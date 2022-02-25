@@ -130,6 +130,7 @@ namespace sp::gltf {
                 return reinterpret_cast<const ReadT &>(buffer->data[byteOffset + (i * byteStride)]);
             },
             [this, &i] {
+                // TODO: Handle normalized int/uint -> float conversion
                 return static_cast<ReadT>(reinterpret_cast<const Tn &>(buffer->data[byteOffset + (i * byteStride)]));
             }...};
         return convertFuncs[typeIndex]();

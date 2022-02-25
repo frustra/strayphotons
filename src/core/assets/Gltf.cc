@@ -41,7 +41,7 @@ namespace sp {
             if (it != primitive.attributes.end()) normalBuffer = Accessor<glm::vec3>(model, it->second);
             it = primitive.attributes.find("TEXCOORD_0");
             if (it != primitive.attributes.end()) {
-                texcoordBuffer = Accessor<glm::vec2, glm::u16vec2, glm::u8vec2, glm::i16vec2, glm::i8vec2>(model,
+                texcoordBuffer = Accessor<glm::vec2 /*, glm::u16vec2, glm::u8vec2, glm::i16vec2, glm::i8vec2*/>(model,
                     it->second);
             }
             it = primitive.attributes.find("JOINTS_0");
@@ -50,7 +50,7 @@ namespace sp {
             }
             it = primitive.attributes.find("WEIGHTS_0");
             if (it != primitive.attributes.end()) {
-                weightsBuffer = Accessor<glm::vec4, glm::u16vec4, glm::u8vec4>(model, it->second);
+                weightsBuffer = Accessor<glm::vec4 /*, glm::u16vec4, glm::u8vec4*/>(model, it->second);
             }
         }
 

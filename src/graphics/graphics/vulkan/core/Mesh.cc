@@ -115,10 +115,7 @@ namespace sp::vulkan {
             return 0;
         }
         auto &gltfModel = *source->gltfModel;
-        if (materialIndex < 0 || (size_t)materialIndex >= gltfModel.materials.size()) {
-            Errorf("Mesh::LoadTexture called with invalid materialIndex: %d", materialIndex);
-            return 0;
-        }
+        if (materialIndex < 0 || (size_t)materialIndex >= gltfModel.materials.size()) return 0;
         auto &material = gltfModel.materials[materialIndex];
 
         string name = std::to_string(materialIndex) + "_";

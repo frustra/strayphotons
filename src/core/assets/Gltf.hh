@@ -72,9 +72,9 @@ namespace sp {
                 int materialIndex;
                 Accessor<glm::vec3> positionBuffer;
                 Accessor<glm::vec3> normalBuffer;
-                Accessor<glm::vec2, glm::u16vec2, glm::u8vec2, glm::i16vec2, glm::i8vec2> texcoordBuffer;
+                Accessor<glm::vec2 /*, glm::u16vec2, glm::u8vec2, glm::i16vec2, glm::i8vec2*/> texcoordBuffer;
                 Accessor<glm::u16vec4, glm::u8vec4> jointsBuffer;
-                Accessor<glm::vec4, glm::u16vec4, glm::u8vec4> weightsBuffer;
+                Accessor<glm::vec4 /*, glm::u16vec4, glm::u8vec4*/> weightsBuffer;
             };
 
             Mesh(const tinygltf::Model &model, const tinygltf::Mesh &mesh);
