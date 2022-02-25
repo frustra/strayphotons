@@ -48,7 +48,7 @@ namespace ecs {
     struct Physics {
         Physics() {}
         Physics(sp::AsyncPtr<sp::Gltf> model,
-            size_t meshIndex,
+            size_t meshIndex = 0,
             PhysicsGroup group = PhysicsGroup::World,
             bool dynamic = true,
             float density = 1.0f)

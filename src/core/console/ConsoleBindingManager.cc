@@ -9,16 +9,18 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "console-binding",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
                 ent.Set<ecs::EventInput>(lock);
                 auto &script = ent.Set<ecs::Script>(lock);
-                script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, ecs::Entity ent, chrono_clock::duration interval) {
-                    if (ent.Has<ecs::Script, ecs::EventInput>(lock)) {
-                        auto &script = ent.Get<const ecs::Script>(lock);
+                script.AddOnTick([](ecs::ScriptState &state,
+                                     ecs::Lock<ecs::WriteAll> lock,
+                                     ecs::Entity ent,
+                                     chrono_clock::duration interval) {
+                    if (ent.Has<ecs::EventInput>(lock)) {
                         auto &readInput = ent.Get<const ecs::EventInput>(lock);
                         bool hasEvents = false;
                         for (auto &queue : readInput.events) {
@@ -31,7 +33,7 @@ namespace sp {
                             auto &input = ent.Get<ecs::EventInput>(lock);
                             for (auto &it : input.events) {
                                 while (!it.second.empty()) {
-                                    auto command = script.GetParam<std::string>(it.first);
+                                    auto command = state.GetParam<std::string>(it.first);
                                     if (!command.empty()) { GetConsoleManager().QueueParseAndExecute(command); }
                                     it.second.pop();
                                 }
@@ -45,16 +47,17 @@ namespace sp {
     }
 
     void ConsoleBindingManager::SetConsoleInputCommand(
-        ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
+        ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>> lock,
         std::string eventName,
         std::string command) {
         auto consoleInput = consoleInputEntity.Get(lock);
-        if (!consoleInput.Has<ecs::Script, ecs::EventInput>(lock)) Abort("Console input entity is invalid");
+        if (!consoleInput.Has<ecs::EventInput>(lock)) Abort("Console input entity is invalid");
 
         auto &eventInput = consoleInput.Get<ecs::EventInput>(lock);
         if (!eventInput.IsRegistered(eventName)) eventInput.Register(eventName);
-        auto &script = consoleInput.Get<ecs::Script>(lock);
-        script.SetParam(eventName, command);
+
+        std::lock_guard l(bindingMutex);
+        boundCommands[eventName] = command;
     }
 
     void ConsoleBindingManager::BindKey(string keyName, string command) {

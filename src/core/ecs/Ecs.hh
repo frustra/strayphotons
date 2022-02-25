@@ -48,7 +48,7 @@ namespace ecs {
     struct SceneConnection;
     struct SceneInfo;
     struct Screen;
-    class Script;
+    struct Script;
     class SignalOutput;
     class SignalBindings;
     class Sound;

@@ -11,12 +11,11 @@
 namespace ecs {
     robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions = {
         {"gltf",
-            [](Lock<AddRemove> lock, Entity ent) {
-                if (ent.Has<Script, SceneInfo>(lock)) {
-                    auto &scriptComp = ent.Get<Script>(lock);
+            [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+                if (ent.Has<SceneInfo>(lock)) {
                     auto &sceneInfo = ent.Get<SceneInfo>(lock);
 
-                    auto modelName = scriptComp.GetParam<std::string>("gltf_model");
+                    auto modelName = state.GetParam<std::string>("gltf_model");
                     auto asyncGltf = sp::GAssets.LoadGltf(modelName);
                     auto model = asyncGltf->Get();
                     if (!model) {
@@ -55,12 +54,12 @@ namespace ecs {
                         Component<TransformTree>::Apply(transform, lock, newEntity);
 
                         if (node.meshIndex) {
-                            if (scriptComp.GetParam<bool>("gltf_render")) {
+                            if (state.GetParam<bool>("gltf_render")) {
                                 Renderable renderable(asyncGltf, *node.meshIndex);
                                 ecs::Component<Renderable>::Apply(renderable, lock, newEntity);
                             }
 
-                            auto physicsParam = scriptComp.GetParam<std::string>("gltf_physics");
+                            auto physicsParam = state.GetParam<std::string>("gltf_physics");
                             if (!physicsParam.empty()) {
                                 sp::to_lower(physicsParam);
                                 Physics physics(asyncGltf, *node.meshIndex);

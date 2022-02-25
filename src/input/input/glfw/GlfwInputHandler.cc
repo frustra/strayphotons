@@ -29,7 +29,7 @@ namespace sp {
         keyboardEntity = ecs::NamedEntity("keyboard");
         mouseEntity = ecs::NamedEntity("mouse");
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "glfw-input",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto keyboard = scene->NewSystemEntity(lock, scene, keyboardEntity.Name());

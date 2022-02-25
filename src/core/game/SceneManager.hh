@@ -25,7 +25,7 @@ namespace sp {
     static const char *const InputBindingConfigPath = "input_bindings.json";
 
     enum class SceneAction {
-        AddSystemScene, // Arguments: (sceneName, applyCallback)
+        ApplySystemScene, // Arguments: (sceneName, applyCallback)
         LoadScene, // Arguments: (sceneName)
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
@@ -41,8 +41,8 @@ namespace sp {
         struct stringify<SceneAction> : std::true_type {
             static const char *to_string(const SceneAction &t) {
                 switch (t) {
-                case SceneAction::AddSystemScene:
-                    return "AddSystemScene";
+                case SceneAction::ApplySystemScene:
+                    return "ApplySystemScene";
                 case SceneAction::LoadScene:
                     return "LoadScene";
                 case SceneAction::ReloadScene:
