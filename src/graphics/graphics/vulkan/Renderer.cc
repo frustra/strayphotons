@@ -12,8 +12,8 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Mesh.hh"
-#include "graphics/vulkan/core/Screenshot.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 
 #ifdef SP_XR_SUPPORT
     #include "xr/XrSystem.hh"
@@ -25,9 +25,7 @@ namespace sp::vulkan {
 
     static CVar<float> CVarExposure("r.Exposure", 1.0f, "Scale factor for linear luminosity buffer");
 
-    static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
-        defaultWindowViewTarget,
-        "Primary window's render target");
+    CVar<string> CVarWindowViewTarget("r.WindowViewTarget", defaultWindowViewTarget, "Primary window's render target");
 
     static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
@@ -39,12 +37,6 @@ namespace sp::vulkan {
 
     Renderer::Renderer(DeviceContext &device)
         : device(device), graph(device), scene(device), guiRenderer(new GuiRenderer(device)) {
-        funcs.Register<string, string>("screenshot",
-            "Save screenshot to <path>, optionally specifying an image <resource>",
-            [&](string path, string resource) {
-                QueueScreenshot(path, resource);
-            });
-
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;
         });
@@ -119,7 +111,7 @@ namespace sp::vulkan {
         AddXRSubmit(lock);
 #endif
         AddWindowOutput();
-        AddScreenshots();
+        screenshots.AddPass(graph);
 
         Assert(lock.UseCount() == 1, "something held onto the renderer lock");
     }
@@ -147,7 +139,7 @@ namespace sp::vulkan {
                     if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
                         sourceID = res.id;
                     } else {
-                        sourceID = VisualizeBuffer(res.id, layer);
+                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
                     builder.ShaderRead(sourceID);
                 } else {
@@ -375,7 +367,7 @@ namespace sp::vulkan {
                 if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
                     sourceID = res.id;
                 } else {
-                    sourceID = VisualizeBuffer(res.id);
+                    sourceID = renderer::VisualizeBuffer(graph, res.id);
                 }
 
                 builder.TransferRead(sourceID);
@@ -917,100 +909,6 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddScreenshots() {
-        std::lock_guard lock(screenshotMutex);
-
-        for (auto &pending : pendingScreenshots) {
-            auto screenshotPath = pending.first;
-            auto screenshotResource = pending.second;
-            if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
-
-            rg::ResourceID sourceID = rg::InvalidResource;
-
-            graph.AddPass("Screenshot")
-                .Build([&](rg::PassBuilder &builder) {
-                    auto resource = builder.GetResource(screenshotResource);
-                    if (resource.type != rg::Resource::Type::RenderTarget) {
-                        Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
-                    } else {
-                        auto format = resource.RenderTargetFormat();
-                        if (FormatByteSize(format) == FormatComponentCount(format)) {
-                            sourceID = resource.id;
-                        } else {
-                            sourceID = VisualizeBuffer(resource.id);
-                        }
-                        builder.TransferRead(sourceID);
-                        builder.RequirePass();
-                    }
-                })
-                .Execute([screenshotPath, sourceID](rg::Resources &resources, DeviceContext &device) {
-                    auto &res = resources.GetResource(sourceID);
-                    if (res.type == rg::Resource::Type::RenderTarget) {
-                        auto target = resources.GetRenderTarget(res.id);
-                        WriteScreenshot(device, screenshotPath, target->ImageView());
-                    }
-                });
-        }
-        pendingScreenshots.clear();
-    }
-
-    rg::ResourceID Renderer::VisualizeBuffer(rg::ResourceID sourceID, uint32 arrayLayer) {
-
-        rg::ResourceID targetID = rg::InvalidResource, outputID;
-        graph.AddPass("VisualizeBuffer")
-            .Build([&](rg::PassBuilder &builder) {
-                auto &res = builder.ShaderRead(sourceID);
-                targetID = res.id;
-                auto desc = res.DeriveRenderTarget();
-                desc.format = vk::Format::eR8G8B8A8Srgb;
-                outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
-            })
-            .Execute([this, targetID, arrayLayer](rg::Resources &resources, CommandContext &cmd) {
-                auto target = resources.GetRenderTarget(targetID);
-                ImageViewPtr source;
-                if (target->Desc().arrayLayers > 1 && arrayLayer != ~0u && arrayLayer < target->Desc().arrayLayers) {
-                    source = target->LayerImageView(arrayLayer);
-                } else {
-                    source = target->ImageView();
-                }
-
-                auto debugView = this->debugViews.Load(source.get());
-                if (debugView) {
-                    source = debugView;
-                } else if (source->Format() == vk::Format::eD24UnormS8Uint) {
-                    auto viewInfo = source->CreateInfo();
-                    viewInfo.aspectMask = vk::ImageAspectFlagBits::eStencil;
-                    viewInfo.defaultSampler = cmd.Device().GetSampler(SamplerType::BilinearClamp);
-                    debugView = cmd.Device().CreateImageView(viewInfo);
-                    this->debugViews.Register(source.get(), debugView);
-                    source = debugView;
-                }
-
-                if (source->ViewType() == vk::ImageViewType::e2DArray) {
-                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_2d_array.frag");
-
-                    struct {
-                        float layer = 0;
-                    } push;
-                    cmd.PushConstants(push);
-                } else {
-                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_2d.frag");
-                }
-
-                auto format = source->Format();
-                uint32 comp = FormatComponentCount(format);
-                uint32 swizzle = 0b11000000; // rrra
-                if (comp > 1) {
-                    swizzle = 0b11100100; // rgba
-                }
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, swizzle);
-
-                cmd.SetTexture(0, 0, source);
-                cmd.Draw(3);
-            });
-        return outputID;
-    }
-
     void Renderer::EndFrame() {
         ZoneScoped;
         guiRenderer->Tick();
@@ -1063,11 +961,6 @@ namespace sp::vulkan {
 
     void Renderer::SetDebugGui(GuiManager &gui) {
         debugGui = &gui;
-    }
-
-    void Renderer::QueueScreenshot(const string &path, const string &resource) {
-        std::lock_guard lock(screenshotMutex);
-        pendingScreenshots.push_back({path, resource});
     }
 
     ImageViewPtr Renderer::GetBlankPixelImage() {

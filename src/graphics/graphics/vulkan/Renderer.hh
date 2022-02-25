@@ -2,7 +2,6 @@
 
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
-#include "core/LockFreeMutex.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
@@ -13,6 +12,7 @@
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_passes/Emissive.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
+#include "graphics/vulkan/render_passes/Screenshots.hh"
 
 #include <atomic>
 #include <functional>
@@ -31,6 +31,8 @@ namespace sp {
 namespace sp::vulkan {
     class Mesh;
     class GuiRenderer;
+
+    extern CVar<string> CVarWindowViewTarget;
 
     struct LightingContext {
         int count = 0;
@@ -66,8 +68,6 @@ namespace sp::vulkan {
         }
 #endif
 
-        void QueueScreenshot(const string &path, const string &resource);
-
         ImageViewPtr GetBlankPixelImage();
         ImageViewPtr CreateSinglePixelImage(glm::vec4 value);
 
@@ -83,9 +83,6 @@ namespace sp::vulkan {
         void AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock);
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
 #endif
-
-        void AddScreenshots();
-        rg::ResourceID VisualizeBuffer(rg::ResourceID sourceID, uint32 arrayLayer = ~0u);
 
         void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
         void AddGeometryWarp();
@@ -133,20 +130,17 @@ namespace sp::vulkan {
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
-        LockFreeMutex screenshotMutex;
-        vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
 
         renderer::Emissive emissive;
         renderer::SMAA smaa;
+        renderer::Screenshots screenshots;
 
         struct EmptyImageKey {
             vk::Format format;
         };
 
         ImageViewPtr blankPixelImage;
-
-        PreservingMap<ImageView *, ImageView> debugViews;
 
         std::atomic_flag sceneReady, pendingTransaction;
 

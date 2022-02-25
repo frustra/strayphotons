@@ -1,13 +1,61 @@
-#include "Screenshot.hh"
+#include "Screenshots.hh"
 
 #include "core/Logging.hh"
+#include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 
 #include <filesystem>
 #include <stb_image_write.h>
 
-namespace sp::vulkan {
+namespace sp::vulkan::renderer {
+    Screenshots::Screenshots() {
+        funcs.Register<string, string>("screenshot",
+            "Save screenshot to <path>, optionally specifying an image <resource>",
+            [&](string path, string resource) {
+                std::lock_guard lock(screenshotMutex);
+                pendingScreenshots.push_back({path, resource});
+            });
+    }
+
+    void Screenshots::AddPass(RenderGraph &graph) {
+        std::lock_guard lock(screenshotMutex);
+
+        for (auto &pending : pendingScreenshots) {
+            auto screenshotPath = pending.first;
+            auto screenshotResource = pending.second;
+            if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
+
+            rg::ResourceID sourceID = rg::InvalidResource;
+
+            graph.AddPass("Screenshot")
+                .Build([&](rg::PassBuilder &builder) {
+                    auto resource = builder.GetResource(screenshotResource);
+                    if (resource.type != rg::Resource::Type::RenderTarget) {
+                        Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
+                    } else {
+                        auto format = resource.RenderTargetFormat();
+                        if (FormatByteSize(format) == FormatComponentCount(format)) {
+                            sourceID = resource.id;
+                        } else {
+                            sourceID = VisualizeBuffer(graph, resource.id);
+                        }
+                        builder.TransferRead(sourceID);
+                        builder.RequirePass();
+                    }
+                })
+                .Execute([screenshotPath, sourceID](rg::Resources &resources, DeviceContext &device) {
+                    auto &res = resources.GetResource(sourceID);
+                    if (res.type == rg::Resource::Type::RenderTarget) {
+                        auto target = resources.GetRenderTarget(res.id);
+                        renderer::WriteScreenshot(device, screenshotPath, target->ImageView());
+                    }
+                });
+        }
+        pendingScreenshots.clear();
+    }
+
     void WriteScreenshot(DeviceContext &device, const std::string &path, const ImageViewPtr &view) {
         auto base = std::filesystem::absolute("screenshots");
         if (!std::filesystem::is_directory(base)) {
@@ -118,4 +166,4 @@ namespace sp::vulkan {
             subResourceLayout.rowPitch);
         outputImage->Unmap();
     }
-} // namespace sp::vulkan
+} // namespace sp::vulkan::renderer
