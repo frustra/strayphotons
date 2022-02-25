@@ -16,7 +16,7 @@ namespace sp {
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
                 ent.Set<ecs::EventInput>(lock);
                 auto &script = ent.Set<ecs::Script>(lock);
-                script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+                script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, ecs::Entity ent, chrono_clock::duration interval) {
                     if (ent.Has<ecs::Script, ecs::EventInput>(lock)) {
                         auto &script = ent.Get<const ecs::Script>(lock);
                         auto &readInput = ent.Get<const ecs::EventInput>(lock);

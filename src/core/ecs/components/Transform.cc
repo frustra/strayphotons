@@ -58,6 +58,27 @@ namespace ecs {
         return Component<Transform>::Load(scene, transform.pose, src);
     }
 
+    template<>
+    void Component<TransformTree>::ApplyComponent(Lock<ReadAll> srcLock,
+        Entity src,
+        Lock<AddRemove> dstLock,
+        Entity dst) {
+        if (src.Has<TransformTree>(srcLock) && !dst.Has<TransformSnapshot, TransformTree>(dstLock)) {
+            auto &srcTree = src.Get<TransformTree>(srcLock);
+            auto &dstTree = dst.Get<TransformTree>(dstLock);
+
+            // Map transform parent from staging id to live id
+            if (srcTree.parent.Has<SceneInfo>(srcLock)) {
+                auto &sceneInfo = srcTree.parent.Get<SceneInfo>(srcLock);
+                dstTree.parent = sceneInfo.liveId;
+            } else {
+                dstTree.parent = Entity();
+            }
+            dstTree.pose = srcTree.pose;
+            dst.Set<TransformSnapshot>(dstLock, srcTree.GetGlobalTransform(srcLock));
+        }
+    }
+
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
         : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
 

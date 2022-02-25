@@ -46,4 +46,18 @@ namespace ecs {
         }
         return true;
     }
+
+    template<>
+    void Component<TriggerArea>::Apply(const TriggerArea &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstArea = dst.Get<TriggerArea>(lock);
+        for (size_t i = 0; i < src.triggers.size(); i++) {
+            auto &srcTriggers = src.triggers.at(i);
+            auto &dstTriggers = dstArea.triggers.at(i);
+            for (auto &trigger : srcTriggers) {
+                if (std::find(dstTriggers.begin(), dstTriggers.end(), trigger) == dstTriggers.end()) {
+                    dstTriggers.emplace_back(trigger);
+                }
+            }
+        }
+    }
 } // namespace ecs

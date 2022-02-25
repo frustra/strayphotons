@@ -20,9 +20,9 @@ namespace ecs {
     public:
         ComponentBase(const char *name) : name(name) {}
 
-        virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
-        virtual bool ReloadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
-        virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
+        virtual bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) = 0;
+        virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) = 0;
+        virtual void ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt) = 0;
 
         const char *name;
     };
@@ -33,6 +33,7 @@ namespace ecs {
     template<typename CompType>
     class Component : public ComponentBase {
     public:
+        Component() : ComponentBase("") {}
         Component(const char *name) : ComponentBase(name) {
             auto existing = dynamic_cast<Component<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
@@ -42,7 +43,7 @@ namespace ecs {
             }
         }
 
-        bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
+        bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) override {
             sp::Scene *scene = nullptr;
             if (dst.Has<SceneInfo>(lock)) {
                 auto &sceneInfo = dst.Get<SceneInfo>(lock);
@@ -52,19 +53,16 @@ namespace ecs {
             return Load(scene, comp, src);
         }
 
-        bool ReloadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
-            sp::Scene *scene = nullptr;
-            if (dst.Has<SceneInfo>(lock)) {
-                auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scene = sceneInfo.scene.lock().get();
-            }
-            auto &comp = dst.Get<CompType>(lock);
-            return Load(scene, comp, src);
-        }
-
-        bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) override {
+        bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) override {
             auto &comp = src.Get<CompType>(lock);
             return Save(lock, dst, comp);
+        }
+
+        void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) override {
+            if (src.Has<CompType>(srcLock)) {
+                auto &comp = src.Get<CompType>(srcLock);
+                Apply(comp, dstLock, dst);
+            }
         }
 
         static bool Load(sp::Scene *scene, CompType &dst, const picojson::value &src) {
@@ -72,9 +70,13 @@ namespace ecs {
             return false;
         }
 
-        static bool Save(Lock<Read<ecs::Name>> lock, picojson::value &dst, const CompType &src) {
+        static bool Save(Lock<Read<Name>> lock, picojson::value &dst, const CompType &src) {
             std::cerr << "Calling undefined Save on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
+        }
+
+        static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {
+            if (!dst.Has<CompType>(lock)) dst.Set<CompType>(lock, src);
         }
 
         bool operator==(const Component<CompType> &other) const {

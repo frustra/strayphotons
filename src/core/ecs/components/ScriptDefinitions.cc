@@ -17,7 +17,7 @@ namespace ecs {
 
     robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions = {
         {"flashlight",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Light, TransformTree, SignalOutput, EventInput>(lock)) {
                     auto &light = ent.Get<Light>(lock);
                     auto &signalComp = ent.Get<SignalOutput>(lock);
@@ -35,9 +35,9 @@ namespace ecs {
                         auto &transform = ent.Get<TransformTree>(lock);
                         if (transform.parent.Has<TransformTree>(lock)) {
                             transform.pose = transform.GetGlobalTransform(lock);
-                            transform.parent = Tecs::Entity();
+                            transform.parent = Entity();
                         } else {
-                            Tecs::Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
+                            Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
                             if (parent) {
                                 transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
                                 transform.pose.SetRotation(glm::quat());
@@ -50,7 +50,7 @@ namespace ecs {
                 }
             }},
         {"sun",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree, SignalOutput>(lock)) {
                     auto &transform = ent.Get<TransformTree>(lock);
                     auto &signalComp = ent.Get<SignalOutput>(lock);
@@ -70,7 +70,7 @@ namespace ecs {
                 }
             }},
         {"light_sensor",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, LightSensor, SignalOutput>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto &sensorComp = ent.Get<LightSensor>(lock);
@@ -97,7 +97,7 @@ namespace ecs {
                 }
             }},
         {"joystick_calibration",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Name, Script, EventInput, EventBindings>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto &eventInput = ent.Get<EventInput>(lock);
@@ -120,7 +120,7 @@ namespace ecs {
                 }
             }},
         {"auto_attach",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, TransformTree>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto parentName = scriptComp.GetParam<std::string>("attach_parent");
@@ -135,7 +135,7 @@ namespace ecs {
                             renderable.visibility.set();
                         }
                     } else {
-                        parent = Tecs::Entity();
+                        parent = Entity();
                         if (ent.Has<Renderable>(lock)) {
                             auto &renderable = ent.Get<Renderable>(lock);
                             renderable.visibility.reset();
@@ -146,7 +146,7 @@ namespace ecs {
                 }
             }},
         {"lazy_load_model",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, Renderable>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto modelName = scriptComp.GetParam<std::string>("model_name");
@@ -159,7 +159,7 @@ namespace ecs {
                 }
             }},
         {"relative_movement",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, SignalOutput>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto targetName = scriptComp.GetParam<std::string>("relative_to");
@@ -199,7 +199,7 @@ namespace ecs {
                 }
             }},
         {"camera_view",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, EventInput, TransformTree>(lock)) {
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/camera_rotate", event)) {
@@ -230,7 +230,7 @@ namespace ecs {
                 }
             }},
         {"model_spawner",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, EventInput>(lock)) {
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
@@ -269,7 +269,7 @@ namespace ecs {
                 }
             }},
         {"rotate",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, TransformTree>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     glm::vec3 rotationAxis;
@@ -286,7 +286,7 @@ namespace ecs {
                 }
             }},
         {"latch_signals",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, SignalOutput>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto &signalOutput = ent.Get<SignalOutput>(lock);
@@ -297,7 +297,7 @@ namespace ecs {
                 }
             }},
         {"grab_object",
-            [](Lock<WriteAll> lock, Tecs::Entity ent, chrono_clock::duration interval) {
+            [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto &query = ent.Get<PhysicsQuery>(lock);
@@ -310,7 +310,7 @@ namespace ecs {
                         if (ph.constraint != ent) {
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
-                            target = Tecs::Entity();
+                            target = Entity();
                         }
                     }
 
@@ -321,7 +321,7 @@ namespace ecs {
                             auto &ph = target.Get<Physics>(lock);
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
-                            target = Tecs::Entity();
+                            target = Entity();
                         } else if (query.raycastHitTarget.Has<Physics, TransformSnapshot>(lock)) {
                             // Grab the entity being looked at
                             auto &ph = query.raycastHitTarget.Get<Physics>(lock);

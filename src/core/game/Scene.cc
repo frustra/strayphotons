@@ -6,14 +6,14 @@
 namespace sp {
     void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live,
-        Tecs::Entity e) {
+        ecs::Entity e) {
 
         Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
         auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
         auto &liveSceneInfo = sceneInfo.liveId.Get<const ecs::SceneInfo>(live);
 
-        std::vector<Tecs::Entity> stagingIds;
+        std::vector<ecs::Entity> stagingIds;
         auto stagingId = liveSceneInfo.stagingId;
         while (stagingId.Has<ecs::SceneInfo>(staging)) {
             stagingIds.emplace_back(stagingId);
@@ -22,7 +22,7 @@ namespace sp {
             stagingId = stagingInfo.nextStagingId;
         }
         while (!stagingIds.empty()) {
-            Scene::CopyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
+            Scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
             stagingIds.pop_back();
         }
         Scene::RemoveDanglingComponents(ecs::Lock<ecs::ReadAll>(staging), live, sceneInfo.liveId);
@@ -30,7 +30,7 @@ namespace sp {
 
     void ApplyComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live,
-        Tecs::Entity e) {
+        ecs::Entity e) {
 
         Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
         auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
@@ -39,7 +39,7 @@ namespace sp {
 
         if (liveSceneInfo.stagingId == e) {
             // Entity is the linked-list root, which can be applied directly.
-            Scene::CopyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, sceneInfo.liveId);
+            Scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, sceneInfo.liveId);
             return;
         }
 
@@ -50,7 +50,7 @@ namespace sp {
         Assertf(!active, "%s scene destroyed while active: %s", type, name);
     }
 
-    Tecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+    ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::shared_ptr<Scene> &scene,
         std::string entityName) {
         if (!entityName.empty() && namedEntities.count(entityName) > 0) return namedEntities[entityName];
@@ -64,8 +64,8 @@ namespace sp {
         return entity;
     }
 
-    Tecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
-        Tecs::Entity prefabRoot,
+    ecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+        ecs::Entity prefabRoot,
         std::string entityName) {
         if (!entityName.empty() && namedEntities.count(entityName) > 0) return namedEntities[entityName];
 
@@ -113,8 +113,8 @@ namespace sp {
                 if (!sceneInfo.liveId) {
                     // No entity exists in the live scene
                     sceneInfo.liveId = live.NewEntity();
-                    CopyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
-                    CopyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
+                    ApplyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
+                    ApplyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
                 }
             }
         }

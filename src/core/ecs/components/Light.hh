@@ -11,7 +11,7 @@ namespace ecs {
         glm::vec3 tint;
         string gelName;
         bool on = true;
-        Tecs::Entity bulb;
+        Entity bulb;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
     };
@@ -20,4 +20,6 @@ namespace ecs {
 
     template<>
     bool Component<Light>::Load(sp::Scene *scene, Light &dst, const picojson::value &src);
+    template<>
+    void Component<Light>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst);
 } // namespace ecs

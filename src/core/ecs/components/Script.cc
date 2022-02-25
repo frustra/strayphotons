@@ -90,6 +90,13 @@ namespace ecs {
         return true;
     }
 
+    template<>
+    void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstScript = dst.Get<Script>(lock);
+        dstScript.CopyCallbacks(src);
+        dstScript.CopyParams(src);
+    }
+
     void Script::CopyCallbacks(const Script &src) {
         if (onTickCallbacks.empty()) onTickCallbacks = src.onTickCallbacks;
         // Ignore prefab callbacks, they aren't used in the live ECS

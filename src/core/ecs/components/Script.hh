@@ -11,8 +11,8 @@
 #include <vector>
 
 namespace ecs {
-    using ScriptFunc = std::function<void(ecs::Lock<ecs::WriteAll>, Tecs::Entity, chrono_clock::duration)>;
-    using PrefabFunc = std::function<void(ecs::Lock<ecs::AddRemove>, Tecs::Entity)>;
+    using ScriptFunc = std::function<void(Lock<WriteAll>, Entity, chrono_clock::duration)>;
+    using PrefabFunc = std::function<void(Lock<AddRemove>, Entity)>;
 
     class Script {
     public:
@@ -24,7 +24,7 @@ namespace ecs {
             prefabCallbacks.push_back(callback);
         }
 
-        void OnTick(ecs::Lock<ecs::WriteAll> lock, const Tecs::Entity &ent, chrono_clock::duration interval) {
+        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
             ZoneScopedN("OnTick");
             ZoneValue(ent.index);
             for (auto &callback : onTickCallbacks) {
@@ -32,7 +32,7 @@ namespace ecs {
             }
         }
 
-        void Prefab(ecs::Lock<ecs::AddRemove> lock, const Tecs::Entity &ent) {
+        void Prefab(Lock<AddRemove> lock, const Entity &ent) {
             ZoneScopedN("Prefab");
             ZoneValue(ent.index);
             for (auto &callback : prefabCallbacks) {
@@ -43,7 +43,7 @@ namespace ecs {
         using ParameterType = typename std::variant<bool,
             double,
             std::string,
-            Tecs::Entity,
+            Entity,
             NamedEntity,
             std::vector<bool>,
             std::vector<double>,
@@ -81,4 +81,6 @@ namespace ecs {
 
     template<>
     bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src);
+    template<>
+    void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

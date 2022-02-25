@@ -7,15 +7,15 @@ namespace ecs {
     class NamedEntity {
     public:
         NamedEntity() {}
-        NamedEntity(const std::string &name, Tecs::Entity ent = Tecs::Entity()) : name(name), ent(ent) {}
+        NamedEntity(const std::string &name, Entity ent = Entity()) : name(name), ent(ent) {}
 
         const std::string &Name() const {
             return name;
         }
 
-        const Tecs::Entity &Get(Lock<Read<ecs::Name>> lock);
+        const Entity &Get(Lock<Read<ecs::Name>> lock);
 
-        Tecs::Entity Get(Lock<Read<ecs::Name>> lock) const;
+        Entity Get(Lock<Read<ecs::Name>> lock) const;
 
         bool operator==(const NamedEntity &other) const {
             return !name.empty() && name == other.name;
@@ -43,7 +43,7 @@ namespace ecs {
 
     private:
         std::string name;
-        Tecs::Entity ent;
+        Entity ent;
     };
 } // namespace ecs
 

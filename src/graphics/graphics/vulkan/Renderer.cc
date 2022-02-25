@@ -175,7 +175,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock) {
-        Tecs::Entity windowEntity = device.GetActiveView();
+        ecs::Entity windowEntity = device.GetActiveView();
 
         if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return;
 
@@ -404,7 +404,7 @@ namespace sp::vulkan {
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
         bool hasPendingModel = false;
 
-        for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
+        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &renderable = ent.Get<ecs::Renderable>(lock);

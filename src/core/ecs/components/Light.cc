@@ -39,4 +39,17 @@ namespace ecs {
         }
         return true;
     }
+
+    template<>
+    void Component<Light>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) {
+        if (src.Has<Light>(srcLock) && !dst.Has<Light>(dstLock)) {
+            auto &light = dst.Set<Light>(dstLock, src.Get<Light>(srcLock));
+
+            // Map light bulb from staging id to live id
+            if (light.bulb && light.bulb.Has<SceneInfo>(srcLock)) {
+                auto &sceneInfo = light.bulb.Get<SceneInfo>(srcLock);
+                light.bulb = sceneInfo.liveId;
+            }
+        }
+    }
 } // namespace ecs

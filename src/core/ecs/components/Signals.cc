@@ -64,6 +64,20 @@ namespace ecs {
         return true;
     }
 
+    template<>
+    void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstOutput = dst.Get<SignalOutput>(lock);
+        for (auto &signal : src.GetSignals()) {
+            if (!dstOutput.HasSignal(signal.first)) dstOutput.SetSignal(signal.first, signal.second);
+        }
+    }
+
+    template<>
+    void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstBindings = dst.Get<SignalBindings>(lock);
+        dstBindings.CopyBindings(src);
+    }
+
     std::ostream &operator<<(std::ostream &out, const SignalBindings::CombineOperator &v) {
         switch (v) {
         case SignalBindings::CombineOperator::ADD:
@@ -209,7 +223,7 @@ namespace ecs {
     }
 
     double SignalBindings::GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
-        Tecs::Entity ent,
+        Entity ent,
         const std::string &name,
         size_t depth) {
         if (depth > MAX_SIGNAL_BINDING_DEPTH) {

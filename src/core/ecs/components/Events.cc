@@ -36,6 +36,20 @@ namespace ecs {
         return true;
     }
 
+    template<>
+    void Component<EventInput>::Apply(const EventInput &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstInput = dst.Get<EventInput>(lock);
+        for (auto &input : src.events) {
+            if (!dstInput.IsRegistered(input.first)) dstInput.Register(input.first);
+        }
+    }
+
+    template<>
+    void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstBindings = dst.Get<EventBindings>(lock);
+        dstBindings.CopyBindings(src);
+    }
+
     std::string Event::toString() const {
         std::stringstream ss;
         ss << this->data;
@@ -99,7 +113,7 @@ namespace ecs {
         return false;
     }
 
-    bool EventInput::Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut) {
+    bool EventInput::Poll(Lock<Write<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut) {
         auto &readInput = ent.Get<const EventInput>(lock);
         if (readInput.HasEvents(binding)) {
             auto &writeInput = ent.Get<EventInput>(lock);

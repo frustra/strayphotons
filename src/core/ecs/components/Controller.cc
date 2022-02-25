@@ -11,11 +11,11 @@ namespace ecs {
         const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "target") {
-                controller.target = ecs::NamedEntity(param.second.get<string>());
+                controller.target = NamedEntity(param.second.get<string>());
             } else if (param.first == "fallback_target") {
-                controller.fallbackTarget = ecs::NamedEntity(param.second.get<string>());
+                controller.fallbackTarget = NamedEntity(param.second.get<string>());
             } else if (param.first == "movement_proxy") {
-                controller.movementProxy = ecs::NamedEntity(param.second.get<string>());
+                controller.movementProxy = NamedEntity(param.second.get<string>());
             }
         }
         return true;
