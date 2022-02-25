@@ -1,6 +1,7 @@
 {
 	"entities": [
 		{
+			"_name": "sponza",
 			"transform": {
 				"rotate": [-90, 0, 1, 0],
 				"translate": [0, -1, 0],

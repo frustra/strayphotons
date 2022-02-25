@@ -119,7 +119,8 @@ namespace sp {
 
                 auto &ph = ent.template Get<ecs::Physics>(lock);
                 if (ph.model && ph.model->Ready()) {
-                    LoadConvexHullSet(ph.model, ph.meshIndex, ph.decomposeHull);
+                    auto set = LoadConvexHullSet(ph.model, ph.meshIndex, ph.decomposeHull);
+                    if (!set || !set->Ready()) complete = false;
                 } else {
                     complete = false;
                 }
