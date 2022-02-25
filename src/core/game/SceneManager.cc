@@ -244,7 +244,7 @@ namespace sp {
 
                     playerScene->RemoveScene(stagingLock, liveLock);
                     playerScene.reset();
-                    player = Tecs::Entity();
+                    player = ecs::Entity();
                 }
 
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
@@ -452,7 +452,7 @@ namespace sp {
                 auto ent = value.get<picojson::object>();
 
                 if (ent.count("_name")) {
-                    Tecs::Entity entity = lock.NewEntity();
+                    ecs::Entity entity = lock.NewEntity();
                     auto name = ent["_name"].get<string>();
                     if (starts_with(name, "global.")) {
                         entity.Set<ecs::Name>(lock, name);
@@ -464,11 +464,11 @@ namespace sp {
                 }
             }
 
-            std::vector<Tecs::Entity> entities;
+            std::vector<ecs::Entity> entities;
             for (auto value : entityList.get<picojson::array>()) {
                 auto ent = value.get<picojson::object>();
 
-                Tecs::Entity entity;
+                ecs::Entity entity;
                 if (ent.count("_name")) {
                     entity = scene->namedEntities[ent["_name"].get<string>()];
                 } else {
@@ -555,7 +555,7 @@ namespace sp {
             ecs::Write<ecs::TransformTree, ecs::Animation>>();
         auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::TransformSnapshot>>();
 
-        Tecs::Entity liveConnection, stagingConnection;
+        ecs::Entity liveConnection, stagingConnection;
         for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
             if (!e.Has<ecs::SceneConnection, ecs::SceneInfo, ecs::Name>(stagingLock)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
@@ -623,7 +623,7 @@ namespace sp {
 
     void SceneManager::RespawnPlayer(
         ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
-        Tecs::Entity player) {
+        ecs::Entity player) {
         auto spawn = ecs::EntityWith<ecs::Name>(lock, "global.spawn");
         if (spawn.Has<ecs::TransformSnapshot>(lock)) {
             auto &spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);

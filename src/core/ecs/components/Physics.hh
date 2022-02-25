@@ -63,7 +63,7 @@ namespace ecs {
         bool decomposeHull = false;
         float density = 1.0f;
 
-        Tecs::Entity jointTarget;
+        Entity jointTarget;
         PhysicsJointType jointType = PhysicsJointType::Count;
         glm::vec2 jointRange;
         glm::vec3 jointLocalOffset, jointRemoteOffset;
@@ -71,12 +71,12 @@ namespace ecs {
 
         glm::vec3 constantForce;
 
-        Tecs::Entity constraint;
+        Entity constraint;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
 
-        void SetJoint(Tecs::Entity target,
+        void SetJoint(Entity target,
             PhysicsJointType type,
             glm::vec2 range = glm::vec2(),
             glm::vec3 localOffset = glm::vec3(),
@@ -93,10 +93,10 @@ namespace ecs {
         }
 
         void RemoveJoint() {
-            SetJoint(Tecs::Entity(), PhysicsJointType::Count);
+            SetJoint(Entity(), PhysicsJointType::Count);
         }
 
-        void SetConstraint(Tecs::Entity target,
+        void SetConstraint(Entity target,
             float maxDistance = 0.0f,
             glm::vec3 offset = glm::vec3(),
             glm::quat rotation = glm::quat()) {
@@ -107,7 +107,7 @@ namespace ecs {
         }
 
         void RemoveConstraint() {
-            SetConstraint(Tecs::Entity());
+            SetConstraint(Entity());
         }
     };
 
@@ -116,12 +116,12 @@ namespace ecs {
         float raycastQueryDistance = 0.0f;
         PhysicsGroupMask raycastQueryFilterGroup = PHYSICS_GROUP_WORLD;
         // Raycast outputs
-        Tecs::Entity raycastHitTarget;
+        Entity raycastHitTarget;
         glm::vec3 raycastHitPosition;
         float raycastHitDistance = 0.0f;
 
         // Center of mass query
-        Tecs::Entity centerOfMassQuery;
+        Entity centerOfMassQuery;
         // The calculated center of mass of the object (relative to its Transform)
         glm::vec3 centerOfMass;
     };
@@ -133,4 +133,6 @@ namespace ecs {
     bool Component<Physics>::Load(sp::Scene *scene, Physics &dst, const picojson::value &src);
     template<>
     bool Component<PhysicsQuery>::Load(sp::Scene *scene, PhysicsQuery &dst, const picojson::value &src);
+    template<>
+    void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst);
 } // namespace ecs

@@ -125,7 +125,7 @@ namespace sp::xr {
                         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to read origin info");
 
                         ecs::NamedEntity originEntity = vrSystem.GetEntityForDeviceIndex(originInfo.trackedDeviceIndex);
-                        Tecs::Entity entity = originEntity.Get(lock);
+                        ecs::Entity entity = originEntity.Get(lock);
                         if (entity) {
                             vr::InputDigitalActionData_t digitalActionData;
                             vr::InputAnalogActionData_t analogActionData;

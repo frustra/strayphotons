@@ -11,7 +11,7 @@
 namespace ecs {
     robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions = {
         {"gltf",
-            [](Lock<AddRemove> lock, Tecs::Entity ent) {
+            [](Lock<AddRemove> lock, Entity ent) {
                 if (ent.Has<Script, SceneInfo>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto &sceneInfo = ent.Get<SceneInfo>(lock);
@@ -27,7 +27,7 @@ namespace ecs {
                     auto scene = sceneInfo.scene.lock();
                     Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
 
-                    std::deque<std::pair<size_t, Tecs::Entity>> nodes;
+                    std::deque<std::pair<size_t, Entity>> nodes;
                     for (auto &nodeId : model->rootNodes) {
                         nodes.emplace_back(nodeId, ent);
                     }
@@ -37,7 +37,7 @@ namespace ecs {
                         Assertf(model->nodes[nodeId], "Gltf node %u is not defined", nodeId);
                         auto &node = *model->nodes[nodeId];
 
-                        Tecs::Entity newEntity;
+                        Entity newEntity;
                         if (ent.Has<Name>(lock)) {
                             auto entityName = ent.Get<Name>(lock) + ".";
                             if (node.name.empty()) {
@@ -50,22 +50,31 @@ namespace ecs {
                             newEntity = scene->NewPrefabEntity(lock, ent);
                         }
 
-                        auto &transform = newEntity.Set<TransformTree>(lock, node.transform);
+                        TransformTree transform(node.transform);
                         if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
-                        newEntity.Set<TransformSnapshot>(lock);
+                        Component<TransformTree>::Apply(transform, lock, newEntity);
+
                         if (node.meshIndex) {
                             if (scriptComp.GetParam<bool>("gltf_render")) {
-                                newEntity.Set<Renderable>(lock, asyncGltf, *node.meshIndex);
+                                Renderable renderable(asyncGltf, *node.meshIndex);
+                                ecs::Component<Renderable>::Apply(renderable, lock, newEntity);
                             }
+
                             auto physicsParam = scriptComp.GetParam<std::string>("gltf_physics");
-                            sp::to_lower(physicsParam);
-                            if (physicsParam == "dynamic") {
-                                newEntity.Set<Physics>(lock, asyncGltf, *node.meshIndex);
-                            } else if (physicsParam == "kinematic") {
-                                auto &ph = newEntity.Set<Physics>(lock, asyncGltf, *node.meshIndex);
-                                ph.kinematic = true;
-                            } else if (physicsParam == "static") {
-                                newEntity.Set<Physics>(lock, asyncGltf, *node.meshIndex, PhysicsGroup::World, false);
+                            if (!physicsParam.empty()) {
+                                sp::to_lower(physicsParam);
+                                Physics physics(asyncGltf, *node.meshIndex);
+                                if (physicsParam == "dynamic") {
+                                    physics.dynamic = true;
+                                } else if (physicsParam == "kinematic") {
+                                    physics.dynamic = true;
+                                    physics.kinematic = true;
+                                } else if (physicsParam == "static") {
+                                    physics.dynamic = false;
+                                } else {
+                                    Abortf("Unknown gltf_physics param: %s", physicsParam);
+                                }
+                                ecs::Component<Physics>::Apply(physics, lock, newEntity);
                             }
                         }
 

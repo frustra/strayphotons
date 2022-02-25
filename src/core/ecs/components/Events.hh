@@ -52,7 +52,7 @@ namespace ecs {
         bool HasEvents(const std::string &binding) const;
         bool Poll(const std::string &binding, Event &eventOut);
 
-        static bool Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut);
+        static bool Poll(Lock<Write<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut);
     };
 
     class EventBindings {
@@ -92,4 +92,8 @@ namespace ecs {
     bool Component<EventInput>::Load(sp::Scene *scene, EventInput &dst, const picojson::value &src);
     template<>
     bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &dst, const picojson::value &src);
+    template<>
+    void Component<EventInput>::Apply(const EventInput &src, Lock<AddRemove> lock, Entity dst);
+    template<>
+    void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

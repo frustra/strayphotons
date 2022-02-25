@@ -91,7 +91,7 @@ namespace sp {
 
         float dt = (float)(manager.interval.count() / 1e9);
 
-        for (Tecs::Entity entity : lock.EntitiesWith<ecs::CharacterController>()) {
+        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
 
             auto &controller = entity.Get<ecs::CharacterController>(lock);

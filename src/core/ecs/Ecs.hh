@@ -93,6 +93,7 @@ namespace ecs {
         VoxelArea,
         XRView>;
 
+    using Entity = Tecs::Entity;
     template<typename... Permissions>
     using Lock = Tecs::Lock<ECS, Permissions...>;
     template<typename... Components>
@@ -112,12 +113,12 @@ namespace ecs {
     template<typename T>
     using ComponentEvent = Tecs::ComponentEvent<T>;
 
-    std::string ToString(Lock<Read<Name>> lock, Tecs::Entity e);
+    std::string ToString(Lock<Read<Name>> lock, Entity e);
 
     extern ECS World;
 
     template<typename T>
-    Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value);
+    Entity EntityWith(Lock<Read<T>> lock, const T &value);
 
 }; // namespace ecs
 

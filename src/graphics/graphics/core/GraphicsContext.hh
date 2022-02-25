@@ -33,11 +33,11 @@ namespace sp {
         virtual void EndFrame() = 0;
         virtual void WaitIdle() {}
 
-        void AttachView(Tecs::Entity e) {
+        void AttachView(ecs::Entity e) {
             activeView = e;
         }
 
-        const Tecs::Entity &GetActiveView() const {
+        const ecs::Entity &GetActiveView() const {
             return activeView;
         }
 
@@ -60,6 +60,6 @@ namespace sp {
         }
 
     protected:
-        Tecs::Entity activeView;
+        ecs::Entity activeView;
     };
 } // namespace sp

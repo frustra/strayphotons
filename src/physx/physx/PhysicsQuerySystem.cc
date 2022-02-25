@@ -31,7 +31,7 @@ namespace sp {
                     PxHitFlags(),
                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
-                query.raycastHitTarget = Tecs::Entity();
+                query.raycastHitTarget = ecs::Entity();
                 query.raycastHitPosition = glm::vec3();
                 query.raycastHitDistance = 0.0f;
                 if (status) {

@@ -371,7 +371,7 @@ namespace sp {
     }
 
     PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
-        Tecs::Entity &e) {
+        ecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
         if (!ph.model) return nullptr;
 
@@ -412,7 +412,7 @@ namespace sp {
         return actor;
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e) {
+    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e) {
         if (actors.count(e) == 0) {
             auto actor = CreateActor(lock, e);
             if (!actor) return;

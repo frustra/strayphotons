@@ -20,6 +20,14 @@ namespace ecs {
         return true;
     }
 
+    template<>
+    void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstConnection = dst.Get<SceneConnection>(lock);
+        for (auto &scene : src.scenes) {
+            if (!dstConnection.HasScene(scene)) dstConnection.scenes.emplace_back(scene);
+        }
+    }
+
     bool SceneConnection::HasScene(const std::string &sceneName) const {
         return std::find(scenes.begin(), scenes.end(), sceneName) != scenes.end();
     }

@@ -17,7 +17,7 @@ namespace ecs {
     struct TriggerArea {
         struct TriggerCommand {
             std::string command;
-            robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
+            robin_hood::unordered_flat_set<Entity> contained_entities;
 
             TriggerCommand(const std::string &command) : command(command) {}
 
@@ -27,7 +27,7 @@ namespace ecs {
         };
         struct TriggerSignal {
             std::string outputSignal;
-            robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
+            robin_hood::unordered_flat_set<Entity> contained_entities;
 
             TriggerSignal(const std::string &signal) : outputSignal(signal) {}
 
@@ -46,4 +46,6 @@ namespace ecs {
     bool Component<TriggerGroup>::Load(sp::Scene *scene, TriggerGroup &dst, const picojson::value &src);
     template<>
     bool Component<TriggerArea>::Load(sp::Scene *scene, TriggerArea &dst, const picojson::value &src);
+    template<>
+    void Component<TriggerArea>::Apply(const TriggerArea &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

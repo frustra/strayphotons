@@ -52,7 +52,7 @@ namespace ecs {
 
         const BindingList *Lookup(const std::string name) const;
         static double GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
-            Tecs::Entity ent,
+            Entity ent,
             const std::string &name,
             size_t depth = 0);
         std::vector<std::string> GetBindingNames() const;
@@ -72,4 +72,8 @@ namespace ecs {
     bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &dst, const picojson::value &src);
     template<>
     bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &dst, const picojson::value &src);
+    template<>
+    void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst);
+    template<>
+    void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

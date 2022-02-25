@@ -3,9 +3,9 @@
 #include "ecs/EcsImpl.hh"
 
 namespace ecs {
-    const Tecs::Entity &NamedEntity::Get(Lock<Read<ecs::Name>> lock) {
+    const Entity &NamedEntity::Get(Lock<Read<ecs::Name>> lock) {
         if (name.empty()) {
-            ent = Tecs::Entity();
+            ent = Entity();
         } else {
             if (ent.Has<ecs::Name>(lock)) {
                 if (ent.Get<ecs::Name>(lock) == name) return ent;
@@ -15,9 +15,9 @@ namespace ecs {
         return ent;
     }
 
-    Tecs::Entity NamedEntity::Get(Lock<Read<ecs::Name>> lock) const {
+    Entity NamedEntity::Get(Lock<Read<ecs::Name>> lock) const {
         if (name.empty()) {
-            return Tecs::Entity();
+            return Entity();
         } else {
             if (ent.Has<ecs::Name>(lock)) {
                 if (ent.Get<ecs::Name>(lock) == name) return ent;

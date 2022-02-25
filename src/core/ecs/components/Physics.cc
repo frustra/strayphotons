@@ -27,15 +27,15 @@ namespace ecs {
                 auto groupString = param.second.get<string>();
                 sp::to_upper(groupString);
                 if (groupString == "NOCLIP") {
-                    physics.group = ecs::PhysicsGroup::NoClip;
+                    physics.group = PhysicsGroup::NoClip;
                 } else if (groupString == "WORLD") {
-                    physics.group = ecs::PhysicsGroup::World;
+                    physics.group = PhysicsGroup::World;
                 } else if (groupString == "INTERACTIVE") {
-                    physics.group = ecs::PhysicsGroup::Interactive;
+                    physics.group = PhysicsGroup::Interactive;
                 } else if (groupString == "PLAYER") {
-                    physics.group = ecs::PhysicsGroup::Player;
+                    physics.group = PhysicsGroup::Player;
                 } else if (groupString == "PLAYER_HANDS") {
-                    physics.group = ecs::PhysicsGroup::PlayerHands;
+                    physics.group = PhysicsGroup::PlayerHands;
                 } else {
                     Errorf("Unknown physics group: %s", groupString);
                     return false;
@@ -43,9 +43,9 @@ namespace ecs {
             } else if (param.first == "joint") {
                 Assert(scene, "Physics::Load must have valid scene to define joint");
                 std::string jointTarget = "";
-                ecs::PhysicsJointType jointType = ecs::PhysicsJointType::Fixed;
+                PhysicsJointType jointType = PhysicsJointType::Fixed;
                 glm::vec2 jointRange;
-                ecs::Transform localTransform, remoteTransform;
+                Transform localTransform, remoteTransform;
                 for (auto jointParam : param.second.get<picojson::object>()) {
                     if (jointParam.first == "target") {
                         jointTarget = jointParam.second.get<string>();
@@ -53,15 +53,15 @@ namespace ecs {
                         auto typeString = jointParam.second.get<string>();
                         sp::to_upper(typeString);
                         if (typeString == "FIXED") {
-                            jointType = ecs::PhysicsJointType::Fixed;
+                            jointType = PhysicsJointType::Fixed;
                         } else if (typeString == "DISTANCE") {
-                            jointType = ecs::PhysicsJointType::Distance;
+                            jointType = PhysicsJointType::Distance;
                         } else if (typeString == "SPHERICAL") {
-                            jointType = ecs::PhysicsJointType::Spherical;
+                            jointType = PhysicsJointType::Spherical;
                         } else if (typeString == "HINGE") {
-                            jointType = ecs::PhysicsJointType::Hinge;
+                            jointType = PhysicsJointType::Hinge;
                         } else if (typeString == "SLIDER") {
-                            jointType = ecs::PhysicsJointType::Slider;
+                            jointType = PhysicsJointType::Slider;
                         } else {
                             Errorf("Unknown joint type: %s", typeString);
                             return false;
@@ -137,5 +137,24 @@ namespace ecs {
             if (param.first == "raycast") query.raycastQueryDistance = param.second.get<double>();
         }
         return true;
+    }
+
+    template<>
+    void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) {
+        if (src.Has<Physics>(srcLock) && !dst.Has<Physics>(dstLock)) {
+            auto &physics = dst.Set<Physics>(dstLock, src.Get<Physics>(srcLock));
+
+            // Map physics joints from staging id to live id
+            if (physics.jointTarget && physics.jointTarget.Has<SceneInfo>(srcLock)) {
+                auto &sceneInfo = physics.jointTarget.Get<SceneInfo>(srcLock);
+                physics.jointTarget = sceneInfo.liveId;
+            }
+
+            // Map physics constraint from staging id to live id
+            if (physics.constraint && physics.constraint.Has<SceneInfo>(srcLock)) {
+                auto &sceneInfo = physics.constraint.Get<SceneInfo>(srcLock);
+                physics.constraint = sceneInfo.liveId;
+            }
+        }
     }
 } // namespace ecs

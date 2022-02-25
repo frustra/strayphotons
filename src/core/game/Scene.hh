@@ -24,38 +24,38 @@ namespace sp {
 
         const std::string name;
         const SceneType type;
-        robin_hood::unordered_flat_map<std::string, Tecs::Entity> namedEntities;
+        robin_hood::unordered_flat_map<std::string, ecs::Entity> namedEntities;
 
-        Tecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+        ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
             std::string entityName = "");
-        Tecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
-            Tecs::Entity prefabRoot,
+        ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+            ecs::Entity prefabRoot,
             std::string entityName = "");
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
         template<typename T>
-        static void CopyComponent(ecs::Lock<ecs::ReadAll> src,
+        static void ApplyComponent(ecs::Lock<ecs::ReadAll> src,
             Tecs::Entity srcEnt,
             ecs::Lock<ecs::AddRemove> dst,
             Tecs::Entity dstEnt) {
             if constexpr (!Tecs::is_global_component<T>()) {
-                if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
+                ecs::Component<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
             }
         }
 
         template<typename... AllComponentTypes, template<typename...> typename ECSType>
-        static void CopyAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> src,
-            Tecs::Entity srcEnt,
+        static void ApplyAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> src,
+            ecs::Entity srcEnt,
             Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> dst,
-            Tecs::Entity dstEnt) {
-            (CopyComponent<AllComponentTypes>(src, srcEnt, dst, dstEnt), ...);
+            ecs::Entity dstEnt) {
+            (ApplyComponent<AllComponentTypes>(src, srcEnt, dst, dstEnt), ...);
         }
 
         template<typename T, typename BitsetType>
-        static void MarkHasComponent(ecs::Lock<> lock, Tecs::Entity ent, BitsetType &hasComponents) {
+        static void MarkHasComponent(ecs::Lock<> lock, ecs::Entity ent, BitsetType &hasComponents) {
             if constexpr (!Tecs::is_global_component<T>()) {
                 if (ent.Has<T>(lock)) hasComponents[ecs::ECS::template GetComponentIndex<T>()] = true;
             }
@@ -63,7 +63,7 @@ namespace sp {
 
         template<typename T, typename BitsetType>
         static void RemoveDanglingComponent(ecs::Lock<ecs::AddRemove> lock,
-            Tecs::Entity ent,
+            ecs::Entity ent,
             const BitsetType &hasComponents) {
             if constexpr (!Tecs::is_global_component<T>()) {
                 if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) {
@@ -76,7 +76,7 @@ namespace sp {
         template<typename... AllComponentTypes, template<typename...> typename ECSType>
         static void RemoveDanglingComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> staging,
             Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> live,
-            Tecs::Entity liveId) {
+            ecs::Entity liveId) {
             Assert(liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
             auto &liveSceneInfo = liveId.Get<const ecs::SceneInfo>(live);
 
@@ -97,162 +97,4 @@ namespace sp {
 
         friend class SceneManager;
     };
-
-    template<>
-    inline void Scene::CopyComponent<ecs::TransformTree>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::TransformTree>(src) && !dstEnt.Has<ecs::TransformSnapshot, ecs::TransformTree>(dst)) {
-            auto &srcTree = srcEnt.Get<ecs::TransformTree>(src);
-            auto &dstTree = dstEnt.Get<ecs::TransformTree>(dst);
-
-            // Map transform parent from staging id to live id
-            if (srcTree.parent.Has<ecs::SceneInfo>(src)) {
-                auto &sceneInfo = srcTree.parent.Get<ecs::SceneInfo>(src);
-                dstTree.parent = sceneInfo.liveId;
-            } else {
-                dstTree.parent = Tecs::Entity();
-            }
-            dstTree.pose = srcTree.pose;
-            dstEnt.Set<ecs::TransformSnapshot>(dst, srcTree.GetGlobalTransform(src));
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::Light>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Light>(src) && !dstEnt.Has<ecs::Light>(dst)) {
-            auto &light = dstEnt.Set<ecs::Light>(dst, srcEnt.Get<ecs::Light>(src));
-
-            // Map light bulb from staging id to live id
-            if (light.bulb && light.bulb.Has<ecs::SceneInfo>(src)) {
-                auto &sceneInfo = light.bulb.Get<ecs::SceneInfo>(src);
-                light.bulb = sceneInfo.liveId;
-            }
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::Physics>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Physics>(src) && !dstEnt.Has<ecs::Physics>(dst)) {
-            auto &physics = dstEnt.Set<ecs::Physics>(dst, srcEnt.Get<ecs::Physics>(src));
-
-            // Map physics joints from staging id to live id
-            if (physics.jointTarget && physics.jointTarget.Has<ecs::SceneInfo>(src)) {
-                auto &sceneInfo = physics.jointTarget.Get<ecs::SceneInfo>(src);
-                physics.jointTarget = sceneInfo.liveId;
-            }
-
-            // Map physics constraint from staging id to live id
-            if (physics.constraint && physics.constraint.Has<ecs::SceneInfo>(src)) {
-                auto &sceneInfo = physics.constraint.Get<ecs::SceneInfo>(src);
-                physics.constraint = sceneInfo.liveId;
-            }
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::Script>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Script>(src)) {
-            auto &srcScript = srcEnt.Get<ecs::Script>(src);
-            auto &dstScript = dstEnt.Get<ecs::Script>(dst);
-            dstScript.CopyCallbacks(srcScript);
-            dstScript.CopyParams(srcScript);
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::SceneConnection>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::SceneConnection>(src)) {
-            auto &srcConnection = srcEnt.Get<ecs::SceneConnection>(src);
-            auto &dstConnection = dstEnt.Get<ecs::SceneConnection>(dst);
-            for (auto &scene : srcConnection.scenes) {
-                if (!dstConnection.HasScene(scene)) dstConnection.scenes.emplace_back(scene);
-            }
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::SignalBindings>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::SignalBindings>(src)) {
-            auto &srcBindings = srcEnt.Get<ecs::SignalBindings>(src);
-            auto &dstBindings = dstEnt.Get<ecs::SignalBindings>(dst);
-            dstBindings.CopyBindings(srcBindings);
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::SignalOutput>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::SignalOutput>(src)) {
-            auto &srcOutput = srcEnt.Get<ecs::SignalOutput>(src);
-            auto &dstOutput = dstEnt.Get<ecs::SignalOutput>(dst);
-            for (auto &signal : srcOutput.GetSignals()) {
-                if (!dstOutput.HasSignal(signal.first)) dstOutput.SetSignal(signal.first, signal.second);
-            }
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::TriggerArea>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::TriggerArea>(src)) {
-            auto &srcArea = srcEnt.Get<ecs::TriggerArea>(src);
-            auto &dstArea = dstEnt.Get<ecs::TriggerArea>(dst);
-            for (size_t i = 0; i < srcArea.triggers.size(); i++) {
-                auto &srcTriggers = srcArea.triggers.at(i);
-                auto &dstTriggers = dstArea.triggers.at(i);
-                for (auto &trigger : srcTriggers) {
-                    if (std::find(dstTriggers.begin(), dstTriggers.end(), trigger) == dstTriggers.end()) {
-                        dstTriggers.emplace_back(trigger);
-                    }
-                }
-            }
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::EventBindings>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::EventBindings>(src)) {
-            auto &srcBindings = srcEnt.Get<ecs::EventBindings>(src);
-            auto &dstBindings = dstEnt.Get<ecs::EventBindings>(dst);
-            dstBindings.CopyBindings(srcBindings);
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::EventInput>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::EventInput>(src)) {
-            auto &srcInput = srcEnt.Get<ecs::EventInput>(src);
-            auto &dstInput = dstEnt.Get<ecs::EventInput>(dst);
-            for (auto &input : srcInput.events) {
-                if (!dstInput.IsRegistered(input.first)) dstInput.Register(input.first);
-            }
-        }
-    }
 } // namespace sp

@@ -92,7 +92,7 @@ namespace sp {
 
         void PrintScene(std::string sceneName);
         void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
-            Tecs::Entity player);
+            ecs::Entity player);
 
         std::shared_ptr<Scene> LoadSceneJson(const std::string &name,
             SceneType sceneType,
@@ -115,7 +115,7 @@ namespace sp {
 
         ecs::ECS &liveWorld;
         ecs::ECS &stagingWorld;
-        Tecs::Entity player;
+        ecs::Entity player;
 
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;

@@ -216,11 +216,11 @@ namespace sp::xr {
                 }
             }
 
-            Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
+            ecs::Entity vrOrigin = vrOriginEntity.Get(lock);
             if (vrOrigin && vrOrigin.Has<ecs::TransformTree>(lock)) {
                 for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
                     if (trackedDevices[i] != nullptr) {
-                        Tecs::Entity ent = trackedDevices[i]->Get(lock);
+                        ecs::Entity ent = trackedDevices[i]->Get(lock);
                         if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
                             auto &transform = ent.Get<ecs::TransformTree>(lock);
                             auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;

@@ -42,7 +42,7 @@ namespace ecs {
 
     // Should be called on the live SceneInfo
     // Returns true if live SceneInfo should be removed
-    bool SceneInfo::Remove(Lock<Write<SceneInfo>> staging, const Tecs::Entity &removeId) {
+    bool SceneInfo::Remove(Lock<Write<SceneInfo>> staging, const Entity &removeId) {
         Assert(this->liveId, "Remove called on an invalid SceneInfo");
         Assert(this->stagingId.Has<SceneInfo>(staging), "Remove called on an invalid SceneInfo");
 

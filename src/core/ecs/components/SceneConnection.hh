@@ -19,4 +19,6 @@ namespace ecs {
 
     template<>
     bool Component<SceneConnection>::Load(sp::Scene *scene, SceneConnection &dst, const picojson::value &src);
+    template<>
+    void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

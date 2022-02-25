@@ -64,7 +64,7 @@ namespace sp::vulkan {
     class Renderer {
     public:
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::TransformSnapshot>>;
-        typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
+        typedef std::function<void(DrawLock, ecs::Entity &)> PreDrawFunc;
 
         Renderer(DeviceContext &context, PerfTimer &timer);
         ~Renderer();
@@ -142,7 +142,7 @@ namespace sp::vulkan {
 
         unique_ptr<GuiRenderer> guiRenderer;
         struct RenderableGui {
-            Tecs::Entity entity;
+            ecs::Entity entity;
             GuiManager *manager;
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };

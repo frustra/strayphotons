@@ -26,7 +26,7 @@ namespace ecs {
     const float PLAYER_PUSH_FORCE = 0.3f;
 
     struct CharacterController {
-        ecs::NamedEntity target, fallbackTarget, movementProxy;
+        NamedEntity target, fallbackTarget, movementProxy;
 
         physx::PxCapsuleController *pxController = nullptr;
     };

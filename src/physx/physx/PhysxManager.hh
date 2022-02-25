@@ -40,7 +40,7 @@ namespace sp {
     extern CVar<float> CVarGravity;
 
     struct ActorUserData {
-        Tecs::Entity entity;
+        ecs::Entity entity;
         ecs::Transform pose;
         glm::vec3 scale = glm::vec3(1);
         glm::vec3 velocity = glm::vec3(0);
@@ -48,8 +48,8 @@ namespace sp {
         std::shared_ptr<const ConvexHullSet> shapeCache;
 
         ActorUserData() {}
-        ActorUserData(Tecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
-        ActorUserData(Tecs::Entity ent, const ecs::Transform &pose, ecs::PhysicsGroup group)
+        ActorUserData(ecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
+        ActorUserData(ecs::Entity ent, const ecs::Transform &pose, ecs::PhysicsGroup group)
             : entity(ent), pose(pose), scale(pose.GetScale()), physicsGroup(group) {}
     };
 
@@ -60,7 +60,7 @@ namespace sp {
         bool noclipping = false;
 
         CharacterControllerUserData() {}
-        CharacterControllerUserData(Tecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
+        CharacterControllerUserData(ecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
     };
 
     class PhysxManager : public RegisteredThread {
@@ -74,8 +74,8 @@ namespace sp {
         void FramePreload() override;
         void Frame() override;
 
-        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e);
+        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:

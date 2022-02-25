@@ -28,10 +28,10 @@
 
 namespace ecs {
     template<typename T>
-    Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value) {
+    Entity EntityWith(Lock<Read<T>> lock, const T &value) {
         for (auto e : lock.template EntitiesWith<T>()) {
             if (e.template Has<T>(lock) && e.template Get<const T>(lock) == value) return e;
         }
-        return Tecs::Entity();
+        return Entity();
     }
 } // namespace ecs

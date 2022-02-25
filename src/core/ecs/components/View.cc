@@ -45,7 +45,7 @@ namespace ecs {
         }
     }
 
-    void View::UpdateViewMatrix(Lock<Read<TransformSnapshot>> lock, Tecs::Entity e) {
+    void View::UpdateViewMatrix(Lock<Read<TransformSnapshot>> lock, Entity e) {
         if (e.Has<TransformSnapshot>(lock)) {
             this->invViewMat = e.Get<TransformSnapshot>(lock).matrix;
             this->viewMat = glm::inverse(this->invViewMat);

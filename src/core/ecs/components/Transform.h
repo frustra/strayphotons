@@ -47,7 +47,7 @@ namespace ecs {
     void transform_get_position(GlmVec3 *out, const Transform *t);
     void transform_get_rotation(GlmQuat *out, const Transform *t);
     void transform_get_scale(GlmVec3 *out, const Transform *t);
-    
+
     typedef Transform TransformSnapshot;
 
     typedef struct TransformTree {
@@ -80,6 +80,8 @@ namespace ecs {
     bool Component<Transform>::Load(sp::Scene *scene, Transform &dst, const picojson::value &src);
     template<>
     bool Component<TransformTree>::Load(sp::Scene *scene, TransformTree &dst, const picojson::value &src);
+    template<>
+    void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt);
     #endif
 } // namespace ecs
 #endif
