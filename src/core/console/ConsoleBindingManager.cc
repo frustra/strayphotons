@@ -14,29 +14,20 @@ namespace sp {
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
-                ent.Set<ecs::EventInput>(lock);
+                ent.Set<ecs::EventInput>(lock, INPUT_EVENT_CONSOLE_EXECUTE);
                 auto &script = ent.Set<ecs::Script>(lock);
                 script.AddOnTick([](ecs::ScriptState &state,
                                      ecs::Lock<ecs::WriteAll> lock,
                                      ecs::Entity ent,
                                      chrono_clock::duration interval) {
                     if (ent.Has<ecs::EventInput>(lock)) {
-                        auto &readInput = ent.Get<const ecs::EventInput>(lock);
-                        bool hasEvents = false;
-                        for (auto &queue : readInput.events) {
-                            if (!queue.second.empty()) {
-                                hasEvents = true;
-                                break;
-                            }
-                        }
-                        if (hasEvents) {
-                            auto &input = ent.Get<ecs::EventInput>(lock);
-                            for (auto &it : input.events) {
-                                while (!it.second.empty()) {
-                                    auto command = state.GetParam<std::string>(it.first);
-                                    if (!command.empty()) { GetConsoleManager().QueueParseAndExecute(command); }
-                                    it.second.pop();
-                                }
+                        ecs::Event event;
+                        if (ecs::EventInput::Poll(lock, ent, INPUT_EVENT_CONSOLE_EXECUTE, event)) {
+                            auto command = std::get_if<std::string>(&event.data);
+                            if (command && !command->empty()) {
+                                GetConsoleManager().QueueParseAndExecute(*command);
+                            } else {
+                                Errorf("Console binding received invalid event: %s", event.toString());
                             }
                         }
                     }
@@ -44,20 +35,6 @@ namespace sp {
             });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);
-    }
-
-    void ConsoleBindingManager::SetConsoleInputCommand(
-        ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>> lock,
-        std::string eventName,
-        std::string command) {
-        auto consoleInput = consoleInputEntity.Get(lock);
-        if (!consoleInput.Has<ecs::EventInput>(lock)) Abort("Console input entity is invalid");
-
-        auto &eventInput = consoleInput.Get<ecs::EventInput>(lock);
-        if (!eventInput.IsRegistered(eventName)) eventInput.Register(eventName);
-
-        std::lock_guard l(bindingMutex);
-        boundCommands[eventName] = command;
     }
 
     void ConsoleBindingManager::BindKey(string keyName, string command) {
@@ -87,11 +64,10 @@ namespace sp {
 
                 Logf("Binding %s to command: %s", keyName, command);
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                SetConsoleInputCommand(lock, eventName, command);
-
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-                bindings.Unbind(eventName, consoleInputEntity, eventName);
-                bindings.Bind(eventName, consoleInputEntity, eventName);
+                bindings.Unbind(eventName, consoleInputEntity, INPUT_EVENT_CONSOLE_EXECUTE);
+                bindings.Bind(eventName, consoleInputEntity, INPUT_EVENT_CONSOLE_EXECUTE);
+                // TODO: Set value on binding to console command
             }
         } else {
             Errorf("Key \"%s\" does not exist", keyName);

@@ -92,7 +92,6 @@ namespace sp {
         auto &scenes = GetSceneManager();
         scenes.QueueAction(SceneAction::ReloadPlayer);
         scenes.QueueAction(SceneAction::ReloadBindings);
-        if (options.count("map")) { scenes.QueueAction(SceneAction::LoadScene, options["map"].as<string>()); }
 
         if (startupScript != nullptr) {
             funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
@@ -108,11 +107,11 @@ namespace sp {
             for (string line : startupScript->Lines()) {
                 GetConsoleManager().QueueParseAndExecute(line);
             }
-        } else if (!options.count("map")) {
-            scenes.QueueAction(SceneAction::LoadScene, "menu");
-            {
-                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
-                lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
+        } else {
+            if (options.count("map")) {
+                scenes.QueueAction(SceneAction::LoadScene, options["map"].as<string>());
+            } else {
+                scenes.QueueAction(SceneAction::LoadScene, "menu");
             }
         }
 

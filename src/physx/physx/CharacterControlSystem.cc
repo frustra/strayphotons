@@ -177,9 +177,8 @@ namespace sp {
 
             bool jump = false;
             if (entity.Has<ecs::EventInput>(lock)) {
-                auto &eventInput = entity.Get<ecs::EventInput>(lock);
                 ecs::Event event;
-                while (eventInput.Poll("/action/jump", event)) {
+                while (ecs::EventInput::Poll(lock, entity, "/action/jump", event)) {
                     jump = true;
                 }
             }

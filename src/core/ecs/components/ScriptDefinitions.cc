@@ -27,11 +27,11 @@ namespace ecs {
                     light.spotAngle = glm::radians(signalComp.GetSignal("angle"));
 
                     Event event;
-                    if (EventInput::Poll(lock, ent, "/action/flashlight/toggle", event)) {
+                    while (EventInput::Poll(lock, ent, "/action/flashlight/toggle", event)) {
                         signalComp.SetSignal("on", light.on ? 0.0 : 1.0);
                         light.on = !light.on;
                     }
-                    if (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
+                    while (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
                         auto &transform = ent.Get<TransformTree>(lock);
                         if (transform.parent.Has<TransformTree>(lock)) {
                             transform.pose = transform.GetGlobalTransform(lock);

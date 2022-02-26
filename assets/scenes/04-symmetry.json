@@ -568,10 +568,10 @@
 			"_name": "combinator",
 			"signal_bindings": {
 				"value": {
-					"_operator": "binary_and",
-					"value": [
-						"04-symmetry.sensor1",
-						"04-symmetry.sensor2"
+					"operator": "binary_and",
+					"values": [
+						"setsignal 04-symmetry:sensor1.foo 1",
+						"04-symmetry:sensor2/signal foo 1"
 					]
 				}
 			}

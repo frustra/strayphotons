@@ -1,22 +1,4 @@
 {
-    "console-input": {
-        "event_input": [
-            "/keyboard/key/f1",
-            "/keyboard/key/f5",
-            "/keyboard/key/f6",
-            "/keyboard/key/f7",
-            "/keyboard/key/v"
-        ],
-        "script": {
-            "parameters": {
-                "/keyboard/key/f1": "tracy",
-                "/keyboard/key/f5": "reloadscene",
-                "/keyboard/key/f6": "reloadscene; reloadplayer",
-                "/keyboard/key/f7": "reloadshaders",
-                "/keyboard/key/v": "togglesignal player.player.move_noclip"
-            }
-        }
-    },
     "mouse": {
         "event_bindings": {
             "/mouse/scroll": {
@@ -30,23 +12,20 @@
     },
     "keyboard": {
         "event_bindings": {
-            "/keyboard/key/backtick": { "/action/console/toggle": "debug_gui" },
-            "/keyboard/characters": { "/action/menu/text_input": "debug_gui" },
-            "/keyboard/key/escape": {
-                "/action/menu/open": "menu_gui",
-                "/action/menu/back": "menu_gui"
-            },
-            "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
-            "/keyboard/key/space": { "/action/jump": "player.player" },
+            "/keyboard/key/backtick": "debug_gui/action/console/toggle",
+            "/keyboard/characters": "debug_gui/action/menu/text_input",
+            "/keyboard/key/escape": [ "menu_gui/action/menu/open", "menu_gui/action/menu/back" ],
+            "/keyboard/key/enter": "menu_gui/action/menu/enter",
+            "/keyboard/key/space": "player:player/action/jump",
             "/keyboard/key/e": { "/action/interact_grab": "player.flatview" },
             "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
             "/keyboard/key/p": { "/action/flashlight/grab": "player.flashlight" },
-            "/keyboard/key/f1": { "/keyboard/key/f1": "console-input" },
-            "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },
-            "/keyboard/key/f6": { "/keyboard/key/f6": "console-input" },
-            "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" },
-            "/keyboard/key/v": { "/keyboard/key/v": "console-input" }
+            "/keyboard/key/f1": { "target": "console-input/action/execute", "set_value": "tracy" },
+            "/keyboard/key/f5": { "target": "console-input/action/execute", "set_value": "reloadscene" },
+            "/keyboard/key/f6": { "target": "console-input/action/execute", "set_value": "reloadscene; reloadplayer" },
+            "/keyboard/key/f7": { "target": "console-input/action/execute", "set_value": "reloadshaders" },
+            "/keyboard/key/v": { "target": "console-input/action/execute", "set_value": "togglesignal player.player.move_noclip" }
         }
     },
     "player.left-hand-input": {

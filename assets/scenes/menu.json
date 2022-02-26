@@ -974,27 +974,6 @@
 			}
 		},
 		{
-			"_name": "auto_trigger",
-			"transform": {
-				"translate": [
-					0,
-					1000,
-					0
-				]
-			},
-			"__trigger_area": {
-				"object": {
-					"command": "g.MenuDisplay 2"
-				}
-			},
-			"trigger_area": {
-				"object": {
-					"command": "releasefocus menu"
-				}
-			},
-			"trigger_group": "object"
-		},
-		{
 			"_name": "global.spawn",
 			"transform": {
 				"translate": [
@@ -1067,25 +1046,6 @@
 					0,
 					0
 				]
-			}
-		},
-		{
-			"transform": {
-				"translate": [
-					0,
-					1,
-					0
-				],
-				"scale": [
-					10,
-					2,
-					10
-				]
-			},
-			"__trigger_area": {
-				"player": {
-					"command": "g.MenuDisplay 0; loadscene 01-outside"
-				}
 			}
 		}
 	]

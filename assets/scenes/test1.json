@@ -50,7 +50,11 @@
 				"constant": 4
 			},
 			"signal_bindings": {
-				"animation_state": { "value": "test1.lasersensor", "_operator": "multiply", "constant": "test1.animbox" }
+				"animation_state": {
+					"operator": "multiply",
+					"values": ["lasersensor/value", "global:animbox/constant"]
+				},
+				"animation_state": "lasersensor/value"
 			}
 		},
 		{
