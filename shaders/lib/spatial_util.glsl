@@ -91,6 +91,12 @@ vec3 OrientByNormal(float phi, float tht, vec3 normal) {
     return normalize(xs * tangent1 + ys * normal + zs * tangent2);
 }
 
+// Returns a unit vector that is orthogonal to the input.
+vec3 OrthogonalVec3(vec3 normal) {
+    vec3 up = abs(normal.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+    return normalize(cross(normal, up));
+}
+
 // Produce linear depth in (0, 1) using view space coordinates
 float LinearDepth(vec3 viewPos, vec2 clip) {
     return (length(viewPos) - clip.x) / (clip.y - clip.x);

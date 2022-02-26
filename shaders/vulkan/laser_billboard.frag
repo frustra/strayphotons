@@ -9,8 +9,6 @@ layout(num_views = 2) in;
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 1) in vec3 inWorldPos;
 layout(location = 2) in float inScale;
-layout(location = 3) in vec3 inContactRadiance;
-layout(location = 4) in float dUVbydFragCoord;
 layout(location = 0) out vec4 outFragColor;
 
 layout(push_constant) uniform PushConstants {
