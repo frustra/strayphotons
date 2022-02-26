@@ -38,16 +38,14 @@ namespace sp::vulkan {
         RenderPhase(string_view phaseName) : name(phaseName) {}
 
         void StartTimer(PerfTimer &timer);
-        void StartTimer(CommandContext &cmd, PerfTimer &timer);
+        void StartTimer(CommandContext &cmd);
 
         ~RenderPhase();
     };
 
     class PerfTimer {
     public:
-        void SetDevice(DeviceContext *device) {
-            this->device = device;
-        }
+        PerfTimer(DeviceContext &device) : device(device) {}
 
         void StartFrame();
         void EndFrame();
@@ -61,7 +59,7 @@ namespace sp::vulkan {
         vector<TimeResult> lastCompleteFrame;
 
     private:
-        DeviceContext *device = nullptr;
+        DeviceContext &device;
         bool active = false;
 
         struct FrameContext {

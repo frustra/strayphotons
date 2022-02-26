@@ -12,6 +12,7 @@ namespace ecs {
         vector<glm::vec3> points;
         bool on = true;
         bool relative = true; // multiply transform
+        float radius = 0.003; // in world units
     };
 
     static Component<LaserLine> ComponentLaserLine("laser_line");

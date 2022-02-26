@@ -5,8 +5,6 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 
 namespace sp::vulkan {
-    class PerfTimer;
-
     namespace rg = render_graph;
 } // namespace sp::vulkan
 
@@ -15,8 +13,7 @@ namespace sp::vulkan::render_graph {
 
     class RenderGraph {
     public:
-        RenderGraph(DeviceContext &device, PerfTimer *timer = nullptr)
-            : device(device), timer(timer), resourceFrames({device, device}) {
+        RenderGraph(DeviceContext &device) : device(device), resourceFrames({device, device}) {
             frameIndex = 0;
             resources = &resourceFrames[frameIndex];
         }
@@ -131,7 +128,6 @@ namespace sp::vulkan::render_graph {
         }
 
         DeviceContext &device;
-        PerfTimer *timer;
 
         vector<Pass> passes;
 

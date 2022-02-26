@@ -19,12 +19,13 @@ namespace sp::vulkan {
         timer.Register(*this);
     }
 
-    void RenderPhase::StartTimer(CommandContext &cmd, PerfTimer &timer) {
+    void RenderPhase::StartTimer(CommandContext &cmd) {
         if (this->timer) return;
-        if (!timer.Active()) return;
+        PerfTimer *timer = cmd.Device().GetPerfTimer();
+        if (!timer || !timer->Active()) return;
         this->cmd = &cmd;
-        this->timer = &timer;
-        timer.Register(*this);
+        this->timer = timer;
+        timer->Register(*this);
     }
 
     void PerfTimer::StartFrame() {
@@ -96,8 +97,6 @@ namespace sp::vulkan {
     };
 
     void PerfTimer::Tick() {
-        if (!device) return;
-
         // flush results from two frames ago
         uint32 flushFrameIndex = (frameIndex + frames.size() - 2) % frames.size();
         auto &frame = frames[flushFrameIndex];
@@ -108,16 +107,15 @@ namespace sp::vulkan {
             vk::QueryPoolCreateInfo createInfo;
             createInfo.queryCount = frame.requiredQueryCount;
             createInfo.queryType = vk::QueryType::eTimestamp;
-            frame.queryPool = (*device)->createQueryPoolUnique(createInfo);
+            frame.queryPool = device->createQueryPoolUnique(createInfo);
 
             frame.queryCount = createInfo.queryCount;
-            Debugf("updated timestamp query pool size: %d", frame.queryCount);
         }
 
         if (frame.queryPool && frame.queryCount > 0) {
-            auto cmd = device->GetFrameCommandContext();
+            auto cmd = device.GetFrameCommandContext();
             cmd->Raw().resetQueryPool(*frame.queryPool, 0, frame.queryCount);
-            device->Submit(cmd);
+            device.Submit(cmd);
             frame.queryOffset = 0;
         }
     }
@@ -128,7 +126,7 @@ namespace sp::vulkan {
         auto queryCount = frame.queryOffset;
         frame.gpuTimestamps.resize(queryCount);
 
-        auto gpuQueryResult = (*device)->getQueryPoolResults(*frame.queryPool,
+        auto gpuQueryResult = device->getQueryPoolResults(*frame.queryPool,
             0,
             queryCount,
             sizeof(uint64) * queryCount,

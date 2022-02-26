@@ -12,6 +12,8 @@ namespace ecs {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
                 dst.intensity = param.second.get<double>();
+            } else if (param.first == "radius") {
+                dst.radius = param.second.get<double>();
             } else if (param.first == "color") {
                 dst.color = sp::MakeVec3(param.second);
             } else if (param.first == "on") {
