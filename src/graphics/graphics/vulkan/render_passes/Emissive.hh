@@ -19,19 +19,11 @@ namespace sp::vulkan::renderer {
         };
         vector<Screen> screens;
 
-        struct LaserContext {
-            struct GPULine {
-                glm::vec3 color;
-                float padding0[1];
-                glm::vec3 start;
-                float padding1[1];
-                glm::vec3 end;
-                float padding2[1];
-            };
-            static_assert(sizeof(GPULine) % sizeof(glm::vec4) == 0, "std430 alignment");
-
-            vector<GPULine> gpuData;
+        struct LaserLine {
+            glm::vec3 color;
+            float radius;
+            glm::vec3 start, end;
         };
-        LaserContext lasers;
+        vector<LaserLine> lasers;
     };
 } // namespace sp::vulkan::renderer
