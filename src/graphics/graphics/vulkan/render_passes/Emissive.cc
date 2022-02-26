@@ -82,7 +82,7 @@ namespace sp::vulkan::renderer {
                         glm::vec3 color;
                         float radius;
                         glm::vec3 start;
-                        float _padding0[1];
+                        float mediaDensityFactor;
                         glm::vec3 end;
                         float time;
                     } constants;
@@ -97,6 +97,7 @@ namespace sp::vulkan::renderer {
                         constants.radius = line.radius;
                         constants.start = line.start;
                         constants.end = line.end;
+                        constants.mediaDensityFactor = 1;
                         cmd.PushConstants(constants);
                         cmd.Draw(4);
                     }
