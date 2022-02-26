@@ -1,6 +1,7 @@
 #pragma once
 
-#include "ecs/Components.hh"
+#include <functional>
+#include <string>
 
 namespace sp {
     class Scene;
@@ -28,11 +29,6 @@ namespace ecs {
             return scene == other.scene && entity == other.entity;
         }
     };
-
-    static Component<Name> ComponentName("name");
-
-    template<>
-    bool Component<Name>::Load(sp::Scene *scene, Name &dst, const picojson::value &src);
 } // namespace ecs
 
 namespace std {

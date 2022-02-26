@@ -478,7 +478,7 @@ namespace sp {
 
                 entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
                 for (auto comp : ent) {
-                    if (comp.first.empty() || comp.first[0] == '_') continue;
+                    if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
                     auto componentType = ecs::LookupComponent(comp.first);
                     if (componentType != nullptr) {

@@ -4,8 +4,6 @@
 #include "core/Hashing.hh"
 #include "game/Scene.hh"
 
-#include <picojson/picojson.h>
-
 namespace ecs {
     bool Name::Parse(std::string fullName, const sp::Scene *currentScene) {
         size_t i = fullName.find(':');
@@ -28,11 +26,6 @@ namespace ecs {
             return false;
         }
         return true;
-    }
-
-    template<>
-    bool Component<Name>::Load(sp::Scene *scene, Name &name, const picojson::value &src) {
-        return name.Parse(src.get<std::string>(), scene);
     }
 } // namespace ecs
 
