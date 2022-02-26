@@ -28,8 +28,14 @@ namespace ecs {
                     sp::Abort("Invalid event target");
                 }
                 for (auto target : targetList) {
-                    auto targetName = target.get<std::string>();
-                    bindings.Bind(bind.first, NamedEntity(targetName), dest.first);
+                    auto fullName = target.get<std::string>();
+                    ecs::Name targetName;
+                    if (targetName.Parse(fullName, scene)) {
+                        bindings.Bind(bind.first, NamedEntity(targetName), dest.first);
+                    } else {
+                        Errorf("Invalid event binding target: %s", fullName);
+                        return false;
+                    }
                 }
             }
         }
@@ -216,10 +222,10 @@ namespace ecs {
                         auto &eventInput = ent.Get<EventInput>(lock);
                         eventInput.Add(binding.second, event);
                     } else {
-                        Errorf("Tried to send event to entity without EventInput: %s", binding.first.Name());
+                        Errorf("Tried to send event to entity without EventInput: %s", binding.first.Name().String());
                     }
                 } else {
-                    Errorf("Tried to send event to missing entity: %s", binding.first.Name());
+                    Errorf("Tried to send event to missing entity: %s", binding.first.Name().String());
                 }
             }
         }

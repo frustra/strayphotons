@@ -43,7 +43,8 @@ namespace ecs {
                     } else if (operatorName == "BINARY_OR") {
                         bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_OR);
                     } else {
-                        Abortf("Unknown signal binding combine operator: %s", operatorName);
+                        Errorf("Unknown signal binding combine operator: %s", operatorName);
+                        return false;
                     }
                 } else {
                     picojson::array originList;
@@ -52,11 +53,18 @@ namespace ecs {
                     } else if (source.second.is<picojson::array>()) {
                         originList = source.second.get<picojson::array>();
                     } else {
-                        Abortf("Invalid signal binding source: %s", bind.first);
+                        Errorf("Invalid signal binding source: %s", bind.first);
+                        return false;
                     }
                     for (auto origin : originList) {
-                        auto originName = origin.get<std::string>();
-                        bindings.Bind(bind.first, NamedEntity(originName), source.first);
+                        auto fullName = origin.get<std::string>();
+                        ecs::Name originName;
+                        if (originName.Parse(fullName, scene)) {
+                            bindings.Bind(bind.first, NamedEntity(originName), source.first);
+                        } else {
+                            Errorf("Invalid signal binding origin: %s", fullName);
+                            return false;
+                        }
                     }
                 }
             }
@@ -99,15 +107,16 @@ namespace ecs {
         }
     }
 
-    std::pair<std::string, std::string> ParseSignalString(const std::string &str) {
-        size_t delimiter = str.find_last_of('.');
-        std::string entityName = str;
-        std::string signalName = "value";
-        if (delimiter != std::string::npos) {
-            entityName = str.substr(0, delimiter);
-            signalName = str.substr(delimiter + 1);
+    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str) {
+        size_t delimiter = str.find('/');
+        ecs::Name entityName;
+        if (entityName.Parse(str.substr(0, delimiter))) {
+            std::string signalName = "value";
+            if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
+            return std::make_pair(entityName, signalName);
+        } else {
+            return std::make_pair(ecs::Name(), "");
         }
-        return std::make_pair(entityName, signalName);
     }
 
     void SignalOutput::SetSignal(const std::string &name, double value) {

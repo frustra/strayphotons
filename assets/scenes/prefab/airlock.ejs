@@ -1,8 +1,8 @@
-<% if (!locals.scene && !name.startsWith("global.")) {
-	name = "global." + name;
+<% if (!locals.scene && !name.startsWith("global:")) {
+	name = "global:" + name;
 } %>
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
@@ -24,7 +24,7 @@
 },
 <% if (locals.triggers) { %>
 {
-	"_name": <%= name + "-zone" %>,
+	"name": <%= name + "-zone" %>,
 	"transform": {
 		"parent": <%= name %>,
 		"translate": [1.5, 1.4, 0],
@@ -51,7 +51,7 @@
 	parent: name
 }) %>,
 {
-	"_name": <%= name + '-light' %>,
+	"name": <%= name + '-light' %>,
 	"light": {
 		"tint": [0.5, 0.5, 1],
 		"intensity": 10,

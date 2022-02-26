@@ -12,7 +12,7 @@
 
 namespace ecs {
     static sp::CVar<std::string> CVarFlashlightParent("r.FlashlightParent",
-        "player.player",
+        "player:player",
         "Flashlight parent entity name");
 
     robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions = {
@@ -37,13 +37,18 @@ namespace ecs {
                             transform.pose = transform.GetGlobalTransform(lock);
                             transform.parent = Entity();
                         } else {
-                            Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
-                            if (parent) {
-                                transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
-                                transform.pose.SetRotation(glm::quat());
-                                transform.parent = parent;
+                            ecs::Name parentName;
+                            if (parentName.Parse(CVarFlashlightParent.Get())) {
+                                Entity parent = EntityWith<Name>(lock, parentName);
+                                if (parent) {
+                                    transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
+                                    transform.pose.SetRotation(glm::quat());
+                                    transform.parent = parent;
+                                } else {
+                                    Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
+                                }
                             } else {
-                                Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
+                                Errorf("Flashlight parent entity name is invalid: %s", CVarFlashlightParent.Get());
                             }
                         }
                     }
@@ -114,7 +119,7 @@ namespace ecs {
                                 event.source,
                                 glm::vec2(data->x * factorParamX, data->y * factorParamY));
                         } else {
-                            Abortf("Unsupported event type: %s", event.toString());
+                            Errorf("Unsupported joystick_in event type: %s", event.toString());
                         }
                     }
                 }
@@ -123,26 +128,31 @@ namespace ecs {
             [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, TransformTree>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
-                    auto parentName = scriptComp.GetParam<std::string>("attach_parent");
-                    auto parentEntity = scriptComp.GetParam<NamedEntity>("attach_parent_entity");
-                    if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
+                    auto fullParentName = scriptComp.GetParam<std::string>("attach_parent");
+                    ecs::Name parentName;
+                    if (parentName.Parse(fullParentName)) {
+                        auto parentEntity = scriptComp.GetParam<NamedEntity>("attach_parent_entity");
+                        if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
 
-                    auto &transform = ent.Get<TransformTree>(lock);
-                    auto parent = parentEntity.Get(lock);
-                    if (parent.Has<TransformTree>(lock)) {
-                        if (ent.Has<Renderable>(lock)) {
-                            auto &renderable = ent.Get<Renderable>(lock);
-                            renderable.visibility.set();
+                        auto &transform = ent.Get<TransformTree>(lock);
+                        auto parent = parentEntity.Get(lock);
+                        if (parent.Has<TransformTree>(lock)) {
+                            if (ent.Has<Renderable>(lock)) {
+                                auto &renderable = ent.Get<Renderable>(lock);
+                                renderable.visibility.set();
+                            }
+                        } else {
+                            parent = Entity();
+                            if (ent.Has<Renderable>(lock)) {
+                                auto &renderable = ent.Get<Renderable>(lock);
+                                renderable.visibility.reset();
+                            }
                         }
+                        transform.parent = parent;
+                        scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
                     } else {
-                        parent = Entity();
-                        if (ent.Has<Renderable>(lock)) {
-                            auto &renderable = ent.Get<Renderable>(lock);
-                            renderable.visibility.reset();
-                        }
+                        Errorf("Attach parent name is invalid: %s", fullParentName);
                     }
-                    transform.parent = parent;
-                    scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
                 }
             }},
         {"lazy_load_model",
@@ -162,39 +172,44 @@ namespace ecs {
             [](Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Script, SignalOutput>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
-                    auto targetName = scriptComp.GetParam<std::string>("relative_to");
-                    auto targetEntity = scriptComp.GetParam<NamedEntity>("target_entity");
-                    if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                    auto fullTargetName = scriptComp.GetParam<std::string>("relative_to");
+                    ecs::Name targetName;
+                    if (targetName.Parse(fullTargetName)) {
+                        auto targetEntity = scriptComp.GetParam<NamedEntity>("target_entity");
+                        if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
 
-                    auto target = targetEntity.Get(lock);
-                    if (target) {
-                        scriptComp.SetParam<NamedEntity>("target_entity", targetEntity);
+                        auto target = targetEntity.Get(lock);
+                        if (target) {
+                            scriptComp.SetParam<NamedEntity>("target_entity", targetEntity);
 
-                        glm::vec3 movement = glm::vec3(0);
-                        movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
-                        movement.z += SignalBindings::GetSignal(lock, ent, "move_back");
-                        movement.x -= SignalBindings::GetSignal(lock, ent, "move_left");
-                        movement.x += SignalBindings::GetSignal(lock, ent, "move_right");
-                        float vertical = SignalBindings::GetSignal(lock, ent, "move_up");
-                        vertical -= SignalBindings::GetSignal(lock, ent, "move_down");
+                            glm::vec3 movement = glm::vec3(0);
+                            movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
+                            movement.z += SignalBindings::GetSignal(lock, ent, "move_back");
+                            movement.x -= SignalBindings::GetSignal(lock, ent, "move_left");
+                            movement.x += SignalBindings::GetSignal(lock, ent, "move_right");
+                            float vertical = SignalBindings::GetSignal(lock, ent, "move_up");
+                            vertical -= SignalBindings::GetSignal(lock, ent, "move_down");
 
-                        movement.x = std::clamp(movement.x, -1.0f, 1.0f);
-                        movement.z = std::clamp(movement.z, -1.0f, 1.0f);
-                        vertical = std::clamp(vertical, -1.0f, 1.0f);
+                            movement.x = std::clamp(movement.x, -1.0f, 1.0f);
+                            movement.z = std::clamp(movement.z, -1.0f, 1.0f);
+                            vertical = std::clamp(vertical, -1.0f, 1.0f);
 
-                        if (target.Has<TransformTree>(lock)) {
-                            auto parentRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
-                            movement = parentRotation * movement;
-                            if (std::abs(movement.y) > 0.999) {
-                                movement = parentRotation * glm::vec3(0, -movement.y, 0);
+                            if (target.Has<TransformTree>(lock)) {
+                                auto parentRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
+                                movement = parentRotation * movement;
+                                if (std::abs(movement.y) > 0.999) {
+                                    movement = parentRotation * glm::vec3(0, -movement.y, 0);
+                                }
+                                movement.y = 0;
                             }
-                            movement.y = 0;
-                        }
 
-                        auto &outputComp = ent.Get<SignalOutput>(lock);
-                        outputComp.SetSignal("move_world_x", movement.x);
-                        outputComp.SetSignal("move_world_y", vertical);
-                        outputComp.SetSignal("move_world_z", movement.z);
+                            auto &outputComp = ent.Get<SignalOutput>(lock);
+                            outputComp.SetSignal("move_world_x", movement.x);
+                            outputComp.SetSignal("move_world_y", vertical);
+                            outputComp.SetSignal("move_world_z", movement.z);
+                        }
+                    } else {
+                        Errorf("Relative target name is invalid: %s", fullTargetName);
                     }
                 }
             }},
@@ -249,12 +264,19 @@ namespace ecs {
                                 position.z = scriptComp.GetParam<double>("position_z");
                                 auto &transform = newEntity.Set<TransformTree>(lock, position);
 
-                                auto relativeName = scriptComp.GetParam<std::string>("relative_to");
-                                if (!relativeName.empty()) {
-                                    auto relative = EntityWith<Name>(lock, relativeName);
-                                    if (relative.Has<TransformSnapshot>(lock)) {
-                                        transform.pose.matrix = relative.Get<TransformSnapshot>(lock).matrix *
-                                                                glm::mat4(transform.pose.matrix);
+                                auto fullTargetName = scriptComp.GetParam<std::string>("relative_to");
+                                if (!fullTargetName.empty()) {
+                                    ecs::Name targetName;
+                                    if (targetName.Parse(fullTargetName)) {
+                                        auto relative = EntityWith<Name>(lock, targetName);
+                                        if (relative.Has<TransformSnapshot>(lock)) {
+                                            transform.pose.matrix = relative.Get<TransformSnapshot>(lock).matrix *
+                                                                    glm::mat4(transform.pose.matrix);
+                                        } else {
+                                            Errorf("Spawn target does not exist: %s", targetName);
+                                        }
+                                    } else {
+                                        Errorf("Spawn target name is invalid: %s", fullTargetName);
                                     }
                                 }
                                 newEntity.Set<TransformSnapshot>(lock, transform.pose);

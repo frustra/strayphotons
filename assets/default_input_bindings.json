@@ -1,5 +1,5 @@
 {
-    "console-input": {
+    "console:input": {
         "event_input": [
             "/keyboard/key/f1",
             "/keyboard/key/f5",
@@ -13,75 +13,75 @@
                 "/keyboard/key/f5": "reloadscene",
                 "/keyboard/key/f6": "reloadscene; reloadplayer",
                 "/keyboard/key/f7": "reloadshaders",
-                "/keyboard/key/v": "togglesignal player.player.move_noclip"
+                "/keyboard/key/v": "togglesignal player:player/move_noclip"
             }
         }
     },
-    "mouse": {
+    "input:mouse": {
         "event_bindings": {
             "/mouse/scroll": {
-                "/action/menu/scroll": ["menu_gui", "debug_gui"]
+                "/action/menu/scroll": ["gui-manager:menu_gui", "gui-manager:debug_gui"]
             },
             "/mouse/move": {
-                "/action/camera_rotate": "player.flatview",
-                "/action/interact_rotate": "player.flatview"
+                "/action/camera_rotate": "player:flatview",
+                "/action/interact_rotate": "player:flatview"
             }
         }
     },
-    "keyboard": {
+    "input:keyboard": {
         "event_bindings": {
-            "/keyboard/key/backtick": { "/action/console/toggle": "debug_gui" },
-            "/keyboard/characters": { "/action/menu/text_input": "debug_gui" },
+            "/keyboard/key/backtick": { "/action/console/toggle": "gui-manager:debug_gui" },
+            "/keyboard/characters": { "/action/menu/text_input": "gui-manager:debug_gui" },
             "/keyboard/key/escape": {
-                "/action/menu/open": "menu_gui",
-                "/action/menu/back": "menu_gui"
+                "/action/menu/open": "gui-manager:menu_gui",
+                "/action/menu/back": "gui-manager:menu_gui"
             },
-            "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
-            "/keyboard/key/space": { "/action/jump": "player.player" },
-            "/keyboard/key/e": { "/action/interact_grab": "player.flatview" },
-            "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
-            "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
-            "/keyboard/key/p": { "/action/flashlight/grab": "player.flashlight" },
-            "/keyboard/key/f1": { "/keyboard/key/f1": "console-input" },
-            "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },
-            "/keyboard/key/f6": { "/keyboard/key/f6": "console-input" },
-            "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" },
-            "/keyboard/key/v": { "/keyboard/key/v": "console-input" }
+            "/keyboard/key/enter": { "/action/menu/enter": "gui-manager:menu_gui" },
+            "/keyboard/key/space": { "/action/jump": "player:player" },
+            "/keyboard/key/e": { "/action/interact_grab": "player:flatview" },
+            "/keyboard/key/q": { "/action/spawn": "player:debug-spawner" },
+            "/keyboard/key/f": { "/action/flashlight/toggle": "player:flashlight" },
+            "/keyboard/key/p": { "/action/flashlight/grab": "player:flashlight" },
+            "/keyboard/key/f1": { "/keyboard/key/f1": "console:input" },
+            "/keyboard/key/f5": { "/keyboard/key/f5": "console:input" },
+            "/keyboard/key/f6": { "/keyboard/key/f6": "console:input" },
+            "/keyboard/key/f7": { "/keyboard/key/f7": "console:input" },
+            "/keyboard/key/v": { "/keyboard/key/v": "console:input" }
         }
     },
-    "player.left-hand-input": {
+    "player:left-hand-input": {
         "signal_bindings": {
-            "move_forward": { "/actions/main/in/movement_y": "player.vr-controller-left" },
-            "move_right": { "/actions/main/in/movement_x": "player.vr-controller-left" }
+            "move_forward": { "/actions/main/in/movement_y": "player:vr-controller-left" },
+            "move_right": { "/actions/main/in/movement_x": "player:vr-controller-left" }
         }
     },
-    "player.right-hand-input": {
+    "player:right-hand-input": {
         "signal_bindings": {
-            "move_forward": { "/actions/main/in/movement_y": "player.vr-controller-right" },
-            "move_right": { "/actions/main/in/movement_x": "player.vr-controller-right" }
+            "move_forward": { "/actions/main/in/movement_y": "player:vr-controller-right" },
+            "move_right": { "/actions/main/in/movement_x": "player:vr-controller-right" }
         }
     },
-    "player.player": {
+    "player:player": {
         "signal_bindings": {
-            "menu_primary_trigger": { "mouse_button_left": "mouse" },
-            "menu_secondary_trigger": { "mouse_button_right": "mouse" },
-            "menu_cursor_x": { "mouse_cursor_x": "mouse" },
-            "menu_cursor_y": { "mouse_cursor_y": "mouse" },
-            "move_world_x": { "move_world_x": [ "player.flatview", "player.left-hand-input", "player.right-hand-input" ] },
-            "move_world_y": { "move_world_y": "player.flatview" },
-            "move_world_z": { "move_world_z": [ "player.flatview", "player.left-hand-input", "player.right-hand-input" ] },
-            "move_sprint": { "key_left_shift": "keyboard" }
+            "menu_primary_trigger": { "mouse_button_left": "input:mouse" },
+            "menu_secondary_trigger": { "mouse_button_right": "input:mouse" },
+            "menu_cursor_x": { "mouse_cursor_x": "input:mouse" },
+            "menu_cursor_y": { "mouse_cursor_y": "input:mouse" },
+            "move_world_x": { "move_world_x": [ "player:flatview", "player:left-hand-input", "player:right-hand-input" ] },
+            "move_world_y": { "move_world_y": "player:flatview" },
+            "move_world_z": { "move_world_z": [ "player:flatview", "player:left-hand-input", "player:right-hand-input" ] },
+            "move_sprint": { "key_left_shift": "input:keyboard" }
         }
     },
-    "player.flatview": {
+    "player:flatview": {
         "signal_bindings": {
-            "move_forward": { "key_w": "keyboard" },
-            "move_right": { "key_d": "keyboard" },
-            "move_left": { "key_a": "keyboard" },
-            "move_back": { "key_s": "keyboard" },
-            "move_up": { "key_space": "keyboard" },
-            "move_down": { "key_left_control": "keyboard" },
-            "interact_rotate": { "key_r": "keyboard" }
+            "move_forward": { "key_w": "input:keyboard" },
+            "move_right": { "key_d": "input:keyboard" },
+            "move_left": { "key_a": "input:keyboard" },
+            "move_back": { "key_s": "input:keyboard" },
+            "move_up": { "key_space": "input:keyboard" },
+            "move_down": { "key_left_control": "input:keyboard" },
+            "interact_rotate": { "key_r": "input:keyboard" }
         }
     }
 }

@@ -27,8 +27,7 @@ namespace picojson {
 }
 
 namespace ecs {
-    typedef std::string Name;
-
+    struct Name;
     class Animation;
     struct CharacterController;
     struct EventInput;
@@ -114,6 +113,7 @@ namespace ecs {
     using ComponentEvent = Tecs::ComponentEvent<T>;
 
     std::string ToString(Lock<Read<Name>> lock, Entity e);
+    std::string GetFullName(Lock<Read<Name>> lock, Entity e);
 
     extern ECS World;
 

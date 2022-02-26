@@ -16,8 +16,8 @@ namespace sp {
     bool AudioManager::ThreadInit() {
         ZoneScoped;
 
-        headEntity = ecs::NamedEntity("player.vr-hmd");
-        headEntityFallback = ecs::NamedEntity("player.flatview");
+        headEntity = ecs::NamedEntity("player", "vr-hmd");
+        headEntityFallback = ecs::NamedEntity("player", "flatview");
 
         soundio = soundio_create();
 

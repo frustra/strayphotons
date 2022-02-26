@@ -15,7 +15,7 @@ namespace CoreEcsTests {
             auto lock = World.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
-            player.Set<ecs::Name>(lock, "player");
+            player.Set<ecs::Name>(lock, "", "player");
             auto &transform = player.Set<ecs::TransformSnapshot>(lock, glm::vec3(1, 2, 3));
             auto pos1 = transform.GetPosition();
             AssertEqual(pos1, glm::vec3(1, 2, 3), "Transform did not save correctly");

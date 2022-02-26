@@ -1,7 +1,7 @@
 {
 	"entities": [
 		{
-			"_name": "elevator_zone",
+			"name": "elevator_zone",
 			"signal_output": {},
 			<%- include('prefab/laser_cube') %>,
 			"transform": {
@@ -15,7 +15,7 @@
 			}
 		},
 		{
-			"_name": "transition_zone",
+			"name": "transition_zone",
 			"signal_output": {},
 			<%- include('prefab/laser_cube') %>,
 			"transform": {
@@ -29,7 +29,7 @@
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 160.05, -5],
 				"rotate": [180, 0, 1, 0]
@@ -134,10 +134,10 @@
 			transform: {
 				"translate": [0, 160, -5.1]
 			},
-			load_signal: {"playerPresent": "station-center.elevator_zone"}
+			load_signal: {"playerPresent": "elevator_zone"}
 		}) %>,
 		{
-			"_name": "elevator",
+			"name": "elevator",
 			"transform": {
 				"translate": [0, 160, 0]
 			},
@@ -169,7 +169,7 @@
 			"signal_output": {}
 		},
 		{
-			"_name": "elevator_platform",
+			"name": "elevator_platform",
 			"renderable": "box",
 			"transform": {
 				"parent": "elevator",
@@ -214,7 +214,7 @@
 				"parent": "elevator",
 				"translate": [1.95, 1.25, 0]
 			},
-			command: "setsignal station-center.elevator_door.door_open 0; setsignal global.ship_airlock-out.door_open 0; wait 500 togglesignal station-center.elevator.animation_state 0 100"
+			command: "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
 		}) %>,
 		<%- include('prefab/slide_door', {
 			scene: 'station-center',
@@ -237,7 +237,7 @@
 			}
 		},
 		{
-			"_name": "elevator_open_zone",
+			"name": "elevator_open_zone",
 			"transform": {
 				"translate": [0, 0, 0],
 				"scale": [3, 0.5, 3]
@@ -245,7 +245,7 @@
 			"signal_output": {},
 			"trigger_area": {
 				"object": {
-					"command": "wait 1000 togglesignal station-center.elevator_door.door_open; wait 1100 togglesignal blackhole1.elevator_door.door_open"
+					"command": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
 				}
 			}
 		},
@@ -272,13 +272,13 @@
 			}
 		},
 		{
-			"_name": "global.transition1-center",
+			"name": "global:transition1-center",
 			"transform": {
 				"translate": [0, 0, 0]
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "station-center.transition_zone"}
+				"load_scene_connection": {"playerPresent": "transition_zone"}
 			}
 		}
 	]

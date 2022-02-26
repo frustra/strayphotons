@@ -22,15 +22,6 @@ namespace ecs {
                 light.gelName = param.second.get<string>();
             } else if (param.first == "on") {
                 light.on = param.second.get<bool>();
-            } else if (param.first == "bulb") {
-                Assert(scene, "Light::Load must have valid scene to define bulb");
-                auto bulbName = param.second.get<string>();
-                auto it = scene->namedEntities.find(bulbName);
-                if (it != scene->namedEntities.end()) {
-                    light.bulb = it->second;
-                } else {
-                    Errorf("Component<Light>::Load bulb name does not exist: %s", bulbName);
-                }
             } else if (param.first == "shadowMapSize") {
                 light.shadowMapSize = (uint32)param.second.get<double>();
             } else if (param.first == "shadowMapClip") {
@@ -38,18 +29,5 @@ namespace ecs {
             }
         }
         return true;
-    }
-
-    template<>
-    void Component<Light>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) {
-        if (src.Has<Light>(srcLock) && !dst.Has<Light>(dstLock)) {
-            auto &light = dst.Set<Light>(dstLock, src.Get<Light>(srcLock));
-
-            // Map light bulb from staging id to live id
-            if (light.bulb && light.bulb.Has<SceneInfo>(srcLock)) {
-                auto &sceneInfo = light.bulb.Get<SceneInfo>(srcLock);
-                light.bulb = sceneInfo.liveId;
-            }
-        }
     }
 } // namespace ecs

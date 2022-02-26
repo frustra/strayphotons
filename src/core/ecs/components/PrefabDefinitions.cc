@@ -39,13 +39,13 @@ namespace ecs {
 
                         Entity newEntity;
                         if (ent.Has<Name>(lock)) {
-                            auto entityName = ent.Get<Name>(lock) + ".";
+                            auto name = ent.Get<Name>(lock);
                             if (node.name.empty()) {
-                                entityName += "gltf" + std::to_string(nodeId);
+                                name.entity += ".gltf" + std::to_string(nodeId);
                             } else {
-                                entityName += node.name;
+                                name.entity += "." + node.name;
                             }
-                            newEntity = scene->NewPrefabEntity(lock, ent, entityName);
+                            newEntity = scene->NewPrefabEntity(lock, ent, name);
                         } else {
                             newEntity = scene->NewPrefabEntity(lock, ent);
                         }

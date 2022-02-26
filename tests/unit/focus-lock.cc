@@ -26,17 +26,17 @@ namespace FocusLockTests {
             keyboard = lock.NewEntity();
             mouse = lock.NewEntity();
 
-            player.Set<ecs::Name>(lock, "player");
+            player.Set<ecs::Name>(lock, "", "player");
             player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
             player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
-            signalBindings.Bind(TEST_SIGNAL_ACTION, ecs::NamedEntity("mouse", mouse), TEST_SIGNAL_BUTTON);
+            signalBindings.Bind(TEST_SIGNAL_ACTION, ecs::NamedEntity("", "mouse", mouse), TEST_SIGNAL_BUTTON);
 
-            keyboard.Set<ecs::Name>(lock, "keyboard");
+            keyboard.Set<ecs::Name>(lock, "", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
-            eventBindings.Bind(TEST_EVENT_KEY, ecs::NamedEntity("player", player), TEST_EVENT_ACTION);
+            eventBindings.Bind(TEST_EVENT_KEY, ecs::NamedEntity("", "player", player), TEST_EVENT_ACTION);
 
-            mouse.Set<ecs::Name>(lock, "mouse");
+            mouse.Set<ecs::Name>(lock, "", "mouse");
             auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);
             signalOutput.SetSignal(TEST_SIGNAL_BUTTON, 42.0);
         }
@@ -51,17 +51,17 @@ namespace FocusLockTests {
                 ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("keyboard", keyboard), 42);
+            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("", "keyboard", keyboard), 42);
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
             Assert(eventInput.Poll(TEST_EVENT_ACTION, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_KEY, "Unexpected event name");
-            AssertEqual(event.source, "keyboard", "Unexpected event source");
+            AssertEqual(event.source, ecs::Name("", "keyboard"), "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
             Assert(!eventInput.Poll(TEST_EVENT_ACTION, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
-            AssertEqual(event.source.Name(), "", "Event data should not be set");
+            Assert(!event.source.Name(), "Event data should not be set");
             AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION);
@@ -85,13 +85,13 @@ namespace FocusLockTests {
                 ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("keyboard", keyboard), 42);
+            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("", "keyboard", keyboard), 42);
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
             Assert(!eventInput.Poll(TEST_EVENT_ACTION, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
-            AssertEqual(event.source.Name(), "", "Event data should not be set");
+            Assert(!event.source.Name(), "Event data should not be set");
             AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION);
