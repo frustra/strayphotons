@@ -51,37 +51,43 @@
     },
     "player:left-hand-input": {
         "signal_bindings": {
-            "move_forward": { "/actions/main/in/movement_y": "player:vr-controller-left" },
-            "move_right": { "/actions/main/in/movement_x": "player:vr-controller-left" }
+            "move_forward": "player:vr-controller-left/actions/main/in/movement_y",
+            "move_right": "player:vr-controller-left/actions/main/in/movement_x"
         }
     },
     "player:right-hand-input": {
         "signal_bindings": {
-            "move_forward": { "/actions/main/in/movement_y": "player:vr-controller-right" },
-            "move_right": { "/actions/main/in/movement_x": "player:vr-controller-right" }
+            "move_forward": "player:vr-controller-right/actions/main/in/movement_y",
+            "move_right": "player:vr-controller-right/actions/main/in/movement_x"
         }
     },
     "player:player": {
         "signal_bindings": {
-            "menu_primary_trigger": { "mouse_button_left": "input:mouse" },
-            "menu_secondary_trigger": { "mouse_button_right": "input:mouse" },
-            "menu_cursor_x": { "mouse_cursor_x": "input:mouse" },
-            "menu_cursor_y": { "mouse_cursor_y": "input:mouse" },
-            "move_world_x": { "move_world_x": [ "player:flatview", "player:left-hand-input", "player:right-hand-input" ] },
-            "move_world_y": { "move_world_y": "player:flatview" },
-            "move_world_z": { "move_world_z": [ "player:flatview", "player:left-hand-input", "player:right-hand-input" ] },
-            "move_sprint": { "key_left_shift": "input:keyboard" }
+            "menu_primary_trigger": "input:mouse/mouse_button_left",
+            "menu_secondary_trigger": "input:mouse/mouse_button_right",
+            "menu_cursor_x": "input:mouse/mouse_cursor_x",
+            "menu_cursor_y": "input:mouse/mouse_cursor_y",
+            "move_world_x": {
+                "operator": "add",
+                "values": [ "player:flatview/move_world_x", "player:left-hand-input/move_world_x", "player:right-hand-input/move_world_x" ]
+            },
+            "move_world_y": "player:flatview/move_world_y",
+            "move_world_z": {
+                "operator": "add",
+                "values": [ "player:flatview/move_world_z", "player:left-hand-input/move_world_z", "player:right-hand-input/move_world_z" ]
+            },
+            "move_sprint": "input:keyboard/key_left_shift"
         }
     },
     "player:flatview": {
         "signal_bindings": {
-            "move_forward": { "key_w": "input:keyboard" },
-            "move_right": { "key_d": "input:keyboard" },
-            "move_left": { "key_a": "input:keyboard" },
-            "move_back": { "key_s": "input:keyboard" },
-            "move_up": { "key_space": "input:keyboard" },
-            "move_down": { "key_left_control": "input:keyboard" },
-            "interact_rotate": { "key_r": "input:keyboard" }
+            "move_forward": "input:keyboard/key_w",
+            "move_right": "input:keyboard/key_d",
+            "move_left": "input:keyboard/key_a",
+            "move_back": "input:keyboard/key_s",
+            "move_up": "input:keyboard/key_space",
+            "move_down": "input:keyboard/key_left_control",
+            "interact_rotate": "input:keyboard/key_r"
         }
     }
 }

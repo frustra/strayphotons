@@ -526,9 +526,7 @@
 				]
 			},
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "elevator_zone"
-				}
+				"load_scene_connection": "elevator_zone/playerPresent"
 			},
 			"scene_connection": []
 		},
@@ -586,9 +584,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-in"
-				}
+				"animation_state": "global:ship_airlock-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -635,9 +631,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-in"
-				}
+				"animation_state": "global:ship_airlock-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -698,9 +692,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-out"
-				}
+				"animation_state": "global:ship_airlock-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -747,9 +739,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-out"
-				}
+				"animation_state": "global:ship_airlock-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1259,9 +1249,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "station-center:elevator_door"
-				}
+				"animation_state": "station-center:elevator_door/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1308,9 +1296,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "station-center:elevator_door"
-				}
+				"animation_state": "station-center:elevator_door/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1471,9 +1457,7 @@
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "transition_zone"
-				}
+				"load_scene_connection": "transition_zone/playerPresent"
 			}
 		}
 	]

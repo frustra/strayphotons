@@ -90,9 +90,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock3-4-out"
-				}
+				"animation_state": "global:airlock3-4-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -139,9 +137,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock3-4-out"
-				}
+				"animation_state": "global:airlock3-4-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -191,9 +187,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock3-4-in"
-				}
+				"animation_state": "global:airlock3-4-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -240,9 +234,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock3-4-in"
-				}
+				"animation_state": "global:airlock3-4-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -370,9 +362,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock4-menu-out"
-				}
+				"animation_state": "global:airlock4-menu-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -419,9 +409,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock4-menu-out"
-				}
+				"animation_state": "global:airlock4-menu-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -448,9 +436,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": {
-					"value": "combinator"
-				}
+				"door_open": "combinator/value"
 			}
 		},
 		{
@@ -475,9 +461,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock4-menu-in"
-				}
+				"animation_state": "global:airlock4-menu-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -524,9 +508,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock4-menu-in"
-				}
+				"animation_state": "global:airlock4-menu-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -568,10 +550,10 @@
 			"name": "combinator",
 			"signal_bindings": {
 				"value": {
-					"_operator": "binary_and",
-					"value": [
-						"sensor1",
-						"sensor2"
+					"operator": "binary_and",
+					"values": [
+						"sensor1/value",
+						"sensor2/value"
 					]
 				}
 			}

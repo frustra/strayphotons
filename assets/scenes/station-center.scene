@@ -134,7 +134,7 @@
 			transform: {
 				"translate": [0, 160, -5.1]
 			},
-			load_signal: {"playerPresent": "elevator_zone"}
+			load_signal: "elevator_zone/playerPresent"
 		}) %>,
 		{
 			"name": "elevator",
@@ -278,7 +278,7 @@
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "transition_zone"}
+				"load_scene_connection": "transition_zone/playerPresent"
 			}
 		}
 	]

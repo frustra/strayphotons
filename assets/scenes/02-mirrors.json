@@ -90,9 +90,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock1-2-out"
-				}
+				"animation_state": "global:airlock1-2-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -139,9 +137,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock1-2-out"
-				}
+				"animation_state": "global:airlock1-2-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -191,9 +187,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock1-2-in"
-				}
+				"animation_state": "global:airlock1-2-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -240,9 +234,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock1-2-in"
-				}
+				"animation_state": "global:airlock1-2-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -370,9 +362,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock2-3-out"
-				}
+				"animation_state": "global:airlock2-3-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -419,9 +409,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock2-3-out"
-				}
+				"animation_state": "global:airlock2-3-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -448,9 +436,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": {
-					"value": "sensor2"
-				}
+				"door_open": "sensor2/value"
 			}
 		},
 		{
@@ -475,9 +461,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock2-3-in"
-				}
+				"animation_state": "global:airlock2-3-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -524,9 +508,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock2-3-in"
-				}
+				"animation_state": "global:airlock2-3-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1371,9 +1353,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": {
-					"value": "sensor1"
-				}
+				"door_open": "sensor1/value"
 			}
 		},
 		{
@@ -1398,9 +1378,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "02-mirrors:door1"
-				}
+				"animation_state": "02-mirrors:door1/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1447,9 +1425,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "02-mirrors:door1"
-				}
+				"animation_state": "02-mirrors:door1/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
