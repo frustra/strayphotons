@@ -61,7 +61,8 @@ namespace ecs {
         robin_hood::unordered_map<std::string, BindingList> destToSource;
     };
 
-    std::pair<std::string, std::string> ParseSignalString(const std::string &str);
+    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str,
+        const sp::Scene *currentScene = nullptr);
 
     std::ostream &operator<<(std::ostream &out, const SignalBindings::CombineOperator &v);
 
@@ -69,9 +70,9 @@ namespace ecs {
     static Component<SignalBindings> ComponentSignalBindings("signal_bindings");
 
     template<>
-    bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &dst, const picojson::value &src);
+    bool Component<SignalOutput>::Load(ScenePtr scenePtr, SignalOutput &dst, const picojson::value &src);
     template<>
-    bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &dst, const picojson::value &src);
+    bool Component<SignalBindings>::Load(ScenePtr scenePtr, SignalBindings &dst, const picojson::value &src);
     template<>
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst);
     template<>

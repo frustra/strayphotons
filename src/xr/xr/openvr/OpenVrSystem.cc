@@ -98,7 +98,7 @@ namespace sp::xr {
                 }
 
                 for (size_t i = 0; i < reservedEntities.size(); i++) {
-                    reservedEntities[i] = ecs::NamedEntity("vr-device" + std::to_string(i));
+                    reservedEntities[i] = ecs::NamedEntity("player", "vr-device" + std::to_string(i));
                 }
 
                 uint32_t vrWidth, vrHeight;

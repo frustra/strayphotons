@@ -43,9 +43,9 @@ namespace ecs {
     static Component<TriggerArea> ComponentTriggerArea("trigger_area");
 
     template<>
-    bool Component<TriggerGroup>::Load(sp::Scene *scene, TriggerGroup &dst, const picojson::value &src);
+    bool Component<TriggerGroup>::Load(ScenePtr scenePtr, TriggerGroup &dst, const picojson::value &src);
     template<>
-    bool Component<TriggerArea>::Load(sp::Scene *scene, TriggerArea &dst, const picojson::value &src);
+    bool Component<TriggerArea>::Load(ScenePtr scenePtr, TriggerArea &dst, const picojson::value &src);
     template<>
     void Component<TriggerArea>::Apply(const TriggerArea &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

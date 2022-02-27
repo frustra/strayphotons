@@ -124,6 +124,11 @@ namespace sp::xr {
                             sizeof(originInfo));
                         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to read origin info");
 
+                        std::string actionSignal = action.name;
+                        if (actionSignal.size() > 0 && actionSignal.at(0) == '/') {
+                            actionSignal = actionSignal.substr(1);
+                        }
+
                         ecs::NamedEntity originEntity = vrSystem.GetEntityForDeviceIndex(originInfo.trackedDeviceIndex);
                         ecs::Entity entity = originEntity.Get(lock);
                         if (entity) {
@@ -150,9 +155,9 @@ namespace sp::xr {
                                     auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
 
                                     if (digitalActionData.bActive) {
-                                        signalOutput.SetSignal(action.name, digitalActionData.bState);
+                                        signalOutput.SetSignal(actionSignal, digitalActionData.bState);
                                     } else {
-                                        signalOutput.ClearSignal(action.name);
+                                        signalOutput.ClearSignal(actionSignal);
                                     }
                                 }
                                 break;
@@ -200,19 +205,19 @@ namespace sp::xr {
                                     if (analogActionData.bActive) {
                                         switch (action.type) {
                                         case Action::DataType::Vec3:
-                                            signalOutput.SetSignal(action.name + "_z", analogActionData.z);
+                                            signalOutput.SetSignal(actionSignal + "_z", analogActionData.z);
                                         case Action::DataType::Vec2:
-                                            signalOutput.SetSignal(action.name + "_y", analogActionData.y);
+                                            signalOutput.SetSignal(actionSignal + "_y", analogActionData.y);
                                         case Action::DataType::Vec1:
-                                            signalOutput.SetSignal(action.name + "_x", analogActionData.x);
+                                            signalOutput.SetSignal(actionSignal + "_x", analogActionData.x);
                                             break;
                                         default:
                                             break;
                                         }
                                     } else {
-                                        signalOutput.ClearSignal(action.name + "_x");
-                                        signalOutput.ClearSignal(action.name + "_y");
-                                        signalOutput.ClearSignal(action.name + "_z");
+                                        signalOutput.ClearSignal(actionSignal + "_x");
+                                        signalOutput.ClearSignal(actionSignal + "_y");
+                                        signalOutput.ClearSignal(actionSignal + "_z");
                                     }
                                 }
                                 break;

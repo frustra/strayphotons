@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Renderable>::Load(sp::Scene *scene, Renderable &r, const picojson::value &src) {
+    bool Component<Renderable>::Load(ScenePtr scenePtr, Renderable &r, const picojson::value &src) {
         if (src.is<string>()) {
             r.model = sp::GAssets.LoadGltf(src.get<string>());
             r.meshIndex = 0;

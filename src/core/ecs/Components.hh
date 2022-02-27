@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 namespace picojson {
@@ -13,9 +14,11 @@ namespace picojson {
 
 namespace sp {
     class Scene;
-}
+} // namespace sp
 
 namespace ecs {
+    using ScenePtr = std::weak_ptr<sp::Scene>;
+
     class ComponentBase {
     public:
         ComponentBase(const char *name) : name(name) {}
@@ -44,10 +47,10 @@ namespace ecs {
         }
 
         bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) override {
-            sp::Scene *scene = nullptr;
+            ScenePtr scene;
             if (dst.Has<SceneInfo>(lock)) {
                 auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scene = sceneInfo.scene.lock().get();
+                scene = sceneInfo.scene;
             }
             auto &comp = dst.Set<CompType>(lock);
             return Load(scene, comp, src);
@@ -65,7 +68,7 @@ namespace ecs {
             }
         }
 
-        static bool Load(sp::Scene *scene, CompType &dst, const picojson::value &src) {
+        static bool Load(ScenePtr scenePtr, CompType &dst, const picojson::value &src) {
             std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }

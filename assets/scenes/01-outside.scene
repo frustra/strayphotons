@@ -1,7 +1,7 @@
 {
 	"entities": [
 		{
-			"_name": "lot",
+			"name": "lot",
 			"transform": {
 				"translate": [0, 0, 0]
 			},
@@ -12,14 +12,14 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "01-outside",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "01-outside",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},
 		{
-			"_name": "lot.Walls1_Cube.004",
+			"name": "lot.Walls1_Cube.004",
 			"physics": {
 				"model": "01-outside",
 				"mesh": 6,
@@ -37,11 +37,11 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock1-2',
 			translate: [-8.1, 0.6, -7],
-			in_signal: "01-outside.sensor1",
+			in_signal: "sensor1",
 			scene_connection: "02-mirrors",
 			triggers: {
 				"player": {
-					"command": "setsignal global.airlock1-2-in.door_open 0; addscene 02-mirrors"
+					"command": "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
 				}
 			}
 		}) %>,
@@ -129,7 +129,7 @@
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 0.05, 0]
 			}

@@ -8,10 +8,12 @@
 
 namespace ecs {
     template<>
-    bool Component<LaserLine>::Load(sp::Scene *scene, LaserLine &dst, const picojson::value &src) {
+    bool Component<LaserLine>::Load(ScenePtr scenePtr, LaserLine &dst, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
                 dst.intensity = param.second.get<double>();
+            } else if (param.first == "radius") {
+                dst.radius = param.second.get<double>();
             } else if (param.first == "color") {
                 dst.color = sp::MakeVec3(param.second);
             } else if (param.first == "on") {

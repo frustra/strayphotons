@@ -4,7 +4,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
-namespace sp::vulkan::render_graph {
+namespace sp::vulkan::renderer {
     void SMAA::AddPass(RenderGraph &graph) {
         if (!areaTex)
             areaTex = graph.Device().LoadAssetImage(GAssets.LoadImage("textures/smaa/AreaTex.tga")->Get(),
@@ -108,4 +108,4 @@ namespace sp::vulkan::render_graph {
                 cmd.Draw(3);
             });
     }
-} // namespace sp::vulkan::render_graph
+} // namespace sp::vulkan::renderer

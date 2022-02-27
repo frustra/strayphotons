@@ -1,5 +1,5 @@
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
@@ -16,8 +16,8 @@
 	"script": {
 		"prefab": "gltf",
 		"parameters": {
-			"gltf_model": "mcube",
-			"gltf_render": true
+			"model": "mcube",
+			"render": true
 		}
 	}
 }

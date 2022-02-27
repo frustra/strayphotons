@@ -7,13 +7,13 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "cornell-box-2",
-					"gltf_render": true
+					"model": "cornell-box-2",
+					"render": true
 				}
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [-0.01, 0.2, 9.6],
 				"rotate": [0, 0, 1, 0]
@@ -29,7 +29,7 @@
 			}
 		},
 		{
-			"_name": "spawn_platform",
+			"name": "spawn_platform",
 			"renderable": "box",
 			"transform": {
 				"translate": [-0.01, -0.3, 9.6]

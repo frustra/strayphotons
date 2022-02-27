@@ -96,18 +96,18 @@ namespace sp {
         });
 
     CFunc<string, double> CFuncSetSignal("setsignal",
-        "Set a signal value (setsignal <entity>.<signal> <value>)",
+        "Set a signal value (setsignal <entity>/<signal> <value>)",
         [](string signalStr, double value) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
             auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
             if (!entity) {
-                Logf("Signal entity %s not found", entityName);
+                Logf("Signal entity %s not found", entityName.String());
                 return;
             }
             if (!entity.Has<ecs::SignalOutput>(lock)) {
-                Logf("%s is not a signal output", entityName);
+                Logf("%s is not a signal output", entityName.String());
                 return;
             }
 
@@ -116,18 +116,18 @@ namespace sp {
         });
 
     CFunc<string, string> CFuncToggleSignal("togglesignal",
-        "Toggle a signal between values (togglesignal <entity>.<signal> [<value_a> <value_b>])",
+        "Toggle a signal between values (togglesignal <entity>/<signal> [<value_a> <value_b>])",
         [](string signalStr, string args) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
             auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
             if (!entity) {
-                Logf("Signal entity %s not found", entityName);
+                Logf("Signal entity %s not found", entityName.String());
                 return;
             }
             if (!entity.Has<ecs::SignalOutput>(lock)) {
-                Logf("%s is not a signal output", entityName);
+                Logf("%s is not a signal output", entityName.String());
                 return;
             }
 
@@ -145,7 +145,7 @@ namespace sp {
         });
 
     CFunc<string> CFuncClearSignal("clearsignal",
-        "Clear a signal value (clearsignal <entity>.<signal>)",
+        "Clear a signal value (clearsignal <entity>/<signal>)",
         [](string signalStr) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 

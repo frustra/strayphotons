@@ -135,7 +135,7 @@
 					"signal": "playerPresent"
 				}
 			},
-			load_signal: { "playerPresent": "global.ship_airlock-zone" }
+			load_signal: "global:ship_airlock-zone/playerPresent"
 		}) %>,
 		<%- include('prefab/button', {
 			scene: 'menu',
@@ -143,7 +143,7 @@
 			transform: {
 				"translate": [4.95, 1.5, 2.5]
 			},
-			command: "togglesignal global.ship_airlock-in.door_open"
+			command: "togglesignal global:ship_airlock-in/door_open"
 		}) %>,
 		{
 			"__comment": "button_highlighter",
@@ -163,7 +163,7 @@
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 0.05, 0]
 			},

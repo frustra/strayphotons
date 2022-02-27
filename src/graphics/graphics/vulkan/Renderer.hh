@@ -2,17 +2,17 @@
 
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
-#include "core/LockFreeMutex.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/GPUTypes.hh"
-#include "graphics/vulkan/SMAA.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
-#include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "graphics/vulkan/render_passes/Emissive.hh"
+#include "graphics/vulkan/render_passes/SMAA.hh"
+#include "graphics/vulkan/render_passes/Screenshots.hh"
 
 #include <atomic>
 #include <functional>
@@ -32,6 +32,8 @@ namespace sp::vulkan {
     class Mesh;
     class GuiRenderer;
 
+    extern CVar<string> CVarWindowViewTarget;
+
     struct LightingContext {
         int count = 0;
         glm::ivec2 renderTargetSize = {};
@@ -47,26 +49,12 @@ namespace sp::vulkan {
         } gpuData;
     };
 
-    struct LaserContext {
-        struct GPULine {
-            glm::vec3 color;
-            float padding0[1];
-            glm::vec3 start;
-            float padding1[1];
-            glm::vec3 end;
-            float padding2[1];
-        };
-        static_assert(sizeof(GPULine) % sizeof(glm::vec4) == 0, "std430 alignment");
-
-        vector<GPULine> gpuData;
-    };
-
     class Renderer {
     public:
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::TransformSnapshot>>;
         typedef std::function<void(DrawLock, ecs::Entity &)> PreDrawFunc;
 
-        Renderer(DeviceContext &context, PerfTimer &timer);
+        Renderer(DeviceContext &context);
         ~Renderer();
 
         void RenderFrame();
@@ -80,14 +68,11 @@ namespace sp::vulkan {
         }
 #endif
 
-        void QueueScreenshot(const string &path, const string &resource);
-
         ImageViewPtr GetBlankPixelImage();
         ImageViewPtr CreateSinglePixelImage(glm::vec4 value);
 
     private:
         DeviceContext &device;
-        PerfTimer &timer;
         rg::RenderGraph graph;
 
         void BuildFrameGraph();
@@ -99,18 +84,13 @@ namespace sp::vulkan {
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
 #endif
 
-        void AddScreenshots();
-        rg::ResourceID VisualizeBuffer(rg::ResourceID sourceID, uint32 arrayLayer = ~0u);
-
         void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
         void AddGeometryWarp();
-        void AddLaserState(ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock);
         void AddLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
         void AddShadowMaps(DrawLock lock);
         void AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock);
-        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock);
+        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock);
         void AddLighting();
-        void AddEmissive(ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock);
         void AddTonemap();
         void AddMenuOverlay();
 
@@ -135,7 +115,6 @@ namespace sp::vulkan {
         CFuncCollection funcs;
 
         LightingContext lights;
-        LaserContext lasers;
         GPUSceneContext scene;
         PreservingMap<string, Mesh> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
@@ -151,19 +130,17 @@ namespace sp::vulkan {
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
-        LockFreeMutex screenshotMutex;
-        vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
 
-        rg::SMAA smaa;
+        renderer::Emissive emissive;
+        renderer::SMAA smaa;
+        renderer::Screenshots screenshots;
 
         struct EmptyImageKey {
             vk::Format format;
         };
 
         ImageViewPtr blankPixelImage;
-
-        PreservingMap<ImageView *, ImageView> debugViews;
 
         std::atomic_flag sceneReady, pendingTransaction;
 

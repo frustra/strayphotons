@@ -8,6 +8,7 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
+#include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
@@ -456,6 +457,8 @@ namespace sp::vulkan {
             reloadShaders = true;
         });
 
+        perfTimer.reset(new PerfTimer(*this));
+
         if (enableSwapchain) CreateSwapchain();
     }
 
@@ -616,6 +619,7 @@ namespace sp::vulkan {
 
     void DeviceContext::BeginFrame() {
         ZoneScoped;
+        if (perfTimer) perfTimer->StartFrame();
         UpdateInputModeFromFocus();
 
         if (reloadShaders.exchange(false)) {
@@ -724,6 +728,7 @@ namespace sp::vulkan {
         }
 
         lastFrameEnd = frameEnd;
+        if (perfTimer) perfTimer->EndFrame();
     }
 
     CommandContextPtr DeviceContext::GetFrameCommandContext(CommandContextType type) {

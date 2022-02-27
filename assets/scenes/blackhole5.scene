@@ -1,7 +1,7 @@
 {
 	"entities": [
 		{
-			"_name": "zone",
+			"name": "zone",
 			"signal_output": {},
 			"transform": {
 				"scale": [10, 5, 10],
@@ -128,29 +128,29 @@
 		},
 		<% } %>
 		{
-			"_name": "global.transition5-1",
+			"name": "global:transition5-1",
 			"transform": {
 				"translate": [5, 1.25, 0.25],
 				"scale": [1, 2.5, 1.5]
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "blackhole5.zone"}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{
-			"_name": "global.transition4-5",
+			"name": "global:transition4-5",
 			"transform": {
 				"translate": [-5, 1.25, 0.25],
 				"scale": [1, 2.5, 1.5]
 			},
 			"scene_connection": "blackhole4",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "blackhole5.zone"}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 0.05, 2]
 			},
@@ -173,7 +173,7 @@
 			}
 		},
 		{
-			"_name": "global.station-center",
+			"name": "global:station-center",
 			"renderable": "box",
 			"transform": {
 				"translate": [0, 150, 0],
@@ -188,16 +188,16 @@
 			}
 		},
 		{
-			"_name": "global.blackhole",
+			"name": "global:blackhole",
 			"renderable": "box",
 			"transform": {
-				"parent": "global.station-center",
+				"parent": "global:station-center",
 				"translate": [30, -50, -100],
 				"scale": [200, 200, 10]
 			}
 		},
 		{
-			"_name": "global.black-hole-center",
+			"name": "global:black-hole-center",
 			"light": {
 				"tint": [1, 1, 1],
 				"intensity": -4000,
@@ -206,12 +206,12 @@
 				"shadowMapClip": [0.1, 256]
 			},
 			"transform": {
-				"parent": "global.blackhole",
+				"parent": "global:blackhole",
 				"translate": [0, 0, 10]
 			}
 		},
 		{
-			"_name": "global.black-hole-halo",
+			"name": "global:black-hole-halo",
 			"light": {
 				"tint": [1, 1, 1],
 				"intensity": 2000,
@@ -220,7 +220,7 @@
 				"shadowMapClip": [0.1, 256]
 			},
 			"transform": {
-				"parent": "global.blackhole",
+				"parent": "global:blackhole",
 				"translate": [0, 0, 10]
 			}
 		}

@@ -31,6 +31,8 @@ namespace sp::vulkan::render_graph {
             }
         }
 
+        auto timer = device.GetPerfTimer();
+
         std::stack<tracy::ScopedZone> traceScopes;
         std::stack<RenderPhase> phaseScopes;
         resources.scopeStack.clear();
@@ -123,7 +125,7 @@ namespace sp::vulkan::render_graph {
                 {
                     GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                     RenderPhase phase(pass.name);
-                    if (timer) phase.StartTimer(*cmd, *timer);
+                    phase.StartTimer(*cmd);
                     cmd->BeginRenderPass(renderPassInfo);
                     pass.Execute(resources, *cmd);
                     cmd->EndRenderPass();
@@ -138,7 +140,7 @@ namespace sp::vulkan::render_graph {
                 {
                     GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                     RenderPhase phase(pass.name);
-                    if (timer) phase.StartTimer(*cmd, *timer);
+                    phase.StartTimer(*cmd);
                     pass.Execute(resources, *cmd);
                 }
                 device.Submit(cmd);

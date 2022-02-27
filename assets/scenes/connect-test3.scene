@@ -1,7 +1,7 @@
 {
 	"entities": [
 		{
-			"_name": "loaded",
+			"name": "loaded",
 			"signal_output": {
 				"value": 1.0
 			},
@@ -62,8 +62,8 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock23',
 			translate: [5, 0, 0],
-			out_signal: "connect-test3.loaded",
-			load_signal: {"playerPresent": "connect-test3.loaded"},
+			out_signal: "loaded",
+			load_signal: "loaded/playerPresent",
 			scene_connection: "connect-test2"
 		}) %>,
 		{
@@ -103,8 +103,8 @@
 			name: 'airlock34',
 			translate: [0, 0, 8],
 			rotate: [90, 0, 1, 0],
-			in_signal: "connect-test3.loaded",
-			load_signal: {"playerPresent": "connect-test3.loaded"},
+			in_signal: "loaded",
+			load_signal: "loaded/playerPresent",
 			scene_connection: "connect-test4"
 		}) %>,
 		{
@@ -139,7 +139,7 @@
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [-3, 0.05, -3],
 				"rotate": [-135, 0, 1, 0]

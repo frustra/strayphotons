@@ -16,5 +16,5 @@ namespace ecs {
     static Component<Sound> ComponentSound("sound");
 
     template<>
-    bool Component<Sound>::Load(sp::Scene *scene, Sound &dst, const picojson::value &src);
+    bool Component<Sound>::Load(ScenePtr scenePtr, Sound &dst, const picojson::value &src);
 } // namespace ecs

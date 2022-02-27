@@ -10,7 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &output, const picojson::value &src) {
+    bool Component<SignalOutput>::Load(ScenePtr scenePtr, SignalOutput &output, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<bool>()) {
                 output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
@@ -22,43 +22,62 @@ namespace ecs {
     }
 
     template<>
-    bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &bindings, const picojson::value &src) {
+    bool Component<SignalBindings>::Load(ScenePtr scenePtr, SignalBindings &bindings, const picojson::value &src) {
+        auto scene = scenePtr.lock();
         for (auto bind : src.get<picojson::object>()) {
-            for (auto source : bind.second.get<picojson::object>()) {
-                if (source.first == "_operator") {
-                    auto operatorName = source.second.get<std::string>();
-                    sp::to_upper(operatorName);
-                    if (operatorName == "ADD") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::ADD);
-                    } else if (operatorName == "MIN") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MIN);
-                    } else if (operatorName == "MAX") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MAX);
-                    } else if (operatorName == "MULTIPLY") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MULTIPLY);
-                    } else if (operatorName == "COUNT") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::COUNT);
-                    } else if (operatorName == "BINARY_AND") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_AND);
-                    } else if (operatorName == "BINARY_OR") {
-                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_OR);
-                    } else {
-                        Abortf("Unknown signal binding combine operator: %s", operatorName);
-                    }
+            if (bind.second.is<std::string>()) {
+                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scene.get());
+                if (originName) {
+                    bindings.Bind(bind.first, NamedEntity(originName), signalName);
                 } else {
-                    picojson::array originList;
-                    if (source.second.is<std::string>()) {
-                        originList.emplace_back(source.second);
-                    } else if (source.second.is<picojson::array>()) {
-                        originList = source.second.get<picojson::array>();
+                    Errorf("Invalid signal binding origin: %s", bind.second.get<std::string>());
+                    return false;
+                }
+            } else if (bind.second.is<picojson::object>()) {
+                for (auto source : bind.second.get<picojson::object>()) {
+                    if (source.first == "operator") {
+                        auto operatorName = source.second.get<std::string>();
+                        sp::to_upper(operatorName);
+                        if (operatorName == "ADD") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::ADD);
+                        } else if (operatorName == "MIN") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MIN);
+                        } else if (operatorName == "MAX") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MAX);
+                        } else if (operatorName == "MULTIPLY") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MULTIPLY);
+                        } else if (operatorName == "COUNT") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::COUNT);
+                        } else if (operatorName == "BINARY_AND") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_AND);
+                        } else if (operatorName == "BINARY_OR") {
+                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_OR);
+                        } else {
+                            Errorf("Unknown signal binding combine operator: %s", operatorName);
+                            return false;
+                        }
+                    } else if (source.first == "values") {
+                        if (!source.second.is<picojson::array>()) {
+                            Errorf("Invalid signal binding source: %s", bind.first);
+                            return false;
+                        }
+                        for (auto origin : source.second.get<picojson::array>()) {
+                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scene.get());
+                            if (originName) {
+                                bindings.Bind(bind.first, NamedEntity(originName), signalName);
+                            } else {
+                                Errorf("Invalid signal binding origin: %s", origin.get<std::string>());
+                                return false;
+                            }
+                        }
                     } else {
-                        Abortf("Invalid signal binding source: %s", bind.first);
-                    }
-                    for (auto origin : originList) {
-                        auto originName = origin.get<std::string>();
-                        bindings.Bind(bind.first, NamedEntity(originName), source.first);
+                        Errorf("Unknown signal binding source field: %s", source.first);
+                        return false;
                     }
                 }
+            } else {
+                Errorf("Unknown signal binding type: %s", bind.first);
+                return false;
             }
         }
         return true;
@@ -99,15 +118,16 @@ namespace ecs {
         }
     }
 
-    std::pair<std::string, std::string> ParseSignalString(const std::string &str) {
-        size_t delimiter = str.find_last_of('.');
-        std::string entityName = str;
-        std::string signalName = "value";
-        if (delimiter != std::string::npos) {
-            entityName = str.substr(0, delimiter);
-            signalName = str.substr(delimiter + 1);
+    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const sp::Scene *currentScene) {
+        size_t delimiter = str.find('/');
+        ecs::Name entityName;
+        if (entityName.Parse(str.substr(0, delimiter), currentScene)) {
+            std::string signalName = "value";
+            if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
+            return std::make_pair(entityName, signalName);
+        } else {
+            return std::make_pair(ecs::Name(), "");
         }
-        return std::make_pair(entityName, signalName);
     }
 
     void SignalOutput::SetSignal(const std::string &name, double value) {
@@ -157,7 +177,7 @@ namespace ecs {
     }
 
     void SignalBindings::Bind(const std::string &name, NamedEntity origin, std::string source) {
-        Tracef("Binding %s to %s on %s", name, source, origin.Name());
+        Tracef("Binding %s to %s on %s", name, source, origin.Name().String());
         Binding newBinding(origin, source);
 
         auto list = destToSource.find(name);

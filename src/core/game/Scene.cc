@@ -52,12 +52,15 @@ namespace sp {
 
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::shared_ptr<Scene> &scene,
-        std::string entityName) {
-        if (!entityName.empty() && namedEntities.count(entityName) > 0) return namedEntities[entityName];
+        ecs::Name entityName) {
+        if (entityName) {
+            auto existing = GetEntity(entityName);
+            if (existing) return existing;
+        }
 
         auto entity = stagingLock.NewEntity();
         entity.Set<ecs::SceneInfo>(stagingLock, entity, ecs::SceneInfo::Priority::System, scene);
-        if (!entityName.empty()) {
+        if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
             namedEntities.emplace(entityName, entity);
         }
@@ -66,8 +69,11 @@ namespace sp {
 
     ecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         ecs::Entity prefabRoot,
-        std::string entityName) {
-        if (!entityName.empty() && namedEntities.count(entityName) > 0) return namedEntities[entityName];
+        ecs::Name entityName) {
+        if (entityName) {
+            auto existing = GetEntity(entityName);
+            if (existing) return existing;
+        }
 
         Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
             "Prefab root %s does not have SceneInfo",
@@ -76,10 +82,7 @@ namespace sp {
 
         auto entity = stagingLock.NewEntity();
         entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, rootSceneInfo);
-        if (!entityName.empty()) {
-            if (!starts_with(entityName, "global.") && !starts_with(entityName, this->name + ".")) {
-                entityName = this->name + "." + entityName;
-            }
+        if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
             namedEntities.emplace(entityName, entity);
         }
@@ -104,7 +107,7 @@ namespace sp {
                     if (sceneInfo.liveId) {
                         // Entity overlaps with another scene
                         ZoneScopedN("MergeEntity");
-                        ZoneStr(entityName);
+                        ZoneStr(entityName.String());
                         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
                         auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
                         liveSceneInfo.InsertWithPriority(staging, sceneInfo);

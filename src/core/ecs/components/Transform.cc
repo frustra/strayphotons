@@ -12,7 +12,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::Load(sp::Scene *scene, Transform &transform, const picojson::value &src) {
+    bool Component<Transform>::Load(ScenePtr scenePtr, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "scale") {
                 transform.Scale(sp::MakeVec3(subTransform.second));
@@ -41,21 +41,20 @@ namespace ecs {
     }
 
     template<>
-    bool Component<TransformTree>::Load(sp::Scene *scene, TransformTree &transform, const picojson::value &src) {
+    bool Component<TransformTree>::Load(ScenePtr scenePtr, TransformTree &transform, const picojson::value &src) {
+        auto scene = scenePtr.lock();
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
                 auto parentName = subTransform.second.get<string>();
-                auto it = scene->namedEntities.find(parentName);
-                if (it != scene->namedEntities.end()) {
-                    transform.parent = it->second;
-                } else {
+                transform.parent = scene->GetEntity(parentName);
+                if (!transform.parent) {
                     Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
                     return false;
                 }
             }
         }
-        return Component<Transform>::Load(scene, transform.pose, src);
+        return Component<Transform>::Load(scenePtr, transform.pose, src);
     }
 
     template<>
@@ -77,6 +76,20 @@ namespace ecs {
             dstTree.pose = srcTree.pose;
             dst.Set<TransformSnapshot>(dstLock, srcTree.GetGlobalTransform(srcLock));
         }
+    }
+
+    template<>
+    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstTree = dst.Get<TransformTree>(lock);
+
+        // Map transform parent from staging id to live id
+        if (src.parent) {
+            dstTree.parent = src.parent;
+        } else {
+            dstTree.parent = Entity();
+        }
+        dstTree.pose = src.pose;
+        dst.Get<TransformSnapshot>(lock);
     }
 
     Transform::Transform(glm::vec3 pos, glm::quat orientation)

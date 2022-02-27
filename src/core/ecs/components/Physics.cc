@@ -9,7 +9,8 @@
 
 namespace ecs {
     template<>
-    bool Component<Physics>::Load(sp::Scene *scene, Physics &physics, const picojson::value &src) {
+    bool Component<Physics>::Load(ScenePtr scenePtr, Physics &physics, const picojson::value &src) {
+        auto scene = scenePtr.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
                 physics.model = sp::GAssets.LoadGltf(param.second.get<string>());
@@ -42,13 +43,13 @@ namespace ecs {
                 }
             } else if (param.first == "joint") {
                 Assert(scene, "Physics::Load must have valid scene to define joint");
-                std::string jointTarget = "";
+                Entity jointTarget;
                 PhysicsJointType jointType = PhysicsJointType::Fixed;
                 glm::vec2 jointRange;
                 Transform localTransform, remoteTransform;
                 for (auto jointParam : param.second.get<picojson::object>()) {
                     if (jointParam.first == "target") {
-                        jointTarget = jointParam.second.get<string>();
+                        jointTarget = scene->GetEntity(jointParam.second.get<string>());
                     } else if (jointParam.first == "type") {
                         auto typeString = jointParam.second.get<string>();
                         sp::to_upper(typeString);
@@ -80,9 +81,8 @@ namespace ecs {
                         }
                     }
                 }
-                auto it = scene->namedEntities.find(jointTarget);
-                if (it != scene->namedEntities.end()) {
-                    physics.SetJoint(it->second,
+                if (jointTarget) {
+                    physics.SetJoint(jointTarget,
                         jointType,
                         jointRange,
                         localTransform.GetPosition(),
@@ -97,15 +97,15 @@ namespace ecs {
                 physics.constantForce = sp::MakeVec3(param.second);
             } else if (param.first == "constraint") {
                 Assert(scene, "Physics::Load must have valid scene to define constraint");
-                std::string constraintTarget = "";
+                ecs::Entity constraintTarget;
                 float constraintMaxDistance = 0.0f;
                 Transform constraintTransform;
                 if (param.second.is<string>()) {
-                    constraintTarget = param.second.get<string>();
+                    constraintTarget = scene->GetEntity(param.second.get<string>());
                 } else if (param.second.is<picojson::object>()) {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
-                            constraintTarget = constraintParam.second.get<string>();
+                            constraintTarget = scene->GetEntity(constraintParam.second.get<string>());
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {
@@ -116,9 +116,8 @@ namespace ecs {
                         }
                     }
                 }
-                auto it = scene->namedEntities.find(constraintTarget);
-                if (it != scene->namedEntities.end()) {
-                    physics.SetConstraint(it->second,
+                if (constraintTarget) {
+                    physics.SetConstraint(constraintTarget,
                         constraintMaxDistance,
                         constraintTransform.GetPosition(),
                         constraintTransform.GetRotation());
@@ -132,7 +131,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<PhysicsQuery>::Load(sp::Scene *scene, PhysicsQuery &query, const picojson::value &src) {
+    bool Component<PhysicsQuery>::Load(ScenePtr scenePtr, PhysicsQuery &query, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "raycast") query.raycastQueryDistance = param.second.get<double>();
         }

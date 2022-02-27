@@ -1,8 +1,8 @@
-<% if (!locals.scene && !name.startsWith("global.")) {
-	name = "global." + name;
+<% if (!locals.scene && !name.startsWith("global:")) {
+	name = "global:" + name;
 } %>
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"transform":  <%= transform %>,
 	<% if (locals.load_signal) { %>
 	"signal_bindings": {
@@ -13,7 +13,7 @@
 },
 <% if (locals.triggers) { %>
 {
-	"_name": <%= name + "-zone" %>,
+	"name": <%= name + "-zone" %>,
 	"transform": {
 		"parent": <%= name %>,
 		"translate": [0, 2, 0],
@@ -46,10 +46,10 @@
 		"parent": name,
 		"translate": [1.95, 1.25, 1]
 	},
-	command: "togglesignal " + name + "-out.door_open; wait 300 togglesignal station-center.elevator_door.door_open"
+	command: "togglesignal " + name + "-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open"
 }) %>,
 {
-	"_name": <%= name + "-floor" %>,
+	"name": <%= name + "-floor" %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,
@@ -62,7 +62,7 @@
 	}
 },
 {
-	"_name": <%= name + "-left-wall" %>,
+	"name": <%= name + "-left-wall" %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,
@@ -75,7 +75,7 @@
 	}
 },
 {
-	"_name": <%= name + "-right-wall" %>,
+	"name": <%= name + "-right-wall" %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,
@@ -88,7 +88,7 @@
 	}
 },
 {
-	"_name": <%= name + "-ceiling" %>,
+	"name": <%= name + "-ceiling" %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,

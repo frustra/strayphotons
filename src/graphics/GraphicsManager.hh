@@ -12,7 +12,6 @@
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         #include "graphics/vulkan/core/Common.hh"
-        #include "graphics/vulkan/core/PerfTimer.hh"
     #endif
 
     #ifdef SP_INPUT_SUPPORT_GLFW
@@ -64,7 +63,6 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
-        vulkan::PerfTimer timer;
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_GL

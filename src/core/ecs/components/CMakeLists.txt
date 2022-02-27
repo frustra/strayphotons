@@ -10,6 +10,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Light.cc
     LightSensor.cc
     Mirror.cc
+    Name.cc
     Physics.cc
     PrefabDefinitions.cc
     Renderable.cc

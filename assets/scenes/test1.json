@@ -16,7 +16,7 @@
 			}
 		},
 		{
-			"_name": "animbox",
+			"name": "animbox",
 			"transform": {
 				"translate": [0, 2, -4.875]
 			},
@@ -52,9 +52,8 @@
 			"signal_bindings": {
 				"animation_state": {
 					"operator": "multiply",
-					"values": ["lasersensor/value", "global:animbox/constant"]
-				},
-				"animation_state": "lasersensor/value"
+					"values": [ "lasersensor", "animbox/constant" ]
+				}
 			}
 		},
 		{
@@ -66,7 +65,7 @@
 			"renderable": "box"
 		},
 		{
-			"_name": "lasersensor",
+			"name": "lasersensor",
 			"transform": {
 				"translate": [0, 0.9, -5]
 			},
@@ -105,14 +104,14 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "articulating-arm",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "articulating-arm",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},
 		{
-			"_name": "sensor1",
+			"name": "sensor1",
 			"renderable": "box",
 			"transform": {
 				"scale": [0.1, 0.1, 0.1],
@@ -141,7 +140,7 @@
 			}
 		},
 		{
-			"_name": "door1",
+			"name": "door1",
 			"renderable": "box",
 			"transform": {
 				"scale": [0.1, 1, 0.1],
@@ -161,7 +160,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": { "value": "test1.sensor1" }
+				"animation_state": "sensor1"
 			},
 			"physics": {
 				"model": "box",
@@ -224,7 +223,7 @@
 			}
 		},
 		{
-			"_name": "duck",
+			"name": "duck",
 			"transform": {
 				"translate": [2.5, 0, -2.5],
 				"rotate": [180, 0, 1, 0]
@@ -232,20 +231,20 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "duck",
-					"gltf_render": true
+					"model": "duck",
+					"render": true
 				}
 			}
 		},
 		{
-			"_name": "duck.gltf0",
+			"name": "duck.gltf0",
 			"physics": {
 				"model": "duck",
 				"decomposeHull": true
 			}
 		},
 		{
-			"_name": "mova-mirror",
+			"name": "mova-mirror",
 			"transform": {
 				"translate": [-1.5, 0.5, -2.5]
 			},
@@ -261,8 +260,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "mcube",
-					"gltf_render": true
+					"model": "mcube",
+					"render": true
 				}
 			}
 		},
@@ -295,7 +294,7 @@
 			}
 		},
 		{
-			"_name": "mcube",
+			"name": "mcube",
 			"transform": {
 				"translate": [-2.2, 2.5, 3]
 			},
@@ -311,8 +310,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "mcube",
-					"gltf_render": true
+					"model": "mcube",
+					"render": true
 				}
 			}
 		},
@@ -354,7 +353,7 @@
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [4, 0, 4],
 				"rotate": [35, 0, 1, 0]

@@ -11,5 +11,5 @@ namespace ecs {
     static Component<Screen> ComponentScreen("screen");
 
     template<>
-    bool Component<Screen>::Load(sp::Scene *scene, Screen &dst, const picojson::value &src);
+    bool Component<Screen>::Load(ScenePtr scenePtr, Screen &dst, const picojson::value &src);
 } // namespace ecs

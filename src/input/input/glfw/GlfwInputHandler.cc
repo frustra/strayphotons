@@ -26,11 +26,11 @@ namespace sp {
         glfwSetMouseButtonCallback(window, MouseButtonCallback);
         glfwSetCursorPosCallback(window, MouseMoveCallback);
 
-        keyboardEntity = ecs::NamedEntity("keyboard");
-        mouseEntity = ecs::NamedEntity("mouse");
+        keyboardEntity = ecs::NamedEntity("input", "keyboard");
+        mouseEntity = ecs::NamedEntity("input", "mouse");
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "glfw-input",
+            "input",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto keyboard = scene->NewSystemEntity(lock, scene, keyboardEntity.Name());
                 keyboard.Set<ecs::EventBindings>(lock);

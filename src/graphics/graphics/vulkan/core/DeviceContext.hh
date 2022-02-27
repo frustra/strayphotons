@@ -31,6 +31,7 @@ namespace sp::vulkan {
     const int MAX_FRAMES_IN_FLIGHT = 2;
 
     class DescriptorPool;
+    class PerfTimer;
     class Pipeline;
     class PipelineManager;
     struct PipelineCompileInput;
@@ -185,6 +186,10 @@ namespace sp::vulkan {
             frameEndQueue.Flush(true);
         }
 
+        PerfTimer *GetPerfTimer() const {
+            return perfTimer.get();
+        }
+
     private:
         void SetTitle(string title);
 
@@ -205,13 +210,14 @@ namespace sp::vulkan {
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
 
+        unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
+        unique_ptr<PerfTimer> perfTimer;
+
         struct {
             vector<vk::UniqueCommandPool> cmdPools;
             vector<vk::UniqueCommandBuffer> cmdBuffers;
             vector<tracy::VkCtx *> tracyContexts;
         } tracing;
-
-        unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
 
         unique_ptr<HandlePool<vk::Fence>> fencePool;
         unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;

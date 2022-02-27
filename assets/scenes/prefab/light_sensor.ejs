@@ -1,6 +1,6 @@
 <% if (!locals.type) { type = "light"; } %>
 {
-	"_name": <%= name + "_plate" %>,
+	"name": <%= name + "_plate" %>,
 	"renderable": <%= 'sensor-plate-' + type %>,
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
@@ -12,7 +12,7 @@
 	}
 },
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"transform": {
 		"parent": <%= name + "_plate" %>,
 		"translate": [0, 0, 0.015]
@@ -27,14 +27,18 @@
 		"light_value_b": 0.0,
 		"value": <%= (trigger <= 0) %>
 	},
-	"script": {
-		"onTick": "light_sensor",
-		"prefab": "gltf",
-		"parameters": {
-			"trigger_level": <%= trigger %>,
-			"gltf_model": "sensor",
-			"gltf_render": true,
-			"gltf_physics": "static"
+	"script": [
+		{
+			"onTick": "light_sensor",
+			"parameters": { "trigger_level": <%= trigger %> }
+		},
+		{
+			"prefab": "gltf",
+			"parameters": {
+				"model": "sensor",
+				"render": true,
+				"physics": "static"
+			}
 		}
-	}
+	]
 }

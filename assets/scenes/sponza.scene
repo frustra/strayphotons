@@ -1,7 +1,7 @@
 {
 	"entities": [
 		{
-			"_name": "sponza",
+			"name": "sponza",
 			"transform": {
 				"rotate": [-90, 0, 1, 0],
 				"translate": [0, -1, 0],
@@ -10,8 +10,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "sponza",
-					"gltf_render": true
+					"model": "sponza",
+					"render": true
 				}
 			}
 		},
@@ -47,16 +47,16 @@
 			}
 		},
 		{
-			"_name": "duck",
+			"name": "duck",
 			"transform": {
 				"translate": [0, 0, -7]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "duck",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"model": "duck",
+					"render": true,
+					"physics": "dynamic"
 				}
 			}
 		},
@@ -90,7 +90,7 @@
 			}
 		},
 		{
-			"_name": "sponza-physics",
+			"name": "sponza-physics",
 			"transform": {
 				"scale": [1, 1, 1]
 			}
@@ -260,7 +260,7 @@
 			}
 		},
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"translate": [0, -0.95, 0]
 			},
@@ -270,7 +270,7 @@
 			}
 		},
 		{
-			"_name": "sun",
+			"name": "sun",
 			"light": {
 				"tint": [0.9, 0.9, 1],
 				"illuminance": 10,

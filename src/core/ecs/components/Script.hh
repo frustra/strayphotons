@@ -28,10 +28,9 @@ namespace ecs {
             std::vector<std::string>>;
 
         ScriptState() : callback(std::monostate()) {}
-        ScriptState(OnTickFunc callback)
-            : callback(callback) {}
-        ScriptState(PrefabFunc callback)
-            : callback(callback) {}
+        ScriptState(ScenePtr scene) : scene(scene), callback(std::monostate()) {}
+        ScriptState(ScenePtr scene, OnTickFunc callback) : scene(scene), callback(callback) {}
+        ScriptState(ScenePtr scene, PrefabFunc callback) : scene(scene), callback(callback) {}
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
@@ -52,20 +51,22 @@ namespace ecs {
             return !std::holds_alternative<std::monostate>(callback);
         }
 
-    private:
+        ScenePtr scene;
         std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
+
+    private:
         robin_hood::unordered_flat_map<std::string, ParameterType> parameters;
 
         friend struct Script;
     };
 
     struct Script {
-        ScriptState &AddOnTick(OnTickFunc callback) {
-            scripts.emplace_back(callback);
+        ScriptState &AddOnTick(ScenePtr scene, OnTickFunc callback) {
+            return scripts.emplace_back(scene, callback);
         }
 
-        ScriptState &AddPrefab(PrefabFunc callback) {
-            scripts.emplace_back(callback);
+        ScriptState &AddPrefab(ScenePtr scene, PrefabFunc callback) {
+            return scripts.emplace_back(scene, callback);
         }
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
@@ -95,7 +96,7 @@ namespace ecs {
     extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
 
     template<>
-    bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src);
+    bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs
