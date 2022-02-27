@@ -273,7 +273,7 @@ namespace ecs {
                                             transform.pose.matrix = relative.Get<TransformSnapshot>(lock).matrix *
                                                                     glm::mat4(transform.pose.matrix);
                                         } else {
-                                            Errorf("Spawn target does not exist: %s", targetName);
+                                            Errorf("Spawn target does not exist: %s", targetName.String());
                                         }
                                     } else {
                                         Errorf("Spawn target name is invalid: %s", fullTargetName);

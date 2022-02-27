@@ -77,6 +77,20 @@ namespace ecs {
         }
     }
 
+    template<>
+    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstTree = dst.Get<TransformTree>(lock);
+
+        // Map transform parent from staging id to live id
+        if (src.parent) {
+            dstTree.parent = src.parent;
+        } else {
+            dstTree.parent = Entity();
+        }
+        dstTree.pose = src.pose;
+        dst.Get<TransformSnapshot>(lock);
+    }
+
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
         : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
 

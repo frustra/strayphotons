@@ -166,7 +166,7 @@ namespace ecs {
     }
 
     void SignalBindings::Bind(const std::string &name, NamedEntity origin, std::string source) {
-        Tracef("Binding %s to %s on %s", name, source, origin.Name());
+        Tracef("Binding %s to %s on %s", name, source, origin.Name().String());
         Binding newBinding(origin, source);
 
         auto list = destToSource.find(name);

@@ -132,7 +132,7 @@ namespace sp {
                     if (e) {
                         Logf("      %s on %s", target.second, ecs::ToString(lock, e));
                     } else {
-                        Logf("      %s on %s(missing)", target.second, target.first.Name());
+                        Logf("      %s on %s(missing)", target.second, target.first.Name().String());
                     }
                 }
             }
@@ -175,7 +175,7 @@ namespace sp {
                     if (e) {
                         Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), value);
                     } else {
-                        Logf("      %s on %s(missing): %.2f", source.second, source.first.Name(), value);
+                        Logf("      %s on %s(missing): %.2f", source.second, source.first.Name().String(), value);
                     }
                 }
             }
