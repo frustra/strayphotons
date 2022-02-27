@@ -28,7 +28,7 @@ void main() {
     if (mediaDensityFactor > 0) {
         float density = MediaDensity(inWorldPos, time);
         density = mediaDensityFactor * (density - 1) + 1;
-        weight *= pow(density, 5);
+        weight *= pow(density, 4);
     }
 
     outFragColor.rgb = radiance;

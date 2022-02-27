@@ -71,5 +71,5 @@ void main() {
 
     // contact radiance is determined by the material at the contact point
     vec4 gb0 = texture(gBuffer0, vec3(pointScreenUV, gl_ViewID_OVR));
-    outRadiance = radiance * 50 * (gb0.rgb + 0.05) * gb0.a;
+    outRadiance = radiance * 100 * (gb0.rgb + 0.05) * gb0.a;
 }
