@@ -18,11 +18,8 @@ namespace sp {
     static const std::string INPUT_SIGNAL_MOUSE_CURSOR_X = "mouse_cursor_x";
     static const std::string INPUT_SIGNAL_MOUSE_CURSOR_Y = "mouse_cursor_y";
 
-    // Console
-    static const std::string INPUT_EVENT_CONSOLE_TOGGLE = "/action/console/toggle"; // bool
-    static const std::string INPUT_EVENT_CONSOLE_EXECUTE = "/action/console/execute"; // string
-
     // Menu
+    static const std::string INPUT_EVENT_TOGGLE_CONSOLE = "/action/console/toggle"; // bool
     static const std::string INPUT_EVENT_MENU_OPEN = "/action/menu/open"; // bool
     static const std::string INPUT_EVENT_MENU_BACK = "/action/menu/back"; // bool
     static const std::string INPUT_EVENT_MENU_ENTER = "/action/menu/enter"; // bool

@@ -1,11 +1,9 @@
 #pragma once
 
 #include "console/CFunc.hh"
-#include "core/LockFreeMutex.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
 
-#include <robin_hood.h>
 #include <string>
 
 namespace sp {
@@ -15,7 +13,7 @@ namespace sp {
 
     private:
         // CFunc
-        void BindKey(string keyName, string command);
+        void BindKey(std::string keyName, std::string command);
 
         CFuncCollection funcs;
 

@@ -14,7 +14,7 @@ namespace sp {
         Assert(gui.Has<ecs::EventInput>(lock), "Expected debug_gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
-        eventInput.Register(INPUT_EVENT_CONSOLE_TOGGLE);
+        eventInput.Register(INPUT_EVENT_TOGGLE_CONSOLE);
     }
 
     void DebugGuiManager::DefineWindows() {
@@ -50,7 +50,7 @@ namespace sp {
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
-                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_CONSOLE_TOGGLE, event)) {
+                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
                     consoleOpen = !consoleOpen;
                 }
 
