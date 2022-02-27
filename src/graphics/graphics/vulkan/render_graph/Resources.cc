@@ -72,7 +72,7 @@ namespace sp::vulkan::render_graph {
                     break;
                 }
             }
-            Assert(!assertExists || result == InvalidResource, string("resource does not exist: ").append(name));
+            Assert(!assertExists || result != InvalidResource, string("resource does not exist: ").append(name));
             return result;
         }
 
@@ -137,7 +137,7 @@ namespace sp::vulkan::render_graph {
     void Resources::EndScope() {
         Assert(scopeStack.size() > 1, "tried to end a scope that wasn't started");
         auto &scope = nameScopes[scopeStack.back()];
-        if (scope.resourceNames.size() > 0) scope.SetID("LastOutput", LastOutputID());
+        scope.SetID("LastOutput", LastOutputID());
         scopeStack.pop_back();
     }
 

@@ -113,10 +113,14 @@ vec3 DirectShading(vec3 worldPosition,
             vec4(-viewBounds, viewBounds * 2.0));
 
 #ifdef SHADOWS_ENABLED
-    #ifdef USE_PCF
-        occlusion *= DirectOcclusion(info, surfaceNormal, rotation);
+    #ifdef USE_VSM
+        occlusion *= SampleVarianceShadowMap(info, 0.00002, 0.5);
     #else
+        #ifdef USE_PCF
+        occlusion *= DirectOcclusion(info, surfaceNormal, rotation);
+        #else
         occlusion *= SimpleOcclusion(info);
+        #endif
     #endif
 #endif
 

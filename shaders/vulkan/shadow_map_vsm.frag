@@ -11,5 +11,11 @@ layout(location = 0) out vec4 outLinearDepth;
 #include "lib/view_states_uniform.glsl"
 
 void main() {
-    outLinearDepth.x = LinearDepth(inViewPos, views[0].clip);
+    float depth = LinearDepth(inViewPos, views[0].clip);
+
+    float dx = dFdx(depth);
+    float dy = dFdy(depth);
+    float moment2 = depth * depth + 0.25 * (dx * dx + dy * dy);
+
+    outLinearDepth.xy = vec2(depth, moment2);
 }
