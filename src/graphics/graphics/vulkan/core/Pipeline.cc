@@ -374,7 +374,7 @@ namespace sp::vulkan {
 
             depthStencil.depthTestEnable = state.depthTest;
             depthStencil.depthWriteEnable = state.depthWrite;
-            depthStencil.depthCompareOp = vk::CompareOp::eLess;
+            depthStencil.depthCompareOp = state.depthCompareOp;
             depthStencil.depthBoundsTestEnable = false;
             depthStencil.minDepthBounds = 0.0f;
             depthStencil.maxDepthBounds = 1.0f;

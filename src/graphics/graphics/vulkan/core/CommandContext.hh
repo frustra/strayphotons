@@ -207,6 +207,13 @@ namespace sp::vulkan {
             }
         }
 
+        void SetDepthCompareOp(vk::CompareOp compareOp) {
+            if (compareOp != pipelineInput.state.depthCompareOp) {
+                pipelineInput.state.depthCompareOp = compareOp;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
         void SetStencilTest(bool test) {
             if (test != pipelineInput.state.stencilTest) {
                 pipelineInput.state.stencilTest = test;

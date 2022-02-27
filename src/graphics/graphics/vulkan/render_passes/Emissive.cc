@@ -37,7 +37,8 @@ namespace sp::vulkan::renderer {
             .Build([&](PassBuilder &builder) {
                 auto input = builder.LastOutput();
                 builder.ShaderRead(input.id);
-                builder.ShaderRead("GBuffer2");
+                builder.ShaderRead("GBuffer0");
+                builder.ShaderRead("GBuffer1");
 
                 auto desc = input.DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "Emissive", desc, {LoadOp::DontCare, StoreOp::Store});
@@ -68,21 +69,23 @@ namespace sp::vulkan::renderer {
                 cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
 
                 cmd.SetDepthTest(true, false);
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
                 cmd.SetBlending(true);
+                cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne);
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
+                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
 
                 {
-                    RenderPhase phase("Lasers");
+                    RenderPhase phase("LaserLines");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("laser_billboard.vert", "laser_billboard.frag");
 
                     struct {
-                        glm::vec3 color;
+                        glm::vec3 radiance;
                         float radius;
                         glm::vec3 start;
-                        float _padding0[1];
+                        float mediaDensityFactor;
                         glm::vec3 end;
                         float time;
                     } constants;
@@ -93,10 +96,33 @@ namespace sp::vulkan::renderer {
                         1000.0f;
 
                     for (auto &line : lasers) {
-                        constants.color = line.color;
+                        constants.radiance = line.color;
                         constants.radius = line.radius;
                         constants.start = line.start;
                         constants.end = line.end;
+                        constants.mediaDensityFactor = 1;
+                        cmd.PushConstants(constants);
+                        cmd.Draw(4);
+                    }
+                }
+
+                {
+                    RenderPhase phase("LaserContactPoints");
+                    phase.StartTimer(cmd);
+                    cmd.SetShaders("laser_contact.vert", "laser_contact.frag");
+                    cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
+                    cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
+
+                    struct {
+                        glm::vec3 radiance;
+                        float radius;
+                        glm::vec3 point;
+                    } constants;
+
+                    for (auto &line : lasers) {
+                        constants.radiance = line.color;
+                        constants.radius = line.radius;
+                        constants.point = line.end;
                         cmd.PushConstants(constants);
                         cmd.Draw(4);
                     }
