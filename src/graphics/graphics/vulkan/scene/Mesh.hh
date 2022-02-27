@@ -3,9 +3,9 @@
 #include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "ecs/Ecs.hh"
-#include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <atomic>
 #include <functional>
@@ -24,10 +24,10 @@ namespace sp::vulkan {
         struct Primitive {
             size_t indexOffset, indexCount;
             size_t vertexOffset, vertexCount;
-            TextureIndex baseColor, metallicRoughness;
+            TextureHandle baseColor, metallicRoughness;
         };
 
-        Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUSceneContext &scene, DeviceContext &device);
+        Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
         ~Mesh();
 
         uint32 SceneIndex() const;
@@ -39,29 +39,28 @@ namespace sp::vulkan {
         }
 
         bool CheckReady() {
-            if (pendingWork.empty()) return true;
-            erase_if(pendingWork, [](auto &fut) {
-                return fut->Ready();
-            });
-            return pendingWork.empty();
+            if (ready) return true;
+
+            for (auto &prim : primitives) {
+                if (!prim.baseColor.Ready()) return false;
+                if (!prim.metallicRoughness.Ready()) return false;
+            }
+
+            ready = true;
+            return true;
         }
 
     private:
-        TextureIndex LoadTexture(DeviceContext &device,
-            const shared_ptr<const sp::Gltf> &source,
-            int materialIndex,
-            TextureType type);
         string modelName;
-        GPUSceneContext &scene;
+        GPUScene &scene;
         shared_ptr<const sp::Gltf> asset;
         size_t meshIndex;
 
-        robin_hood::unordered_map<string, TextureIndex> textures;
         vector<Primitive> primitives;
 
         uint32 vertexCount = 0, indexCount = 0;
         SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
 
-        std::vector<AsyncPtr<void>> pendingWork;
+        bool ready = false;
     };
 } // namespace sp::vulkan

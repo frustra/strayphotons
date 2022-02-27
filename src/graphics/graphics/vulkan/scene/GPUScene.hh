@@ -1,14 +1,14 @@
 #pragma once
 
 #include "assets/Async.hh"
+#include "assets/Gltf.hh"
 #include "core/DispatchQueue.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/scene/Texture.hh"
 
 namespace sp::vulkan {
-    typedef uint32 TextureIndex;
-
     struct GPUViewState {
         GPUViewState() {}
         GPUViewState(const ecs::View &view) {
@@ -53,9 +53,14 @@ namespace sp::vulkan {
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
-    class GPUSceneContext {
+    class GPUScene {
+    private:
+        DeviceContext &device;
+        DispatchQueue workQueue;
+
     public:
-        GPUSceneContext(DeviceContext &device);
+        GPUScene(DeviceContext &device);
+        void Flush();
 
         BufferPtr indexBuffer;
         BufferPtr vertexBuffer;
@@ -69,32 +74,6 @@ namespace sp::vulkan {
         uint32 primitiveCount = 0;
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
-        std::pair<TextureIndex, AsyncPtr<void>> AddTexture(const ImageCreateInfo &imageInfo,
-            const ImageViewCreateInfo &viewInfo,
-            const InitialData &data);
-        TextureIndex AddTexture(const ImageViewPtr &ptr);
-        void ReleaseTexture(TextureIndex i);
-        void FlushTextureDescriptors();
-
-        ImageViewPtr GetTexture(TextureIndex i) const {
-            return textures[i];
-        }
-
-        vk::DescriptorSet GetTextureDescriptorSet() const {
-            return textureDescriptorSet;
-        }
-
-    private:
-        TextureIndex AllocateTextureIndex();
-
-        DeviceContext &device;
-
-        vector<ImageViewPtr> textures;
-
-        vector<TextureIndex> freeTextureIndexes;
-        vector<TextureIndex> texturesToFlush;
-        vk::DescriptorSet textureDescriptorSet;
-
-        DispatchQueue workQueue;
+        TextureSet textures;
     };
 } // namespace sp::vulkan
