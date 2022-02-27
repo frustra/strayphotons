@@ -6,14 +6,14 @@
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/vulkan/GuiRenderer.hh"
-#include "graphics/vulkan/VertexLayouts.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
-#include "graphics/vulkan/core/Mesh.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
+#include "graphics/vulkan/scene/Mesh.hh"
+#include "graphics/vulkan/scene/VertexLayouts.hh"
 
 #ifdef SP_XR_SUPPORT
     #include "xr/XrSystem.hh"
@@ -386,6 +386,8 @@ namespace sp::vulkan {
 #endif
 
     void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
+        if (scene.textures.Count() == 0) scene.textures.Add(GetBlankPixelImage());
+
         scene.renderableCount = 0;
         scene.primitiveCount = 0;
         scene.vertexCount = 0;
@@ -636,7 +638,7 @@ namespace sp::vulkan {
         BufferPtr drawParamsBuffer) {
         if (scene.vertexCount == 0) return;
 
-        cmd.SetBindlessDescriptors(2, scene.GetTextureDescriptorSet());
+        cmd.SetBindlessDescriptors(2, scene.textures.GetDescriptorSet());
 
         cmd.SetVertexLayout(SceneVertex::Layout());
         cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint32);
@@ -956,7 +958,7 @@ namespace sp::vulkan {
             meshesToLoad.pop_back();
         }
 
-        scene.FlushTextureDescriptors();
+        scene.Flush();
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {

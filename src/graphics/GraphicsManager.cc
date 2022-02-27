@@ -16,9 +16,9 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        #include "graphics/vulkan/ProfilerGui.hh"
         #include "graphics/vulkan/Renderer.hh"
         #include "graphics/vulkan/core/DeviceContext.hh"
+        #include "graphics/vulkan/gui/ProfilerGui.hh"
     #endif
 
     #include <algorithm>

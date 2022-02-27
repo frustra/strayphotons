@@ -5,14 +5,14 @@
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
-#include "graphics/vulkan/GPUSceneContext.hh"
-#include "graphics/vulkan/GPUTypes.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_passes/Emissive.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
+#include "graphics/vulkan/scene/GPUScene.hh"
+#include "graphics/vulkan/scene/GPUTypes.hh"
 
 #include <atomic>
 #include <functional>
@@ -115,7 +115,7 @@ namespace sp::vulkan {
         CFuncCollection funcs;
 
         LightingContext lights;
-        GPUSceneContext scene;
+        GPUScene scene;
         PreservingMap<string, Mesh> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
 
@@ -135,10 +135,6 @@ namespace sp::vulkan {
         renderer::Emissive emissive;
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;
-
-        struct EmptyImageKey {
-            vk::Format format;
-        };
 
         ImageViewPtr blankPixelImage;
 

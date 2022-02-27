@@ -4,7 +4,6 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     DeviceContext.cc
     Image.cc
     Memory.cc
-    Mesh.cc
     PerfTimer.cc
     Pipeline.cc
     RenderPass.cc
