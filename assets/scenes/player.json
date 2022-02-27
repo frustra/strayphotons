@@ -40,7 +40,7 @@
                 "/action/interact_rotate"
             ],
             "event_bindings": {
-                "/script/joystick_out": { "/action/camera_rotate": "player" }
+                "/script/joystick_out": "player/action/camera_rotate"
             },
             "focus": "GAME",
             "physics_query": {

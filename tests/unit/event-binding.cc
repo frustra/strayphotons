@@ -42,17 +42,17 @@ namespace EventBindingTests {
             auto targets = bindings.Lookup(TEST_SOURCE_BUTTON);
             Assert(targets != nullptr, "Expected source button to have bindings");
             AssertEqual(targets->size(), 1u, "Unexpected binding count");
-            AssertEqual(targets->begin()->first, ecs::Name("", "hand"), "Expected button to be bound on hand");
-            AssertEqual(targets->begin()->second, TEST_EVENT_ACTION1, "Expected button to be bound to action1");
+            AssertEqual(targets->begin()->target, ecs::Name("", "hand"), "Expected button to be bound on hand");
+            AssertEqual(targets->begin()->destQueue, TEST_EVENT_ACTION1, "Expected button to be bound to action1");
 
             targets = bindings.Lookup(TEST_SOURCE_KEY);
             Assert(targets != nullptr, "Expected source key to have bindings");
             auto it = targets->begin();
-            AssertEqual(it->first, ecs::Name("", "hand"), "Expected key to be bound on hand");
-            AssertEqual(it->second, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
+            AssertEqual(it->target, ecs::Name("", "hand"), "Expected key to be bound on hand");
+            AssertEqual(it->destQueue, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
             it++;
-            AssertEqual(it->first, ecs::Name("", "player"), "Expected key to be bound on player");
-            AssertEqual(it->second, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
+            AssertEqual(it->target, ecs::Name("", "player"), "Expected key to be bound on player");
+            AssertEqual(it->destQueue, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
             it++;
             Assert(it == targets->end(), "Expected key to have no more bindings");
         }

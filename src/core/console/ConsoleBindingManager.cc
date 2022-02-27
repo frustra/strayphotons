@@ -10,51 +10,24 @@
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
-            "console-binding",
+            "console",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
-                ent.Set<ecs::EventInput>(lock);
+                ent.Set<ecs::EventInput>(lock, INPUT_EVENT_RUN_COMMAND);
                 auto &script = ent.Set<ecs::Script>(lock);
                 script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, ecs::Entity ent, chrono_clock::duration interval) {
-                    if (ent.Has<ecs::Script, ecs::EventInput>(lock)) {
-                        auto &script = ent.Get<const ecs::Script>(lock);
-                        auto &readInput = ent.Get<const ecs::EventInput>(lock);
-                        bool hasEvents = false;
-                        for (auto &queue : readInput.events) {
-                            if (!queue.second.empty()) {
-                                hasEvents = true;
-                                break;
-                            }
-                        }
-                        if (hasEvents) {
-                            auto &input = ent.Get<ecs::EventInput>(lock);
-                            for (auto &it : input.events) {
-                                while (!it.second.empty()) {
-                                    auto command = script.GetParam<std::string>(it.first);
-                                    if (!command.empty()) { GetConsoleManager().QueueParseAndExecute(command); }
-                                    it.second.pop();
-                                }
-                            }
+                    if (ent.Has<ecs::EventInput>(lock)) {
+                        ecs::Event event;
+                        while (ecs::EventInput::Poll(lock, ent, INPUT_EVENT_RUN_COMMAND, event)) {
+                            auto command = std::get_if<std::string>(&event.data);
+                            if (command && !command->empty()) GetConsoleManager().QueueParseAndExecute(*command);
                         }
                     }
                 });
             });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);
-    }
-
-    void ConsoleBindingManager::SetConsoleInputCommand(
-        ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
-        std::string eventName,
-        std::string command) {
-        auto consoleInput = consoleInputEntity.Get(lock);
-        if (!consoleInput.Has<ecs::Script, ecs::EventInput>(lock)) Abort("Console input entity is invalid");
-
-        auto &eventInput = consoleInput.Get<ecs::EventInput>(lock);
-        if (!eventInput.IsRegistered(eventName)) eventInput.Register(eventName);
-        auto &script = consoleInput.Get<ecs::Script>(lock);
-        script.SetParam(eventName, command);
     }
 
     void ConsoleBindingManager::BindKey(string keyName, string command) {
@@ -84,11 +57,13 @@ namespace sp {
 
                 Logf("Binding %s to command: %s", keyName, command);
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                SetConsoleInputCommand(lock, eventName, command);
-
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-                bindings.Unbind(eventName, consoleInputEntity, eventName);
-                bindings.Bind(eventName, consoleInputEntity, eventName);
+                bindings.Unbind(eventName, consoleInputEntity, INPUT_EVENT_RUN_COMMAND);
+                ecs::EventBindings::Binding binding;
+                binding.target = consoleInputEntity;
+                binding.destQueue = INPUT_EVENT_RUN_COMMAND;
+                binding.setValue = command;
+                bindings.Bind(eventName, binding);
             }
         } else {
             Errorf("Key \"%s\" does not exist", keyName);

@@ -436,7 +436,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "combinator/value"
+				"door_open": "combinator"
 			}
 		},
 		{
@@ -552,8 +552,8 @@
 				"value": {
 					"operator": "binary_and",
 					"values": [
-						"sensor1/value",
-						"sensor2/value"
+						"sensor1",
+						"sensor2"
 					]
 				}
 			}

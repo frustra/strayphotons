@@ -141,7 +141,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "loaded/value"
+				"door_open": "loaded"
 			}
 		},
 		{
@@ -550,7 +550,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "loaded/value"
+				"door_open": "loaded"
 			}
 		},
 		{
@@ -777,10 +777,10 @@
 				"animation_state": {
 					"operator": "add",
 					"values": [
-						"connect-test1:loaded/value",
-						"connect-test2:loaded/value",
-						"connect-test3:loaded/value",
-						"connect-test4:loaded/value"
+						"connect-test1:loaded",
+						"connect-test2:loaded",
+						"connect-test3:loaded",
+						"connect-test4:loaded"
 					]
 				}
 			}

@@ -436,7 +436,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "sensor2/value"
+				"door_open": "sensor2"
 			}
 		},
 		{
@@ -1353,7 +1353,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "sensor1/value"
+				"door_open": "sensor1"
 			}
 		},
 		{

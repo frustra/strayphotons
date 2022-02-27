@@ -15,7 +15,7 @@
 			name: 'airlock3-4',
 			translate: [7.5, 0, 12],
 			rotate: [90, 0, 1, 0],
-			in_signal: "sensor2/value",
+			in_signal: "sensor2",
 			scene_connection: "04-symmetry",
 			triggers: {
 				"player": {
@@ -45,7 +45,7 @@
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
 			rotate: [0, 0, 1, 0],
-			input_signal: "sensor1/value"
+			input_signal: "sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {

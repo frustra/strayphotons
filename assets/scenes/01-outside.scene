@@ -37,7 +37,7 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock1-2',
 			translate: [-8.1, 0.6, -7],
-			in_signal: "sensor1/value",
+			in_signal: "sensor1",
 			scene_connection: "02-mirrors",
 			triggers: {
 				"player": {

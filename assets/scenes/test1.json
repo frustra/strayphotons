@@ -52,7 +52,7 @@
 			"signal_bindings": {
 				"animation_state": {
 					"operator": "multiply",
-					"values": [ "lasersensor/value", "animbox/constant" ]
+					"values": [ "lasersensor", "animbox/constant" ]
 				}
 			}
 		},
@@ -160,7 +160,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": "sensor1/value"
+				"animation_state": "sensor1"
 			},
 			"physics": {
 				"model": "box",

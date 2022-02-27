@@ -141,7 +141,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "loaded/value"
+				"door_open": "loaded"
 			}
 		},
 		{
@@ -550,7 +550,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": "loaded/value"
+				"door_open": "loaded"
 			}
 		},
 		{

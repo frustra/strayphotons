@@ -15,7 +15,7 @@
 			name: 'airlock4-menu',
 			translate: [4.5, 0, -3],
 			rotate: [-90, 0, 1, 0],
-			in_signal: "combinator/value",
+			in_signal: "combinator",
 			triggers: {
 				"player": {
 					"command": "setsignal global:airlock4-menu-in/door_open 0; wait 1000 loadscene menu"
@@ -27,7 +27,7 @@
 			"signal_bindings": {
 				"value": {
 					"operator": "binary_and",
-					"values": ["sensor1/value", "sensor2/value"]
+					"values": ["sensor1", "sensor2"]
 				}
 			}
 		},

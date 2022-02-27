@@ -59,11 +59,22 @@ namespace ecs {
     public:
         EventBindings() {}
 
-        using Binding = typename std::pair<NamedEntity, std::string>;
+        struct Binding {
+            NamedEntity target;
+            std::string destQueue;
+
+            std::optional<Event::EventData> setValue;
+
+            bool operator==(const Binding &other) const {
+                return target == other.target && destQueue == other.destQueue;
+            }
+        };
+
         using BindingList = typename std::vector<Binding>;
 
         void CopyBindings(const EventBindings &src);
 
+        void Bind(std::string source, const Binding &binding);
         void Bind(std::string source, NamedEntity target, std::string dest);
         void Unbind(std::string source, NamedEntity target, std::string dest);
         void UnbindSource(std::string source);
@@ -84,6 +95,8 @@ namespace ecs {
     private:
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
+
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const sp::Scene *currentScene = nullptr);
 
     static Component<EventInput> ComponentEventInput("event_input");
     static Component<EventBindings> ComponentEventBindings("event_bindings");

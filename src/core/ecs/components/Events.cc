@@ -15,28 +15,79 @@ namespace ecs {
         return true;
     }
 
-    template<>
-    bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &bindings, const picojson::value &src) {
-        for (auto bind : src.get<picojson::object>()) {
-            for (auto dest : bind.second.get<picojson::object>()) {
-                picojson::array targetList;
-                if (dest.second.is<std::string>()) {
-                    targetList.emplace_back(dest.second);
-                } else if (dest.second.is<picojson::array>()) {
-                    targetList = dest.second.get<picojson::array>();
-                } else {
-                    sp::Abort("Invalid event target");
-                }
-                for (auto target : targetList) {
-                    auto fullName = target.get<std::string>();
-                    ecs::Name targetName;
-                    if (targetName.Parse(fullName, scene)) {
-                        bindings.Bind(bind.first, NamedEntity(targetName), dest.first);
+    bool parseEventData(Event::EventData &data, const picojson::value &src) {
+        if (src.is<bool>()) {
+            data = src.get<bool>();
+        } else if (src.is<double>()) {
+            data = src.get<double>();
+        } else if (src.is<std::string>()) {
+            data = src.get<std::string>();
+        } else {
+            Errorf("Unsupported EventData value: %s", src.to_str());
+            return false;
+        }
+        return true;
+    }
+
+    bool parseEventBinding(sp::Scene *scene, EventBindings::Binding &binding, const picojson::value &src) {
+        if (src.is<std::string>()) {
+            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scene);
+            if (targetName) {
+                binding.target = NamedEntity(targetName);
+                binding.destQueue = eventName;
+            } else {
+                Errorf("Invalid event binding target: %s", src.get<std::string>());
+                return false;
+            }
+        } else if (src.is<picojson::object>()) {
+            for (auto param : src.get<picojson::object>()) {
+                if (param.first == "target") {
+                    if (param.second.is<std::string>()) {
+                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scene);
+                        if (targetName) {
+                            binding.target = NamedEntity(targetName);
+                            binding.destQueue = eventName;
+                        } else {
+                            Errorf("Invalid event binding target: %s", param.second.get<std::string>());
+                            return false;
+                        }
                     } else {
-                        Errorf("Invalid event binding target: %s", fullName);
+                        Errorf("Invalid event binding target type: %s", param.second.to_str());
                         return false;
                     }
+                } else if (param.first == "set_value") {
+                    Event::EventData eventData;
+                    if (parseEventData(eventData, param.second)) {
+                        binding.setValue = eventData;
+                    } else {
+                        Errorf("Invalid event binding set_value: %s", param.second.to_str());
+                        return false;
+                    }
+                } else {
+                    Errorf("Unknown event binding field: %s", param.first);
+                    return false;
                 }
+            }
+        } else {
+            Errorf("Unknown event binding type: %s", src.to_str());
+            return false;
+        }
+        return true;
+    }
+
+    template<>
+    bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &bindings, const picojson::value &src) {
+        for (auto param : src.get<picojson::object>()) {
+            if (param.second.is<picojson::array>()) {
+                for (auto bind : param.second.get<picojson::array>()) {
+                    EventBindings::Binding binding;
+                    if (!parseEventBinding(scene, binding, bind)) return false;
+                    bindings.Bind(param.first, binding);
+                }
+            } else {
+                EventBindings::Binding binding;
+                if (!parseEventBinding(scene, binding, param.second)) return false;
+                bindings.Bind(param.first, binding);
             }
         }
         return true;
@@ -80,6 +131,20 @@ namespace ecs {
             },
             v);
         return out;
+    }
+
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const sp::Scene *currentScene) {
+        size_t delimiter = str.find('/');
+        ecs::Name entityName;
+        if (entityName.Parse(str.substr(0, delimiter), currentScene)) {
+            if (delimiter != std::string::npos) {
+                return std::make_pair(entityName, str.substr(delimiter));
+            } else {
+                return std::make_pair(entityName, "");
+            }
+        } else {
+            return std::make_pair(ecs::Name(), "");
+        }
     }
 
     void EventInput::Register(const std::string &binding) {
@@ -143,16 +208,21 @@ namespace ecs {
         }
     }
 
-    void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
-        Binding newBinding(target, dest);
-
+    void EventBindings::Bind(std::string source, const Binding &binding) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             auto &vec = list->second;
-            if (std::find(vec.begin(), vec.end(), newBinding) == vec.end()) vec.emplace_back(newBinding);
+            if (std::find(vec.begin(), vec.end(), binding) == vec.end()) vec.emplace_back(binding);
         } else {
-            sourceToDest.emplace(source, BindingList{newBinding});
+            sourceToDest.emplace(source, BindingList{binding});
         }
+    }
+
+    void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
+        Binding binding;
+        binding.target = target;
+        binding.destQueue = dest;
+        Bind(source, binding);
     }
 
     void EventBindings::Unbind(std::string source, NamedEntity target, std::string dest) {
@@ -160,7 +230,7 @@ namespace ecs {
         if (list != sourceToDest.end()) {
             auto binding = list->second.begin();
             while (binding != list->second.end()) {
-                if (binding->first == target && binding->second == dest) {
+                if (binding->target == target && binding->destQueue == dest) {
                     binding = list->second.erase(binding);
                 } else {
                     binding++;
@@ -177,7 +247,7 @@ namespace ecs {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
-                if (binding->first == target) {
+                if (binding->target == target) {
                     binding = list.second.erase(binding);
                 } else {
                     binding++;
@@ -190,7 +260,7 @@ namespace ecs {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
-                if (binding->first == target && binding->second == dest) {
+                if (binding->target == target && binding->destQueue == dest) {
                     binding = list.second.erase(binding);
                 } else {
                     binding++;
@@ -212,7 +282,7 @@ namespace ecs {
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
-                auto ent = binding.first.Get(lock);
+                auto ent = binding.target.Get(lock);
                 if (focusLock && ent.Has<FocusLayer>(lock)) {
                     auto &layer = ent.Get<FocusLayer>(lock);
                     if (!focusLock->HasPrimaryFocus(layer)) continue;
@@ -220,12 +290,20 @@ namespace ecs {
                 if (ent.Exists(lock)) {
                     if (ent.Has<EventInput>(lock)) {
                         auto &eventInput = ent.Get<EventInput>(lock);
-                        eventInput.Add(binding.second, event);
+
+                        // Execute event modifiers before submitting to the destination queue
+                        if (binding.setValue) {
+                            Event modifiedEvent = event;
+                            modifiedEvent.data = *binding.setValue;
+                            eventInput.Add(binding.destQueue, modifiedEvent);
+                        } else {
+                            eventInput.Add(binding.destQueue, event);
+                        }
                     } else {
-                        Errorf("Tried to send event to entity without EventInput: %s", binding.first.Name().String());
+                        Errorf("Tried to send event to entity without EventInput: %s", binding.target.Name().String());
                     }
                 } else {
-                    Errorf("Tried to send event to missing entity: %s", binding.first.Name().String());
+                    Errorf("Tried to send event to missing entity: %s", binding.target.Name().String());
                 }
             }
         }
