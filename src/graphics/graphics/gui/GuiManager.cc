@@ -37,11 +37,11 @@ namespace sp {
         io.KeyMap[ImGuiKey_Y] = KEY_Y;
         io.KeyMap[ImGuiKey_Z] = KEY_Z;
 
-        guiEntity = ecs::NamedEntity("gui-manager", name);
+        guiEntity = ecs::NamedEntity("gui", name);
         keyboardEntity = ecs::NamedEntity("input", "keyboard");
 
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
-            "gui-manager",
+            "gui",
             [this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, layer);

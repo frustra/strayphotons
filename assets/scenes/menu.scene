@@ -135,7 +135,7 @@
 					"signal": "playerPresent"
 				}
 			},
-			load_signal: { "playerPresent": "global:ship_airlock-zone" }
+			load_signal: "global:ship_airlock-zone/playerPresent"
 		}) %>,
 		<%- include('prefab/button', {
 			scene: 'menu',

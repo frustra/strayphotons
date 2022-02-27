@@ -1304,9 +1304,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "blackhole1:elevator_door"
-				}
+				"animation_state": "blackhole1:elevator_door/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1353,9 +1351,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "blackhole1:elevator_door"
-				}
+				"animation_state": "blackhole1:elevator_door/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1454,9 +1450,7 @@
 			},
 			"scene_connection": "blackhole2",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "zone"
-				}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{
@@ -1470,9 +1464,7 @@
 			},
 			"scene_connection": "blackhole5",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "zone"
-				}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{
@@ -1492,9 +1484,7 @@
 			},
 			"scene_connection": "station-center",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "zone"
-				}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{

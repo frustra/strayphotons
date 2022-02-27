@@ -17,7 +17,7 @@
 	"signal_output": {},
 	"signal_bindings": {
 		<% if (locals.input_signal) { %>
-		"door_open": { "value": <%= locals.input_signal %> }
+		"door_open": <%= locals.input_signal %>
 		<% } %>
 	}
 },
@@ -37,7 +37,7 @@
 		]
 	},
 	"signal_bindings": {
-		"animation_state": { "door_open": <%= (name.startsWith(scene + ':') ? "" : (scene + ':')) + name %> }
+		"animation_state": <%= (name.startsWith(scene + ':') ? "" : (scene + ':')) + name + "/door_open" %>
 	},
 	"physics": {
 		"model": "door-panel",
@@ -65,7 +65,7 @@
 		]
 	},
 	"signal_bindings": {
-		"animation_state": { "door_open": <%= (name.startsWith(scene + ':') ? "" : (scene + ':')) + name %> }
+		"animation_state": <%= (name.startsWith(scene + ':') ? "" : (scene + ':')) + name + "/door_open" %>
 	},
 	"physics": {
 		"model": "door-panel",

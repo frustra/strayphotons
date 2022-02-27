@@ -255,7 +255,7 @@
 			},
 			"scene_connection": "blackhole2",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "zone"}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{
@@ -265,7 +265,7 @@
 			},
 			"scene_connection": "blackhole5",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "zone"}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{
@@ -276,7 +276,7 @@
 			},
 			"scene_connection": "station-center",
 			"signal_bindings": {
-				"load_scene_connection": {"playerPresent": "zone"}
+				"load_scene_connection": "zone/playerPresent"
 			}
 		},
 		{

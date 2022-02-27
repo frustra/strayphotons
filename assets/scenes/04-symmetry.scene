@@ -26,8 +26,8 @@
 			"name": "combinator",
 			"signal_bindings": {
 				"value": {
-					"_operator": "binary_and",
-					"value": ["sensor1", "sensor2"]
+					"operator": "binary_and",
+					"values": ["sensor1", "sensor2"]
 				}
 			}
 		},

@@ -110,9 +110,7 @@
 			},
 			"scene_connection": "connect-test1",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "loaded"
-				}
+				"load_scene_connection": "loaded/playerPresent"
 			},
 			"script": {
 				"prefab": "gltf",
@@ -143,9 +141,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": {
-					"value": "loaded"
-				}
+				"door_open": "loaded"
 			}
 		},
 		{
@@ -170,9 +166,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock12-out"
-				}
+				"animation_state": "global:airlock12-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -219,9 +213,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock12-out"
-				}
+				"animation_state": "global:airlock12-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -271,9 +263,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock12-in"
-				}
+				"animation_state": "global:airlock12-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -320,9 +310,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock12-in"
-				}
+				"animation_state": "global:airlock12-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -434,9 +422,7 @@
 			},
 			"scene_connection": "connect-test3",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "loaded"
-				}
+				"load_scene_connection": "loaded/playerPresent"
 			},
 			"script": {
 				"prefab": "gltf",
@@ -490,9 +476,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock23-out"
-				}
+				"animation_state": "global:airlock23-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -539,9 +523,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock23-out"
-				}
+				"animation_state": "global:airlock23-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -568,9 +550,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"door_open": {
-					"value": "loaded"
-				}
+				"door_open": "loaded"
 			}
 		},
 		{
@@ -595,9 +575,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock23-in"
-				}
+				"animation_state": "global:airlock23-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -644,9 +622,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:airlock23-in"
-				}
+				"animation_state": "global:airlock23-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",

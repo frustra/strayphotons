@@ -11,11 +11,6 @@ namespace sp {
     public:
         ConsoleBindingManager();
 
-        static void SetConsoleInputCommand(
-            ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
-            std::string eventName,
-            std::string command);
-
     private:
         // CFunc
         void BindKey(string keyName, string command);

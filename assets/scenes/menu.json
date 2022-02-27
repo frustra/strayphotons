@@ -232,9 +232,7 @@
 				]
 			},
 			"signal_bindings": {
-				"load_scene_connection": {
-					"playerPresent": "global:ship_airlock-zone"
-				}
+				"load_scene_connection": "global:ship_airlock-zone/playerPresent"
 			},
 			"scene_connection": "station-center"
 		},
@@ -449,9 +447,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-in"
-				}
+				"animation_state": "global:ship_airlock-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -498,9 +494,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-in"
-				}
+				"animation_state": "global:ship_airlock-in/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -561,9 +555,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-out"
-				}
+				"animation_state": "global:ship_airlock-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",
@@ -610,9 +602,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": {
-					"door_open": "global:ship_airlock-out"
-				}
+				"animation_state": "global:ship_airlock-out/door_open"
 			},
 			"physics": {
 				"model": "door-panel",

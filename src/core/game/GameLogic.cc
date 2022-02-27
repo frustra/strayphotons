@@ -127,12 +127,12 @@ namespace sp {
             for (auto &bindingName : bindings.GetBindingNames()) {
                 auto list = bindings.Lookup(bindingName);
                 Logf("    %s:%s", bindingName, list->empty() ? " none" : "");
-                for (auto &target : *list) {
-                    auto e = target.first.Get(lock);
+                for (auto &binding : *list) {
+                    auto e = binding.target.Get(lock);
                     if (e) {
-                        Logf("      %s on %s", target.second, ecs::ToString(lock, e));
+                        Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, e));
                     } else {
-                        Logf("      %s on %s(missing)", target.second, target.first.Name().String());
+                        Logf("      %s on %s(missing)", binding.destQueue, binding.target.Name().String());
                     }
                 }
             }
