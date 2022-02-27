@@ -29,9 +29,13 @@ namespace sp::vulkan {
 
         TextureHandle Add(const ImageViewPtr &ptr);
 
-        ImageViewPtr Get(TextureIndex i) const {
+        ImageViewPtr Get(TextureIndex i) {
+            if (i == 0) return GetBlankPixel();
             return textures[i];
         }
+
+        ImageViewPtr GetBlankPixel();
+        ImageViewPtr CreateSinglePixel(glm::vec4 value);
 
         vk::DescriptorSet GetDescriptorSet() const {
             return textureDescriptorSet;

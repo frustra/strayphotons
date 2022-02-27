@@ -6,6 +6,7 @@
 namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device, DispatchQueue &workQueue) : device(device), workQueue(workQueue) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
+        AllocateTextureIndex(); // reserve first index for blank pixel / error texture
     }
 
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
@@ -220,5 +221,30 @@ namespace sp::vulkan {
                 it++;
             }
         }
+    }
+
+    ImageViewPtr TextureSet::GetBlankPixel() {
+        auto &texPtr = textures[0];
+        if (!texPtr) texPtr = CreateSinglePixel(glm::vec4(1));
+        return texPtr;
+    }
+
+    ImageViewPtr TextureSet::CreateSinglePixel(glm::vec4 value) {
+        uint8 data[4];
+        for (size_t i = 0; i < 4; i++) {
+            data[i] = (uint8_t)(255.0 * value[i]);
+        }
+
+        ImageCreateInfo imageInfo;
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        imageInfo.extent = vk::Extent3D(1, 1, 1);
+
+        ImageViewCreateInfo viewInfo;
+        viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
+        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {data, sizeof(data)});
+        device.FlushMainQueue();
+        return fut->Get();
     }
 } // namespace sp::vulkan

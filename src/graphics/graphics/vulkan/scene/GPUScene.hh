@@ -3,12 +3,16 @@
 #include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "core/DispatchQueue.hh"
+#include "core/PreservingMap.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/scene/Texture.hh"
 
 namespace sp::vulkan {
+    class Mesh;
+
     struct GPUViewState {
         GPUViewState() {}
         GPUViewState(const ecs::View &view) {
@@ -61,6 +65,20 @@ namespace sp::vulkan {
     public:
         GPUScene(DeviceContext &device);
         void Flush();
+        void LoadState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
+        shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
+
+        struct DrawBufferIDs {
+            rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
+            rg::ResourceID drawParamsBuffer;
+        };
+
+        DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
+
+        void DrawSceneIndirect(CommandContext &cmd,
+            BufferPtr vertexBuffer,
+            BufferPtr drawCommandsBuffer,
+            BufferPtr drawParamsBuffer);
 
         BufferPtr indexBuffer;
         BufferPtr vertexBuffer;
@@ -75,5 +93,10 @@ namespace sp::vulkan {
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
         TextureSet textures;
+
+    private:
+        void FlushMeshes();
+        PreservingMap<string, Mesh> activeMeshes;
+        vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
     };
 } // namespace sp::vulkan
