@@ -1,9 +1,9 @@
 {
-	"_name": <%= name + "_root" %>,
+	"name": <%= name + "_root" %>,
 	"transform": <%= transform %>
 },
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name + "_root" %>,
@@ -25,7 +25,7 @@
     "signal_output": {}
 },
 {
-	"_name": <%= name + "_actuator" %>,
+	"name": <%= name + "_actuator" %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name + "_root" %>,

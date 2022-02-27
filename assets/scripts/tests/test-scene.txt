@@ -1,5 +1,5 @@
 loadscene test1
-setsignal player.flashlight.on 1
+setsignal player:flashlight/on 1
 steplogic
 stepphysics
 screenshot test-scene1.png

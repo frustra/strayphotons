@@ -1,12 +1,12 @@
 {
     "entities": [
         {
-            "_name": "player",
+            "name": "player",
             "transform": {},
             "character_controller": {
-                "target": "player.vr-hmd",
-                "fallback_target": "player.flatview",
-                "movement_proxy": "player.vr-origin"
+                "target": "vr-hmd",
+                "fallback_target": "flatview",
+                "movement_proxy": "vr-origin"
             },
             "trigger_group": "player",
             "event_input": [
@@ -15,7 +15,7 @@
             "signal_output": {}
         },
         {
-            "_name": "flatview",
+            "name": "flatview",
             "view": {
                 "clip": [0.1, 350]
             },
@@ -28,7 +28,7 @@
                 "parameters": {
                     "scale_x": 20.0,
                     "scale_y": -20.0,
-                    "relative_to": "player.flatview",
+                    "relative_to": "player:flatview",
                     "view_sensitivity": 0.001,
                     "rotate_sensitivity": 0.01
                 }
@@ -40,7 +40,7 @@
                 "/action/interact_rotate"
             ],
             "event_bindings": {
-                "/script/joystick_out": { "/action/camera_rotate": "player.player" }
+                "/script/joystick_out": { "/action/camera_rotate": "player" }
             },
             "focus": "GAME",
             "physics_query": {
@@ -49,7 +49,7 @@
             "signal_output": {}
         },
         {
-            "_name": "debug-spawner",
+            "name": "debug-spawner",
             "event_input": [
                 "/action/spawn"
             ],
@@ -57,13 +57,13 @@
                 "onTick": "model_spawner",
                 "parameters": {
                     "model": "cardboard-box",
-                    "relative_to": "player.flatview",
+                    "relative_to": "player:flatview",
                     "position_z": -2
                 }
             }
         },
         {
-            "_name": "left-hand-input",
+            "name": "left-hand-input",
             "renderable": {
                 "model": "box",
                 "hidden": true
@@ -75,14 +75,14 @@
             "script": {
                 "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
-                    "attach_parent": "player.vr-controller-left",
-                    "relative_to": "player.vr-hmd"
+                    "attach_parent": "player:vr-controller-left",
+                    "relative_to": "player:vr-hmd"
                 }
             },
             "signal_output": {}
         },
         {
-            "_name": "right-hand-input",
+            "name": "right-hand-input",
             "renderable": {
                 "model": "box",
                 "hidden": true
@@ -94,14 +94,14 @@
             "script": {
                 "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
-                    "attach_parent": "player.vr-controller-right",
-                    "relative_to": "player.vr-controller-right"
+                    "attach_parent": "player:vr-controller-right",
+                    "relative_to": "player:vr-controller-right"
                 }
             },
             "signal_output": {}
         },
         {
-            "_name": "left-hand",
+            "name": "left-hand",
             "physics": {
                 "model": "box",
                 "group": "player_hands",
@@ -127,7 +127,7 @@
             }
         },
         {
-            "_name": "right-hand",
+            "name": "right-hand",
             "physics": {
                 "model": "box",
                 "group": "player_hands",
@@ -153,7 +153,7 @@
             }
         },
         {
-            "_name": "flashlight",
+            "name": "flashlight",
             "transform": {
                 "parent": "flatview",
                 "translate": [0, -0.3, 0]

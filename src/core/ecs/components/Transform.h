@@ -82,6 +82,8 @@ namespace ecs {
     bool Component<TransformTree>::Load(sp::Scene *scene, TransformTree &dst, const picojson::value &src);
     template<>
     void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt);
+    template<>
+    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst);
     #endif
 } // namespace ecs
 #endif

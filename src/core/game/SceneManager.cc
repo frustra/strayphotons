@@ -250,13 +250,10 @@ namespace sp {
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
-                        auto it = scene->namedEntities.find("player");
-                        if (it != scene->namedEntities.end()) {
-                            auto stagingPlayer = it->second;
-                            if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
-                                auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
-                                player = sceneInfo.liveId;
-                            }
+                        auto stagingPlayer = scene->GetEntity(ecs::Name("player", "player"));
+                        if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
+                            auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
+                            player = sceneInfo.liveId;
                         }
                         Assert(!!player, "Player scene doesn't contain an entity named player");
                         RespawnPlayer(liveLock, player);
@@ -451,16 +448,15 @@ namespace sp {
             for (auto value : entityList.get<picojson::array>()) {
                 auto ent = value.get<picojson::object>();
 
-                if (ent.count("_name")) {
+                if (ent.count("name")) {
+                    auto fullName = ent["name"].get<string>();
+
                     ecs::Entity entity = lock.NewEntity();
-                    auto name = ent["_name"].get<string>();
-                    if (starts_with(name, "global.")) {
-                        entity.Set<ecs::Name>(lock, name);
-                    } else {
-                        entity.Set<ecs::Name>(lock, sceneName + "." + name);
+                    auto &name = entity.Set<ecs::Name>(lock);
+                    if (name.Parse(fullName, scene.get())) {
+                        Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", fullName);
+                        scene->namedEntities.emplace(name, entity);
                     }
-                    Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", name);
-                    scene->namedEntities.emplace(name, entity);
                 }
             }
 
@@ -469,20 +465,26 @@ namespace sp {
                 auto ent = value.get<picojson::object>();
 
                 ecs::Entity entity;
-                if (ent.count("_name")) {
-                    entity = scene->namedEntities[ent["_name"].get<string>()];
+                if (ent.count("name")) {
+                    auto fullName = ent["name"].get<string>();
+                    entity = scene->GetEntity(fullName);
+                    if (!entity) {
+                        Errorf("Skipping entity with invalid name: %s", fullName);
+                        continue;
+                    }
                 } else {
                     entity = lock.NewEntity();
                 }
 
                 entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
                 for (auto comp : ent) {
-                    if (comp.first[0] == '_') continue;
+                    if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
                     auto componentType = ecs::LookupComponent(comp.first);
                     if (componentType != nullptr) {
-                        bool result = componentType->LoadEntity(lock, entity, comp.second);
-                        Assertf(result, "Failed to load component type: %s", comp.first);
+                        if (!componentType->LoadEntity(lock, entity, comp.second)) {
+                            Errorf("Failed to load component, ignoring: %s", comp.first);
+                        }
                     } else {
                         Errorf("Unknown component, ignoring: %s", comp.first);
                     }
@@ -528,23 +530,32 @@ namespace sp {
             auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
             for (auto param : root.get<picojson::object>()) {
-                Tracef("Loading input for: %s", param.first);
-                auto entity = lock.NewEntity();
-                entity.Set<ecs::Name>(lock, param.first);
-                entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
-                for (auto comp : param.second.get<picojson::object>()) {
-                    if (comp.first[0] == '_') continue;
-
-                    auto componentType = ecs::LookupComponent(comp.first);
-                    if (componentType != nullptr) {
-                        bool result = componentType->LoadEntity(lock, entity, comp.second);
-                        Assertf(result, "Failed to load component type: %s", comp.first);
-                    } else {
-                        Errorf("Unknown component, ignoring: %s", comp.first);
-                    }
+                auto fullName = param.first;
+                Tracef("Loading input for: %s", fullName);
+                if (fullName.find(':') == std::string::npos) {
+                    Abortf("Binding entity does not have scene name: %s", fullName);
                 }
-                // Special case so TransformSnapshot doesn't get removed as a dangling component
-                if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
+                ecs::Name name;
+                if (name.Parse(fullName, scene.get())) {
+                    auto entity = lock.NewEntity();
+                    entity.Set<ecs::Name>(lock, name);
+                    entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
+                    for (auto comp : param.second.get<picojson::object>()) {
+                        if (comp.first[0] == '_') continue;
+
+                        auto componentType = ecs::LookupComponent(comp.first);
+                        if (componentType != nullptr) {
+                            bool result = componentType->LoadEntity(lock, entity, comp.second);
+                            Assertf(result, "Failed to load component type: %s", comp.first);
+                        } else {
+                            Errorf("Unknown component, ignoring: %s", comp.first);
+                        }
+                    }
+                    // Special case so TransformSnapshot doesn't get removed as a dangling component
+                    if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
+                } else {
+                    Errorf("Invalid binding entity name: %s", fullName);
+                }
             }
         }
         return scene;
@@ -624,7 +635,7 @@ namespace sp {
     void SceneManager::RespawnPlayer(
         ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
         ecs::Entity player) {
-        auto spawn = ecs::EntityWith<ecs::Name>(lock, "global.spawn");
+        auto spawn = ecs::EntityWith<ecs::Name>(lock, ecs::Name("global", "spawn"));
         if (spawn.Has<ecs::TransformSnapshot>(lock)) {
             auto &spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
             if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
@@ -634,7 +645,7 @@ namespace sp {
                 playerTransform = spawnTransform;
                 playerTree.pose = spawnTransform;
             }
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "player.vr-origin");
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "vr-origin"));
             if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(lock);
                 auto &vrTree = vrOrigin.Get<ecs::TransformTree>(lock);

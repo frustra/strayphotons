@@ -46,10 +46,8 @@ namespace ecs {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
                 auto parentName = subTransform.second.get<string>();
-                auto it = scene->namedEntities.find(parentName);
-                if (it != scene->namedEntities.end()) {
-                    transform.parent = it->second;
-                } else {
+                transform.parent = scene->GetEntity(parentName);
+                if (!transform.parent) {
                     Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
                     return false;
                 }
@@ -77,6 +75,20 @@ namespace ecs {
             dstTree.pose = srcTree.pose;
             dst.Set<TransformSnapshot>(dstLock, srcTree.GetGlobalTransform(srcLock));
         }
+    }
+
+    template<>
+    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstTree = dst.Get<TransformTree>(lock);
+
+        // Map transform parent from staging id to live id
+        if (src.parent) {
+            dstTree.parent = src.parent;
+        } else {
+            dstTree.parent = Entity();
+        }
+        dstTree.pose = src.pose;
+        dst.Get<TransformSnapshot>(lock);
     }
 
     Transform::Transform(glm::vec3 pos, glm::quat orientation)

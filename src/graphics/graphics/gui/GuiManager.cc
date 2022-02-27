@@ -37,8 +37,8 @@ namespace sp {
         io.KeyMap[ImGuiKey_Y] = KEY_Y;
         io.KeyMap[ImGuiKey_Z] = KEY_Z;
 
-        guiEntity = ecs::NamedEntity(name);
-        keyboardEntity = ecs::NamedEntity("keyboard");
+        guiEntity = ecs::NamedEntity("gui-manager", name);
+        keyboardEntity = ecs::NamedEntity("input", "keyboard");
 
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
             "gui-manager",
@@ -50,16 +50,16 @@ namespace sp {
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
-                    ecs::NamedEntity("player.player"),
+                    ecs::NamedEntity("player", "player"),
                     INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                    ecs::NamedEntity("player.player"),
+                    ecs::NamedEntity("player", "player"),
                     INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X,
-                    ecs::NamedEntity("player.player"),
+                    ecs::NamedEntity("player", "player"),
                     INPUT_SIGNAL_MENU_CURSOR_X);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y,
-                    ecs::NamedEntity("player.player"),
+                    ecs::NamedEntity("player", "player"),
                     INPUT_SIGNAL_MENU_CURSOR_Y);
             });
     }

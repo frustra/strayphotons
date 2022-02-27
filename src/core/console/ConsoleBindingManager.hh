@@ -22,7 +22,7 @@ namespace sp {
 
         CFuncCollection funcs;
 
-        static inline ecs::NamedEntity consoleInputEntity = ecs::NamedEntity("console-input");
-        static inline ecs::NamedEntity keyboardEntity = ecs::NamedEntity("keyboard");
+        static inline ecs::NamedEntity consoleInputEntity = ecs::NamedEntity("console", "input");
+        static inline ecs::NamedEntity keyboardEntity = ecs::NamedEntity("input", "keyboard");
     };
 } // namespace sp

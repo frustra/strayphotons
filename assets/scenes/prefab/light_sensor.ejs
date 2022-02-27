@@ -1,6 +1,6 @@
 <% if (!locals.type) { type = "light"; } %>
 {
-	"_name": <%= name + "_plate" %>,
+	"name": <%= name + "_plate" %>,
 	"renderable": <%= 'sensor-plate-' + type %>,
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
@@ -12,7 +12,7 @@
 	}
 },
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"transform": {
 		"parent": <%= name + "_plate" %>,
 		"translate": [0, 0, 0.015]

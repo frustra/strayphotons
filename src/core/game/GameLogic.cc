@@ -35,8 +35,8 @@ namespace sp {
     void GameLogic::PrintDebug() {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();
-        auto player = ecs::EntityWith<ecs::Name>(lock, "player.player");
-        auto flatview = ecs::EntityWith<ecs::Name>(lock, "player.flatview");
+        auto player = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "player"));
+        auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
         if (flatview.Has<ecs::TransformSnapshot>(lock)) {
             auto &transform = flatview.Get<ecs::TransformSnapshot>(lock);
             auto position = transform.GetPosition();
@@ -76,16 +76,12 @@ namespace sp {
         }
     }
 
-    void GameLogic::PrintEvents(std::string entityName) {
+    void GameLogic::PrintEvents() {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>>();
 
         auto &focusLock = lock.Get<ecs::FocusLock>();
         for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
-            if (!entityName.empty()) {
-                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
-            }
-
             if (ent.Has<ecs::FocusLayer>(lock)) {
                 auto &layer = ent.Get<ecs::FocusLayer>(lock);
                 std::stringstream ss;
@@ -112,10 +108,6 @@ namespace sp {
         }
 
         for (auto ent : lock.EntitiesWith<ecs::EventBindings>()) {
-            if (!entityName.empty()) {
-                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
-            }
-
             if (ent.Has<ecs::FocusLayer>(lock)) {
                 auto &layer = ent.Get<ecs::FocusLayer>(lock);
                 std::stringstream ss;
@@ -140,22 +132,18 @@ namespace sp {
                     if (e) {
                         Logf("      %s on %s", target.second, ecs::ToString(lock, e));
                     } else {
-                        Logf("      %s on %s(missing)", target.second, target.first.Name());
+                        Logf("      %s on %s(missing)", target.second, target.first.Name().String());
                     }
                 }
             }
         }
     }
 
-    void GameLogic::PrintSignals(std::string entityName) {
+    void GameLogic::PrintSignals() {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>>();
         Logf("Signal outputs:");
         for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
-            if (!entityName.empty()) {
-                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
-            }
-
             auto &output = ent.Get<ecs::SignalOutput>(lock);
             auto &signals = output.GetSignals();
 
@@ -168,10 +156,6 @@ namespace sp {
         Logf("");
         Logf("Signal bindings:");
         for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
-            if (!entityName.empty()) {
-                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
-            }
-
             auto &bindings = ent.Get<ecs::SignalBindings>(lock);
             auto bindingNames = bindings.GetBindingNames();
             Logf("  %s:%s", ecs::ToString(lock, ent), bindingNames.empty() ? " none" : "");
@@ -191,7 +175,7 @@ namespace sp {
                     if (e) {
                         Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), value);
                     } else {
-                        Logf("      %s on %s(missing): %.2f", source.second, source.first.Name(), value);
+                        Logf("      %s on %s(missing): %.2f", source.second, source.first.Name().String(), value);
                     }
                 }
             }

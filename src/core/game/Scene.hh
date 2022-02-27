@@ -3,9 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/components/Light.hh"
 #include "ecs/components/SceneInfo.hh"
-#include "ecs/components/Transform.h"
 #include "game/SceneType.hh"
 
 #include <bitset>
@@ -24,17 +22,33 @@ namespace sp {
 
         const std::string name;
         const SceneType type;
-        robin_hood::unordered_flat_map<std::string, ecs::Entity> namedEntities;
 
         ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
-            std::string entityName = "");
+            ecs::Name name = ecs::Name());
         ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             ecs::Entity prefabRoot,
-            std::string entityName = "");
+            ecs::Name name = ecs::Name());
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
+
+        ecs::Entity GetEntity(const ecs::Name &entityName) const {
+            auto it = namedEntities.find(entityName);
+            if (it != namedEntities.end()) return it->second;
+            return {};
+        }
+
+        ecs::Entity GetEntity(const std::string &fullName) const {
+            ecs::Name entityName;
+            if (entityName.Parse(fullName, this)) {
+                auto it = namedEntities.find(entityName);
+                if (it != namedEntities.end()) return it->second;
+            } else {
+                Errorf("Invalid entity name: %s", fullName);
+            }
+            return {};
+        }
 
         template<typename T>
         static void ApplyComponent(ecs::Lock<ecs::ReadAll> src,
@@ -94,6 +108,8 @@ namespace sp {
     private:
         std::shared_ptr<const Asset> asset;
         bool active = false;
+
+        robin_hood::unordered_flat_map<ecs::Name, ecs::Entity> namedEntities;
 
         friend class SceneManager;
     };

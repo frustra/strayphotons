@@ -7,7 +7,7 @@
 			scene_connection: "03-dark",
 			triggers: {
 				"player": {
-					"command": "r.MirrorRecursion 3; setsignal global.airlock3-4-out.door_open 1; wait 2000 removescene 03-dark"
+					"command": "r.MirrorRecursion 3; setsignal global:airlock3-4-out/door_open 1; wait 2000 removescene 03-dark"
 				}
 			}
 		}) %>,
@@ -15,19 +15,19 @@
 			name: 'airlock4-menu',
 			translate: [4.5, 0, -3],
 			rotate: [-90, 0, 1, 0],
-			in_signal: "04-symmetry.combinator",
+			in_signal: "combinator",
 			triggers: {
 				"player": {
-					"command": "setsignal global.airlock4-menu-in.door_open 0; wait 1000 loadscene menu"
+					"command": "setsignal global:airlock4-menu-in/door_open 0; wait 1000 loadscene menu"
 				}
 			}
 		}) %>,
 		{
-			"_name": "combinator",
+			"name": "combinator",
 			"signal_bindings": {
 				"value": {
 					"_operator": "binary_and",
-					"value": ["04-symmetry.sensor1", "04-symmetry.sensor2"]
+					"value": ["sensor1", "sensor2"]
 				}
 			}
 		},
@@ -91,7 +91,7 @@
 			rotate: [-143, 0, 1, 0]
 		}) %>,
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"rotate": [0, 0, 1, 0],
 				"translate": [4.5, 0.05, 10.5]

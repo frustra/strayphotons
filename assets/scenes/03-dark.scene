@@ -7,7 +7,7 @@
 			scene_connection: "02-mirrors",
 			triggers: {
 				"player": {
-					"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global.airlock2-3-out.door_open 1; wait 2000 removescene 02-mirrors"
+					"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global:airlock2-3-out/door_open 1; wait 2000 removescene 02-mirrors"
 				}
 			}
 		}) %>,
@@ -15,11 +15,11 @@
 			name: 'airlock3-4',
 			translate: [7.5, 0, 12],
 			rotate: [90, 0, 1, 0],
-			in_signal: "03-dark.sensor2",
+			in_signal: "sensor2",
 			scene_connection: "04-symmetry",
 			triggers: {
 				"player": {
-					"command": "setsignal global.airlock3-4-in.door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
+					"command": "setsignal global:airlock3-4-in/door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
 				}
 			}
 		}) %>,
@@ -45,7 +45,7 @@
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
 			rotate: [0, 0, 1, 0],
-			input_signal: "03-dark.sensor1"
+			input_signal: "sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {
@@ -108,7 +108,7 @@
 		}) %>,
 
 		{
-			"_name": "global.spawn",
+			"name": "global:spawn",
 			"transform": {
 				"rotate": [270, 0, 1, 0],
 				"translate": [-1.7, 0.05, 1.4]

@@ -31,7 +31,7 @@
 
 namespace sp {
     static CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
-        "player.flatview",
+        "player:flatview",
         "The entity with a View component to display");
 
     #ifdef SP_TEST_MODE
@@ -156,7 +156,8 @@ namespace sp {
         if (game->menuGui) game->menuGui->BeforeFrame();
 
         if (flatviewEntity == ecs::NamedEntity() || CVarFlatviewEntity.Changed()) {
-            flatviewEntity = ecs::NamedEntity(CVarFlatviewEntity.Get(true));
+            ecs::Name flatviewName;
+            if (flatviewName.Parse(CVarFlatviewEntity.Get(true))) { flatviewEntity = ecs::NamedEntity(flatviewName); }
         }
 
         {

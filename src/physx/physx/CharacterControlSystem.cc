@@ -110,7 +110,9 @@ namespace sp {
             glm::vec3 targetPosition = transform.GetPosition();
 
             auto target = controller.target.Get(lock);
-            if (!target.Has<ecs::TransformTree>(lock)) target = controller.fallbackTarget.Get(lock);
+            if (!target.Has<ecs::TransformTree>(lock) || !target.Get<const ecs::TransformTree>(lock).parent) {
+                target = controller.fallbackTarget.Get(lock);
+            }
             if (target.Has<ecs::TransformTree>(lock)) {
                 auto &targetTree = target.Get<const ecs::TransformTree>(lock);
                 targetPosition = targetTree.GetGlobalTransform(lock).GetPosition();

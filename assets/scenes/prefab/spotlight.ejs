@@ -1,5 +1,5 @@
 {
-	"_name": <%= name %>,
+	"name": <%= name %>,
 	"light": {
 		<% if (locals.on != null) { %>"on": <%= on %>,<% } %>
 		"tint": <%= tint %>,
@@ -33,7 +33,7 @@
 	}
 },
 {
-	"_name": <%= name + "-bulb" %>,
+	"name": <%= name + "-bulb" %>,
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,

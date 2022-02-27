@@ -4,7 +4,7 @@
 
 namespace ecs {
     const Entity &NamedEntity::Get(Lock<Read<ecs::Name>> lock) {
-        if (name.empty()) {
+        if (!name) {
             ent = Entity();
         } else {
             if (ent.Has<ecs::Name>(lock)) {
@@ -16,7 +16,7 @@ namespace ecs {
     }
 
     Entity NamedEntity::Get(Lock<Read<ecs::Name>> lock) const {
-        if (name.empty()) {
+        if (!name) {
             return Entity();
         } else {
             if (ent.Has<ecs::Name>(lock)) {
