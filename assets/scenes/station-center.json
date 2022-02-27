@@ -554,9 +554,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -662,9 +662,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -932,8 +932,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "spotlight-01",
-					"gltf_render": true
+					"model": "spotlight-01",
+					"render": true
 				}
 			},
 			"transform": {
@@ -1219,9 +1219,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -1368,8 +1368,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "spotlight-01",
-					"gltf_render": true
+					"model": "spotlight-01",
+					"render": true
 				}
 			},
 			"transform": {

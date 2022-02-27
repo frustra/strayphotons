@@ -136,9 +136,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "duck",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"model": "duck",
+					"render": true,
+					"physics": "dynamic"
 				}
 			}
 		},

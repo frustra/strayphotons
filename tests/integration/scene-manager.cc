@@ -69,7 +69,7 @@ namespace SceneManagerTests {
     void TestBasicLoadAddRemove() {
         {
             Timer t("Add system scene first");
-            Scenes.QueueActionAndBlock(sp::SceneAction::AddSystemScene, "system", systemSceneCallback);
+            Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -148,7 +148,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add system scene second");
-            Scenes.QueueActionAndBlock(sp::SceneAction::AddSystemScene, "system", systemSceneCallback);
+            Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -168,7 +168,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload system scene");
-            Scenes.QueueActionAndBlock(sp::SceneAction::AddSystemScene, "system", systemSceneCallback);
+            Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();

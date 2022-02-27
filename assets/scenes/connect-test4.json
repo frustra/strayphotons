@@ -115,9 +115,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "airlock",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "airlock",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},
@@ -134,9 +134,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -233,9 +233,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -427,9 +427,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "airlock",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "airlock",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},
@@ -446,9 +446,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -543,9 +543,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},

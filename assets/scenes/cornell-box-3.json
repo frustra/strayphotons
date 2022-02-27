@@ -7,8 +7,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "cornell-box-3",
-					"gltf_render": true
+					"model": "cornell-box-3",
+					"render": true
 				}
 			}
 		},

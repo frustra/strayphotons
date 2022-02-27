@@ -67,5 +67,5 @@ namespace ecs {
     static Component<View> ComponentView("view");
 
     template<>
-    bool Component<View>::Load(sp::Scene *scene, View &dst, const picojson::value &src);
+    bool Component<View>::Load(ScenePtr scenePtr, View &dst, const picojson::value &src);
 } // namespace ecs

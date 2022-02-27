@@ -45,5 +45,5 @@ namespace ecs {
     static Component<Animation> ComponentAnimation("animation");
 
     template<>
-    bool Component<Animation>::Load(sp::Scene *scene, Animation &dst, const picojson::value &src);
+    bool Component<Animation>::Load(ScenePtr scenePtr, Animation &dst, const picojson::value &src);
 } // namespace ecs

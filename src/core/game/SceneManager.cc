@@ -94,8 +94,8 @@ namespace sp {
             actionQueue.pop_front();
             lock.unlock();
 
-            if (item.action == SceneAction::AddSystemScene) {
-                ZoneScopedN("AddSystemScene");
+            if (item.action == SceneAction::ApplySystemScene) {
+                ZoneScopedN("ApplySystemScene");
                 ZoneStr(item.sceneName);
                 auto scene = stagedScenes.Load(item.sceneName);
                 if (!scene) {

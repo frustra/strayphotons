@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<VoxelArea>::Load(sp::Scene *scene, VoxelArea &voxelArea, const picojson::value &src) {
+    bool Component<VoxelArea>::Load(ScenePtr scenePtr, VoxelArea &voxelArea, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "min") {
                 voxelArea.min = sp::MakeVec3(param.second);

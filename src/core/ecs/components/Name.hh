@@ -14,7 +14,7 @@ namespace ecs {
         Name() {}
         Name(std::string scene, std::string entity) : scene(scene), entity(entity) {}
 
-        bool Parse(std::string fullName, const sp::Scene *currentScene = GLM_NULLPTR);
+        bool Parse(std::string fullName, const sp::Scene *currentScene = nullptr);
 
         std::string String() const {
             if (scene.empty()) return entity;

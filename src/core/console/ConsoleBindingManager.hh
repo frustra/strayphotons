@@ -13,7 +13,7 @@ namespace sp {
 
     private:
         // CFunc
-        void BindKey(string keyName, string command);
+        void BindKey(std::string keyName, std::string command);
 
         CFuncCollection funcs;
 

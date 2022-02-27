@@ -12,9 +12,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "01-outside",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "01-outside",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},

@@ -6,52 +6,43 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
-    template<>
-    bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src) {
+    bool parseScriptState(ScriptState &state, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
-                if (param.second.is<picojson::array>()) {
-                    for (auto nameParam : param.second.get<picojson::array>()) {
-                        auto scriptName = nameParam.get<std::string>();
-                        auto it = ScriptDefinitions.find(scriptName);
-                        if (it != ScriptDefinitions.end()) {
-                            dst.AddOnTick(it->second);
-                        } else {
-                            Errorf("Script has unknown onTick event: %s", scriptName);
-                            return false;
-                        }
-                    }
-                } else {
+                if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
                     auto it = ScriptDefinitions.find(scriptName);
                     if (it != ScriptDefinitions.end()) {
-                        dst.AddOnTick(it->second);
-                    } else {
-                        Errorf("Script has unknown onTick event: %s", scriptName);
-                        return false;
-                    }
-                }
-            } else if (param.first == "prefab") {
-                if (param.second.is<picojson::array>()) {
-                    for (auto nameParam : param.second.get<picojson::array>()) {
-                        auto scriptName = nameParam.get<std::string>();
-                        auto it = PrefabDefinitions.find(scriptName);
-                        if (it != PrefabDefinitions.end()) {
-                            dst.AddPrefab(it->second);
-                        } else {
-                            Errorf("Script has unknown prefab definition: %s", scriptName);
+                        if (state) {
+                            Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
                         }
+                        state.callback = it->second;
+                    } else {
+                        Errorf("Script has unknown onTick definition: %s", scriptName);
+                        return false;
                     }
                 } else {
+                    Errorf("Script onTick has invalid definition: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "prefab") {
+                if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
                     auto it = PrefabDefinitions.find(scriptName);
                     if (it != PrefabDefinitions.end()) {
-                        dst.AddPrefab(it->second);
+                        if (state) {
+                            Errorf("Script has multiple definitions: %s", scriptName);
+                            return false;
+                        }
+                        state.callback = it->second;
                     } else {
                         Errorf("Script has unknown prefab definition: %s", scriptName);
                         return false;
                     }
+                } else {
+                    Errorf("Script prefab has invalid definition: %s", param.second.to_str());
+                    return false;
                 }
             } else if (param.first == "parameters") {
                 for (auto scriptParam : param.second.get<picojson::object>()) {
@@ -63,29 +54,51 @@ namespace ecs {
                             for (auto arrayParam : array) {
                                 list.emplace_back(arrayParam.get<std::string>());
                             }
-                            dst.SetParam(scriptParam.first, list);
+                            state.SetParam(scriptParam.first, list);
                         } else if (array.front().is<bool>()) {
                             std::vector<bool> list;
                             for (auto arrayParam : array) {
                                 list.emplace_back(arrayParam.get<bool>());
                             }
-                            dst.SetParam(scriptParam.first, list);
+                            state.SetParam(scriptParam.first, list);
                         } else if (array.front().is<double>()) {
                             std::vector<double> list;
                             for (auto arrayParam : array) {
                                 list.emplace_back(arrayParam.get<double>());
                             }
-                            dst.SetParam(scriptParam.first, list);
+                            state.SetParam(scriptParam.first, list);
                         }
                     } else if (scriptParam.second.is<std::string>()) {
-                        dst.SetParam(scriptParam.first, scriptParam.second.get<std::string>());
+                        state.SetParam(scriptParam.first, scriptParam.second.get<std::string>());
                     } else if (scriptParam.second.is<bool>()) {
-                        dst.SetParam(scriptParam.first, scriptParam.second.get<bool>());
+                        state.SetParam(scriptParam.first, scriptParam.second.get<bool>());
                     } else {
-                        dst.SetParam(scriptParam.first, scriptParam.second.get<double>());
+                        state.SetParam(scriptParam.first, scriptParam.second.get<double>());
                     }
                 }
             }
+        }
+        return state;
+    }
+
+    template<>
+    bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src) {
+        if (src.is<picojson::object>()) {
+            ScriptState state(scenePtr);
+            if (parseScriptState(state, src)) dst.scripts.push_back(std::move(state));
+        } else if (src.is<picojson::array>()) {
+            for (auto entry : src.get<picojson::array>()) {
+                if (entry.is<picojson::object>()) {
+                    ScriptState state(scenePtr);
+                    if (parseScriptState(state, entry)) dst.scripts.push_back(std::move(state));
+                } else {
+                    Errorf("Invalid script entry: %s", entry.to_str());
+                    return false;
+                }
+            }
+        } else {
+            Errorf("Invalid script component: %s", src.to_str());
+            return false;
         }
         return true;
     }
@@ -93,19 +106,6 @@ namespace ecs {
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstScript = dst.Get<Script>(lock);
-        dstScript.CopyCallbacks(src);
-        dstScript.CopyParams(src);
-    }
-
-    void Script::CopyCallbacks(const Script &src) {
-        if (onTickCallbacks.empty()) onTickCallbacks = src.onTickCallbacks;
-        // Ignore prefab callbacks, they aren't used in the live ECS
-        // if (prefabCallbacks.empty()) prefabCallbacks = src.prefabCallbacks;
-    }
-
-    void Script::CopyParams(const Script &src) {
-        for (auto &[name, param] : src.scriptParameters) {
-            scriptParameters.insert_or_assign(name, param);
-        }
+        if (dstScript.scripts.empty()) dstScript.scripts.assign(src.scripts.begin(), src.scripts.end());
     }
 } // namespace ecs

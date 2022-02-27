@@ -23,8 +23,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "sponza",
-					"gltf_render": true
+					"model": "sponza",
+					"render": true
 				}
 			}
 		},
@@ -118,9 +118,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "duck",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"model": "duck",
+					"render": true,
+					"physics": "dynamic"
 				}
 			}
 		},
@@ -149,8 +149,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "mcube",
-					"gltf_render": true
+					"model": "mcube",
+					"render": true
 				}
 			}
 		},
@@ -217,8 +217,8 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "mcube",
-					"gltf_render": true
+					"model": "mcube",
+					"render": true
 				}
 			}
 		},

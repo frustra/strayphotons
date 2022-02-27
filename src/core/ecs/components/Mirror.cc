@@ -6,7 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Mirror>::Load(sp::Scene *scene, Mirror &mirror, const picojson::value &src) {
+    bool Component<Mirror>::Load(ScenePtr scenePtr, Mirror &mirror, const picojson::value &src) {
         mirror.size = sp::MakeVec2(src);
         return true;
     }

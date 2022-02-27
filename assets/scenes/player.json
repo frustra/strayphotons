@@ -23,16 +23,27 @@
                 "parent": "player",
                 "translate": [0, 1.8, 0]
             },
-            "script": {
-                "onTick": ["joystick_calibration", "relative_movement", "camera_view", "grab_object"],
-                "parameters": {
-                    "scale_x": 20.0,
-                    "scale_y": -20.0,
-                    "relative_to": "player:flatview",
-                    "view_sensitivity": 0.001,
-                    "rotate_sensitivity": 0.01
+            "script": [
+                {
+                    "onTick": "joystick_calibration",
+                    "parameters": {
+                        "scale_x": 20.0,
+                        "scale_y": -20.0
+                    }
+                },
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "player:flatview" }
+                },
+                {
+                    "onTick": "camera_view",
+                    "parameters": { "view_sensitivity": 0.001 }
+                },
+                {
+                    "onTick": "grab_object",
+                    "parameters": { "rotate_sensitivity": 0.01 }
                 }
-            },
+            ],
             "event_input": [
                 "/script/joystick_in",
                 "/action/camera_rotate",
@@ -72,13 +83,16 @@
                 "scale": [0.01, 0.01, 0.01],
                 "rotate": [180, 0, 1, 0]
             },
-            "script": {
-                "onTick": ["auto_attach", "relative_movement"],
-                "parameters": {
-                    "attach_parent": "player:vr-controller-left",
-                    "relative_to": "player:vr-hmd"
+            "script": [
+                {
+                    "onTick": "auto_attach",
+                    "parameters": { "attach_parent": "player:vr-controller-left" }
+                },
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "player:vr-hmd" }
                 }
-            },
+            ],
             "signal_output": {}
         },
         {
@@ -91,13 +105,16 @@
                 "scale": [0.01, 0.01, 0.01],
                 "rotate": [180, 0, 1, 0]
             },
-            "script": {
-                "onTick": ["auto_attach", "relative_movement"],
-                "parameters": {
-                    "attach_parent": "player:vr-controller-right",
-                    "relative_to": "player:vr-controller-right"
+            "script": [
+                {
+                    "onTick": "auto_attach",
+                    "parameters": { "attach_parent": "player:vr-controller-right" }
+                },
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "player:vr-controller-right" }
                 }
-            },
+            ],
             "signal_output": {}
         },
         {
@@ -122,7 +139,7 @@
                 "hidden": true
             },
             "script": {
-                "onTick": ["lazy_load_model"],
+                "onTick": "lazy_load_model",
                 "parameters": { "model_name": "vr_glove_left" }
             }
         },
@@ -148,7 +165,7 @@
                 "hidden": true
             },
             "script": {
-                "onTick": ["lazy_load_model"],
+                "onTick": "lazy_load_model",
                 "parameters": { "model_name": "vr_glove_right" }
             }
         },

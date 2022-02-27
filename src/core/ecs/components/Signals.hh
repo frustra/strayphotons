@@ -70,9 +70,9 @@ namespace ecs {
     static Component<SignalBindings> ComponentSignalBindings("signal_bindings");
 
     template<>
-    bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &dst, const picojson::value &src);
+    bool Component<SignalOutput>::Load(ScenePtr scenePtr, SignalOutput &dst, const picojson::value &src);
     template<>
-    bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &dst, const picojson::value &src);
+    bool Component<SignalBindings>::Load(ScenePtr scenePtr, SignalBindings &dst, const picojson::value &src);
     template<>
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst);
     template<>

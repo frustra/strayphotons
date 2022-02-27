@@ -103,9 +103,9 @@ namespace ecs {
     static Component<EventBindings> ComponentEventBindings("event_bindings");
 
     template<>
-    bool Component<EventInput>::Load(sp::Scene *scene, EventInput &dst, const picojson::value &src);
+    bool Component<EventInput>::Load(ScenePtr scenePtr, EventInput &dst, const picojson::value &src);
     template<>
-    bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &dst, const picojson::value &src);
+    bool Component<EventBindings>::Load(ScenePtr scenePtr, EventBindings &dst, const picojson::value &src);
     template<>
     void Component<EventInput>::Apply(const EventInput &src, Lock<AddRemove> lock, Entity dst);
     template<>

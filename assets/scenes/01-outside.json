@@ -24,9 +24,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "01-outside",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "01-outside",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},
@@ -82,16 +82,22 @@
 				"light_value_b": 0,
 				"value": true
 			},
-			"script": {
-				"onTick": "light_sensor",
-				"prefab": "gltf",
-				"parameters": {
-					"trigger_level": -0.01,
-					"gltf_model": "sensor",
-					"gltf_render": true,
-					"gltf_physics": "static"
+			"script": [
+				{
+					"onTick": "light_sensor",
+					"parameters": {
+						"trigger_level": -0.01
+					}
+				},
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "sensor",
+						"render": true,
+						"physics": "static"
+					}
 				}
-			}
+			]
 		},
 		{
 			"name": "global:airlock1-2",
@@ -106,9 +112,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "airlock",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "airlock",
+					"render": true,
+					"physics": "static"
 				}
 			}
 		},
@@ -147,9 +153,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},
@@ -244,9 +250,9 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"gltf_model": "door-frame",
-					"gltf_render": true,
-					"gltf_physics": "static"
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
 				}
 			},
 			"signal_output": {},

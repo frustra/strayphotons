@@ -9,7 +9,8 @@
 
 namespace ecs {
     template<>
-    bool Component<Physics>::Load(sp::Scene *scene, Physics &physics, const picojson::value &src) {
+    bool Component<Physics>::Load(ScenePtr scenePtr, Physics &physics, const picojson::value &src) {
+        auto scene = scenePtr.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
                 physics.model = sp::GAssets.LoadGltf(param.second.get<string>());
@@ -130,7 +131,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<PhysicsQuery>::Load(sp::Scene *scene, PhysicsQuery &query, const picojson::value &src) {
+    bool Component<PhysicsQuery>::Load(ScenePtr scenePtr, PhysicsQuery &query, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "raycast") query.raycastQueryDistance = param.second.get<double>();
         }

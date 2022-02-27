@@ -9,22 +9,30 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "console",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_RUN_COMMAND);
                 auto &script = ent.Set<ecs::Script>(lock);
-                script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, ecs::Entity ent, chrono_clock::duration interval) {
-                    if (ent.Has<ecs::EventInput>(lock)) {
-                        ecs::Event event;
-                        while (ecs::EventInput::Poll(lock, ent, INPUT_EVENT_RUN_COMMAND, event)) {
-                            auto command = std::get_if<std::string>(&event.data);
-                            if (command && !command->empty()) GetConsoleManager().QueueParseAndExecute(*command);
+                script.AddOnTick(scene,
+                    [](ecs::ScriptState &state,
+                        ecs::Lock<ecs::WriteAll> lock,
+                        ecs::Entity ent,
+                        chrono_clock::duration interval) {
+                        if (ent.Has<ecs::EventInput>(lock)) {
+                            ecs::Event event;
+                            while (ecs::EventInput::Poll(lock, ent, INPUT_EVENT_RUN_COMMAND, event)) {
+                                auto command = std::get_if<std::string>(&event.data);
+                                if (command && !command->empty()) {
+                                    GetConsoleManager().QueueParseAndExecute(*command);
+                                } else {
+                                    Errorf("Console binding received invalid event: %s", event.toString());
+                                }
+                            }
                         }
-                    }
-                });
+                    });
             });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);
@@ -59,6 +67,7 @@ namespace sp {
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
                 bindings.Unbind(eventName, consoleInputEntity, INPUT_EVENT_RUN_COMMAND);
+
                 ecs::EventBindings::Binding binding;
                 binding.target = consoleInputEntity;
                 binding.destQueue = INPUT_EVENT_RUN_COMMAND;

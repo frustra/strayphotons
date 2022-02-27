@@ -48,7 +48,7 @@ namespace ecs {
     struct Physics {
         Physics() {}
         Physics(sp::AsyncPtr<sp::Gltf> model,
-            size_t meshIndex,
+            size_t meshIndex = 0,
             PhysicsGroup group = PhysicsGroup::World,
             bool dynamic = true,
             float density = 1.0f)
@@ -130,9 +130,9 @@ namespace ecs {
     static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
 
     template<>
-    bool Component<Physics>::Load(sp::Scene *scene, Physics &dst, const picojson::value &src);
+    bool Component<Physics>::Load(ScenePtr scenePtr, Physics &dst, const picojson::value &src);
     template<>
-    bool Component<PhysicsQuery>::Load(sp::Scene *scene, PhysicsQuery &dst, const picojson::value &src);
+    bool Component<PhysicsQuery>::Load(ScenePtr scenePtr, PhysicsQuery &dst, const picojson::value &src);
     template<>
     void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst);
 } // namespace ecs

@@ -11,35 +11,13 @@
 #include <vector>
 
 namespace ecs {
-    using ScriptFunc = std::function<void(Lock<WriteAll>, Entity, chrono_clock::duration)>;
-    using PrefabFunc = std::function<void(Lock<AddRemove>, Entity)>;
+    class ScriptState;
 
-    class Script {
+    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
+    using PrefabFunc = std::function<void(ScriptState &, Lock<AddRemove>, Entity)>;
+
+    class ScriptState {
     public:
-        void AddOnTick(ScriptFunc callback) {
-            onTickCallbacks.push_back(callback);
-        }
-
-        void AddPrefab(PrefabFunc callback) {
-            prefabCallbacks.push_back(callback);
-        }
-
-        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
-            ZoneScopedN("OnTick");
-            ZoneValue(ent.index);
-            for (auto &callback : onTickCallbacks) {
-                callback(lock, ent, interval);
-            }
-        }
-
-        void Prefab(Lock<AddRemove> lock, const Entity &ent) {
-            ZoneScopedN("Prefab");
-            ZoneValue(ent.index);
-            for (auto &callback : prefabCallbacks) {
-                callback(lock, ent);
-            }
-        }
-
         using ParameterType = typename std::variant<bool,
             double,
             std::string,
@@ -49,38 +27,76 @@ namespace ecs {
             std::vector<double>,
             std::vector<std::string>>;
 
-        void CopyCallbacks(const Script &src);
-        void CopyParams(const Script &src);
+        ScriptState() : callback(std::monostate()) {}
+        ScriptState(ScenePtr scene) : scene(scene), callback(std::monostate()) {}
+        ScriptState(ScenePtr scene, OnTickFunc callback) : scene(scene), callback(callback) {}
+        ScriptState(ScenePtr scene, PrefabFunc callback) : scene(scene), callback(callback) {}
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
-            scriptParameters[name] = value;
+            parameters[name] = value;
         }
 
         template<typename T>
         T GetParam(std::string name) const {
-            auto itr = scriptParameters.find(name);
-            if (itr == scriptParameters.end()) {
+            auto itr = parameters.find(name);
+            if (itr == parameters.end()) {
                 return T();
             } else {
                 return std::get<T>(itr->second);
             }
         }
 
-    private:
-        std::vector<ScriptFunc> onTickCallbacks;
-        std::vector<PrefabFunc> prefabCallbacks;
+        operator bool() const {
+            return !std::holds_alternative<std::monostate>(callback);
+        }
 
-        robin_hood::unordered_flat_map<std::string, ParameterType> scriptParameters;
+        ScenePtr scene;
+        std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
+
+    private:
+        robin_hood::unordered_flat_map<std::string, ParameterType> parameters;
+
+        friend struct Script;
+    };
+
+    struct Script {
+        ScriptState &AddOnTick(ScenePtr scene, OnTickFunc callback) {
+            return scripts.emplace_back(scene, callback);
+        }
+
+        ScriptState &AddPrefab(ScenePtr scene, PrefabFunc callback) {
+            return scripts.emplace_back(scene, callback);
+        }
+
+        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
+            ZoneScopedN("OnTick");
+            ZoneValue(ent.index);
+            for (auto &state : scripts) {
+                auto callback = std::get_if<OnTickFunc>(&state.callback);
+                if (callback) (*callback)(state, lock, ent, interval);
+            }
+        }
+
+        void Prefab(Lock<AddRemove> lock, const Entity &ent) {
+            ZoneScopedN("Prefab");
+            ZoneValue(ent.index);
+            for (auto &state : scripts) {
+                auto callback = std::get_if<PrefabFunc>(&state.callback);
+                if (callback) (*callback)(state, lock, ent);
+            }
+        }
+
+        std::vector<ScriptState> scripts;
     };
 
     static Component<Script> ComponentScript("script");
 
-    extern robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions;
+    extern robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
     extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
 
     template<>
-    bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src);
+    bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

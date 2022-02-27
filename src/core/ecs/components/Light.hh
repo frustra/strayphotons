@@ -18,5 +18,5 @@ namespace ecs {
     static Component<Light> ComponentLight("light");
 
     template<>
-    bool Component<Light>::Load(sp::Scene *scene, Light &dst, const picojson::value &src);
+    bool Component<Light>::Load(ScenePtr scenePtr, Light &dst, const picojson::value &src);
 } // namespace ecs

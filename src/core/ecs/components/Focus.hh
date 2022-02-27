@@ -35,7 +35,7 @@ namespace ecs {
     static Component<FocusLayer> ComponentFocusLayer("focus");
 
     template<>
-    bool Component<FocusLayer>::Load(sp::Scene *scene, FocusLayer &dst, const picojson::value &src);
+    bool Component<FocusLayer>::Load(ScenePtr scenePtr, FocusLayer &dst, const picojson::value &src);
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::FocusLock);
