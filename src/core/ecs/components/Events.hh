@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
+#include <optional>
 #include <queue>
 #include <robin_hood.h>
 #include <set>
