@@ -35,6 +35,10 @@ namespace sp::vulkan {
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
+    static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
+
+    static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
+
     Renderer::Renderer(DeviceContext &device)
         : device(device), graph(device), scene(device), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listrendertargets", "List all render targets", [&]() {
@@ -664,7 +668,8 @@ namespace sp::vulkan {
                 RenderTargetDesc desc;
                 auto extent = glm::max(glm::ivec2(1), lights.renderTargetSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
-                desc.format = vk::Format::eR32Sfloat;
+
+                desc.format = CVarVSM.Get() ? vk::Format::eR32G32Sfloat : vk::Format::eR32Sfloat;
                 builder.OutputColorAttachment(0, "ShadowMapLinear", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eD16Unorm;
@@ -678,7 +683,7 @@ namespace sp::vulkan {
             })
 
             .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
+                cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
 
                 auto &lights = this->lights;
                 for (int i = 0; i < lights.count; i++) {
@@ -697,6 +702,12 @@ namespace sp::vulkan {
                     DrawSceneIndirect(cmd, resources, resources.GetBuffer(ids.drawCommandsBuffer), {});
                 }
             });
+
+        graph.BeginScope("ShadowMapBlur");
+        auto sourceID = graph.LastOutputID();
+        auto blurY1 = AddGaussianBlur(sourceID, glm::ivec2(0, 1), 1);
+        AddGaussianBlur(blurY1, glm::ivec2(1, 0), 1);
+        graph.EndScope();
     }
 
     void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock) {
@@ -752,12 +763,14 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddLighting() {
+        auto depthTarget = CVarVSM.Get() ? "ShadowMapBlur.LastOutput" : "ShadowMapLinear";
+
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
                 auto gBuffer0 = builder.ShaderRead("GBuffer0");
                 builder.ShaderRead("GBuffer1");
                 builder.ShaderRead("GBuffer2");
-                builder.ShaderRead("ShadowMapLinear");
+                builder.ShaderRead(depthTarget);
 
                 auto desc = gBuffer0.DeriveRenderTarget();
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
@@ -772,8 +785,9 @@ namespace sp::vulkan {
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("screen_cover.vert", "lighting.frag");
+            .Execute([this, depthTarget](rg::Resources &resources, CommandContext &cmd) {
+                auto frag = CVarVSM.Get() ? "lighting_vsm.frag" : CVarPCF.Get() ? "lighting_pcf.frag" : "lighting.frag";
+                cmd.SetShaders("screen_cover.vert", frag);
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
@@ -783,7 +797,7 @@ namespace sp::vulkan {
                 cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
                 cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
                 cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
-                cmd.SetTexture(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+                cmd.SetTexture(0, 3, resources.GetRenderTarget(depthTarget)->ImageView());
 
                 cmd.PushConstants(CVarExposure.Get());
 
@@ -839,14 +853,21 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
                 auto desc = source.DeriveRenderTarget();
-                desc.extent.width /= downsample;
-                desc.extent.height /= downsample;
+                desc.extent.width = std::max(desc.extent.width / downsample, 1u);
+                desc.extent.height = std::max(desc.extent.height / downsample, 1u);
                 auto dest = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
                 destID = dest.id;
             })
             .Execute([sourceID, constants](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
-                cmd.SetTexture(0, 0, resources.GetRenderTarget(sourceID)->ImageView());
+                auto source = resources.GetRenderTarget(sourceID);
+
+                if (source->Desc().primaryViewType == vk::ImageViewType::e2DArray) {
+                    cmd.SetShaders("screen_cover.vert", "gaussian_blur_array.frag");
+                } else {
+                    cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
+                }
+
+                cmd.SetTexture(0, 0, source->ImageView());
                 cmd.PushConstants(constants);
                 cmd.Draw(3);
             });

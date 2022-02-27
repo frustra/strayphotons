@@ -17,7 +17,8 @@ file(GLOB_RECURSE SHADERS
 )
 list(FILTER SHADERS EXCLUDE REGEX "shaders/opengl")
 
-file(GLOB SHADERS_LIB ${SHADER_LIB_DIR}/*.glsl ${SHADER_DIR}/lib/*.glsl ${CMAKE_CURRENT_SOURCE_DIR}/smaa/*.glsl)
+file(GLOB_RECURSE SHADERS_LIB ${SHADER_DIR}/*.glsl)
+list(FILTER SHADERS_LIB EXCLUDE REGEX "shaders/opengl")
 
 find_package(Vulkan REQUIRED)
 

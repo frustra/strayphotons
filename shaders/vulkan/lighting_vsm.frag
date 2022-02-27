@@ -4,6 +4,7 @@
 layout(num_views = 2) in;
 
 #define SHADOWS_ENABLED
+#define USE_VSM
 #define LIGHTING_GEL
 #define MULTIPLE_LIGHTING_GELS
 

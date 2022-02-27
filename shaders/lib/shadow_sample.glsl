@@ -97,3 +97,21 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
 
     return smoothstep(0.3, 1.0, occlusion);
 }
+
+float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
+    vec3 texCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat);
+
+    if (texCoord.xy != clamp(texCoord.xy, 0.0, 1.0)) return 0.0;
+
+    float threshold = LinearDepth(info.shadowMapPos, info.clip);
+    vec2 moments = texture(TEXTURE_SAMPLER(texCoord.xy * info.mapOffset.zw + info.mapOffset.xy)).xy;
+
+    float p = step(threshold, moments.x);
+    float variance = max(moments.y - moments.x * moments.x, varianceMin);
+
+    // Apply Chebyshev's inequality
+    float d = threshold - moments.x;
+    float pMax = smoothstep(lightBleedReduction, 1.0, variance / (variance + d * d));
+
+    return min(max(p, pMax), 1.0);
+}
