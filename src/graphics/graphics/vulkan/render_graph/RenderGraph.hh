@@ -36,22 +36,22 @@ namespace sp::vulkan::render_graph {
                 return *this;
             }
 
-            InitialPassState &Execute(std::function<void(Resources &, CommandContext &)> executeFunc) {
+            ResourceID Execute(std::function<void(Resources &, CommandContext &)> executeFunc) {
                 Assert(passIndex != ~0u, "Build must be called before Execute");
                 Assert(executeFunc, "Execute function must be defined");
                 auto &pass = graph.passes[passIndex];
                 Assert(!pass.HasExecute(), "multiple Execute functions for the same pass");
                 pass.executeFunc = executeFunc;
-                return *this;
+                return graph.LastOutputID();
             }
 
-            InitialPassState &Execute(std::function<void(Resources &, DeviceContext &)> executeFunc) {
+            ResourceID Execute(std::function<void(Resources &, DeviceContext &)> executeFunc) {
                 Assert(passIndex != ~0u, "Build must be called before Execute");
                 Assert(executeFunc, "Execute function must be defined");
                 auto &pass = graph.passes[passIndex];
                 Assert(!pass.HasExecute(), "multiple Execute functions for the same pass");
                 pass.executeFunc = executeFunc;
-                return *this;
+                return graph.LastOutputID();
             }
 
         private:

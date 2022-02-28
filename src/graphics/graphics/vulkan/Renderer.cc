@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
+#include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
@@ -434,6 +435,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddMenuOverlay() {
+        auto inputID = graph.LastOutputID();
         rg::ResourceID menuID = rg::InvalidResource;
         for (auto &gui : guis) {
             if (gui.manager->Name() == "menu_gui") {
@@ -445,18 +447,27 @@ namespace sp::vulkan {
         }
         Assert(menuID != rg::InvalidResource, "main menu doesn't exist");
 
+        {
+            auto scope = graph.Scope("MenuOverlayBlur");
+            renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 2);
+            renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(1, 0), 2);
+            renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 1);
+            renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(1, 0), 2);
+            renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 1);
+            renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(1, 0), 1, 0.2f);
+        }
+
         graph.AddPass("MenuOverlay")
             .Build([&](rg::PassBuilder &builder) {
-                auto input = builder.LastOutput();
-                builder.ShaderRead(input.id);
-
-                auto desc = input.DeriveRenderTarget();
-                builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
-
+                builder.ShaderRead(builder.LastOutputID());
                 builder.ShaderRead(menuID);
+
+                auto desc = builder.GetResource(inputID).DeriveRenderTarget();
+                builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([menuID](rg::Resources &resources, CommandContext &cmd) {
                 cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.SetBlending(true);
                 cmd.DrawScreenCover(resources.GetRenderTarget(menuID)->ImageView());
             });
     }

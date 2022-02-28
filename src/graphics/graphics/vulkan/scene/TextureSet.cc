@@ -1,4 +1,4 @@
-#include "Texture.hh"
+#include "TextureSet.hh"
 
 #include "assets/GltfImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

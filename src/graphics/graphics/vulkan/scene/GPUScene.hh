@@ -8,7 +8,7 @@
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
-#include "graphics/vulkan/scene/Texture.hh"
+#include "graphics/vulkan/scene/TextureSet.hh"
 
 namespace sp::vulkan {
     class Mesh;

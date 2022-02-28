@@ -3,7 +3,7 @@
 #include "Common.hh"
 
 namespace sp::vulkan::renderer {
-    ResourceID AddGaussianBlur(RenderGraph &graph,
+    ResourceID AddGaussianBlur1D(RenderGraph &graph,
         ResourceID sourceID,
         glm::ivec2 direction,
         uint32 downsample = 1,

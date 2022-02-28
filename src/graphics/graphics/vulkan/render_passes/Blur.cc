@@ -4,7 +4,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan::renderer {
-    ResourceID AddGaussianBlur(RenderGraph &graph,
+    ResourceID AddGaussianBlur1D(RenderGraph &graph,
         ResourceID sourceID,
         glm::ivec2 direction,
         uint32 downsample,
@@ -21,15 +21,13 @@ namespace sp::vulkan::renderer {
         constants.threshold = clip;
         constants.scale = scale;
 
-        ResourceID destID;
-        graph.AddPass("GaussianBlur")
+        return graph.AddPass("GaussianBlur")
             .Build([&](PassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
                 auto desc = source.DeriveRenderTarget();
                 desc.extent.width = std::max(desc.extent.width / downsample, 1u);
                 desc.extent.height = std::max(desc.extent.height / downsample, 1u);
-                auto dest = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
-                destID = dest.id;
+                builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([sourceID, constants](Resources &resources, CommandContext &cmd) {
                 auto source = resources.GetRenderTarget(sourceID);
@@ -44,7 +42,5 @@ namespace sp::vulkan::renderer {
                 cmd.PushConstants(constants);
                 cmd.Draw(3);
             });
-
-        return destID;
     }
 } // namespace sp::vulkan::renderer
