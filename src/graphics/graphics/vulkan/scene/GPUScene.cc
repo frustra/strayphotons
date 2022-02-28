@@ -153,4 +153,90 @@ namespace sp::vulkan {
             drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand));
     }
 
+    void GPUScene::AddGeometryWarp(rg::RenderGraph &graph) {
+        graph.AddPass("GeometryWarp")
+            .Build([&](rg::PassBuilder &builder) {
+                const auto maxDraws = primitiveCountPowerOfTwo;
+
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
+                    "WarpedVertexDrawCmds",
+                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand));
+
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
+                    "WarpedVertexDrawParams",
+                    maxDraws * sizeof(glm::vec4) * 5);
+
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
+                    "WarpedVertexBuffer",
+                    sizeof(SceneVertex) * vertexCount);
+            })
+            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                if (vertexCount == 0) return;
+
+                vk::BufferMemoryBarrier barrier;
+                barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+                barrier.buffer = *renderableEntityList;
+                barrier.size = VK_WHOLE_SIZE;
+                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eHost,
+                    vk::PipelineStageFlagBits::eComputeShader,
+                    {},
+                    {},
+                    {barrier},
+                    {});
+
+                auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
+                auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
+                auto warpedVertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
+
+                cmd.Raw().fillBuffer(*cmdBuffer, 0, sizeof(uint32), 0);
+
+                cmd.SetComputeShader("generate_warp_geometry_draws.comp");
+                cmd.SetStorageBuffer(0, 0, renderableEntityList);
+                cmd.SetStorageBuffer(0, 1, models);
+                cmd.SetStorageBuffer(0, 2, primitiveLists);
+                cmd.SetStorageBuffer(0, 3, cmdBuffer);
+                cmd.SetStorageBuffer(0, 4, paramBuffer);
+
+                struct {
+                    uint32 renderableCount;
+                } constants;
+                constants.renderableCount = renderableCount;
+                cmd.PushConstants(constants);
+                cmd.Dispatch((renderableCount + 127) / 128, 1, 1);
+
+                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
+                barrier.buffer = *cmdBuffer;
+                barrier.size = VK_WHOLE_SIZE;
+                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
+                    vk::PipelineStageFlagBits::eDrawIndirect,
+                    {},
+                    {},
+                    {barrier},
+                    {});
+
+                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+                barrier.buffer = *paramBuffer;
+                barrier.size = VK_WHOLE_SIZE;
+                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
+                    vk::PipelineStageFlagBits::eVertexShader,
+                    {},
+                    {},
+                    {barrier},
+                    {});
+
+                cmd.BeginRenderPass({});
+                cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
+                cmd.SetStorageBuffer(0, 0, paramBuffer);
+                cmd.SetStorageBuffer(0, 1, warpedVertexBuffer);
+                cmd.SetVertexLayout(SceneVertex::Layout());
+                cmd.SetPrimitiveTopology(vk::PrimitiveTopology::ePointList);
+                cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+                cmd.DrawIndirect(cmdBuffer, sizeof(uint32), primitiveCount);
+                cmd.EndRenderPass();
+            });
+    }
+
 } // namespace sp::vulkan

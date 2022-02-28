@@ -6,16 +6,12 @@
 
 namespace sp::vulkan::renderer {
     void SMAA::AddPass(RenderGraph &graph) {
-        if (!areaTex)
-            areaTex = graph.Device().LoadAssetImage(GAssets.LoadImage("textures/smaa/AreaTex.tga")->Get(),
-                false,
-                false);
+        if (!areaTexAsset) areaTexAsset = GAssets.LoadImage("textures/smaa/AreaTex.tga");
+        if (!searchTexAsset) searchTexAsset = GAssets.LoadImage("textures/smaa/SearchTex.tga");
+        if (!areaTexAsset->Ready() || !searchTexAsset->Ready()) return;
 
-        if (!searchTex)
-            searchTex = graph.Device().LoadAssetImage(GAssets.LoadImage("textures/smaa/SearchTex.tga")->Get(),
-                false,
-                false);
-
+        if (!areaTex) areaTex = graph.Device().LoadAssetImage(areaTexAsset->Get(), false, false);
+        if (!searchTex) searchTex = graph.Device().LoadAssetImage(searchTexAsset->Get(), false, false);
         if (!areaTex->Ready() || !searchTex->Ready()) return;
 
         auto sourceID = graph.LastOutputID();

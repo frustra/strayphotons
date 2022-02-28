@@ -9,5 +9,6 @@ namespace sp::vulkan::renderer {
 
     private:
         AsyncPtr<ImageView> areaTex, searchTex;
+        AsyncPtr<sp::Image> areaTexAsset, searchTexAsset;
     };
 } // namespace sp::vulkan::renderer

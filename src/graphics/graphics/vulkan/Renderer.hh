@@ -62,10 +62,8 @@ namespace sp::vulkan {
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
 #endif
 
-        void AddGeometryWarp();
         void AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock);
-        void AddTonemap();
         void AddMenuOverlay();
 
         CFuncCollection funcs;

@@ -5,5 +5,6 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     Screenshots.cc
     SMAA.cc
     Lighting.cc
+    Tonemap.cc
     VisualizeBuffer.cc
 )

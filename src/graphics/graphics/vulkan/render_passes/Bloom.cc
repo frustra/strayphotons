@@ -7,7 +7,7 @@
 namespace sp::vulkan::renderer {
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
-    ResourceID AddBloom(RenderGraph &graph) {
+    void AddBloom(RenderGraph &graph) {
         graph.BeginScope("BloomBlur");
         auto sourceID = graph.LastOutputID();
         auto blurY1 = renderer::AddGaussianBlur(graph, sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
@@ -16,13 +16,11 @@ namespace sp::vulkan::renderer {
         auto blurX2 = renderer::AddGaussianBlur(graph, blurY2, glm::ivec2(1, 0), 1);
         graph.EndScope();
 
-        rg::ResourceID destID;
         graph.AddPass("BloomCombine")
             .Build([&](rg::PassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
                 auto desc = source.DeriveRenderTarget();
-                auto dest = builder.OutputColorAttachment(0, "Bloom", desc, {LoadOp::DontCare, StoreOp::Store});
-                destID = dest.id;
+                builder.OutputColorAttachment(0, "Bloom", desc, {LoadOp::DontCare, StoreOp::Store});
 
                 builder.ShaderRead(blurX1);
                 builder.ShaderRead(blurX2);
@@ -34,6 +32,5 @@ namespace sp::vulkan::renderer {
                 cmd.SetTexture(0, 2, resources.GetRenderTarget(blurX2)->ImageView());
                 cmd.Draw(3);
             });
-        return destID;
     }
 } // namespace sp::vulkan::renderer

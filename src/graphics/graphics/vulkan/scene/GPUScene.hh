@@ -80,6 +80,8 @@ namespace sp::vulkan {
             BufferPtr drawCommandsBuffer,
             BufferPtr drawParamsBuffer);
 
+        void AddGeometryWarp(rg::RenderGraph &graph);
+
         BufferPtr indexBuffer;
         BufferPtr vertexBuffer;
         BufferPtr primitiveLists;

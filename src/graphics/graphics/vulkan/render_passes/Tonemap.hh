@@ -3,5 +3,5 @@
 #include "Common.hh"
 
 namespace sp::vulkan::renderer {
-    void AddBloom(RenderGraph &graph);
+    void AddTonemap(RenderGraph &graph);
 } // namespace sp::vulkan::renderer

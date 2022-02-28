@@ -1,6 +1,5 @@
 #include "Renderer.hh"
 
-#include "assets/Gltf.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -12,6 +11,7 @@
 #include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
+#include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
@@ -84,7 +84,7 @@ namespace sp::vulkan {
         scene.LoadState(lock);
         lighting.LoadState(lock);
 
-        AddGeometryWarp();
+        scene.AddGeometryWarp(graph);
         lighting.AddShadowPasses(graph);
         AddGuis(lock);
 
@@ -381,92 +381,6 @@ namespace sp::vulkan {
     }
 #endif
 
-    void Renderer::AddGeometryWarp() {
-        graph.AddPass("GeometryWarp")
-            .Build([&](rg::PassBuilder &builder) {
-                const auto maxDraws = scene.primitiveCountPowerOfTwo;
-
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
-                    "WarpedVertexDrawCmds",
-                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand));
-
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
-                    "WarpedVertexDrawParams",
-                    maxDraws * sizeof(glm::vec4) * 5);
-
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
-                    "WarpedVertexBuffer",
-                    sizeof(SceneVertex) * scene.vertexCount);
-            })
-            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                if (scene.vertexCount == 0) return;
-
-                vk::BufferMemoryBarrier barrier;
-                barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-                barrier.buffer = *scene.renderableEntityList;
-                barrier.size = VK_WHOLE_SIZE;
-                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eHost,
-                    vk::PipelineStageFlagBits::eComputeShader,
-                    {},
-                    {},
-                    {barrier},
-                    {});
-
-                auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
-                auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
-                auto vertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
-
-                cmd.Raw().fillBuffer(*cmdBuffer, 0, sizeof(uint32), 0);
-
-                cmd.SetComputeShader("generate_warp_geometry_draws.comp");
-                cmd.SetStorageBuffer(0, 0, scene.renderableEntityList);
-                cmd.SetStorageBuffer(0, 1, scene.models);
-                cmd.SetStorageBuffer(0, 2, scene.primitiveLists);
-                cmd.SetStorageBuffer(0, 3, cmdBuffer);
-                cmd.SetStorageBuffer(0, 4, paramBuffer);
-
-                struct {
-                    uint32 renderableCount;
-                } constants;
-                constants.renderableCount = scene.renderableCount;
-                cmd.PushConstants(constants);
-                cmd.Dispatch((scene.renderableCount + 127) / 128, 1, 1);
-
-                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
-                barrier.buffer = *cmdBuffer;
-                barrier.size = VK_WHOLE_SIZE;
-                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
-                    vk::PipelineStageFlagBits::eDrawIndirect,
-                    {},
-                    {},
-                    {barrier},
-                    {});
-
-                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-                barrier.buffer = *paramBuffer;
-                barrier.size = VK_WHOLE_SIZE;
-                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
-                    vk::PipelineStageFlagBits::eVertexShader,
-                    {},
-                    {},
-                    {barrier},
-                    {});
-
-                cmd.BeginRenderPass({});
-                cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
-                cmd.SetStorageBuffer(0, 0, paramBuffer);
-                cmd.SetStorageBuffer(0, 1, vertexBuffer);
-                cmd.SetVertexLayout(SceneVertex::Layout());
-                cmd.SetPrimitiveTopology(vk::PrimitiveTopology::ePointList);
-                cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
-                cmd.DrawIndirect(cmdBuffer, sizeof(uint32), scene.primitiveCount);
-                cmd.EndRenderPass();
-            });
-    }
-
     void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock) {
         ecs::ComponentEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
@@ -514,25 +428,9 @@ namespace sp::vulkan {
         lighting.AddLightingPass(graph);
         emissive.AddPass(graph, lock);
         renderer::AddBloom(graph);
-        AddTonemap();
+        renderer::AddTonemap(graph);
 
         if (CVarSMAA.Get()) smaa.AddPass(graph);
-    }
-
-    void Renderer::AddTonemap() {
-        graph.AddPass("Tonemap")
-            .Build([&](rg::PassBuilder &builder) {
-                auto luminance = builder.ShaderRead(builder.LastOutputID());
-
-                auto desc = luminance.DeriveRenderTarget();
-                desc.format = vk::Format::eR8G8B8A8Srgb;
-                builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
-            })
-            .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("screen_cover.vert", "tonemap.frag");
-                cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
-                cmd.Draw(3);
-            });
     }
 
     void Renderer::AddMenuOverlay() {
