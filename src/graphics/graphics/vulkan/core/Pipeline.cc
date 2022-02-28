@@ -456,21 +456,20 @@ namespace sp::vulkan {
                 auto stages = layoutInfo.stages[binding];
                 uint32 descriptorCount = layoutInfo.descriptorCount[binding];
                 if (descriptorCount == 0) {
-                    auto deviceLimit = device.IndexingLimits().maxDescriptorSetUpdateAfterBindSamplers;
-                    Assertf(descriptorCount <= deviceLimit,
-                        "device supports %d sampler descriptors, wanted %d",
-                        deviceLimit,
-                        descriptorCount);
-
                     bindless = true;
                     descriptorCount = MAX_BINDINGS_PER_BINDLESS_DESCRIPTOR_SET;
                     stages = vk::ShaderStageFlagBits::eAll;
                     bindingFlags.resize(binding + 1);
                     bindingFlags[binding] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
                                             vk::DescriptorBindingFlagBits::ePartiallyBound |
-                                            vk::DescriptorBindingFlagBits::eUpdateAfterBind |
                                             vk::DescriptorBindingFlagBits::eUpdateUnusedWhilePending;
                 }
+
+                auto deviceLimit = device.Limits().maxDescriptorSetSampledImages;
+                Assertf(descriptorCount <= deviceLimit,
+                    "device supports %d sampler descriptors, wanted %d",
+                    deviceLimit,
+                    descriptorCount);
 
                 bindings.emplace_back(binding, type, descriptorCount, stages, nullptr);
             }

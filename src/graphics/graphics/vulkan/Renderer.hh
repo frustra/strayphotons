@@ -2,17 +2,16 @@
 
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
-#include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_passes/Emissive.hh"
+#include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
-#include "graphics/vulkan/scene/GPUTypes.hh"
 
 #include <atomic>
 #include <functional>
@@ -34,26 +33,8 @@ namespace sp::vulkan {
 
     extern CVar<string> CVarWindowViewTarget;
 
-    struct LightingContext {
-        int count = 0;
-        glm::ivec2 renderTargetSize = {};
-        ecs::View views[MAX_LIGHTS];
-
-        int gelCount = 0;
-        string gelNames[MAX_LIGHT_GELS];
-
-        struct GPUData {
-            GPULight lights[MAX_LIGHTS];
-            int count;
-            float padding[3];
-        } gpuData;
-    };
-
     class Renderer {
     public:
-        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::TransformSnapshot>>;
-        typedef std::function<void(DrawLock, ecs::Entity &)> PreDrawFunc;
-
         Renderer(DeviceContext &context);
         ~Renderer();
 
@@ -68,9 +49,6 @@ namespace sp::vulkan {
         }
 #endif
 
-        ImageViewPtr GetBlankPixelImage();
-        ImageViewPtr CreateSinglePixelImage(glm::vec4 value);
-
     private:
         DeviceContext &device;
         rg::RenderGraph graph;
@@ -84,40 +62,18 @@ namespace sp::vulkan {
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
 #endif
 
-        void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
-        void AddGeometryWarp();
-        void AddLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
-        void AddShadowMaps(DrawLock lock);
         void AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock);
-        void AddLighting();
-        void AddTonemap();
         void AddMenuOverlay();
-
-        rg::ResourceID AddBloom();
-        rg::ResourceID AddGaussianBlur(rg::ResourceID sourceID,
-            glm::ivec2 direction,
-            uint32 downsample = 1,
-            float scale = 1.0f,
-            float clip = FLT_MAX);
-
-        struct DrawBufferIDs {
-            rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
-            rg::ResourceID drawParamsBuffer;
-        };
-
-        DrawBufferIDs GenerateDrawsForView(ecs::Renderable::VisibilityMask viewMask);
-        void DrawSceneIndirect(CommandContext &cmd,
-            rg::Resources &resources,
-            BufferPtr drawCommandsBuffer,
-            BufferPtr drawParamsBuffer);
 
         CFuncCollection funcs;
 
-        LightingContext lights;
         GPUScene scene;
-        PreservingMap<string, Mesh> activeMeshes;
-        vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
+
+        renderer::Lighting lighting;
+        renderer::Emissive emissive;
+        renderer::SMAA smaa;
+        renderer::Screenshots screenshots;
 
         unique_ptr<GuiRenderer> guiRenderer;
         struct RenderableGui {
@@ -131,14 +87,6 @@ namespace sp::vulkan {
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
         bool listRenderTargets = false;
-
-        renderer::Emissive emissive;
-        renderer::SMAA smaa;
-        renderer::Screenshots screenshots;
-
-        ImageViewPtr blankPixelImage;
-
-        std::atomic_flag sceneReady, pendingTransaction;
 
 #ifdef SP_XR_SUPPORT
         shared_ptr<xr::XrSystem> xrSystem;

@@ -282,8 +282,6 @@ namespace sp::vulkan {
             "device must support descriptorBindingVariableDescriptorCount");
         Assert(availableVulkan12Features.shaderSampledImageArrayNonUniformIndexing,
             "device must support shaderSampledImageArrayNonUniformIndexing");
-        Assert(availableVulkan12Features.descriptorBindingSampledImageUpdateAfterBind,
-            "device must support descriptorBindingSampledImageUpdateAfterBind");
         Assert(availableVulkan12Features.descriptorBindingUpdateUnusedWhilePending,
             "device must support descriptorBindingUpdateUnusedWhilePending");
 
@@ -293,7 +291,6 @@ namespace sp::vulkan {
         enabledVulkan12Features.descriptorBindingPartiallyBound = true;
         enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
         enabledVulkan12Features.shaderSampledImageArrayNonUniformIndexing = true;
-        enabledVulkan12Features.descriptorBindingSampledImageUpdateAfterBind = true;
         enabledVulkan12Features.descriptorBindingUpdateUnusedWhilePending = true;
 
         vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
