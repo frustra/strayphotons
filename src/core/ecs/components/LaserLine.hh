@@ -17,7 +17,7 @@ namespace ecs {
             glm::vec3 color = glm::vec3(1); // HDR value
         };
         using Segments = std::vector<Segment>;
-        std::variant<Line, Segments> line;
+        std::variant<Line, Segments> line = Line();
 
         float intensity = 1.0f; // multiplier applied to color
         float mediaDensityFactor = 1.0f;

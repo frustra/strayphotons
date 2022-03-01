@@ -13,7 +13,7 @@
 
 namespace sp::vulkan {
     Mesh::Mesh(std::shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device)
-        : modelName(source->name), scene(scene), asset(source), meshIndex(meshIndex) {
+        : modelName(source->name), asset(source) {
         ZoneScoped;
         ZonePrintf("%s.%u", modelName, meshIndex);
         // TODO: cache the output somewhere. Keeping the conversion code in
