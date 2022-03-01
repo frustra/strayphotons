@@ -4,9 +4,9 @@
             "name": "player",
             "transform": {},
             "character_controller": {
-                "target": "vr-hmd",
+                "target": "vr:hmd",
                 "fallback_target": "flatview",
-                "movement_proxy": "vr-origin"
+                "movement_proxy": "vr:origin"
             },
             "trigger_group": "player",
             "event_input": [
@@ -71,102 +71,6 @@
                     "relative_to": "player:flatview",
                     "position_z": -2
                 }
-            }
-        },
-        {
-            "name": "left-hand-input",
-            "renderable": {
-                "model": "box",
-                "hidden": true
-            },
-            "transform": {
-                "scale": [0.01, 0.01, 0.01],
-                "rotate": [180, 0, 1, 0]
-            },
-            "script": [
-                {
-                    "onTick": "auto_attach",
-                    "parameters": { "attach_parent": "player:vr-controller-left" }
-                },
-                {
-                    "onTick": "relative_movement",
-                    "parameters": { "relative_to": "player:vr-hmd" }
-                }
-            ],
-            "signal_output": {}
-        },
-        {
-            "name": "right-hand-input",
-            "renderable": {
-                "model": "box",
-                "hidden": true
-            },
-            "transform": {
-                "scale": [0.01, 0.01, 0.01],
-                "rotate": [180, 0, 1, 0]
-            },
-            "script": [
-                {
-                    "onTick": "auto_attach",
-                    "parameters": { "attach_parent": "player:vr-controller-right" }
-                },
-                {
-                    "onTick": "relative_movement",
-                    "parameters": { "relative_to": "player:vr-controller-right" }
-                }
-            ],
-            "signal_output": {}
-        },
-        {
-            "name": "left-hand",
-            "physics": {
-                "model": "box",
-                "group": "player_hands",
-                "constraint": "left-hand-input"
-            },
-            "transform": {
-                "translate": [1, 1, 0],
-                "scale": [0.05, 0.125, 0.2]
-            }
-        },
-        {
-            "transform": {
-                "parent": "left-hand",
-                "scale": [20, 8, 5],
-                "translate": [0.2, -0.1, -0.3]
-            },
-            "renderable": {
-                "hidden": true
-            },
-            "script": {
-                "onTick": "lazy_load_model",
-                "parameters": { "model_name": "vr_glove_left" }
-            }
-        },
-        {
-            "name": "right-hand",
-            "physics": {
-                "model": "box",
-                "group": "player_hands",
-                "constraint": "right-hand-input"
-            },
-            "transform": {
-                "translate": [-1, 1, 0],
-                "scale": [0.05, 0.125, 0.2]
-            }
-        },
-        {
-            "transform": {
-                "parent": "right-hand",
-                "scale": [20, 8, 5],
-                "translate": [-0.2, -0.1, -0.3]
-            },
-            "renderable": {
-                "hidden": true
-            },
-            "script": {
-                "onTick": "lazy_load_model",
-                "parameters": { "model_name": "vr_glove_right" }
             }
         },
         {

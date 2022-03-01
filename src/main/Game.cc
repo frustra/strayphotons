@@ -53,6 +53,7 @@ namespace sp {
         std::atomic_flag exitTriggered;
 
         CFunc<int> cfExit("exit", "Quits the game", [&exitCode, &exitTriggered](int arg) {
+            Tracef("Exit triggered via console command");
             exitCode = arg;
             exitTriggered.test_and_set();
             exitTriggered.notify_all();
@@ -120,7 +121,10 @@ namespace sp {
 
 #ifdef SP_GRAPHICS_SUPPORT
         while (!exitTriggered.test()) {
-            if (!graphics.Frame()) break;
+            if (!graphics.Frame()) {
+                Tracef("Exit triggered via window manager");
+                break;
+            }
             FrameMark;
         }
 #else

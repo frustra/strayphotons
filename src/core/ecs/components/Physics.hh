@@ -3,6 +3,7 @@
 #include "assets/Async.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -45,17 +46,55 @@ namespace ecs {
         Count,
     };
 
+    struct PhysicsShape {
+        struct Sphere {
+            float radius;
+            Sphere(float radius = 1.0f) : radius(radius) {}
+        };
+
+        struct Capsule {
+            float radius;
+            float height;
+            Capsule(float height = 1.0f, float radius = 0.5f) : radius(radius), height(height) {}
+        };
+
+        struct Box {
+            glm::vec3 extents;
+            Box(glm::vec3 extents = glm::vec3(1)) : extents(extents) {}
+        };
+
+        struct Plane {};
+
+        struct ConvexMesh {
+            sp::AsyncPtr<sp::Gltf> model;
+            size_t meshIndex = 0;
+
+            ConvexMesh() {}
+            ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : model(model), meshIndex(meshIndex) {}
+        };
+
+        std::variant<std::monostate, Sphere, Capsule, Box, Plane, ConvexMesh> shape;
+
+        PhysicsShape() : shape(std::monostate()) {}
+        PhysicsShape(Sphere sphere) : shape(sphere) {}
+        PhysicsShape(Capsule capsule) : shape(capsule) {}
+        PhysicsShape(Box box) : shape(box) {}
+        PhysicsShape(Plane plane) : shape(plane) {}
+        PhysicsShape(ConvexMesh mesh) : shape(mesh) {}
+        PhysicsShape(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : shape(ConvexMesh(model, meshIndex)) {}
+
+        operator bool() const {
+            return !std::holds_alternative<std::monostate>(shape);
+        }
+    };
+
     struct Physics {
         Physics() {}
-        Physics(sp::AsyncPtr<sp::Gltf> model,
-            size_t meshIndex = 0,
-            PhysicsGroup group = PhysicsGroup::World,
-            bool dynamic = true,
-            float density = 1.0f)
-            : model(model), meshIndex(meshIndex), group(group), dynamic(dynamic), density(density) {}
+        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float density = 1.0f)
+            : shape(shape), group(group), dynamic(dynamic), density(density) {}
 
-        sp::AsyncPtr<sp::Gltf> model;
-        size_t meshIndex = 0;
+        PhysicsShape shape;
+        Transform shapeTransform;
 
         PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;

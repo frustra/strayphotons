@@ -118,8 +118,10 @@ namespace sp {
                 if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
 
                 auto &ph = ent.template Get<ecs::Physics>(lock);
-                if (ph.model && ph.model->Ready()) {
-                    auto set = LoadConvexHullSet(ph.model, ph.meshIndex, ph.decomposeHull);
+                auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&ph.shape.shape);
+                if (!mesh || !mesh->model) continue;
+                if (mesh->model->Ready()) {
+                    auto set = LoadConvexHullSet(mesh->model, mesh->meshIndex, ph.decomposeHull);
                     if (!set || !set->Ready()) complete = false;
                 } else {
                     complete = false;
@@ -142,7 +144,8 @@ namespace sp {
                 uint32_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
 
                 for (uint32_t i = 0; i < n; i++) {
-                    buffer[i]->is<PxRigidDynamic>()->wakeUp();
+                    auto dynamic = buffer[i]->is<PxRigidDynamic>();
+                    if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
                 }
 
                 if (n < buffer.size()) break;
@@ -265,6 +268,7 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::Player, (uint16_t)ecs::PhysicsGroup::Player, false);
         PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::Player, (uint16_t)ecs::PhysicsGroup::PlayerHands, false);
         // Don't collide anything with the noclip group.
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::NoClip, false);
         PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::World, false);
         PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::Interactive, false);
         PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::Player, false);
@@ -373,7 +377,10 @@ namespace sp {
     PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
         ecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
-        if (!ph.model) return nullptr;
+        if (!ph.shape) return nullptr;
+
+        auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&ph.shape.shape);
+        if (mesh && !mesh->model) return nullptr;
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
         auto globalTransform = transform.GetGlobalTransform(lock);
@@ -397,12 +404,40 @@ namespace sp {
 
         PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
-        userData->shapeCache = LoadConvexHullSet(ph.model, ph.meshIndex, ph.decomposeHull)->Get();
+        if (mesh) {
+            userData->shapeCache = LoadConvexHullSet(mesh->model, mesh->meshIndex, ph.decomposeHull)->Get();
 
-        for (auto &hull : userData->shapeCache->hulls) {
-            PxRigidActorExt::createExclusiveShape(*actor,
-                PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
-                *mat);
+            for (auto &hull : userData->shapeCache->hulls) {
+                PxRigidActorExt::createExclusiveShape(*actor,
+                    PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
+                    *mat);
+            }
+        } else {
+            PxShape *shape = std::visit(
+                [&actor, &mat](auto &&shape) {
+                    using T = std::decay_t<decltype(shape)>;
+                    if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
+                        return PxRigidActorExt::createExclusiveShape(*actor, PxSphereGeometry(shape.radius), *mat);
+                    } else if constexpr (std::is_same<ecs::PhysicsShape::Capsule, T>()) {
+                        return PxRigidActorExt::createExclusiveShape(*actor,
+                            PxCapsuleGeometry(shape.radius, shape.height * 0.5f),
+                            *mat);
+                    } else if constexpr (std::is_same<ecs::PhysicsShape::Box, T>()) {
+                        return PxRigidActorExt::createExclusiveShape(*actor,
+                            PxBoxGeometry(GlmVec3ToPxVec3(shape.extents * 0.5f)),
+                            *mat);
+                    } else if constexpr (std::is_same<ecs::PhysicsShape::Plane, T>()) {
+                        return PxRigidActorExt::createExclusiveShape(*actor, PxPlaneGeometry(), *mat);
+                    } else {
+                        return (PxShape *)nullptr;
+                    }
+                },
+                ph.shape.shape);
+            if (shape) {
+                PxTransform shapeTransform(GlmVec3ToPxVec3(ph.shapeTransform.GetPosition()),
+                    GlmQuatToPxQuat(ph.shapeTransform.GetRotation()));
+                shape->setLocalPose(shapeTransform);
+            }
         }
 
         auto dynamic = actor->is<PxRigidDynamic>();
@@ -429,15 +464,18 @@ namespace sp {
             bool scaleChanged = scale != userData->scale;
             if (scaleChanged) {
                 auto n = actor->getNbShapes();
-                std::vector<PxShape *> shapes(n);
-                actor->getShapes(&shapes[0], n);
-                for (uint32 i = 0; i < n; i++) {
-                    PxConvexMeshGeometry geom;
-                    if (shapes[i]->getConvexMeshGeometry(geom)) {
-                        geom.scale = PxMeshScale(GlmVec3ToPxVec3(scale));
-                        shapes[i]->setGeometry(geom);
-                    } else {
-                        Abort("Physx geometry type not implemented");
+                if (n > 0) {
+                    std::vector<PxShape *> shapes(n);
+                    actor->getShapes(&shapes[0], n);
+                    for (uint32 i = 0; i < n; i++) {
+                        PxConvexMeshGeometry geom;
+                        if (shapes[i]->getConvexMeshGeometry(geom)) {
+                            geom.scale = PxMeshScale(GlmVec3ToPxVec3(scale));
+                            shapes[i]->setGeometry(geom);
+                        } else {
+                            // TODO: figure out scale for other shapes
+                            // Abort("Physx geometry type not implemented");
+                        }
                     }
                 }
                 userData->scale = scale;

@@ -71,7 +71,7 @@ namespace ecs {
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
             ZoneScopedN("OnTick");
-            ZoneValue(ent.index);
+            ZoneStr(ecs::ToString(lock, ent));
             for (auto &state : scripts) {
                 auto callback = std::get_if<OnTickFunc>(&state.callback);
                 if (callback) (*callback)(state, lock, ent, interval);
@@ -80,7 +80,7 @@ namespace ecs {
 
         void Prefab(Lock<AddRemove> lock, const Entity &ent) {
             ZoneScopedN("Prefab");
-            ZoneValue(ent.index);
+            ZoneStr(ecs::ToString(lock, ent));
             for (auto &state : scripts) {
                 auto callback = std::get_if<PrefabFunc>(&state.callback);
                 if (callback) (*callback)(state, lock, ent);

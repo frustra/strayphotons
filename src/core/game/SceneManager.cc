@@ -645,7 +645,7 @@ namespace sp {
                 playerTransform = spawnTransform;
                 playerTree.pose = spawnTransform;
             }
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "vr-origin"));
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, ecs::Name("vr", "origin"));
             if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(lock);
                 auto &vrTree = vrOrigin.Get<ecs::TransformTree>(lock);
