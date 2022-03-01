@@ -21,8 +21,6 @@ namespace sp::vulkan {
     private:
         double lastTime = 0.0, deltaTime;
 
-        DeviceContext &device;
-
         unique_ptr<VertexLayout> vertexLayout;
 
         shared_ptr<ImFontAtlas> fontAtlas;

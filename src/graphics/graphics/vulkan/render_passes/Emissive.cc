@@ -19,17 +19,29 @@ namespace sp::vulkan::renderer {
             }
 
             if (!laser.on) continue;
-            if (laser.points.size() < 2) continue;
 
-            LaserLine line;
-            line.color = laser.color * laser.intensity;
-            line.radius = laser.radius;
-            line.start = transform * glm::vec4(laser.points[0], 1);
+            LaserLine drawLine;
+            drawLine.radius = laser.radius;
+            drawLine.mediaDensityFactor = laser.mediaDensityFactor;
 
-            for (size_t i = 1; i < laser.points.size(); i++) {
-                line.end = transform * glm::vec4(laser.points[i], 1);
-                lasers.push_back(line);
-                line.start = line.end;
+            auto line = std::get_if<ecs::LaserLine::Line>(&laser.line);
+            auto segments = std::get_if<ecs::LaserLine::Segments>(&laser.line);
+            if (line && line->points.size() >= 2) {
+                drawLine.color = line->color * laser.intensity;
+                drawLine.start = transform * glm::vec4(line->points[0], 1);
+
+                for (size_t i = 1; i < line->points.size(); i++) {
+                    drawLine.end = transform * glm::vec4(line->points[i], 1);
+                    lasers.push_back(drawLine);
+                    drawLine.start = drawLine.end;
+                }
+            } else if (segments && segments->size() > 0) {
+                for (auto &segment : *segments) {
+                    drawLine.start = transform * glm::vec4(segment.start, 1);
+                    drawLine.end = transform * glm::vec4(segment.end, 1);
+                    drawLine.color = segment.color * laser.intensity;
+                    lasers.push_back(drawLine);
+                }
             }
         }
 
@@ -100,7 +112,7 @@ namespace sp::vulkan::renderer {
                         constants.radius = line.radius;
                         constants.start = line.start;
                         constants.end = line.end;
-                        constants.mediaDensityFactor = 1;
+                        constants.mediaDensityFactor = line.mediaDensityFactor;
                         cmd.PushConstants(constants);
                         cmd.Draw(4);
                     }

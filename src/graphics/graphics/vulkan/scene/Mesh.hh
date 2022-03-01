@@ -52,9 +52,7 @@ namespace sp::vulkan {
 
     private:
         string modelName;
-        GPUScene &scene;
         shared_ptr<const sp::Gltf> asset;
-        size_t meshIndex;
 
         vector<Primitive> primitives;
 
