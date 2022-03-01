@@ -1,0 +1,3 @@
+buffer ExposureState {
+    float exposure;
+};

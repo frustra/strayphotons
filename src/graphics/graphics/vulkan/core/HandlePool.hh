@@ -11,31 +11,32 @@ namespace sp::vulkan {
     template<typename HandleType>
     class SharedHandle {
     public:
-        struct PoolRef {
-            vector<SharedHandle<HandleType>> *freeList;
-            LockFreeMutex *freeMutex;
+        struct Data {
+            std::atomic_size_t refCount;
+
+            struct PoolRef {
+                vector<SharedHandle<HandleType>> *freeList;
+                LockFreeMutex *freeMutex;
 
 #ifdef HANDLE_POOL_DEBUG_UNFREED_HANDLES
-            shared_ptr<std::atomic_flag> destroyed;
+                shared_ptr<std::atomic_flag> destroyed;
 #endif
+            } pool;
         };
 
         SharedHandle() {}
         SharedHandle(std::nullptr_t) {}
 
-        SharedHandle(SharedHandle<HandleType> &&other) noexcept
-            : handle(std::move(other.handle)), pool(std::move(other.pool)), useCount(other.useCount) {
-            other.useCount = nullptr;
+        SharedHandle(SharedHandle<HandleType> &&other) noexcept : handle(std::move(other.handle)), data(other.data) {
+            other.data = nullptr;
         }
 
-        SharedHandle(const SharedHandle<HandleType> &other) noexcept
-            : handle(other.handle), pool(other.pool), useCount(other.useCount) {
-            if (useCount) (*useCount)++;
+        SharedHandle(const SharedHandle<HandleType> &other) noexcept : handle(other.handle), data(other.data) {
+            if (data) data->refCount++;
         }
 
-        explicit SharedHandle(HandleType &&handle, PoolRef &&pool) : handle(std::move(handle)), pool(std::move(pool)) {
-            useCount = new std::atomic_size_t(1);
-        }
+        explicit SharedHandle(HandleType &&handle, Data::PoolRef &&pool)
+            : handle(std::move(handle)), data(new Data(1, std::move(pool))) {}
 
         ~SharedHandle() {
             Destroy();
@@ -44,9 +45,8 @@ namespace sp::vulkan {
         void Reset(const SharedHandle<HandleType> &newValue) {
             Destroy();
             handle = newValue.handle;
-            pool = newValue.pool;
-            useCount = newValue.useCount;
-            if (useCount) (*useCount)++;
+            data = newValue.data;
+            if (data) data->refCount++;
         }
 
         SharedHandle<HandleType> &operator=(const SharedHandle<HandleType> &other) {
@@ -59,7 +59,7 @@ namespace sp::vulkan {
         }
 
         operator bool() {
-            return !!useCount;
+            return !!data;
         }
 
         HandleType &Get() {
@@ -68,23 +68,23 @@ namespace sp::vulkan {
 
     private:
         void Destroy() {
-            if (!useCount) return; // SharedHandle doesn't own a handle
+            if (!data) return; // SharedHandle doesn't own a handle
 
 #ifdef HANDLE_POOL_DEBUG_UNFREED_HANDLES
-            Assert(!pool.destroyed->test(), "pool destroyed before this allocation");
+            Assert(!data->pool.destroyed->test(), "pool destroyed before this allocation");
 #endif
-            auto uses = useCount->fetch_sub(1);
+            auto uses = data->refCount.fetch_sub(1);
             if (uses == 0) {
-                delete useCount;
+                delete data;
+                data = nullptr;
             } else if (uses == 1) {
-                std::unique_lock lock(*pool.freeMutex);
-                pool.freeList->push_back(std::move(*this));
+                std::unique_lock lock(*data->pool.freeMutex);
+                data->pool.freeList->push_back(std::move(*this));
             }
         }
 
         HandleType handle = {};
-        PoolRef pool;
-        std::atomic_size_t *useCount = nullptr;
+        Data *data = nullptr;
 
         template<typename>
         friend class HandlePool;
@@ -135,7 +135,7 @@ namespace sp::vulkan {
                     SharedHandle<HandleType> sharedHandle = std::move(freeObjects.back());
                     freeObjects.pop_back();
                     lock.unlock();
-                    (*sharedHandle.useCount)++;
+                    sharedHandle.data->refCount++;
                     if (resetObject) resetObject(sharedHandle);
                     return sharedHandle;
                 }

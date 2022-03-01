@@ -3,13 +3,18 @@
 layout(num_views = 2) in;
 
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 #include "../lib/vertex_base.glsl"
 
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec3 outWorldPos;
 layout(location = 2) out float outScale;
 
+INCLUDE_LAYOUT(binding = 0)
 #include "lib/view_states_uniform.glsl"
+
+INCLUDE_LAYOUT(binding = 1)
+#include "lib/exposure_state.glsl"
 
 layout(push_constant) uniform PushConstants {
     vec3 radiance;

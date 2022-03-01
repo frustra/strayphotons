@@ -1,11 +1,60 @@
 #include "PassBuilder.hh"
 
 namespace sp::vulkan::render_graph {
-    const Resource &PassBuilder::ShaderRead(string_view name) {
-        return ShaderRead(resources.GetID(name));
+    const Resource &PassBuilder::TransferRead(string_view name) {
+        return TransferRead(GetID(name));
     }
 
-    const Resource &PassBuilder::ShaderRead(ResourceID id) {
+    const Resource &PassBuilder::TransferRead(ResourceID id) {
+        auto &resource = resources.GetResourceRef(id);
+        ResourceAccess access = {vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferRead};
+        if (resource.type == Resource::Type::RenderTarget) {
+            resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eTransferSrc;
+            access.layout = vk::ImageLayout::eTransferSrcOptimal;
+        } else if (resource.type == Resource::Type::Buffer) {
+            resource.bufferDesc.usage |= vk::BufferUsageFlagBits::eTransferSrc;
+        }
+        pass.AddDependency(access, resource);
+        return resource;
+    }
+
+    const Resource &PassBuilder::TransferWrite(string_view name) {
+        return TransferWrite(GetID(name));
+    }
+
+    const Resource &PassBuilder::TransferWrite(ResourceID id) {
+        auto &resource = resources.GetResourceRef(id);
+        ResourceAccess access = {vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite};
+        if (resource.type == Resource::Type::RenderTarget) {
+            resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eTransferDst;
+            access.layout = vk::ImageLayout::eTransferDstOptimal;
+        } else if (resource.type == Resource::Type::Buffer) {
+            resource.bufferDesc.usage |= vk::BufferUsageFlagBits::eTransferDst;
+        }
+        pass.AddDependency(access, resource);
+        return resource;
+    }
+    const Resource &PassBuilder::UniformRead(string_view name, PipelineStageMask stages) {
+        return UniformRead(GetID(name), stages);
+    }
+
+    const Resource &PassBuilder::UniformRead(ResourceID id, PipelineStageMask stages) {
+        auto &resource = resources.GetResourceRef(id);
+        ResourceAccess access = {
+            stages,
+            vk::AccessFlagBits::eUniformRead,
+        };
+        resource.bufferDesc.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
+        resource.bufferDesc.residency = Residency::CPU_TO_GPU;
+        pass.AddDependency(access, resource);
+        return resource;
+    }
+
+    const Resource &PassBuilder::TextureRead(string_view name, PipelineStageMask stages) {
+        return TextureRead(GetID(name), stages);
+    }
+
+    const Resource &PassBuilder::TextureRead(ResourceID id, PipelineStageMask stages) {
         auto &resource = resources.GetResourceRef(id);
         resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eSampled;
 
@@ -21,28 +70,73 @@ namespace sp::vulkan::render_graph {
         else if (stencil)
             layout = vk::ImageLayout::eStencilReadOnlyOptimal;
 
-        ResourceAccess access = {vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, layout};
+        ResourceAccess access = {stages, vk::AccessFlagBits::eShaderRead, layout};
         pass.AddDependency(access, resource);
         return resource;
     }
 
-    const Resource &PassBuilder::TransferRead(string_view name) {
-        return TransferRead(resources.GetID(name));
+    const Resource &PassBuilder::StorageRead(string_view name, PipelineStageMask stages) {
+        return StorageRead(GetID(name), stages);
     }
 
-    const Resource &PassBuilder::TransferRead(ResourceID id) {
+    const Resource &PassBuilder::StorageRead(ResourceID id, PipelineStageMask stages) {
         auto &resource = resources.GetResourceRef(id);
-        resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eTransferSrc;
         ResourceAccess access = {
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferRead,
-            vk::ImageLayout::eTransferSrcOptimal,
+            stages,
+            vk::AccessFlagBits::eShaderRead,
         };
+        if (resource.type == Resource::Type::RenderTarget) {
+            resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eStorage;
+            access.layout = vk::ImageLayout::eGeneral;
+        } else if (resource.type == Resource::Type::Buffer) {
+            resource.bufferDesc.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+        }
         pass.AddDependency(access, resource);
         return resource;
     }
 
-    Resource PassBuilder::CreateRenderTarget(string_view name, const RenderTargetDesc &desc) {
+    const Resource &PassBuilder::StorageWrite(string_view name, PipelineStageMask stages) {
+        return StorageWrite(GetID(name), stages);
+    }
+
+    const Resource &PassBuilder::StorageWrite(ResourceID id, PipelineStageMask stages) {
+        auto &resource = resources.GetResourceRef(id);
+        ResourceAccess access = {
+            stages,
+            vk::AccessFlagBits::eShaderWrite,
+        };
+        if (resource.type == Resource::Type::RenderTarget) {
+            resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eStorage;
+            access.layout = vk::ImageLayout::eGeneral;
+        } else if (resource.type == Resource::Type::Buffer) {
+            resource.bufferDesc.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+        }
+        pass.AddDependency(access, resource);
+        return resource;
+    }
+
+    const Resource &PassBuilder::BufferAccess(string_view name,
+        PipelineStageMask stages,
+        AccessMask access,
+        BufferUsageMask usage) {
+        return BufferAccess(GetID(name), stages, access, usage);
+    }
+
+    const Resource &PassBuilder::BufferAccess(ResourceID id,
+        PipelineStageMask stages,
+        AccessMask accesses,
+        BufferUsageMask usage) {
+        auto &resource = resources.GetResourceRef(id);
+        ResourceAccess access = {
+            stages,
+            accesses,
+        };
+        resource.bufferDesc.usage |= usage;
+        pass.AddDependency(access, resource);
+        return resource;
+    }
+
+    Resource PassBuilder::RenderTargetCreate(string_view name, const RenderTargetDesc &desc) {
         Resource resource(desc);
         resources.Register(name, resource);
         pass.AddOutput(resource.id);
@@ -50,7 +144,7 @@ namespace sp::vulkan::render_graph {
     }
 
     void PassBuilder::SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info) {
-        SetColorAttachment(index, resources.GetID(name), info);
+        SetColorAttachment(index, GetID(name), info);
     }
 
     void PassBuilder::SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
@@ -69,7 +163,7 @@ namespace sp::vulkan::render_graph {
     }
 
     void PassBuilder::SetDepthAttachment(string_view name, const AttachmentInfo &info) {
-        SetDepthAttachment(resources.GetID(name), info);
+        SetDepthAttachment(GetID(name), info);
     }
 
     void PassBuilder::SetDepthAttachment(ResourceID id, const AttachmentInfo &info) {
@@ -95,26 +189,18 @@ namespace sp::vulkan::render_graph {
         pass.primaryAttachmentIndex = index;
     }
 
-    Resource PassBuilder::CreateBuffer(BufferType bufferType, size_t size) {
-        return CreateBuffer(bufferType, "", size);
+    Resource PassBuilder::BufferCreate(size_t size, BufferUsageMask usage, Residency residency) {
+        return BufferCreate("", size, usage, residency);
     }
 
-    Resource PassBuilder::CreateBuffer(BufferType bufferType, string_view name, size_t size) {
-        Resource resource(bufferType, size);
+    Resource PassBuilder::BufferCreate(string_view name, size_t size, BufferUsageMask usage, Residency residency) {
+        BufferDesc desc;
+        desc.size = size;
+        desc.usage = usage;
+        desc.residency = residency;
+        Resource resource(desc);
         resources.Register(name, resource);
         pass.AddOutput(resource.id);
-        return resource;
-    }
-
-    const Resource &PassBuilder::ReadBuffer(string_view name) {
-        return ReadBuffer(resources.GetID(name));
-    }
-
-    const Resource &PassBuilder::ReadBuffer(ResourceID id) {
-        auto &resource = resources.GetResourceRef(id);
-        // TODO: need to mark stages and usage for buffers that are written from the GPU,
-        // so we can generate barriers. For now this is only used for CPU->GPU.
-        pass.AddDependency({}, resource);
         return resource;
     }
 
@@ -122,7 +208,7 @@ namespace sp::vulkan::render_graph {
         string_view name,
         const RenderTargetDesc &desc,
         const AttachmentInfo &info) {
-        auto resource = CreateRenderTarget(name, desc);
+        auto resource = RenderTargetCreate(name, desc);
         SetAttachmentWithoutOutput(index, resource.id, info);
         return resource;
     }

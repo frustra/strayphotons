@@ -1,7 +1,5 @@
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
-#include "lib/light_data_uniform.glsl"
-#include "lib/view_states_uniform.glsl"
 
 layout(binding = 0) uniform sampler2DArray gBuffer0;
 layout(binding = 1) uniform sampler2DArray gBuffer1;
@@ -10,14 +8,19 @@ layout(binding = 3) uniform sampler2D shadowMap;
 
 layout(set = 1, binding = 0) uniform sampler2D lightingGels[MAX_LIGHT_GELS];
 
+INCLUDE_LAYOUT(binding = 11)
+#include "lib/light_data_uniform.glsl"
+
+INCLUDE_LAYOUT(binding = 10)
+#include "lib/view_states_uniform.glsl"
+
+INCLUDE_LAYOUT(binding = 9)
+#include "lib/exposure_state.glsl"
+
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
 #include "../lib/shading.glsl"
-
-layout(push_constant) uniform LightingData {
-    float exposure;
-};
 
 layout(constant_id = 0) const uint MODE = 1;
 

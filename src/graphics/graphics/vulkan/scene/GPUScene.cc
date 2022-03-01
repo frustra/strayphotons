@@ -29,14 +29,12 @@ namespace sp::vulkan {
         FlushMeshes();
     }
 
-    void GPUScene::LoadState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
+    void GPUScene::LoadState(rg::RenderGraph &graph,
+        ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
+        renderables.clear();
         renderableCount = 0;
         primitiveCount = 0;
         vertexCount = 0;
-
-        renderableEntityList = device.GetFramePooledBuffer(BUFFER_TYPE_STORAGE_TRANSFER, 1024 * 1024);
-
-        auto gpuRenderable = (GPURenderableEntity *)renderableEntityList->Mapped();
 
         for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
@@ -55,20 +53,29 @@ namespace sp::vulkan {
             }
             if (!vkMesh->CheckReady()) continue;
 
-            Assert(renderableCount * sizeof(GPURenderableEntity) < renderableEntityList->Size(),
-                "renderable entity overflow");
-
-            gpuRenderable->modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
-            gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
-            gpuRenderable->meshIndex = vkMesh->SceneIndex();
-            gpuRenderable->vertexOffset = vertexCount;
-            gpuRenderable++;
+            GPURenderableEntity gpuRenderable;
+            gpuRenderable.modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
+            gpuRenderable.visibilityMask = renderable.visibility.to_ulong();
+            gpuRenderable.meshIndex = vkMesh->SceneIndex();
+            gpuRenderable.vertexOffset = vertexCount;
+            renderables.push_back(gpuRenderable);
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
             vertexCount += vkMesh->VertexCount();
         }
 
         primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(primitiveCount));
+
+        graph.AddPass("SceneState")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.BufferCreate("RenderableEntities",
+                    renderables.size() * sizeof(renderables.front()),
+                    rg::BufferUsage::eTransferDst,
+                    Residency::CPU_TO_GPU);
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());
+            });
     }
 
     shared_ptr<Mesh> GPUScene::LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex) {
@@ -102,19 +109,22 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
 
-                auto drawCmds = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
-                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand));
+                auto drawCmds = builder.StorageCreate(sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand),
+                    Residency::GPU_ONLY);
+                builder.TransferWrite(drawCmds.id);
                 bufferIDs.drawCommandsBuffer = drawCmds.id;
 
-                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(uint16) * 2);
+                auto drawParams = builder.StorageCreate(maxDraws * sizeof(uint16) * 2, Residency::GPU_ONLY);
                 bufferIDs.drawParamsBuffer = drawParams.id;
+
+                builder.StorageRead("RenderableEntities", rg::PipelineStage::eComputeShader);
             })
             .Execute([this, viewMask, bufferIDs](rg::Resources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
                 cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
 
                 cmd.SetComputeShader("generate_draws_for_view.comp");
-                cmd.SetStorageBuffer(0, 0, renderableEntityList);
+                cmd.SetStorageBuffer(0, 0, resources.GetBuffer("RenderableEntities"));
                 cmd.SetStorageBuffer(0, 1, models);
                 cmd.SetStorageBuffer(0, 2, primitiveLists);
                 cmd.SetStorageBuffer(0, 3, drawBuffer);
@@ -158,20 +168,23 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
 
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
-                    "WarpedVertexDrawCmds",
-                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand));
+                builder.BufferCreate("WarpedVertexDrawCmds",
+                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand),
+                    rg::BufferUsage::eStorageBuffer | rg::BufferUsage::eIndirectBuffer | rg::BufferUsage::eTransferDst,
+                    Residency::GPU_ONLY);
 
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
-                    "WarpedVertexDrawParams",
-                    maxDraws * sizeof(glm::vec4) * 5);
+                builder.StorageCreate("WarpedVertexDrawParams", maxDraws * sizeof(glm::vec4) * 5, Residency::GPU_ONLY);
 
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
-                    "WarpedVertexBuffer",
-                    sizeof(SceneVertex) * vertexCount);
+                builder.BufferCreate("WarpedVertexBuffer",
+                    sizeof(SceneVertex) * vertexCount,
+                    rg::BufferUsage::eStorageBuffer | rg::BufferUsage::eVertexBuffer,
+                    Residency::GPU_ONLY);
+
+                builder.StorageRead("RenderableEntities", rg::PipelineStage::eComputeShader);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 if (vertexCount == 0) return;
+                auto renderableEntityList = resources.GetBuffer("RenderableEntities");
 
                 vk::BufferMemoryBarrier barrier;
                 barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;

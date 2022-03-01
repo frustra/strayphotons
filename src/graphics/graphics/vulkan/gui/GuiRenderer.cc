@@ -164,7 +164,7 @@ namespace sp::vulkan {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
                     auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
-                    cmd.SetTexture(0, 0, texture);
+                    cmd.SetImageView(0, 0, texture);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;

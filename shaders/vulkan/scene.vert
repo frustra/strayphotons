@@ -5,6 +5,7 @@
 layout(num_views = 2) in;
 
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 #include "../lib/vertex_base.glsl"
 
 layout(location = 0) in vec3 inPosition;
@@ -22,6 +23,7 @@ layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
     DrawParams drawParams[];
 };
 
+INCLUDE_LAYOUT(binding = 10)
 #include "lib/view_states_uniform.glsl"
 
 void main() {

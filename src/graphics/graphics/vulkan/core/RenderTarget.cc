@@ -20,6 +20,7 @@ namespace sp::vulkan {
         if (view) return view;
 
         ImageViewCreateInfo info = imageView->CreateInfo();
+        info.viewType = vk::ImageViewType::e2D;
         info.baseArrayLayer = layer;
         info.arrayLayerCount = 1;
         view = device->CreateImageView(info);
@@ -34,7 +35,7 @@ namespace sp::vulkan {
             }
         }
 
-        ZoneScopedN("CreateRenderTarget");
+        ZoneScopedN("RenderTargetCreate");
         ZoneValue(pool.size());
         ZonePrintf("size=%dx%d", desc.extent.width, desc.extent.height);
 

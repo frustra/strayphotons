@@ -54,6 +54,7 @@ namespace sp::vulkan {
         TextureIndex AllocateTextureIndex();
 
         vector<ImageViewPtr> textures;
+        vector<ImageViewPtr> texturesPendingDelete;
 
         vector<TextureIndex> freeTextureIndexes;
         vector<TextureIndex> texturesToFlush;

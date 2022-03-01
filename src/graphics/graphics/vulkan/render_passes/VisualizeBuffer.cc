@@ -8,7 +8,7 @@ namespace sp::vulkan::renderer {
         ResourceID targetID = InvalidResource, outputID;
         graph.AddPass("VisualizeBuffer")
             .Build([&](PassBuilder &builder) {
-                auto &res = builder.ShaderRead(sourceID);
+                auto &res = builder.TextureRead(sourceID);
                 targetID = res.id;
                 auto desc = res.DeriveRenderTarget();
                 desc.format = vk::Format::eR8G8B8A8Srgb;
@@ -42,7 +42,7 @@ namespace sp::vulkan::renderer {
                 }
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, swizzle);
 
-                cmd.SetTexture(0, 0, source);
+                cmd.SetImageView(0, 0, source);
                 cmd.Draw(3);
             });
         return outputID;

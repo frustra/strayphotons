@@ -3,11 +3,13 @@
 layout(num_views = 2) in;
 
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 #include "../lib/vertex_base.glsl"
 
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec4 outColor;
 
+INCLUDE_LAYOUT(binding = 1)
 #include "lib/view_states_uniform.glsl"
 
 vec2 positions[4] = vec2[](vec2(-0.5, 0.5), vec2(-0.5, -0.5), vec2(0.5, 0.5), vec2(0.5, -0.5));
