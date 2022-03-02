@@ -207,7 +207,7 @@ namespace sp {
                     asset = Load(path, AssetType::External);
                 }
 
-                gltf = workQueue.Dispatch<Gltf>(asset, [this, name](std::shared_ptr<const Asset> asset) {
+                gltf = workQueue.Dispatch<Gltf>(asset, [name](std::shared_ptr<const Asset> asset) {
                     if (!asset) {
                         Logf("Gltf not found: %s", name);
                         return std::shared_ptr<Gltf>();

@@ -41,17 +41,20 @@ namespace sp::vulkan {
         if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
 
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
+        string_view message(pCallbackData->pMessage);
+
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            Errorf("VK %s %s", typeStr, pCallbackData->pMessage);
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+            Errorf("VK %s %s", typeStr, message);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            Warnf("VK %s %s", typeStr, pCallbackData->pMessage);
+            Warnf("VK %s %s", typeStr, message);
             break;
         default:
             break;
         }
-        Tracef("VK %s %s", typeStr, pCallbackData->pMessage);
+        Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
     }
 

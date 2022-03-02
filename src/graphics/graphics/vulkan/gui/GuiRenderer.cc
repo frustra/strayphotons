@@ -14,7 +14,7 @@
 #include <imgui/imgui.h>
 
 namespace sp::vulkan {
-    GuiRenderer::GuiRenderer(DeviceContext &device) : device(device) {
+    GuiRenderer::GuiRenderer(DeviceContext &device) {
         vertexLayout = make_unique<VertexLayout>(0, sizeof(ImDrawVert));
         vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, pos));
         vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));

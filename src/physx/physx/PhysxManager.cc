@@ -9,6 +9,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
 #include <PxScene.h>
@@ -20,9 +21,8 @@
 namespace sp {
     using namespace physx;
 
-    // clang-format off
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
-    // clang-format on
+    CVar<bool> CVarPhysxDebugLines("x.DebugLines", false, "Show physx debug visualization lines");
 
     PhysxManager::PhysxManager(bool stepMode)
         : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
@@ -62,6 +62,18 @@ namespace sp {
                     this->Step(std::max(1u, arg));
                 });
         }
+
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            "physx",
+            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto ent = scene->NewSystemEntity(lock, scene, debugLineEntity.Name());
+                auto &laser = ent.Set<ecs::LaserLine>(lock);
+                laser.intensity = 0.5f;
+                laser.mediaDensityFactor = 0;
+                laser.radius = 0.005f;
+                laser.line = ecs::LaserLine::Segments();
+            });
+
         StartThread(stepMode);
     }
 
@@ -152,6 +164,12 @@ namespace sp {
 
                 startIndex += n;
             }
+        }
+
+        if (CVarPhysxDebugLines.Changed()) {
+            float scale = CVarPhysxDebugLines.Get(true);
+            scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, scale);
+            scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, scale);
         }
 
         animationSystem.Frame();
@@ -248,6 +266,24 @@ namespace sp {
             constraintSystem.BreakConstraints(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
+
+            auto debugLines = debugLineEntity.Get(lock);
+            if (debugLines.Has<ecs::LaserLine>(lock)) {
+                auto &laser = debugLines.Get<ecs::LaserLine>(lock);
+                auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);
+                segments.clear();
+                if (CVarPhysxDebugLines.Get()) {
+                    auto &rb = scene->getRenderBuffer();
+                    for (size_t i = 0; i < rb.getNbLines(); i++) {
+                        auto &line = rb.getLines()[i];
+                        ecs::LaserLine::Segment segment;
+                        segment.start = PxVec3ToGlmVec3(line.pos0);
+                        segment.end = PxVec3ToGlmVec3(line.pos1);
+                        segment.color = PxColorToGlmVec3(line.color0);
+                        segments.push_back(segment);
+                    }
+                }
+            }
         }
 
         triggerSystem.Frame();

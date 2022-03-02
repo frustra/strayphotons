@@ -34,13 +34,15 @@ namespace sp {
             auto &lines = entity.Get<ecs::LaserLine>(lock);
             lines.on = true;
             lines.intensity = emitter.intensity;
-            lines.color = emitter.color;
             lines.relative = false;
-            lines.points.clear();
+
+            auto &line = std::get<ecs::LaserLine::Line>(lines.line);
+            line.color = emitter.color;
+            line.points.clear();
 
             glm::vec3 rayStart = transform.GetPosition();
             glm::vec3 rayDir = transform.GetForward();
-            lines.points.push_back(rayStart);
+            line.points.push_back(rayStart);
 
             PxRaycastBuffer hit;
             PxFilterData filterData;
@@ -79,7 +81,7 @@ namespace sp {
                     }
                 }
 
-                lines.points.push_back(hitPos);
+                line.points.push_back(hitPos);
 
                 if (reflect) {
                     rayDir = glm::normalize(glm::reflect(rayDir, PxVec3ToGlmVec3(hit.block.normal)));
