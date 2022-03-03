@@ -52,9 +52,6 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     float t = dot(surfaceNormal, info.shadowMapPos) / dot(surfaceNormal, rayDir);
     float fragmentDepth = LinearDepth(rayDir * t, info.clip);
 
-    float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
-    float testDepth = fragmentDepth - shadowBias;
-
     float values[8] = {
         // clang-format off
         texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[0] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
@@ -68,21 +65,21 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
         // clang-format on
     };
 
-    float maxDepth = max(values[0], max(values[1], max(values[2], values[3])));
-    maxDepth = max(maxDepth, max(values[4], max(values[5], max(values[6], values[7]))));
-    testDepth -= maxDepth - testDepth;
-    // clang-format off
-    float totalSample = step(testDepth, values[0]) +
-                        step(testDepth, values[1]) +
-                        step(testDepth, values[2]) +
-                        step(testDepth, values[3]) +
-                        step(testDepth, values[4]) +
-                        step(testDepth, values[5]) +
-                        step(testDepth, values[6]) +
-                        step(testDepth, values[7]);
-    // clang-format on
+    float avgDepth = (values[0] + values[1] + values[2] + values[3] + values[4] + values[5] + values[6] + values[7]) *
+                     0.125;
+    float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
+    float testDepth = fragmentDepth - shadowBias;
 
-    return edgeTerm.x * edgeTerm.y * smoothstep(2, 8, totalSample);
+    float totalSample = step(testDepth - max(0, avgDepth - values[0]), values[0]) +
+                        step(testDepth - max(0, avgDepth - values[1]), values[1]) +
+                        step(testDepth - max(0, avgDepth - values[2]), values[2]) +
+                        step(testDepth - max(0, avgDepth - values[3]), values[3]) +
+                     step(testDepth - max(0, avgDepth - values[4]), values[4]) +
+                        step(testDepth - max(0, avgDepth - values[5]), values[5]) +
+                        step(testDepth - max(0, avgDepth - values[6]), values[6]) +
+                        step(testDepth - max(0, avgDepth - values[7]), values[7]);
+
+    return edgeTerm.x * edgeTerm.y * smoothstep(2, 5, totalSample);
 }
 
 float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
