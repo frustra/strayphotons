@@ -8,6 +8,7 @@
     #include <linenoise.h>
 #endif
 
+#include "assets/Script.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "core/Tracing.hh"
@@ -108,8 +109,13 @@ namespace sp {
         outputLines.push_back({lvl, line});
     }
 
-    void ConsoleManager::StartThread(bool exitOnEmptyQueue) {
-        this->exitOnEmptyQueue = exitOnEmptyQueue;
+    void ConsoleManager::StartThread(const Script *startupScript) {
+        if (startupScript) {
+            exitOnEmptyQueue = true;
+            for (string line : startupScript->Lines()) {
+                scriptCommands.emplace(line);
+            }
+        }
         RegisteredThread::StartThread();
     }
 
@@ -117,16 +123,25 @@ namespace sp {
         ZoneScoped;
         std::unique_lock<std::mutex> ulock(queueLock, std::defer_lock);
 
-        auto now = chrono_clock::now();
-
         ulock.lock();
-        if (exitOnEmptyQueue && queuedCommands.empty()) {
+        if (exitOnEmptyQueue && queuedCommands.empty() && scriptCommands.empty()) {
             ulock.unlock();
             ParseAndExecute("exit");
             StopThread(false);
             return;
         }
 
+        auto now = chrono_clock::now();
+        while (!scriptCommands.empty() && (queuedCommands.empty() || queuedCommands.top().wait_until > now)) {
+            auto text = scriptCommands.front();
+            scriptCommands.pop();
+            ulock.unlock();
+
+            ParseAndExecute(text);
+
+            ulock.lock();
+            now = chrono_clock::now();
+        }
         while (!queuedCommands.empty()) {
             auto top = queuedCommands.top();
             if (top.wait_until > now) break;

@@ -13,6 +13,8 @@
 #include <thread>
 
 namespace sp {
+    class Script;
+
     struct ConsoleLine {
         logging::Level level;
         string text;
@@ -36,7 +38,7 @@ namespace sp {
         ConsoleManager();
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
-        void StartThread(bool exitOnEmptyQueue);
+        void StartThread(const Script *startupScript);
 
         void AddLog(logging::Level lvl, const string &line);
 
@@ -69,7 +71,9 @@ namespace sp {
         std::mutex queueLock;
         std::priority_queue<ConsoleInputLine, std::vector<ConsoleInputLine>, std::greater<ConsoleInputLine>>
             queuedCommands;
+
         bool exitOnEmptyQueue = false;
+        std::queue<std::string> scriptCommands;
 
         std::mutex linesLock;
         vector<ConsoleLine> outputLines;
