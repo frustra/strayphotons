@@ -1,0 +1,12 @@
+loadscene cornell-box-1
+stepphysics
+screenshot cornell-box-1.png
+stepgraphics
+loadscene cornell-box-2
+stepphysics
+screenshot cornell-box-2.png
+stepgraphics
+loadscene cornell-box-3
+stepphysics
+screenshot cornell-box-3.png
+stepgraphics
