@@ -74,7 +74,7 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
                         step(testDepth - max(0, avgDepth - values[1]), values[1]) +
                         step(testDepth - max(0, avgDepth - values[2]), values[2]) +
                         step(testDepth - max(0, avgDepth - values[3]), values[3]) +
-                     step(testDepth - max(0, avgDepth - values[4]), values[4]) +
+                        step(testDepth - max(0, avgDepth - values[4]), values[4]) +
                         step(testDepth - max(0, avgDepth - values[5]), values[5]) +
                         step(testDepth - max(0, avgDepth - values[6]), values[6]) +
                         step(testDepth - max(0, avgDepth - values[7]), values[7]);
