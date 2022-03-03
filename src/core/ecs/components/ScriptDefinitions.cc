@@ -12,7 +12,7 @@
 
 namespace ecs {
     static sp::CVar<std::string> CVarFlashlightParent("r.FlashlightParent",
-        "player:player",
+        "player:flatview",
         "Flashlight parent entity name");
 
     robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions = {

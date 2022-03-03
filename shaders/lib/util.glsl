@@ -35,6 +35,10 @@ float linstep(float low, float high, float v) {
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
+vec2 linstep(vec2 low, vec2 high, vec2 v) {
+    return clamp((v - low) / (high - low), 0.0, 1.0);
+}
+
 #include "color_util.glsl"
 #include "spatial_util.glsl"
 

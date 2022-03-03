@@ -32,70 +32,54 @@ float SimpleOcclusion(ShadowInfo info) {
 }
 
 #ifdef MIRROR_SAMPLE
-float SampleOcclusionMirror(vec3 shadowMapCoord, ShadowInfo info, vec3 surfaceNormal, vec2 offset) {
+float DirectOcclusionMirror(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     vec2 mapSize = textureSize(mirrorShadowMap, 0).xy * info.mapOffset.zw;
 #else
-float SampleOcclusion(vec3 shadowMapCoord, ShadowInfo info, vec3 surfaceNormal, vec2 offset) {
+float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     vec2 mapSize = textureSize(shadowMap, 0).xy * info.mapOffset.zw;
 #endif
     vec2 texelSize = 1.0 / mapSize;
-    vec3 texCoord = shadowMapCoord + vec3(offset * texelSize.xy, 0);
+    vec2 shadowMapCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat).xy;
+    const vec2 shadowSampleWidth = 3 * texelSize;
 
-    if (texCoord.xy != clamp(texCoord.xy, 0.0, 1.0)) return 0.0;
-    vec2 edgeTerm = smoothstep(vec2(0.0), texelSize, texCoord.xy);
-    edgeTerm *= smoothstep(vec2(1.0), 1.0 - texelSize, texCoord.xy);
+    // Clip and smooth out the edges of the shadow map so we don't sample neighbors
+    if (shadowMapCoord != clamp(shadowMapCoord, 0.0, 1.0)) return 0.0;
+    vec2 edgeTerm = linstep(vec2(0.0), shadowSampleWidth, shadowMapCoord);
+    edgeTerm *= linstep(vec2(1.0), 1.0 - shadowSampleWidth, shadowMapCoord);
 
-    vec3 rayDir = normalize(vec3(texCoord.xy * info.nearInfo.zw + info.nearInfo.xy, -info.clip.x));
-
+    // Calculate the the shadow map depth for the current fragment
+    vec3 rayDir = normalize(vec3(shadowMapCoord * info.nearInfo.zw + info.nearInfo.xy, -info.clip.x));
     float t = dot(surfaceNormal, info.shadowMapPos) / dot(surfaceNormal, rayDir);
-    vec3 hitPos = rayDir * t;
+    float fragmentDepth = LinearDepth(rayDir * t, info.clip);
 
+    float values[8] = {
+        // clang-format off
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[0] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[1] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[2] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[3] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[4] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[5] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[6] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[7] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r
+        // clang-format on
+    };
+
+    float avgDepth = (values[0] + values[1] + values[2] + values[3] + values[4] + values[5] + values[6] + values[7]) *
+                     0.125;
     float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
+    float testDepth = fragmentDepth - shadowBias;
 
-    float testDepth = LinearDepth(hitPos, info.clip);
-    testDepth = max(testDepth, LinearDepth(info.shadowMapPos, info.clip) - shadowBias * 2.0);
+    float totalSample = step(testDepth - max(0, avgDepth - values[0]), values[0]) +
+                        step(testDepth - max(0, avgDepth - values[1]), values[1]) +
+                        step(testDepth - max(0, avgDepth - values[2]), values[2]) +
+                        step(testDepth - max(0, avgDepth - values[3]), values[3]) +
+                        step(testDepth - max(0, avgDepth - values[4]), values[4]) +
+                        step(testDepth - max(0, avgDepth - values[5]), values[5]) +
+                        step(testDepth - max(0, avgDepth - values[6]), values[6]) +
+                        step(testDepth - max(0, avgDepth - values[7]), values[7]);
 
-    vec2 coord = texCoord.xy * info.mapOffset.zw + info.mapOffset.xy;
-    vec3 sampledDepth = vec3(texture(TEXTURE_SAMPLER(coord)).r, 0, 0);
-    vec4 values = textureGather(TEXTURE_SAMPLER(coord), 0);
-    sampledDepth.y = min(values.x, min(values.y, min(values.z, values.w)));
-    sampledDepth.z = max(values.x, max(values.y, max(values.z, values.w)));
-
-    float minTest = min(sampledDepth.y, testDepth - shadowBias);
-    minTest = max(minTest, step(sampledDepth.z, testDepth - shadowBias * 2.0) * testDepth - shadowBias);
-
-    return edgeTerm.x * edgeTerm.y * smoothstep(minTest, testDepth, sampledDepth.x);
-}
-
-#ifdef MIRROR_SAMPLE
-float DirectOcclusionMirror(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
-#else
-float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
-#endif
-    vec3 shadowMapCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat);
-
-    // #ifdef MIRROR_SAMPLE
-    // 	return SampleOcclusionMirror(shadowMapCoord, info, surfaceNormal, vec2(0));
-    // #else
-    // 	return SampleOcclusion(shadowMapCoord, info, surfaceNormal, vec2(0));
-    // #endif
-
-    float occlusion = 0;
-    for (int x = -DiskKernelRadius; x <= DiskKernelRadius; x++) {
-        for (int y = -DiskKernelRadius; y <= DiskKernelRadius; y++) {
-            vec2 offset = vec2(x, y) * 1.3;
-
-#ifdef MIRROR_SAMPLE
-            occlusion += SampleOcclusionMirror(shadowMapCoord, info, surfaceNormal, rotation0 * offset) *
-                         DiskKernel[x + DiskKernelRadius][y + DiskKernelRadius];
-#else
-            occlusion += SampleOcclusion(shadowMapCoord, info, surfaceNormal, rotation0 * offset) *
-                         DiskKernel[x + DiskKernelRadius][y + DiskKernelRadius];
-#endif
-        }
-    }
-
-    return smoothstep(0.3, 1.0, occlusion);
+    return edgeTerm.x * edgeTerm.y * smoothstep(2, 5, totalSample);
 }
 
 float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
