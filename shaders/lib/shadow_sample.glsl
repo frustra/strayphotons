@@ -32,24 +32,6 @@ float SimpleOcclusion(ShadowInfo info) {
 }
 
 #ifdef MIRROR_SAMPLE
-float SampleOcclusionMirror(vec2 shadowMapCoord, ShadowInfo info, float testDepth) {
-#else
-float SampleOcclusion(vec2 shadowMapCoord, ShadowInfo info, float testDepth) {
-#endif
-    vec2 coord = shadowMapCoord * info.mapOffset.zw + info.mapOffset.xy;
-    vec4 values;
-    values.x = textureOffset(TEXTURE_SAMPLER(coord), ivec2(-1, 0)).r;
-    values.y = textureOffset(TEXTURE_SAMPLER(coord), ivec2(1, 0)).r;
-    values.z = textureOffset(TEXTURE_SAMPLER(coord), ivec2(0, -1)).r;
-    values.w = textureOffset(TEXTURE_SAMPLER(coord), ivec2(0, 1)).r;
-
-    vec4 deltaDepths = values - testDepth;
-    float maxDelta = max(deltaDepths.x, max(deltaDepths.y, max(deltaDepths.z, deltaDepths.w)));
-    vec4 samples = step(testDepth - maxDelta, values);
-    return smoothstep(0, 4, samples.x + samples.y + samples.z + samples.w);
-}
-
-#ifdef MIRROR_SAMPLE
 float DirectOcclusionMirror(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     vec2 mapSize = textureSize(mirrorShadowMap, 0).xy * info.mapOffset.zw;
 #else
@@ -58,11 +40,12 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
 #endif
     vec2 texelSize = 1.0 / mapSize;
     vec2 shadowMapCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat).xy;
+	const vec2 shadowSampleWidth = 3 * texelSize;
 
     // Clip and smooth out the edges of the shadow map so we don't sample neighbors
     if (shadowMapCoord != clamp(shadowMapCoord, 0.0, 1.0)) return 0.0;
-    vec2 edgeTerm = linstep(texelSize, texelSize * 2, shadowMapCoord);
-    edgeTerm *= linstep(1.0 - texelSize, 1.0 - texelSize * 2, shadowMapCoord);
+    vec2 edgeTerm = linstep(vec2(0.0), shadowSampleWidth, shadowMapCoord);
+    edgeTerm *= linstep(vec2(1.0), 1.0 - shadowSampleWidth, shadowMapCoord);
 
     // Calculate the the shadow map depth for the current fragment
     vec3 rayDir = normalize(vec3(shadowMapCoord * info.nearInfo.zw + info.nearInfo.xy, -info.clip.x));
@@ -72,33 +55,31 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
     float testDepth = fragmentDepth - shadowBias;
 
-    // #ifdef MIRROR_SAMPLE
-    //     return edgeTerm.x * edgeTerm.y * SampleOcclusionMirror(shadowMapCoord, info, testDepth);
-    // #else
-    //     return edgeTerm.x * edgeTerm.y * SampleOcclusion(shadowMapCoord, info, testDepth);
-    // #endif
+	float values[8] = {
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[0] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[1] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[2] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[3] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[4] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[5] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[6] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[7] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r
+	};
 
-    float occlusion = 0;
-    vec2 offset = rotation0 * vec2(texelSize.x, 0);
-#ifdef MIRROR_SAMPLE
-    occlusion += SampleOcclusionMirror(shadowMapCoord + offset, info, testDepth);
-    offset = mat2(0, -1, 1, 0) * offset;
-    occlusion += SampleOcclusionMirror(shadowMapCoord + offset, info, testDepth);
-    offset = mat2(0, -1, 1, 0) * offset;
-    occlusion += SampleOcclusionMirror(shadowMapCoord + offset, info, testDepth);
-    offset = mat2(0, -1, 1, 0) * offset;
-    occlusion += SampleOcclusionMirror(shadowMapCoord + offset, info, testDepth);
-#else
-    occlusion += SampleOcclusion(shadowMapCoord + offset, info, testDepth);
-    offset = mat2(0, -1, 1, 0) * offset;
-    occlusion += SampleOcclusion(shadowMapCoord + offset, info, testDepth);
-    offset = mat2(0, -1, 1, 0) * offset;
-    occlusion += SampleOcclusion(shadowMapCoord + offset, info, testDepth);
-    offset = mat2(0, -1, 1, 0) * offset;
-    occlusion += SampleOcclusion(shadowMapCoord + offset, info, testDepth);
-#endif
+    float maxDepth = max(values[0], max(values[1], max(values[2], values[3])));
+    maxDepth = max(maxDepth, max(values[4], max(values[5], max(values[6], values[7]))));
+	testDepth -= maxDepth - testDepth;
+    float totalSample = 
+		step(testDepth, values[0]) +
+		step(testDepth, values[1]) +
+		step(testDepth, values[2]) +
+		step(testDepth, values[3]) +
+		step(testDepth, values[4]) +
+		step(testDepth, values[5]) +
+		step(testDepth, values[6]) +
+		step(testDepth, values[7]);
 
-    return edgeTerm.x * edgeTerm.y * linstep(0.05, 1.0, occlusion * 0.25);
+    return edgeTerm.x * edgeTerm.y * smoothstep(2, 8, totalSample);
 }
 
 float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
