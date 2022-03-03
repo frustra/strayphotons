@@ -139,8 +139,7 @@ vec3 DirectShading(vec3 worldPosition,
 #endif
 
         // Sum output.
-        // pixelLuminance += vec3(occlusion, 0, illuminance);
-		pixelLuminance += occlusion * lightTint * luminance;
+        pixelLuminance += occlusion * lightTint * luminance;
     }
 
 #ifdef INCLUDE_MIRRORS
