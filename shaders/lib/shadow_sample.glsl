@@ -40,7 +40,7 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
 #endif
     vec2 texelSize = 1.0 / mapSize;
     vec2 shadowMapCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat).xy;
-	const vec2 shadowSampleWidth = 3 * texelSize;
+    const vec2 shadowSampleWidth = 3 * texelSize;
 
     // Clip and smooth out the edges of the shadow map so we don't sample neighbors
     if (shadowMapCoord != clamp(shadowMapCoord, 0.0, 1.0)) return 0.0;
@@ -55,29 +55,32 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
     float testDepth = fragmentDepth - shadowBias;
 
-	float values[8] = {
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[0] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[1] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[2] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[3] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[4] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[5] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[6] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
-    	texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[7] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r
-	};
+    float values[8] = {
+        // clang-format off
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[0] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[1] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[2] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[3] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[4] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[5] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[6] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r,
+        texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * SpiralOffsets[7] * shadowSampleWidth) * info.mapOffset.zw + info.mapOffset.xy)).r
+        // clang-format on
+    };
 
     float maxDepth = max(values[0], max(values[1], max(values[2], values[3])));
     maxDepth = max(maxDepth, max(values[4], max(values[5], max(values[6], values[7]))));
-	testDepth -= maxDepth - testDepth;
-    float totalSample = 
-		step(testDepth, values[0]) +
-		step(testDepth, values[1]) +
-		step(testDepth, values[2]) +
-		step(testDepth, values[3]) +
-		step(testDepth, values[4]) +
-		step(testDepth, values[5]) +
-		step(testDepth, values[6]) +
-		step(testDepth, values[7]);
+    testDepth -= maxDepth - testDepth;
+    // clang-format off
+    float totalSample = step(testDepth, values[0]) +
+                        step(testDepth, values[1]) +
+                        step(testDepth, values[2]) +
+                        step(testDepth, values[3]) +
+                        step(testDepth, values[4]) +
+                        step(testDepth, values[5]) +
+                        step(testDepth, values[6]) +
+                        step(testDepth, values[7]);
+    // clang-format on
 
     return edgeTerm.x * edgeTerm.y * smoothstep(2, 8, totalSample);
 }
