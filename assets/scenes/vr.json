@@ -79,7 +79,7 @@
 					"prefab": "gltf",
 					"parameters": {
 						"model": "vr_glove_right",
-						"render": false,
+						"render": true,
 						"physics_group": "noclip",
 						"physics_joints": "spherical"
 					}

@@ -115,9 +115,9 @@ namespace ecs {
                             float boneLength = glm::length(boneVector);
                             Physics physics;
                             if (boneLength > 0.0f) {
-                                physics.shape = PhysicsShape::Capsule(boneLength, 0.01f);
+                                physics.shape = PhysicsShape::Capsule(boneLength, 0.01f * globalTransform.GetScale().x);
                             } else {
-                                physics.shape = PhysicsShape::Sphere(0.01f);
+                                physics.shape = PhysicsShape::Sphere(0.01f * globalTransform.GetScale().x);
                             }
                             if (jointsParam == "spherical") {
                                 // physics.SetJoint(transform.parent,
