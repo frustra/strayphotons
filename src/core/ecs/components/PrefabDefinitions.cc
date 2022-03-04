@@ -81,7 +81,7 @@ namespace ecs {
                     if (node.meshIndex) {
                         if (state.GetParam<bool>("render")) {
                             Renderable renderable(asyncGltf, *node.meshIndex);
-                            ecs::Component<Renderable>::Apply(renderable, lock, newEntity);
+                            Component<Renderable>::Apply(renderable, lock, newEntity);
                         }
 
                         auto physicsParam = state.GetParam<std::string>("physics");
@@ -100,16 +100,19 @@ namespace ecs {
                                 Abortf("Unknown gltf physics param: %s", physicsParam);
                             }
                             physics.group = group;
-                            ecs::Component<Physics>::Apply(physics, lock, newEntity);
+                            Component<Physics>::Apply(physics, lock, newEntity);
                         }
                     }
 
                     auto jointsParam = state.GetParam<std::string>("physics_joints");
-                    if (!jointsParam.empty() && transform.parent) {
+                    if (!jointsParam.empty() && transform.parent.Has<TransformTree>(lock)) {
                         auto it = jointNodes.find(nodeId);
                         if (it != jointNodes.end()) {
                             sp::to_lower(jointsParam);
-                            float boneLength = glm::length(transform.pose.GetPosition());
+                            auto parentTransform = transform.parent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                            auto globalTransform = transform.GetGlobalTransform(lock);
+                            glm::vec3 boneVector = globalTransform.GetPosition() - parentTransform.GetPosition();
+                            float boneLength = glm::length(boneVector);
                             Physics physics;
                             if (boneLength > 0.0f) {
                                 physics.shape = PhysicsShape::Capsule(boneLength, 0.01f);
@@ -117,23 +120,25 @@ namespace ecs {
                                 physics.shape = PhysicsShape::Sphere(0.01f);
                             }
                             if (jointsParam == "spherical") {
-                                physics.SetJoint(transform.parent,
-                                    PhysicsJointType::Spherical,
-                                    glm::vec2(),
-                                    -transform.pose.GetPosition());
+                                // physics.SetJoint(transform.parent,
+                                //     PhysicsJointType::Spherical,
+                                //     glm::vec2(),
+                                //     -boneVector);
                             } else if (jointsParam == "hinge") {
-                                physics.SetJoint(transform.parent,
-                                    PhysicsJointType::Hinge,
-                                    glm::vec2(),
-                                    -transform.pose.GetPosition());
+                                // physics.SetJoint(transform.parent, PhysicsJointType::Hinge, glm::vec2(),
+                                // -boneVector);
                             } else {
                                 Abortf("Unknown physics_joints param: %s", jointsParam);
                             }
-                            physics.shapeTransform = ecs::Transform(transform.pose.GetPosition() * -0.5f,
-                                glm::angleAxis(glm::radians(-90.0f), glm::vec3(0, 0, 1)));
+                            auto inversePose = glm::inverse(transform.pose.GetRotation());
+                            physics.shapeTransform = Transform(inversePose * glm::vec3(boneLength * 0.5f, 0, 0),
+                                inversePose);
                             physics.group = group;
                             physics.kinematic = true;
-                            ecs::Component<Physics>::Apply(physics, lock, newEntity);
+                            Component<Physics>::Apply(physics, lock, newEntity);
+
+                            Renderable renderable(sp::GAssets.LoadGltf("smolbox"), 0);
+                            Component<Renderable>::Apply(renderable, lock, newEntity);
                         }
                     }
 

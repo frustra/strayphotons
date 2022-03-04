@@ -51,9 +51,7 @@
                 "prefab": "gltf",
                 "parameters": {
                     "model": "vr_glove_left",
-                    "render": true,
-                    "physics_group": "noclip",
-                    "physics_joints": "spherical"
+                    "render": true
                 }
             }
         },
@@ -66,11 +64,35 @@
                 "prefab": "gltf",
                 "parameters": {
                     "model": "vr_glove_right",
-                    "render": true,
-                    "physics_group": "noclip",
-                    "physics_joints": "spherical"
+                    "render": true
                 }
             }
-        }
+        },
+		{
+			"name": "testbones",
+			"transform": {
+				"translate": [1, 1, -1],
+                "scale": [10, 10, 10]
+			},
+			"script": [
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "vr_glove_right",
+						"render": false,
+						"physics_group": "noclip",
+						"physics_joints": "spherical"
+					}
+				},
+				{
+					"onTick": "rotate",
+					"parameters": {
+						"axis_x": 1.0,
+						"axis_y": 1.0,
+						"speed": 0
+					}
+				}
+			]
+		}
     ]
 }

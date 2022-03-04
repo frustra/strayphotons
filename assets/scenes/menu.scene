@@ -28,31 +28,6 @@
 			}
 		},
 		{
-			"name": "testbones",
-			"transform": {
-				"translate": [1, 1, -1]
-			},
-			"script": [
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "test_skin",
-						"render": true,
-						"physics_group": "noclip",
-						"physics_joints": "spherical"
-					}
-				},
-				{
-					"onTick": "rotate",
-					"parameters": {
-						"axis_x": 1.0,
-						"axis_y": 1.0,
-						"speed": 0
-					}
-				}
-			]
-		},
-		{
 			"__comment": "floor",
 			"renderable": "box",
 			"transform": {
