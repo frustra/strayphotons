@@ -105,9 +105,6 @@ namespace sp {
             GetConsoleManager().QueueParseAndExecute("syncscene");
 
             Debugf("Running script: %s", startupScript->path);
-            for (string line : startupScript->Lines()) {
-                GetConsoleManager().QueueParseAndExecute(line);
-            }
         } else {
             if (options.count("map")) {
                 scenes.QueueAction(SceneAction::LoadScene, options["map"].as<string>());
@@ -116,7 +113,7 @@ namespace sp {
             }
         }
 
-        GetConsoleManager().StartThread(startupScript != nullptr);
+        GetConsoleManager().StartThread(startupScript);
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT
