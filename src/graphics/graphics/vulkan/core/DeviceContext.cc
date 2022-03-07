@@ -414,6 +414,8 @@ namespace sp::vulkan {
             threadContextUnique = make_unique<ThreadContext>();
             ThreadContext *threadContext = threadContextUnique.get();
 
+            threadContext->bufferPool = make_unique<BufferPool>(*this);
+
             for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                 vk::CommandPoolCreateInfo poolInfo;
                 poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
@@ -687,6 +689,7 @@ namespace sp::vulkan {
         }
 
         Thread().ReleaseAvailableResources();
+        Thread().bufferPool->Tick();
 
         renderTargetPool->TickFrame();
     }
@@ -767,19 +770,21 @@ namespace sp::vulkan {
         return cmdHandle;
     }
 
-    void DeviceContext::Submit(CommandContextPtr &cmdArg,
+    void DeviceContext::Submit(CommandContextPtr &cmd,
+        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
+        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
+        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
+        vk::Fence fence) {
+        Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence);
+    }
+
+    void DeviceContext::Submit(vk::ArrayProxy<CommandContextPtr> cmds,
         vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
         vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
         vk::Fence fence) {
         ZoneScoped;
         Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread (for now)");
-
-        CommandContextPtr cmd = cmdArg;
-        // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
-        cmdArg.reset();
-        if (cmd->recording) cmd->End();
-
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
         InlineVector<vk::Semaphore, 8> signalSemArray;
@@ -791,13 +796,36 @@ namespace sp::vulkan {
         InlineVector<vk::PipelineStageFlags, 8> waitStageArray;
         waitStageArray.insert(waitStageArray.end(), waitStages.begin(), waitStages.end());
 
-        if (cmd->WritesToSwapchain()) {
-            waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-            waitSemArray.push_back(*Frame().imageAvailableSemaphore);
-            signalSemArray.push_back(*Frame().renderCompleteSemaphore);
+        QueueType queue = QUEUE_TYPES_COUNT;
+
+        for (auto &cmd : cmds) {
+            auto cmdFence = cmd->Fence();
+            auto cmdQueue = QueueType(cmd->GetType());
+
+            if (cmd->WritesToSwapchain()) {
+                waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+                waitSemArray.push_back(*Frame().imageAvailableSemaphore);
+                signalSemArray.push_back(*Frame().renderCompleteSemaphore);
+
+                Assert(!fence, "can't use custom fence on submission to swapchain");
+                Assert(!cmdFence, "can't use command context fence on submission to swapchain");
+                fence = *Frame().inFlightFence;
+                device->resetFences({fence});
+            } else if (cmdFence) {
+                Assert(!fence, "can't submit with multiple fences");
+                fence = cmdFence;
+            }
+
+            Assert(queue == QUEUE_TYPES_COUNT || cmdQueue == queue, "can't submit with multiple queues");
+            queue = cmdQueue;
         }
 
-        const vk::CommandBuffer commandBuffer = cmd->Raw();
+        vector<vk::CommandBuffer> cmdBufs;
+        cmdBufs.reserve(cmds.size());
+        for (auto &cmd : cmds) {
+            if (cmd->recording) cmd->End();
+            cmdBufs.push_back(cmd->Raw());
+        }
 
         vk::SubmitInfo submitInfo;
         submitInfo.waitSemaphoreCount = waitSemArray.size();
@@ -805,23 +833,14 @@ namespace sp::vulkan {
         submitInfo.pWaitDstStageMask = waitStageArray.data();
         submitInfo.signalSemaphoreCount = signalSemArray.size();
         submitInfo.pSignalSemaphores = signalSemArray.data();
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.commandBufferCount = cmdBufs.size();
+        submitInfo.pCommandBuffers = cmdBufs.data();
 
-        auto cmdFence = cmd->Fence();
+        queues[queue].submit({submitInfo}, fence);
 
-        if (cmd->WritesToSwapchain()) {
-            Assert(!fence, "can't use custom fence on submission to swapchain");
-            Assert(!cmdFence, "can't use command context fence on submission to swapchain");
-            fence = *Frame().inFlightFence;
-            device->resetFences({fence});
-        } else if (cmdFence) {
-            Assert(!fence, "can't use custom fence with command context that has a fence");
-            fence = cmdFence;
+        for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {
+            cmdPtr->reset();
         }
-
-        auto &queue = queues[QueueType(cmd->GetType())];
-        queue.submit({submitInfo}, fence);
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
@@ -835,6 +854,10 @@ namespace sp::vulkan {
 
     BufferPtr DeviceContext::AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo) {
         return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+    }
+
+    BufferPtr DeviceContext::GetBuffer(const BufferDesc &desc) {
+        return Thread().bufferPool->Get(desc);
     }
 
     BufferPtr DeviceContext::GetFramePooledBuffer(BufferType type, vk::DeviceSize size) {
@@ -855,31 +878,9 @@ namespace sp::vulkan {
             usage = vk::BufferUsageFlagBits::eUniformBuffer;
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
             break;
-        case BUFFER_TYPE_INDIRECT:
-            usage = vk::BufferUsageFlagBits::eIndirectBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
         case BUFFER_TYPE_INDEX_TRANSFER:
             usage = vk::BufferUsageFlagBits::eIndexBuffer;
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_STORAGE_TRANSFER:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_STORAGE_LOCAL:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer;
-            residency = VMA_MEMORY_USAGE_GPU_ONLY;
-            break;
-        case BUFFER_TYPE_STORAGE_LOCAL_INDIRECT:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
-                    vk::BufferUsageFlagBits::eTransferDst;
-            residency = VMA_MEMORY_USAGE_GPU_ONLY;
-            break;
-        case BUFFER_TYPE_STORAGE_LOCAL_VERTEX:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
-                    vk::BufferUsageFlagBits::eTransferSrc;
-            residency = VMA_MEMORY_USAGE_GPU_ONLY;
             break;
         case BUFFER_TYPE_VERTEX_TRANSFER:
             usage = vk::BufferUsageFlagBits::eVertexBuffer;
@@ -1065,7 +1066,7 @@ namespace sp::vulkan {
 
                     image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
                     factorCmd->SetComputeShader("texture_factor.comp");
-                    factorCmd->SetTexture(0, 0, factorView);
+                    factorCmd->SetImageView(0, 0, factorView);
 
                     struct {
                         glm::vec4 factor;

@@ -5,7 +5,6 @@
 #include "graphics/vulkan/render_passes/Blur.hh"
 
 namespace sp::vulkan::renderer {
-    static CVar<float> CVarExposure("r.Exposure", 1.0f, "Scale factor for linear luminosity buffer");
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
 
@@ -85,10 +84,16 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.ReadBuffer("WarpedVertexBuffer");
+                builder.BufferAccess("WarpedVertexBuffer",
+                    rg::PipelineStage::eVertexInput,
+                    rg::Access::eVertexAttributeRead,
+                    rg::BufferUsage::eVertexBuffer);
 
                 for (auto &ids : drawIDs) {
-                    builder.ReadBuffer(ids.drawCommandsBuffer);
+                    builder.BufferAccess(ids.drawCommandsBuffer,
+                        rg::PipelineStage::eDrawIndirect,
+                        rg::Access::eIndirectCommandRead,
+                        rg::BufferUsage::eIndirectBuffer);
                 }
             })
 
@@ -127,20 +132,21 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
-                auto gBuffer0 = builder.ShaderRead("GBuffer0");
-                builder.ShaderRead("GBuffer1");
-                builder.ShaderRead("GBuffer2");
-                builder.ShaderRead(depthTarget);
+                auto gBuffer0 = builder.TextureRead("GBuffer0");
+                builder.TextureRead("GBuffer1");
+                builder.TextureRead("GBuffer2");
+                builder.TextureRead(depthTarget);
 
                 auto desc = gBuffer0.DeriveRenderTarget();
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                builder.ReadBuffer("ViewState");
-                builder.CreateUniformBuffer("LightState", sizeof(gpuData));
+                builder.UniformRead("ViewState");
+                builder.StorageRead("ExposureState");
+                builder.UniformCreate("LightState", sizeof(gpuData));
 
                 for (int i = 0; i < gelCount; i++) {
-                    builder.ShaderRead(gelNames[i]);
+                    builder.TextureRead(gelNames[i]);
                 }
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
@@ -154,19 +160,17 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
-                cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
-                cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
-                cmd.SetTexture(0, 3, resources.GetRenderTarget(depthTarget)->ImageView());
-
-                cmd.PushConstants(CVarExposure.Get());
+                cmd.SetImageView(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
+                cmd.SetImageView(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
+                cmd.SetImageView(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
+                cmd.SetImageView(0, 3, resources.GetRenderTarget(depthTarget)->ImageView());
 
                 for (int i = 0; i < MAX_LIGHT_GELS; i++) {
                     if (i < gelCount) {
                         const auto &target = resources.GetRenderTarget(gelNames[i]);
-                        cmd.SetTexture(1, i, target->ImageView());
+                        cmd.SetImageView(1, i, target->ImageView());
                     } else {
-                        cmd.SetTexture(1, i, scene.textures.GetBlankPixel());
+                        cmd.SetImageView(1, i, scene.textures.GetBlankPixel());
                     }
                 }
 
@@ -175,6 +179,7 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, lightState);
+                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.Draw(3);
             });
     }

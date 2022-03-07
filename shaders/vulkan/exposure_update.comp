@@ -1,0 +1,78 @@
+#version 450
+
+#include "../lib/histogram_common.glsl"
+#include "../lib/util.glsl"
+
+layout(binding = 0, r32ui) uniform uimage2D histogram;
+
+layout(binding = 1) readonly buffer ExposureState {
+    float exposure;
+}
+lastExposureState;
+
+layout(binding = 2) buffer NextExposureState {
+    float exposure;
+}
+nextExposureState;
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+layout(push_constant) uniform PushConstants {
+    float exposureMin;
+    float exposureMax;
+    float exposureComp;
+    float eyeAdaptationLow;
+    float eyeAdaptationHigh;
+    float eyeAdaptationMinLuminance;
+    float eyeAdaptationMaxLuminance;
+    float eyeAdaptationUpRate;
+    float eyeAdaptationDownRate;
+    float eyeAdaptationKeyComp;
+};
+
+void main() {
+    nextExposureState.exposure = lastExposureState.exposure;
+
+    float sum = 0;
+
+    for (int i = 0; i < HistogramBins; i++)
+        sum += float(imageLoad(histogram, ivec2(i, 0)).r);
+
+    float discardLower = sum * eyeAdaptationLow / 100.0;
+    float discardUpper = sum * eyeAdaptationHigh / 100.0;
+    float accum = 0.0, totalWeight = 0.0;
+
+    for (int i = 0; i < HistogramBins; i++) {
+        float weight = float(imageLoad(histogram, ivec2(i, 0)).r);
+        float m = min(weight, discardLower);
+
+        weight -= m; // discard samples
+        discardLower -= m;
+        discardUpper -= m;
+
+        weight = min(weight, discardUpper);
+        discardUpper -= weight;
+
+        float value = luminanceFromRatio(float(i) / float(HistogramBins - 1));
+        accum += value * weight;
+        totalWeight += weight;
+    }
+
+    float luminance = accum / max(1e-5, totalWeight);
+
+    luminance = min(luminance, eyeAdaptationMaxLuminance);
+    luminance = max(luminance, eyeAdaptationMinLuminance);
+    luminance /= lastExposureState.exposure;
+
+    float autoKeyComp = 1.03 - 2.0 / (log(luminance * 1000.0 + 1.0) / log(10) + 2.0);
+    autoKeyComp = eyeAdaptationKeyComp * autoKeyComp + 1.0 - eyeAdaptationKeyComp;
+
+    float ev100 = log2(luminance * 100.0 / 12.5) - exposureComp;
+    float newExposure = autoKeyComp / (1.2 * exp2(ev100));
+
+    float alpha = newExposure < lastExposureState.exposure ? eyeAdaptationUpRate : eyeAdaptationDownRate;
+    alpha = max(min(alpha, 0.9999), 0.0001);
+
+    float blended = lastExposureState.exposure * (1 - alpha) + newExposure * alpha;
+    nextExposureState.exposure = max(min(blended, exposureMax), exposureMin);
+}

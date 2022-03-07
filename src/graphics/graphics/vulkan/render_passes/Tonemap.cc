@@ -6,7 +6,7 @@ namespace sp::vulkan::renderer {
     void AddTonemap(RenderGraph &graph) {
         graph.AddPass("Tonemap")
             .Build([&](rg::PassBuilder &builder) {
-                auto luminance = builder.ShaderRead(builder.LastOutputID());
+                auto luminance = builder.TextureRead(builder.LastOutputID());
 
                 auto desc = luminance.DeriveRenderTarget();
                 desc.format = vk::Format::eR8G8B8A8Srgb;
@@ -14,7 +14,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "tonemap.frag");
-                cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.SetImageView(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
                 cmd.Draw(3);
             });
     }

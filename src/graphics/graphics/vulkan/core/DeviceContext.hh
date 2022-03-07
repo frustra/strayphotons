@@ -4,6 +4,7 @@
 #include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/vulkan/core/BufferPool.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
@@ -98,6 +99,12 @@ namespace sp::vulkan {
             vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
             vk::Fence fence = {});
 
+        void Submit(vk::ArrayProxy<CommandContextPtr> cmds,
+            vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
+            vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
+            vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
+            vk::Fence fence = {});
+
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);
 
@@ -117,6 +124,7 @@ namespace sp::vulkan {
 
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
+        BufferPtr GetBuffer(const BufferDesc &desc);
         BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
@@ -286,6 +294,7 @@ namespace sp::vulkan {
             std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
             std::array<unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
             std::array<vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
+            unique_ptr<BufferPool> bufferPool;
 
             void ReleaseAvailableResources();
         };

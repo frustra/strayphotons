@@ -9,14 +9,9 @@ namespace sp::vulkan {
 } // namespace sp::vulkan
 
 namespace sp::vulkan::render_graph {
-    const uint32 RESOURCE_HISTORY_FRAMES = 1;
-
     class RenderGraph {
     public:
-        RenderGraph(DeviceContext &device) : device(device), resourceFrames({device, device}) {
-            frameIndex = 0;
-            resources = &resourceFrames[frameIndex];
-        }
+        RenderGraph(DeviceContext &device);
 
         class InitialPassState {
         public:
@@ -26,9 +21,9 @@ namespace sp::vulkan::render_graph {
             InitialPassState &Build(SetupFunc setupFunc) {
                 Assert(passIndex == ~0u, "multiple Build calls for the same pass");
                 Pass pass(name);
-                pass.scopes = graph.resources->scopeStack;
+                pass.scopes = graph.resources.scopeStack;
 
-                PassBuilder builder(*graph.resources, pass);
+                PassBuilder builder(graph.resources, pass);
                 setupFunc(builder);
                 passIndex = graph.passes.size();
                 graph.passes.push_back(pass);
@@ -86,11 +81,11 @@ namespace sp::vulkan::render_graph {
         void SetTargetImageView(string_view name, ImageViewPtr view);
 
         void RequireResource(string_view name) {
-            RequireResource(resources->GetID(name));
+            RequireResource(resources.GetID(name));
         }
 
         void RequireResource(ResourceID id) {
-            resources->IncrementRef(id);
+            resources.IncrementRef(id);
         }
 
         void Execute();
@@ -102,14 +97,14 @@ namespace sp::vulkan::render_graph {
         vector<RenderTargetInfo> AllRenderTargets();
 
         ResourceID LastOutputID() const {
-            return resources->lastOutputID;
+            return resources.lastOutputID;
         }
         Resource LastOutput() const {
-            return resources->LastOutput();
+            return resources.LastOutput();
         }
 
         bool HasResource(string_view name) const {
-            return resources->GetID(name, false) != InvalidResource;
+            return resources.GetID(name, false) != InvalidResource;
         }
 
         DeviceContext &Device() {
@@ -122,18 +117,13 @@ namespace sp::vulkan::render_graph {
         void AdvanceFrame();
 
         void UpdateLastOutput(const Pass &pass) {
-            if (pass.attachments.size() > pass.primaryAttachmentIndex) {
-                resources->lastOutputID = pass.attachments[pass.primaryAttachmentIndex].resourceID;
-            }
+            if (pass.primaryAttachmentIndex >= pass.attachments.size()) return;
+            auto primaryID = pass.attachments[pass.primaryAttachmentIndex].resourceID;
+            if (primaryID != InvalidResource) resources.lastOutputID = primaryID;
         }
 
         DeviceContext &device;
-
         vector<Pass> passes;
-
-        // Points to an entry in resourceFrames based on the current frame index
-        Resources *resources;
-        std::array<Resources, RESOURCE_HISTORY_FRAMES + 1> resourceFrames;
-        size_t frameIndex;
+        Resources resources;
     };
 } // namespace sp::vulkan::render_graph

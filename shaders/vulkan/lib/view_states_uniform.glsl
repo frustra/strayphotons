@@ -1,4 +1,3 @@
-
-layout(binding = 10) uniform ViewStates {
+uniform ViewStates {
     ViewState views[2];
 };

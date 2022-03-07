@@ -13,6 +13,7 @@ namespace sp::vulkan::render_graph {
 
     const uint32 MAX_RESOURCE_SCOPES = sizeof(uint8);
     const uint32 MAX_RESOURCE_SCOPE_DEPTH = 4;
+    const uint32 RESOURCE_FRAME_COUNT = 2;
 
     const ResourceID InvalidResource = ~0u;
 
@@ -25,7 +26,7 @@ namespace sp::vulkan::render_graph {
 
         Resource() {}
         Resource(RenderTargetDesc desc) : type(Type::RenderTarget), renderTargetDesc(desc) {}
-        Resource(BufferType bufType, size_t size) : type(Type::Buffer), bufferDesc({size, bufType}) {}
+        Resource(BufferDesc desc) : type(Type::Buffer), bufferDesc(desc) {}
 
         explicit operator bool() const {
             return type != Type::Undefined;
@@ -60,9 +61,8 @@ namespace sp::vulkan::render_graph {
     public:
         Resources(DeviceContext &device) : device(device) {
             Reset();
+            nameScopes.emplace_back();
         }
-
-        void Reset();
 
         RenderTargetPtr GetRenderTarget(ResourceID id);
         RenderTargetPtr GetRenderTarget(string_view name);
@@ -72,7 +72,7 @@ namespace sp::vulkan::render_graph {
 
         const Resource &GetResource(string_view name) const;
         const Resource &GetResource(ResourceID id) const;
-        ResourceID GetID(string_view name, bool assertExists = true) const;
+        ResourceID GetID(string_view name, bool assertExists = true, int framesAgo = 0) const;
 
         ResourceID LastOutputID() const {
             return lastOutputID;
@@ -81,11 +81,20 @@ namespace sp::vulkan::render_graph {
             return GetResource(lastOutputID);
         }
 
+        /**
+         * Keeps a resource alive until the next frame's graph has been built.
+         * If no pass depends on the resource in the next frame, it will be released before execution.
+         */
+        void ExportToNextFrame(ResourceID id);
+        void ExportToNextFrame(string_view name);
+
     private:
         friend class RenderGraph;
         friend class PassBuilder;
 
-        void ResizeBeforeExecute();
+        void ResizeIfNeeded();
+        void DecrefExportedResources();
+
         uint32 RefCount(ResourceID id);
         void IncrementRef(ResourceID id);
         void DecrementRef(ResourceID id);
@@ -95,26 +104,37 @@ namespace sp::vulkan::render_graph {
         void BeginScope(string_view name);
         void EndScope();
 
+        void AdvanceFrame();
+        void Reset();
+
         Resource &GetResourceRef(ResourceID id) {
             Assertf(id < resources.size(), "resource ID %u is invalid", id);
             return resources[id];
         }
 
         DeviceContext &device;
+        uint32 frameIndex = 0;
 
         struct Scope {
             string name;
-            robin_hood::unordered_flat_map<string, ResourceID, StringHash, StringEqual> resourceNames;
 
-            ResourceID GetID(string_view name) const;
-            void SetID(string_view name, ResourceID id);
+            struct PerFrame {
+                // robin_hood::unordered_flat_map<string, ResourceID, StringHash, StringEqual> resourceNames;
+                std::unordered_map<string, ResourceID, StringHash, StringEqual> resourceNames;
+            };
+            std::array<PerFrame, RESOURCE_FRAME_COUNT> frames;
+
+            ResourceID GetID(string_view name, uint32 frameIndex) const;
+            void SetID(string_view name, ResourceID id, uint32 frameIndex);
         };
+
         vector<Scope> nameScopes;
         InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
 
         vector<Resource> resources;
+        vector<ResourceID> freeIDs, exportedIDs, lastExportedIDs;
+        size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
-        // Built during execution
         vector<int32> refCounts;
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;

@@ -1,4 +1,5 @@
 target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
+    BufferPool.cc
     CommandContext.cc
     Common.cc
     DeviceContext.cc

@@ -7,10 +7,11 @@
 #include "graphics/vulkan/core/Tracing.hh"
 
 namespace sp::vulkan::render_graph {
+    RenderGraph::RenderGraph(DeviceContext &device) : device(device), resources(device) {}
+
     void RenderGraph::Execute() {
         ZoneScoped;
-        auto &resources = *this->resources;
-        resources.ResizeBeforeExecute();
+        resources.ResizeIfNeeded();
         resources.lastOutputID = InvalidResource;
 
         // passes are already sorted by dependency order
@@ -31,18 +32,40 @@ namespace sp::vulkan::render_graph {
             }
         }
 
+        resources.DecrefExportedResources();
+
         auto timer = device.GetPerfTimer();
 
         std::stack<tracy::ScopedZone> traceScopes;
         std::stack<RenderPhase> phaseScopes;
-        resources.scopeStack.clear();
+
+        auto &frameScopeStack = resources.scopeStack;
+        frameScopeStack.clear();
+
+        vector<CommandContextPtr> pendingCmds;
+        CommandContextPtr cmd;
+
+        auto submitPendingCmds = [&]() {
+            if (cmd) {
+                pendingCmds.push_back(cmd);
+                cmd.reset();
+            }
+
+            if (!pendingCmds.empty()) {
+                device.Submit({(uint32)pendingCmds.size(), pendingCmds.data()});
+                pendingCmds.clear();
+            }
+        };
 
         for (auto &pass : passes) {
             if (!pass.active) continue;
 
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
-            CommandContextPtr cmd;
+            for (auto out : pass.outputs) {
+                resources.IncrementRef(out);
+            }
+
             AddPassBarriers(cmd, pass); // creates cmd if necessary
 
             bool isRenderPass = false;
@@ -76,13 +99,9 @@ namespace sp::vulkan::render_graph {
                 }
             }
 
-            if (!cmd) {
-                if (isRenderPass || pass.ExecutesWithCommandContext()) cmd = device.GetFrameCommandContext();
-            }
-
-            for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
+            for (int i = std::max(pass.scopes.size(), frameScopeStack.size()) - 1; i >= 0; i--) {
                 uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
-                uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : 255;
+                uint8 resScope = i < (int)frameScopeStack.size() ? frameScopeStack[i] : 255;
                 if (resScope != passScope) {
                     if (resScope != 255) {
                         if (!traceScopes.empty()) traceScopes.pop();
@@ -110,7 +129,7 @@ namespace sp::vulkan::render_graph {
                     }
                 }
             }
-            resources.scopeStack = pass.scopes;
+            frameScopeStack = pass.scopes;
 
             tracy::ScopedZone traceZone(__LINE__,
                 __FILE__,
@@ -122,45 +141,49 @@ namespace sp::vulkan::render_graph {
                 true);
 
             if (isRenderPass) {
-                {
-                    GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
-                    RenderPhase phase(pass.name);
-                    phase.StartTimer(*cmd);
-                    cmd->BeginRenderPass(renderPassInfo);
-                    pass.Execute(resources, *cmd);
-                    cmd->EndRenderPass();
-                }
-                device.Submit(cmd);
+                if (!cmd) cmd = device.GetFrameCommandContext();
+                GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
+                RenderPhase phase(pass.name);
+                phase.StartTimer(*cmd);
+                cmd->BeginRenderPass(renderPassInfo);
+                pass.Execute(resources, *cmd);
+                cmd->EndRenderPass();
             } else if (pass.ExecutesWithDeviceContext()) {
+                submitPendingCmds();
                 RenderPhase phase(pass.name);
                 if (timer) phase.StartTimer(*timer);
-                if (cmd) device.Submit(cmd);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
-                {
-                    GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
-                    RenderPhase phase(pass.name);
-                    phase.StartTimer(*cmd);
-                    pass.Execute(resources, *cmd);
-                }
-                device.Submit(cmd);
+                if (!cmd) cmd = device.GetFrameCommandContext();
+                GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
+                RenderPhase phase(pass.name);
+                phase.StartTimer(*cmd);
+                pass.Execute(resources, *cmd);
             } else {
                 Abort("invalid pass");
             }
 
+            if (cmd) pendingCmds.push_back(std::move(cmd));
+            cmd.reset();
+
             for (auto &dep : pass.dependencies) {
                 resources.DecrementRef(dep.id);
+            }
+            for (auto out : pass.outputs) {
+                resources.DecrementRef(out);
             }
 
             pass.executeFunc = {}; // releases any captures
             UpdateLastOutput(pass);
+
+            submitPendingCmds();
         }
 
+        submitPendingCmds();
         AdvanceFrame();
     }
 
     void RenderGraph::AddPassBarriers(CommandContextPtr &cmd, Pass &pass) {
-        auto &resources = *this->resources;
         for (auto &dep : pass.dependencies) {
             if (dep.access.layout == vk::ImageLayout::eUndefined) continue;
 
@@ -216,21 +239,18 @@ namespace sp::vulkan::render_graph {
 
     void RenderGraph::AdvanceFrame() {
         passes.clear();
-        frameIndex = (frameIndex + 1) % resourceFrames.size();
-        resources = &resourceFrames[frameIndex];
-        resources->Reset();
+        resources.AdvanceFrame();
     }
 
     void RenderGraph::BeginScope(string_view name) {
-        resources->BeginScope(name);
+        resources.BeginScope(name);
     }
 
     void RenderGraph::EndScope() {
-        resources->EndScope();
+        resources.EndScope();
     }
 
     void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
-        auto &resources = *this->resources;
         auto &res = resources.GetResource(name);
         Assert(res.renderTargetDesc.extent == view->Extent(), "image extent mismatch");
 
@@ -242,15 +262,14 @@ namespace sp::vulkan::render_graph {
         Assert(view->BaseArrayLayer() == 0, "view can't target a specific layer");
         Assert(res.renderTargetDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
 
-        resources.ResizeBeforeExecute();
+        resources.ResizeIfNeeded();
         resources.renderTargets[res.id] = make_shared<RenderTarget>(device, res.renderTargetDesc, view, ~0u);
     }
 
     vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
         vector<RenderTargetInfo> output;
-        auto &resources = *this->resources;
-        for (const auto &[scope, names] : resources.nameScopes) {
-            for (const auto &[name, id] : names) {
+        for (const auto &[scope, frame] : resources.nameScopes) {
+            for (const auto &[name, id] : frame[resources.frameIndex].resourceNames) {
                 const auto &res = resources.resources[id];
                 if (res.type == Resource::Type::RenderTarget) {
                     output.emplace_back(

@@ -4,18 +4,40 @@
 
 namespace sp::vulkan::render_graph {
     void Resources::Reset() {
-        nameScopes.clear();
-        nameScopes.emplace_back();
+        lastOutputID = InvalidResource;
+
         scopeStack.clear();
         scopeStack.push_back(0);
-        resources.clear();
-        refCounts.clear();
-        renderTargets.clear();
-        buffers.clear();
-        lastOutputID = InvalidResource;
+
+        for (auto &scope : nameScopes) {
+            scope.frames[frameIndex].resourceNames.clear();
+        }
+
+        for (ResourceID id = 0; id < resources.size(); id++) {
+            if (resources[id].type != Resource::Type::Undefined && refCounts[id] == 0) {
+                freeIDs.push_back(id);
+                resources[id].type = Resource::Type::Undefined;
+
+                Assert(!renderTargets[id], "dangling render target");
+                Assert(!buffers[id], "dangling buffer");
+            }
+        }
     }
 
-    void Resources::ResizeBeforeExecute() {
+    void Resources::AdvanceFrame() {
+        frameIndex = (frameIndex + 1) % RESOURCE_FRAME_COUNT;
+        Reset();
+
+        if (resources.size() > lastResourceCount) {
+            consecutiveGrowthFrames++;
+        } else {
+            consecutiveGrowthFrames = 0;
+        }
+        Assertf(consecutiveGrowthFrames < 100, "likely resource leak, have %d resources", resources.size());
+        lastResourceCount = resources.size();
+    }
+
+    void Resources::ResizeIfNeeded() {
         refCounts.resize(resources.size());
         renderTargets.resize(resources.size());
         buffers.resize(resources.size());
@@ -43,7 +65,8 @@ namespace sp::vulkan::render_graph {
         auto &res = resources[id];
         Assert(res.type == Resource::Type::Buffer, "resource is not a buffer");
         auto &buf = buffers[res.id];
-        if (!buf) buf = device.GetFramePooledBuffer(res.bufferDesc.type, res.bufferDesc.size);
+        if (!buf) buf = device.GetBuffer(res.bufferDesc);
+        DebugAssert(res.bufferDesc.usage == buf->Usage(), "buffer usage mismatch");
         return buf;
     }
 
@@ -57,8 +80,9 @@ namespace sp::vulkan::render_graph {
         return invalidResource;
     }
 
-    ResourceID Resources::GetID(string_view name, bool assertExists) const {
+    ResourceID Resources::GetID(string_view name, bool assertExists, int framesAgo) const {
         ResourceID result = InvalidResource;
+        uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
         if (name.find('.') != string_view::npos) {
             // Any resource name with a dot is assumed to be fully qualified.
@@ -68,7 +92,7 @@ namespace sp::vulkan::render_graph {
 
             for (auto &scope : nameScopes) {
                 if (scope.name == scopeName) {
-                    result = scope.GetID(resourceName);
+                    result = scope.GetID(resourceName, getFrameIndex);
                     break;
                 }
             }
@@ -77,7 +101,7 @@ namespace sp::vulkan::render_graph {
         }
 
         for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
-            auto id = nameScopes[*scopeIt].GetID(name);
+            auto id = nameScopes[*scopeIt].GetID(name, getFrameIndex);
             if (id != InvalidResource) return id;
         }
         Assert(!assertExists, string("resource does not exist: ").append(name));
@@ -91,6 +115,7 @@ namespace sp::vulkan::render_graph {
 
     void Resources::IncrementRef(ResourceID id) {
         Assert(id < resources.size(), "id out of range");
+        ResizeIfNeeded();
         ++refCounts[id];
     }
 
@@ -112,46 +137,85 @@ namespace sp::vulkan::render_graph {
     }
 
     void Resources::Register(string_view name, Resource &resource) {
-        resource.id = (ResourceID)resources.size();
-        resources.push_back(resource);
+        if (freeIDs.empty()) {
+            resource.id = (ResourceID)resources.size();
+            resources.push_back(resource);
+        } else {
+            resource.id = freeIDs.back();
+            freeIDs.pop_back();
+            resources[resource.id] = resource;
+        }
 
         if (name.empty()) return;
-        nameScopes[scopeStack.back()].SetID(name, resource.id);
+        nameScopes[scopeStack.back()].SetID(name, resource.id, frameIndex);
     }
 
     void Resources::BeginScope(string_view name) {
-        auto &newScope = nameScopes.emplace_back();
+        Assert(!name.empty(), "scopes must have a name");
+
         const auto &topScope = nameScopes[scopeStack.back()];
+        string fullName;
 
         if (topScope.name.empty()) {
-            newScope.name = name;
+            fullName = name;
         } else {
-            newScope.name = topScope.name + ".";
-            newScope.name.append(name);
+            fullName = topScope.name + ".";
+            fullName.append(name);
+        }
+
+        size_t scopeIndex = 0;
+        for (size_t i = 0; i < nameScopes.size(); i++) {
+            if (nameScopes[i].name == fullName) {
+                scopeIndex = i;
+                break;
+            }
+        }
+        if (scopeIndex == 0) {
+            scopeIndex = nameScopes.size();
+            auto &newScope = nameScopes.emplace_back();
+            newScope.name = std::move(fullName);
         }
 
         Assert(scopeStack.size() < MAX_RESOURCE_SCOPE_DEPTH, "too many nested scopes");
-        scopeStack.push_back((uint8)(nameScopes.size() - 1));
+        scopeStack.push_back((uint8)scopeIndex);
     }
 
     void Resources::EndScope() {
         Assert(scopeStack.size() > 1, "tried to end a scope that wasn't started");
         auto &scope = nameScopes[scopeStack.back()];
-        scope.SetID("LastOutput", LastOutputID());
+        scope.SetID("LastOutput", LastOutputID(), frameIndex);
         scopeStack.pop_back();
     }
 
-    ResourceID Resources::Scope::GetID(string_view name) const {
+    ResourceID Resources::Scope::GetID(string_view name, uint32 frameIndex) const {
+        auto &resourceNames = frames[frameIndex].resourceNames;
         auto it = resourceNames.find(name);
         if (it != resourceNames.end()) return it->second;
         return InvalidResource;
     }
 
-    void Resources::Scope::SetID(string_view name, ResourceID id) {
+    void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex) {
+        auto &resourceNames = frames[frameIndex].resourceNames;
         Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
         auto &nameID = resourceNames[name.data()];
         Assert(!nameID, "resource already registered");
         nameID = id;
     }
 
+    void Resources::ExportToNextFrame(string_view name) {
+        return ExportToNextFrame(GetID(name));
+    }
+
+    void Resources::ExportToNextFrame(ResourceID id) {
+        exportedIDs.push_back(id);
+        IncrementRef(id);
+    }
+
+    void Resources::DecrefExportedResources() {
+        for (auto id : lastExportedIDs) {
+            DecrementRef(id);
+        }
+        lastExportedIDs = exportedIDs;
+        exportedIDs.clear();
+    }
 } // namespace sp::vulkan::render_graph

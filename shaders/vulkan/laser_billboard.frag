@@ -4,12 +4,16 @@
 layout(num_views = 2) in;
 
 #include "../lib/media_density.glsl"
+#include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
 
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 1) in vec3 inWorldPos;
 layout(location = 2) in float inScale;
 layout(location = 0) out vec4 outFragColor;
+
+INCLUDE_LAYOUT(binding = 1)
+#include "lib/exposure_state.glsl"
 
 layout(push_constant) uniform PushConstants {
     vec3 radiance;
@@ -31,6 +35,6 @@ void main() {
         weight *= pow(density, 4);
     }
 
-    outFragColor.rgb = radiance;
+    outFragColor.rgb = radiance * exposure;
     outFragColor.a = max(weight, 0);
 }

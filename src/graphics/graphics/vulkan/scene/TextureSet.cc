@@ -42,6 +42,7 @@ namespace sp::vulkan {
     void TextureSet::ReleaseTexture(TextureIndex i) {
         textures[i].reset();
         freeTextureIndexes.push_back(i);
+        texturesToFlush.push_back(i);
     }
 
     TextureHandle TextureSet::LoadGltfMaterial(const shared_ptr<const Gltf> &source,
@@ -181,6 +182,20 @@ namespace sp::vulkan {
     }
 
     void TextureSet::Flush() {
+        texturesPendingDelete.clear();
+
+        for (auto it = textureCache.begin(); it != textureCache.end();) {
+            auto &handle = it->second;
+            if (handle.ref.use_count() == 1) {
+                // keep image alive until next frame to ensure no GPU references
+                texturesPendingDelete.push_back(textures[handle.index]);
+                ReleaseTexture(handle.index);
+                it = textureCache.erase(it);
+            } else {
+                it++;
+            }
+        }
+
         vector<vk::WriteDescriptorSet> descriptorWrites;
         vector<vk::DescriptorImageInfo> descriptorImageInfos;
         vk::WriteDescriptorSet descriptorWrite;
@@ -189,7 +204,8 @@ namespace sp::vulkan {
         descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 
         for (auto descriptorIndex : texturesToFlush) {
-            const auto &tex = textures[descriptorIndex];
+            auto tex = textures[descriptorIndex];
+            if (!tex) tex = GetBlankPixel();
             descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
         }
 
@@ -211,16 +227,6 @@ namespace sp::vulkan {
 
         device->updateDescriptorSets(descriptorWrites, {});
         texturesToFlush.clear();
-
-        for (auto it = textureCache.begin(); it != textureCache.end();) {
-            auto &handle = it->second;
-            if (handle.ref.use_count() == 1) {
-                ReleaseTexture(handle.index);
-                it = textureCache.erase(it);
-            } else {
-                it++;
-            }
-        }
     }
 
     ImageViewPtr TextureSet::GetBlankPixel() {

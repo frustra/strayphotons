@@ -33,6 +33,10 @@ namespace sp::vulkan {
             return desc;
         }
 
+        bool OwnedByPool() const {
+            return poolIndex != ~0u;
+        }
+
     protected:
         int unusedFrames = 0;
         friend class RenderTargetManager;

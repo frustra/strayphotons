@@ -23,7 +23,7 @@ namespace sp::vulkan::renderer {
 
         return graph.AddPass("GaussianBlur")
             .Build([&](PassBuilder &builder) {
-                auto source = builder.ShaderRead(sourceID);
+                auto source = builder.TextureRead(sourceID);
                 auto desc = source.DeriveRenderTarget();
                 desc.extent.width = std::max(desc.extent.width / downsample, 1u);
                 desc.extent.height = std::max(desc.extent.height / downsample, 1u);
@@ -38,7 +38,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
                 }
 
-                cmd.SetTexture(0, 0, source->ImageView());
+                cmd.SetImageView(0, 0, source->ImageView());
                 cmd.PushConstants(constants);
                 cmd.Draw(3);
             });
