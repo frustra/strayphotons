@@ -123,7 +123,7 @@ namespace sp::vulkan::renderer {
         graph.BeginScope("ShadowMapBlur");
         auto sourceID = graph.LastOutputID();
         auto blurY1 = AddGaussianBlur1D(graph, sourceID, glm::ivec2(0, 1), 1);
-        AddGaussianBlur1D(graph, blurY1, glm::ivec2(1, 0), 1);
+        AddGaussianBlur1D(graph, blurY1, glm::ivec2(1, 0), 2);
         graph.EndScope();
     }
 

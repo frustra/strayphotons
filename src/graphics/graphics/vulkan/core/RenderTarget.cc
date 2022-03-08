@@ -37,10 +37,10 @@ namespace sp::vulkan {
 
         ZoneScopedN("RenderTargetCreate");
         ZoneValue(pool.size());
-        ZonePrintf("size=%dx%d", desc.extent.width, desc.extent.height);
+        ZonePrintf("size=%dx%dx%d", desc.extent.width, desc.extent.height, desc.extent.depth);
 
         ImageCreateInfo imageInfo;
-        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.imageType = desc.imageType;
         imageInfo.extent = desc.extent;
         imageInfo.arrayLayers = desc.arrayLayers;
         imageInfo.format = desc.format;

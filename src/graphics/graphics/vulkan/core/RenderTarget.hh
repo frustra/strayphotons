@@ -8,6 +8,7 @@ namespace sp::vulkan {
         uint32 arrayLayers = 1;
         vk::Format format = vk::Format::eUndefined;
         vk::ImageUsageFlags usage; // must include eColorAttachment or eDepthStencilAttachment to use as a render target
+        vk::ImageType imageType = vk::ImageType::e2D;
         vk::ImageViewType primaryViewType = vk::ImageViewType::e2D;
 
         bool operator==(const RenderTargetDesc &other) const = default;
