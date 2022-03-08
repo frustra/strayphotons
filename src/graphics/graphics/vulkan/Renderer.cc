@@ -75,6 +75,7 @@ namespace sp::vulkan {
             ecs::TransformSnapshot,
             ecs::LaserLine,
             ecs::Light,
+            ecs::VoxelArea,
             ecs::Renderable,
             ecs::View,
             ecs::XRView,
@@ -87,6 +88,7 @@ namespace sp::vulkan {
         lighting.LoadState(lock);
 
         scene.AddGeometryWarp(graph);
+        lighting.AddVoxelization(graph);
         lighting.AddShadowPasses(graph);
         AddGuis(lock);
 
