@@ -10,6 +10,7 @@ namespace sp::vulkan {
         vk::ImageUsageFlags usage; // must include eColorAttachment or eDepthStencilAttachment to use as a render target
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::ImageViewType primaryViewType = vk::ImageViewType::e2D;
+        SamplerType sampler = SamplerType::BilinearClamp;
 
         bool operator==(const RenderTargetDesc &other) const = default;
     };
