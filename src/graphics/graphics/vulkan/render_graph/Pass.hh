@@ -76,6 +76,7 @@ namespace sp::vulkan::render_graph {
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
         uint8 primaryAttachmentIndex = 0;
+        bool isRenderPass = false;
 
         std::variant<std::monostate,
             std::function<void(Resources &, CommandContext &)>,

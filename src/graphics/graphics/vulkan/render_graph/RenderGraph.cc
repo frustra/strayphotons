@@ -68,13 +68,12 @@ namespace sp::vulkan::render_graph {
 
             AddPassBarriers(cmd, pass); // creates cmd if necessary
 
-            bool isRenderPass = false;
             RenderPassInfo renderPassInfo;
 
             for (uint32 i = 0; i < pass.attachments.size(); i++) {
                 auto &attachment = pass.attachments[i];
                 if (attachment.resourceID == InvalidResource) continue;
-                isRenderPass = true;
+                pass.isRenderPass = true;
 
                 ImageViewPtr imageView;
                 auto renderTarget = resources.GetRenderTarget(attachment.resourceID);
@@ -140,7 +139,7 @@ namespace sp::vulkan::render_graph {
                 pass.name.size(),
                 true);
 
-            if (isRenderPass) {
+            if (pass.isRenderPass) {
                 if (!cmd) cmd = device.GetFrameCommandContext();
                 GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                 RenderPhase phase(pass.name);
