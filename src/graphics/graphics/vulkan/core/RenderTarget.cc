@@ -20,7 +20,7 @@ namespace sp::vulkan {
         if (view) return view;
 
         ImageViewCreateInfo info = imageView->CreateInfo();
-        info.viewType = vk::ImageViewType::e2D;
+        info.viewType = desc.DeriveViewType();
         info.baseArrayLayer = layer;
         info.arrayLayerCount = 1;
         view = device->CreateImageView(info);
@@ -28,42 +28,61 @@ namespace sp::vulkan {
     }
 
     RenderTargetPtr RenderTargetManager::Get(const RenderTargetDesc &desc) {
-        for (auto &elemRef : pool) {
+        auto &list = pool[desc];
+        for (auto &elemRef : list) {
             if (elemRef.use_count() <= 1 && elemRef->desc == desc) {
                 elemRef->unusedFrames = 0;
                 return elemRef;
             }
         }
 
+        auto createDesc = desc;
         ZoneScopedN("RenderTargetCreate");
         ZoneValue(pool.size());
-        ZonePrintf("size=%dx%dx%d", desc.extent.width, desc.extent.height, desc.extent.depth);
+        ZonePrintf("size=%dx%dx%d", createDesc.extent.width, desc.extent.height, desc.extent.depth);
+
+        Assertf(createDesc.extent.width > 0 && desc.extent.height > 0 && desc.extent.depth > 0,
+            "image must not have any zero extents, have %dx%dx%d",
+            createDesc.extent.width,
+            createDesc.extent.height,
+            createDesc.extent.depth);
+
+        if (createDesc.primaryViewType == vk::ImageViewType::e2D)
+            createDesc.primaryViewType = createDesc.DeriveViewType();
 
         ImageCreateInfo imageInfo;
-        imageInfo.imageType = desc.imageType;
-        imageInfo.extent = desc.extent;
-        imageInfo.arrayLayers = desc.arrayLayers;
-        imageInfo.format = desc.format;
-        imageInfo.usage = desc.usage;
+        imageInfo.imageType = createDesc.imageType;
+        imageInfo.extent = createDesc.extent;
+        imageInfo.arrayLayers = createDesc.arrayLayers;
+        imageInfo.format = createDesc.format;
+        imageInfo.usage = createDesc.usage;
 
         ImageViewCreateInfo viewInfo;
-        viewInfo.viewType = desc.primaryViewType;
-        viewInfo.defaultSampler = device.GetSampler(desc.sampler);
+        viewInfo.viewType = createDesc.primaryViewType;
+        viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo)->Get();
-        auto ptr = make_shared<RenderTarget>(device, desc, imageView, pool.size());
+        auto ptr = make_shared<RenderTarget>(device, createDesc, imageView, pool.size());
 
-        pool.push_back(ptr);
+        list.push_back(ptr);
         return ptr;
     }
 
     void RenderTargetManager::TickFrame() {
-        erase_if(pool, [&](auto &elemRef) {
-            if (elemRef.use_count() > 1) {
-                elemRef->unusedFrames = 0;
-                return false;
+        for (auto it = pool.begin(); it != pool.end();) {
+            auto &list = it->second;
+            erase_if(list, [&](auto &elemRef) {
+                if (elemRef.use_count() > 1) {
+                    elemRef->unusedFrames = 0;
+                    return false;
+                }
+                return elemRef->unusedFrames++ > 4;
+            });
+            if (list.empty()) {
+                it = pool.erase(it);
+            } else {
+                it++;
             }
-            return elemRef->unusedFrames++ > 4;
-        });
+        }
     }
 } // namespace sp::vulkan
