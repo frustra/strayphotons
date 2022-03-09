@@ -49,6 +49,8 @@ namespace sp::vulkan {
         Down,
     };
 
+    const size_t MAX_VIEWPORTS = 4;
+
     class CommandContext : public NonCopyable {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
@@ -169,10 +171,6 @@ namespace sp::vulkan {
             return framebuffer->Extent();
         }
 
-        vk::Rect2D GetViewport() const {
-            return viewport;
-        }
-
         void SetYDirection(YDirection dir) {
             if (viewportYDirection != dir) {
                 viewportYDirection = dir;
@@ -187,11 +185,17 @@ namespace sp::vulkan {
         }
 
         void SetViewport(const vk::Rect2D &newViewport) {
-            if (viewport != newViewport) {
-                viewport = newViewport;
+            if (pipelineInput.state.viewportCount != 1) {
+                pipelineInput.state.viewportCount = 1;
+                SetDirty(DirtyBits::Pipeline);
+            }
+            if (viewports[0] != newViewport) {
+                viewports[0] = newViewport;
                 SetDirty(DirtyBits::Viewport);
             }
         }
+
+        void SetViewportArray(vk::ArrayProxy<const vk::Rect2D> newViewports);
 
         void SetDepthRange(float minDepth, float maxDepth) {
             this->minDepth = minDepth;
@@ -424,7 +428,7 @@ namespace sp::vulkan {
         bool recording = false, abandoned = false;
 
         YDirection viewportYDirection = YDirection::Up;
-        vk::Rect2D viewport;
+        std::array<vk::Rect2D, MAX_VIEWPORTS> viewports;
         float minDepth = 0.0f, maxDepth = 1.0f;
         vk::Rect2D scissor;
 
