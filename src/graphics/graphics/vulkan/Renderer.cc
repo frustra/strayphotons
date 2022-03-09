@@ -35,7 +35,8 @@ namespace sp::vulkan {
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
     Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), lighting(scene), guiRenderer(new GuiRenderer(device)) {
+        : device(device), graph(device), scene(device), lighting(scene), voxels(scene),
+          guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;
         });
@@ -85,10 +86,11 @@ namespace sp::vulkan {
             ecs::FocusLock>>();
 
         scene.LoadState(graph, lock);
-        lighting.LoadState(lock);
+        lighting.LoadState(graph, lock);
+        voxels.LoadState(graph, lock);
 
         scene.AddGeometryWarp(graph);
-        lighting.AddVoxelization(graph);
+        voxels.AddVoxelization(graph);
         lighting.AddShadowPasses(graph);
         AddGuis(lock);
 
@@ -447,6 +449,7 @@ namespace sp::vulkan {
         emissive.AddPass(graph, lock);
         renderer::AddExposureUpdate(graph);
         renderer::AddBloom(graph);
+        voxels.AddDebugPass(graph);
         renderer::AddTonemap(graph);
 
         if (CVarSMAA.Get()) smaa.AddPass(graph);

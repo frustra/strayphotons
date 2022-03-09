@@ -23,8 +23,7 @@ layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
     DrawParams drawParams[];
 };
 
-INCLUDE_LAYOUT(binding = 10)
-uniform ViewStates {
+layout(binding = 0) uniform ViewStates {
     ViewState views[3];
 };
 

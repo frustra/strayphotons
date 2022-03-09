@@ -8,7 +8,7 @@ namespace sp::vulkan::renderer {
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
 
-    void Lighting::LoadState(ecs::Lock<ecs::Read<ecs::Light, ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
+    void Lighting::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         lightCount = 0;
         gelCount = 0;
         shadowAtlasSize = glm::ivec2(0, 0);
@@ -64,72 +64,12 @@ namespace sp::vulkan::renderer {
         }
         gpuData.count = lightCount;
 
-        for (auto entity : lock.EntitiesWith<ecs::VoxelArea>()) {
-            if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
-
-            auto &area = entity.Get<ecs::VoxelArea>(lock);
-            if (area.extents.x > 0 && area.extents.y > 0 && area.extents.z > 0) {
-                voxelGridSize = area.extents;
-                voxelGridOrigin = entity.Get<ecs::TransformSnapshot>(lock);
-                break; // Only 1 voxel area supported for now
-            }
-        }
-    }
-
-    void Lighting::AddVoxelization(RenderGraph &graph) {
-        ecs::View ortho;
-        ortho.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_VOXEL);
-        ortho.SetViewMat(glm::scale(glm::mat4(voxelGridOrigin.matrix), glm::vec3(voxelGridSize)));
-        ortho.projMat = glm::identity<glm::mat4>();
-        ortho.invProjMat = glm::identity<glm::mat4>();
-        ortho.clearMode.reset();
-
-        ecs::View orthoAxes[3] = {ortho, ortho, ortho};
-        orthoAxes[0].extents = glm::ivec2(voxelGridSize.z, voxelGridSize.y);
-        orthoAxes[1].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.z);
-        orthoAxes[2].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.y);
-
-        auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask);
-
-        graph.AddPass("Voxelization")
+        graph.AddPass("LightState")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
-                desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
-                desc.primaryViewType = vk::ImageViewType::e3D;
-                desc.imageType = vk::ImageType::e3D;
-                desc.format = vk::Format::eR16G16B16A16Sfloat;
-                desc.usage = vk::ImageUsageFlagBits::eStorage;
-                builder.RenderTargetCreate("VoxelRadiance", desc);
-
-                builder.BufferAccess("WarpedVertexBuffer",
-                    rg::PipelineStage::eVertexInput,
-                    rg::Access::eVertexAttributeRead,
-                    rg::BufferUsage::eVertexBuffer);
-
-                builder.BufferAccess(drawID.drawCommandsBuffer,
-                    rg::PipelineStage::eDrawIndirect,
-                    rg::Access::eIndirectCommandRead,
-                    rg::BufferUsage::eIndirectBuffer);
+                builder.UniformCreate("LightState", sizeof(gpuData));
             })
-
-            .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("voxel_fill.vert", "voxel_fill.frag");
-
-                GPUViewState lightViews[] = {{orthoAxes[0]}, {orthoAxes[1]}, {orthoAxes[2]}};
-                cmd.UploadUniformData(0, 10, lightViews, 3);
-
-                vk::Rect2D viewport;
-                viewport.extent = vk::Extent2D(std::max(voxelGridSize.x, voxelGridSize.z),
-                    std::max(voxelGridSize.y, voxelGridSize.z));
-                cmd.SetViewport(viewport);
-                cmd.SetYDirection(YDirection::Down);
-
-                cmd.SetImageView(0, 0, resources.GetRenderTarget("VoxelRadiance")->ImageView());
-
-                scene.DrawSceneIndirect(cmd,
-                    resources.GetBuffer("WarpedVertexBuffer"),
-                    resources.GetBuffer(drawID.drawCommandsBuffer),
-                    {});
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
             });
     }
 
@@ -213,7 +153,7 @@ namespace sp::vulkan::renderer {
 
                 builder.UniformRead("ViewState");
                 builder.StorageRead("ExposureState");
-                builder.UniformCreate("LightState", sizeof(gpuData));
+                builder.UniformRead("LightState");
 
                 for (int i = 0; i < gelCount; i++) {
                     builder.TextureRead(gelNames[i]);
@@ -244,11 +184,8 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
-                auto lightState = resources.GetBuffer("LightState");
-                lightState->CopyFrom(&gpuData);
-
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                cmd.SetUniformBuffer(0, 11, lightState);
+                cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.Draw(3);
             });

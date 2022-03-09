@@ -7,17 +7,13 @@ namespace sp::vulkan::renderer {
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}
-        void LoadState(ecs::Lock<ecs::Read<ecs::Light, ecs::VoxelArea, ecs::TransformSnapshot>> lock);
+        void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
 
-        void AddVoxelization(RenderGraph &graph);
         void AddShadowPasses(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
 
     private:
         GPUScene &scene;
-
-        ecs::Transform voxelGridOrigin;
-        glm::ivec3 voxelGridSize = glm::ivec3(1);
 
         int lightCount;
         glm::ivec2 shadowAtlasSize = {};

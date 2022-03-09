@@ -35,6 +35,10 @@
             "/keyboard/key/v": {
                 "target": "console:input/action/run_command",
                 "set_value": "togglesignal player:player/move_noclip"
+            },
+            "/keyboard/key/g": {
+                "target": "console:input/action/run_command",
+                "set_value": "toggle r.DebugVoxels"
             }
         }
     },

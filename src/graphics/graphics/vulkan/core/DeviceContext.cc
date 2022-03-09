@@ -275,6 +275,7 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
         Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
         Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
+        Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
         Assert(availableVulkan11Features.multiview, "device must support multiview");
         Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
         Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
@@ -308,6 +309,7 @@ namespace sp::vulkan {
         enabledDeviceFeatures.samplerAnisotropy = true;
         enabledDeviceFeatures.multiDrawIndirect = true;
         enabledDeviceFeatures.shaderInt16 = true;
+        enabledDeviceFeatures.fragmentStoresAndAtomics = true;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
