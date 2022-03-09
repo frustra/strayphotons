@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Hashing.hh"
 #include "graphics/vulkan/core/Common.hh"
 
 namespace sp::vulkan {
@@ -9,10 +10,22 @@ namespace sp::vulkan {
         vk::Format format = vk::Format::eUndefined;
         vk::ImageUsageFlags usage; // must include eColorAttachment or eDepthStencilAttachment to use as a render target
         vk::ImageType imageType = vk::ImageType::e2D;
-        vk::ImageViewType primaryViewType = vk::ImageViewType::e2D;
+        vk::ImageViewType primaryViewType = vk::ImageViewType::e2D; // when e2D, derived from imageType
         SamplerType sampler = SamplerType::BilinearClamp;
 
         bool operator==(const RenderTargetDesc &other) const = default;
+
+        vk::ImageViewType DeriveViewType() const {
+            switch (imageType) {
+            case vk::ImageType::e1D:
+                return vk::ImageViewType::e1D;
+            case vk::ImageType::e2D:
+                return vk::ImageViewType::e2D;
+            case vk::ImageType::e3D:
+                return vk::ImageViewType::e3D;
+            }
+            Abort("invalid vk::ImageType");
+        }
     };
 
     class RenderTarget {
@@ -59,6 +72,8 @@ namespace sp::vulkan {
 
     private:
         DeviceContext &device;
-        vector<RenderTargetPtr> pool;
+
+        using RenderTargetKey = HashKey<RenderTargetDesc>;
+        robin_hood::unordered_map<RenderTargetKey, vector<RenderTargetPtr>, typename RenderTargetKey::Hasher> pool;
     };
 } // namespace sp::vulkan
