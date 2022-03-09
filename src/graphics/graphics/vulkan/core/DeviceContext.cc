@@ -274,10 +274,12 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
         Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
+        Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
         Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
         Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
         Assert(availableVulkan11Features.multiview, "device must support multiview");
         Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
+        Assert(availableVulkan12Features.shaderOutputViewportIndex, "device must support shaderOutputViewportIndex");
         Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
         Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
         Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
@@ -290,6 +292,7 @@ namespace sp::vulkan {
             "device must support descriptorBindingUpdateUnusedWhilePending");
 
         vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
+        enabledVulkan12Features.shaderOutputViewportIndex = true;
         enabledVulkan12Features.drawIndirectCount = true;
         enabledVulkan12Features.runtimeDescriptorArray = true;
         enabledVulkan12Features.descriptorBindingPartiallyBound = true;
@@ -308,6 +311,7 @@ namespace sp::vulkan {
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
         enabledDeviceFeatures.multiDrawIndirect = true;
+        enabledDeviceFeatures.multiViewport = true;
         enabledDeviceFeatures.shaderInt16 = true;
         enabledDeviceFeatures.fragmentStoresAndAtomics = true;
 

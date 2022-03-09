@@ -41,11 +41,13 @@ namespace sp::vulkan {
         Assert(!framebuffer, "render pass already started");
 
         framebuffer = device.GetFramebuffer(info);
+
+        pipelineInput.state.viewportCount = 1;
+        viewports[0] = vk::Rect2D{{0, 0}, framebuffer->Extent()};
+        scissor = viewports[0];
+
         pipelineInput.renderPass = framebuffer->GetRenderPass();
         renderPass = device.GetRenderPass(info);
-
-        viewport = vk::Rect2D{{0, 0}, framebuffer->Extent()};
-        scissor = viewport;
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
         uint32 clearValueCount = info.state.colorAttachmentCount;
@@ -161,6 +163,23 @@ namespace sp::vulkan {
             }
         }
         Draw(3); // vertices are defined as constants in the vertex shader
+    }
+
+    void CommandContext::SetViewportArray(vk::ArrayProxy<const vk::Rect2D> newViewports) {
+        Assert(newViewports.size() <= viewports.size(), "too many viewports");
+        Assert(newViewports.size() <= device.Limits().maxViewports, "too many viewports for device");
+        if (pipelineInput.state.viewportCount != newViewports.size()) {
+            pipelineInput.state.viewportCount = newViewports.size();
+            SetDirty(DirtyBits::Pipeline);
+        }
+        size_t i = 0;
+        for (auto &newViewport : newViewports) {
+            if (viewports[i] != newViewport) {
+                viewports[i] = newViewport;
+                SetDirty(DirtyBits::Viewport);
+            }
+            i++;
+        }
     }
 
     void CommandContext::ImageBarrier(const ImagePtr &image,
@@ -356,19 +375,25 @@ namespace sp::vulkan {
         }
 
         if (ResetDirty(DirtyBits::Viewport)) {
-            vk::Viewport vp = {(float)viewport.offset.x,
-                (float)viewport.offset.y,
-                (float)viewport.extent.width,
-                (float)viewport.extent.height,
-                minDepth,
-                maxDepth};
+            std::array<vk::Viewport, MAX_VIEWPORTS> vps;
 
-            if (viewportYDirection == YDirection::Up) {
-                // Negative height sets viewport coordinates to OpenGL style (Y up)
-                vp.y = framebuffer->Extent().height - vp.y;
-                vp.height = -vp.height;
+            for (size_t i = 0; i < pipelineInput.state.viewportCount; i++) {
+                auto &viewport = viewports[i];
+
+                vps[i] = vk::Viewport{(float)viewport.offset.x,
+                    (float)viewport.offset.y,
+                    (float)viewport.extent.width,
+                    (float)viewport.extent.height,
+                    minDepth,
+                    maxDepth};
+
+                if (viewportYDirection == YDirection::Up) {
+                    // Negative height sets viewport coordinates to OpenGL style (Y up)
+                    vps[i].y = framebuffer->Extent().height - vps[i].y;
+                    vps[i].height = -vps[i].height;
+                }
             }
-            cmd->setViewport(0, 1, &vp);
+            cmd->setViewport(0, pipelineInput.state.viewportCount, vps.data());
         }
 
         if (ResetDirty(DirtyBits::Scissor)) {
