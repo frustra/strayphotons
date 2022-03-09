@@ -68,12 +68,6 @@ namespace sp::vulkan::render_graph {
         // The attachment at this index will become the LastOutput of the graph after the pass, defaults to 0
         void SetPrimaryAttachment(uint32 index);
 
-        // If a pass has any attachments, it will automatically be treated as a render pass.
-        // If a pass invokes the rasterizer but doesn't have any attachments, call MakeRenderPass.
-        void MakeRenderPass() {
-            pass.isRenderPass = true;
-        }
-
         Resource RenderTargetCreate(string_view name, const RenderTargetDesc &desc);
 
         Resource BufferCreate(size_t size, BufferUsageMask usage, Residency residency);

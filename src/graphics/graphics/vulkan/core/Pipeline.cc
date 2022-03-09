@@ -347,7 +347,7 @@ namespace sp::vulkan {
         vk::PipelineDepthStencilStateCreateInfo depthStencil;
 
         if (!rasterizer.rasterizerDiscardEnable) {
-            viewportState.viewportCount = 1;
+            viewportState.viewportCount = state.viewportCount;
             viewportState.scissorCount = 1;
 
             colorBlending.attachmentCount = compile.renderPass->ColorAttachmentCount();
