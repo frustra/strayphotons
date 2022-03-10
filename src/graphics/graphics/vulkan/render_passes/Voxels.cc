@@ -105,8 +105,8 @@ namespace sp::vulkan::renderer {
                 cmd.ImageBarrier(radianceView->Image(),
                     vk::ImageLayout::eGeneral,
                     vk::ImageLayout::eGeneral,
-                    vk::PipelineStageFlagBits::eTopOfPipe,
-                    {},
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferWrite,
                     vk::PipelineStageFlagBits::eFragmentShader,
                     vk::AccessFlagBits::eShaderWrite);
 
