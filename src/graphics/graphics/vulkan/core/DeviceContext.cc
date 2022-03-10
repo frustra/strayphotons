@@ -243,11 +243,14 @@ namespace sp::vulkan {
             queueInfos.push_back(queueInfo);
         }
 
-        vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        vector<const char *> enabledDeviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
             VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
             VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-            VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME};
+            VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+        };
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -278,8 +281,10 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
         Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
         Assert(availableVulkan11Features.multiview, "device must support multiview");
+        Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
         Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
         Assert(availableVulkan12Features.shaderOutputViewportIndex, "device must support shaderOutputViewportIndex");
+        Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
         Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
         Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
         Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
@@ -293,6 +298,7 @@ namespace sp::vulkan {
 
         vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
         enabledVulkan12Features.shaderOutputViewportIndex = true;
+        enabledVulkan12Features.shaderOutputLayer = true;
         enabledVulkan12Features.drawIndirectCount = true;
         enabledVulkan12Features.runtimeDescriptorArray = true;
         enabledVulkan12Features.descriptorBindingPartiallyBound = true;
@@ -303,6 +309,7 @@ namespace sp::vulkan {
         vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
         enabledVulkan11Features.storageBuffer16BitAccess = true;
         enabledVulkan11Features.multiview = true;
+        enabledVulkan11Features.shaderDrawParameters = true;
         enabledVulkan11Features.pNext = &enabledVulkan12Features;
 
         vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;

@@ -28,7 +28,6 @@ namespace sp::vulkan::renderer {
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
-            view.clearMode.reset();
             view.clip = light.shadowMapClip;
             view.UpdateProjectionMatrix();
             view.UpdateViewMatrix(lock, entity);

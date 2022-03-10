@@ -43,8 +43,9 @@ namespace sp::vulkan {
         framebuffer = device.GetFramebuffer(info);
 
         pipelineInput.state.viewportCount = 1;
+        pipelineInput.state.scissorCount = 1;
         viewports[0] = vk::Rect2D{{0, 0}, framebuffer->Extent()};
-        scissor = viewports[0];
+        scissors[0] = viewports[0];
 
         pipelineInput.renderPass = framebuffer->GetRenderPass();
         renderPass = device.GetRenderPass(info);
@@ -65,7 +66,7 @@ namespace sp::vulkan {
         vk::RenderPassBeginInfo renderPassBeginInfo;
         renderPassBeginInfo.renderPass = *renderPass;
         renderPassBeginInfo.framebuffer = *framebuffer;
-        renderPassBeginInfo.renderArea = scissor;
+        renderPassBeginInfo.renderArea = scissors[0];
         renderPassBeginInfo.clearValueCount = clearValueCount;
         renderPassBeginInfo.pClearValues = clearValues;
         cmd->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
@@ -163,6 +164,23 @@ namespace sp::vulkan {
             }
         }
         Draw(3); // vertices are defined as constants in the vertex shader
+    }
+
+    void CommandContext::SetScissorArray(vk::ArrayProxy<const vk::Rect2D> newScissors) {
+        Assert(newScissors.size() <= scissors.size(), "too many scissors");
+        Assert(newScissors.size() <= device.Limits().maxViewports, "too many scissors for device");
+        if (pipelineInput.state.scissorCount != newScissors.size()) {
+            pipelineInput.state.scissorCount = newScissors.size();
+            SetDirty(DirtyBits::Pipeline);
+        }
+        size_t i = 0;
+        for (auto &newScissor : newScissors) {
+            if (scissors[i] != newScissor) {
+                scissors[i] = newScissor;
+                SetDirty(DirtyBits::Scissor);
+            }
+            i++;
+        }
     }
 
     void CommandContext::SetViewportArray(vk::ArrayProxy<const vk::Rect2D> newViewports) {
@@ -397,9 +415,12 @@ namespace sp::vulkan {
         }
 
         if (ResetDirty(DirtyBits::Scissor)) {
-            vk::Rect2D sc = scissor;
-            sc.offset.y = framebuffer->Extent().height - sc.offset.y - sc.extent.height;
-            cmd->setScissor(0, 1, &sc);
+            std::array<vk::Rect2D, MAX_VIEWPORTS> scs;
+            for (size_t i = 0; i < pipelineInput.state.scissorCount; i++) {
+                scs[i] = scissors[i];
+                scs[i].offset.y = framebuffer->Extent().height - scs[i].offset.y - scs[i].extent.height;
+            }
+            cmd->setScissor(0, pipelineInput.state.scissorCount, scs.data());
         }
 
         if (pipelineInput.state.stencilTest && ResetDirty(DirtyBits::Stencil)) {

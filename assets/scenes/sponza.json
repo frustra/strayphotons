@@ -1473,11 +1473,30 @@
 			}
 		},
 		{
+			"name": "voxel_center",
 			"transform": {
 				"translate": [
-					-6,
-					-1.1,
-					-14.5
+					0.35,
+					5.3,
+					-0.65
+				]
+			},
+			"script": {
+				"onTick": "rotate",
+				"parameters": {
+					"axis_y": 1,
+					"axis_z": 1,
+					"speed": 0
+				}
+			}
+		},
+		{
+			"transform": {
+				"parent": "voxel_center",
+				"translate": [
+					-6.1,
+					-6.4,
+					-13.7
 				],
 				"scale": [
 					0.1,
@@ -1487,9 +1506,9 @@
 			},
 			"voxel_area": {
 				"extents": [
+					122,
 					128,
-					128,
-					280
+					274
 				]
 			}
 		},

@@ -15,12 +15,7 @@ namespace sp::vulkan::renderer {
     private:
         GPUScene &scene;
 
-        ecs::Transform voxelGridOrigin;
+        ecs::Transform voxelToWorld;
         glm::ivec3 voxelGridSize = glm::ivec3(1);
-
-        struct GPUData {
-            glm::mat4 origin;
-            glm::ivec3 size;
-        } gpuData;
     };
 } // namespace sp::vulkan::renderer

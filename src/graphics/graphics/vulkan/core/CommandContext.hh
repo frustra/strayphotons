@@ -155,11 +155,17 @@ namespace sp::vulkan {
         }
 
         void SetScissor(const vk::Rect2D &newScissor) {
-            if (scissor != newScissor) {
-                scissor = newScissor;
+            if (pipelineInput.state.scissorCount != 1) {
+                pipelineInput.state.scissorCount = 1;
+                SetDirty(DirtyBits::Pipeline);
+            }
+            if (scissors[0] != newScissor) {
+                scissors[0] = newScissor;
                 SetDirty(DirtyBits::Scissor);
             }
         }
+
+        void SetScissorArray(vk::ArrayProxy<const vk::Rect2D> newScissors);
 
         void ClearScissor() {
             vk::Rect2D framebufferExtents = {{0, 0}, framebuffer->Extent()};
@@ -429,8 +435,8 @@ namespace sp::vulkan {
 
         YDirection viewportYDirection = YDirection::Up;
         std::array<vk::Rect2D, MAX_VIEWPORTS> viewports;
+        std::array<vk::Rect2D, MAX_VIEWPORTS> scissors;
         float minDepth = 0.0f, maxDepth = 1.0f;
-        vk::Rect2D scissor;
 
         struct StencilDynamicState {
             uint32 writeMask = 0, compareMask = 0, reference = 0;

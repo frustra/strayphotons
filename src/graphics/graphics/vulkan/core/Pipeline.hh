@@ -32,6 +32,7 @@ namespace sp::vulkan {
         unsigned blendEnable : 1;
         unsigned stencilTest : 1;
         uint8 viewportCount = 1;
+        uint8 scissorCount = 1;
         vk::CompareOp depthCompareOp = vk::CompareOp::eLess;
         vk::CompareOp stencilCompareOp = vk::CompareOp::eAlways;
         vk::StencilOp stencilFailOp = vk::StencilOp::eKeep;

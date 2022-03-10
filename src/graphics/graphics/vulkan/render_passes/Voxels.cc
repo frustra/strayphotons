@@ -16,18 +16,22 @@ namespace sp::vulkan::renderer {
             auto &area = entity.Get<ecs::VoxelArea>(lock);
             if (area.extents.x > 0 && area.extents.y > 0 && area.extents.z > 0) {
                 voxelGridSize = area.extents;
-                voxelGridOrigin = entity.Get<ecs::TransformSnapshot>(lock);
+                voxelToWorld = entity.Get<ecs::TransformSnapshot>(lock);
                 break; // Only 1 voxel area supported for now
             }
         }
-        gpuData.origin = glm::inverse(glm::mat4(voxelGridOrigin.matrix));
-        gpuData.size = voxelGridSize;
+
+        struct GPUData {
+            glm::mat4 worldToVoxel;
+            glm::ivec3 size;
+        };
 
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
-                builder.UniformCreate("VoxelState", sizeof(gpuData));
+                builder.UniformCreate("VoxelState", sizeof(GPUData));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                GPUData gpuData = {glm::inverse(glm::mat4(voxelToWorld.matrix)), voxelGridSize};
                 resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
             });
     }
@@ -35,22 +39,30 @@ namespace sp::vulkan::renderer {
     void Voxels::AddVoxelization(RenderGraph &graph) {
         ecs::View ortho;
         ortho.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_VOXEL);
-        auto voxelScale = voxelGridOrigin.GetScale();
-        auto voxelMat = gpuData.origin;
-        voxelMat[3] *= glm::vec4(2, 2, 1, 1) / glm::vec4(voxelGridSize, 1.0f);
-        voxelMat = glm::translate(voxelMat, glm::vec3(-voxelScale.x, -voxelScale.y, 0));
-        voxelMat = glm::scale(voxelMat, glm::vec3(2, 2, 1) / glm::vec3(voxelGridSize));
-        ortho.SetViewMat(voxelMat);
-        ortho.projMat = glm::identity<glm::mat4>();
-        ortho.invProjMat = glm::identity<glm::mat4>();
-        ortho.clearMode.reset();
 
-        ecs::View orthoAxes[3] = {ortho, ortho, ortho};
+        auto voxelCenter = voxelToWorld;
+        voxelCenter.Translate(glm::mat3(voxelCenter.matrix) * (0.5f * glm::vec3(voxelGridSize)));
+
+        std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
+        axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
+        axisTransform[1].Rotate(M_PI_2, glm::vec3(1, 0, 0));
+
+        axisTransform[0].Scale(glm::vec3(voxelGridSize.z, voxelGridSize.y, voxelGridSize.x));
+        axisTransform[1].Scale(glm::vec3(voxelGridSize.x, voxelGridSize.z, voxelGridSize.y));
+        axisTransform[2].Scale(voxelGridSize);
+
+        std::array<ecs::View, 3> orthoAxes = {ortho, ortho, ortho};
         orthoAxes[0].extents = glm::ivec2(voxelGridSize.z, voxelGridSize.y);
         orthoAxes[1].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.z);
         orthoAxes[2].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.y);
+        for (size_t i = 0; i < orthoAxes.size(); i++) {
+            auto axis = axisTransform[i];
+            axis.Scale(glm::vec3(0.5, 0.5, 1));
+            axis.Translate(axis.GetRotationAndScale() * glm::vec3(0, 0, -0.5));
+            orthoAxes[i].SetInvViewMat(axis.matrix);
+        }
 
-        auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask);
+        auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
 
         graph.AddPass("Voxelization")
             .Build([&](rg::PassBuilder &builder) {
@@ -123,12 +135,15 @@ namespace sp::vulkan::renderer {
                 GPUViewState lightViews[] = {{orthoAxes[0]}, {orthoAxes[1]}, {orthoAxes[2]}};
                 cmd.UploadUniformData(0, 0, lightViews, 3);
 
-                vk::Rect2D viewport;
-                viewport.extent = vk::Extent2D(std::max(voxelGridSize.x, voxelGridSize.z),
-                    std::max(voxelGridSize.y, voxelGridSize.z));
-                cmd.SetViewport(viewport);
-                cmd.SetYDirection(YDirection::Down);
-                cmd.SetDepthTest(false, false);
+                std::array<vk::Rect2D, 3> viewports, scissors;
+                for (size_t i = 0; i < viewports.size(); i++) {
+                    viewports[i].extent = vk::Extent2D(orthoAxes[i].extents.x, orthoAxes[i].extents.y);
+                    scissors[i].extent = vk::Extent2D(orthoAxes[i].extents.x, orthoAxes[i].extents.y);
+                    // viewports[i].extent = vk::Extent2D(desc.extent.width, desc.extent.height);
+                    // scissors[i].extent = vk::Extent2D(desc.extent.width, desc.extent.height);
+                }
+                cmd.SetViewportArray(viewports);
+                cmd.SetScissorArray(scissors);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
 
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
@@ -152,7 +167,9 @@ namespace sp::vulkan::renderer {
                 builder.UniformRead("ViewState");
                 builder.UniformRead("VoxelState");
 
-                auto desc = builder.LastOutput().DeriveRenderTarget();
+                auto lastOutput = builder.TextureRead(builder.LastOutputID());
+
+                auto desc = lastOutput.DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "VoxelDebug", desc, {LoadOp::DontCare, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
@@ -167,8 +184,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetImageView(0, 2, resources.GetRenderTarget("VoxelRadiance")->ImageView());
+                cmd.SetImageView(0, 3, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
 
-                cmd.SetYDirection(YDirection::Down);
                 cmd.Draw(3);
             });
     }

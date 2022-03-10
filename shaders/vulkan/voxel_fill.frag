@@ -9,15 +9,11 @@ layout(num_views = 3) in;
 
 layout(set = 2, binding = 0) uniform sampler2D textures[];
 
-layout(location = 0) in vec3 inViewPos;
+layout(location = 0) in vec3 inVoxelPos;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
-
-layout(binding = 1) uniform VoxelStateUniform {
-    VoxelState voxelInfo;
-};
 
 layout(binding = 2, rgba16f) writeonly uniform image3D radianceOut;
 
@@ -29,6 +25,5 @@ void main() {
     // float roughness = metallicRoughnessSample.g;
     // float metallic = metallicRoughnessSample.b;
 
-    vec3 voxelPos = voxelInfo.gridSize * vec3(inViewPos.xy * 0.5 + 0.5, inViewPos.z);
-    imageStore(radianceOut, ivec3(voxelPos), vec4(baseColor.rgb, 1.0));
+    imageStore(radianceOut, ivec3(inVoxelPos), vec4(baseColor.rgb, 1.0));
 }

@@ -1,8 +1,7 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
-#extension GL_OVR_multiview2 : enable
-layout(num_views = 3) in;
+#extension GL_ARB_shader_viewport_layer_array : enable
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
@@ -12,7 +11,7 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 
-layout(location = 0) out vec3 outViewPos;
+layout(location = 0) out vec3 outVoxelPos;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
 layout(location = 3) flat out int baseColorTexID;
@@ -27,10 +26,15 @@ layout(binding = 0) uniform ViewStates {
     ViewState views[3];
 };
 
+layout(binding = 1) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
 void main() {
-    ViewState view = views[gl_ViewID_OVR];
+    ViewState view = views[gl_InstanceIndex - gl_BaseInstance];
     gl_Position = view.viewMat * vec4(inPosition, 1.0);
-    outViewPos = gl_Position.xyz / gl_Position.w;
+
+    outVoxelPos = (voxelInfo.worldToVoxel * vec4(inPosition, 1.0)).xyz;
 
     mat3 rotation = mat3(view.viewMat);
     outNormal = rotation * inNormal;
@@ -39,4 +43,6 @@ void main() {
     DrawParams params = drawParams[gl_BaseInstance];
     baseColorTexID = int(params.baseColorTexID);
     metallicRoughnessTexID = int(params.metallicRoughnessTexID);
+
+    gl_ViewportIndex = int(gl_InstanceIndex - gl_BaseInstance);
 }

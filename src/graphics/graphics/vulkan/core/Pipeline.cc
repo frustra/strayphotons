@@ -348,7 +348,7 @@ namespace sp::vulkan {
 
         if (!rasterizer.rasterizerDiscardEnable) {
             viewportState.viewportCount = state.viewportCount;
-            viewportState.scissorCount = 1;
+            viewportState.scissorCount = state.scissorCount;
 
             colorBlending.attachmentCount = compile.renderPass->ColorAttachmentCount();
             colorBlending.pAttachments = colorBlendAttachments.data();

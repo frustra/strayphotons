@@ -27,7 +27,9 @@ namespace ecs {
         const glm::vec3 &GetPosition() const;
         glm::quat GetRotation() const;
         glm::vec3 GetScale() const;
+        const glm::mat3 &GetRotationAndScale() const;
         glm::vec3 GetForward() const;
+
     #endif
 #endif
     } Transform;

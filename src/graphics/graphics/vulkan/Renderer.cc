@@ -350,7 +350,7 @@ namespace sp::vulkan {
                     auto view = viewsByEye[i];
 
                     if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
-                        view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
+                        view.SetInvViewMat(this->xrRenderPoses[i] * view.invViewMat);
                     }
 
                     viewState[i] = GPUViewState(view);

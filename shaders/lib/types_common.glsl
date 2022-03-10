@@ -52,7 +52,7 @@ struct LightSensor {
 };
 
 struct VoxelState {
-    mat4 origin;
+    mat4 worldToVoxel;
     ivec3 gridSize;
 };
 

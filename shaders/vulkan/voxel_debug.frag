@@ -17,6 +17,7 @@ layout(binding = 1) uniform VoxelStateUniform {
 };
 
 layout(binding = 2) uniform sampler3D voxelRadiance;
+layout(binding = 3) uniform sampler2DArray overlayTex;
 
 float GetVoxelNearest(vec3 position, out vec3 radiance) {
     vec4 radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
@@ -25,8 +26,8 @@ float GetVoxelNearest(vec3 position, out vec3 radiance) {
 }
 
 float TraceVoxelGrid(vec3 rayWorldPos, vec3 rayWorldDir, out vec3 hitRadiance) {
-    vec3 rayVoxelPos = (voxelInfo.origin * vec4(rayWorldPos, 1.0)).xyz;
-    vec3 rayVoxelDir = normalize(mat3(voxelInfo.origin) * rayWorldDir);
+    vec3 rayVoxelPos = (voxelInfo.worldToVoxel * vec4(rayWorldPos, 1.0)).xyz;
+    vec3 rayVoxelDir = normalize(mat3(voxelInfo.worldToVoxel) * rayWorldDir);
 
     ivec3 voxelIndex = ivec3(rayVoxelPos);
 
@@ -61,11 +62,13 @@ float TraceVoxelGrid(vec3 rayWorldPos, vec3 rayWorldDir, out vec3 hitRadiance) {
 void main() {
     ViewState view = views[gl_ViewID_OVR];
 
-    vec4 rayPos = view.invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, view.invProjMat), 1);
+    vec4 rayPos = view.invViewMat *
+                  vec4(ScreenPosToViewPos(vec2(inTexCoord.x, 1 - inTexCoord.y), 0, view.invProjMat), 1);
     vec3 rayDir = normalize(rayPos.xyz - view.invViewMat[3].xyz);
 
     vec3 sampleRadiance;
     TraceVoxelGrid(rayPos.xyz, rayDir, sampleRadiance);
 
-    outFragColor = vec4(sampleRadiance, 1.0);
+    vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed
+    outFragColor = vec4(mix(sampleRadiance, overlay, 0.25), 1.0);
 }

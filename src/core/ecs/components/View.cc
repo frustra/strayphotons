@@ -22,13 +22,12 @@ namespace ecs {
                     view.clip = sp::MakeVec2(param.second);
                 } else if (param.first == "offset") {
                     view.offset = sp::MakeVec2(param.second);
-                } else if (param.first == "clear") {
-                    view.clearColor = glm::vec4(sp::MakeVec3(param.second), 1.0f);
-                } else if (param.first == "sky") {
-                    view.skyIlluminance = param.second.get<double>();
                 } else if (param.first == "visibility") {
                     auto &value = param.second.get<string>();
                     if (value == "camera") { view.visibilityMask.set(Renderable::Visibility::VISIBLE_DIRECT_CAMERA); }
+                } else {
+                    Errorf("Unknown view component parameter: %s", param.first);
+                    return false;
                 }
             }
         }
