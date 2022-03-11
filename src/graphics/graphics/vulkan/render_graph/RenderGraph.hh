@@ -125,5 +125,6 @@ namespace sp::vulkan::render_graph {
         DeviceContext &device;
         vector<Pass> passes;
         Resources resources;
+        std::array<vector<ResourceID>, RESOURCE_FRAME_COUNT> futureDependencies;
     };
 } // namespace sp::vulkan::render_graph

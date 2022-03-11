@@ -81,24 +81,17 @@ namespace sp::vulkan::render_graph {
             return GetResource(lastOutputID);
         }
 
-        /**
-         * Keeps a resource alive until the next frame's graph has been built.
-         * If no pass depends on the resource in the next frame, it will be released before execution.
-         */
-        void ExportToNextFrame(ResourceID id);
-        void ExportToNextFrame(string_view name);
-
     private:
         friend class RenderGraph;
         friend class PassBuilder;
 
         void ResizeIfNeeded();
-        void DecrefExportedResources();
 
         uint32 RefCount(ResourceID id);
         void IncrementRef(ResourceID id);
         void DecrementRef(ResourceID id);
 
+        ResourceID ReserveID(string_view name);
         void Register(string_view name, Resource &resource);
 
         void BeginScope(string_view name);
@@ -132,7 +125,8 @@ namespace sp::vulkan::render_graph {
         InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
 
         vector<Resource> resources;
-        vector<ResourceID> freeIDs, exportedIDs, lastExportedIDs;
+        vector<string> resourceNames;
+        vector<ResourceID> freeIDs;
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
         vector<int32> refCounts;

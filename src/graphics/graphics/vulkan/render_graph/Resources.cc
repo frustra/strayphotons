@@ -15,11 +15,12 @@ namespace sp::vulkan::render_graph {
 
         for (ResourceID id = 0; id < resources.size(); id++) {
             if (resources[id].type != Resource::Type::Undefined && refCounts[id] == 0) {
-                freeIDs.push_back(id);
-                resources[id].type = Resource::Type::Undefined;
-
                 Assert(!renderTargets[id], "dangling render target");
                 Assert(!buffers[id], "dangling buffer");
+
+                freeIDs.push_back(id);
+                resources[id].type = Resource::Type::Undefined;
+                resourceNames[id] = {};
             }
         }
     }
@@ -136,14 +137,35 @@ namespace sp::vulkan::render_graph {
         }
     }
 
+    ResourceID Resources::ReserveID(string_view name) {
+        if (name.empty()) return InvalidResource;
+
+        Resource futureResource;
+        Register(name, futureResource);
+        return futureResource.id;
+    }
+
     void Resources::Register(string_view name, Resource &resource) {
+        if (!name.empty()) {
+            auto existingID = GetID(name, false);
+            if (existingID != InvalidResource) {
+                Assert(resourceNames[existingID] == name, "resource defined with a different name");
+                Assert(resources[existingID].type == Resource::Type::Undefined, "resource defined twice");
+                resource.id = existingID;
+                resources[existingID] = resource;
+                return;
+            }
+        }
+
         if (freeIDs.empty()) {
             resource.id = (ResourceID)resources.size();
             resources.push_back(resource);
+            resourceNames.emplace_back(name);
         } else {
             resource.id = freeIDs.back();
             freeIDs.pop_back();
             resources[resource.id] = resource;
+            resourceNames[resource.id] = name;
         }
 
         if (name.empty()) return;
@@ -200,22 +222,5 @@ namespace sp::vulkan::render_graph {
         auto &nameID = resourceNames[name.data()];
         Assert(!nameID, "resource already registered");
         nameID = id;
-    }
-
-    void Resources::ExportToNextFrame(string_view name) {
-        return ExportToNextFrame(GetID(name));
-    }
-
-    void Resources::ExportToNextFrame(ResourceID id) {
-        exportedIDs.push_back(id);
-        IncrementRef(id);
-    }
-
-    void Resources::DecrefExportedResources() {
-        for (auto id : lastExportedIDs) {
-            DecrementRef(id);
-        }
-        lastExportedIDs = exportedIDs;
-        exportedIDs.clear();
     }
 } // namespace sp::vulkan::render_graph

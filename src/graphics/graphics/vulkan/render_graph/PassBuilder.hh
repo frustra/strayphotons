@@ -16,8 +16,7 @@ namespace sp::vulkan::render_graph {
         PassBuilder(Resources &resources, Pass &pass, int framesAgo = 0)
             : resources(resources), pass(pass), framesAgo(framesAgo) {}
 
-        ResourceID GetID(string_view name) {
-            bool assertExists = (framesAgo == 0);
+        ResourceID GetID(string_view name, bool assertExists = true) {
             return resources.GetID(name, assertExists, framesAgo);
         }
 
@@ -100,15 +99,11 @@ namespace sp::vulkan::render_graph {
             return {resources, pass, framesAgo + 1};
         }
 
-        /**
-         * Keeps a resource alive until the next frame's graph has been built.
-         * If no pass depends on the resource in the next frame, it will be released before execution.
-         */
-        void ExportToNextFrame(ResourceID id) {
-            resources.ExportToNextFrame(id);
-        }
-        void ExportToNextFrame(string_view name) {
-            resources.ExportToNextFrame(name);
+        ResourceID ReadPreviousFrame(string_view name, int framesAgo = 1) {
+            auto thisFrameID = resources.GetID(name, false);
+            if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
+            pass.AddFutureDependency(thisFrameID, framesAgo);
+            return resources.GetID(name, false, framesAgo);
         }
 
     private:

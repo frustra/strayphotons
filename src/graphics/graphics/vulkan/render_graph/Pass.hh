@@ -15,8 +15,13 @@ namespace sp::vulkan::render_graph {
     };
 
     struct ResourceDependency {
-        ResourceAccess access;
         ResourceID id;
+        ResourceAccess access;
+    };
+
+    struct FutureResourceID {
+        ResourceID id;
+        int framesFromNow;
     };
 
     struct AttachmentInfo {
@@ -44,11 +49,15 @@ namespace sp::vulkan::render_graph {
         Pass(string_view name) : name(name) {}
 
         void AddDependency(const ResourceAccess &access, const Resource &res) {
-            dependencies.push_back({access, res.id});
+            dependencies.push_back({res.id, access});
         }
 
         void AddOutput(ResourceID id) {
             outputs.push_back(id);
+        }
+
+        void AddFutureDependency(ResourceID id, int framesFromNow) {
+            futureDependencies.push_back({id, framesFromNow});
         }
 
         bool HasExecute() const {
@@ -73,6 +82,7 @@ namespace sp::vulkan::render_graph {
         string_view name;
         InlineVector<ResourceDependency, 32> dependencies;
         InlineVector<ResourceID, 16> outputs;
+        vector<FutureResourceID> futureDependencies;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
         uint8 primaryAttachmentIndex = 0;
