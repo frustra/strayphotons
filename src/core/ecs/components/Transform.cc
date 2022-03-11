@@ -141,7 +141,7 @@ namespace ecs {
     }
 
     const glm::mat3 &Transform::GetRotationAndScale() const {
-        return reinterpret_cast<const glm::mat3 &>(matrix);
+        return *reinterpret_cast<const glm::mat3 *>(&matrix);
     }
 
     void Transform::SetScale(const glm::vec3 &xyz) {
