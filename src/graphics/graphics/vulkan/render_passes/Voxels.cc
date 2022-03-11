@@ -103,7 +103,7 @@ namespace sp::vulkan::renderer {
         for (size_t i = 0; i < orthoAxes.size(); i++) {
             auto axis = axisTransform[i];
             axis.Scale(glm::vec3(0.5, 0.5, 1));
-            axis.Translate(axis.GetRotationAndScale() * glm::vec3(0, 0, -0.5));
+            axis.Translate(glm::mat3(axis.matrix) * glm::vec3(0, 0, -0.5));
             orthoAxes[i].SetInvViewMat(axis.matrix);
         }
 

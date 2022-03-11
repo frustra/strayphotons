@@ -140,10 +140,6 @@ namespace ecs {
         return glm::normalize(scaledRotation * glm::vec3(0, 0, -1));
     }
 
-    const glm::mat3 &Transform::GetRotationAndScale() const {
-        return *reinterpret_cast<const glm::mat3 *>(&matrix);
-    }
-
     void Transform::SetScale(const glm::vec3 &xyz) {
         matrix[0] = glm::normalize(matrix[0]) * xyz.x;
         matrix[1] = glm::normalize(matrix[1]) * xyz.y;
