@@ -16,8 +16,11 @@ layout(binding = 1) uniform VoxelStateUniform {
     VoxelState voxelInfo;
 };
 
-layout(binding = 2) uniform sampler3D voxelRadiance;
-layout(binding = 3) uniform sampler2DArray overlayTex;
+INCLUDE_LAYOUT(binding = 2)
+#include "lib/exposure_state.glsl"
+
+layout(binding = 3) uniform sampler3D voxelRadiance;
+layout(binding = 4) uniform sampler2DArray overlayTex;
 
 float GetVoxelNearest(vec3 position, out vec3 radiance) {
     vec4 radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
@@ -70,5 +73,5 @@ void main() {
     TraceVoxelGrid(rayPos.xyz, rayDir, sampleRadiance);
 
     vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed
-    outFragColor = vec4(mix(sampleRadiance, overlay, 0.25), 1.0);
+    outFragColor = vec4(mix(sampleRadiance * exposure, overlay, 0.125), 1.0);
 }

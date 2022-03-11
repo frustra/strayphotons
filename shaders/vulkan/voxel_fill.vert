@@ -11,11 +11,12 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 
-layout(location = 0) out vec3 outVoxelPos;
-layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec2 outTexCoord;
-layout(location = 3) flat out int baseColorTexID;
-layout(location = 4) flat out int metallicRoughnessTexID;
+layout(location = 0) out vec3 outWorldPos;
+layout(location = 1) out vec3 outVoxelPos;
+layout(location = 2) out vec3 outNormal;
+layout(location = 3) out vec2 outTexCoord;
+layout(location = 4) flat out int baseColorTexID;
+layout(location = 5) flat out int metallicRoughnessTexID;
 
 #include "lib/draw_params.glsl"
 layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
@@ -31,13 +32,13 @@ layout(binding = 1) uniform VoxelStateUniform {
 };
 
 void main() {
+    outWorldPos = inPosition;
+
     ViewState view = views[gl_InstanceIndex - gl_BaseInstance];
     gl_Position = view.viewMat * vec4(inPosition, 1.0);
 
     outVoxelPos = (voxelInfo.worldToVoxel * vec4(inPosition, 1.0)).xyz;
-
-    mat3 rotation = mat3(view.viewMat);
-    outNormal = rotation * inNormal;
+    outNormal = mat3(voxelInfo.worldToVoxel) * inNormal;
     outTexCoord = inTexCoord;
 
     DrawParams params = drawParams[gl_BaseInstance];

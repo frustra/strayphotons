@@ -8,6 +8,7 @@ namespace sp::vulkan::renderer {
     static CVar<int> CVarDebugVoxels("r.DebugVoxels",
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace)");
+    static CVar<bool> CVarClearVoxels("r.ClearVoxels", true, "Enable voxel grid clearing between frames");
 
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
         for (auto entity : lock.EntitiesWith<ecs::VoxelArea>()) {
@@ -73,7 +74,10 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 desc.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage;
                 builder.RenderTargetCreate("VoxelRadiance", desc);
+
                 builder.UniformRead("VoxelState");
+                builder.UniformRead("LightState");
+                builder.TextureRead("ShadowMapLinear");
 
                 builder.BufferAccess("WarpedVertexBuffer",
                     rg::PipelineStage::eVertexInput,
@@ -89,26 +93,36 @@ namespace sp::vulkan::renderer {
             .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
                 auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
 
-                vk::ClearColorValue clear;
-                vk::ImageSubresourceRange range;
-                range.layerCount = 1;
-                range.levelCount = 1;
-                range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                cmd.ImageBarrier(radianceView->Image(),
-                    vk::ImageLayout::eUndefined,
-                    vk::ImageLayout::eGeneral,
-                    vk::PipelineStageFlagBits::eTopOfPipe,
-                    {},
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite);
-                cmd.Raw().clearColorImage(*radianceView->Image(), vk::ImageLayout::eGeneral, clear, {range});
-                cmd.ImageBarrier(radianceView->Image(),
-                    vk::ImageLayout::eGeneral,
-                    vk::ImageLayout::eGeneral,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite,
-                    vk::PipelineStageFlagBits::eFragmentShader,
-                    vk::AccessFlagBits::eShaderWrite);
+                if (CVarClearVoxels.Get()) {
+                    vk::ClearColorValue clear;
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    cmd.ImageBarrier(radianceView->Image(),
+                        vk::ImageLayout::eUndefined,
+                        vk::ImageLayout::eGeneral,
+                        vk::PipelineStageFlagBits::eTopOfPipe,
+                        {},
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferWrite);
+                    cmd.Raw().clearColorImage(*radianceView->Image(), vk::ImageLayout::eGeneral, clear, {range});
+                    cmd.ImageBarrier(radianceView->Image(),
+                        vk::ImageLayout::eGeneral,
+                        vk::ImageLayout::eGeneral,
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferWrite,
+                        vk::PipelineStageFlagBits::eFragmentShader,
+                        vk::AccessFlagBits::eShaderWrite);
+                } else {
+                    cmd.ImageBarrier(radianceView->Image(),
+                        vk::ImageLayout::eUndefined,
+                        vk::ImageLayout::eGeneral,
+                        vk::PipelineStageFlagBits::eTopOfPipe,
+                        {},
+                        vk::PipelineStageFlagBits::eFragmentShader,
+                        vk::AccessFlagBits::eShaderWrite);
+                }
 
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
@@ -147,7 +161,9 @@ namespace sp::vulkan::renderer {
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
 
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
-                cmd.SetImageView(0, 2, radianceView);
+                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
+                cmd.SetImageView(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+                cmd.SetImageView(0, 4, radianceView);
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -166,6 +182,7 @@ namespace sp::vulkan::renderer {
                 builder.TextureRead("VoxelRadiance");
                 builder.UniformRead("ViewState");
                 builder.UniformRead("VoxelState");
+                builder.StorageRead("ExposureState");
 
                 auto lastOutput = builder.TextureRead(builder.LastOutputID());
 
@@ -183,8 +200,9 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
-                cmd.SetImageView(0, 2, resources.GetRenderTarget("VoxelRadiance")->ImageView());
-                cmd.SetImageView(0, 3, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
+                cmd.SetImageView(0, 3, resources.GetRenderTarget("VoxelRadiance")->ImageView());
+                cmd.SetImageView(0, 4, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
 
                 cmd.Draw(3);
             });

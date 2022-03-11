@@ -90,8 +90,8 @@ namespace sp::vulkan {
         voxels.LoadState(graph, lock);
 
         scene.AddGeometryWarp(graph);
-        voxels.AddVoxelization(graph);
         lighting.AddShadowPasses(graph);
+        voxels.AddVoxelization(graph);
         AddGuis(lock);
 
         {
@@ -447,9 +447,9 @@ namespace sp::vulkan {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
         emissive.AddPass(graph, lock);
+        voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddBloom(graph);
-        voxels.AddDebugPass(graph);
         renderer::AddTonemap(graph);
 
         if (CVarSMAA.Get()) smaa.AddPass(graph);
