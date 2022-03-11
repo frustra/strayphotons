@@ -81,6 +81,8 @@ namespace sp::vulkan {
         }
 
         void Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ);
+        // indirectBuffer stores a VkDispatchIndirectCommand object
+        void DispatchIndirect(BufferPtr indirectBuffer, vk::DeviceSize offset);
         void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
         void DrawIndexed(uint32 indexes,
             uint32 instances = 1,

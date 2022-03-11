@@ -108,6 +108,11 @@ namespace sp::vulkan {
         cmd->dispatch(groupCountX, groupCountY, groupCountZ);
     }
 
+    void CommandContext::DispatchIndirect(BufferPtr indirectBuffer, vk::DeviceSize offset) {
+        FlushComputeState();
+        cmd->dispatchIndirect(*indirectBuffer, offset);
+    }
+
     void CommandContext::Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance) {
         FlushGraphicsState();
         cmd->draw(vertexes, instances, firstVertex, firstInstance);

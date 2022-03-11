@@ -22,18 +22,37 @@ namespace sp::vulkan::renderer {
             }
         }
 
-        struct GPUData {
+        struct GPUVoxelState {
             glm::mat4 worldToVoxel;
             glm::ivec3 size;
         };
 
+        struct GPUVoxelOverflowFragment {
+            glm::vec3 position;
+            glm::vec3 radiance;
+        };
+
+        struct GPUVoxelFragmentList {
+            VkDispatchIndirectCommand fragmentCount;
+            VkDispatchIndirectCommand overflowCounts[3];
+            GPUVoxelOverflowFragment overflowBuckets[3][8096];
+        };
+
+        ResourceID fragmentListBufferId = 0;
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
-                builder.UniformCreate("VoxelState", sizeof(GPUData));
+                builder.UniformCreate("VoxelState", sizeof(GPUVoxelState));
+
+                fragmentListBufferId =
+                    builder.StorageCreate("VoxelFragmentList", sizeof(GPUVoxelFragmentList), Residency::GPU_ONLY).id;
+                builder.TransferWrite(fragmentListBufferId);
             })
-            .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                GPUData gpuData = {glm::inverse(glm::mat4(voxelToWorld.matrix)), voxelGridSize};
+            .Execute([this, fragmentListBufferId](rg::Resources &resources, CommandContext &cmd) {
+                GPUVoxelState gpuData = {glm::inverse(glm::mat4(voxelToWorld.matrix)), voxelGridSize};
                 resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
+
+                auto fragmentListBuffer = resources.GetBuffer(fragmentListBufferId);
+                cmd.Raw().fillBuffer(*fragmentListBuffer, 0, sizeof(GPUVoxelFragmentList), 0);
             });
     }
 
