@@ -38,7 +38,7 @@
             },
             "/keyboard/key/g": {
                 "target": "console:input/action/run_command",
-                "set_value": "toggle r.DebugVoxels"
+                "set_value": "toggle r.VoxelDebug"
             }
         }
     },

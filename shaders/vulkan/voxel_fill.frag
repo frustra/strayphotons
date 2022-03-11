@@ -34,8 +34,8 @@ void main() {
 
     vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
     float roughness = metallicRoughnessSample.g;
-    float metallic = metallicRoughnessSample.b;
+    float metalness = metallicRoughnessSample.b;
 
-    vec3 pixelLuminance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal);
+    vec3 pixelLuminance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
     imageStore(radianceOut, ivec3(inVoxelPos), vec4(pixelLuminance, 1.0));
 }

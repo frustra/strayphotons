@@ -17,7 +17,6 @@ namespace sp::vulkan::renderer {
     static CVar<float> CVarEyeAdaptationDownRate("r.EyeAdaptationDownRate", 0.04, "Rate at which eye adapts to darker scenes");
     static CVar<float> CVarEyeAdaptationKeyComp("r.EyeAdaptationKeyComp", 1.0, "Amount of key compensation for eye adaptation (0-1)");
     static CVar<bool> CVarHistogram("r.Histogram", false, "Overlay luminance histogram in view");
-    static CVar<bool> CVarHistogramAbsolute("r.HistogramAbsolute", false, "Display in absolute luminance (default is exposed luminance)");
     // clang-format on
 
     struct ExposureUpdateParams {
@@ -146,18 +145,15 @@ namespace sp::vulkan::renderer {
             graph.AddPass("ViewHistogram")
                 .Build([&](rg::PassBuilder &builder) {
                     builder.StorageRead("LuminanceHistogram");
-                    builder.StorageRead("ExposureState");
                     auto lumi = builder.TextureRead(source);
 
                     auto desc = lumi.DeriveRenderTarget();
                     builder.OutputColorAttachment(0, "ViewH", desc, {LoadOp::DontCare, StoreOp::Store});
                 })
                 .Execute([source](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.PushConstants(CVarHistogramAbsolute.Get());
                     cmd.SetShaders("screen_cover.vert", "render_histogram.frag");
                     cmd.SetImageView(0, 0, resources.GetRenderTarget(source)->ImageView());
                     cmd.SetImageView(0, 1, resources.GetRenderTarget("LuminanceHistogram")->ImageView());
-                    cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
                     cmd.Draw(3);
                 });
     }

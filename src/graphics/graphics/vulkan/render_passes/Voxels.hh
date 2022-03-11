@@ -16,6 +16,6 @@ namespace sp::vulkan::renderer {
         GPUScene &scene;
 
         ecs::Transform voxelToWorld;
-        glm::ivec3 voxelGridSize = glm::ivec3(1);
+        glm::ivec3 voxelGridSize;
     };
 } // namespace sp::vulkan::renderer

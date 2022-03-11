@@ -5,12 +5,14 @@
 #include "graphics/vulkan/render_passes/Blur.hh"
 
 namespace sp::vulkan::renderer {
-    static CVar<int> CVarDebugVoxels("r.DebugVoxels",
+    static CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace)");
-    static CVar<bool> CVarClearVoxels("r.ClearVoxels", true, "Enable voxel grid clearing between frames");
+    static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
+    static CVar<bool> CVarVoxelClear("r.VoxelClear", true, "Enable voxel grid clearing between frames");
 
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
+        voxelGridSize = glm::ivec3(0);
         for (auto entity : lock.EntitiesWith<ecs::VoxelArea>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
@@ -27,6 +29,48 @@ namespace sp::vulkan::renderer {
             glm::ivec3 size;
         };
 
+        graph.AddPass("VoxelState")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.UniformCreate("VoxelState", sizeof(GPUVoxelState));
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                GPUVoxelState gpuData = {glm::inverse(glm::mat4(voxelToWorld.matrix)), voxelGridSize};
+                resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
+            });
+    }
+
+    void Voxels::AddVoxelization(RenderGraph &graph) {
+        if (voxelGridSize == glm::ivec3(0)) {
+            graph.AddPass("DummyVoxelization")
+                .Build([&](rg::PassBuilder &builder) {
+                    RenderTargetDesc desc;
+                    desc.extent = vk::Extent3D(1, 1, 1);
+                    desc.primaryViewType = vk::ImageViewType::e3D;
+                    desc.imageType = vk::ImageType::e3D;
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    desc.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage;
+                    builder.RenderTargetCreate("VoxelRadiance", desc);
+                })
+                .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                    auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
+
+                    vk::ClearColorValue clear;
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    cmd.ImageBarrier(radianceView->Image(),
+                        vk::ImageLayout::eUndefined,
+                        vk::ImageLayout::eGeneral,
+                        vk::PipelineStageFlagBits::eTopOfPipe,
+                        {},
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferWrite);
+                    cmd.Raw().clearColorImage(*radianceView->Image(), vk::ImageLayout::eGeneral, clear, {range});
+                });
+            return;
+        }
+
         struct GPUVoxelOverflowFragment {
             glm::vec3 position;
             glm::vec3 radiance;
@@ -38,25 +82,6 @@ namespace sp::vulkan::renderer {
             GPUVoxelOverflowFragment overflowBuckets[3][8096];
         };
 
-        ResourceID fragmentListBufferId = 0;
-        graph.AddPass("VoxelState")
-            .Build([&](rg::PassBuilder &builder) {
-                builder.UniformCreate("VoxelState", sizeof(GPUVoxelState));
-
-                fragmentListBufferId =
-                    builder.StorageCreate("VoxelFragmentList", sizeof(GPUVoxelFragmentList), Residency::GPU_ONLY).id;
-                builder.TransferWrite(fragmentListBufferId);
-            })
-            .Execute([this, fragmentListBufferId](rg::Resources &resources, CommandContext &cmd) {
-                GPUVoxelState gpuData = {glm::inverse(glm::mat4(voxelToWorld.matrix)), voxelGridSize};
-                resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
-
-                auto fragmentListBuffer = resources.GetBuffer(fragmentListBufferId);
-                cmd.Raw().fillBuffer(*fragmentListBuffer, 0, sizeof(GPUVoxelFragmentList), 0);
-            });
-    }
-
-    void Voxels::AddVoxelization(RenderGraph &graph) {
         ecs::View ortho;
         ortho.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_VOXEL);
 
@@ -94,6 +119,10 @@ namespace sp::vulkan::renderer {
                 desc.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage;
                 builder.RenderTargetCreate("VoxelRadiance", desc);
 
+                auto fragmentListId =
+                    builder.StorageCreate("VoxelFragmentList", sizeof(GPUVoxelFragmentList), Residency::GPU_ONLY).id;
+                builder.TransferWrite(fragmentListId);
+
                 builder.UniformRead("VoxelState");
                 builder.UniformRead("LightState");
                 builder.TextureRead("ShadowMapLinear");
@@ -112,7 +141,7 @@ namespace sp::vulkan::renderer {
             .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
                 auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
 
-                if (CVarClearVoxels.Get()) {
+                if (CVarVoxelClear.Get()) {
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
                     range.layerCount = 1;
@@ -143,6 +172,9 @@ namespace sp::vulkan::renderer {
                         vk::AccessFlagBits::eShaderWrite);
                 }
 
+                auto fragmentListBuffer = resources.GetBuffer("VoxelFragmentList");
+                cmd.Raw().fillBuffer(*fragmentListBuffer, 0, sizeof(GPUVoxelFragmentList), 0);
+
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
                     std::max(voxelGridSize.y, voxelGridSize.z),
@@ -160,7 +192,7 @@ namespace sp::vulkan::renderer {
                     vk::AccessFlagBits::eShaderWrite);
 
                 RenderPassInfo renderPass;
-                renderPass.PushColorAttachment(dummyTarget->ImageView(), LoadOp::DontCare, StoreOp::Store);
+                renderPass.PushColorAttachment(dummyTarget->ImageView(), LoadOp::DontCare, StoreOp::DontCare);
                 cmd.BeginRenderPass(renderPass);
 
                 cmd.SetShaders("voxel_fill.vert", "voxel_fill.frag");
@@ -172,8 +204,6 @@ namespace sp::vulkan::renderer {
                 for (size_t i = 0; i < viewports.size(); i++) {
                     viewports[i].extent = vk::Extent2D(orthoAxes[i].extents.x, orthoAxes[i].extents.y);
                     scissors[i].extent = vk::Extent2D(orthoAxes[i].extents.x, orthoAxes[i].extents.y);
-                    // viewports[i].extent = vk::Extent2D(desc.extent.width, desc.extent.height);
-                    // scissors[i].extent = vk::Extent2D(desc.extent.width, desc.extent.height);
                 }
                 cmd.SetViewportArray(viewports);
                 cmd.SetScissorArray(scissors);
@@ -194,7 +224,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Voxels::AddDebugPass(RenderGraph &graph) {
-        if (CVarDebugVoxels.Get() <= 0) return;
+        if (CVarVoxelDebug.Get() <= 0) return;
 
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {
@@ -222,6 +252,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
                 cmd.SetImageView(0, 3, resources.GetRenderTarget("VoxelRadiance")->ImageView());
                 cmd.SetImageView(0, 4, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebugBlend.Get());
 
                 cmd.Draw(3);
             });

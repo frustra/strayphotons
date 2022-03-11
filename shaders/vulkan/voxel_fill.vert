@@ -38,7 +38,7 @@ void main() {
     gl_Position = view.viewMat * vec4(inPosition, 1.0);
 
     outVoxelPos = (voxelInfo.worldToVoxel * vec4(inPosition, 1.0)).xyz;
-    outNormal = mat3(voxelInfo.worldToVoxel) * inNormal;
+    outNormal = normalize(inNormal);
     outTexCoord = inTexCoord;
 
     DrawParams params = drawParams[gl_BaseInstance];

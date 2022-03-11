@@ -9,9 +9,6 @@ layout(num_views = 2) in;
 layout(binding = 0) uniform sampler2DArray luminanceTex;
 layout(binding = 1, r32ui) uniform uimage2D histogram;
 
-INCLUDE_LAYOUT(binding = 2)
-#include "lib/exposure_state.glsl"
-
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
