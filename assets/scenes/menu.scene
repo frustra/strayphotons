@@ -170,11 +170,11 @@
 		},
 		{
 			"transform": {
-				"translate": [-5, 0, -4],
+				"translate": [-5, -0.05, -4],
 				"scale": [0.1, 0.1, 0.1]
 			},
 			"voxel_area": {
-				"extents": [141, 50, 80]
+				"extents": [141, 51, 80]
 			}
 		},
 		{

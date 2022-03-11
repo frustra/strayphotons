@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <glm/glm.hpp>
+#include <new>
 #include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
 
@@ -133,7 +134,7 @@ namespace sp::vulkan {
         template<typename T>
         void SetShaderConstant(ShaderStage stage, uint32 index, T data) {
             static_assert(sizeof(T) == sizeof(uint32), "type must be 4 bytes");
-            SetShaderConstant(stage, index, *reinterpret_cast<uint32 *>(&data));
+            SetShaderConstant(stage, index, *std::launder(reinterpret_cast<uint32 *>(&data)));
         }
 
         void SetShaderConstant(ShaderStage stage, uint32 index, bool data) {

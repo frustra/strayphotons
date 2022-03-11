@@ -977,7 +977,7 @@
 			"transform": {
 				"translate": [
 					-5,
-					0,
+					-0.05,
 					-4
 				],
 				"scale": [
@@ -989,7 +989,7 @@
 			"voxel_area": {
 				"extents": [
 					141,
-					50,
+					51,
 					80
 				]
 			}
