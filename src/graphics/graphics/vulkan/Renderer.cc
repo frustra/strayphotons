@@ -35,7 +35,8 @@ namespace sp::vulkan {
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
     Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), lighting(scene), guiRenderer(new GuiRenderer(device)) {
+        : device(device), graph(device), scene(device), lighting(scene), voxels(scene),
+          guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;
         });
@@ -75,6 +76,7 @@ namespace sp::vulkan {
             ecs::TransformSnapshot,
             ecs::LaserLine,
             ecs::Light,
+            ecs::VoxelArea,
             ecs::Renderable,
             ecs::View,
             ecs::XRView,
@@ -84,10 +86,12 @@ namespace sp::vulkan {
             ecs::FocusLock>>();
 
         scene.LoadState(graph, lock);
-        lighting.LoadState(lock);
+        lighting.LoadState(graph, lock);
+        voxels.LoadState(graph, lock);
 
         scene.AddGeometryWarp(graph);
         lighting.AddShadowPasses(graph);
+        voxels.AddVoxelization(graph);
         AddGuis(lock);
 
         {
@@ -346,7 +350,7 @@ namespace sp::vulkan {
                     auto view = viewsByEye[i];
 
                     if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
-                        view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
+                        view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
                     }
 
                     viewState[i] = GPUViewState(view);
@@ -443,6 +447,7 @@ namespace sp::vulkan {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
         emissive.AddPass(graph, lock);
+        voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddBloom(graph);
         renderer::AddTonemap(graph);

@@ -8,7 +8,7 @@ namespace sp::vulkan::renderer {
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
 
-    void Lighting::LoadState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
+    void Lighting::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         lightCount = 0;
         gelCount = 0;
         shadowAtlasSize = glm::ivec2(0, 0);
@@ -28,7 +28,6 @@ namespace sp::vulkan::renderer {
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
-            view.clearMode.reset();
             view.clip = light.shadowMapClip;
             view.UpdateProjectionMatrix();
             view.UpdateViewMatrix(lock, entity);
@@ -63,6 +62,14 @@ namespace sp::vulkan::renderer {
             gpuData.lights[i].mapOffset /= mapOffsetScale;
         }
         gpuData.count = lightCount;
+
+        graph.AddPass("LightState")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.UniformCreate("LightState", sizeof(gpuData));
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
+            });
     }
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
@@ -137,13 +144,15 @@ namespace sp::vulkan::renderer {
                 builder.TextureRead("GBuffer2");
                 builder.TextureRead(depthTarget);
 
+                builder.StorageRead("VoxelRadiance");
+
                 auto desc = gBuffer0.DeriveRenderTarget();
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
                 builder.UniformRead("ViewState");
                 builder.StorageRead("ExposureState");
-                builder.UniformCreate("LightState", sizeof(gpuData));
+                builder.UniformRead("LightState");
 
                 for (int i = 0; i < gelCount; i++) {
                     builder.TextureRead(gelNames[i]);
@@ -174,11 +183,8 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
-                auto lightState = resources.GetBuffer("LightState");
-                lightState->CopyFrom(&gpuData);
-
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                cmd.SetUniformBuffer(0, 11, lightState);
+                cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.Draw(3);
             });

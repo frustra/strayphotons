@@ -102,7 +102,8 @@ namespace sp::vulkan {
     }
 
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
-        ecs::Renderable::VisibilityMask viewMask) {
+        ecs::Renderable::VisibilityMask viewMask,
+        uint32 instanceCount) {
         DrawBufferIDs bufferIDs;
 
         graph.AddPass("GenerateDrawsForView")
@@ -119,7 +120,7 @@ namespace sp::vulkan {
 
                 builder.StorageRead("RenderableEntities", rg::PipelineStage::eComputeShader);
             })
-            .Execute([this, viewMask, bufferIDs](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
                 cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
 
@@ -132,9 +133,11 @@ namespace sp::vulkan {
 
                 struct {
                     uint32 renderableCount;
+                    uint32 instanceCount;
                     uint32 visibilityMask;
                 } constants;
                 constants.renderableCount = renderableCount;
+                constants.instanceCount = instanceCount;
                 constants.visibilityMask = viewMask.to_ulong();
                 cmd.PushConstants(constants);
 
