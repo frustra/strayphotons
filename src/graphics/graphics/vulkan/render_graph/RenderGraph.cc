@@ -15,24 +15,38 @@ namespace sp::vulkan::render_graph {
         resources.lastOutputID = InvalidResource;
 
         // passes are already sorted by dependency order
-        for (auto it = passes.rbegin(); it != passes.rend(); it++) {
-            auto &pass = *it;
-            pass.active = pass.required;
-            if (!pass.active) {
-                for (auto &out : pass.outputs) {
-                    if (resources.RefCount(out) > 0) {
-                        pass.active = true;
-                        break;
+        bool futureDependencyAdded;
+        do {
+            futureDependencyAdded = false;
+            for (auto it = passes.rbegin(); it != passes.rend(); it++) {
+                auto &pass = *it;
+                if (pass.active) continue;
+                pass.active = pass.required;
+                if (!pass.active) {
+                    for (auto &out : pass.outputs) {
+                        if (resources.RefCount(out) > 0) {
+                            pass.active = true;
+                            break;
+                        }
                     }
                 }
+                if (!pass.active) continue;
+                for (auto &dep : pass.dependencies) {
+                    resources.IncrementRef(dep.id);
+                }
+                for (auto &dep : pass.futureDependencies) {
+                    resources.IncrementRef(dep.id);
+                    auto depFrame = (resources.frameIndex + dep.framesFromNow) % RESOURCE_FRAME_COUNT;
+                    futureDependencies[depFrame].push_back(dep.id);
+                    futureDependencyAdded = true;
+                }
             }
-            if (!pass.active) continue;
-            for (auto &dep : pass.dependencies) {
-                resources.IncrementRef(dep.id);
-            }
-        }
+        } while (futureDependencyAdded);
 
-        resources.DecrefExportedResources();
+        for (auto id : futureDependencies[resources.frameIndex]) {
+            resources.DecrementRef(id);
+        }
+        futureDependencies[resources.frameIndex].clear();
 
         auto timer = device.GetPerfTimer();
 

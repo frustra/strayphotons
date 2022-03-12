@@ -45,7 +45,7 @@ namespace sp::vulkan::renderer {
                     BufferUsage::eTransferDst,
                     Residency::CPU_TO_GPU);
 
-                auto lastStateID = builder.PreviousFrame().GetID("NextExposureState");
+                auto lastStateID = builder.ReadPreviousFrame("NextExposureState");
                 if (lastStateID != InvalidResource) builder.TransferRead(lastStateID);
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
@@ -119,7 +119,6 @@ namespace sp::vulkan::renderer {
                     sizeof(ExposureState),
                     BufferUsage::eStorageBuffer | BufferUsage::eTransferSrc,
                     Residency::CPU_TO_GPU);
-                builder.ExportToNextFrame("NextExposureState");
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 ExposureUpdateParams constants;
