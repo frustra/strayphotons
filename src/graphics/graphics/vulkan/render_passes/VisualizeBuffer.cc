@@ -5,17 +5,17 @@
 
 namespace sp::vulkan::renderer {
     ResourceID VisualizeBuffer(RenderGraph &graph, ResourceID sourceID, uint32 arrayLayer) {
-        ResourceID targetID = InvalidResource, outputID;
+        ResourceID outputID;
         graph.AddPass("VisualizeBuffer")
             .Build([&](PassBuilder &builder) {
-                auto &res = builder.TextureRead(sourceID);
-                targetID = res.id;
-                auto desc = res.DeriveRenderTarget();
+                builder.Read(sourceID, Access::FragmentShaderSampleImage);
+
+                auto desc = builder.DeriveRenderTarget(sourceID);
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
-            .Execute([targetID, arrayLayer](Resources &resources, CommandContext &cmd) {
-                auto target = resources.GetRenderTarget(targetID);
+            .Execute([sourceID, arrayLayer](Resources &resources, CommandContext &cmd) {
+                auto target = resources.GetRenderTarget(sourceID);
                 ImageViewPtr source;
                 if (target->Desc().arrayLayers > 1 && arrayLayer != ~0u && arrayLayer < target->Desc().arrayLayers) {
                     source = target->LayerImageView(arrayLayer);

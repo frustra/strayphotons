@@ -19,9 +19,9 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("GammaCorrect")
             .Build([&](PassBuilder &builder) {
-                auto source = builder.TextureRead("LinearLuminance");
+                auto luminanceID = builder.Read("LinearLuminance", Access::FragmentShaderSampleImage);
 
-                auto desc = source.DeriveRenderTarget();
+                auto desc = builder.DeriveRenderTarget(luminanceID);
                 desc.format = vk::Format::eR8G8B8A8Unorm;
                 builder.OutputColorAttachment(0, "luminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
@@ -33,16 +33,16 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("EdgeDetection")
             .Build([&](PassBuilder &builder) {
-                auto luminance = builder.TextureRead("luminance");
+                auto luminanceID = builder.Read("luminance", Access::FragmentShaderSampleImage);
 
-                auto desc = luminance.DeriveRenderTarget();
+                auto desc = builder.DeriveRenderTarget(luminanceID);
                 desc.format = vk::Format::eR8G8B8A8Unorm;
                 builder.OutputColorAttachment(0, "edges", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eD24UnormS8Uint;
                 builder.OutputDepthAttachment("stencil", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.UniformRead("ViewState");
+                builder.ReadUniform("ViewState");
             })
             .Execute([](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/edge_detection.frag");
@@ -61,13 +61,13 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("BlendingWeights")
             .Build([&](PassBuilder &builder) {
-                auto edges = builder.TextureRead("edges");
+                auto edgesID = builder.Read("edges", Access::FragmentShaderSampleImage);
 
-                auto desc = edges.DeriveRenderTarget();
+                auto desc = builder.DeriveRenderTarget(edgesID);
                 builder.OutputColorAttachment(0, "weights", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.SetDepthAttachment("stencil", {LoadOp::Load, StoreOp::Store});
-                builder.UniformRead("ViewState");
+                builder.ReadUniform("ViewState");
             })
             .Execute([this](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending_weights.frag");
@@ -89,12 +89,12 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Blend")
             .Build([&](PassBuilder &builder) {
-                auto source = builder.TextureRead(sourceID);
-                builder.TextureRead("weights");
+                builder.Read(sourceID, Access::FragmentShaderSampleImage);
+                builder.Read("weights", Access::FragmentShaderSampleImage);
 
-                auto desc = source.DeriveRenderTarget();
+                auto desc = builder.DeriveRenderTarget(sourceID);
                 builder.OutputColorAttachment(0, "Output", desc, {LoadOp::DontCare, StoreOp::Store});
-                builder.UniformRead("ViewState");
+                builder.ReadUniform("ViewState");
             })
             .Execute([sourceID](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending.frag");

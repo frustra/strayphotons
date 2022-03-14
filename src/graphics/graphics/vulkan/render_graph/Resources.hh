@@ -5,6 +5,7 @@
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
+#include "graphics/vulkan/render_graph/Access.hh"
 
 #include <robin_hood.h>
 
@@ -90,6 +91,7 @@ namespace sp::vulkan::render_graph {
         uint32 RefCount(ResourceID id);
         void IncrementRef(ResourceID id);
         void DecrementRef(ResourceID id);
+        void AddUsageFromAccess(ResourceID id, Access access);
 
         ResourceID ReserveID(string_view name);
         void Register(string_view name, Resource &resource);
@@ -132,6 +134,8 @@ namespace sp::vulkan::render_graph {
         vector<int32> refCounts;
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;
+
+        vector<Access> lastResourceAccess;
 
         ResourceID lastOutputID = InvalidResource;
     };

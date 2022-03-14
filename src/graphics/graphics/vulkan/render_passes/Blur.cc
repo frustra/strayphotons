@@ -23,8 +23,9 @@ namespace sp::vulkan::renderer {
 
         return graph.AddPass("GaussianBlur")
             .Build([&](PassBuilder &builder) {
-                auto source = builder.TextureRead(sourceID);
-                auto desc = source.DeriveRenderTarget();
+                builder.Read(sourceID, Access::FragmentShaderSampleImage);
+
+                auto desc = builder.DeriveRenderTarget(sourceID);
                 desc.extent.width = std::max(desc.extent.width / downsample, 1u);
                 desc.extent.height = std::max(desc.extent.height / downsample, 1u);
                 builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});

@@ -78,6 +78,7 @@ namespace sp::vulkan::render_graph {
         void BeginScope(string_view name);
         void EndScope();
 
+        // TODO: add SetRenderTarget etc. on Resources, allowing importing arbitrary resources in Execute
         void SetTargetImageView(string_view name, ImageViewPtr view);
 
         void RequireResource(string_view name) {
@@ -113,7 +114,8 @@ namespace sp::vulkan::render_graph {
 
     private:
         friend class InitialPassState;
-        void AddPassBarriers(CommandContextPtr &cmd, Pass &pass);
+        void AddPreBarriers(CommandContextPtr &cmd, Pass &pass);
+        void AddPostBarriers(CommandContextPtr &cmd, Pass &pass);
         void AdvanceFrame();
 
         void UpdateLastOutput(const Pass &pass) {

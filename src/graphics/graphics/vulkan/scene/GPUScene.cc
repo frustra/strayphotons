@@ -68,10 +68,10 @@ namespace sp::vulkan {
 
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {
-                builder.BufferCreate("RenderableEntities",
+                builder.CreateBuffer("RenderableEntities",
                     renderables.size() * sizeof(renderables.front()),
-                    rg::BufferUsage::eTransferDst,
-                    Residency::CPU_TO_GPU);
+                    Residency::CPU_TO_GPU,
+                    rg::Access::HostWrite);
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());
@@ -110,15 +110,26 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
 
-                auto drawCmds = builder.StorageCreate(sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand),
-                    Residency::GPU_ONLY);
-                builder.TransferWrite(drawCmds.id);
-                bufferIDs.drawCommandsBuffer = drawCmds.id;
+                graph.AddPass("Clear")
+                    .Build([&](rg::PassBuilder &builder) {
+                        auto drawCmds = builder.CreateBuffer(
+                            sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand),
+                            Residency::GPU_ONLY,
+                            rg::Access::TransferWrite);
+                        bufferIDs.drawCommandsBuffer = drawCmds.id;
+                    })
+                    .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
+                        auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
+                        cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
+                    });
 
-                auto drawParams = builder.StorageCreate(maxDraws * sizeof(uint16) * 2, Residency::GPU_ONLY);
+                builder.Read("RenderableEntities", rg::Access::ComputeShaderReadStorage);
+                builder.Write(bufferIDs.drawCommandsBuffer, rg::Access::ComputeShaderWrite);
+
+                auto drawParams = builder.CreateBuffer(maxDraws * sizeof(uint16) * 2,
+                    Residency::GPU_ONLY,
+                    rg::Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
-
-                builder.StorageRead("RenderableEntities", rg::PipelineStage::eComputeShader);
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
@@ -167,52 +178,38 @@ namespace sp::vulkan {
     }
 
     void GPUScene::AddGeometryWarp(rg::RenderGraph &graph) {
-        graph.AddPass("GeometryWarp")
+        graph.AddPass("GeometryWarpCalls")
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
 
-                builder.BufferCreate("WarpedVertexDrawCmds",
-                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand),
-                    rg::BufferUsage::eStorageBuffer | rg::BufferUsage::eIndirectBuffer | rg::BufferUsage::eTransferDst,
-                    Residency::GPU_ONLY);
+                graph.AddPass("Clear")
+                    .Build([&](rg::PassBuilder &builder) {
+                        builder.CreateBuffer("WarpedVertexDrawCmds",
+                            sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand),
+                            Residency::GPU_ONLY,
+                            rg::Access::TransferWrite);
+                    })
+                    .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                        cmd.Raw().fillBuffer(*resources.GetBuffer("WarpedVertexDrawCmds"), 0, sizeof(uint32), 0);
+                    });
 
-                builder.StorageCreate("WarpedVertexDrawParams", maxDraws * sizeof(glm::vec4) * 5, Residency::GPU_ONLY);
+                builder.Read("RenderableEntities", rg::Access::ComputeShaderReadStorage);
+                builder.Write("WarpedVertexDrawCmds", rg::Access::ComputeShaderWrite);
 
-                builder.BufferCreate("WarpedVertexBuffer",
-                    sizeof(SceneVertex) * vertexCount,
-                    rg::BufferUsage::eStorageBuffer | rg::BufferUsage::eVertexBuffer,
-                    Residency::GPU_ONLY);
-
-                builder.StorageRead("RenderableEntities", rg::PipelineStage::eComputeShader);
+                builder.CreateBuffer("WarpedVertexDrawParams",
+                    maxDraws * sizeof(glm::vec4) * 5,
+                    Residency::GPU_ONLY,
+                    rg::Access::ComputeShaderWrite);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 if (vertexCount == 0) return;
-                auto renderableEntityList = resources.GetBuffer("RenderableEntities");
-
-                vk::BufferMemoryBarrier barrier;
-                barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-                barrier.buffer = *renderableEntityList;
-                barrier.size = VK_WHOLE_SIZE;
-                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eHost,
-                    vk::PipelineStageFlagBits::eComputeShader,
-                    {},
-                    {},
-                    {barrier},
-                    {});
-
-                auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
-                auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
-                auto warpedVertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
-
-                cmd.Raw().fillBuffer(*cmdBuffer, 0, sizeof(uint32), 0);
 
                 cmd.SetComputeShader("generate_warp_geometry_draws.comp");
-                cmd.SetStorageBuffer(0, 0, renderableEntityList);
+                cmd.SetStorageBuffer(0, 0, resources.GetBuffer("RenderableEntities"));
                 cmd.SetStorageBuffer(0, 1, models);
                 cmd.SetStorageBuffer(0, 2, primitiveLists);
-                cmd.SetStorageBuffer(0, 3, cmdBuffer);
-                cmd.SetStorageBuffer(0, 4, paramBuffer);
+                cmd.SetStorageBuffer(0, 3, resources.GetBuffer("WarpedVertexDrawCmds"));
+                cmd.SetStorageBuffer(0, 4, resources.GetBuffer("WarpedVertexDrawParams"));
 
                 struct {
                     uint32 renderableCount;
@@ -220,28 +217,24 @@ namespace sp::vulkan {
                 constants.renderableCount = renderableCount;
                 cmd.PushConstants(constants);
                 cmd.Dispatch((renderableCount + 127) / 128, 1, 1);
+            });
 
-                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
-                barrier.buffer = *cmdBuffer;
-                barrier.size = VK_WHOLE_SIZE;
-                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
-                    vk::PipelineStageFlagBits::eDrawIndirect,
-                    {},
-                    {},
-                    {barrier},
-                    {});
+        graph.AddPass("GeometryWarp")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.Read("WarpedVertexDrawCmds", rg::Access::IndirectBuffer);
+                builder.Read("WarpedVertexDrawParams", rg::Access::VertexShaderReadStorage);
 
-                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-                barrier.buffer = *paramBuffer;
-                barrier.size = VK_WHOLE_SIZE;
-                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
-                    vk::PipelineStageFlagBits::eVertexShader,
-                    {},
-                    {},
-                    {barrier},
-                    {});
+                builder.CreateBuffer("WarpedVertexBuffer",
+                    sizeof(SceneVertex) * vertexCount,
+                    Residency::GPU_ONLY,
+                    rg::Access::VertexShaderWrite);
+            })
+            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                if (vertexCount == 0) return;
+
+                auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
+                auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
+                auto warpedVertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
 
                 cmd.BeginRenderPass({});
                 cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});

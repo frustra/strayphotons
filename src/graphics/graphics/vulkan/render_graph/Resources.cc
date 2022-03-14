@@ -42,6 +42,7 @@ namespace sp::vulkan::render_graph {
         refCounts.resize(resources.size());
         renderTargets.resize(resources.size());
         buffers.resize(resources.size());
+        lastResourceAccess.resize(resources.size());
     }
 
     RenderTargetPtr Resources::GetRenderTarget(string_view name) {
@@ -134,6 +135,16 @@ namespace sp::vulkan::render_graph {
             break;
         default:
             Abort("resource type is undefined");
+        }
+    }
+
+    void Resources::AddUsageFromAccess(ResourceID id, Access access) {
+        auto &res = GetResourceRef(id);
+        auto &acc = AccessMap[(size_t)access];
+        if (res.type == Resource::Type::RenderTarget) {
+            res.renderTargetDesc.usage |= acc.imageUsageMask;
+        } else if (res.type == Resource::Type::Buffer) {
+            res.bufferDesc.usage |= acc.bufferUsageMask;
         }
     }
 

@@ -65,7 +65,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("LightState")
             .Build([&](rg::PassBuilder &builder) {
-                builder.UniformCreate("LightState", sizeof(gpuData));
+                builder.CreateUniform("LightState", sizeof(gpuData));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 resources.GetBuffer("LightState")->CopyFrom(&gpuData);
@@ -91,16 +91,10 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.BufferAccess("WarpedVertexBuffer",
-                    rg::PipelineStage::eVertexInput,
-                    rg::Access::eVertexAttributeRead,
-                    rg::BufferUsage::eVertexBuffer);
+                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
 
                 for (auto &ids : drawIDs) {
-                    builder.BufferAccess(ids.drawCommandsBuffer,
-                        rg::PipelineStage::eDrawIndirect,
-                        rg::Access::eIndirectCommandRead,
-                        rg::BufferUsage::eIndirectBuffer);
+                    builder.Read(ids.drawCommandsBuffer, rg::Access::IndirectBuffer);
                 }
             })
 
@@ -139,23 +133,22 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
-                auto gBuffer0 = builder.TextureRead("GBuffer0");
-                builder.TextureRead("GBuffer1");
-                builder.TextureRead("GBuffer2");
-                builder.TextureRead(depthTarget);
+                auto gBuffer0 = builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
+                builder.Read(depthTarget, Access::FragmentShaderSampleImage);
 
-                builder.StorageRead("VoxelRadiance");
-
-                auto desc = gBuffer0.DeriveRenderTarget();
+                auto desc = builder.DeriveRenderTarget(gBuffer0);
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                builder.UniformRead("ViewState");
-                builder.StorageRead("ExposureState");
-                builder.UniformRead("LightState");
+                builder.Read("VoxelRadiance", Access::FragmentShaderReadStorage);
+                builder.Read("ExposureState", Access::FragmentShaderReadStorage);
+                builder.ReadUniform("ViewState");
+                builder.ReadUniform("LightState");
 
                 for (int i = 0; i < gelCount; i++) {
-                    builder.TextureRead(gelNames[i]);
+                    builder.Read(gelNames[i], Access::FragmentShaderSampleImage);
                 }
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
@@ -183,9 +176,9 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
+                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
-                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.Draw(3);
             });
     }
