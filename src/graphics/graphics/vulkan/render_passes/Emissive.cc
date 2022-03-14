@@ -48,15 +48,15 @@ namespace sp::vulkan::renderer {
         graph.AddPass("Emissive")
             .Build([&](PassBuilder &builder) {
                 auto input = builder.LastOutput();
-                builder.TextureRead(input.id);
-                builder.TextureRead("GBuffer0");
-                builder.TextureRead("GBuffer1");
-                builder.StorageRead("ExposureState");
+                builder.Read(input.id, Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                builder.Read("ExposureState", Access::FragmentShaderReadStorage);
 
                 auto desc = input.DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "Emissive", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                builder.UniformRead("ViewState");
+                builder.ReadUniform("ViewState");
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
@@ -64,10 +64,10 @@ namespace sp::vulkan::renderer {
                     if (!ent.Has<ecs::Transform>(lock)) continue;
 
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
-                    auto &resource = builder.TextureRead(screenComp.textureName);
+                    auto id = builder.Read(screenComp.textureName, Access::FragmentShaderSampleImage);
 
                     Screen screen;
-                    screen.id = resource.id;
+                    screen.id = id;
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).matrix;
                     screens.push_back(std::move(screen));

@@ -8,19 +8,19 @@
 #include <variant>
 
 namespace sp::vulkan::render_graph {
-    struct ResourceAccess {
-        vk::PipelineStageFlags stages = {};
-        vk::AccessFlags access = {};
-        vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+    struct ResourceIDAccess {
+        ResourceID id;
+        Access access;
+        bool creates = false;
+
+        bool IsWrite() const {
+            return AccessIsWrite(access);
+        }
     };
 
-    struct ResourceDependency {
+    struct ResourceIDFutureAccess {
         ResourceID id;
-        ResourceAccess access;
-    };
-
-    struct FutureResourceID {
-        ResourceID id;
+        Access access;
         int framesFromNow;
     };
 
@@ -48,16 +48,17 @@ namespace sp::vulkan::render_graph {
     public:
         Pass(string_view name) : name(name) {}
 
-        void AddDependency(const ResourceAccess &access, const Resource &res) {
-            dependencies.push_back({res.id, access});
+        void AddCreate(ResourceID id, Access access) {
+            accesses.push_back({id, access, true});
         }
-
-        void AddOutput(ResourceID id) {
-            outputs.push_back(id);
+        void AddRead(ResourceID id, Access access) {
+            accesses.push_back({id, access, false});
         }
-
-        void AddFutureDependency(ResourceID id, int framesFromNow) {
-            futureDependencies.push_back({id, framesFromNow});
+        void AddWrite(ResourceID id, Access access) {
+            accesses.push_back({id, access, false});
+        }
+        void AddFutureRead(ResourceID id, Access access, int framesFromNow) {
+            futureReads.push_back({id, access, framesFromNow});
         }
 
         bool HasExecute() const {
@@ -80,9 +81,8 @@ namespace sp::vulkan::render_graph {
         friend class RenderGraph;
         friend class PassBuilder;
         string_view name;
-        InlineVector<ResourceDependency, 32> dependencies;
-        InlineVector<ResourceID, 16> outputs;
-        vector<FutureResourceID> futureDependencies;
+        InlineVector<ResourceIDAccess, 32> accesses;
+        vector<ResourceIDFutureAccess> futureReads;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
         uint8 primaryAttachmentIndex = 0;

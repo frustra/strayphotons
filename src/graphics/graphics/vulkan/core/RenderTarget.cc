@@ -37,7 +37,7 @@ namespace sp::vulkan {
         }
 
         auto createDesc = desc;
-        ZoneScopedN("RenderTargetCreate");
+        ZoneScopedN("CreateRenderTarget");
         ZoneValue(pool.size());
         ZonePrintf("size=%dx%dx%d", createDesc.extent.width, desc.extent.height, desc.extent.depth);
 

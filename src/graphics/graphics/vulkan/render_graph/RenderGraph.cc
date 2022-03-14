@@ -20,24 +20,28 @@ namespace sp::vulkan::render_graph {
             futureDependencyAdded = false;
             for (auto it = passes.rbegin(); it != passes.rend(); it++) {
                 auto &pass = *it;
-                if (pass.active) continue;
+                if (pass.active) continue; // handled in a previous loop
+
                 pass.active = pass.required;
                 if (!pass.active) {
-                    for (auto &out : pass.outputs) {
-                        if (resources.RefCount(out) > 0) {
+                    for (auto &access : pass.accesses) {
+                        if (access.IsWrite() && resources.RefCount(access.id) > 0) {
                             pass.active = true;
                             break;
                         }
                     }
                 }
                 if (!pass.active) continue;
-                for (auto &dep : pass.dependencies) {
-                    resources.IncrementRef(dep.id);
+
+                for (auto &access : pass.accesses) {
+                    resources.IncrementRef(access.id);
+                    resources.AddUsageFromAccess(access.id, access.access);
                 }
-                for (auto &dep : pass.futureDependencies) {
-                    resources.IncrementRef(dep.id);
-                    auto depFrame = (resources.frameIndex + dep.framesFromNow) % RESOURCE_FRAME_COUNT;
-                    futureDependencies[depFrame].push_back(dep.id);
+                for (auto &access : pass.futureReads) {
+                    resources.IncrementRef(access.id);
+                    resources.AddUsageFromAccess(access.id, access.access);
+                    auto accessFrame = (resources.frameIndex + access.framesFromNow) % RESOURCE_FRAME_COUNT;
+                    futureDependencies[accessFrame].push_back(access.id);
                     futureDependencyAdded = true;
                 }
             }
@@ -75,12 +79,6 @@ namespace sp::vulkan::render_graph {
             if (!pass.active) continue;
 
             Assert(pass.HasExecute(), "pass must have an Execute function");
-
-            for (auto out : pass.outputs) {
-                resources.IncrementRef(out);
-            }
-
-            AddPassBarriers(cmd, pass); // creates cmd if necessary
 
             RenderPassInfo renderPassInfo;
 
@@ -153,6 +151,8 @@ namespace sp::vulkan::render_graph {
                 pass.name.size(),
                 true);
 
+            AddPreBarriers(cmd, pass); // creates cmd if necessary
+
             if (pass.isRenderPass) {
                 if (!cmd) cmd = device.GetFrameCommandContext();
                 GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
@@ -176,14 +176,14 @@ namespace sp::vulkan::render_graph {
                 Abort("invalid pass");
             }
 
+            AddPostBarriers(cmd, pass); // creates cmd if necessary
+
             if (cmd) pendingCmds.push_back(std::move(cmd));
             cmd.reset();
 
-            for (auto &dep : pass.dependencies) {
-                resources.DecrementRef(dep.id);
-            }
-            for (auto out : pass.outputs) {
-                resources.DecrementRef(out);
+            for (auto &access : pass.accesses) {
+                resources.lastResourceAccess[access.id] = access.access;
+                resources.DecrementRef(access.id);
             }
 
             pass.executeFunc = {}; // releases any captures
@@ -196,59 +196,73 @@ namespace sp::vulkan::render_graph {
         AdvanceFrame();
     }
 
-    void RenderGraph::AddPassBarriers(CommandContextPtr &cmd, Pass &pass) {
-        for (auto &dep : pass.dependencies) {
-            if (dep.access.layout == vk::ImageLayout::eUndefined) continue;
+    void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
+        for (auto &access : pass.accesses) {
+            auto nextAccess = access.access;
+            if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
 
-            auto &res = resources.resources[dep.id];
-            Assert(res.type == Resource::Type::RenderTarget, "resource type must be RenderTarget");
+            auto next = AccessMap[(size_t)nextAccess];
 
-            auto image = resources.GetRenderTarget(dep.id)->ImageView()->Image();
+            if (access.creates) {
+                auto &res = resources.resources[access.id];
+
+                if (res.type == Resource::Type::RenderTarget) {
+                    auto view = resources.GetRenderTarget(access.id)->ImageView();
+                    if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
+                    if (next.imageLayout == vk::ImageLayout::eUndefined) continue;
+
+                    if (!cmd) cmd = device.GetFrameCommandContext();
+
+                    cmd->ImageBarrier(view->Image(),
+                        vk::ImageLayout::eUndefined,
+                        next.imageLayout,
+                        vk::PipelineStageFlagBits::eBottomOfPipe,
+                        {},
+                        next.stageMask,
+                        next.accessMask);
+                }
+                continue;
+            }
+
+            auto lastAccess = resources.lastResourceAccess[access.id];
+            Assert(lastAccess != Access::None && lastAccess < Access::AccessTypesCount,
+                "previous resource access missing");
+
+            auto last = AccessMap[(size_t)lastAccess];
+
+            if (!AccessIsWrite(lastAccess) && next.imageLayout == last.imageLayout) continue;
+
+            auto &res = resources.resources[access.id];
+            Assert(res.type != Resource::Type::Undefined, "resource must exist");
 
             if (!cmd) cmd = device.GetFrameCommandContext();
-            cmd->ImageBarrier(image,
-                image->LastLayout(),
-                dep.access.layout,
-                // TODO: infer these:
-                vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                dep.access.stages,
-                dep.access.access);
-        }
 
-        for (auto id : pass.outputs) {
-            // assume pass doesn't depend on one of its outputs (e.g. blending), TODO: implement
-            auto &res = resources.resources[id];
+            if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
 
-            if (res.type == Resource::Type::RenderTarget) {
-                auto view = resources.GetRenderTarget(id)->ImageView();
-                auto image = view->Image();
+            if (res.type == Resource::Type::Buffer) {
+                vk::MemoryBarrier barrier;
+                barrier.srcAccessMask = last.accessMask;
+                barrier.dstAccessMask = next.accessMask;
+                cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
+            } else if (res.type == Resource::Type::RenderTarget) {
+                const auto &image = resources.renderTargets[access.id];
+                Assert(image, "render target should have been created by a previous pass");
+
+                const auto &view = image->ImageView();
                 if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-                if (!cmd) cmd = device.GetFrameCommandContext();
-
-                if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eColorAttachment) {
-                    if (image->LastLayout() == vk::ImageLayout::eColorAttachmentOptimal) continue;
-                    cmd->ImageBarrier(image,
-                        vk::ImageLayout::eUndefined,
-                        vk::ImageLayout::eColorAttachmentOptimal,
-                        vk::PipelineStageFlagBits::eBottomOfPipe,
-                        {},
-                        vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                        vk::AccessFlagBits::eColorAttachmentWrite);
-                } else if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
-                    if (image->LastLayout() == vk::ImageLayout::eDepthStencilAttachmentOptimal) continue;
-                    cmd->ImageBarrier(image,
-                        vk::ImageLayout::eUndefined,
-                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                        vk::PipelineStageFlagBits::eBottomOfPipe,
-                        {},
-                        vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                        vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-                }
+                cmd->ImageBarrier(view->Image(),
+                    last.imageLayout,
+                    next.imageLayout,
+                    last.stageMask,
+                    last.accessMask,
+                    next.stageMask,
+                    next.accessMask);
             }
         }
     }
+
+    void RenderGraph::AddPostBarriers(CommandContextPtr &cmd, Pass &pass) {}
 
     void RenderGraph::AdvanceFrame() {
         passes.clear();

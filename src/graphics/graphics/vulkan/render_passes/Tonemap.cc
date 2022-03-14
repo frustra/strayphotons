@@ -6,9 +6,10 @@ namespace sp::vulkan::renderer {
     void AddTonemap(RenderGraph &graph) {
         graph.AddPass("Tonemap")
             .Build([&](rg::PassBuilder &builder) {
-                auto luminance = builder.TextureRead(builder.LastOutputID());
+                auto luminanceID = builder.LastOutputID();
+                builder.Read(luminanceID, Access::FragmentShaderSampleImage);
 
-                auto desc = luminance.DeriveRenderTarget();
+                auto desc = builder.DeriveRenderTarget(luminanceID);
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })

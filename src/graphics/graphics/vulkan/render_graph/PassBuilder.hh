@@ -4,22 +4,13 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 
 namespace sp::vulkan::render_graph {
-    using PipelineStageMask = vk::PipelineStageFlags;
-    using PipelineStage = vk::PipelineStageFlagBits;
-    using AccessMask = vk::AccessFlags;
-    using Access = vk::AccessFlagBits;
-    using BufferUsageMask = vk::BufferUsageFlags;
-    using BufferUsage = vk::BufferUsageFlagBits;
-
     class PassBuilder {
     public:
-        PassBuilder(Resources &resources, Pass &pass, int framesAgo = 0)
-            : resources(resources), pass(pass), framesAgo(framesAgo) {}
+        PassBuilder(Resources &resources, Pass &pass) : resources(resources), pass(pass) {}
 
         ResourceID GetID(string_view name, bool assertExists = true) {
-            return resources.GetID(name, assertExists, framesAgo);
+            return resources.GetID(name, assertExists);
         }
-
         Resource GetResource(ResourceID id) {
             return resources.GetResource(id);
         }
@@ -27,31 +18,16 @@ namespace sp::vulkan::render_graph {
             return resources.GetResource(GetID(name));
         }
 
-        const Resource &TransferRead(string_view name);
-        const Resource &TransferRead(ResourceID id);
-        const Resource &TransferWrite(string_view name);
-        const Resource &TransferWrite(ResourceID id);
+        void Read(ResourceID id, Access access);
+        ResourceID Read(string_view name, Access access);
+        ResourceID ReadPreviousFrame(string_view name, Access access, int framesAgo = 1);
 
-        // Images may be accessed as textures
-        const Resource &TextureRead(string_view name, PipelineStageMask stages = PipelineStage::eFragmentShader);
-        const Resource &TextureRead(ResourceID id, PipelineStageMask stages = PipelineStage::eFragmentShader);
+        void Write(ResourceID id, Access access);
+        ResourceID Write(string_view name, Access access);
 
-        // Buffers may be read as uniforms
-        const Resource &UniformRead(string_view name, PipelineStageMask stages = PipelineStage::eVertexShader);
-        const Resource &UniformRead(ResourceID id, PipelineStageMask stages = PipelineStage::eVertexShader);
-
-        // Buffers and images may be accessed as storage
-        const Resource &StorageRead(string_view name, PipelineStageMask stages = PipelineStage::eFragmentShader);
-        const Resource &StorageRead(ResourceID id, PipelineStageMask stages = PipelineStage::eFragmentShader);
-        const Resource &StorageWrite(string_view name, PipelineStageMask stages = PipelineStage::eFragmentShader);
-        const Resource &StorageWrite(ResourceID id, PipelineStageMask stages = PipelineStage::eFragmentShader);
-
-        // Generic access, when one of the helpers is insufficient
-        const Resource &BufferAccess(string_view name,
-            PipelineStageMask stages,
-            AccessMask access,
-            BufferUsageMask usage);
-        const Resource &BufferAccess(ResourceID id, PipelineStageMask stages, AccessMask access, BufferUsageMask usage);
+        // Indicates an access to a uniform buffer from any shader, equivalent to Read with Access::AnyShaderUniformRead
+        const Resource &ReadUniform(string_view name);
+        const Resource &ReadUniform(ResourceID id);
 
         void SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info);
         void SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info);
@@ -67,21 +43,17 @@ namespace sp::vulkan::render_graph {
         // The attachment at this index will become the LastOutput of the graph after the pass, defaults to 0
         void SetPrimaryAttachment(uint32 index);
 
-        Resource RenderTargetCreate(string_view name, const RenderTargetDesc &desc);
+        Resource CreateRenderTarget(string_view name, const RenderTargetDesc &desc, Access access);
 
-        Resource BufferCreate(size_t size, BufferUsageMask usage, Residency residency);
-        Resource BufferCreate(string_view name, size_t size, BufferUsageMask usage, Residency residency);
-
-        Resource StorageCreate(size_t size, Residency residency) {
-            return BufferCreate(size, BufferUsage::eStorageBuffer, residency);
-        }
-        Resource StorageCreate(string_view name, size_t size, Residency residency) {
-            return BufferCreate(name, size, BufferUsage::eStorageBuffer, residency);
+        RenderTargetDesc DeriveRenderTarget(ResourceID id) {
+            return resources.GetResourceRef(id).DeriveRenderTarget();
         }
 
-        // Defines a uniform buffer that will be shared between passes.
-        Resource UniformCreate(string_view name, size_t size) {
-            return BufferCreate(name, size, BufferUsage::eUniformBuffer, Residency::CPU_TO_GPU);
+        Resource CreateBuffer(size_t size, Residency residency, Access access);
+        Resource CreateBuffer(string_view name, size_t size, Residency residency, Access access);
+
+        Resource CreateUniform(string_view name, size_t size) {
+            return CreateBuffer(name, size, Residency::CPU_TO_GPU, Access::HostWrite);
         }
 
         ResourceID LastOutputID() const {
@@ -95,17 +67,6 @@ namespace sp::vulkan::render_graph {
             pass.required = true;
         }
 
-        PassBuilder PreviousFrame() {
-            return {resources, pass, framesAgo + 1};
-        }
-
-        ResourceID ReadPreviousFrame(string_view name, int framesAgo = 1) {
-            auto thisFrameID = resources.GetID(name, false);
-            if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
-            pass.AddFutureDependency(thisFrameID, framesAgo);
-            return resources.GetID(name, false, framesAgo);
-        }
-
     private:
         Resource OutputAttachment(uint32 index,
             string_view name,
@@ -113,10 +74,8 @@ namespace sp::vulkan::render_graph {
             const AttachmentInfo &info);
 
         void SetAttachment(uint32 index, ResourceID id, const AttachmentInfo &info);
-        void SetAttachmentWithoutOutput(uint32 index, ResourceID id, const AttachmentInfo &info);
 
         Resources &resources;
         Pass &pass;
-        int framesAgo;
     };
 } // namespace sp::vulkan::render_graph

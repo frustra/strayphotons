@@ -143,7 +143,7 @@ namespace sp::vulkan {
                     } else {
                         sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
-                    builder.TextureRead(sourceID);
+                    builder.Read(sourceID, rg::Access::FragmentShaderSampleImage);
                 } else {
                     loadOp = LoadOp::Clear;
                 }
@@ -192,17 +192,11 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eD24UnormS8Uint;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.UniformCreate("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
 
-                builder.BufferAccess("WarpedVertexBuffer",
-                    rg::PipelineStage::eVertexInput,
-                    rg::Access::eVertexAttributeRead,
-                    rg::BufferUsage::eVertexBuffer);
-                builder.BufferAccess(drawIDs.drawCommandsBuffer,
-                    rg::PipelineStage::eDrawIndirect,
-                    rg::Access::eIndirectCommandRead,
-                    rg::BufferUsage::eIndirectBuffer);
-                builder.StorageRead(drawIDs.drawParamsBuffer, rg::PipelineStage::eVertexShader);
+                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
+                builder.Read(drawIDs.drawCommandsBuffer, rg::Access::IndirectBuffer);
+                builder.Read(drawIDs.drawParamsBuffer, rg::Access::VertexShaderReadStorage);
             })
             .Execute([this, view, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
@@ -316,17 +310,11 @@ namespace sp::vulkan {
                 builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
-                builder.UniformCreate("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
 
-                builder.BufferAccess("WarpedVertexBuffer",
-                    rg::PipelineStage::eVertexInput,
-                    rg::Access::eVertexAttributeRead,
-                    rg::BufferUsage::eVertexBuffer);
-                builder.BufferAccess(drawIDs.drawCommandsBuffer,
-                    rg::PipelineStage::eDrawIndirect,
-                    rg::Access::eIndirectCommandRead,
-                    rg::BufferUsage::eIndirectBuffer);
-                builder.StorageRead(drawIDs.drawParamsBuffer, rg::PipelineStage::eVertexShader);
+                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
+                builder.Read(drawIDs.drawCommandsBuffer, rg::Access::IndirectBuffer);
+                builder.Read(drawIDs.drawParamsBuffer, rg::Access::VertexShaderReadStorage);
             })
             .Execute([this, viewsByEye, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
@@ -385,7 +373,7 @@ namespace sp::vulkan {
                     sourceID = renderer::VisualizeBuffer(graph, res.id);
                 }
 
-                builder.TransferRead(sourceID);
+                builder.Read(sourceID, rg::Access::TransferRead);
                 builder.RequirePass();
             })
             .Execute([this, sourceID](rg::Resources &resources, DeviceContext &device) {
@@ -480,8 +468,8 @@ namespace sp::vulkan {
 
         graph.AddPass("MenuOverlay")
             .Build([&](rg::PassBuilder &builder) {
-                builder.TextureRead(builder.LastOutputID());
-                builder.TextureRead(menuID);
+                builder.Read(builder.LastOutputID(), rg::Access::FragmentShaderSampleImage);
+                builder.Read(menuID, rg::Access::FragmentShaderSampleImage);
 
                 auto desc = builder.GetResource(inputID).DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});

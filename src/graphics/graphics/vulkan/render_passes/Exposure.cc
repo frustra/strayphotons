@@ -39,13 +39,12 @@ namespace sp::vulkan::renderer {
     void AddExposureState(RenderGraph &graph) {
         graph.AddPass("ExposureState")
             .Build([&](rg::PassBuilder &builder) {
-                builder.BufferCreate("ExposureState",
+                builder.CreateBuffer("ExposureState",
                     sizeof(ExposureState),
-                    BufferUsage::eTransferDst,
-                    Residency::CPU_TO_GPU);
+                    Residency::CPU_TO_GPU,
+                    Access::TransferWrite);
 
-                auto lastStateID = builder.ReadPreviousFrame("NextExposureState");
-                if (lastStateID != InvalidResource) builder.TransferRead(lastStateID);
+                builder.ReadPreviousFrame("NextExposureState", Access::TransferRead);
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 auto stateBuffer = resources.GetBuffer("ExposureState");
@@ -74,31 +73,31 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("LuminanceHistogram")
             .Build([&](rg::PassBuilder &builder) {
-                builder.TextureRead(source);
+                graph.AddPass("Clear")
+                    .Build([&](rg::PassBuilder &builder) {
+                        RenderTargetDesc histogramDesc;
+                        histogramDesc.extent = vk::Extent3D(bins, 1, 1);
+                        histogramDesc.format = vk::Format::eR32Uint;
+                        builder.CreateRenderTarget("LuminanceHistogram", histogramDesc, Access::TransferWrite);
+                    })
+                    .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                        vk::ImageSubresourceRange range;
+                        range.layerCount = 1;
+                        range.levelCount = 1;
+                        range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                        cmd.Raw().clearColorImage(
+                            *resources.GetRenderTarget("LuminanceHistogram")->ImageView()->Image(),
+                            vk::ImageLayout::eTransferDstOptimal,
+                            {},
+                            {range});
+                    });
 
-                RenderTargetDesc histogramDesc;
-                histogramDesc.extent = vk::Extent3D(bins, 1, 1);
-                histogramDesc.format = vk::Format::eR32Uint;
-                histogramDesc.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage;
-                builder.RenderTargetCreate("LuminanceHistogram", histogramDesc);
+                builder.Read(source, Access::ComputeShaderSampleImage);
+                builder.Write("LuminanceHistogram", Access::ComputeShaderWrite);
             })
             .Execute([source](rg::Resources &resources, CommandContext &cmd) {
                 auto luminance = resources.GetRenderTarget(source)->LayerImageView(0);
                 auto histogram = resources.GetRenderTarget("LuminanceHistogram");
-
-                vk::ClearColorValue clear;
-                vk::ImageSubresourceRange range;
-                range.layerCount = 1;
-                range.levelCount = 1;
-                range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                cmd.ImageBarrier(histogram->ImageView()->Image(),
-                    vk::ImageLayout::eUndefined,
-                    vk::ImageLayout::eGeneral,
-                    vk::PipelineStageFlagBits::eTopOfPipe,
-                    {},
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite);
-                cmd.Raw().clearColorImage(*histogram->ImageView()->Image(), vk::ImageLayout::eGeneral, clear, {range});
 
                 cmd.SetComputeShader("lumi_histogram.comp");
                 cmd.SetImageView(0, 0, luminance);
@@ -111,13 +110,13 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("ExposureUpdate")
             .Build([&](rg::PassBuilder &builder) {
-                builder.StorageRead("LuminanceHistogram");
-                builder.StorageRead("ExposureState");
+                builder.Read("LuminanceHistogram", Access::ComputeShaderReadStorage);
+                builder.Read("ExposureState", Access::ComputeShaderReadStorage);
 
-                builder.BufferCreate("NextExposureState",
+                builder.CreateBuffer("NextExposureState",
                     sizeof(ExposureState),
-                    BufferUsage::eStorageBuffer | BufferUsage::eTransferSrc,
-                    Residency::CPU_TO_GPU);
+                    Residency::CPU_TO_GPU,
+                    Access::ComputeShaderWrite);
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 ExposureUpdateParams constants;
@@ -143,10 +142,10 @@ namespace sp::vulkan::renderer {
         if (CVarHistogram.Get())
             graph.AddPass("ViewHistogram")
                 .Build([&](rg::PassBuilder &builder) {
-                    builder.StorageRead("LuminanceHistogram");
-                    auto lumi = builder.TextureRead(source);
+                    builder.Read("LuminanceHistogram", Access::FragmentShaderReadStorage);
+                    builder.Read(source, Access::FragmentShaderSampleImage);
 
-                    auto desc = lumi.DeriveRenderTarget();
+                    auto desc = builder.DeriveRenderTarget(source);
                     builder.OutputColorAttachment(0, "ViewH", desc, {LoadOp::DontCare, StoreOp::Store});
                 })
                 .Execute([source](rg::Resources &resources, CommandContext &cmd) {
