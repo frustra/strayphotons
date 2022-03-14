@@ -115,7 +115,6 @@ namespace sp::vulkan::render_graph {
     private:
         friend class InitialPassState;
         void AddPreBarriers(CommandContextPtr &cmd, Pass &pass);
-        void AddPostBarriers(CommandContextPtr &cmd, Pass &pass);
         void AdvanceFrame();
 
         void UpdateLastOutput(const Pass &pass) {

@@ -111,7 +111,6 @@ namespace sp::vulkan::renderer {
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
-                desc.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage;
 
                 bool clearRadiance = CVarVoxelClear.Get();
                 if (!clearRadiance) builder.CreateRenderTarget("VoxelRadiance", desc, Access::FragmentShaderWrite);

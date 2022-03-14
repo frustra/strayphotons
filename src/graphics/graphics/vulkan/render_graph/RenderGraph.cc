@@ -176,8 +176,6 @@ namespace sp::vulkan::render_graph {
                 Abort("invalid pass");
             }
 
-            AddPostBarriers(cmd, pass); // creates cmd if necessary
-
             if (cmd) pendingCmds.push_back(std::move(cmd));
             cmd.reset();
 
@@ -261,8 +259,6 @@ namespace sp::vulkan::render_graph {
             }
         }
     }
-
-    void RenderGraph::AddPostBarriers(CommandContextPtr &cmd, Pass &pass) {}
 
     void RenderGraph::AdvanceFrame() {
         passes.clear();
