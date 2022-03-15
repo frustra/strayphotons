@@ -4,7 +4,7 @@
 
 namespace sp::vulkan::render_graph {
     enum class Access : uint8_t {
-        None,
+        Undefined,
 
         // Reads
         IndirectBuffer,
@@ -59,7 +59,7 @@ namespace sp::vulkan::render_graph {
     };
 
     const AccessInfo AccessMap[(size_t)Access::AccessTypesCount] = {
-        // None
+        // Undefined
         {{}, {}, {}, {}, vk::ImageLayout::eUndefined},
         // IndirectBuffer
         {vk::PipelineStageFlagBits::eDrawIndirect,

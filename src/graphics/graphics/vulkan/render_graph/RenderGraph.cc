@@ -186,8 +186,6 @@ namespace sp::vulkan::render_graph {
 
             pass.executeFunc = {}; // releases any captures
             UpdateLastOutput(pass);
-
-            submitPendingCmds();
         }
 
         submitPendingCmds();
@@ -197,7 +195,7 @@ namespace sp::vulkan::render_graph {
     void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
-            if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
+            if (nextAccess == Access::Undefined || nextAccess >= Access::AccessTypesCount) continue;
 
             auto next = AccessMap[(size_t)nextAccess];
 
@@ -223,7 +221,7 @@ namespace sp::vulkan::render_graph {
             }
 
             auto lastAccess = resources.lastResourceAccess[access.id];
-            Assert(lastAccess != Access::None && lastAccess < Access::AccessTypesCount,
+            Assert(lastAccess != Access::Undefined && lastAccess < Access::AccessTypesCount,
                 "previous resource access missing");
 
             auto last = AccessMap[(size_t)lastAccess];

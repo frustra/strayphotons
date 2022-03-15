@@ -515,7 +515,7 @@ namespace sp::vulkan {
 
         vk::SwapchainCreateInfoKHR swapchainInfo;
         swapchainInfo.surface = *surface;
-        swapchainInfo.minImageCount = surfaceCapabilities.minImageCount + 1;
+        swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
@@ -657,6 +657,7 @@ namespace sp::vulkan {
                 auto acquireResult =
                     device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
                 swapchainImageIndex = acquireResult.value;
+                ZoneValue(swapchainImageIndex);
             } catch (const vk::OutOfDateKHRError &) {
                 RecreateSwapchain();
                 return BeginFrame();

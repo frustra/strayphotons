@@ -94,14 +94,6 @@ namespace sp::vulkan {
         voxels.AddVoxelization(graph);
         AddGuis(lock);
 
-        {
-            auto scope = graph.Scope("FlatView");
-            AddFlatView(lock);
-            if (graph.HasResource("GBuffer0")) {
-                AddDeferredPasses(lock);
-                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
-            }
-        }
 #ifdef SP_XR_SUPPORT
         {
             auto scope = graph.Scope("XRView");
@@ -110,6 +102,15 @@ namespace sp::vulkan {
         }
         AddXRSubmit(lock);
 #endif
+
+        {
+            auto scope = graph.Scope("FlatView");
+            AddFlatView(lock);
+            if (graph.HasResource("GBuffer0")) {
+                AddDeferredPasses(lock);
+                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
+            }
+        }
         AddWindowOutput();
         screenshots.AddPass(graph);
 
