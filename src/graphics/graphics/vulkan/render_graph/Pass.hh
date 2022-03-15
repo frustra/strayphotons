@@ -11,7 +11,6 @@ namespace sp::vulkan::render_graph {
     struct ResourceIDAccess {
         ResourceID id;
         Access access;
-        bool creates = false;
 
         bool IsWrite() const {
             return AccessIsWrite(access);
@@ -48,14 +47,8 @@ namespace sp::vulkan::render_graph {
     public:
         Pass(string_view name) : name(name) {}
 
-        void AddCreate(ResourceID id, Access access) {
-            accesses.push_back({id, access, true});
-        }
-        void AddRead(ResourceID id, Access access) {
-            accesses.push_back({id, access, false});
-        }
-        void AddWrite(ResourceID id, Access access) {
-            accesses.push_back({id, access, false});
+        void AddAccess(ResourceID id, Access access) {
+            accesses.push_back({id, access});
         }
         void AddFutureRead(ResourceID id, Access access, int framesFromNow) {
             futureReads.push_back({id, access, framesFromNow});

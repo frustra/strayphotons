@@ -148,7 +148,7 @@ namespace sp::vulkan {
             vk::ImageLayout::eColorAttachmentOptimal},
         // ColorAttachmentReadWrite
         {vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::AccessFlagBits::eColorAttachmentWrite,
+            vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite,
             {},
             vk::ImageUsageFlagBits::eColorAttachment,
             vk::ImageLayout::eColorAttachmentOptimal},
