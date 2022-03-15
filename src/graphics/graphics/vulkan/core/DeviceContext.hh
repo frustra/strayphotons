@@ -10,6 +10,7 @@
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 
+#include <atomic>
 #include <future>
 #include <robin_hood.h>
 #include <variant>
@@ -125,7 +126,6 @@ namespace sp::vulkan {
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
         BufferPtr GetBuffer(const BufferDesc &desc);
-        BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
@@ -278,7 +278,6 @@ namespace sp::vulkan {
 
             // Stores all command contexts created for this frame, so they can be reused in later frames
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
-            std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
 
             vector<InFlightObject> inFlightObjects;
         };
@@ -311,7 +310,7 @@ namespace sp::vulkan {
 
         robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
-        std::atomic_bool reloadShaders;
+        std::atomic_bool reloadShaders, printBufferStats;
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 

@@ -145,7 +145,7 @@ namespace sp::vulkan {
                     } else {
                         sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
-                    builder.Read(sourceID, rg::Access::FragmentShaderSampleImage);
+                    builder.Read(sourceID, Access::FragmentShaderSampleImage);
                 } else {
                     loadOp = LoadOp::Clear;
                 }
@@ -196,9 +196,9 @@ namespace sp::vulkan {
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
 
-                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
-                builder.Read(drawIDs.drawCommandsBuffer, rg::Access::IndirectBuffer);
-                builder.Read(drawIDs.drawParamsBuffer, rg::Access::VertexShaderReadStorage);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
             .Execute([this, view, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
@@ -314,9 +314,9 @@ namespace sp::vulkan {
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
 
-                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
-                builder.Read(drawIDs.drawCommandsBuffer, rg::Access::IndirectBuffer);
-                builder.Read(drawIDs.drawParamsBuffer, rg::Access::VertexShaderReadStorage);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
             .Execute([this, viewsByEye, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
@@ -375,7 +375,7 @@ namespace sp::vulkan {
                     sourceID = renderer::VisualizeBuffer(graph, res.id);
                 }
 
-                builder.Read(sourceID, rg::Access::TransferRead);
+                builder.Read(sourceID, Access::TransferRead);
                 builder.RequirePass();
             })
             .Execute([this, sourceID](rg::Resources &resources, DeviceContext &device) {
@@ -470,8 +470,8 @@ namespace sp::vulkan {
 
         graph.AddPass("MenuOverlay")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read(builder.LastOutputID(), rg::Access::FragmentShaderSampleImage);
-                builder.Read(menuID, rg::Access::FragmentShaderSampleImage);
+                builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
+                builder.Read(menuID, Access::FragmentShaderSampleImage);
 
                 auto desc = builder.GetResource(inputID).DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});

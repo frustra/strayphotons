@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Hashing.hh"
 #include "core/Tracing.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Common.hh"
 
 #ifdef __clang__
@@ -40,13 +41,6 @@
 #endif
 
 namespace sp::vulkan {
-    enum BufferType {
-        BUFFER_TYPE_UNIFORM,
-        BUFFER_TYPE_INDEX_TRANSFER,
-        BUFFER_TYPE_VERTEX_TRANSFER,
-        BUFFER_TYPES_COUNT
-    };
-
     enum class Residency {
         UNKNOWN = VMA_MEMORY_USAGE_UNKNOWN,
         CPU_ONLY = VMA_MEMORY_USAGE_CPU_ONLY,
@@ -90,6 +84,7 @@ namespace sp::vulkan {
         void Unmap();
         void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
+        vk::MemoryPropertyFlags Properties() const;
 
         const size_t CopyBlockSize = 512 * 1024;
 
@@ -195,6 +190,12 @@ namespace sp::vulkan {
         // ArrayAllocate cannot be called after calling SubAllocate.
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
+        Access LastAccess() const {
+            return lastAccess;
+        }
+
+        void SetAccess(Access oldAccess, Access newAccess);
+
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
@@ -203,6 +204,8 @@ namespace sp::vulkan {
 
         vk::DeviceSize subBufferBytesPerElement = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
+
+        Access lastAccess = Access::Undefined;
     };
 } // namespace sp::vulkan
 

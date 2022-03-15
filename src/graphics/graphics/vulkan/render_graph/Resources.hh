@@ -2,10 +2,10 @@
 
 #include "core/Hashing.hh"
 #include "core/InlineVector.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
-#include "graphics/vulkan/render_graph/Access.hh"
 
 #include <robin_hood.h>
 

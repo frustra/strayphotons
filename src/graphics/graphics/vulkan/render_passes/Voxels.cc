@@ -177,9 +177,9 @@ namespace sp::vulkan::renderer {
                 builder.Read("OverflowList1", Access::FragmentShaderWrite);
                 builder.Read("OverflowList2", Access::FragmentShaderWrite);
 
-                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
-                builder.Read(drawID.drawCommandsBuffer, rg::Access::IndirectBuffer);
-                builder.Read(drawID.drawParamsBuffer, rg::Access::VertexShaderReadStorage);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read(drawID.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawID.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
 
             .Execute([this, drawID, orthoAxes, &lighting](rg::Resources &resources, CommandContext &cmd) {

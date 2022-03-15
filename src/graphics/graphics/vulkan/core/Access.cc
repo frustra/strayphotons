@@ -1,64 +1,7 @@
-#pragma once
+#include "Access.hh"
 
-#include "graphics/vulkan/core/Common.hh"
-
-namespace sp::vulkan::render_graph {
-    enum class Access : uint8_t {
-        Undefined,
-
-        // Reads
-        IndirectBuffer,
-        IndexBuffer,
-        VertexBuffer,
-        VertexShaderSampleImage,
-        VertexShaderReadUniform,
-        VertexShaderReadStorage,
-        FragmentShaderSampleImage,
-        FragmentShaderReadUniform,
-        FragmentShaderReadStorage,
-        FragmentShaderReadColorInputAttachment,
-        FragmentShaderReadDepthInputStencilAttachment,
-        ColorAttachmentRead,
-        DepthStencilAttachmentRead,
-        ComputeShaderSampleImage,
-        ComputeShaderReadUniform,
-        ComputeShaderReadStorage,
-        AnyShaderSampleImage,
-        AnyShaderReadUniform,
-        AnyShaderReadStorage,
-        TransferRead,
-        HostRead,
-
-        AccessTypesEndOfReads,
-
-        // Writes
-        VertexShaderWrite,
-        FragmentShaderWrite,
-        ColorAttachmentWrite,
-        ColorAttachmentReadWrite,
-        DepthStencilAttachmentWrite,
-        ComputeShaderWrite,
-        AnyShaderWrite,
-        TransferWrite,
-        HostPreinitialized,
-        HostWrite,
-
-        AccessTypesCount,
-    };
-
-    inline bool AccessIsWrite(Access access) {
-        return access > Access::AccessTypesEndOfReads && access < Access::AccessTypesCount;
-    }
-
-    struct AccessInfo {
-        vk::PipelineStageFlags stageMask;
-        vk::AccessFlags accessMask;
-        vk::BufferUsageFlags bufferUsageMask;
-        vk::ImageUsageFlags imageUsageMask;
-        vk::ImageLayout imageLayout;
-    };
-
-    const AccessInfo AccessMap[(size_t)Access::AccessTypesCount] = {
+namespace sp::vulkan {
+    const AccessInfo AccessInfo::Map[(size_t)Access::AccessTypesCount] = {
         // Undefined
         {{}, {}, {}, {}, vk::ImageLayout::eUndefined},
         // IndirectBuffer
@@ -238,5 +181,4 @@ namespace sp::vulkan::render_graph {
         // HostWrite
         {vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, {}, {}, vk::ImageLayout::eGeneral},
     };
-
-} // namespace sp::vulkan::render_graph
+} // namespace sp::vulkan
