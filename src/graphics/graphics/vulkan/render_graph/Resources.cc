@@ -3,6 +3,12 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan::render_graph {
+    Resources::Resources(DeviceContext &device) : device(device) {
+        renderTargetPool = make_unique<RenderTargetManager>(device);
+        Reset();
+        nameScopes.emplace_back();
+    }
+
     void Resources::Reset() {
         lastOutputID = InvalidResource;
 
@@ -36,13 +42,18 @@ namespace sp::vulkan::render_graph {
         }
         Assertf(consecutiveGrowthFrames < 100, "likely resource leak, have %d resources", resources.size());
         lastResourceCount = resources.size();
+
+        renderTargetPool->TickFrame();
     }
 
     void Resources::ResizeIfNeeded() {
         refCounts.resize(resources.size());
         renderTargets.resize(resources.size());
         buffers.resize(resources.size());
-        lastResourceAccess.resize(resources.size());
+    }
+
+    RenderTargetPtr Resources::TemporaryRenderTarget(const RenderTargetDesc &desc) {
+        return renderTargetPool->Get(desc);
     }
 
     RenderTargetPtr Resources::GetRenderTarget(string_view name) {
@@ -54,7 +65,7 @@ namespace sp::vulkan::render_graph {
         auto &res = resources[id];
         Assert(res.type == Resource::Type::RenderTarget, "resource is not a render target");
         auto &target = renderTargets[res.id];
-        if (!target) target = device.GetRenderTarget(res.renderTargetDesc);
+        if (!target) target = renderTargetPool->Get(res.renderTargetDesc);
         return target;
     }
 

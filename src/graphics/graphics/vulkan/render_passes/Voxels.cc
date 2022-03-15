@@ -158,7 +158,7 @@ namespace sp::vulkan::renderer {
                     1);
                 desc.format = vk::Format::eR8Sint;
                 desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
-                auto dummyTarget = cmd.Device().GetRenderTarget(desc);
+                auto dummyTarget = resources.TemporaryRenderTarget(desc);
 
                 cmd.ImageBarrier(dummyTarget->ImageView()->Image(),
                     vk::ImageLayout::eUndefined,

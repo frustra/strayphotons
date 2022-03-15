@@ -418,7 +418,6 @@ namespace sp::vulkan {
                 device->resetFences({fence});
             });
 
-        renderTargetPool = make_unique<RenderTargetManager>(*this);
         pipelinePool = make_unique<PipelineManager>(*this);
         renderPassPool = make_unique<RenderPassManager>(*this);
         framebufferPool = make_unique<FramebufferManager>(*this);
@@ -472,7 +471,9 @@ namespace sp::vulkan {
             reloadShaders = true;
         });
         funcs->Register("vkbufferstats", "Print Vulkan buffer pool stats", [&]() {
-            printBufferStats = true;
+            for (auto &tc : threadContexts) {
+                tc->printBufferStats = true;
+            }
         });
 
         perfTimer.reset(new PerfTimer(*this));
@@ -689,7 +690,10 @@ namespace sp::vulkan {
         ZoneScoped;
         for (auto &pool : Frame().commandContexts) {
             // Resets all command buffers in the pool, so they can be recorded and used again.
-            if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
+            if (pool.nextIndex > 0) {
+                ZoneScopedN("ResetCommandPool");
+                device->resetCommandPool(*pool.commandPool);
+            }
             pool.nextIndex = 0;
         }
 
@@ -698,14 +702,6 @@ namespace sp::vulkan {
         });
 
         Thread().ReleaseAvailableResources();
-        Thread().bufferPool->Tick();
-
-        if (printBufferStats) {
-            Thread().bufferPool->LogStats();
-            printBufferStats = false;
-        }
-
-        renderTargetPool->TickFrame();
     }
 
     void DeviceContext::SwapBuffers() {
@@ -727,6 +723,10 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::EndFrame() {
+        allocatorQueue.Dispatch<void>([this]() {
+            Thread().ReleaseAvailableResources();
+        });
+
         frameEndQueue.Flush();
 
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -1338,10 +1338,6 @@ namespace sp::vulkan {
         return *sampler;
     }
 
-    RenderTargetPtr DeviceContext::GetRenderTarget(const RenderTargetDesc &desc) {
-        return renderTargetPool->Get(desc);
-    }
-
     ShaderHandle DeviceContext::LoadShader(string_view name) {
         auto it = shaderHandles.find(name);
         if (it != shaderHandles.end()) return it->second;
@@ -1425,12 +1421,16 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::ThreadContext::ReleaseAvailableResources() {
+        ZoneScoped;
         for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
             erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
                 auto &cmd = cmdHandle.Get();
                 return cmd->Device()->getFenceStatus(cmd->Fence()) == vk::Result::eSuccess;
             });
         }
+
+        bufferPool->Tick();
+        if (printBufferStats.exchange(false)) bufferPool->LogStats();
     }
 
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {
