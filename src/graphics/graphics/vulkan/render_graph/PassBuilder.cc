@@ -95,7 +95,7 @@ namespace sp::vulkan::render_graph {
     Resource PassBuilder::CreateBuffer(string_view name, size_t size, Residency residency, Access access) {
         BufferDesc desc;
         desc.size = size;
-        desc.usage |= AccessMap[(size_t)access].bufferUsageMask;
+        desc.usage |= GetAccessInfo(access).bufferUsageMask;
         desc.residency = residency;
         Resource resource(desc);
         resources.Register(name, resource);

@@ -10,6 +10,7 @@
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 
+#include <atomic>
 #include <future>
 #include <robin_hood.h>
 #include <variant>
@@ -311,7 +312,7 @@ namespace sp::vulkan {
 
         robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
-        std::atomic_bool reloadShaders;
+        std::atomic_bool reloadShaders, printBufferStats;
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 

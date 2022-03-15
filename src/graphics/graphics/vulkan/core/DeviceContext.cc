@@ -471,6 +471,9 @@ namespace sp::vulkan {
         funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
             reloadShaders = true;
         });
+        funcs->Register("vkbufferstats", "Print Vulkan buffer pool stats", [&]() {
+            printBufferStats = true;
+        });
 
         perfTimer.reset(new PerfTimer(*this));
 
@@ -704,6 +707,11 @@ namespace sp::vulkan {
 
         Thread().ReleaseAvailableResources();
         Thread().bufferPool->Tick();
+
+        if (printBufferStats) {
+            Thread().bufferPool->LogStats();
+            printBufferStats = false;
+        }
 
         renderTargetPool->TickFrame();
     }

@@ -180,7 +180,6 @@ namespace sp::vulkan::render_graph {
             cmd.reset();
 
             for (auto &access : pass.accesses) {
-                resources.lastResourceAccess[access.id] = access.access;
                 resources.DecrementRef(access.id);
             }
 
@@ -197,7 +196,10 @@ namespace sp::vulkan::render_graph {
             auto nextAccess = access.access;
             if (nextAccess == Access::Undefined || nextAccess >= Access::AccessTypesCount) continue;
 
-            auto next = AccessMap[(size_t)nextAccess];
+            auto lastAccess = resources.lastResourceAccess[access.id];
+            resources.lastResourceAccess[access.id] = nextAccess;
+
+            auto &next = GetAccessInfo(nextAccess);
 
             if (access.creates) {
                 auto &res = resources.resources[access.id];
@@ -205,27 +207,49 @@ namespace sp::vulkan::render_graph {
                 if (res.type == Resource::Type::RenderTarget) {
                     auto view = resources.GetRenderTarget(access.id)->ImageView();
                     if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
-                    if (next.imageLayout == vk::ImageLayout::eUndefined) continue;
+
+                    auto &image = view->Image();
+                    lastAccess = image->LastAccess();
+                    if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::Undefined) continue;
+
+                    auto last = GetAccessInfo(lastAccess);
+                    if (last.stageMask == vk::PipelineStageFlags(0))
+                        last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
 
                     if (!cmd) cmd = device.GetFrameCommandContext();
 
-                    cmd->ImageBarrier(view->Image(),
-                        vk::ImageLayout::eUndefined,
+                    cmd->ImageBarrier(image,
+                        last.imageLayout,
                         next.imageLayout,
-                        vk::PipelineStageFlagBits::eBottomOfPipe,
-                        {},
+                        last.stageMask,
+                        last.accessMask,
                         next.stageMask,
                         next.accessMask);
+
+                    image->SetAccess(Access::Undefined, nextAccess);
+                } else if (res.type == Resource::Type::Buffer) {
+                    auto buffer = resources.GetBuffer(access.id);
+                    lastAccess = buffer->LastAccess();
+                    buffer->SetAccess(Access::Undefined, nextAccess);
+
+                    if (nextAccess == Access::HostWrite) continue;
+                    if (lastAccess == ccess::Undefined) continue;
+
+                    if (!cmd) cmd = device.GetFrameCommandContext();
+
+                    auto last = GetAccessInfo(lastAccess);
+                    vk::MemoryBarrier barrier;
+                    barrier.srcAccessMask = last.accessMask;
+                    barrier.dstAccessMask = next.accessMask;
+                    cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
                 }
                 continue;
             }
 
-            auto lastAccess = resources.lastResourceAccess[access.id];
             Assert(lastAccess != Access::Undefined && lastAccess < Access::AccessTypesCount,
                 "previous resource access missing");
 
-            auto last = AccessMap[(size_t)lastAccess];
-
+            auto last = GetAccessInfo(lastAccess);
             if (!AccessIsWrite(lastAccess) && next.imageLayout == last.imageLayout) continue;
 
             auto &res = resources.resources[access.id];
@@ -240,20 +264,27 @@ namespace sp::vulkan::render_graph {
                 barrier.srcAccessMask = last.accessMask;
                 barrier.dstAccessMask = next.accessMask;
                 cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
-            } else if (res.type == Resource::Type::RenderTarget) {
-                const auto &image = resources.renderTargets[access.id];
-                Assert(image, "render target should have been created by a previous pass");
 
-                const auto &view = image->ImageView();
+                const auto &buffer = resources.buffers[access.id];
+                Assert(buffer, "buffer should have been created by a previous pass");
+                buffer->SetAccess(lastAccess, nextAccess);
+            } else if (res.type == Resource::Type::RenderTarget) {
+                const auto &target = resources.renderTargets[access.id];
+                Assert(target, "render target should have been created by a previous pass");
+
+                const auto &view = target->ImageView();
                 if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-                cmd->ImageBarrier(view->Image(),
+                const auto &image = view->Image();
+                cmd->ImageBarrier(image,
                     last.imageLayout,
                     next.imageLayout,
                     last.stageMask,
                     last.accessMask,
                     next.stageMask,
                     next.accessMask);
+
+                image->SetAccess(lastAccess, nextAccess);
             }
         }
     }
