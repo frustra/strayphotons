@@ -91,10 +91,10 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
                 for (auto &ids : drawIDs) {
-                    builder.Read(ids.drawCommandsBuffer, rg::Access::IndirectBuffer);
+                    builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
                 }
             })
 

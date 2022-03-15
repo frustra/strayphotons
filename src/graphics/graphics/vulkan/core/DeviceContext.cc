@@ -471,6 +471,9 @@ namespace sp::vulkan {
         funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
             reloadShaders = true;
         });
+        funcs->Register("vkbufferstats", "Print Vulkan buffer pool stats", [&]() {
+            printBufferStats = true;
+        });
 
         perfTimer.reset(new PerfTimer(*this));
 
@@ -694,16 +697,13 @@ namespace sp::vulkan {
             return device->getFenceStatus(entry.fence) == vk::Result::eSuccess;
         });
 
-        for (auto &pool : Frame().bufferPools) {
-            erase_if(pool, [&](auto &buf) {
-                if (!buf.used) return true;
-                buf.used = false;
-                return false;
-            });
-        }
-
         Thread().ReleaseAvailableResources();
         Thread().bufferPool->Tick();
+
+        if (printBufferStats) {
+            Thread().bufferPool->LogStats();
+            printBufferStats = false;
+        }
 
         renderTargetPool->TickFrame();
     }
@@ -872,41 +872,6 @@ namespace sp::vulkan {
 
     BufferPtr DeviceContext::GetBuffer(const BufferDesc &desc) {
         return Thread().bufferPool->Get(desc);
-    }
-
-    BufferPtr DeviceContext::GetFramePooledBuffer(BufferType type, vk::DeviceSize size) {
-        Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread");
-
-        auto &pool = Frame().bufferPools[type];
-        for (auto &buf : pool) {
-            if (!buf.used && buf.size == size) {
-                buf.used = true;
-                return buf.buffer;
-            }
-        }
-
-        vk::BufferUsageFlags usage;
-        VmaMemoryUsage residency;
-        switch (type) {
-        case BUFFER_TYPE_UNIFORM:
-            usage = vk::BufferUsageFlagBits::eUniformBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_INDEX_TRANSFER:
-            usage = vk::BufferUsageFlagBits::eIndexBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_VERTEX_TRANSFER:
-            usage = vk::BufferUsageFlagBits::eVertexBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        default:
-            Abortf("unknown buffer type %d", type);
-        }
-
-        auto buffer = AllocateBuffer(size, usage, residency);
-        pool.emplace_back(PooledBuffer{buffer, size, true});
-        return buffer;
     }
 
     AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,

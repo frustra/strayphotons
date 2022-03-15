@@ -34,6 +34,11 @@ namespace sp::vulkan {
         return allocation ? allocation->GetSize() : 0;
     }
 
+    vk::MemoryPropertyFlags UniqueMemory::Properties() const {
+        auto flags = allocator->m_MemProps.memoryTypes[allocation->GetMemoryTypeIndex()].propertyFlags;
+        return vk::MemoryPropertyFlags(flags);
+    }
+
     void UniqueMemory::Flush() {
         // Flush is a no-op if memory type is HOST_COHERENT; such memory is automatically flushed
         if (allocator->IsMemoryTypeNonCoherent(allocation->GetMemoryTypeIndex())) {
@@ -114,5 +119,10 @@ namespace sp::vulkan {
         subBufferBytesPerElement = 1;
         auto offsetBytes = SubAllocateRaw(size, alignment);
         return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
+    }
+
+    void Buffer::SetAccess(Access oldAccess, Access newAccess) {
+        DebugAssert(oldAccess == Access::Undefined || oldAccess == lastAccess, "unexpected access");
+        lastAccess = newAccess;
     }
 } // namespace sp::vulkan

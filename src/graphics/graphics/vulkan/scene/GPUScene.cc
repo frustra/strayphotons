@@ -71,7 +71,7 @@ namespace sp::vulkan {
                 builder.CreateBuffer("RenderableEntities",
                     renderables.size() * sizeof(renderables.front()),
                     Residency::CPU_TO_GPU,
-                    rg::Access::HostWrite);
+                    Access::HostWrite);
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());
@@ -115,7 +115,7 @@ namespace sp::vulkan {
                         auto drawCmds = builder.CreateBuffer(
                             sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand),
                             Residency::GPU_ONLY,
-                            rg::Access::TransferWrite);
+                            Access::TransferWrite);
                         bufferIDs.drawCommandsBuffer = drawCmds.id;
                     })
                     .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
@@ -123,17 +123,16 @@ namespace sp::vulkan {
                         cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
                     });
 
-                builder.Read("RenderableEntities", rg::Access::ComputeShaderReadStorage);
-                builder.Write(bufferIDs.drawCommandsBuffer, rg::Access::ComputeShaderWrite);
+                builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
+                builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
                 auto drawParams = builder.CreateBuffer(maxDraws * sizeof(uint16) * 2,
                     Residency::GPU_ONLY,
-                    rg::Access::ComputeShaderWrite);
+                    Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
-                cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
 
                 cmd.SetComputeShader("generate_draws_for_view.comp");
                 cmd.SetStorageBuffer(0, 0, resources.GetBuffer("RenderableEntities"));
@@ -187,19 +186,19 @@ namespace sp::vulkan {
                         builder.CreateBuffer("WarpedVertexDrawCmds",
                             sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand),
                             Residency::GPU_ONLY,
-                            rg::Access::TransferWrite);
+                            Access::TransferWrite);
                     })
                     .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                         cmd.Raw().fillBuffer(*resources.GetBuffer("WarpedVertexDrawCmds"), 0, sizeof(uint32), 0);
                     });
 
-                builder.Read("RenderableEntities", rg::Access::ComputeShaderReadStorage);
-                builder.Write("WarpedVertexDrawCmds", rg::Access::ComputeShaderWrite);
+                builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
+                builder.Write("WarpedVertexDrawCmds", Access::ComputeShaderWrite);
 
                 builder.CreateBuffer("WarpedVertexDrawParams",
                     maxDraws * sizeof(glm::vec4) * 5,
                     Residency::GPU_ONLY,
-                    rg::Access::ComputeShaderWrite);
+                    Access::ComputeShaderWrite);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 if (vertexCount == 0) return;
@@ -221,13 +220,13 @@ namespace sp::vulkan {
 
         graph.AddPass("GeometryWarp")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read("WarpedVertexDrawCmds", rg::Access::IndirectBuffer);
-                builder.Read("WarpedVertexDrawParams", rg::Access::VertexShaderReadStorage);
+                builder.Read("WarpedVertexDrawCmds", Access::IndirectBuffer);
+                builder.Read("WarpedVertexDrawParams", Access::VertexShaderReadStorage);
 
                 builder.CreateBuffer("WarpedVertexBuffer",
                     sizeof(SceneVertex) * vertexCount,
                     Residency::GPU_ONLY,
-                    rg::Access::VertexShaderWrite);
+                    Access::VertexShaderWrite);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 if (vertexCount == 0) return;

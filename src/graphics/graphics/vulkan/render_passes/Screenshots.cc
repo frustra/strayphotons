@@ -41,7 +41,7 @@ namespace sp::vulkan::renderer {
                         } else {
                             sourceID = VisualizeBuffer(graph, resource.id);
                         }
-                        builder.Read(sourceID, rg::Access::TransferRead);
+                        builder.Read(sourceID, Access::TransferRead);
                         builder.RequirePass();
                     }
                 })

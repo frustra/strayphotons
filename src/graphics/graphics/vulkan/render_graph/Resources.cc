@@ -140,7 +140,7 @@ namespace sp::vulkan::render_graph {
 
     void Resources::AddUsageFromAccess(ResourceID id, Access access) {
         auto &res = GetResourceRef(id);
-        auto &acc = AccessMap[(size_t)access];
+        auto &acc = GetAccessInfo(access);
         if (res.type == Resource::Type::RenderTarget) {
             res.renderTargetDesc.usage |= acc.imageUsageMask;
         } else if (res.type == Resource::Type::Buffer) {
