@@ -47,14 +47,11 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Emissive")
             .Build([&](PassBuilder &builder) {
-                auto input = builder.LastOutput();
-                builder.Read(input.id, Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
 
-                auto desc = input.DeriveRenderTarget();
-                builder.OutputColorAttachment(0, "Emissive", desc, {LoadOp::DontCare, StoreOp::Store});
+                builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
 
                 builder.ReadUniform("ViewState");
 
@@ -78,8 +75,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-                cmd.SetDepthTest(false, false);
-                cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
 
                 cmd.SetDepthTest(true, false);
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);

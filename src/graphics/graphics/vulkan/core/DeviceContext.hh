@@ -38,8 +38,6 @@ namespace sp::vulkan {
     class PipelineManager;
     struct PipelineCompileInput;
     class Shader;
-    struct RenderTargetDesc;
-    class RenderTargetManager;
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
@@ -139,8 +137,6 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
-        RenderTargetPtr GetRenderTarget(const RenderTargetDesc &desc);
-
         AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
@@ -230,7 +226,6 @@ namespace sp::vulkan {
         unique_ptr<HandlePool<vk::Fence>> fencePool;
         unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;
         unique_ptr<PipelineManager> pipelinePool;
-        unique_ptr<RenderTargetManager> renderTargetPool;
         unique_ptr<RenderPassManager> renderPassPool;
         unique_ptr<FramebufferManager> framebufferPool;
 
@@ -293,7 +288,9 @@ namespace sp::vulkan {
             std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
             std::array<unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
             std::array<vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
+
             unique_ptr<BufferPool> bufferPool;
+            std::atomic_bool printBufferStats;
 
             void ReleaseAvailableResources();
         };
@@ -310,7 +307,7 @@ namespace sp::vulkan {
 
         robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
-        std::atomic_bool reloadShaders, printBufferStats;
+        std::atomic_bool reloadShaders;
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 

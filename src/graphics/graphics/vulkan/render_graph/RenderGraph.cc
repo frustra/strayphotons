@@ -195,87 +195,25 @@ namespace sp::vulkan::render_graph {
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
             if (nextAccess == Access::Undefined || nextAccess >= Access::AccessTypesCount) continue;
-
-            auto lastAccess = resources.lastResourceAccess[access.id];
-            resources.lastResourceAccess[access.id] = nextAccess;
-
             auto &next = GetAccessInfo(nextAccess);
 
-            if (access.creates) {
-                auto &res = resources.resources[access.id];
-
-                if (res.type == Resource::Type::RenderTarget) {
-                    auto view = resources.GetRenderTarget(access.id)->ImageView();
-                    if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
-
-                    auto &image = view->Image();
-                    lastAccess = image->LastAccess();
-                    if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::Undefined) continue;
-
-                    auto last = GetAccessInfo(lastAccess);
-                    if (last.stageMask == vk::PipelineStageFlags(0))
-                        last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-
-                    if (!cmd) cmd = device.GetFrameCommandContext();
-
-                    cmd->ImageBarrier(image,
-                        last.imageLayout,
-                        next.imageLayout,
-                        last.stageMask,
-                        last.accessMask,
-                        next.stageMask,
-                        next.accessMask);
-
-                    image->SetAccess(Access::Undefined, nextAccess);
-                } else if (res.type == Resource::Type::Buffer) {
-                    auto buffer = resources.GetBuffer(access.id);
-                    lastAccess = buffer->LastAccess();
-                    buffer->SetAccess(Access::Undefined, nextAccess);
-
-                    if (nextAccess == Access::HostWrite) continue;
-                    if (lastAccess == Access::Undefined) continue;
-
-                    if (!cmd) cmd = device.GetFrameCommandContext();
-
-                    auto last = GetAccessInfo(lastAccess);
-                    vk::MemoryBarrier barrier;
-                    barrier.srcAccessMask = last.accessMask;
-                    barrier.dstAccessMask = next.accessMask;
-                    cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
-                }
-                continue;
-            }
-
-            Assert(lastAccess != Access::Undefined && lastAccess < Access::AccessTypesCount,
-                "previous resource access missing");
-
-            auto last = GetAccessInfo(lastAccess);
-            if (!AccessIsWrite(lastAccess) && next.imageLayout == last.imageLayout) continue;
-
             auto &res = resources.resources[access.id];
-            Assert(res.type != Resource::Type::Undefined, "resource must exist");
+            Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", access.id);
 
-            if (!cmd) cmd = device.GetFrameCommandContext();
-
-            if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-
-            if (res.type == Resource::Type::Buffer) {
-                vk::MemoryBarrier barrier;
-                barrier.srcAccessMask = last.accessMask;
-                barrier.dstAccessMask = next.accessMask;
-                cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
-
-                const auto &buffer = resources.buffers[access.id];
-                Assert(buffer, "buffer should have been created by a previous pass");
-                buffer->SetAccess(lastAccess, nextAccess);
-            } else if (res.type == Resource::Type::RenderTarget) {
-                const auto &target = resources.renderTargets[access.id];
-                Assert(target, "render target should have been created by a previous pass");
-
-                const auto &view = target->ImageView();
+            if (res.type == Resource::Type::RenderTarget) {
+                auto view = resources.GetRenderTarget(access.id)->ImageView();
                 if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-                const auto &image = view->Image();
+                auto &image = view->Image();
+                auto lastAccess = image->LastAccess();
+                if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::Undefined) continue;
+
+                auto last = GetAccessInfo(lastAccess);
+                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
+                if (nextAccess == Access::ColorAttachmentWrite) last.imageLayout = vk::ImageLayout::eUndefined;
+
+                if (!cmd) cmd = device.GetFrameCommandContext();
+
                 cmd->ImageBarrier(image,
                     last.imageLayout,
                     next.imageLayout,
@@ -284,7 +222,22 @@ namespace sp::vulkan::render_graph {
                     next.stageMask,
                     next.accessMask);
 
-                image->SetAccess(lastAccess, nextAccess);
+                image->SetAccess(Access::Undefined, nextAccess);
+            } else if (res.type == Resource::Type::Buffer) {
+                auto buffer = resources.GetBuffer(access.id);
+                auto lastAccess = buffer->LastAccess();
+                buffer->SetAccess(Access::Undefined, nextAccess);
+
+                if (nextAccess == Access::HostWrite) continue;
+                if (lastAccess == Access::Undefined) continue;
+
+                if (!cmd) cmd = device.GetFrameCommandContext();
+
+                auto last = GetAccessInfo(lastAccess);
+                vk::MemoryBarrier barrier;
+                barrier.srcAccessMask = last.accessMask;
+                barrier.dstAccessMask = next.accessMask;
+                cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
             }
         }
     }

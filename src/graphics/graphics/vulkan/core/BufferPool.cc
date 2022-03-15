@@ -20,6 +20,7 @@ namespace sp::vulkan {
     }
 
     void BufferPool::Tick() {
+        ZoneScoped;
         for (auto &[desc, list] : buffers) {
             list.free.insert(list.free.end(), list.pendingFree.begin(), list.pendingFree.end());
             list.pendingFree.clear();
@@ -27,6 +28,8 @@ namespace sp::vulkan {
             for (int i = list.pending.size() - 1; i >= 0; i--) {
                 auto &x = list.pending[i];
                 if (x.use_count() == 1) {
+                    // Host visible memory may be mapped and written while GPU work is still ongoing.
+                    // Double buffer in this case, so the next frame can start without synchronizing.
                     if (x->Properties() & vk::MemoryPropertyFlagBits::eHostVisible)
                         list.pendingFree.push_back(std::move(x));
                     else
@@ -38,6 +41,7 @@ namespace sp::vulkan {
     }
 
     void BufferPool::LogStats() const {
+        bool any = false;
         struct entry {
             struct {
                 size_t count = 0, bytes = 0;
@@ -50,18 +54,23 @@ namespace sp::vulkan {
                 auto &ent = stats[VkMemoryPropertyFlags(buf->Properties())];
                 ent.allocated.bytes += buf->ByteSize();
                 ent.allocated.count += 1;
+                any = true;
             }
             for (auto &buf : list.free) {
                 auto &ent = stats[VkMemoryPropertyFlags(buf->Properties())];
                 ent.free.bytes += buf->ByteSize();
                 ent.free.count += 1;
+                any = true;
             }
             for (auto &buf : list.pendingFree) {
                 auto &ent = stats[VkMemoryPropertyFlags(buf->Properties())];
                 ent.pendingFree.bytes += buf->ByteSize();
                 ent.pendingFree.count += 1;
+                any = true;
             }
         }
+
+        if (!any) return;
 
         for (auto &[key, ent] : stats) {
             Logf("%s\n%llu count allocated, %llu count free, %llu count pending free\n%llu bytes allocated, %llu bytes "

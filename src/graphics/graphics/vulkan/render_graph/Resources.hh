@@ -60,11 +60,9 @@ namespace sp::vulkan::render_graph {
 
     class Resources {
     public:
-        Resources(DeviceContext &device) : device(device) {
-            Reset();
-            nameScopes.emplace_back();
-        }
+        Resources(DeviceContext &device);
 
+        RenderTargetPtr TemporaryRenderTarget(const RenderTargetDesc &desc);
         RenderTargetPtr GetRenderTarget(ResourceID id);
         RenderTargetPtr GetRenderTarget(string_view name);
 
@@ -132,10 +130,9 @@ namespace sp::vulkan::render_graph {
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
         vector<int32> refCounts;
+        unique_ptr<RenderTargetManager> renderTargetPool;
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;
-
-        vector<Access> lastResourceAccess;
 
         ResourceID lastOutputID = InvalidResource;
     };

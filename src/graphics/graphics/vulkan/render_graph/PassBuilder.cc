@@ -2,7 +2,7 @@
 
 namespace sp::vulkan::render_graph {
     void PassBuilder::Read(ResourceID id, Access access) {
-        pass.AddRead(id, access);
+        pass.AddAccess(id, access);
     }
 
     ResourceID PassBuilder::Read(string_view name, Access access) {
@@ -17,12 +17,12 @@ namespace sp::vulkan::render_graph {
         pass.AddFutureRead(thisFrameID, access, framesAgo);
 
         auto prevFrameID = resources.GetID(name, false, framesAgo);
-        if (prevFrameID != InvalidResource) pass.AddRead(prevFrameID, access);
+        if (prevFrameID != InvalidResource) pass.AddAccess(prevFrameID, access);
         return prevFrameID;
     }
 
     void PassBuilder::Write(ResourceID id, Access access) {
-        pass.AddWrite(id, access);
+        pass.AddAccess(id, access);
     }
 
     ResourceID PassBuilder::Write(string_view name, Access access) {
@@ -45,7 +45,7 @@ namespace sp::vulkan::render_graph {
     Resource PassBuilder::CreateRenderTarget(string_view name, const RenderTargetDesc &desc, Access access) {
         Resource resource(desc);
         resources.Register(name, resource);
-        pass.AddCreate(resource.id, access);
+        pass.AddAccess(resource.id, access);
         return resource;
     }
 
@@ -56,7 +56,7 @@ namespace sp::vulkan::render_graph {
     void PassBuilder::SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
         auto &res = resources.GetResourceRef(id);
         Assert(res.type == Resource::Type::RenderTarget, "resource must be a render target");
-        res.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
+        Write(id, Access::ColorAttachmentReadWrite);
         SetAttachment(index, id, info);
     }
 
@@ -64,7 +64,6 @@ namespace sp::vulkan::render_graph {
         string_view name,
         RenderTargetDesc desc,
         const AttachmentInfo &info) {
-        desc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
         return OutputAttachment(index, name, desc, info);
     }
 
@@ -95,11 +94,10 @@ namespace sp::vulkan::render_graph {
     Resource PassBuilder::CreateBuffer(string_view name, size_t size, Residency residency, Access access) {
         BufferDesc desc;
         desc.size = size;
-        desc.usage |= GetAccessInfo(access).bufferUsageMask;
         desc.residency = residency;
         Resource resource(desc);
         resources.Register(name, resource);
-        pass.AddCreate(resource.id, access);
+        pass.AddAccess(resource.id, access);
         return resource;
     }
 
