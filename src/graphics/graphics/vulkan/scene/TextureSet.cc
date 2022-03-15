@@ -21,6 +21,9 @@ namespace sp::vulkan {
     }
 
     TextureHandle TextureSet::Add(const ImageViewPtr &ptr) {
+        auto it = std::find(textures.begin(), textures.end(), ptr);
+        if (it != textures.end()) return {(TextureIndex)(it - textures.begin()), {}};
+
         auto i = AllocateTextureIndex();
         textures[i] = ptr;
         texturesToFlush.push_back(i);

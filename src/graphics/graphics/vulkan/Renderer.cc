@@ -91,8 +91,9 @@ namespace sp::vulkan {
 
         scene.AddGeometryWarp(graph);
         lighting.AddShadowPasses(graph);
-        voxels.AddVoxelization(graph);
         AddGuis(lock);
+        lighting.AddGelTextures(graph);
+        voxels.AddVoxelization(graph, lighting);
 
 #ifdef SP_XR_SUPPORT
         {

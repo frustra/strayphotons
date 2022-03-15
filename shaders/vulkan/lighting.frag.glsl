@@ -6,7 +6,7 @@ layout(binding = 1) uniform sampler2DArray gBuffer1;
 layout(binding = 2) uniform sampler2DArray gBuffer2;
 layout(binding = 3) uniform sampler2D shadowMap;
 
-layout(set = 1, binding = 0) uniform sampler2D lightingGels[MAX_LIGHT_GELS];
+layout(set = 1, binding = 0) uniform sampler2D textures[];
 
 INCLUDE_LAYOUT(binding = 11)
 #include "lib/light_data_uniform.glsl"

@@ -6,11 +6,10 @@ layout(num_views = 3) in;
 
 #define DIFFUSE_ONLY_SHADING
 #define SHADOWS_ENABLED
+#define LIGHTING_GELS
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
-
-layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 layout(location = 0) in vec3 inWorldPos;
 layout(location = 1) in vec3 inVoxelPos;
@@ -19,10 +18,13 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 
+#include "lib/voxel_data_buffers.glsl"
+
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"
 
 layout(binding = 3) uniform sampler2D shadowMap;
+layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 #include "../lib/shading.glsl"
 

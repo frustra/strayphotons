@@ -3,6 +3,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
+#include "graphics/vulkan/render_passes/Lighting.hh"
 
 namespace sp::vulkan::renderer {
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
@@ -39,19 +40,21 @@ namespace sp::vulkan::renderer {
             });
     }
 
-    void Voxels::AddVoxelization(RenderGraph &graph) {
+    void Voxels::AddVoxelization(RenderGraph &graph, const Lighting &lighting) {
+        auto scope = graph.Scope("Voxels");
+
         if (voxelGridSize == glm::ivec3(0)) {
-            graph.AddPass("DummyVoxelization")
+            graph.AddPass("Dummy")
                 .Build([&](rg::PassBuilder &builder) {
                     RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(1, 1, 1);
                     desc.primaryViewType = vk::ImageViewType::e3D;
                     desc.imageType = vk::ImageType::e3D;
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
-                    builder.CreateRenderTarget("VoxelRadiance", desc, Access::TransferWrite);
+                    builder.CreateRenderTarget("Radiance", desc, Access::TransferWrite);
                 })
                 .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                    auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
+                    auto radianceView = resources.GetRenderTarget("Radiance")->ImageView();
 
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
@@ -66,15 +69,17 @@ namespace sp::vulkan::renderer {
             return;
         }
 
-        struct GPUVoxelOverflowFragment {
-            glm::vec3 position;
-            glm::vec3 radiance;
+        struct GPUVoxelFragment {
+            uint16_t position[3];
+            uint16_t radiance[3]; // half-float formatted
         };
 
-        struct GPUVoxelFragmentList {
-            VkDispatchIndirectCommand fragmentCount;
-            VkDispatchIndirectCommand overflowCounts[3];
-            GPUVoxelOverflowFragment overflowBuckets[3][8096];
+        // Separate buffers store lists as GPUVoxelFragment[count]
+        struct GPUVoxelFragmentCounts {
+            uint32_t fragmentCount;
+            uint32_t overflowCount[3];
+            VkDispatchIndirectCommand fragmentsCmd;
+            VkDispatchIndirectCommand overflowCmd[3];
         };
 
         ecs::View ortho;
@@ -102,9 +107,11 @@ namespace sp::vulkan::renderer {
             orthoAxes[i].SetInvViewMat(axis.matrix);
         }
 
+        bool clearRadiance = CVarVoxelClear.Get();
+        auto fragmentListSize = (voxelGridSize.x * voxelGridSize.y * voxelGridSize.z) / 2;
         auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
 
-        graph.AddPass("Voxelization")
+        graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
@@ -112,46 +119,70 @@ namespace sp::vulkan::renderer {
                 desc.imageType = vk::ImageType::e3D;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
 
-                bool clearRadiance = CVarVoxelClear.Get();
-                if (!clearRadiance) builder.CreateRenderTarget("VoxelRadiance", desc, Access::FragmentShaderWrite);
+                builder.CreateRenderTarget("Radiance",
+                    desc,
+                    clearRadiance ? Access::TransferWrite : Access::FragmentShaderWrite);
 
-                graph.AddPass("Clear")
-                    .Build([&](rg::PassBuilder &builder) {
-                        if (clearRadiance) builder.CreateRenderTarget("VoxelRadiance", desc, Access::TransferWrite);
+                builder.CreateBuffer("FragmentCounts",
+                    sizeof(GPUVoxelFragmentCounts),
+                    Residency::GPU_ONLY,
+                    Access::TransferWrite);
 
-                        builder.CreateBuffer("VoxelFragmentList",
-                            sizeof(GPUVoxelFragmentList),
-                            Residency::GPU_ONLY,
-                            Access::TransferWrite);
-                    })
-                    .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
-                        vk::ClearColorValue clear;
-                        vk::ImageSubresourceRange range;
-                        range.layerCount = 1;
-                        range.levelCount = 1;
-                        range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                        auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
-                        cmd.Raw().clearColorImage(*radianceView->Image(),
-                            vk::ImageLayout::eTransferDstOptimal,
-                            clear,
-                            {range});
+                builder.CreateBuffer("FragmentList",
+                    sizeof(GPUVoxelFragment) * fragmentListSize,
+                    Residency::GPU_ONLY,
+                    Access::FragmentShaderWrite);
+                builder.CreateBuffer("OverflowList0",
+                    sizeof(GPUVoxelFragment) * fragmentListSize,
+                    Residency::GPU_ONLY,
+                    Access::FragmentShaderWrite);
+                builder.CreateBuffer("OverflowList1",
+                    sizeof(GPUVoxelFragment) * fragmentListSize,
+                    Residency::GPU_ONLY,
+                    Access::FragmentShaderWrite);
+                builder.CreateBuffer("OverflowList2",
+                    sizeof(GPUVoxelFragment) * fragmentListSize,
+                    Residency::GPU_ONLY,
+                    Access::FragmentShaderWrite);
+            })
+            .Execute([this, drawID, orthoAxes, clearRadiance](rg::Resources &resources, CommandContext &cmd) {
+                if (clearRadiance) {
+                    vk::ClearColorValue clear;
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    auto radianceView = resources.GetRenderTarget("Radiance")->ImageView();
+                    cmd.Raw().clearColorImage(*radianceView->Image(),
+                        vk::ImageLayout::eTransferDstOptimal,
+                        clear,
+                        {range});
+                }
 
-                        auto fragmentListBuffer = resources.GetBuffer("VoxelFragmentList");
-                        cmd.Raw().fillBuffer(*fragmentListBuffer, 0, sizeof(GPUVoxelFragmentList), 0);
-                    });
+                auto fragmentListBuffer = resources.GetBuffer("FragmentCounts");
+                cmd.Raw().fillBuffer(*fragmentListBuffer, 0, sizeof(GPUVoxelFragmentCounts), 0);
+            });
 
-                if (clearRadiance) builder.Write("VoxelRadiance", Access::FragmentShaderWrite);
+        graph.AddPass("Fill")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.Write("Radiance", Access::FragmentShaderWrite);
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
                 builder.Read("ShadowMapLinear", Access::FragmentShaderSampleImage);
+
+                builder.Read("FragmentCounts", Access::FragmentShaderWrite);
+                builder.Read("FragmentList", Access::FragmentShaderWrite);
+                builder.Read("OverflowList0", Access::FragmentShaderWrite);
+                builder.Read("OverflowList1", Access::FragmentShaderWrite);
+                builder.Read("OverflowList2", Access::FragmentShaderWrite);
 
                 builder.Read("WarpedVertexBuffer", rg::Access::VertexBuffer);
                 builder.Read(drawID.drawCommandsBuffer, rg::Access::IndirectBuffer);
                 builder.Read(drawID.drawParamsBuffer, rg::Access::VertexShaderReadStorage);
             })
 
-            .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawID, orthoAxes, &lighting](rg::Resources &resources, CommandContext &cmd) {
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
                     std::max(voxelGridSize.y, voxelGridSize.z),
@@ -189,7 +220,13 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
                 cmd.SetImageView(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
-                cmd.SetImageView(0, 4, resources.GetRenderTarget("VoxelRadiance")->ImageView());
+                cmd.SetImageView(0, 4, resources.GetRenderTarget("Radiance")->ImageView());
+
+                cmd.SetStorageBuffer(3, 0, resources.GetBuffer("FragmentCounts"));
+                cmd.SetStorageBuffer(3, 1, resources.GetBuffer("FragmentList"));
+                cmd.SetStorageBuffer(3, 2, resources.GetBuffer("OverflowList0"));
+                cmd.SetStorageBuffer(3, 3, resources.GetBuffer("OverflowList1"));
+                cmd.SetStorageBuffer(3, 4, resources.GetBuffer("OverflowList2"));
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -205,7 +242,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read("VoxelRadiance", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("VoxelState");
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
@@ -227,7 +264,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
-                cmd.SetImageView(0, 3, resources.GetRenderTarget("VoxelRadiance")->ImageView());
+                cmd.SetImageView(0, 3, resources.GetRenderTarget("Voxels.Radiance")->ImageView());
                 cmd.SetImageView(0, 4, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebugBlend.Get());
