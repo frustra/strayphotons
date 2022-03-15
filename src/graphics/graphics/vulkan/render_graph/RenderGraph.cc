@@ -233,7 +233,7 @@ namespace sp::vulkan::render_graph {
                     buffer->SetAccess(Access::Undefined, nextAccess);
 
                     if (nextAccess == Access::HostWrite) continue;
-                    if (lastAccess == ccess::Undefined) continue;
+                    if (lastAccess == Access::Undefined) continue;
 
                     if (!cmd) cmd = device.GetFrameCommandContext();
 

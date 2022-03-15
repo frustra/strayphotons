@@ -41,13 +41,6 @@
 #endif
 
 namespace sp::vulkan {
-    enum BufferType {
-        BUFFER_TYPE_UNIFORM,
-        BUFFER_TYPE_INDEX_TRANSFER,
-        BUFFER_TYPE_VERTEX_TRANSFER,
-        BUFFER_TYPES_COUNT
-    };
-
     enum class Residency {
         UNKNOWN = VMA_MEMORY_USAGE_UNKNOWN,
         CPU_ONLY = VMA_MEMORY_USAGE_CPU_ONLY,
