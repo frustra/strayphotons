@@ -5,7 +5,7 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
-#include "graphics/vulkan/core/RenderTarget.hh"
+#include "graphics/vulkan/render_graph/PooledImage.hh"
 
 #include <robin_hood.h>
 
@@ -21,27 +21,27 @@ namespace sp::vulkan::render_graph {
     struct Resource {
         enum class Type {
             Undefined,
-            RenderTarget,
+            Image,
             Buffer,
         };
 
         Resource() {}
-        Resource(RenderTargetDesc desc) : type(Type::RenderTarget), renderTargetDesc(desc) {}
+        Resource(ImageDesc desc) : type(Type::Image), imageDesc(desc) {}
         Resource(BufferDesc desc) : type(Type::Buffer), bufferDesc(desc) {}
 
         explicit operator bool() const {
             return type != Type::Undefined;
         }
 
-        RenderTargetDesc DeriveRenderTarget() const {
-            Assert(type == Type::RenderTarget, "resource is not a render target");
-            auto desc = renderTargetDesc;
+        ImageDesc DeriveImage() const {
+            Assert(type == Type::Image, "resource is not a render target");
+            auto desc = imageDesc;
             desc.usage = {};
             return desc;
         }
 
-        vk::Format RenderTargetFormat() const {
-            return renderTargetDesc.format;
+        vk::Format ImageFormat() const {
+            return imageDesc.format;
         }
 
         ResourceID id = InvalidResource;
@@ -49,7 +49,7 @@ namespace sp::vulkan::render_graph {
 
     private:
         union {
-            RenderTargetDesc renderTargetDesc;
+            ImageDesc imageDesc;
             BufferDesc bufferDesc;
         };
 
@@ -62,9 +62,12 @@ namespace sp::vulkan::render_graph {
     public:
         Resources(DeviceContext &device);
 
-        RenderTargetPtr TemporaryRenderTarget(const RenderTargetDesc &desc);
-        RenderTargetPtr GetRenderTarget(ResourceID id);
-        RenderTargetPtr GetRenderTarget(string_view name);
+        PooledImagePtr TemporaryImage(const ImageDesc &desc);
+
+        ImageViewPtr GetImageView(ResourceID id);
+        ImageViewPtr GetImageView(string_view name);
+        ImageViewPtr GetImageLayerView(ResourceID id, uint32 layer);
+        ImageViewPtr GetImageLayerView(string_view name, uint32 layer);
 
         BufferPtr GetBuffer(ResourceID id);
         BufferPtr GetBuffer(string_view name);
@@ -130,10 +133,16 @@ namespace sp::vulkan::render_graph {
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
         vector<int32> refCounts;
-        unique_ptr<RenderTargetManager> renderTargetPool;
-        vector<RenderTargetPtr> renderTargets;
+        vector<PooledImagePtr> images;
         vector<BufferPtr> buffers;
 
         ResourceID lastOutputID = InvalidResource;
+
+        PooledImagePtr GetPooledImage(ResourceID id);
+        PooledImagePtr GetImageFromPool(const ImageDesc &desc);
+        void TickImagePool();
+
+        using PooledImageKey = HashKey<ImageDesc>;
+        robin_hood::unordered_map<PooledImageKey, vector<PooledImagePtr>, typename PooledImageKey::Hasher> imagePool;
     };
 } // namespace sp::vulkan::render_graph

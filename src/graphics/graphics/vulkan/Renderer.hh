@@ -3,7 +3,6 @@
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
-#include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
@@ -88,7 +87,7 @@ namespace sp::vulkan {
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
-        bool listRenderTargets = false;
+        bool listImages = false;
 
 #ifdef SP_XR_SUPPORT
         shared_ptr<xr::XrSystem> xrSystem;

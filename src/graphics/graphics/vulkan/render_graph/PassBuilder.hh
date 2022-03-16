@@ -31,22 +31,19 @@ namespace sp::vulkan::render_graph {
 
         void SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info);
         void SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info);
-        Resource OutputColorAttachment(uint32 index,
-            string_view name,
-            RenderTargetDesc desc,
-            const AttachmentInfo &info);
+        Resource OutputColorAttachment(uint32 index, string_view name, ImageDesc desc, const AttachmentInfo &info);
 
         void SetDepthAttachment(string_view name, const AttachmentInfo &info);
         void SetDepthAttachment(ResourceID id, const AttachmentInfo &info);
-        Resource OutputDepthAttachment(string_view name, RenderTargetDesc desc, const AttachmentInfo &info);
+        Resource OutputDepthAttachment(string_view name, ImageDesc desc, const AttachmentInfo &info);
 
         // The attachment at this index will become the LastOutput of the graph after the pass, defaults to 0
         void SetPrimaryAttachment(uint32 index);
 
-        Resource CreateRenderTarget(string_view name, const RenderTargetDesc &desc, Access access);
+        Resource CreateImage(string_view name, const ImageDesc &desc, Access access);
 
-        RenderTargetDesc DeriveRenderTarget(ResourceID id) {
-            return resources.GetResourceRef(id).DeriveRenderTarget();
+        ImageDesc DeriveImage(ResourceID id) {
+            return resources.GetResourceRef(id).DeriveImage();
         }
 
         Resource CreateBuffer(size_t size, Residency residency, Access access);
@@ -73,10 +70,7 @@ namespace sp::vulkan::render_graph {
         }
 
     private:
-        Resource OutputAttachment(uint32 index,
-            string_view name,
-            const RenderTargetDesc &desc,
-            const AttachmentInfo &info);
+        Resource OutputAttachment(uint32 index, string_view name, const ImageDesc &desc, const AttachmentInfo &info);
 
         void SetAttachment(uint32 index, ResourceID id, const AttachmentInfo &info);
 

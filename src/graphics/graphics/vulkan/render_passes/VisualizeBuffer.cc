@@ -10,17 +10,14 @@ namespace sp::vulkan::renderer {
             .Build([&](PassBuilder &builder) {
                 builder.Read(sourceID, Access::FragmentShaderSampleImage);
 
-                auto desc = builder.DeriveRenderTarget(sourceID);
+                auto desc = builder.DeriveImage(sourceID);
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
             .Execute([sourceID, arrayLayer](Resources &resources, CommandContext &cmd) {
-                auto target = resources.GetRenderTarget(sourceID);
-                ImageViewPtr source;
-                if (target->Desc().arrayLayers > 1 && arrayLayer != ~0u && arrayLayer < target->Desc().arrayLayers) {
-                    source = target->LayerImageView(arrayLayer);
-                } else {
-                    source = target->ImageView();
+                auto source = resources.GetImageView(sourceID);
+                if (source->ArrayLayers() > 1 && arrayLayer != ~0u && arrayLayer < source->ArrayLayers()) {
+                    source = resources.GetImageLayerView(sourceID, arrayLayer);
                 }
 
                 if (source->ViewType() == vk::ImageViewType::e2DArray) {
