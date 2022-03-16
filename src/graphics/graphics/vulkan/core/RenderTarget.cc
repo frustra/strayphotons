@@ -53,6 +53,7 @@ namespace sp::vulkan {
         ImageCreateInfo imageInfo;
         imageInfo.imageType = createDesc.imageType;
         imageInfo.extent = createDesc.extent;
+        imageInfo.mipLevels = createDesc.mipLevels;
         imageInfo.arrayLayers = createDesc.arrayLayers;
         imageInfo.format = createDesc.format;
         imageInfo.usage = createDesc.usage;

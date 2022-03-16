@@ -6,6 +6,7 @@
 namespace sp::vulkan {
     struct RenderTargetDesc {
         vk::Extent3D extent;
+        uint32 mipLevels = 1;
         uint32 arrayLayers = 1;
         vk::Format format = vk::Format::eUndefined;
         vk::ImageUsageFlags usage; // must include eColorAttachment or eDepthStencilAttachment to use as a render target

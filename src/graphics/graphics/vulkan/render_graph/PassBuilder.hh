@@ -63,6 +63,11 @@ namespace sp::vulkan::render_graph {
             return resources.LastOutput();
         }
 
+        // Indicates pending command buffers should be submitted before Execute is called
+        void FlushCommands() {
+            pass.flushCommands = true;
+        }
+
         void RequirePass() {
             pass.required = true;
         }

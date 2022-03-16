@@ -80,6 +80,7 @@ namespace sp::vulkan::render_graph {
         bool active = false, required = false;
         uint8 primaryAttachmentIndex = 0;
         bool isRenderPass = false;
+        bool flushCommands = false; // true will submit pending command buffers
 
         std::variant<std::monostate,
             std::function<void(Resources &, CommandContext &)>,

@@ -50,11 +50,9 @@ namespace sp::vulkan::renderer {
                 builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
-
-                builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
-
                 builder.ReadUniform("ViewState");
 
+                builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
                 for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
