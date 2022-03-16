@@ -269,7 +269,7 @@ namespace sp::vulkan::render_graph {
         }
 
         auto createDesc = desc;
-        ZoneScopedN("CreateImage");
+        ZoneScopedN("CreatePooledImage");
         ZoneValue(imagePool.size());
         ZonePrintf("size=%dx%dx%d", createDesc.extent.width, desc.extent.height, desc.extent.depth);
 
