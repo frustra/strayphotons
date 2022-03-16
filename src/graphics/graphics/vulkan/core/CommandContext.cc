@@ -460,6 +460,8 @@ namespace sp::vulkan {
     }
 
     vk::Fence CommandContext::Fence() {
+        if (abandoned) return {};
+
         if (!fence && scope == CommandContextScope::Fence) {
             vk::FenceCreateInfo fenceInfo;
             fence = device->createFenceUnique(fenceInfo);

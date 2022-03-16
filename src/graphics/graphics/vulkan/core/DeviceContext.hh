@@ -233,6 +233,7 @@ namespace sp::vulkan {
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
         std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
+        std::array<uint32, QUEUE_TYPES_COUNT> queueLastSubmit;
         vk::Extent3D imageTransferGranularity;
 
         vk::UniqueSwapchainKHR swapchain;

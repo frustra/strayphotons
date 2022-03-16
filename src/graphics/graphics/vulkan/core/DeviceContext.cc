@@ -340,6 +340,7 @@ namespace sp::vulkan {
             auto familyIndex = queueFamilyIndex[queueType];
             auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
             queues[queueType] = queue;
+            queueLastSubmit[queueType] = 0;
 
             if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
 
@@ -678,11 +679,17 @@ namespace sp::vulkan {
         PrepareResourcesForFrame();
 
         for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+            auto prevQueueSubmitFrame = queueLastSubmit[i];
+            if (prevQueueSubmitFrame < frameCounter - 1) continue;
+
             auto trctx = tracing.tracyContexts[i];
             if (!trctx) continue;
+
             auto ctx = GetFencedCommandContext(CommandContextType(i));
             TracyVkCollect(trctx, ctx->Raw());
             Submit(ctx);
+
+            queueLastSubmit[i] = prevQueueSubmitFrame;
         }
     }
 
@@ -850,6 +857,7 @@ namespace sp::vulkan {
         submitInfo.commandBufferCount = cmdBufs.size();
         submitInfo.pCommandBuffers = cmdBufs.data();
 
+        queueLastSubmit[queue] = frameCounter;
         queues[queue].submit({submitInfo}, fence);
 
         for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {
@@ -1425,7 +1433,8 @@ namespace sp::vulkan {
         for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
             erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
                 auto &cmd = cmdHandle.Get();
-                return cmd->Device()->getFenceStatus(cmd->Fence()) == vk::Result::eSuccess;
+                auto fence = cmd->Fence();
+                return !fence || cmd->Device()->getFenceStatus(fence) == vk::Result::eSuccess;
             });
         }
 
