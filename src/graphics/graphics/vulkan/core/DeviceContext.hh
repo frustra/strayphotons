@@ -242,6 +242,8 @@ namespace sp::vulkan {
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
 
+        bool haveRayTracing = false;
+
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         unique_ptr<PerfTimer> perfTimer;
 

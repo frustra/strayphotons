@@ -237,7 +237,7 @@ namespace sp::vulkan {
             queueInfos.push_back(queueInfo);
         }
 
-        vector<const char *> enabledDeviceExtensions = {
+        vector<const char *> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
             VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
@@ -246,17 +246,42 @@ namespace sp::vulkan {
             VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         };
 
-        auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+        vector<const char *> rayTracingExtensions = {
+            VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        };
 
-        for (auto requiredExtension : enabledDeviceExtensions) {
-            bool found = false;
-            for (auto &availableExtension : availableDeviceExtensions) {
-                if (strncmp(requiredExtension, availableExtension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-                    found = true;
+        auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+        vector<const char *> enabledDeviceExtensions;
+
+        auto enableExtensions = [&](const char *available, vector<const char *> &exts) {
+            if (exts.empty()) return true;
+
+            for (auto it = exts.begin(); it != exts.end(); it++) {
+                if (strncmp(available, *it, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+                    enabledDeviceExtensions.push_back(*it);
+                    exts.erase(it);
                     break;
                 }
             }
-            Assertf(found, "device must have extension %s", requiredExtension);
+            return exts.empty();
+        };
+
+        bool haveRequiredExtensions = false;
+
+        for (auto &availableExtension : availableDeviceExtensions) {
+            auto &availableName = availableExtension.extensionName;
+            haveRequiredExtensions = enableExtensions(availableName, requiredDeviceExtensions);
+            haveRayTracing = enableExtensions(availableName, rayTracingExtensions);
+        }
+
+        if (!haveRequiredExtensions) {
+            string missingExtensions;
+            for (auto &ext : requiredDeviceExtensions) {
+                if (!missingExtensions.empty()) missingExtensions += ", ";
+                missingExtensions += ext;
+            }
+            Abortf("Vulkan device extension not supported: %s", missingExtensions);
         }
 
         vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
@@ -317,6 +342,19 @@ namespace sp::vulkan {
         enabledDeviceFeatures.shaderInt16 = true;
         enabledDeviceFeatures.fragmentStoresAndAtomics = true;
         enabledDeviceFeatures.wideLines = true;
+
+        vk::PhysicalDeviceAccelerationStructureFeaturesKHR accelStructureFeatures;
+        vk::PhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingFeatures;
+        vk::PhysicalDeviceBufferDeviceAddressFeatures deviceAddressFeatures;
+        if (haveRayTracing) {
+            enabledVulkan12Features.pNext = &accelStructureFeatures;
+            accelStructureFeatures.pNext = &rayTracingFeatures;
+            rayTracingFeatures.pNext = &deviceAddressFeatures;
+
+            accelStructureFeatures.accelerationStructure = true;
+            rayTracingFeatures.rayTracingPipeline = true;
+            deviceAddressFeatures.bufferDeviceAddress = true;
+        }
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
