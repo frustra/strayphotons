@@ -80,6 +80,8 @@ namespace sp::vulkan::render_graph {
 
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
+            if (pass.flushCommands) submitPendingCmds();
+
             RenderPassInfo renderPassInfo;
 
             for (uint32 i = 0; i < pass.attachments.size(); i++) {
@@ -162,7 +164,6 @@ namespace sp::vulkan::render_graph {
                 pass.Execute(resources, *cmd);
                 cmd->EndRenderPass();
             } else if (pass.ExecutesWithDeviceContext()) {
-                submitPendingCmds();
                 RenderPhase phase(pass.name);
                 if (timer) phase.StartTimer(*timer);
                 pass.Execute(resources, device);

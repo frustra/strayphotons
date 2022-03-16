@@ -375,6 +375,7 @@ namespace sp::vulkan {
                 }
 
                 builder.Read(sourceID, Access::TransferRead);
+                builder.FlushCommands();
                 builder.RequirePass();
             })
             .Execute([this, sourceID](rg::Resources &resources, DeviceContext &device) {
