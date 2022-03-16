@@ -20,7 +20,7 @@ namespace sp::vulkan::render_graph {
 
         for (ResourceID id = 0; id < resources.size(); id++) {
             if (resources[id].type != Resource::Type::Undefined && refCounts[id] == 0) {
-                Assert(!renderTargets[id], "dangling render target");
+                Assert(!images[id], "dangling render target");
                 Assert(!buffers[id], "dangling buffer");
 
                 freeIDs.push_back(id);
@@ -42,29 +42,43 @@ namespace sp::vulkan::render_graph {
         Assertf(consecutiveGrowthFrames < 100, "likely resource leak, have %d resources", resources.size());
         lastResourceCount = resources.size();
 
-        TickRenderTargetPool();
+        TickImagePool();
     }
 
     void Resources::ResizeIfNeeded() {
         refCounts.resize(resources.size());
-        renderTargets.resize(resources.size());
+        images.resize(resources.size());
         buffers.resize(resources.size());
     }
 
-    RenderTargetPtr Resources::TemporaryRenderTarget(const RenderTargetDesc &desc) {
-        return GetPooledRenderTarget(desc);
+    PooledImagePtr Resources::TemporaryImage(const ImageDesc &desc) {
+        return GetImageFromPool(desc);
     }
 
-    RenderTargetPtr Resources::GetRenderTarget(string_view name) {
-        return GetRenderTarget(GetID(name));
+    ImageViewPtr Resources::GetImageView(string_view name) {
+        return GetImageView(GetID(name));
     }
 
-    RenderTargetPtr Resources::GetRenderTarget(ResourceID id) {
+    ImageViewPtr Resources::GetImageView(ResourceID id) {
+        if (id >= resources.size()) return nullptr;
+        return GetPooledImage(id)->ImageView();
+    }
+
+    ImageViewPtr Resources::GetImageLayerView(string_view name, uint32 layer) {
+        return GetImageLayerView(GetID(name), layer);
+    }
+
+    ImageViewPtr Resources::GetImageLayerView(ResourceID id, uint32 layer) {
+        if (id >= resources.size()) return nullptr;
+        return GetPooledImage(id)->LayerImageView(layer);
+    }
+
+    PooledImagePtr Resources::GetPooledImage(ResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
-        Assert(res.type == Resource::Type::RenderTarget, "resource is not a render target");
-        auto &target = renderTargets[res.id];
-        if (!target) target = GetPooledRenderTarget(res.renderTargetDesc);
+        Assert(res.type == Resource::Type::Image, "resource is not a render target");
+        auto &target = images[res.id];
+        if (!target) target = GetImageFromPool(res.imageDesc);
         return target;
     }
 
@@ -137,8 +151,8 @@ namespace sp::vulkan::render_graph {
 
         auto &res = resources[id];
         switch (res.type) {
-        case Resource::Type::RenderTarget:
-            renderTargets[id].reset();
+        case Resource::Type::Image:
+            images[id].reset();
             break;
         case Resource::Type::Buffer:
             buffers[id].reset();
@@ -151,8 +165,8 @@ namespace sp::vulkan::render_graph {
     void Resources::AddUsageFromAccess(ResourceID id, Access access) {
         auto &res = GetResourceRef(id);
         auto &acc = GetAccessInfo(access);
-        if (res.type == Resource::Type::RenderTarget) {
-            res.renderTargetDesc.usage |= acc.imageUsageMask;
+        if (res.type == Resource::Type::Image) {
+            res.imageDesc.usage |= acc.imageUsageMask;
         } else if (res.type == Resource::Type::Buffer) {
             res.bufferDesc.usage |= acc.bufferUsageMask;
         }
@@ -245,8 +259,8 @@ namespace sp::vulkan::render_graph {
         nameID = id;
     }
 
-    RenderTargetPtr Resources::GetPooledRenderTarget(const RenderTargetDesc &desc) {
-        auto &list = renderTargetPool[desc];
+    PooledImagePtr Resources::GetImageFromPool(const ImageDesc &desc) {
+        auto &list = imagePool[desc];
         for (auto &elemRef : list) {
             if (elemRef.use_count() <= 1 && elemRef->Desc() == desc) {
                 elemRef->unusedFrames = 0;
@@ -255,8 +269,8 @@ namespace sp::vulkan::render_graph {
         }
 
         auto createDesc = desc;
-        ZoneScopedN("CreateRenderTarget");
-        ZoneValue(renderTargetPool.size());
+        ZoneScopedN("CreateImage");
+        ZoneValue(imagePool.size());
         ZonePrintf("size=%dx%dx%d", createDesc.extent.width, desc.extent.height, desc.extent.depth);
 
         Assertf(createDesc.extent.width > 0 && desc.extent.height > 0 && desc.extent.depth > 0,
@@ -281,14 +295,14 @@ namespace sp::vulkan::render_graph {
         viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo)->Get();
-        auto ptr = make_shared<RenderTarget>(device, createDesc, imageView);
+        auto ptr = make_shared<PooledImage>(device, createDesc, imageView);
 
         list.push_back(ptr);
         return ptr;
     }
 
-    void Resources::TickRenderTargetPool() {
-        for (auto it = renderTargetPool.begin(); it != renderTargetPool.end();) {
+    void Resources::TickImagePool() {
+        for (auto it = imagePool.begin(); it != imagePool.end();) {
             auto &list = it->second;
             erase_if(list, [&](auto &elemRef) {
                 if (elemRef.use_count() > 1) {
@@ -298,7 +312,7 @@ namespace sp::vulkan::render_graph {
                 return elemRef->unusedFrames++ > 4;
             });
             if (list.empty()) {
-                it = renderTargetPool.erase(it);
+                it = imagePool.erase(it);
             } else {
                 it++;
             }

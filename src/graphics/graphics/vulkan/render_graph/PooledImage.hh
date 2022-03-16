@@ -3,18 +3,19 @@
 #include "core/Hashing.hh"
 #include "graphics/vulkan/core/Common.hh"
 
-namespace sp::vulkan {
-    struct RenderTargetDesc {
+namespace sp::vulkan::render_graph {
+    struct ImageDesc {
         vk::Extent3D extent;
         uint32 mipLevels = 1;
         uint32 arrayLayers = 1;
         vk::Format format = vk::Format::eUndefined;
-        vk::ImageUsageFlags usage; // must include eColorAttachment or eDepthStencilAttachment to use as a render target
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::ImageViewType primaryViewType = vk::ImageViewType::e2D; // when e2D, derived from imageType
         SamplerType sampler = SamplerType::BilinearClamp;
 
-        bool operator==(const RenderTargetDesc &other) const = default;
+        vk::ImageUsageFlags usage; // set by the render graph
+
+        bool operator==(const ImageDesc &other) const = default;
 
         vk::ImageViewType DeriveViewType() const {
             switch (imageType) {
@@ -29,9 +30,9 @@ namespace sp::vulkan {
         }
     };
 
-    class RenderTarget {
+    class PooledImage {
     public:
-        RenderTarget(DeviceContext &device, const RenderTargetDesc &desc, const ImageViewPtr &imageView)
+        PooledImage(DeviceContext &device, const ImageDesc &desc, const ImageViewPtr &imageView)
             : device(&device), desc(desc), imageView(imageView) {}
 
         const ImageViewPtr &ImageView() const {
@@ -40,16 +41,20 @@ namespace sp::vulkan {
 
         const ImageViewPtr &LayerImageView(uint32 layer);
 
-        const RenderTargetDesc &Desc() const {
+        const ImageDesc &Desc() const {
             return desc;
         }
 
+    protected:
+        friend class Resources;
         int unusedFrames = 0;
 
     private:
         DeviceContext *device;
-        RenderTargetDesc desc;
+        ImageDesc desc;
         ImageViewPtr imageView;
         vector<ImageViewPtr> layerImageViews;
     };
-} // namespace sp::vulkan
+
+    typedef shared_ptr<PooledImage> PooledImagePtr;
+} // namespace sp::vulkan::render_graph

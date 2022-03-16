@@ -25,21 +25,21 @@ namespace sp::vulkan::renderer {
             .Build([&](PassBuilder &builder) {
                 builder.Read(sourceID, Access::FragmentShaderSampleImage);
 
-                auto desc = builder.DeriveRenderTarget(sourceID);
+                auto desc = builder.DeriveImage(sourceID);
                 desc.extent.width = std::max(desc.extent.width / downsample, 1u);
                 desc.extent.height = std::max(desc.extent.height / downsample, 1u);
                 builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([sourceID, constants](Resources &resources, CommandContext &cmd) {
-                auto source = resources.GetRenderTarget(sourceID);
+                auto source = resources.GetImageView(sourceID);
 
-                if (source->Desc().primaryViewType == vk::ImageViewType::e2DArray) {
+                if (source->ViewType() == vk::ImageViewType::e2DArray) {
                     cmd.SetShaders("screen_cover.vert", "gaussian_blur_array.frag");
                 } else {
                     cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
                 }
 
-                cmd.SetImageView(0, 0, source->ImageView());
+                cmd.SetImageView(0, 0, source);
                 cmd.PushConstants(constants);
                 cmd.Draw(3);
             });

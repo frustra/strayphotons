@@ -89,12 +89,9 @@ namespace sp::vulkan::render_graph {
                 if (attachment.resourceID == InvalidResource) continue;
                 pass.isRenderPass = true;
 
-                ImageViewPtr imageView;
-                auto renderTarget = resources.GetRenderTarget(attachment.resourceID);
-                if (attachment.arrayIndex != ~0u && renderTarget->Desc().arrayLayers > 1) {
-                    imageView = renderTarget->LayerImageView(attachment.arrayIndex);
-                } else {
-                    imageView = renderTarget->ImageView();
+                auto imageView = resources.GetImageView(attachment.resourceID);
+                if (attachment.arrayIndex != ~0u && imageView->ArrayLayers() > 1) {
+                    imageView = resources.GetImageLayerView(attachment.resourceID, attachment.arrayIndex);
                 }
 
                 if (i != MAX_COLOR_ATTACHMENTS) {
@@ -201,8 +198,8 @@ namespace sp::vulkan::render_graph {
             auto &res = resources.resources[access.id];
             Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", access.id);
 
-            if (res.type == Resource::Type::RenderTarget) {
-                auto view = resources.GetRenderTarget(access.id)->ImageView();
+            if (res.type == Resource::Type::Image) {
+                auto view = resources.GetImageView(access.id);
                 if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
                 auto &image = view->Image();
@@ -258,28 +255,27 @@ namespace sp::vulkan::render_graph {
 
     void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
         auto &res = resources.GetResource(name);
-        Assert(res.renderTargetDesc.extent == view->Extent(), "image extent mismatch");
+        Assert(res.imageDesc.extent == view->Extent(), "image extent mismatch");
 
-        auto resFormat = res.renderTargetDesc.format;
+        auto resFormat = res.imageDesc.format;
         auto viewFormat = view->Format();
         Assert(FormatComponentCount(resFormat) == FormatComponentCount(viewFormat), "image component count mismatch");
         Assert(FormatByteSize(resFormat) == FormatByteSize(viewFormat), "image component size mismatch");
 
         Assert(view->BaseArrayLayer() == 0, "view can't target a specific layer");
-        Assert(res.renderTargetDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
+        Assert(res.imageDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
 
         resources.ResizeIfNeeded();
-        resources.renderTargets[res.id] = make_shared<RenderTarget>(device, res.renderTargetDesc, view);
+        resources.images[res.id] = make_shared<PooledImage>(device, res.imageDesc, view);
     }
 
-    vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
-        vector<RenderTargetInfo> output;
+    vector<RenderGraph::PooledImageInfo> RenderGraph::AllImages() {
+        vector<PooledImageInfo> output;
         for (const auto &[scope, frame] : resources.nameScopes) {
             for (const auto &[name, id] : frame[resources.frameIndex].resourceNames) {
                 const auto &res = resources.resources[id];
-                if (res.type == Resource::Type::RenderTarget) {
-                    output.emplace_back(
-                        RenderTargetInfo{scope.empty() ? name : scope + "." + name, res.renderTargetDesc});
+                if (res.type == Resource::Type::Image) {
+                    output.emplace_back(PooledImageInfo{scope.empty() ? name : scope + "." + name, res.imageDesc});
                 }
             }
         }

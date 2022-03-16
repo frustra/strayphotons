@@ -43,15 +43,15 @@ namespace sp::vulkan::renderer {
         if (voxelGridSize == glm::ivec3(0)) {
             graph.AddPass("DummyVoxelization")
                 .Build([&](rg::PassBuilder &builder) {
-                    RenderTargetDesc desc;
+                    ImageDesc desc;
                     desc.extent = vk::Extent3D(1, 1, 1);
                     desc.primaryViewType = vk::ImageViewType::e3D;
                     desc.imageType = vk::ImageType::e3D;
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
-                    builder.CreateRenderTarget("VoxelRadiance", desc, Access::TransferWrite);
+                    builder.CreateImage("VoxelRadiance", desc, Access::TransferWrite);
                 })
                 .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                    auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
+                    auto radianceView = resources.GetImageView("VoxelRadiance");
 
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
@@ -106,18 +106,18 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Voxelization")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
+                ImageDesc desc;
                 desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
 
                 bool clearRadiance = CVarVoxelClear.Get();
-                if (!clearRadiance) builder.CreateRenderTarget("VoxelRadiance", desc, Access::FragmentShaderWrite);
+                if (!clearRadiance) builder.CreateImage("VoxelRadiance", desc, Access::FragmentShaderWrite);
 
                 graph.AddPass("Clear")
                     .Build([&](rg::PassBuilder &builder) {
-                        if (clearRadiance) builder.CreateRenderTarget("VoxelRadiance", desc, Access::TransferWrite);
+                        if (clearRadiance) builder.CreateImage("VoxelRadiance", desc, Access::TransferWrite);
 
                         builder.CreateBuffer("VoxelFragmentList",
                             sizeof(GPUVoxelFragmentList),
@@ -130,7 +130,7 @@ namespace sp::vulkan::renderer {
                         range.layerCount = 1;
                         range.levelCount = 1;
                         range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                        auto radianceView = resources.GetRenderTarget("VoxelRadiance")->ImageView();
+                        auto radianceView = resources.GetImageView("VoxelRadiance");
                         cmd.Raw().clearColorImage(*radianceView->Image(),
                             vk::ImageLayout::eTransferDstOptimal,
                             clear,
@@ -152,13 +152,13 @@ namespace sp::vulkan::renderer {
             })
 
             .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
-                RenderTargetDesc desc;
+                ImageDesc desc;
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
                     std::max(voxelGridSize.y, voxelGridSize.z),
                     1);
                 desc.format = vk::Format::eR8Sint;
                 desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
-                auto dummyTarget = resources.TemporaryRenderTarget(desc);
+                auto dummyTarget = resources.TemporaryImage(desc);
 
                 cmd.ImageBarrier(dummyTarget->ImageView()->Image(),
                     vk::ImageLayout::eUndefined,
@@ -188,8 +188,8 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
-                cmd.SetImageView(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
-                cmd.SetImageView(0, 4, resources.GetRenderTarget("VoxelRadiance")->ImageView());
+                cmd.SetImageView(0, 3, resources.GetImageView("ShadowMapLinear"));
+                cmd.SetImageView(0, 4, resources.GetImageView("VoxelRadiance"));
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -212,7 +212,7 @@ namespace sp::vulkan::renderer {
 
                 builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
 
-                auto desc = builder.DeriveRenderTarget(builder.LastOutputID());
+                auto desc = builder.DeriveImage(builder.LastOutputID());
                 builder.OutputColorAttachment(0, "VoxelDebug", desc, {LoadOp::DontCare, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
@@ -227,8 +227,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
-                cmd.SetImageView(0, 3, resources.GetRenderTarget("VoxelRadiance")->ImageView());
-                cmd.SetImageView(0, 4, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.SetImageView(0, 3, resources.GetImageView("VoxelRadiance"));
+                cmd.SetImageView(0, 4, resources.GetImageView(resources.LastOutputID()));
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebugBlend.Get());
 

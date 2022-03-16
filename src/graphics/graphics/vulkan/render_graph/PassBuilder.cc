@@ -42,7 +42,7 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    Resource PassBuilder::CreateRenderTarget(string_view name, const RenderTargetDesc &desc, Access access) {
+    Resource PassBuilder::CreateImage(string_view name, const ImageDesc &desc, Access access) {
         Resource resource(desc);
         resources.Register(name, resource);
         pass.AddAccess(resource.id, access);
@@ -55,14 +55,14 @@ namespace sp::vulkan::render_graph {
 
     void PassBuilder::SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
         auto &res = resources.GetResourceRef(id);
-        Assert(res.type == Resource::Type::RenderTarget, "resource must be a render target");
+        Assert(res.type == Resource::Type::Image, "resource must be a render target");
         Write(id, Access::ColorAttachmentReadWrite);
         SetAttachment(index, id, info);
     }
 
     Resource PassBuilder::OutputColorAttachment(uint32 index,
         string_view name,
-        RenderTargetDesc desc,
+        ImageDesc desc,
         const AttachmentInfo &info) {
         return OutputAttachment(index, name, desc, info);
     }
@@ -76,8 +76,8 @@ namespace sp::vulkan::render_graph {
         SetAttachment(MAX_COLOR_ATTACHMENTS, id, info);
     }
 
-    Resource PassBuilder::OutputDepthAttachment(string_view name, RenderTargetDesc desc, const AttachmentInfo &info) {
-        auto resource = CreateRenderTarget(name, desc, Access::DepthStencilAttachmentWrite);
+    Resource PassBuilder::OutputDepthAttachment(string_view name, ImageDesc desc, const AttachmentInfo &info) {
+        auto resource = CreateImage(name, desc, Access::DepthStencilAttachmentWrite);
         SetAttachment(MAX_COLOR_ATTACHMENTS, resource.id, info);
         return resource;
     }
@@ -103,9 +103,9 @@ namespace sp::vulkan::render_graph {
 
     Resource PassBuilder::OutputAttachment(uint32 index,
         string_view name,
-        const RenderTargetDesc &desc,
+        const ImageDesc &desc,
         const AttachmentInfo &info) {
-        auto resource = CreateRenderTarget(name, desc, Access::ColorAttachmentWrite);
+        auto resource = CreateImage(name, desc, Access::ColorAttachmentWrite);
         SetAttachment(index, resource.id, info);
         return resource;
     }
