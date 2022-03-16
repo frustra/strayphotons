@@ -175,6 +175,11 @@ namespace sp::vulkan {
         if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return;
 
         auto view = windowEntity.Get<ecs::View>(lock);
+        if (view.extents.x == 0 || view.extents.y == 0) {
+            // TODO: Fix race condition with PrepareWindowView being in a separate transaction
+            // Abortf("Invalid flatview extents: %d, %d", view.extents.x, view.extents.y);
+            return;
+        }
         view.UpdateViewMatrix(lock, windowEntity);
 
         auto drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
