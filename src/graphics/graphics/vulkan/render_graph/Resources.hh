@@ -130,10 +130,16 @@ namespace sp::vulkan::render_graph {
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
         vector<int32> refCounts;
-        unique_ptr<RenderTargetManager> renderTargetPool;
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;
 
         ResourceID lastOutputID = InvalidResource;
+
+        RenderTargetPtr GetPooledRenderTarget(const RenderTargetDesc &desc);
+        void TickRenderTargetPool();
+
+        using RenderTargetKey = HashKey<RenderTargetDesc>;
+        robin_hood::unordered_map<RenderTargetKey, vector<RenderTargetPtr>, typename RenderTargetKey::Hasher>
+            renderTargetPool;
     };
 } // namespace sp::vulkan::render_graph

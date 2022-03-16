@@ -31,13 +31,8 @@ namespace sp::vulkan {
 
     class RenderTarget {
     public:
-        RenderTarget(DeviceContext &device,
-            const RenderTargetDesc &desc,
-            const ImageViewPtr &imageView,
-            size_t poolIndex)
-            : device(&device), desc(desc), imageView(imageView), poolIndex(poolIndex) {}
-
-        ~RenderTarget();
+        RenderTarget(DeviceContext &device, const RenderTargetDesc &desc, const ImageViewPtr &imageView)
+            : device(&device), desc(desc), imageView(imageView) {}
 
         const ImageViewPtr &ImageView() const {
             return imageView;
@@ -49,32 +44,12 @@ namespace sp::vulkan {
             return desc;
         }
 
-        bool OwnedByPool() const {
-            return poolIndex != ~0u;
-        }
-
-    protected:
         int unusedFrames = 0;
-        friend class RenderTargetManager;
 
     private:
         DeviceContext *device;
         RenderTargetDesc desc;
         ImageViewPtr imageView;
-        size_t poolIndex;
         vector<ImageViewPtr> layerImageViews;
-    };
-
-    class RenderTargetManager {
-    public:
-        RenderTargetManager(DeviceContext &device) : device(device) {}
-        RenderTargetPtr Get(const RenderTargetDesc &desc);
-        void TickFrame();
-
-    private:
-        DeviceContext &device;
-
-        using RenderTargetKey = HashKey<RenderTargetDesc>;
-        robin_hood::unordered_map<RenderTargetKey, vector<RenderTargetPtr>, typename RenderTargetKey::Hasher> pool;
     };
 } // namespace sp::vulkan

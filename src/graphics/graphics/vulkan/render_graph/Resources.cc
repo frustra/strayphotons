@@ -4,7 +4,6 @@
 
 namespace sp::vulkan::render_graph {
     Resources::Resources(DeviceContext &device) : device(device) {
-        renderTargetPool = make_unique<RenderTargetManager>(device);
         Reset();
         nameScopes.emplace_back();
     }
@@ -43,7 +42,7 @@ namespace sp::vulkan::render_graph {
         Assertf(consecutiveGrowthFrames < 100, "likely resource leak, have %d resources", resources.size());
         lastResourceCount = resources.size();
 
-        renderTargetPool->TickFrame();
+        TickRenderTargetPool();
     }
 
     void Resources::ResizeIfNeeded() {
@@ -53,7 +52,7 @@ namespace sp::vulkan::render_graph {
     }
 
     RenderTargetPtr Resources::TemporaryRenderTarget(const RenderTargetDesc &desc) {
-        return renderTargetPool->Get(desc);
+        return GetPooledRenderTarget(desc);
     }
 
     RenderTargetPtr Resources::GetRenderTarget(string_view name) {
@@ -65,7 +64,7 @@ namespace sp::vulkan::render_graph {
         auto &res = resources[id];
         Assert(res.type == Resource::Type::RenderTarget, "resource is not a render target");
         auto &target = renderTargets[res.id];
-        if (!target) target = renderTargetPool->Get(res.renderTargetDesc);
+        if (!target) target = GetPooledRenderTarget(res.renderTargetDesc);
         return target;
     }
 
@@ -244,5 +243,65 @@ namespace sp::vulkan::render_graph {
         auto &nameID = resourceNames[name.data()];
         Assert(!nameID, "resource already registered");
         nameID = id;
+    }
+
+    RenderTargetPtr Resources::GetPooledRenderTarget(const RenderTargetDesc &desc) {
+        auto &list = renderTargetPool[desc];
+        for (auto &elemRef : list) {
+            if (elemRef.use_count() <= 1 && elemRef->Desc() == desc) {
+                elemRef->unusedFrames = 0;
+                return elemRef;
+            }
+        }
+
+        auto createDesc = desc;
+        ZoneScopedN("CreateRenderTarget");
+        ZoneValue(renderTargetPool.size());
+        ZonePrintf("size=%dx%dx%d", createDesc.extent.width, desc.extent.height, desc.extent.depth);
+
+        Assertf(createDesc.extent.width > 0 && desc.extent.height > 0 && desc.extent.depth > 0,
+            "image must not have any zero extents, have %dx%dx%d",
+            createDesc.extent.width,
+            createDesc.extent.height,
+            createDesc.extent.depth);
+
+        if (createDesc.primaryViewType == vk::ImageViewType::e2D)
+            createDesc.primaryViewType = createDesc.DeriveViewType();
+
+        ImageCreateInfo imageInfo;
+        imageInfo.imageType = createDesc.imageType;
+        imageInfo.extent = createDesc.extent;
+        imageInfo.mipLevels = createDesc.mipLevels;
+        imageInfo.arrayLayers = createDesc.arrayLayers;
+        imageInfo.format = createDesc.format;
+        imageInfo.usage = createDesc.usage;
+
+        ImageViewCreateInfo viewInfo;
+        viewInfo.viewType = createDesc.primaryViewType;
+        viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
+
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo)->Get();
+        auto ptr = make_shared<RenderTarget>(device, createDesc, imageView);
+
+        list.push_back(ptr);
+        return ptr;
+    }
+
+    void Resources::TickRenderTargetPool() {
+        for (auto it = renderTargetPool.begin(); it != renderTargetPool.end();) {
+            auto &list = it->second;
+            erase_if(list, [&](auto &elemRef) {
+                if (elemRef.use_count() > 1) {
+                    elemRef->unusedFrames = 0;
+                    return false;
+                }
+                return elemRef->unusedFrames++ > 4;
+            });
+            if (list.empty()) {
+                it = renderTargetPool.erase(it);
+            } else {
+                it++;
+            }
+        }
     }
 } // namespace sp::vulkan::render_graph

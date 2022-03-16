@@ -269,7 +269,7 @@ namespace sp::vulkan::render_graph {
         Assert(res.renderTargetDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
 
         resources.ResizeIfNeeded();
-        resources.renderTargets[res.id] = make_shared<RenderTarget>(device, res.renderTargetDesc, view, ~0u);
+        resources.renderTargets[res.id] = make_shared<RenderTarget>(device, res.renderTargetDesc, view);
     }
 
     vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
