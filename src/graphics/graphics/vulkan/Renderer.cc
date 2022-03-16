@@ -13,6 +13,7 @@
 #include "graphics/vulkan/render_passes/Bloom.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
+#include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
@@ -421,6 +422,9 @@ namespace sp::vulkan {
                         desc.extent = vk::Extent3D(1920, 1080, 1);
                     }
 
+                    desc.mipLevels = CalculateMipmapLevels(desc.extent);
+                    desc.sampler = SamplerType::TrilinearClamp;
+
                     const auto &name = gui.manager->Name();
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
                     gui.renderGraphID = target.id;
@@ -430,6 +434,8 @@ namespace sp::vulkan {
                     vk::Rect2D viewport = {{}, {extent.width, extent.height}};
                     guiRenderer->Render(*gui.manager, cmd, viewport);
                 });
+
+            renderer::AddMipmap(graph, gui.renderGraphID);
         }
     }
 
