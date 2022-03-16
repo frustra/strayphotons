@@ -10,10 +10,12 @@ namespace ecs {
     template<>
     bool Component<VoxelArea>::Load(ScenePtr scenePtr, VoxelArea &voxelArea, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "min") {
-                voxelArea.min = sp::MakeVec3(param.second);
-            } else if (param.first == "max") {
-                voxelArea.max = sp::MakeVec3(param.second);
+            if (param.first == "extents") {
+                if (param.second.is<double>()) {
+                    voxelArea.extents = glm::ivec3((int)param.second.get<double>());
+                } else if (param.second.is<picojson::array>()) {
+                    voxelArea.extents = glm::ivec3(sp::MakeVec3(param.second));
+                }
             }
         }
         return true;

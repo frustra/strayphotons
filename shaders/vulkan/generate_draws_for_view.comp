@@ -8,6 +8,7 @@ layout(local_size_x = 128, local_size_y = 1) in;
 
 layout(push_constant) uniform PushConstants {
     uint renderableCount;
+    uint instanceCount;
     uint visibilityMask;
 };
 
@@ -47,7 +48,7 @@ void main() {
         MeshPrimitive prim = primitives[pi];
         VkDrawIndexedIndirectCommand draw;
         draw.indexCount = prim.indexCount;
-        draw.instanceCount = 1;
+        draw.instanceCount = instanceCount;
         draw.firstIndex = model.indexOffset + prim.firstIndex;
         draw.vertexOffset = int(renderable.vertexOffset + prim.vertexOffset);
 

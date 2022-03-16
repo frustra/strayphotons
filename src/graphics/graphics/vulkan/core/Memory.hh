@@ -1,7 +1,9 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/Hashing.hh"
 #include "core/Tracing.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Common.hh"
 
 #ifdef __clang__
@@ -39,21 +41,20 @@
 #endif
 
 namespace sp::vulkan {
-    enum BufferType {
-        BUFFER_TYPE_UNIFORM,
-        BUFFER_TYPE_INDEX_TRANSFER,
-        BUFFER_TYPE_INDIRECT,
-        BUFFER_TYPE_STORAGE_TRANSFER,
-        BUFFER_TYPE_STORAGE_LOCAL,
-        BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
-        BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
-        BUFFER_TYPE_VERTEX_TRANSFER,
-        BUFFER_TYPES_COUNT
+    enum class Residency {
+        UNKNOWN = VMA_MEMORY_USAGE_UNKNOWN,
+        CPU_ONLY = VMA_MEMORY_USAGE_CPU_ONLY,
+        CPU_TO_GPU = VMA_MEMORY_USAGE_CPU_TO_GPU,
+        GPU_ONLY = VMA_MEMORY_USAGE_GPU_ONLY,
+        GPU_TO_CPU = VMA_MEMORY_USAGE_GPU_TO_CPU,
     };
 
     struct BufferDesc {
         size_t size;
-        BufferType type;
+        vk::BufferUsageFlags usage;
+        Residency residency = Residency::UNKNOWN;
+
+        bool operator==(const BufferDesc &other) const = default;
     };
 
     struct InitialData {
@@ -83,6 +84,7 @@ namespace sp::vulkan {
         void Unmap();
         void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
+        vk::MemoryPropertyFlags Properties() const;
 
         const size_t CopyBlockSize = 512 * 1024;
 
@@ -175,6 +177,10 @@ namespace sp::vulkan {
             return bufferInfo.size;
         }
 
+        vk::BufferUsageFlags Usage() const {
+            return bufferInfo.usage;
+        }
+
         // Treats the buffer as an array with all elements having `bytesPerElement` size.
         // Allocates `elementCount` elements from this array.
         // SubAllocate cannot be called after calling ArrayAllocate.
@@ -184,6 +190,12 @@ namespace sp::vulkan {
         // ArrayAllocate cannot be called after calling SubAllocate.
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
+        Access LastAccess() const {
+            return lastAccess;
+        }
+
+        void SetAccess(Access oldAccess, Access newAccess);
+
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
@@ -192,5 +204,23 @@ namespace sp::vulkan {
 
         vk::DeviceSize subBufferBytesPerElement = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
+
+        Access lastAccess = Access::Undefined;
     };
 } // namespace sp::vulkan
+
+namespace std {
+    template<>
+    struct hash<sp::vulkan::BufferDesc> {
+        typedef sp::vulkan::BufferDesc argument_type;
+        typedef std::size_t result_type;
+
+        result_type operator()(argument_type const &s) const {
+            result_type h = 0;
+            sp::hash_combine(h, s.size);
+            sp::hash_combine(h, VkBufferUsageFlags(s.usage));
+            sp::hash_combine(h, s.residency);
+            return h;
+        }
+    };
+} // namespace std

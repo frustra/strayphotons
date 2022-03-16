@@ -3,7 +3,6 @@
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
-#include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
@@ -11,6 +10,7 @@
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
+#include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <atomic>
@@ -71,6 +71,7 @@ namespace sp::vulkan {
         GPUScene scene;
 
         renderer::Lighting lighting;
+        renderer::Voxels voxels;
         renderer::Emissive emissive;
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;
@@ -86,7 +87,7 @@ namespace sp::vulkan {
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
-        bool listRenderTargets = false;
+        bool listImages = false;
 
 #ifdef SP_XR_SUPPORT
         shared_ptr<xr::XrSystem> xrSystem;

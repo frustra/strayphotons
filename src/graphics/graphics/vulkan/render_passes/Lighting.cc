@@ -5,11 +5,10 @@
 #include "graphics/vulkan/render_passes/Blur.hh"
 
 namespace sp::vulkan::renderer {
-    static CVar<float> CVarExposure("r.Exposure", 1.0f, "Scale factor for linear luminosity buffer");
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
 
-    void Lighting::LoadState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
+    void Lighting::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         lightCount = 0;
         gelCount = 0;
         shadowAtlasSize = glm::ivec2(0, 0);
@@ -29,7 +28,6 @@ namespace sp::vulkan::renderer {
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
-            view.clearMode.reset();
             view.clip = light.shadowMapClip;
             view.UpdateProjectionMatrix();
             view.UpdateViewMatrix(lock, entity);
@@ -64,6 +62,14 @@ namespace sp::vulkan::renderer {
             gpuData.lights[i].mapOffset /= mapOffsetScale;
         }
         gpuData.count = lightCount;
+
+        graph.AddPass("LightState")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("LightState", sizeof(gpuData));
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
+            });
     }
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
@@ -75,7 +81,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("ShadowMaps")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
+                ImageDesc desc;
                 auto extent = glm::max(glm::ivec2(1), shadowAtlasSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
@@ -85,10 +91,10 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.ReadBuffer("WarpedVertexBuffer");
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
                 for (auto &ids : drawIDs) {
-                    builder.ReadBuffer(ids.drawCommandsBuffer);
+                    builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
                 }
             })
 
@@ -118,7 +124,7 @@ namespace sp::vulkan::renderer {
         graph.BeginScope("ShadowMapBlur");
         auto sourceID = graph.LastOutputID();
         auto blurY1 = AddGaussianBlur1D(graph, sourceID, glm::ivec2(0, 1), 1);
-        AddGaussianBlur1D(graph, blurY1, glm::ivec2(1, 0), 1);
+        AddGaussianBlur1D(graph, blurY1, glm::ivec2(1, 0), 2);
         graph.EndScope();
     }
 
@@ -127,20 +133,22 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
-                auto gBuffer0 = builder.ShaderRead("GBuffer0");
-                builder.ShaderRead("GBuffer1");
-                builder.ShaderRead("GBuffer2");
-                builder.ShaderRead(depthTarget);
+                auto gBuffer0 = builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
+                builder.Read(depthTarget, Access::FragmentShaderSampleImage);
 
-                auto desc = gBuffer0.DeriveRenderTarget();
+                auto desc = builder.DeriveImage(gBuffer0);
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                builder.ReadBuffer("ViewState");
-                builder.CreateUniformBuffer("LightState", sizeof(gpuData));
+                builder.Read("VoxelRadiance", Access::FragmentShaderReadStorage);
+                builder.Read("ExposureState", Access::FragmentShaderReadStorage);
+                builder.ReadUniform("ViewState");
+                builder.ReadUniform("LightState");
 
                 for (int i = 0; i < gelCount; i++) {
-                    builder.ShaderRead(gelNames[i]);
+                    builder.Read(gelNames[i], Access::FragmentShaderSampleImage);
                 }
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
@@ -154,27 +162,23 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
-                cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
-                cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
-                cmd.SetTexture(0, 3, resources.GetRenderTarget(depthTarget)->ImageView());
-
-                cmd.PushConstants(CVarExposure.Get());
+                cmd.SetImageView(0, 0, resources.GetImageView("GBuffer0"));
+                cmd.SetImageView(0, 1, resources.GetImageView("GBuffer1"));
+                cmd.SetImageView(0, 2, resources.GetImageView("GBuffer2"));
+                cmd.SetImageView(0, 3, resources.GetImageView(depthTarget));
 
                 for (int i = 0; i < MAX_LIGHT_GELS; i++) {
                     if (i < gelCount) {
-                        const auto &target = resources.GetRenderTarget(gelNames[i]);
-                        cmd.SetTexture(1, i, target->ImageView());
+                        const auto &target = resources.GetImageView(gelNames[i]);
+                        cmd.SetImageView(1, i, target);
                     } else {
-                        cmd.SetTexture(1, i, scene.textures.GetBlankPixel());
+                        cmd.SetImageView(1, i, scene.textures.GetBlankPixel());
                     }
                 }
 
-                auto lightState = resources.GetBuffer("LightState");
-                lightState->CopyFrom(&gpuData);
-
+                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                cmd.SetUniformBuffer(0, 11, lightState);
+                cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
                 cmd.Draw(3);
             });
     }

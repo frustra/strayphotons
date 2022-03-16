@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <glm/glm.hpp>
+#include <new>
 #include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
 
@@ -49,6 +50,8 @@ namespace sp::vulkan {
         Down,
     };
 
+    const size_t MAX_VIEWPORTS = 4;
+
     class CommandContext : public NonCopyable {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
@@ -79,6 +82,8 @@ namespace sp::vulkan {
         }
 
         void Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ);
+        // indirectBuffer stores a VkDispatchIndirectCommand object
+        void DispatchIndirect(BufferPtr indirectBuffer, vk::DeviceSize offset);
         void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
         void DrawIndexed(uint32 indexes,
             uint32 instances = 1,
@@ -129,7 +134,7 @@ namespace sp::vulkan {
         template<typename T>
         void SetShaderConstant(ShaderStage stage, uint32 index, T data) {
             static_assert(sizeof(T) == sizeof(uint32), "type must be 4 bytes");
-            SetShaderConstant(stage, index, *reinterpret_cast<uint32 *>(&data));
+            SetShaderConstant(stage, index, *std::launder(reinterpret_cast<uint32 *>(&data)));
         }
 
         void SetShaderConstant(ShaderStage stage, uint32 index, bool data) {
@@ -153,11 +158,17 @@ namespace sp::vulkan {
         }
 
         void SetScissor(const vk::Rect2D &newScissor) {
-            if (scissor != newScissor) {
-                scissor = newScissor;
+            if (pipelineInput.state.scissorCount != 1) {
+                pipelineInput.state.scissorCount = 1;
+                SetDirty(DirtyBits::Pipeline);
+            }
+            if (scissors[0] != newScissor) {
+                scissors[0] = newScissor;
                 SetDirty(DirtyBits::Scissor);
             }
         }
+
+        void SetScissorArray(vk::ArrayProxy<const vk::Rect2D> newScissors);
 
         void ClearScissor() {
             vk::Rect2D framebufferExtents = {{0, 0}, framebuffer->Extent()};
@@ -167,10 +178,6 @@ namespace sp::vulkan {
         vk::Extent2D GetFramebufferExtent() const {
             if (!framebuffer) return {};
             return framebuffer->Extent();
-        }
-
-        vk::Rect2D GetViewport() const {
-            return viewport;
         }
 
         void SetYDirection(YDirection dir) {
@@ -187,11 +194,17 @@ namespace sp::vulkan {
         }
 
         void SetViewport(const vk::Rect2D &newViewport) {
-            if (viewport != newViewport) {
-                viewport = newViewport;
+            if (pipelineInput.state.viewportCount != 1) {
+                pipelineInput.state.viewportCount = 1;
+                SetDirty(DirtyBits::Pipeline);
+            }
+            if (viewports[0] != newViewport) {
+                viewports[0] = newViewport;
                 SetDirty(DirtyBits::Viewport);
             }
         }
+
+        void SetViewportArray(vk::ArrayProxy<const vk::Rect2D> newViewports);
 
         void SetDepthRange(float minDepth, float maxDepth) {
             this->minDepth = minDepth;
@@ -325,8 +338,8 @@ namespace sp::vulkan {
             }
         }
 
-        void SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view);
-        void SetTexture(uint32 set, uint32 binding, const ImageView *view);
+        void SetImageView(uint32 set, uint32 binding, const ImageViewPtr &view);
+        void SetImageView(uint32 set, uint32 binding, const ImageView *view);
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
         void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
@@ -424,9 +437,9 @@ namespace sp::vulkan {
         bool recording = false, abandoned = false;
 
         YDirection viewportYDirection = YDirection::Up;
-        vk::Rect2D viewport;
+        std::array<vk::Rect2D, MAX_VIEWPORTS> viewports;
+        std::array<vk::Rect2D, MAX_VIEWPORTS> scissors;
         float minDepth = 0.0f, maxDepth = 1.0f;
-        vk::Rect2D scissor;
 
         struct StencilDynamicState {
             uint32 writeMask = 0, compareMask = 0, reference = 0;

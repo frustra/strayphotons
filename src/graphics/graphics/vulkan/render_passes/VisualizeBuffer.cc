@@ -5,22 +5,19 @@
 
 namespace sp::vulkan::renderer {
     ResourceID VisualizeBuffer(RenderGraph &graph, ResourceID sourceID, uint32 arrayLayer) {
-        ResourceID targetID = InvalidResource, outputID;
+        ResourceID outputID;
         graph.AddPass("VisualizeBuffer")
             .Build([&](PassBuilder &builder) {
-                auto &res = builder.ShaderRead(sourceID);
-                targetID = res.id;
-                auto desc = res.DeriveRenderTarget();
+                builder.Read(sourceID, Access::FragmentShaderSampleImage);
+
+                auto desc = builder.DeriveImage(sourceID);
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
-            .Execute([targetID, arrayLayer](Resources &resources, CommandContext &cmd) {
-                auto target = resources.GetRenderTarget(targetID);
-                ImageViewPtr source;
-                if (target->Desc().arrayLayers > 1 && arrayLayer != ~0u && arrayLayer < target->Desc().arrayLayers) {
-                    source = target->LayerImageView(arrayLayer);
-                } else {
-                    source = target->ImageView();
+            .Execute([sourceID, arrayLayer](Resources &resources, CommandContext &cmd) {
+                auto source = resources.GetImageView(sourceID);
+                if (source->ArrayLayers() > 1 && arrayLayer != ~0u && arrayLayer < source->ArrayLayers()) {
+                    source = resources.GetImageLayerView(sourceID, arrayLayer);
                 }
 
                 if (source->ViewType() == vk::ImageViewType::e2DArray) {
@@ -42,7 +39,7 @@ namespace sp::vulkan::renderer {
                 }
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, swizzle);
 
-                cmd.SetTexture(0, 0, source);
+                cmd.SetImageView(0, 0, source);
                 cmd.Draw(3);
             });
         return outputID;

@@ -210,6 +210,7 @@ namespace sp {
         auto realFrameEnd = chrono_clock::now();
 
         if (frameEnd > realFrameEnd) {
+            ZoneScopedN("SleepUntilFrameEnd");
             std::this_thread::sleep_until(frameEnd);
             previousFrameEnd = frameEnd;
         } else {

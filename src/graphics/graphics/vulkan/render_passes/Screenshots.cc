@@ -32,24 +32,24 @@ namespace sp::vulkan::renderer {
             graph.AddPass("Screenshot")
                 .Build([&](rg::PassBuilder &builder) {
                     auto resource = builder.GetResource(screenshotResource);
-                    if (resource.type != rg::Resource::Type::RenderTarget) {
+                    if (resource.type != rg::Resource::Type::Image) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                     } else {
-                        auto format = resource.RenderTargetFormat();
+                        auto format = resource.ImageFormat();
                         if (FormatByteSize(format) == FormatComponentCount(format)) {
                             sourceID = resource.id;
                         } else {
                             sourceID = VisualizeBuffer(graph, resource.id);
                         }
-                        builder.TransferRead(sourceID);
+                        builder.Read(sourceID, Access::TransferRead);
                         builder.RequirePass();
                     }
                 })
                 .Execute([screenshotPath, sourceID](rg::Resources &resources, DeviceContext &device) {
                     auto &res = resources.GetResource(sourceID);
-                    if (res.type == rg::Resource::Type::RenderTarget) {
-                        auto target = resources.GetRenderTarget(res.id);
-                        renderer::WriteScreenshot(device, screenshotPath, target->ImageView());
+                    if (res.type == rg::Resource::Type::Image) {
+                        auto target = resources.GetImageView(res.id);
+                        renderer::WriteScreenshot(device, screenshotPath, target);
                     }
                 });
         }

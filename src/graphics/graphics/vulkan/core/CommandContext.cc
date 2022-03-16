@@ -41,11 +41,14 @@ namespace sp::vulkan {
         Assert(!framebuffer, "render pass already started");
 
         framebuffer = device.GetFramebuffer(info);
+
+        pipelineInput.state.viewportCount = 1;
+        pipelineInput.state.scissorCount = 1;
+        viewports[0] = vk::Rect2D{{0, 0}, framebuffer->Extent()};
+        scissors[0] = viewports[0];
+
         pipelineInput.renderPass = framebuffer->GetRenderPass();
         renderPass = device.GetRenderPass(info);
-
-        viewport = vk::Rect2D{{0, 0}, framebuffer->Extent()};
-        scissor = viewport;
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
         uint32 clearValueCount = info.state.colorAttachmentCount;
@@ -63,7 +66,7 @@ namespace sp::vulkan {
         vk::RenderPassBeginInfo renderPassBeginInfo;
         renderPassBeginInfo.renderPass = *renderPass;
         renderPassBeginInfo.framebuffer = *framebuffer;
-        renderPassBeginInfo.renderArea = scissor;
+        renderPassBeginInfo.renderArea = scissors[0];
         renderPassBeginInfo.clearValueCount = clearValueCount;
         renderPassBeginInfo.pClearValues = clearValues;
         cmd->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
@@ -103,6 +106,11 @@ namespace sp::vulkan {
     void CommandContext::Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ) {
         FlushComputeState();
         cmd->dispatch(groupCountX, groupCountY, groupCountZ);
+    }
+
+    void CommandContext::DispatchIndirect(BufferPtr indirectBuffer, vk::DeviceSize offset) {
+        FlushComputeState();
+        cmd->dispatchIndirect(*indirectBuffer, offset);
     }
 
     void CommandContext::Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance) {
@@ -155,12 +163,46 @@ namespace sp::vulkan {
     void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
         SetShaders("screen_cover.vert", "screen_cover.frag");
         if (view) {
-            SetTexture(0, 0, view);
+            SetImageView(0, 0, view);
             if (view->ViewType() == vk::ImageViewType::e2DArray) {
                 SetSingleShader(ShaderStage::Fragment, "screen_cover_array.frag");
             }
         }
         Draw(3); // vertices are defined as constants in the vertex shader
+    }
+
+    void CommandContext::SetScissorArray(vk::ArrayProxy<const vk::Rect2D> newScissors) {
+        Assert(newScissors.size() <= scissors.size(), "too many scissors");
+        Assert(newScissors.size() <= device.Limits().maxViewports, "too many scissors for device");
+        if (pipelineInput.state.scissorCount != newScissors.size()) {
+            pipelineInput.state.scissorCount = newScissors.size();
+            SetDirty(DirtyBits::Pipeline);
+        }
+        size_t i = 0;
+        for (auto &newScissor : newScissors) {
+            if (scissors[i] != newScissor) {
+                scissors[i] = newScissor;
+                SetDirty(DirtyBits::Scissor);
+            }
+            i++;
+        }
+    }
+
+    void CommandContext::SetViewportArray(vk::ArrayProxy<const vk::Rect2D> newViewports) {
+        Assert(newViewports.size() <= viewports.size(), "too many viewports");
+        Assert(newViewports.size() <= device.Limits().maxViewports, "too many viewports for device");
+        if (pipelineInput.state.viewportCount != newViewports.size()) {
+            pipelineInput.state.viewportCount = newViewports.size();
+            SetDirty(DirtyBits::Pipeline);
+        }
+        size_t i = 0;
+        for (auto &newViewport : newViewports) {
+            if (viewports[i] != newViewport) {
+                viewports[i] = newViewport;
+                SetDirty(DirtyBits::Viewport);
+            }
+            i++;
+        }
     }
 
     void CommandContext::ImageBarrier(const ImagePtr &image,
@@ -249,11 +291,11 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
-    void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view) {
-        SetTexture(set, binding, view.get());
+    void CommandContext::SetImageView(uint32 set, uint32 binding, const ImageViewPtr &view) {
+        SetImageView(set, binding, view.get());
     }
 
-    void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageView *view) {
+    void CommandContext::SetImageView(uint32 set, uint32 binding, const ImageView *view) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
@@ -295,7 +337,11 @@ namespace sp::vulkan {
     }
 
     BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
-        auto buffer = device.GetFramePooledBuffer(BUFFER_TYPE_UNIFORM, size);
+        BufferDesc desc;
+        desc.size = size;
+        desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+        desc.residency = Residency::CPU_TO_GPU;
+        auto buffer = device.GetBuffer(desc);
         SetUniformBuffer(set, binding, buffer);
         return buffer;
     }
@@ -356,25 +402,34 @@ namespace sp::vulkan {
         }
 
         if (ResetDirty(DirtyBits::Viewport)) {
-            vk::Viewport vp = {(float)viewport.offset.x,
-                (float)viewport.offset.y,
-                (float)viewport.extent.width,
-                (float)viewport.extent.height,
-                minDepth,
-                maxDepth};
+            std::array<vk::Viewport, MAX_VIEWPORTS> vps;
 
-            if (viewportYDirection == YDirection::Up) {
-                // Negative height sets viewport coordinates to OpenGL style (Y up)
-                vp.y = framebuffer->Extent().height - vp.y;
-                vp.height = -vp.height;
+            for (size_t i = 0; i < pipelineInput.state.viewportCount; i++) {
+                auto &viewport = viewports[i];
+
+                vps[i] = vk::Viewport{(float)viewport.offset.x,
+                    (float)viewport.offset.y,
+                    (float)viewport.extent.width,
+                    (float)viewport.extent.height,
+                    minDepth,
+                    maxDepth};
+
+                if (viewportYDirection == YDirection::Up) {
+                    // Negative height sets viewport coordinates to OpenGL style (Y up)
+                    vps[i].y = framebuffer->Extent().height - vps[i].y;
+                    vps[i].height = -vps[i].height;
+                }
             }
-            cmd->setViewport(0, 1, &vp);
+            cmd->setViewport(0, pipelineInput.state.viewportCount, vps.data());
         }
 
         if (ResetDirty(DirtyBits::Scissor)) {
-            vk::Rect2D sc = scissor;
-            sc.offset.y = framebuffer->Extent().height - sc.offset.y - sc.extent.height;
-            cmd->setScissor(0, 1, &sc);
+            std::array<vk::Rect2D, MAX_VIEWPORTS> scs;
+            for (size_t i = 0; i < pipelineInput.state.scissorCount; i++) {
+                scs[i] = scissors[i];
+                scs[i].offset.y = framebuffer->Extent().height - scs[i].offset.y - scs[i].extent.height;
+            }
+            cmd->setScissor(0, pipelineInput.state.scissorCount, scs.data());
         }
 
         if (pipelineInput.state.stencilTest && ResetDirty(DirtyBits::Stencil)) {
@@ -405,6 +460,8 @@ namespace sp::vulkan {
     }
 
     vk::Fence CommandContext::Fence() {
+        if (abandoned) return {};
+
         if (!fence && scope == CommandContextScope::Fence) {
             vk::FenceCreateInfo fenceInfo;
             fence = device->createFenceUnique(fenceInfo);

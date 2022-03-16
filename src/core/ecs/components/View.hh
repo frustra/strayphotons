@@ -8,18 +8,6 @@
 
 namespace ecs {
     struct View {
-        // Define a std::bitset and a corresponding enum that can be used to store clear modes independent of any
-        // graphics backend.
-        enum ClearMode {
-            CLEAR_MODE_COLOR_BUFFER = 0,
-            CLEAR_MODE_DEPTH_BUFFER,
-            CLEAR_MODE_ACCUMULATION_BUFFER,
-            CLEAR_MODE_STENCIL_BUFFER,
-            CLEAR_MODE_COUNT,
-        };
-
-        using ClearModeBitset = std::bitset<CLEAR_MODE_COUNT>;
-
         View() {}
         View(glm::ivec2 extents,
             float fov = 0.0f,
@@ -31,14 +19,6 @@ namespace ecs {
 
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
-
-        // TODO(any): Maybe remove color clear once we have interior spaces
-        ClearModeBitset clearMode =
-            ClearModeBitset().set(CLEAR_MODE_COLOR_BUFFER, true).set(CLEAR_MODE_DEPTH_BUFFER, true);
-        glm::vec4 clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-        bool stencil = false;
-        bool blend = false;
-        float skyIlluminance = 0.0f;
 
         // Required parameters.
         glm::ivec2 extents = {0, 0};
@@ -54,9 +34,9 @@ namespace ecs {
             invProjMat = glm::inverse(projMat);
         }
 
-        void SetViewMat(const glm::mat4 &newViewMat) {
-            viewMat = newViewMat;
-            invViewMat = glm::inverse(viewMat);
+        void SetInvViewMat(const glm::mat4 &newInvViewMat) {
+            invViewMat = newInvViewMat;
+            viewMat = glm::inverse(invViewMat);
         }
 
         // Matrix cache

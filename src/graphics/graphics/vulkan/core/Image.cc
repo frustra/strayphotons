@@ -36,6 +36,11 @@ namespace sp::vulkan {
         lastLayout = newLayout;
     }
 
+    void Image::SetAccess(Access oldAccess, Access newAccess) {
+        DebugAssert(oldAccess == Access::Undefined || oldAccess == lastAccess, "unexpected access");
+        lastAccess = newAccess;
+    }
+
     vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors) {
         if (bits != 8 && bits != 16) {
             if (logErrors) Errorf("can't infer format with bits=%d", bits);

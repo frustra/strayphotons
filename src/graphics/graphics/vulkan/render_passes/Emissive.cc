@@ -47,26 +47,22 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Emissive")
             .Build([&](PassBuilder &builder) {
-                auto input = builder.LastOutput();
-                builder.ShaderRead(input.id);
-                builder.ShaderRead("GBuffer0");
-                builder.ShaderRead("GBuffer1");
+                builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
+                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                builder.Read("ExposureState", Access::FragmentShaderReadStorage);
+                builder.ReadUniform("ViewState");
 
-                auto desc = input.DeriveRenderTarget();
-                builder.OutputColorAttachment(0, "Emissive", desc, {LoadOp::DontCare, StoreOp::Store});
-
-                builder.ReadBuffer("ViewState");
-
+                builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
                 for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
                     if (!ent.Has<ecs::Transform>(lock)) continue;
 
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
-                    auto &resource = builder.ShaderRead(screenComp.textureName);
+                    auto id = builder.Read(screenComp.textureName, Access::FragmentShaderSampleImage);
 
                     Screen screen;
-                    screen.id = resource.id;
+                    screen.id = id;
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).matrix;
                     screens.push_back(std::move(screen));
@@ -77,8 +73,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-                cmd.SetDepthTest(false, false);
-                cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
 
                 cmd.SetDepthTest(true, false);
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
@@ -86,7 +80,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetBlending(true);
                 cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne);
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
+                cmd.SetStorageBuffer(0, 1, resources.GetBuffer("ExposureState"));
 
                 {
                     RenderPhase phase("LaserLines");
@@ -122,8 +117,8 @@ namespace sp::vulkan::renderer {
                     RenderPhase phase("LaserContactPoints");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("laser_contact.vert", "laser_contact.frag");
-                    cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
-                    cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
+                    cmd.SetImageView(0, 2, resources.GetImageView("GBuffer0"));
+                    cmd.SetImageView(0, 3, resources.GetImageView("GBuffer1"));
 
                     struct {
                         glm::vec3 radiance;
@@ -144,9 +139,10 @@ namespace sp::vulkan::renderer {
                     RenderPhase phase("Screens");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("textured_quad.vert", "single_texture.frag");
+                    cmd.SetUniformBuffer(0, 1, resources.GetBuffer("ViewState"));
 
                     for (auto &screen : screens) {
-                        cmd.SetTexture(0, 0, resources.GetRenderTarget(screen.id)->ImageView());
+                        cmd.SetImageView(0, 0, resources.GetImageView(screen.id));
                         cmd.PushConstants(screen.gpuData);
                         cmd.Draw(4);
                     }

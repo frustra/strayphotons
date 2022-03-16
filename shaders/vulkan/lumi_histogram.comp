@@ -1,0 +1,49 @@
+#version 450
+
+#include "../lib/histogram_common.glsl"
+#include "../lib/util.glsl"
+
+layout(binding = 0) uniform sampler2D lumiTex;
+layout(binding = 1, r32ui) uniform uimage2D finalHistogram;
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+shared uint Histogram[HistogramBins];
+
+void main() {
+    vec2 ts = textureSize(lumiTex, 0);
+    vec2 texCoord = (vec2(gl_GlobalInvocationID.xy) + 0.5) * histDownsample / ts;
+
+    if (gl_LocalInvocationIndex == 0) {
+        // Initialize shared mem in first thread.
+        for (int i = 0; i < HistogramBins; i++) {
+            Histogram[i] = 0;
+        }
+    }
+
+    barrier();
+
+    if (texCoord.x < 1.0 && texCoord.y < 1.0) {
+        vec3 c = texture(lumiTex, texCoord).rgb;
+        float bin = histogramBinFromPixel(c);
+
+        int bin0 = int(bin);
+        int bin1 = min(bin0 + 1, HistogramBins - 1);
+
+        // Weight by distance to integer bin.
+        float w1 = fract(bin);
+        float w0 = 1.0 - w1;
+
+        atomicAdd(Histogram[bin0], uint(round(histSampleScale * w0)));
+        atomicAdd(Histogram[bin1], uint(round(histSampleScale * w1)));
+    }
+
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0) {
+        // Persist shared mem to global buffer in first thread.
+        for (int i = 0; i < HistogramBins; i++) {
+            imageAtomicAdd(finalHistogram, ivec2(i, 0), Histogram[i]);
+        }
+    }
+}

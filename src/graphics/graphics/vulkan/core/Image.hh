@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/core/Texture.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
@@ -101,6 +102,10 @@ namespace sp::vulkan {
             return lastLayout;
         }
 
+        Access LastAccess() const {
+            return lastAccess;
+        }
+
         vk::ImageUsageFlags Usage() const {
             return usage;
         }
@@ -112,6 +117,7 @@ namespace sp::vulkan {
         }
 
         void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+        void SetAccess(Access oldAccess, Access newAccess);
 
     private:
         vk::Image image;
@@ -119,6 +125,7 @@ namespace sp::vulkan {
         vk::Extent3D extent;
         uint32 mipLevels = 0, arrayLayers = 0;
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
+        Access lastAccess = Access::Undefined;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
     };
 
@@ -152,7 +159,7 @@ namespace sp::vulkan {
             uniqueHandle = std::move(view);
         }
 
-        ImagePtr Image() const {
+        const ImagePtr &Image() const {
             return info.image;
         }
 

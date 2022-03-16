@@ -1,93 +1,85 @@
 #include "PassBuilder.hh"
 
 namespace sp::vulkan::render_graph {
-    const Resource &PassBuilder::ShaderRead(string_view name) {
-        return ShaderRead(resources.GetID(name));
+    void PassBuilder::Read(ResourceID id, Access access) {
+        pass.AddAccess(id, access);
     }
 
-    const Resource &PassBuilder::ShaderRead(ResourceID id) {
+    ResourceID PassBuilder::Read(string_view name, Access access) {
+        auto id = GetID(name);
+        Read(id, access);
+        return id;
+    }
+
+    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, int framesAgo) {
+        auto thisFrameID = resources.GetID(name, false);
+        if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
+        pass.AddFutureRead(thisFrameID, access, framesAgo);
+
+        auto prevFrameID = resources.GetID(name, false, framesAgo);
+        if (prevFrameID != InvalidResource) pass.AddAccess(prevFrameID, access);
+        return prevFrameID;
+    }
+
+    void PassBuilder::Write(ResourceID id, Access access) {
+        pass.AddAccess(id, access);
+    }
+
+    ResourceID PassBuilder::Write(string_view name, Access access) {
+        auto id = GetID(name);
+        Write(id, access);
+        return id;
+    }
+
+    const Resource &PassBuilder::ReadUniform(string_view name) {
+        return ReadUniform(GetID(name));
+    }
+
+    const Resource &PassBuilder::ReadUniform(ResourceID id) {
+        Read(id, Access::AnyShaderReadUniform);
         auto &resource = resources.GetResourceRef(id);
-        resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eSampled;
-
-        auto aspect = FormatToAspectFlags(resource.renderTargetDesc.format);
-        bool depth = !!(aspect & vk::ImageAspectFlagBits::eDepth);
-        bool stencil = !!(aspect & vk::ImageAspectFlagBits::eStencil);
-
-        auto layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        if (depth && stencil)
-            layout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-        else if (depth)
-            layout = vk::ImageLayout::eDepthReadOnlyOptimal;
-        else if (stencil)
-            layout = vk::ImageLayout::eStencilReadOnlyOptimal;
-
-        ResourceAccess access = {vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, layout};
-        pass.AddDependency(access, resource);
+        resource.bufferDesc.residency = Residency::CPU_TO_GPU;
         return resource;
     }
 
-    const Resource &PassBuilder::TransferRead(string_view name) {
-        return TransferRead(resources.GetID(name));
-    }
-
-    const Resource &PassBuilder::TransferRead(ResourceID id) {
-        auto &resource = resources.GetResourceRef(id);
-        resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eTransferSrc;
-        ResourceAccess access = {
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferRead,
-            vk::ImageLayout::eTransferSrcOptimal,
-        };
-        pass.AddDependency(access, resource);
-        return resource;
-    }
-
-    Resource PassBuilder::CreateRenderTarget(string_view name, const RenderTargetDesc &desc) {
+    Resource PassBuilder::CreateImage(string_view name, const ImageDesc &desc, Access access) {
         Resource resource(desc);
         resources.Register(name, resource);
-        pass.AddOutput(resource.id);
+        pass.AddAccess(resource.id, access);
         return resource;
     }
 
     void PassBuilder::SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info) {
-        SetColorAttachment(index, resources.GetID(name), info);
+        SetColorAttachment(index, GetID(name), info);
     }
 
     void PassBuilder::SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
         auto &res = resources.GetResourceRef(id);
-        Assert(res.type == Resource::Type::RenderTarget, "resource must be a render target");
-        res.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
+        Assert(res.type == Resource::Type::Image, "resource must be a render target");
+        Write(id, Access::ColorAttachmentReadWrite);
         SetAttachment(index, id, info);
     }
 
     Resource PassBuilder::OutputColorAttachment(uint32 index,
         string_view name,
-        RenderTargetDesc desc,
+        ImageDesc desc,
         const AttachmentInfo &info) {
-        desc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
         return OutputAttachment(index, name, desc, info);
     }
 
     void PassBuilder::SetDepthAttachment(string_view name, const AttachmentInfo &info) {
-        SetDepthAttachment(resources.GetID(name), info);
+        SetDepthAttachment(GetID(name), info);
     }
 
     void PassBuilder::SetDepthAttachment(ResourceID id, const AttachmentInfo &info) {
-        auto &res = resources.GetResourceRef(id);
-        Assert(res.type == Resource::Type::RenderTarget, "resource must be a render target");
-        res.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
-        ResourceAccess access = {
-            vk::PipelineStageFlagBits::eEarlyFragmentTests,
-            vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal,
-        };
-        pass.AddDependency(access, res);
+        Write(id, Access::DepthStencilAttachmentWrite);
         SetAttachment(MAX_COLOR_ATTACHMENTS, id, info);
     }
 
-    Resource PassBuilder::OutputDepthAttachment(string_view name, RenderTargetDesc desc, const AttachmentInfo &info) {
-        desc.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
-        return OutputAttachment(MAX_COLOR_ATTACHMENTS, name, desc, info);
+    Resource PassBuilder::OutputDepthAttachment(string_view name, ImageDesc desc, const AttachmentInfo &info) {
+        auto resource = CreateImage(name, desc, Access::DepthStencilAttachmentWrite);
+        SetAttachment(MAX_COLOR_ATTACHMENTS, resource.id, info);
+        return resource;
     }
 
     void PassBuilder::SetPrimaryAttachment(uint32 index) {
@@ -95,44 +87,30 @@ namespace sp::vulkan::render_graph {
         pass.primaryAttachmentIndex = index;
     }
 
-    Resource PassBuilder::CreateBuffer(BufferType bufferType, size_t size) {
-        return CreateBuffer(bufferType, "", size);
+    Resource PassBuilder::CreateBuffer(size_t size, Residency residency, Access access) {
+        return CreateBuffer("", size, residency, access);
     }
 
-    Resource PassBuilder::CreateBuffer(BufferType bufferType, string_view name, size_t size) {
-        Resource resource(bufferType, size);
+    Resource PassBuilder::CreateBuffer(string_view name, size_t size, Residency residency, Access access) {
+        BufferDesc desc;
+        desc.size = size;
+        desc.residency = residency;
+        Resource resource(desc);
         resources.Register(name, resource);
-        pass.AddOutput(resource.id);
-        return resource;
-    }
-
-    const Resource &PassBuilder::ReadBuffer(string_view name) {
-        return ReadBuffer(resources.GetID(name));
-    }
-
-    const Resource &PassBuilder::ReadBuffer(ResourceID id) {
-        auto &resource = resources.GetResourceRef(id);
-        // TODO: need to mark stages and usage for buffers that are written from the GPU,
-        // so we can generate barriers. For now this is only used for CPU->GPU.
-        pass.AddDependency({}, resource);
+        pass.AddAccess(resource.id, access);
         return resource;
     }
 
     Resource PassBuilder::OutputAttachment(uint32 index,
         string_view name,
-        const RenderTargetDesc &desc,
+        const ImageDesc &desc,
         const AttachmentInfo &info) {
-        auto resource = CreateRenderTarget(name, desc);
-        SetAttachmentWithoutOutput(index, resource.id, info);
+        auto resource = CreateImage(name, desc, Access::ColorAttachmentWrite);
+        SetAttachment(index, resource.id, info);
         return resource;
     }
 
     void PassBuilder::SetAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
-        pass.AddOutput(id);
-        SetAttachmentWithoutOutput(index, id, info);
-    }
-
-    void PassBuilder::SetAttachmentWithoutOutput(uint32 index, ResourceID id, const AttachmentInfo &info) {
         auto &attachment = pass.attachments[index];
         attachment = info;
         attachment.resourceID = id;

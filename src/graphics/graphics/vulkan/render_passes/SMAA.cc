@@ -19,34 +19,34 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("GammaCorrect")
             .Build([&](PassBuilder &builder) {
-                auto source = builder.ShaderRead("LinearLuminance");
+                auto luminanceID = builder.Read("LinearLuminance", Access::FragmentShaderSampleImage);
 
-                auto desc = source.DeriveRenderTarget();
+                auto desc = builder.DeriveImage(luminanceID);
                 desc.format = vk::Format::eR8G8B8A8Unorm;
                 builder.OutputColorAttachment(0, "luminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "gamma_correct.frag");
-                cmd.SetTexture(0, 0, res.GetRenderTarget("LinearLuminance")->ImageView());
+                cmd.SetImageView(0, 0, res.GetImageView("LinearLuminance"));
                 cmd.Draw(3);
             });
 
         graph.AddPass("EdgeDetection")
             .Build([&](PassBuilder &builder) {
-                auto luminance = builder.ShaderRead("luminance");
+                auto luminanceID = builder.Read("luminance", Access::FragmentShaderSampleImage);
 
-                auto desc = luminance.DeriveRenderTarget();
+                auto desc = builder.DeriveImage(luminanceID);
                 desc.format = vk::Format::eR8G8B8A8Unorm;
                 builder.OutputColorAttachment(0, "edges", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eD24UnormS8Uint;
                 builder.OutputDepthAttachment("stencil", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.ReadBuffer("ViewState");
+                builder.ReadUniform("ViewState");
             })
             .Execute([](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/edge_detection.frag");
-                cmd.SetTexture(0, 0, res.GetRenderTarget("luminance")->ImageView());
+                cmd.SetImageView(0, 0, res.GetImageView("luminance"));
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eAlways);
@@ -61,19 +61,19 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("BlendingWeights")
             .Build([&](PassBuilder &builder) {
-                auto edges = builder.ShaderRead("edges");
+                auto edgesID = builder.Read("edges", Access::FragmentShaderSampleImage);
 
-                auto desc = edges.DeriveRenderTarget();
+                auto desc = builder.DeriveImage(edgesID);
                 builder.OutputColorAttachment(0, "weights", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.SetDepthAttachment("stencil", {LoadOp::Load, StoreOp::Store});
-                builder.ReadBuffer("ViewState");
+                builder.ReadUniform("ViewState");
             })
             .Execute([this](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending_weights.frag");
-                cmd.SetTexture(0, 0, res.GetRenderTarget("edges")->ImageView());
-                cmd.SetTexture(0, 1, areaTex->Get());
-                cmd.SetTexture(0, 2, searchTex->Get());
+                cmd.SetImageView(0, 0, res.GetImageView("edges"));
+                cmd.SetImageView(0, 1, areaTex->Get());
+                cmd.SetImageView(0, 2, searchTex->Get());
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eEqual);
@@ -89,17 +89,17 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Blend")
             .Build([&](PassBuilder &builder) {
-                auto source = builder.ShaderRead(sourceID);
-                builder.ShaderRead("weights");
+                builder.Read(sourceID, Access::FragmentShaderSampleImage);
+                builder.Read("weights", Access::FragmentShaderSampleImage);
 
-                auto desc = source.DeriveRenderTarget();
+                auto desc = builder.DeriveImage(sourceID);
                 builder.OutputColorAttachment(0, "Output", desc, {LoadOp::DontCare, StoreOp::Store});
-                builder.ReadBuffer("ViewState");
+                builder.ReadUniform("ViewState");
             })
             .Execute([sourceID](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending.frag");
-                cmd.SetTexture(0, 0, res.GetRenderTarget(sourceID)->ImageView());
-                cmd.SetTexture(0, 1, res.GetRenderTarget("weights")->ImageView());
+                cmd.SetImageView(0, 0, res.GetImageView(sourceID));
+                cmd.SetImageView(0, 1, res.GetImageView("weights"));
                 cmd.SetUniformBuffer(0, 10, res.GetBuffer("ViewState"));
                 cmd.Draw(3);
             });

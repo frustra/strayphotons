@@ -15,6 +15,16 @@
             "signal_output": {}
         },
         {
+            "transform": {
+                "parent": "flatview",
+                "translate": [-7.5, -5, -7.5],
+                "scale": [0.1, 0.1, 0.1]
+            },
+            "_voxel_area": {
+                "extents": [150, 100, 150]
+            }
+        },
+        {
             "name": "flatview",
             "view": {
                 "clip": [0.1, 350]

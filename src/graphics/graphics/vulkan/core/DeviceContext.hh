@@ -4,11 +4,13 @@
 #include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/vulkan/core/BufferPool.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 
+#include <atomic>
 #include <future>
 #include <robin_hood.h>
 #include <variant>
@@ -28,7 +30,7 @@ namespace sp {
 }
 
 namespace sp::vulkan {
-    const int MAX_FRAMES_IN_FLIGHT = 2;
+    const uint32 MAX_FRAMES_IN_FLIGHT = 2;
 
     class DescriptorPool;
     class PerfTimer;
@@ -36,8 +38,6 @@ namespace sp::vulkan {
     class PipelineManager;
     struct PipelineCompileInput;
     class Shader;
-    struct RenderTargetDesc;
-    class RenderTargetManager;
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
@@ -98,6 +98,12 @@ namespace sp::vulkan {
             vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
             vk::Fence fence = {});
 
+        void Submit(vk::ArrayProxy<CommandContextPtr> cmds,
+            vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
+            vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
+            vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
+            vk::Fence fence = {});
+
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);
 
@@ -117,7 +123,7 @@ namespace sp::vulkan {
 
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
-        BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
+        BufferPtr GetBuffer(const BufferDesc &desc);
 
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
@@ -130,8 +136,6 @@ namespace sp::vulkan {
         ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
-
-        RenderTargetPtr GetRenderTarget(const RenderTargetDesc &desc);
 
         AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
@@ -222,7 +226,6 @@ namespace sp::vulkan {
         unique_ptr<HandlePool<vk::Fence>> fencePool;
         unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;
         unique_ptr<PipelineManager> pipelinePool;
-        unique_ptr<RenderTargetManager> renderTargetPool;
         unique_ptr<RenderPassManager> renderPassPool;
         unique_ptr<FramebufferManager> framebufferPool;
 
@@ -230,6 +233,7 @@ namespace sp::vulkan {
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
         std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
+        std::array<uint32, QUEUE_TYPES_COUNT> queueLastSubmit;
         vk::Extent3D imageTransferGranularity;
 
         vk::UniqueSwapchainKHR swapchain;
@@ -270,7 +274,6 @@ namespace sp::vulkan {
 
             // Stores all command contexts created for this frame, so they can be reused in later frames
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
-            std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
 
             vector<InFlightObject> inFlightObjects;
         };
@@ -286,6 +289,9 @@ namespace sp::vulkan {
             std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
             std::array<unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
             std::array<vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
+
+            unique_ptr<BufferPool> bufferPool;
+            std::atomic_bool printBufferStats;
 
             void ReleaseAvailableResources();
         };

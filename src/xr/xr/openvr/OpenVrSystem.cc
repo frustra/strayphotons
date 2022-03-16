@@ -148,6 +148,7 @@ namespace sp::xr {
 
             invViewMat = glm::transpose(eyeToHmdPose * hmdPose);
 
+            Tracef("GetPredictedViewPose");
             return true;
         }
 

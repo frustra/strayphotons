@@ -122,8 +122,17 @@ namespace sp::vulkan {
         totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
         if (totalVtxSize == 0 || totalIdxSize == 0) return;
 
-        auto vertexBuffer = cmd.Device().GetFramePooledBuffer(BUFFER_TYPE_VERTEX_TRANSFER, totalVtxSize);
-        auto indexBuffer = cmd.Device().GetFramePooledBuffer(BUFFER_TYPE_INDEX_TRANSFER, totalIdxSize);
+        BufferDesc vtxDesc;
+        vtxDesc.size = totalVtxSize;
+        vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+        vtxDesc.residency = Residency::CPU_TO_GPU;
+        auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
+
+        BufferDesc idxDesc;
+        idxDesc.size = totalIdxSize;
+        idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
+        idxDesc.residency = Residency::CPU_TO_GPU;
+        auto indexBuffer = cmd.Device().GetBuffer(idxDesc);
 
         ImDrawVert *vtxData;
         ImDrawIdx *idxData;
@@ -164,7 +173,7 @@ namespace sp::vulkan {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
                     auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
-                    cmd.SetTexture(0, 0, texture);
+                    cmd.SetImageView(0, 0, texture);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;

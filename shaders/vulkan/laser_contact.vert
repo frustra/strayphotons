@@ -2,18 +2,22 @@
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
 
-#include "../lib/spatial_util.glsl"
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 #include "../lib/vertex_base.glsl"
 
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec3 outRadiance;
 layout(location = 2) out float outScale;
 
-layout(binding = 0) uniform sampler2DArray gBuffer0;
-layout(binding = 1) uniform sampler2DArray gBuffer1;
-
+INCLUDE_LAYOUT(binding = 0)
 #include "lib/view_states_uniform.glsl"
+
+INCLUDE_LAYOUT(binding = 1)
+#include "lib/exposure_state.glsl"
+
+layout(binding = 2) uniform sampler2DArray gBuffer0;
+layout(binding = 3) uniform sampler2DArray gBuffer1;
 
 layout(push_constant) uniform PushConstants {
     vec3 radiance;
@@ -71,5 +75,5 @@ void main() {
 
     // contact radiance is determined by the material at the contact point
     vec4 gb0 = texture(gBuffer0, vec3(pointScreenUV, gl_ViewID_OVR));
-    outRadiance = radiance * 100 * (gb0.rgb + 0.05) * gb0.a;
+    outRadiance = exposure * radiance * 100 * (gb0.rgb + 0.05) * gb0.a;
 }

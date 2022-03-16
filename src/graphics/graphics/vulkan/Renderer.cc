@@ -12,6 +12,8 @@
 #include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
+#include "graphics/vulkan/render_passes/Exposure.hh"
+#include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
@@ -25,18 +27,19 @@ namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
     static const std::string defaultXRViewTarget = "XRView.LastOutput";
 
-    CVar<string> CVarWindowViewTarget("r.WindowViewTarget", defaultWindowViewTarget, "Primary window's render target");
+    CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
     static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
-    static CVar<string> CVarXRViewTarget("r.XRViewTarget", defaultXRViewTarget, "HMD's render target");
+    static CVar<string> CVarXRViewTarget("r.XRView", defaultXRViewTarget, "HMD's render target");
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
     Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), lighting(scene), guiRenderer(new GuiRenderer(device)) {
-        funcs.Register("listrendertargets", "List all render targets", [&]() {
-            listRenderTargets = true;
+        : device(device), graph(device), scene(device), lighting(scene), voxels(scene),
+          guiRenderer(new GuiRenderer(device)) {
+        funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
+            listImages = true;
         });
 
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -50,9 +53,9 @@ namespace sp::vulkan {
     void Renderer::RenderFrame() {
         BuildFrameGraph();
 
-        if (listRenderTargets) {
-            listRenderTargets = false;
-            auto list = graph.AllRenderTargets();
+        if (listImages) {
+            listImages = false;
+            auto list = graph.AllImages();
             for (const auto &info : list) {
                 auto &extent = info.desc.extent;
                 Logf("%s (%dx%dx%d [%d] %s)",
@@ -74,6 +77,7 @@ namespace sp::vulkan {
             ecs::TransformSnapshot,
             ecs::LaserLine,
             ecs::Light,
+            ecs::VoxelArea,
             ecs::Renderable,
             ecs::View,
             ecs::XRView,
@@ -82,12 +86,23 @@ namespace sp::vulkan {
             ecs::Screen,
             ecs::FocusLock>>();
 
-        scene.LoadState(lock);
-        lighting.LoadState(lock);
+        scene.LoadState(graph, lock);
+        lighting.LoadState(graph, lock);
+        voxels.LoadState(graph, lock);
 
         scene.AddGeometryWarp(graph);
         lighting.AddShadowPasses(graph);
+        voxels.AddVoxelization(graph);
         AddGuis(lock);
+
+#ifdef SP_XR_SUPPORT
+        {
+            auto scope = graph.Scope("XRView");
+            AddXRView(lock);
+            if (graph.HasResource("GBuffer0")) AddDeferredPasses(lock);
+        }
+        AddXRSubmit(lock);
+#endif
 
         {
             auto scope = graph.Scope("FlatView");
@@ -97,14 +112,6 @@ namespace sp::vulkan {
                 if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
             }
         }
-#ifdef SP_XR_SUPPORT
-        {
-            auto scope = graph.Scope("XRView");
-            AddXRView(lock);
-            if (graph.HasResource("GBuffer0")) AddDeferredPasses(lock);
-        }
-        AddXRSubmit(lock);
-#endif
         AddWindowOutput();
         screenshots.AddPass(graph);
 
@@ -118,6 +125,8 @@ namespace sp::vulkan {
         rg::ResourceID sourceID = rg::InvalidResource;
         graph.AddPass("WindowFinalOutput")
             .Build([&](rg::PassBuilder &builder) {
+                builder.RequirePass();
+
                 auto sourceName = CVarWindowViewTarget.Get();
                 auto res = builder.GetResource(sourceName);
                 if (!res && sourceName != defaultWindowViewTarget) {
@@ -129,27 +138,27 @@ namespace sp::vulkan {
                 auto loadOp = LoadOp::DontCare;
 
                 if (res) {
-                    auto format = res.RenderTargetFormat();
+                    auto format = res.ImageFormat();
                     auto layer = CVarWindowViewTargetLayer.Get();
                     if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
                         sourceID = res.id;
                     } else {
                         sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
-                    builder.ShaderRead(sourceID);
+                    builder.Read(sourceID, Access::FragmentShaderSampleImage);
                 } else {
                     loadOp = LoadOp::Clear;
                 }
 
-                RenderTargetDesc desc;
+                rg::ImageDesc desc;
                 desc.extent = swapchainImage->Extent();
                 desc.format = swapchainImage->Format();
                 builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
             })
             .Execute([this, sourceID](rg::Resources &resources, CommandContext &cmd) {
                 if (sourceID != rg::InvalidResource) {
-                    auto source = resources.GetRenderTarget(sourceID)->ImageView();
-                    cmd.SetTexture(0, 0, source);
+                    auto source = resources.GetImageView(sourceID);
+                    cmd.SetImageView(0, 0, source);
                     cmd.DrawScreenCover(source);
                 }
 
@@ -157,7 +166,6 @@ namespace sp::vulkan {
             });
 
         graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
-        graph.RequireResource("WindowFinalOutput");
     }
 
     void Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock) {
@@ -172,7 +180,7 @@ namespace sp::vulkan {
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
+                rg::ImageDesc desc;
                 desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
 
@@ -186,11 +194,11 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eD24UnormS8Uint;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
 
-                builder.ReadBuffer("WarpedVertexBuffer");
-                builder.ReadBuffer(drawIDs.drawCommandsBuffer);
-                builder.ReadBuffer(drawIDs.drawParamsBuffer);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
             .Execute([this, view, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
@@ -268,7 +276,7 @@ namespace sp::vulkan {
 
         graph.AddPass("HiddenAreaStencil0")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
+                rg::ImageDesc desc;
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
@@ -291,7 +299,7 @@ namespace sp::vulkan {
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
+                rg::ImageDesc desc;
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
@@ -304,11 +312,11 @@ namespace sp::vulkan {
                 builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
-                builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
 
-                builder.ReadBuffer("WarpedVertexBuffer");
-                builder.ReadBuffer(drawIDs.drawCommandsBuffer);
-                builder.ReadBuffer(drawIDs.drawParamsBuffer);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
             .Execute([this, viewsByEye, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
@@ -332,7 +340,7 @@ namespace sp::vulkan {
                     auto view = viewsByEye[i];
 
                     if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
-                        view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
+                        view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
                     }
 
                     viewState[i] = GPUViewState(view);
@@ -360,23 +368,22 @@ namespace sp::vulkan {
                     res = builder.GetResource(defaultXRViewTarget);
                 }
 
-                auto format = res.RenderTargetFormat();
+                auto format = res.ImageFormat();
                 if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
                     sourceID = res.id;
                 } else {
                     sourceID = renderer::VisualizeBuffer(graph, res.id);
                 }
 
-                builder.TransferRead(sourceID);
+                builder.Read(sourceID, Access::TransferRead);
+                builder.FlushCommands();
                 builder.RequirePass();
             })
             .Execute([this, sourceID](rg::Resources &resources, DeviceContext &device) {
-                auto xrRenderTarget = resources.GetRenderTarget(sourceID);
+                auto xrImage = resources.GetImageView(sourceID);
 
                 for (size_t i = 0; i < 2; i++) {
-                    this->xrSystem->SubmitView(ecs::XrEye(i),
-                        this->xrRenderPoses[i],
-                        xrRenderTarget->ImageView().get());
+                    this->xrSystem->SubmitView(ecs::XrEye(i), this->xrRenderPoses[i], xrImage.get());
                 }
             });
     }
@@ -403,7 +410,7 @@ namespace sp::vulkan {
         for (auto &gui : guis) {
             graph.AddPass("Gui")
                 .Build([&](rg::PassBuilder &builder) {
-                    RenderTargetDesc desc;
+                    rg::ImageDesc desc;
                     desc.format = vk::Format::eR8G8B8A8Srgb;
 
                     // TODO: figure out a good size based on the transform of the gui
@@ -413,21 +420,29 @@ namespace sp::vulkan {
                         desc.extent = vk::Extent3D(1920, 1080, 1);
                     }
 
+                    desc.mipLevels = CalculateMipmapLevels(desc.extent);
+                    desc.sampler = SamplerType::TrilinearClamp;
+
                     const auto &name = gui.manager->Name();
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
                     gui.renderGraphID = target.id;
                 })
                 .Execute([this, gui](rg::Resources &resources, CommandContext &cmd) {
-                    auto &extent = resources.GetRenderTarget(gui.renderGraphID)->Desc().extent;
+                    auto extent = resources.GetImageView(gui.renderGraphID)->Extent();
                     vk::Rect2D viewport = {{}, {extent.width, extent.height}};
                     guiRenderer->Render(*gui.manager, cmd, viewport);
                 });
+
+            renderer::AddMipmap(graph, gui.renderGraphID);
         }
     }
 
     void Renderer::AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock) {
+        renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
         emissive.AddPass(graph, lock);
+        voxels.AddDebugPass(graph);
+        renderer::AddExposureUpdate(graph);
         renderer::AddBloom(graph);
         renderer::AddTonemap(graph);
 
@@ -459,16 +474,16 @@ namespace sp::vulkan {
 
         graph.AddPass("MenuOverlay")
             .Build([&](rg::PassBuilder &builder) {
-                builder.ShaderRead(builder.LastOutputID());
-                builder.ShaderRead(menuID);
+                builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
+                builder.Read(menuID, Access::FragmentShaderSampleImage);
 
-                auto desc = builder.GetResource(inputID).DeriveRenderTarget();
+                auto desc = builder.GetResource(inputID).DeriveImage();
                 builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([menuID](rg::Resources &resources, CommandContext &cmd) {
-                cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.DrawScreenCover(resources.GetImageView(resources.LastOutputID()));
                 cmd.SetBlending(true);
-                cmd.DrawScreenCover(resources.GetRenderTarget(menuID)->ImageView());
+                cmd.DrawScreenCover(resources.GetImageView(menuID));
             });
     }
 

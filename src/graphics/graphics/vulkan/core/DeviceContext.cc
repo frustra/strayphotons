@@ -11,7 +11,6 @@
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
-#include "graphics/vulkan/core/RenderTarget.hh"
 #include "graphics/vulkan/core/Tracing.hh"
 
 #include <algorithm>
@@ -243,11 +242,14 @@ namespace sp::vulkan {
             queueInfos.push_back(queueInfo);
         }
 
-        vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        vector<const char *> enabledDeviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
             VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
             VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-            VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME};
+            VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+        };
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -274,9 +276,14 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
         Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
+        Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
         Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
+        Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
         Assert(availableVulkan11Features.multiview, "device must support multiview");
+        Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
         Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
+        Assert(availableVulkan12Features.shaderOutputViewportIndex, "device must support shaderOutputViewportIndex");
+        Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
         Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
         Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
         Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
@@ -289,6 +296,8 @@ namespace sp::vulkan {
             "device must support descriptorBindingUpdateUnusedWhilePending");
 
         vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
+        enabledVulkan12Features.shaderOutputViewportIndex = true;
+        enabledVulkan12Features.shaderOutputLayer = true;
         enabledVulkan12Features.drawIndirectCount = true;
         enabledVulkan12Features.runtimeDescriptorArray = true;
         enabledVulkan12Features.descriptorBindingPartiallyBound = true;
@@ -299,6 +308,7 @@ namespace sp::vulkan {
         vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
         enabledVulkan11Features.storageBuffer16BitAccess = true;
         enabledVulkan11Features.multiview = true;
+        enabledVulkan11Features.shaderDrawParameters = true;
         enabledVulkan11Features.pNext = &enabledVulkan12Features;
 
         vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
@@ -307,7 +317,9 @@ namespace sp::vulkan {
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
         enabledDeviceFeatures.multiDrawIndirect = true;
+        enabledDeviceFeatures.multiViewport = true;
         enabledDeviceFeatures.shaderInt16 = true;
+        enabledDeviceFeatures.fragmentStoresAndAtomics = true;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
@@ -327,6 +339,7 @@ namespace sp::vulkan {
             auto familyIndex = queueFamilyIndex[queueType];
             auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
             queues[queueType] = queue;
+            queueLastSubmit[queueType] = 0;
 
             if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
 
@@ -405,7 +418,6 @@ namespace sp::vulkan {
                 device->resetFences({fence});
             });
 
-        renderTargetPool = make_unique<RenderTargetManager>(*this);
         pipelinePool = make_unique<PipelineManager>(*this);
         renderPassPool = make_unique<RenderPassManager>(*this);
         framebufferPool = make_unique<FramebufferManager>(*this);
@@ -413,6 +425,8 @@ namespace sp::vulkan {
         for (auto &threadContextUnique : threadContexts) {
             threadContextUnique = make_unique<ThreadContext>();
             ThreadContext *threadContext = threadContextUnique.get();
+
+            threadContext->bufferPool = make_unique<BufferPool>(*this);
 
             for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                 vk::CommandPoolCreateInfo poolInfo;
@@ -455,6 +469,11 @@ namespace sp::vulkan {
         funcs = make_unique<CFuncCollection>();
         funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
             reloadShaders = true;
+        });
+        funcs->Register("vkbufferstats", "Print Vulkan buffer pool stats", [&]() {
+            for (auto &tc : threadContexts) {
+                tc->printBufferStats = true;
+            }
         });
 
         perfTimer.reset(new PerfTimer(*this));
@@ -500,7 +519,7 @@ namespace sp::vulkan {
 
         vk::SwapchainCreateInfoKHR swapchainInfo;
         swapchainInfo.surface = *surface;
-        swapchainInfo.minImageCount = surfaceCapabilities.minImageCount + 1;
+        swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
@@ -642,6 +661,7 @@ namespace sp::vulkan {
                 auto acquireResult =
                     device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
                 swapchainImageIndex = acquireResult.value;
+                ZoneValue(swapchainImageIndex);
             } catch (const vk::OutOfDateKHRError &) {
                 RecreateSwapchain();
                 return BeginFrame();
@@ -658,11 +678,17 @@ namespace sp::vulkan {
         PrepareResourcesForFrame();
 
         for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+            auto prevQueueSubmitFrame = queueLastSubmit[i];
+            if (prevQueueSubmitFrame < frameCounter - 1) continue;
+
             auto trctx = tracing.tracyContexts[i];
             if (!trctx) continue;
+
             auto ctx = GetFencedCommandContext(CommandContextType(i));
             TracyVkCollect(trctx, ctx->Raw());
             Submit(ctx);
+
+            queueLastSubmit[i] = prevQueueSubmitFrame;
         }
     }
 
@@ -670,7 +696,10 @@ namespace sp::vulkan {
         ZoneScoped;
         for (auto &pool : Frame().commandContexts) {
             // Resets all command buffers in the pool, so they can be recorded and used again.
-            if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
+            if (pool.nextIndex > 0) {
+                ZoneScopedN("ResetCommandPool");
+                device->resetCommandPool(*pool.commandPool);
+            }
             pool.nextIndex = 0;
         }
 
@@ -678,17 +707,7 @@ namespace sp::vulkan {
             return device->getFenceStatus(entry.fence) == vk::Result::eSuccess;
         });
 
-        for (auto &pool : Frame().bufferPools) {
-            erase_if(pool, [&](auto &buf) {
-                if (!buf.used) return true;
-                buf.used = false;
-                return false;
-            });
-        }
-
         Thread().ReleaseAvailableResources();
-
-        renderTargetPool->TickFrame();
     }
 
     void DeviceContext::SwapBuffers() {
@@ -710,6 +729,10 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::EndFrame() {
+        allocatorQueue.Dispatch<void>([this]() {
+            Thread().ReleaseAvailableResources();
+        });
+
         frameEndQueue.Flush();
 
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -767,19 +790,21 @@ namespace sp::vulkan {
         return cmdHandle;
     }
 
-    void DeviceContext::Submit(CommandContextPtr &cmdArg,
+    void DeviceContext::Submit(CommandContextPtr &cmd,
+        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
+        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
+        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
+        vk::Fence fence) {
+        Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence);
+    }
+
+    void DeviceContext::Submit(vk::ArrayProxy<CommandContextPtr> cmds,
         vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
         vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
         vk::Fence fence) {
         ZoneScoped;
         Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread (for now)");
-
-        CommandContextPtr cmd = cmdArg;
-        // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
-        cmdArg.reset();
-        if (cmd->recording) cmd->End();
-
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
         InlineVector<vk::Semaphore, 8> signalSemArray;
@@ -791,13 +816,36 @@ namespace sp::vulkan {
         InlineVector<vk::PipelineStageFlags, 8> waitStageArray;
         waitStageArray.insert(waitStageArray.end(), waitStages.begin(), waitStages.end());
 
-        if (cmd->WritesToSwapchain()) {
-            waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-            waitSemArray.push_back(*Frame().imageAvailableSemaphore);
-            signalSemArray.push_back(*Frame().renderCompleteSemaphore);
+        QueueType queue = QUEUE_TYPES_COUNT;
+
+        for (auto &cmd : cmds) {
+            auto cmdFence = cmd->Fence();
+            auto cmdQueue = QueueType(cmd->GetType());
+
+            if (cmd->WritesToSwapchain()) {
+                waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+                waitSemArray.push_back(*Frame().imageAvailableSemaphore);
+                signalSemArray.push_back(*Frame().renderCompleteSemaphore);
+
+                Assert(!fence, "can't use custom fence on submission to swapchain");
+                Assert(!cmdFence, "can't use command context fence on submission to swapchain");
+                fence = *Frame().inFlightFence;
+                device->resetFences({fence});
+            } else if (cmdFence) {
+                Assert(!fence, "can't submit with multiple fences");
+                fence = cmdFence;
+            }
+
+            Assert(queue == QUEUE_TYPES_COUNT || cmdQueue == queue, "can't submit with multiple queues");
+            queue = cmdQueue;
         }
 
-        const vk::CommandBuffer commandBuffer = cmd->Raw();
+        vector<vk::CommandBuffer> cmdBufs;
+        cmdBufs.reserve(cmds.size());
+        for (auto &cmd : cmds) {
+            if (cmd->recording) cmd->End();
+            cmdBufs.push_back(cmd->Raw());
+        }
 
         vk::SubmitInfo submitInfo;
         submitInfo.waitSemaphoreCount = waitSemArray.size();
@@ -805,23 +853,15 @@ namespace sp::vulkan {
         submitInfo.pWaitDstStageMask = waitStageArray.data();
         submitInfo.signalSemaphoreCount = signalSemArray.size();
         submitInfo.pSignalSemaphores = signalSemArray.data();
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.commandBufferCount = cmdBufs.size();
+        submitInfo.pCommandBuffers = cmdBufs.data();
 
-        auto cmdFence = cmd->Fence();
+        queueLastSubmit[queue] = frameCounter;
+        queues[queue].submit({submitInfo}, fence);
 
-        if (cmd->WritesToSwapchain()) {
-            Assert(!fence, "can't use custom fence on submission to swapchain");
-            Assert(!cmdFence, "can't use command context fence on submission to swapchain");
-            fence = *Frame().inFlightFence;
-            device->resetFences({fence});
-        } else if (cmdFence) {
-            Assert(!fence, "can't use custom fence with command context that has a fence");
-            fence = cmdFence;
+        for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {
+            cmdPtr->reset();
         }
-
-        auto &queue = queues[QueueType(cmd->GetType())];
-        queue.submit({submitInfo}, fence);
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
@@ -837,61 +877,8 @@ namespace sp::vulkan {
         return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
     }
 
-    BufferPtr DeviceContext::GetFramePooledBuffer(BufferType type, vk::DeviceSize size) {
-        Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread");
-
-        auto &pool = Frame().bufferPools[type];
-        for (auto &buf : pool) {
-            if (!buf.used && buf.size == size) {
-                buf.used = true;
-                return buf.buffer;
-            }
-        }
-
-        vk::BufferUsageFlags usage;
-        VmaMemoryUsage residency;
-        switch (type) {
-        case BUFFER_TYPE_UNIFORM:
-            usage = vk::BufferUsageFlagBits::eUniformBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_INDIRECT:
-            usage = vk::BufferUsageFlagBits::eIndirectBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_INDEX_TRANSFER:
-            usage = vk::BufferUsageFlagBits::eIndexBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_STORAGE_TRANSFER:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        case BUFFER_TYPE_STORAGE_LOCAL:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer;
-            residency = VMA_MEMORY_USAGE_GPU_ONLY;
-            break;
-        case BUFFER_TYPE_STORAGE_LOCAL_INDIRECT:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
-                    vk::BufferUsageFlagBits::eTransferDst;
-            residency = VMA_MEMORY_USAGE_GPU_ONLY;
-            break;
-        case BUFFER_TYPE_STORAGE_LOCAL_VERTEX:
-            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
-                    vk::BufferUsageFlagBits::eTransferSrc;
-            residency = VMA_MEMORY_USAGE_GPU_ONLY;
-            break;
-        case BUFFER_TYPE_VERTEX_TRANSFER:
-            usage = vk::BufferUsageFlagBits::eVertexBuffer;
-            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            break;
-        default:
-            Abortf("unknown buffer type %d", type);
-        }
-
-        auto buffer = AllocateBuffer(size, usage, residency);
-        pool.emplace_back(PooledBuffer{buffer, size, true});
-        return buffer;
+    BufferPtr DeviceContext::GetBuffer(const BufferDesc &desc) {
+        return Thread().bufferPool->Get(desc);
     }
 
     AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
@@ -1065,7 +1052,7 @@ namespace sp::vulkan {
 
                     image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
                     factorCmd->SetComputeShader("texture_factor.comp");
-                    factorCmd->SetTexture(0, 0, factorView);
+                    factorCmd->SetImageView(0, 0, factorView);
 
                     struct {
                         glm::vec4 factor;
@@ -1358,10 +1345,6 @@ namespace sp::vulkan {
         return *sampler;
     }
 
-    RenderTargetPtr DeviceContext::GetRenderTarget(const RenderTargetDesc &desc) {
-        return renderTargetPool->Get(desc);
-    }
-
     ShaderHandle DeviceContext::LoadShader(string_view name) {
         auto it = shaderHandles.find(name);
         if (it != shaderHandles.end()) return it->second;
@@ -1445,12 +1428,17 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::ThreadContext::ReleaseAvailableResources() {
+        ZoneScoped;
         for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
             erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
                 auto &cmd = cmdHandle.Get();
-                return cmd->Device()->getFenceStatus(cmd->Fence()) == vk::Result::eSuccess;
+                auto fence = cmd->Fence();
+                return !fence || cmd->Device()->getFenceStatus(fence) == vk::Result::eSuccess;
             });
         }
+
+        bufferPool->Tick();
+        if (printBufferStats.exchange(false)) bufferPool->LogStats();
     }
 
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {

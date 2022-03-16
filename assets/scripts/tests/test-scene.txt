@@ -11,3 +11,6 @@ stepgraphics
 stepphysics 200
 screenshot test-scene3.png
 stepgraphics
+r.VoxelDebug 1
+screenshot test-scene-voxels.png
+stepgraphics

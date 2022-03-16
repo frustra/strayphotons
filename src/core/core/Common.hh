@@ -31,6 +31,12 @@ typedef int64_t int64;
 #define Assert(condition, message) \
     if (!(condition)) ::sp::Abort(message);
 
+#ifdef SP_DEBUG
+    #define DebugAssert(condition, message) Assert(condition, message)
+#else
+    #define DebugAssert(condition, message)
+#endif
+
 namespace sp {
     [[noreturn]] void Abort(const string &message = "");
     void DebugBreak();

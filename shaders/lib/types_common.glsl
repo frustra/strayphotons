@@ -51,17 +51,9 @@ struct LightSensor {
     float id1;
 };
 
-struct VoxelArea {
-    vec3 areaMin;
-    vec3 areaMax;
+struct VoxelState {
+    mat4 worldToVoxel;
+    ivec3 gridSize;
 };
-
-#ifdef MAX_VOXEL_AREAS
-struct VoxelInfo {
-    vec3 center;
-    float size;
-    VoxelArea areas[MAX_VOXEL_AREAS];
-};
-#endif
 
 #endif

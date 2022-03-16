@@ -19,18 +19,18 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("BloomCombine")
             .Build([&](rg::PassBuilder &builder) {
-                auto source = builder.ShaderRead(sourceID);
-                auto desc = source.DeriveRenderTarget();
+                builder.Read(sourceID, Access::FragmentShaderSampleImage);
+                auto desc = builder.DeriveImage(sourceID);
                 builder.OutputColorAttachment(0, "Bloom", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                builder.ShaderRead(blur1);
-                builder.ShaderRead(blur2);
+                builder.Read(blur1, Access::FragmentShaderSampleImage);
+                builder.Read(blur2, Access::FragmentShaderSampleImage);
             })
             .Execute([sourceID, blur1, blur2](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "bloom_combine.frag");
-                cmd.SetTexture(0, 0, resources.GetRenderTarget(sourceID)->ImageView());
-                cmd.SetTexture(0, 1, resources.GetRenderTarget(blur1)->ImageView());
-                cmd.SetTexture(0, 2, resources.GetRenderTarget(blur2)->ImageView());
+                cmd.SetImageView(0, 0, resources.GetImageView(sourceID));
+                cmd.SetImageView(0, 1, resources.GetImageView(blur1));
+                cmd.SetImageView(0, 2, resources.GetImageView(blur2));
                 cmd.Draw(3);
             });
     }

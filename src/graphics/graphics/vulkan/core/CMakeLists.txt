@@ -1,4 +1,6 @@
 target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
+    Access.cc
+    BufferPool.cc
     CommandContext.cc
     Common.cc
     DeviceContext.cc
@@ -7,7 +9,6 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     PerfTimer.cc
     Pipeline.cc
     RenderPass.cc
-    RenderTarget.cc
     UniqueID.cc
     Util.cc
 )

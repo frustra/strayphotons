@@ -7,7 +7,7 @@ namespace sp::vulkan::renderer {
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}
-        void LoadState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
+        void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);

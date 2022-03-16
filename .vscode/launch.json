@@ -8,39 +8,6 @@
             "name": "StrayPhotons (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/sp.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "sourceFileMap": {
-                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
-            }
-        },
-        {
-            "name": "StrayPhotons (gdb)",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/sp",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
-            "name": "StrayPhotons Vulkan (vsdbg)",
-            "type": "cppvsdbg",
-            "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
             "args": ["--with-validation-layers"],
             "stopAtEntry": false,
@@ -52,21 +19,7 @@
             }
         },
         {
-            "name": "StrayPhotons Vulkan No Validation (vsdbg)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-vk.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "sourceFileMap": {
-                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
-            }
-        },
-        {
-            "name": "StrayPhotons Vulkan (gdb)",
+            "name": "StrayPhotons (gdb)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
@@ -85,7 +38,54 @@
             ]
         },
         {
-            "name": "StrayPhotons Vulkan No Validation (gdb)",
+            "name": "StrayPhotons No VR (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-vk.exe",
+            "args": ["--no-vr"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "sourceFileMap": {
+                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
+            }
+        },
+        {
+            "name": "StrayPhotons No VR (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-vk",
+            "args": ["--no-vr"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "StrayPhotons No Validation (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-vk.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "sourceFileMap": {
+                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
+            }
+        },
+        {
+            "name": "StrayPhotons No Validation (gdb)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",

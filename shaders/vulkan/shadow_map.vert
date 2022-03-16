@@ -4,11 +4,13 @@
 layout(num_views = 1) in;
 
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 #include "../lib/vertex_base.glsl"
 
 layout(location = 0) in vec3 inPos;
 layout(location = 0) out vec3 outViewPos;
 
+INCLUDE_LAYOUT(binding = 10)
 #include "lib/view_states_uniform.glsl"
 
 void main() {

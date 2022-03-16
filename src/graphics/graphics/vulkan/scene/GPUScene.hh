@@ -65,7 +65,7 @@ namespace sp::vulkan {
     public:
         GPUScene(DeviceContext &device);
         void Flush();
-        void LoadState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
+        void LoadState(rg::RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
         shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
@@ -73,7 +73,9 @@ namespace sp::vulkan {
             rg::ResourceID drawParamsBuffer;
         };
 
-        DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
+        DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
+            ecs::Renderable::VisibilityMask viewMask,
+            uint32 instanceCount = 1);
 
         void DrawSceneIndirect(CommandContext &cmd,
             BufferPtr vertexBuffer,
@@ -88,7 +90,6 @@ namespace sp::vulkan {
         BufferPtr models;
 
         uint32 renderableCount = 0;
-        BufferPtr renderableEntityList;
 
         uint32 vertexCount = 0;
         uint32 primitiveCount = 0;
@@ -100,5 +101,6 @@ namespace sp::vulkan {
         void FlushMeshes();
         PreservingMap<string, Mesh> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
+        vector<GPURenderableEntity> renderables;
     };
 } // namespace sp::vulkan
