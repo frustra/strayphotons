@@ -92,6 +92,8 @@ namespace sp::vulkan::render_graph {
                 auto imageView = resources.GetImageView(attachment.resourceID);
                 if (attachment.arrayIndex != ~0u && imageView->ArrayLayers() > 1) {
                     imageView = resources.GetImageLayerView(attachment.resourceID, attachment.arrayIndex);
+                } else if (imageView->MipLevels() > 1) {
+                    imageView = resources.GetImageMipView(attachment.resourceID, 0);
                 }
 
                 if (i != MAX_COLOR_ATTACHMENTS) {

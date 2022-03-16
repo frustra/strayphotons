@@ -73,6 +73,15 @@ namespace sp::vulkan::render_graph {
         return GetPooledImage(id)->LayerImageView(layer);
     }
 
+    ImageViewPtr Resources::GetImageMipView(string_view name, uint32 mip) {
+        return GetImageMipView(GetID(name), mip);
+    }
+
+    ImageViewPtr Resources::GetImageMipView(ResourceID id, uint32 mip) {
+        if (id >= resources.size()) return nullptr;
+        return GetPooledImage(id)->MipImageView(mip);
+    }
+
     PooledImagePtr Resources::GetPooledImage(ResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
