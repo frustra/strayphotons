@@ -5,9 +5,9 @@
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 
+#include <bit>
 #include <functional>
 #include <glm/glm.hpp>
-#include <new>
 #include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
 
@@ -132,9 +132,8 @@ namespace sp::vulkan {
         void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
 
         template<typename T>
-        void SetShaderConstant(ShaderStage stage, uint32 index, const T &data) {
-            static_assert(sizeof(T) == sizeof(uint32), "type must be 4 bytes");
-            SetShaderConstant(stage, index, reinterpret_cast<const uint32 &>(data));
+        void SetShaderConstant(ShaderStage stage, uint32 index, T data) {
+            SetShaderConstant(stage, index, std::bit_cast<uint32>(data));
         }
 
         void SetShaderConstant(ShaderStage stage, uint32 index, bool data) {
