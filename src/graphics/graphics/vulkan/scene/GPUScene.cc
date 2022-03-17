@@ -69,7 +69,7 @@ namespace sp::vulkan {
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer("RenderableEntities",
-                    std::max(1llu, renderables.size()) * sizeof(renderables.front()),
+                    std::max(size_t(1), renderables.size()) * sizeof(renderables.front()),
                     Residency::CPU_TO_GPU,
                     Access::HostWrite);
             })
