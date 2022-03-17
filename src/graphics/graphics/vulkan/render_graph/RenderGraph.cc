@@ -92,6 +92,8 @@ namespace sp::vulkan::render_graph {
                 auto imageView = resources.GetImageView(attachment.resourceID);
                 if (attachment.arrayIndex != ~0u && imageView->ArrayLayers() > 1) {
                     imageView = resources.GetImageLayerView(attachment.resourceID, attachment.arrayIndex);
+                } else if (imageView->MipLevels() > 1) {
+                    imageView = resources.GetImageMipView(attachment.resourceID, 0);
                 }
 
                 if (i != MAX_COLOR_ATTACHMENTS) {
@@ -192,7 +194,7 @@ namespace sp::vulkan::render_graph {
     void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
-            if (nextAccess == Access::Undefined || nextAccess >= Access::AccessTypesCount) continue;
+            if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
             auto &next = GetAccessInfo(nextAccess);
 
             auto &res = resources.resources[access.id];
@@ -204,7 +206,7 @@ namespace sp::vulkan::render_graph {
 
                 auto &image = view->Image();
                 auto lastAccess = image->LastAccess();
-                if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::Undefined) continue;
+                if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::None) continue;
 
                 auto last = GetAccessInfo(lastAccess);
                 if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
@@ -220,14 +222,14 @@ namespace sp::vulkan::render_graph {
                     next.stageMask,
                     next.accessMask);
 
-                image->SetAccess(Access::Undefined, nextAccess);
+                image->SetAccess(Access::None, nextAccess);
             } else if (res.type == Resource::Type::Buffer) {
                 auto buffer = resources.GetBuffer(access.id);
                 auto lastAccess = buffer->LastAccess();
-                buffer->SetAccess(Access::Undefined, nextAccess);
+                buffer->SetAccess(Access::None, nextAccess);
 
                 if (nextAccess == Access::HostWrite) continue;
-                if (lastAccess == Access::Undefined) continue;
+                if (lastAccess == Access::None) continue;
 
                 if (!cmd) cmd = device.GetFrameCommandContext();
 

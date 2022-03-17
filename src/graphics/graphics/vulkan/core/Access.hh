@@ -4,7 +4,7 @@
 
 namespace sp::vulkan {
     enum class Access : uint8_t {
-        Undefined,
+        None,
 
         // Reads
         IndirectBuffer,

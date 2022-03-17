@@ -73,10 +73,20 @@ namespace sp::vulkan::render_graph {
         return GetPooledImage(id)->LayerImageView(layer);
     }
 
+    ImageViewPtr Resources::GetImageMipView(string_view name, uint32 mip) {
+        return GetImageMipView(GetID(name), mip);
+    }
+
+    ImageViewPtr Resources::GetImageMipView(ResourceID id, uint32 mip) {
+        if (id >= resources.size()) return nullptr;
+        return GetPooledImage(id)->MipImageView(mip);
+    }
+
     PooledImagePtr Resources::GetPooledImage(ResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
-        Assert(res.type == Resource::Type::Image, "resource is not a render target");
+        Assertf(res.type == Resource::Type::Image, "resource %s is not a render target", resourceNames[id]);
+        Assertf(RefCount(id) > 0, "can't get image %s without accessing it", resourceNames[id]);
         auto &target = images[res.id];
         if (!target) target = GetImageFromPool(res.imageDesc);
         return target;
@@ -89,7 +99,8 @@ namespace sp::vulkan::render_graph {
     BufferPtr Resources::GetBuffer(ResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
-        Assert(res.type == Resource::Type::Buffer, "resource is not a buffer");
+        Assertf(res.type == Resource::Type::Buffer, "resource %s is not a buffer", resourceNames[id]);
+        Assertf(RefCount(id) > 0, "can't get buffer %s without accessing it", resourceNames[id]);
         auto &buf = buffers[res.id];
         if (!buf) buf = device.GetBuffer(res.bufferDesc);
         DebugAssert(res.bufferDesc.usage == buf->Usage(), "buffer usage mismatch");

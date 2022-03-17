@@ -3,6 +3,8 @@
 #include "Common.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
+#include <span>
+
 namespace sp::vulkan::renderer {
     class Lighting {
     public:
@@ -10,6 +12,7 @@ namespace sp::vulkan::renderer {
         void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
+        void AddGelTextures(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
 
     private:
@@ -19,8 +22,8 @@ namespace sp::vulkan::renderer {
         glm::ivec2 shadowAtlasSize = {};
         ecs::View views[MAX_LIGHTS];
 
-        int gelCount;
-        string gelNames[MAX_LIGHT_GELS];
+        std::pair<string, const TextureIndex *> gelTextures[MAX_LIGHTS];
+        robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
 
         struct GPULight {
             glm::vec3 position;

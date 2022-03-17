@@ -31,6 +31,7 @@ namespace sp::vulkan {
 
         ImageViewPtr Get(TextureIndex i) {
             if (i == 0) return GetBlankPixel();
+            Assertf(i < textures.size(), "Invalid texture infex: %u", i);
             return textures[i];
         }
 

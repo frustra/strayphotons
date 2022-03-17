@@ -68,6 +68,8 @@ namespace sp::vulkan::render_graph {
         ImageViewPtr GetImageView(string_view name);
         ImageViewPtr GetImageLayerView(ResourceID id, uint32 layer);
         ImageViewPtr GetImageLayerView(string_view name, uint32 layer);
+        ImageViewPtr GetImageMipView(ResourceID id, uint32 mip);
+        ImageViewPtr GetImageMipView(string_view name, uint32 mip);
 
         BufferPtr GetBuffer(ResourceID id);
         BufferPtr GetBuffer(string_view name);

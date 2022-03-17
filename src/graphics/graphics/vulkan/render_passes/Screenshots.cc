@@ -43,6 +43,7 @@ namespace sp::vulkan::renderer {
                         }
                         builder.Read(sourceID, Access::TransferRead);
                         builder.RequirePass();
+                        builder.FlushCommands();
                     }
                 })
                 .Execute([screenshotPath, sourceID](rg::Resources &resources, DeviceContext &device) {

@@ -118,7 +118,7 @@ namespace sp::vulkan {
                             Access::TransferWrite);
                         bufferIDs.drawCommandsBuffer = drawCmds.id;
                     })
-                    .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
+                    .Execute([bufferIDs](rg::Resources &resources, CommandContext &cmd) {
                         auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
                         cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
                     });
@@ -188,7 +188,7 @@ namespace sp::vulkan {
                             Residency::GPU_ONLY,
                             Access::TransferWrite);
                     })
-                    .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                    .Execute([](rg::Resources &resources, CommandContext &cmd) {
                         cmd.Raw().fillBuffer(*resources.GetBuffer("WarpedVertexDrawCmds"), 0, sizeof(uint32), 0);
                     });
 

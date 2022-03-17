@@ -205,7 +205,7 @@ namespace sp::vulkan {
         vk::DeviceSize subBufferBytesPerElement = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 
-        Access lastAccess = Access::Undefined;
+        Access lastAccess = Access::None;
     };
 } // namespace sp::vulkan
 
