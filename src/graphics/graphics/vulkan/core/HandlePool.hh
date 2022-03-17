@@ -12,8 +12,6 @@ namespace sp::vulkan {
     class SharedHandle {
     public:
         struct Data {
-            std::atomic_size_t refCount;
-
             struct PoolRef {
                 vector<SharedHandle<HandleType>> *freeList;
                 LockFreeMutex *freeMutex;
@@ -21,7 +19,12 @@ namespace sp::vulkan {
 #ifdef HANDLE_POOL_DEBUG_UNFREED_HANDLES
                 shared_ptr<std::atomic_flag> destroyed;
 #endif
-            } pool;
+            };
+
+            std::atomic_size_t refCount;
+            PoolRef pool;
+
+            Data(PoolRef &&pool) : refCount(1), pool(std::move(pool)) {}
         };
 
         SharedHandle() {}
@@ -35,8 +38,8 @@ namespace sp::vulkan {
             if (data) data->refCount++;
         }
 
-        explicit SharedHandle(HandleType &&handle, Data::PoolRef &&pool)
-            : handle(std::move(handle)), data(new Data(1, std::move(pool))) {}
+        explicit SharedHandle(HandleType &&handle, typename Data::PoolRef &&pool)
+            : handle(std::move(handle)), data(new Data(std::move(pool))) {}
 
         ~SharedHandle() {
             Destroy();

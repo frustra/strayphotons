@@ -9,3 +9,6 @@ stepgraphics
 stepphysics 120
 screenshot sponza-test-frame.png
 stepgraphics
+r.VoxelDebug 1
+screenshot sponza-test-voxels.png
+stepgraphics
