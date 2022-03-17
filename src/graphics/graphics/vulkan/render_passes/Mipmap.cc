@@ -11,7 +11,7 @@ namespace sp::vulkan::renderer {
                 builder.Read(id, Access::TransferRead);
             })
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
-                const auto &image = resources.GetRenderTarget(id)->ImageView()->Image();
+                const auto &image = resources.GetImageView(id)->Image();
 
                 ImageBarrierInfo transferMips;
                 transferMips.trackImageLayout = false;

@@ -102,7 +102,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("ShadowMaps")
             .Build([&](rg::PassBuilder &builder) {
-                RenderTargetDesc desc;
+                ImageDesc desc;
                 auto extent = glm::max(glm::ivec2(1), shadowAtlasSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
@@ -159,7 +159,7 @@ namespace sp::vulkan::renderer {
                 builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
                 builder.Read(depthTarget, Access::FragmentShaderSampleImage);
 
-                auto desc = builder.DeriveRenderTarget(gBuffer0);
+                auto desc = builder.DeriveImage(gBuffer0);
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
@@ -179,10 +179,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetImageView(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
-                cmd.SetImageView(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
-                cmd.SetImageView(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
-                cmd.SetImageView(0, 3, resources.GetRenderTarget(depthTarget)->ImageView());
+                cmd.SetImageView(0, 0, resources.GetImageView("GBuffer0"));
+                cmd.SetImageView(0, 1, resources.GetImageView("GBuffer1"));
+                cmd.SetImageView(0, 2, resources.GetImageView("GBuffer2"));
+                cmd.SetImageView(0, 3, resources.GetImageView(depthTarget));
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
 

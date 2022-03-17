@@ -78,7 +78,7 @@ namespace sp::vulkan::render_graph {
         void BeginScope(string_view name);
         void EndScope();
 
-        // TODO: add SetRenderTarget etc. on Resources, allowing importing arbitrary resources in Execute
+        // TODO: add SetImage etc. on Resources, allowing importing arbitrary resources in Execute
         void SetTargetImageView(string_view name, ImageViewPtr view);
 
         void RequireResource(string_view name) {
@@ -91,11 +91,11 @@ namespace sp::vulkan::render_graph {
 
         void Execute();
 
-        struct RenderTargetInfo {
+        struct PooledImageInfo {
             string name;
-            RenderTargetDesc desc;
+            ImageDesc desc;
         };
-        vector<RenderTargetInfo> AllRenderTargets();
+        vector<PooledImageInfo> AllImages();
 
         ResourceID LastOutputID() const {
             return resources.lastOutputID;
