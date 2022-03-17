@@ -132,9 +132,9 @@ namespace sp::vulkan {
         void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
 
         template<typename T>
-        void SetShaderConstant(ShaderStage stage, uint32 index, T data) {
+        void SetShaderConstant(ShaderStage stage, uint32 index, const T &data) {
             static_assert(sizeof(T) == sizeof(uint32), "type must be 4 bytes");
-            SetShaderConstant(stage, index, *std::launder(reinterpret_cast<uint32 *>(&data)));
+            SetShaderConstant(stage, index, reinterpret_cast<const uint32 &>(data));
         }
 
         void SetShaderConstant(ShaderStage stage, uint32 index, bool data) {
