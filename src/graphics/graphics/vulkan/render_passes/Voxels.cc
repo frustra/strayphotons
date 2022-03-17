@@ -123,14 +123,10 @@ namespace sp::vulkan::renderer {
                 desc.imageType = vk::ImageType::e3D;
 
                 desc.format = vk::Format::eR32Uint;
-                builder.CreateImage("FillCounters",
-                    desc,
-                    clearCounters ? Access::TransferWrite : Access::FragmentShaderWrite);
+                builder.CreateImage("FillCounters", desc, clearCounters ? Access::TransferWrite : Access::None);
 
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
-                builder.CreateImage("Radiance",
-                    desc,
-                    clearRadiance ? Access::TransferWrite : Access::FragmentShaderWrite);
+                builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
 
                 builder.CreateBuffer("FragmentCounts",
                     sizeof(GPUVoxelFragmentCounts),
@@ -140,19 +136,19 @@ namespace sp::vulkan::renderer {
                 builder.CreateBuffer("FragmentList",
                     sizeof(GPUVoxelFragment) * fragmentListSize,
                     Residency::GPU_ONLY,
-                    Access::FragmentShaderWrite);
+                    Access::None);
                 builder.CreateBuffer("OverflowList0",
                     sizeof(GPUVoxelFragment) * fragmentListSize,
                     Residency::GPU_ONLY,
-                    Access::FragmentShaderWrite);
+                    Access::None);
                 builder.CreateBuffer("OverflowList1",
                     sizeof(GPUVoxelFragment) * fragmentListSize,
                     Residency::GPU_ONLY,
-                    Access::FragmentShaderWrite);
+                    Access::None);
                 builder.CreateBuffer("OverflowList2",
                     sizeof(GPUVoxelFragment) * fragmentListSize,
                     Residency::GPU_ONLY,
-                    Access::FragmentShaderWrite);
+                    Access::None);
             })
             .Execute([clearRadiance, clearCounters](rg::Resources &resources, CommandContext &cmd) {
                 if (clearRadiance) {
@@ -234,8 +230,8 @@ namespace sp::vulkan::renderer {
                     vk::ImageLayout::eColorAttachmentOptimal,
                     vk::PipelineStageFlagBits::eTopOfPipe,
                     {},
-                    vk::PipelineStageFlagBits::eFragmentShader,
-                    vk::AccessFlagBits::eShaderWrite);
+                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                    vk::AccessFlagBits::eColorAttachmentWrite);
 
                 RenderPassInfo renderPass;
                 renderPass.PushColorAttachment(dummyTarget->ImageView(), LoadOp::DontCare, StoreOp::DontCare);

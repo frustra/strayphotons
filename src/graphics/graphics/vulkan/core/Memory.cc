@@ -122,7 +122,7 @@ namespace sp::vulkan {
     }
 
     void Buffer::SetAccess(Access oldAccess, Access newAccess) {
-        DebugAssert(oldAccess == Access::Undefined || oldAccess == lastAccess, "unexpected access");
+        DebugAssert(oldAccess == Access::None || oldAccess == lastAccess, "unexpected access");
         lastAccess = newAccess;
     }
 } // namespace sp::vulkan

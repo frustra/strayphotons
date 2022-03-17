@@ -2,7 +2,7 @@
 
 namespace sp::vulkan {
     const AccessInfo AccessInfo::Map[(size_t)Access::AccessTypesCount] = {
-        // Undefined
+        // None
         {{}, {}, {}, {}, vk::ImageLayout::eUndefined},
         // IndirectBuffer
         {vk::PipelineStageFlagBits::eDrawIndirect,

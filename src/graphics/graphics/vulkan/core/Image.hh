@@ -125,7 +125,7 @@ namespace sp::vulkan {
         vk::Extent3D extent;
         uint32 mipLevels = 0, arrayLayers = 0;
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
-        Access lastAccess = Access::Undefined;
+        Access lastAccess = Access::None;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
     };
 

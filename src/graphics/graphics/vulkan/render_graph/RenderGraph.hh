@@ -13,10 +13,23 @@ namespace sp::vulkan::render_graph {
     public:
         RenderGraph(DeviceContext &device);
 
+        class InitialPassState;
+
+        InitialPassState AddPass(string_view name) {
+            return {*this, name};
+        }
+
         class InitialPassState {
         public:
             InitialPassState(RenderGraph &graph, string_view name) : graph(graph), name(name) {}
 
+            /**
+             * Call once after AddPass to configure the pass, and
+             * declare any resources this pass will create and access.
+             *
+             *     .Build([&](rg::PassBuilder &pass) {
+             *     })
+             */
             template<typename SetupFunc>
             InitialPassState &Build(SetupFunc setupFunc) {
                 Assert(passIndex == ~0u, "multiple Build calls for the same pass");
@@ -31,6 +44,15 @@ namespace sp::vulkan::render_graph {
                 return *this;
             }
 
+            /**
+             * Call Execute once after Build to attach an execution callback.
+             * Access resources here. If your callback accepts a CommandContext,
+             * it will be passed a CommandContext in default state,
+             * which will be submitted along with other passes in a batch.
+             *
+             *     .Execute([](rg::Resources &resources, CommandContext &cmd) {
+             *     });
+             */
             ResourceID Execute(std::function<void(Resources &, CommandContext &)> executeFunc) {
                 Assert(passIndex != ~0u, "Build must be called before Execute");
                 Assert(executeFunc, "Execute function must be defined");
@@ -40,6 +62,21 @@ namespace sp::vulkan::render_graph {
                 return graph.LastOutputID();
             }
 
+            /**
+             * Call Execute once after Build to attach an execution callback.
+             * This is useful for writing mapped memory, e.g. uploading uniform buffers.
+             *
+             * If your callback accepts a DeviceContext,
+             * you are responsible for ensuring work is queued in the right order.
+             *
+             * If you only access mapped buffers, you have nothing to ensure.
+             *
+             * If you queue commands, and care about queue ordering relative to other passes,
+             * pass.FlushCommands() must be declared in Build.
+             *
+             *     .Execute([](rg::Resources &resources, DeviceContext &device) {
+             *     });
+             */
             ResourceID Execute(std::function<void(Resources &, DeviceContext &)> executeFunc) {
                 Assert(passIndex != ~0u, "Build must be called before Execute");
                 Assert(executeFunc, "Execute function must be defined");
@@ -54,10 +91,6 @@ namespace sp::vulkan::render_graph {
             string_view name;
             uint32 passIndex = ~0u;
         };
-
-        InitialPassState AddPass(string_view name) {
-            return {*this, name};
-        }
 
         class GraphScope {
             RenderGraph &graph;
