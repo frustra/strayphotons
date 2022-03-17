@@ -80,6 +80,7 @@ namespace sp::vulkan::render_graph {
 
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
+            AddPreBarriers(cmd, pass); // creates cmd if necessary
             if (pass.flushCommands) submitPendingCmds();
 
             RenderPassInfo renderPassInfo;
@@ -151,8 +152,6 @@ namespace sp::vulkan::render_graph {
                 pass.name.data(),
                 pass.name.size(),
                 true);
-
-            AddPreBarriers(cmd, pass); // creates cmd if necessary
 
             if (pass.isRenderPass) {
                 if (!cmd) cmd = device.GetFrameCommandContext();

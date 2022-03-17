@@ -92,6 +92,8 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::CreateBuffer(string_view name, size_t size, Residency residency, Access access) {
+        Assert(size > 0, "can't create a buffer of size 0");
+
         BufferDesc desc;
         desc.size = size;
         desc.residency = residency;
