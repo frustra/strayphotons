@@ -177,7 +177,7 @@ namespace sp {
                     manager.joints.erase(entity);
 
                     auto dynamic = actor->is<PxRigidDynamic>();
-                    if (dynamic) dynamic->wakeUp();
+                    if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
                 }
             }
 
@@ -264,7 +264,7 @@ namespace sp {
                     joint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
                 }
                 auto dynamic = actor->is<PxRigidDynamic>();
-                if (dynamic) dynamic->wakeUp();
+                if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
             }
 
             if (physics.constraint.Has<ecs::TransformTree>(lock)) {

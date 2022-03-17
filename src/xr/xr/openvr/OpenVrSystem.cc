@@ -39,7 +39,7 @@ namespace sp::xr {
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr-system");
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_system");
         loaded.clear();
         vrSystem.reset();
     }
@@ -80,10 +80,9 @@ namespace sp::xr {
         RegisterModels();
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "vr-system",
+            "vr_system",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto vrOrigin = scene->NewSystemEntity(lock, scene, vrOriginEntity.Name());
-                vrOrigin.Set<ecs::TransformSnapshot>(lock);
                 vrOrigin.Set<ecs::TransformTree>(lock);
 
                 static const std::array specialEntities = {vrHmdEntity,
@@ -91,14 +90,13 @@ namespace sp::xr {
                     vrControllerRightEntity};
                 for (auto &namedEntity : specialEntities) {
                     auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
-                    ent.Set<ecs::TransformSnapshot>(lock);
                     ent.Set<ecs::TransformTree>(lock);
                     ent.Set<ecs::EventBindings>(lock);
                     ent.Set<ecs::SignalOutput>(lock);
                 }
 
                 for (size_t i = 0; i < reservedEntities.size(); i++) {
-                    reservedEntities[i] = ecs::NamedEntity("player", "vr-device" + std::to_string(i));
+                    reservedEntities[i] = ecs::NamedEntity("vr", "device" + std::to_string(i));
                 }
 
                 uint32_t vrWidth, vrHeight;
@@ -122,6 +120,8 @@ namespace sp::xr {
                     view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
                 }
             });
+
+        GetSceneManager().QueueActionAndBlock(SceneAction::AddScene, "vr");
 
         return true;
     }
@@ -235,7 +235,7 @@ namespace sp::xr {
         if (missingEntities) {
             ZoneScopedN("OpenVrSystem::AddMissingEntities");
             GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-                "vr-system",
+                "vr_system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto namedEntity : trackedDevices) {
                         if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {

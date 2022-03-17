@@ -69,7 +69,7 @@ namespace sp::vulkan {
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer("RenderableEntities",
-                    renderables.size() * sizeof(renderables.front()),
+                    std::max(size_t(1), renderables.size()) * sizeof(renderables.front()),
                     Residency::CPU_TO_GPU,
                     Access::HostWrite);
             })
@@ -224,7 +224,7 @@ namespace sp::vulkan {
                 builder.Read("WarpedVertexDrawParams", Access::VertexShaderReadStorage);
 
                 builder.CreateBuffer("WarpedVertexBuffer",
-                    sizeof(SceneVertex) * vertexCount,
+                    sizeof(SceneVertex) * std::max(1u, vertexCount),
                     Residency::GPU_ONLY,
                     Access::VertexShaderWrite);
             })

@@ -23,6 +23,15 @@ namespace ecs {
                 auto scene = state.scene.lock();
                 Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
 
+                robin_hood::unordered_set<size_t> jointNodes;
+                for (auto &skin : model->skins) {
+                    if (skin) {
+                        for (auto &joint : skin->joints) {
+                            jointNodes.emplace(joint.jointNodeIndex);
+                        }
+                    }
+                }
+
                 std::deque<std::pair<size_t, Entity>> nodes;
                 for (auto &nodeId : model->rootNodes) {
                     nodes.emplace_back(nodeId, ent);
@@ -50,16 +59,36 @@ namespace ecs {
                     if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
                     Component<TransformTree>::Apply(transform, lock, newEntity);
 
+                    PhysicsGroup group = PhysicsGroup::World;
+                    auto physicsGroupParam = state.GetParam<std::string>("physics_group");
+                    if (!physicsGroupParam.empty()) {
+                        sp::to_lower(physicsGroupParam);
+                        if (physicsGroupParam == "noclip") {
+                            group = PhysicsGroup::NoClip;
+                        } else if (physicsGroupParam == "world") {
+                            group = PhysicsGroup::World;
+                        } else if (physicsGroupParam == "interactive") {
+                            group = PhysicsGroup::Interactive;
+                        } else if (physicsGroupParam == "player") {
+                            group = PhysicsGroup::Player;
+                        } else if (physicsGroupParam == "player_hands") {
+                            group = PhysicsGroup::PlayerHands;
+                        } else {
+                            Abortf("Unknown gltf physics group param: %s", physicsGroupParam);
+                        }
+                    }
+
                     if (node.meshIndex) {
                         if (state.GetParam<bool>("render")) {
                             Renderable renderable(asyncGltf, *node.meshIndex);
-                            ecs::Component<Renderable>::Apply(renderable, lock, newEntity);
+                            Component<Renderable>::Apply(renderable, lock, newEntity);
                         }
 
                         auto physicsParam = state.GetParam<std::string>("physics");
                         if (!physicsParam.empty()) {
                             sp::to_lower(physicsParam);
-                            Physics physics(asyncGltf, *node.meshIndex);
+                            PhysicsShape::ConvexMesh mesh(asyncGltf, *node.meshIndex);
+                            Physics physics(mesh);
                             if (physicsParam == "dynamic") {
                                 physics.dynamic = true;
                             } else if (physicsParam == "kinematic") {
@@ -68,9 +97,45 @@ namespace ecs {
                             } else if (physicsParam == "static") {
                                 physics.dynamic = false;
                             } else {
-                                Abortf("Unknown gltf_physics param: %s", physicsParam);
+                                Abortf("Unknown gltf physics param: %s", physicsParam);
                             }
-                            ecs::Component<Physics>::Apply(physics, lock, newEntity);
+                            physics.group = group;
+                            Component<Physics>::Apply(physics, lock, newEntity);
+                        }
+                    }
+
+                    auto jointsParam = state.GetParam<std::string>("physics_joints");
+                    if (!jointsParam.empty() && transform.parent.Has<TransformTree>(lock)) {
+                        auto it = jointNodes.find(nodeId);
+                        if (it != jointNodes.end()) {
+                            sp::to_lower(jointsParam);
+                            auto parentTransform = transform.parent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                            auto globalTransform = transform.GetGlobalTransform(lock);
+                            glm::vec3 boneVector = globalTransform.GetPosition() - parentTransform.GetPosition();
+                            float boneLength = glm::length(boneVector);
+                            Physics physics;
+                            if (boneLength > 0.0f) {
+                                physics.shape = PhysicsShape::Capsule(boneLength, 0.01f * globalTransform.GetScale().x);
+                            } else {
+                                physics.shape = PhysicsShape::Sphere(0.01f * globalTransform.GetScale().x);
+                            }
+                            if (jointsParam == "spherical") {
+                                // physics.SetJoint(transform.parent,
+                                //     PhysicsJointType::Spherical,
+                                //     glm::vec2(),
+                                //     -boneVector);
+                            } else if (jointsParam == "hinge") {
+                                // physics.SetJoint(transform.parent, PhysicsJointType::Hinge, glm::vec2(),
+                                // -boneVector);
+                            } else {
+                                Abortf("Unknown physics_joints param: %s", jointsParam);
+                            }
+                            auto inversePose = glm::inverse(transform.pose.GetRotation());
+                            physics.shapeTransform = Transform(inversePose * glm::vec3(boneLength * 0.5f, 0, 0),
+                                inversePose);
+                            physics.group = group;
+                            physics.kinematic = true;
+                            Component<Physics>::Apply(physics, lock, newEntity);
                         }
                     }
 

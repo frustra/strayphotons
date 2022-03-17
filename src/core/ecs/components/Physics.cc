@@ -13,9 +13,59 @@ namespace ecs {
         auto scene = scenePtr.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
-                physics.model = sp::GAssets.LoadGltf(param.second.get<string>());
-            } else if (param.first == "mesh") {
-                physics.meshIndex = (size_t)param.second.get<double>();
+                if (physics.shape) {
+                    Errorf("Physics component defines multiple shapes: model, %s", param.second.to_str());
+                    return false;
+                }
+                if (param.second.is<std::string>()) {
+                    physics.shape = PhysicsShape(sp::GAssets.LoadGltf(param.second.get<std::string>()));
+                } else if (param.second.is<picojson::object>()) {
+                    PhysicsShape::ConvexMesh mesh;
+                    for (auto meshParam : param.second.get<picojson::object>()) {
+                        if (meshParam.first == "model") {
+                            mesh.model = sp::GAssets.LoadGltf(meshParam.second.get<std::string>());
+                        } else if (meshParam.first == "mesh_index") {
+                            mesh.meshIndex = (size_t)meshParam.second.get<double>();
+                        } else {
+                            Errorf("Unknown physics model field: %s", meshParam.first);
+                            return false;
+                        }
+                    }
+                    physics.shape = PhysicsShape(mesh);
+                } else {
+                    Errorf("Unknown physics model value: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "capsule") {
+                if (physics.shape) {
+                    Errorf("Physics component defines multiple shapes: capsule, %s", param.second.to_str());
+                    return false;
+                }
+                if (param.second.is<picojson::object>()) {
+                    PhysicsShape::Capsule capsule;
+                    for (auto capsuleParam : param.second.get<picojson::object>()) {
+                        if (capsuleParam.first == "radius") {
+                            capsule.radius = capsuleParam.second.get<double>();
+                        } else if (capsuleParam.first == "height") {
+                            capsule.height = capsuleParam.second.get<double>();
+                        } else {
+                            Errorf("Unknown physics capsule field: %s", capsuleParam.first);
+                            return false;
+                        }
+                    }
+                    physics.shape = PhysicsShape(capsule);
+                } else {
+                    Errorf("Unknown physics capsule value: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "shape_transform") {
+                Transform shapeTransform;
+                if (Component<Transform>::Load(scene, shapeTransform, param.second)) {
+                    physics.shapeTransform = shapeTransform;
+                } else {
+                    Errorf("Couldn't parse physics shape transform");
+                    return false;
+                }
             } else if (param.first == "dynamic") {
                 physics.dynamic = param.second.get<bool>();
             } else if (param.first == "kinematic") {

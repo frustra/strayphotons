@@ -21,8 +21,10 @@
 		{
 			"name": "lot.Walls1_Cube.004",
 			"physics": {
-				"model": "01-outside",
-				"mesh": 6,
+				"model": {
+					"model": "01-outside",
+					"mesh_index": 6
+				},
 				"dynamic": false,
 				"decomposeHull": true
 			}

@@ -49,13 +49,13 @@ namespace sp {
             std::shared_ptr<InputBindings> inputBindings;
 
             EnumArray<ecs::NamedEntity, ecs::XrEye> views = {
-                {ecs::NamedEntity("player", "vr-eye-left"), ecs::NamedEntity("player", "vr-eye-right")},
+                {ecs::NamedEntity("vr", "left_eye"), ecs::NamedEntity("vr", "right_eye")},
             };
 
-            ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("player", "vr-origin");
-            ecs::NamedEntity vrHmdEntity = ecs::NamedEntity("player", "vr-hmd");
-            ecs::NamedEntity vrControllerLeftEntity = ecs::NamedEntity("player", "vr-controller-left");
-            ecs::NamedEntity vrControllerRightEntity = ecs::NamedEntity("player", "vr-controller-right");
+            ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("vr", "origin");
+            ecs::NamedEntity vrHmdEntity = ecs::NamedEntity("vr", "hmd");
+            ecs::NamedEntity vrControllerLeftEntity = ecs::NamedEntity("vr", "controller_left");
+            ecs::NamedEntity vrControllerRightEntity = ecs::NamedEntity("vr", "controller_right");
             std::array<ecs::NamedEntity, vr::k_unMaxTrackedDeviceCount> reservedEntities = {};
             std::array<ecs::NamedEntity *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
