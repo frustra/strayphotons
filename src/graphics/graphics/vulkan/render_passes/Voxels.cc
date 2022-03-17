@@ -53,13 +53,10 @@ namespace sp::vulkan::renderer {
                     desc.extent = vk::Extent3D(1, 1, 1);
                     desc.primaryViewType = vk::ImageViewType::e3D;
                     desc.imageType = vk::ImageType::e3D;
-                    desc.format = vk::Format::eR32Uint;
-                    builder.CreateImage("FillCounters", desc, Access::TransferWrite);
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
                     builder.CreateImage("Radiance", desc, Access::TransferWrite);
                 })
                 .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                    auto counterView = resources.GetImageView("FillCounters");
                     auto radianceView = resources.GetImageView("Radiance");
 
                     vk::ClearColorValue clear;
@@ -67,10 +64,6 @@ namespace sp::vulkan::renderer {
                     range.layerCount = 1;
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    cmd.Raw().clearColorImage(*counterView->Image(),
-                        vk::ImageLayout::eTransferDstOptimal,
-                        clear,
-                        {range});
                     cmd.Raw().clearColorImage(*radianceView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
@@ -317,7 +310,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Voxels::AddDebugPass(RenderGraph &graph) {
-        if (CVarVoxelDebug.Get() <= 0) return;
+        if (CVarVoxelDebug.Get() <= 0 || voxelGridSize == glm::ivec3(0)) return;
 
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {

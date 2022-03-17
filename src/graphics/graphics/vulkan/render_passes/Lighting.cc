@@ -9,7 +9,7 @@ namespace sp::vulkan::renderer {
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
     static CVar<int> CVarLightingMode("r.LightingMode",
-        1,
+        0,
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
 
