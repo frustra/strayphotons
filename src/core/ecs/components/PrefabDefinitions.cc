@@ -136,9 +136,6 @@ namespace ecs {
                             physics.group = group;
                             physics.kinematic = true;
                             Component<Physics>::Apply(physics, lock, newEntity);
-
-                            Renderable renderable(sp::GAssets.LoadGltf("smolbox"), 0);
-                            Component<Renderable>::Apply(renderable, lock, newEntity);
                         }
                     }
 

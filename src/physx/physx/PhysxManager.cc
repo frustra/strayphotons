@@ -510,7 +510,7 @@ namespace sp {
                             shapes[i]->setGeometry(geom);
                         } else {
                             // TODO: figure out scale for other shapes
-                            // Abort("Physx geometry type not implemented");
+                            Abort("Physx geometry type not implemented");
                         }
                     }
                 }

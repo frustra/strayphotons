@@ -90,6 +90,8 @@ namespace sp::vulkan {
 
         template<typename T>
         void CopyFrom(const T *srcData, size_t srcCount = 1, size_t dstOffset = 0) {
+            if (srcCount == 0) return;
+
             ZoneScoped;
             Assert(sizeof(T) * (dstOffset + srcCount) <= ByteSize(), "UniqueMemory overflow");
             T *dstData;
