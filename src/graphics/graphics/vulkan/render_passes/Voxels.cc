@@ -304,7 +304,8 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
 
                     cmd.DispatchIndirect(resources.GetBuffer("FragmentCounts"),
-                        offsetof(GPUVoxelFragmentCounts, overflowCmd[i]));
+                        offsetof(GPUVoxelFragmentCounts, overflowCmd) +
+                            i * sizeof(GPUVoxelFragmentCounts::overflowCmd[0]));
                 });
         }
     }
