@@ -126,7 +126,8 @@
         "execution": "cpp",
         "complex": "cpp",
         "alignedvector3": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "orderingmethods": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

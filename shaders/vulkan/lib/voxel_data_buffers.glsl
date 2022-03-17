@@ -3,8 +3,8 @@
 #include "indirect_commands.glsl"
 
 struct VoxelFragment {
-    uint16_t position[3];
-    float16_t radiance[3];
+    u16vec3 position;
+    f16vec3 radiance;
 };
 
 layout(std430, set = 3, binding = 0) buffer VoxelFragmentCounts {

@@ -5,17 +5,22 @@ layout(binding = 0) uniform sampler2DArray gBuffer0;
 layout(binding = 1) uniform sampler2DArray gBuffer1;
 layout(binding = 2) uniform sampler2DArray gBuffer2;
 layout(binding = 3) uniform sampler2D shadowMap;
+layout(binding = 4) uniform sampler3D voxelRadiance;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 
-INCLUDE_LAYOUT(binding = 11)
-#include "lib/light_data_uniform.glsl"
+layout(binding = 8) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+INCLUDE_LAYOUT(binding = 9)
+#include "lib/exposure_state.glsl"
 
 INCLUDE_LAYOUT(binding = 10)
 #include "lib/view_states_uniform.glsl"
 
-INCLUDE_LAYOUT(binding = 9)
-#include "lib/exposure_state.glsl"
+INCLUDE_LAYOUT(binding = 11)
+#include "lib/light_data_uniform.glsl"
 
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
@@ -50,8 +55,12 @@ void main() {
     vec3 rayDir = normalize(worldPosition - worldFragPosition);
     vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
+    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
+    vec4 voxelSample = texture(voxelRadiance, voxelPos / voxelInfo.gridSize);
+    if (voxelSample.a > 0.00001) voxelSample /= voxelSample.a;
+
     vec3 indirectSpecular = vec3(0);
-    vec3 indirectDiffuse = vec3(0);
+    vec3 indirectDiffuse = voxelSample.rgb;
 
     vec3 directDiffuseColor = baseColor - baseColor * metalness;
     vec3 directLight =
