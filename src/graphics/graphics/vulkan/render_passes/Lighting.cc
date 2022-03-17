@@ -3,15 +3,20 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
+#include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
+    static CVar<int> CVarLightingMode("r.LightingMode",
+        0,
+        "Toggle between different lighting shader modes "
+        "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
 
     void Lighting::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         lightCount = 0;
-        gelCount = 0;
         shadowAtlasSize = glm::ivec2(0, 0);
+        gelTextureCache.clear();
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
@@ -45,12 +50,12 @@ namespace sp::vulkan::renderer {
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
 
-            if (light.gelName.empty()) {
-                data.gelId = 0;
+            data.gelId = 0;
+            if (!light.gelName.empty()) {
+                auto it = gelTextureCache.emplace(light.gelName, 0).first;
+                gelTextures[lightCount] = std::make_pair(light.gelName, &it->second);
             } else {
-                Assert(gelCount < MAX_LIGHT_GELS, "too many light gels");
-                data.gelId = ++gelCount;
-                gelNames[data.gelId - 1] = light.gelName;
+                gelTextures[lightCount] = {};
             }
 
             shadowAtlasSize.x += extent;
@@ -68,6 +73,25 @@ namespace sp::vulkan::renderer {
                 builder.CreateUniform("LightState", sizeof(gpuData));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
+            });
+    }
+
+    void Lighting::AddGelTextures(RenderGraph &graph) {
+        graph.AddPass("GelTextures")
+            .Build([&](rg::PassBuilder &builder) {
+                for (auto &gel : gelTextureCache) {
+                    builder.Read(gel.first, Access::FragmentShaderSampleImage);
+                }
+                builder.Write("LightState", Access::HostWrite);
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                for (auto &gel : gelTextureCache) {
+                    gel.second = scene.textures.Add(resources.GetImageView(gel.first)).index;
+                }
+                for (size_t i = 0; i < MAX_LIGHTS; i++) {
+                    if (gelTextures[i].second) gpuData.lights[i].gelId = *gelTextures[i].second;
+                }
                 resources.GetBuffer("LightState")->CopyFrom(&gpuData);
             });
     }
@@ -137,19 +161,16 @@ namespace sp::vulkan::renderer {
                 builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
                 builder.Read(depthTarget, Access::FragmentShaderSampleImage);
+                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
 
                 auto desc = builder.DeriveImage(gBuffer0);
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                builder.Read("VoxelRadiance", Access::FragmentShaderReadStorage);
+                builder.ReadUniform("VoxelState");
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("LightState");
-
-                for (int i = 0; i < gelCount; i++) {
-                    builder.Read(gelNames[i], Access::FragmentShaderSampleImage);
-                }
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
@@ -166,19 +187,17 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 1, resources.GetImageView("GBuffer1"));
                 cmd.SetImageView(0, 2, resources.GetImageView("GBuffer2"));
                 cmd.SetImageView(0, 3, resources.GetImageView(depthTarget));
+                cmd.SetImageView(0, 4, resources.GetImageView("Voxels.Radiance"));
 
-                for (int i = 0; i < MAX_LIGHT_GELS; i++) {
-                    if (i < gelCount) {
-                        const auto &target = resources.GetImageView(gelNames[i]);
-                        cmd.SetImageView(1, i, target);
-                    } else {
-                        cmd.SetImageView(1, i, scene.textures.GetBlankPixel());
-                    }
-                }
+                cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
 
+                cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
+
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
+
                 cmd.Draw(3);
             });
     }

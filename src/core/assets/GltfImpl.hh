@@ -125,14 +125,15 @@ namespace sp::gltf {
             "Trying to read invalid gltf::Accessor");
         Assertf(i < count, "Trying to read invalid gltf::Accessor index: %u >= %u", i, count);
 
-        std::array<std::function<ReadT()>, 1 + sizeof...(Tn)> convertFuncs = {
-            [this, &i] {
-                return reinterpret_cast<const ReadT &>(buffer->data[byteOffset + (i * byteStride)]);
+        const auto &data = buffer->data[byteOffset + (i * byteStride)];
+        static const std::array<std::function<ReadT(const uint8_t &)>, 1 + sizeof...(Tn)> convertFuncs = {
+            [this, &i](const uint8_t &data) {
+                return reinterpret_cast<const ReadT &>(data);
             },
-            [this, &i] {
+            [this, &i](const uint8_t &data) {
                 // TODO: Handle normalized int/uint -> float conversion
-                return static_cast<ReadT>(reinterpret_cast<const Tn &>(buffer->data[byteOffset + (i * byteStride)]));
+                return static_cast<ReadT>(reinterpret_cast<const Tn &>(data));
             }...};
-        return convertFuncs[typeIndex]();
+        return convertFuncs[typeIndex](data);
     }
 } // namespace sp::gltf

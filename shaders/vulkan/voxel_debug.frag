@@ -19,15 +19,17 @@ layout(binding = 1) uniform VoxelStateUniform {
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/exposure_state.glsl"
 
-layout(binding = 3) uniform sampler3D voxelRadiance;
-layout(binding = 4) uniform sampler2DArray overlayTex;
+layout(binding = 3, r32ui) readonly uniform uimage3D fillCounters;
+layout(binding = 4, rgba16f) readonly uniform image3D voxelRadiance;
+layout(binding = 5) uniform sampler2DArray overlayTex;
 
 layout(constant_id = 0) const float BLEND_WEIGHT = 0;
 
 float GetVoxelNearest(vec3 position, out vec3 radiance) {
-    vec4 radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
+    uint count = imageLoad(fillCounters, ivec3(position)).r;
+    vec4 radianceData = imageLoad(voxelRadiance, ivec3(position));
     radiance = radianceData.rgb;
-    return radianceData.a;
+    return float(count);
 }
 
 float TraceVoxelGrid(vec3 rayWorldPos, vec3 rayWorldDir, out vec3 hitRadiance) {
@@ -72,7 +74,8 @@ void main() {
     vec3 rayDir = normalize(rayPos.xyz - view.invViewMat[3].xyz);
 
     vec3 sampleRadiance;
-    TraceVoxelGrid(rayPos.xyz, rayDir, sampleRadiance);
+    float count = TraceVoxelGrid(rayPos.xyz, rayDir, sampleRadiance);
+    // sampleRadiance = vec3(1 / count);
 
     vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed
     outFragColor = vec4(mix(sampleRadiance * exposure, overlay, BLEND_WEIGHT), 1.0);

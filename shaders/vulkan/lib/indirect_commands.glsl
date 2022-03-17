@@ -1,3 +1,9 @@
+struct VkDispatchIndirectCommand {
+    uint x;
+    uint y;
+    uint z;
+};
+
 struct VkDrawIndirectCommand {
     uint vertexCount;
     uint instanceCount;

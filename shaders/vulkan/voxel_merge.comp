@@ -1,0 +1,68 @@
+#version 460
+#extension GL_EXT_shader_16bit_storage : require
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+#extension GL_EXT_shader_16bit_storage : require
+
+#include "lib/indirect_commands.glsl"
+
+struct VoxelFragment {
+    u16vec3 position;
+    f16vec3 radiance;
+};
+
+layout(std430, set = 1, binding = 0) buffer VoxelFragmentCounts {
+    uint fragmentCount;
+    uint overflowCount[3];
+    VkDispatchIndirectCommand fragmentsCmd;
+    VkDispatchIndirectCommand overflowCmd[3];
+};
+
+layout(std430, set = 1, binding = 1) buffer VoxelFragmentList {
+    VoxelFragment fragmentList[];
+};
+
+layout(std430, set = 1, binding = 2) buffer VoxelOverflowList0 {
+    VoxelFragment overflowList0[];
+};
+
+layout(std430, set = 1, binding = 3) buffer VoxelOverflowList1 {
+    VoxelFragment overflowList1[];
+};
+
+layout(std430, set = 1, binding = 4) buffer VoxelOverflowList2 {
+    VoxelFragment overflowList2[];
+};
+
+layout(binding = 0, r32ui) uniform uimage3D fillCounters;
+layout(binding = 1, rgba16f) uniform image3D voxelRadiance;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
+
+layout(constant_id = 0) const int OVERFLOW_INDEX = 0;
+
+void main() {
+    uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
+    if (index >= overflowCount[OVERFLOW_INDEX]) return;
+
+    ivec3 position;
+    vec3 overflowRadiance;
+    if (OVERFLOW_INDEX == 0) {
+        position = ivec3(overflowList0[index].position);
+        overflowRadiance = vec3(overflowList0[index].radiance);
+    } else if (OVERFLOW_INDEX == 1) {
+        position = ivec3(overflowList1[index].position);
+        overflowRadiance = vec3(overflowList1[index].radiance);
+    } else /*if (OVERFLOW_INDEX == 2)*/ {
+        position = ivec3(overflowList2[index].position);
+        overflowRadiance = vec3(overflowList2[index].radiance);
+    }
+    vec4 existingRadiance = imageLoad(voxelRadiance, position);
+    existingRadiance.a += 1;
+
+    float weight = 1.0 / existingRadiance.a;
+    imageStore(voxelRadiance, position, vec4(mix(existingRadiance.rgb, overflowRadiance, weight), existingRadiance.a));
+}
