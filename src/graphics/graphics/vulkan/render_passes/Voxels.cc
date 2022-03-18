@@ -31,6 +31,7 @@ namespace sp::vulkan::renderer {
         struct GPUVoxelState {
             glm::mat4 worldToVoxel;
             glm::ivec3 size;
+            float _padding[1];
         };
 
         graph.AddPass("VoxelState")

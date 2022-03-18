@@ -3,6 +3,14 @@
 #include "core/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <SPIRV-Reflect/common/output_stream.h>
+
+void StreamWriteDescriptorBinding(std::ostream &os,
+    const SpvReflectDescriptorBinding &obj,
+    bool write_set,
+    bool flatten_cbuffers,
+    const char *indent);
+
 namespace sp::vulkan {
 
     PipelineManager::PipelineManager(DeviceContext &device) : device(device) {
@@ -38,8 +46,8 @@ namespace sp::vulkan {
     }
 
     PipelineLayout::PipelineLayout(DeviceContext &device, const ShaderSet &shaders, PipelineManager &manager)
-        : device(device) {
-        ReflectShaders(shaders);
+        : device(device), shaders(shaders) {
+        ReflectShaders();
 
         vk::DescriptorSetLayout layouts[MAX_BOUND_DESCRIPTOR_SETS] = {};
         uint32 layoutCount = 0;
@@ -64,7 +72,7 @@ namespace sp::vulkan {
         CreateDescriptorUpdateTemplates(device);
     }
 
-    void PipelineLayout::ReflectShaders(const ShaderSet &shaders) {
+    void PipelineLayout::ReflectShaders() {
         uint32 count;
 
         for (size_t stageIndex = 0; stageIndex < (size_t)ShaderStage::Count; stageIndex++) {
@@ -128,8 +136,33 @@ namespace sp::vulkan {
                         setInfo.storageImagesMask |= (1 << binding);
                     } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                         setInfo.uniformBuffersMask |= (1 << binding);
+
+                        info.sizes[set][binding].sizeBase = desc->block.padded_size;
                     } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
                         setInfo.storageBuffersMask |= (1 << binding);
+
+                        VkDeviceSize sizeBase = 0, sizeIncrement = 0;
+
+                        if (desc->block.member_count > 0) {
+                            auto &lastMember = desc->block.members[desc->block.member_count - 1];
+                            sizeBase = lastMember.absolute_offset;
+
+                            if (lastMember.array.stride > 0) {
+                                sizeIncrement = lastMember.array.stride;
+                            } else if (lastMember.type_description->traits.array.stride > 0) {
+                                // For runtime arrays, SPIRV-Reflect only sets the stride on the type description, not
+                                // on the instance. Setting it on the instance here allows the stride to be printed in
+                                // debug output.
+                                lastMember.array.stride = lastMember.type_description->traits.array.stride;
+                                sizeIncrement = lastMember.array.stride;
+                            } else {
+                                sizeBase = lastMember.padded_size;
+                            }
+                        }
+
+                        auto &sizes = info.sizes[set][binding];
+                        sizes.sizeBase = sizeBase;
+                        sizes.sizeIncrement = sizeIncrement;
                     } else {
                         Abortf("unsupported SpvReflectDescriptorType %d", type);
                     }
@@ -215,6 +248,48 @@ namespace sp::vulkan {
 
         auto [descriptorSet, existed] = descriptorPools[set]->GetDescriptorSet(hash);
         if (!existed) {
+            auto &sizes = info.sizes[set];
+            bool errors = false;
+
+            ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32 binding) {
+                auto size = bindings[binding].buffer.range - bindings[binding].buffer.offset;
+                auto expectedMinimumSize = sizes[binding].sizeBase;
+                if (size == expectedMinimumSize) return;
+
+                auto expectedExtraStride = sizes[binding].sizeIncrement;
+                int64_t extra = size - expectedMinimumSize;
+
+                if (expectedExtraStride > 0 && extra > 0 && (extra % expectedExtraStride) == 0) return;
+                errors = true;
+
+                size_t i;
+                for (i = 0; i < (size_t)ShaderStage::Count; i++) {
+                    if (setLayout.stages[binding] & ShaderStageToFlagBits[i]) break;
+                }
+
+                std::stringstream reflectionStr;
+                string_view shaderName = "";
+
+                if (i < (size_t)ShaderStage::Count && shaders[i]) {
+                    shaderName = shaders[i]->name;
+                    auto desc = shaders[i]->reflection.GetDescriptorBinding(binding, set);
+                    StreamWriteDescriptorBinding(reflectionStr, *desc, true, false, "  ");
+                } else {
+                    reflectionStr << "trying to write a descriptor value that's not accessed by any shader";
+                }
+
+                Errorf("layout mismatch in binding for shader=%s set=%d binding=%d size=%d expected_minimum_size=%d "
+                       "expected_extra_stride=%d\n%s",
+                    shaderName,
+                    set,
+                    binding,
+                    size,
+                    expectedMinimumSize,
+                    expectedExtraStride,
+                    reflectionStr.str());
+            });
+
+            Assert(!errors, "error validating descriptor set");
             device->updateDescriptorSetWithTemplate(descriptorSet, GetDescriptorUpdateTemplate(set), &setBindings);
         }
         return descriptorSet;
