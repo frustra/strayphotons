@@ -16,7 +16,7 @@ namespace sp::vulkan {
             vk::BufferUsageFlagBits::eVertexBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        primitiveLists = device.AllocateBuffer(1024 * 1024,
+        primitiveLists = device.AllocateBuffer(1024 * 1024 * sizeof(GPUMeshPrimitive),
             vk::BufferUsageFlagBits::eStorageBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 

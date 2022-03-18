@@ -65,6 +65,11 @@ namespace sp::vulkan {
         uint32 descriptorSetsMask = 0;
         uint32 bindlessMask = 0;
         DescriptorSetLayoutInfo descriptorSets[MAX_BOUND_DESCRIPTOR_SETS];
+
+        struct MemorySize {
+            VkDeviceSize sizeBase = 0, sizeIncrement = 0;
+        };
+        std::array<std::array<MemorySize, MAX_BINDINGS_PER_DESCRIPTOR_SET>, MAX_BOUND_DESCRIPTOR_SETS> sizes;
     };
 
     // meta-pool that creates multiple descriptor pools as needed
@@ -120,10 +125,11 @@ namespace sp::vulkan {
         vk::DescriptorSet GetFilledDescriptorSet(uint32 set, const DescriptorSetBindings &setBindings);
 
     private:
-        void ReflectShaders(const ShaderSet &shaders);
+        void ReflectShaders();
         void CreateDescriptorUpdateTemplates(DeviceContext &device);
 
         DeviceContext &device;
+        ShaderSet shaders;
         PipelineLayoutInfo info;
         vk::UniqueDescriptorUpdateTemplate descriptorUpdateTemplates[MAX_BOUND_DESCRIPTOR_SETS];
         shared_ptr<DescriptorPool> descriptorPools[MAX_BOUND_DESCRIPTOR_SETS];
