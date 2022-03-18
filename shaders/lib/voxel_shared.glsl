@@ -1,7 +1,15 @@
 #ifndef VOXEL_SHARED_GLSL_INCLUDED
 #define VOXEL_SHARED_GLSL_INCLUDED
 
+#extension GL_EXT_shader_16bit_storage : require
+
+#include "indirect_commands.glsl"
 #include "util.glsl"
+
+struct VoxelFragment {
+    u16vec3 position;
+    f16vec3 radiance;
+};
 
 const uint MipmapWorkGroupSize = 256;
 

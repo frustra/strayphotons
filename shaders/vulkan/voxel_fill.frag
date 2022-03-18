@@ -1,8 +1,5 @@
 #version 460
-#extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_nonuniform_qualifier : enable
-#extension GL_OVR_multiview2 : enable
-layout(num_views = 3) in;
 
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 
@@ -21,15 +18,13 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 
-#include "lib/voxel_data_buffers.glsl"
-
 layout(std430, set = 3, binding = 0) buffer VoxelFragmentList {
     uint count;
     uint capacity;
     VkDispatchIndirectCommand cmd;
     VoxelFragment list[];
 }
-fragmentLists[];
+fragmentLists[MAX_VOXEL_FRAGMENT_LISTS];
 
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"

@@ -85,6 +85,7 @@ namespace sp::vulkan::renderer {
             uint32_t count;
             uint32_t capacity;
             VkDispatchIndirectCommand cmd;
+            float _padding[1];
             // GPUVoxelFragment list[];
         };
 
@@ -120,20 +121,25 @@ namespace sp::vulkan::renderer {
 
         fragmentListBuffers.clear();
 
+        auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
+        auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
+
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
-                desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
+                desc.extent = voxelGridExtents;
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;
+                desc.mipLevels = voxelGridMips;
 
                 desc.format = vk::Format::eR32Uint;
                 builder.CreateImage("FillCounters", desc, clearCounters ? Access::TransferWrite : Access::None);
 
+                desc.sampler = SamplerType::TrilinearClamp;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
 
-                for (size_t i = 0; i < CVarVoxelFragmentBuckets.Get(); i++) {
+                for (size_t i = 0; i < CVarVoxelFragmentBuckets.Get() && i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
                     auto buf = builder.CreateBuffer(
                         sizeof(GPUVoxelFragmentList) + sizeof(GPUVoxelFragment) * fragmentListSize,
                         Residency::GPU_ONLY,
@@ -144,24 +150,24 @@ namespace sp::vulkan::renderer {
             .Execute([this, clearRadiance, clearCounters, fragmentListSize](rg::Resources &resources,
                          CommandContext &cmd) {
                 if (clearRadiance) {
+                    auto radianceView = resources.GetImageView("Radiance");
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
                     range.layerCount = 1;
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    auto radianceView = resources.GetImageView("Radiance");
                     cmd.Raw().clearColorImage(*radianceView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
                         {range});
                 }
                 if (clearCounters) {
+                    auto counterView = resources.GetImageView("FillCounters");
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
                     range.layerCount = 1;
-                    range.levelCount = 1;
+                    range.levelCount = counterView->MipLevels();
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    auto counterView = resources.GetImageView("FillCounters");
                     cmd.Raw().clearColorImage(*counterView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
@@ -235,13 +241,17 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
                 cmd.SetImageView(0, 3, resources.GetImageView("ShadowMapLinear"));
-                cmd.SetImageView(0, 4, resources.GetImageView("FillCounters"));
-                cmd.SetImageView(0, 5, resources.GetImageView("Radiance"));
+                cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
+                cmd.SetImageView(0, 5, resources.GetImageMipView("Radiance", 0));
+
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, (uint32_t)fragmentListBuffers.size());
 
                 uint32 binding = 0;
-                for (auto &resourceId : fragmentListBuffers) {
-                    // TODO: somehow make this work like bindless?
-                    cmd.SetStorageBuffer(3, binding++, resources.GetBuffer(resourceId));
+                for (; binding < fragmentListBuffers.size(); binding++) {
+                    cmd.SetStorageBuffer(3, binding, resources.GetBuffer(fragmentListBuffers[binding]));
+                }
+                for (; binding < MAX_VOXEL_FRAGMENT_LISTS; binding++) {
+                    cmd.SetStorageBuffer(3, binding, resources.GetBuffer(fragmentListBuffers[0]));
                 }
 
                 scene.DrawSceneIndirect(cmd,
@@ -255,25 +265,75 @@ namespace sp::vulkan::renderer {
         for (uint32_t i = 1; i < fragmentListBuffers.size(); i++) {
             graph.AddPass("Merge")
                 .Build([&](rg::PassBuilder &builder) {
-                    builder.Read("FillCounters", Access::ComputeShaderSampleImage);
                     builder.Write("Radiance", Access::ComputeShaderWrite);
 
-                    builder.Write(fragmentListBuffers[i], Access::IndirectBuffer);
+                    builder.Read(fragmentListBuffers[i], Access::IndirectBuffer);
+                    builder.Read(fragmentListBuffers[i], Access::ComputeShaderReadStorage);
                 })
                 .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_merge.comp");
 
-                    cmd.SetImageView(0, 0, resources.GetImageView("FillCounters"));
-                    cmd.SetImageView(0, 1, resources.GetImageView("Radiance"));
+                    cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
 
                     cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
 
                     auto buffer = resources.GetBuffer(fragmentListBuffers[i]);
-                    cmd.SetStorageBuffer(1, 0, buffer);
+                    cmd.SetStorageBuffer(0, 1, buffer);
 
                     cmd.DispatchIndirect(buffer, offsetof(GPUVoxelFragmentList, cmd));
                 });
         }
+
+        for (uint32_t i = 1; i < voxelGridMips; i++) {
+            graph.AddPass("Mipmap")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.Write("Radiance", Access::ComputeShaderWrite);
+                })
+                .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetComputeShader("voxel_mipmap.comp");
+
+                    cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", i - 1));
+                    cmd.SetImageView(0, 1, resources.GetImageMipView("Radiance", i));
+
+                    cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
+
+                    auto divisor = 8 << i;
+                    auto dispatchCount = (voxelGridSize + divisor - 1) / divisor;
+                    cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
+                });
+        }
+
+        // graph.AddPass("FillReadback")
+        //     .Build([&](rg::PassBuilder &builder) {
+        //         builder.Read(fragmentListBuffers[0], Access::TransferRead);
+
+        //         builder.CreateBuffer("FillReadback",
+        //             sizeof(GPUVoxelFragmentList),
+        //             Residency::GPU_TO_CPU,
+        //             Access::TransferWrite);
+        //     })
+        //     .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+        //         auto srcBuffer = resources.GetBuffer(fragmentListBuffers[0]);
+        //         auto dstBuffer = resources.GetBuffer("FillReadback");
+
+        //         vk::BufferCopy region;
+        //         region.size = sizeof(GPUVoxelFragmentList);
+        //         cmd.Raw().copyBuffer(*srcBuffer, *dstBuffer, {region});
+        //     });
+
+        // graph.AddPass("FillReadback2")
+        //     .Build([&](rg::PassBuilder &builder) {
+        //         builder.RequirePass();
+        //         builder.ReadPreviousFrame("FillReadback", Access::HostRead);
+        //     })
+        //     .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+        //         auto resourceId = resources.GetID("FillReadback", false, 1);
+        //         if (resourceId == InvalidResource) return;
+
+        //         auto buffer = resources.GetBuffer(resourceId);
+        //         auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
+        //         Logf("Fragment count: %u", map->count);
+        //     });
     }
 
     void Voxels::AddDebugPass(RenderGraph &graph) {

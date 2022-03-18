@@ -5,8 +5,8 @@
     #define MAX_LIGHTS 16
 #endif
 
-#ifndef MAX_LIGHT_GELS
-    #define MAX_LIGHT_GELS 2
+#ifndef MAX_VOXEL_FRAGMENT_LISTS
+    #define MAX_VOXEL_FRAGMENT_LISTS 16
 #endif
 
 const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
