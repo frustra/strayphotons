@@ -147,16 +147,15 @@ namespace sp::vulkan {
                             auto &lastMember = desc->block.members[desc->block.member_count - 1];
                             sizeBase = lastMember.absolute_offset;
 
-                            if (lastMember.array.stride > 0) {
-                                sizeIncrement = lastMember.array.stride;
-                            } else if (lastMember.type_description->traits.array.stride > 0) {
+                            if (lastMember.type_description->op == SpvOpTypeRuntimeArray) {
+                                Assert(lastMember.type_description->traits.array.stride > 0, "zero stride array");
                                 // For runtime arrays, SPIRV-Reflect only sets the stride on the type description, not
                                 // on the instance. Setting it on the instance here allows the stride to be printed in
                                 // debug output.
                                 lastMember.array.stride = lastMember.type_description->traits.array.stride;
                                 sizeIncrement = lastMember.array.stride;
                             } else {
-                                sizeBase = lastMember.padded_size;
+                                sizeBase += lastMember.padded_size;
                             }
                         }
 
@@ -256,10 +255,10 @@ namespace sp::vulkan {
                 auto expectedMinimumSize = sizes[binding].sizeBase;
                 if (size == expectedMinimumSize) return;
 
-                auto expectedExtraStride = sizes[binding].sizeIncrement;
+                auto expectedSizeIncrement = sizes[binding].sizeIncrement;
                 int64_t extra = size - expectedMinimumSize;
 
-                if (expectedExtraStride > 0 && extra > 0 && (extra % expectedExtraStride) == 0) return;
+                if (expectedSizeIncrement > 0 && extra > 0 && (extra % expectedSizeIncrement) == 0) return;
                 errors = true;
 
                 size_t i;
@@ -278,14 +277,14 @@ namespace sp::vulkan {
                     reflectionStr << "trying to write a descriptor value that's not accessed by any shader";
                 }
 
-                Errorf("layout mismatch in binding for shader=%s set=%d binding=%d size=%d expected_minimum_size=%d "
-                       "expected_extra_stride=%d\n%s",
+                Errorf("layout mismatch in shader=%s set=%d binding=%d buffer_size=%d expected_minimum_size=%d "
+                       "expected_size_increment=%d\n%s",
                     shaderName,
                     set,
                     binding,
                     size,
                     expectedMinimumSize,
-                    expectedExtraStride,
+                    expectedSizeIncrement,
                     reflectionStr.str());
             });
 
