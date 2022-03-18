@@ -61,8 +61,7 @@ void main() {
         overflowRadiance = vec3(overflowList2[index].radiance);
     }
     vec4 existingRadiance = imageLoad(voxelRadiance, position);
-    existingRadiance.a += 1;
 
-    float weight = 1.0 / existingRadiance.a;
-    imageStore(voxelRadiance, position, vec4(mix(existingRadiance.rgb, overflowRadiance, weight), existingRadiance.a));
+    float weight = 1.0f / (OVERFLOW_INDEX + 2);
+    imageStore(voxelRadiance, position, vec4(mix(existingRadiance.rgb, overflowRadiance, weight), 1));
 }

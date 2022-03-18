@@ -16,7 +16,7 @@
         },
         {
             "transform": {
-                "parent": "flatview",
+                "parent": "player",
                 "translate": [-7.5, -5, -7.5],
                 "scale": [0.1, 0.1, 0.1]
             },

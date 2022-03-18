@@ -23,6 +23,8 @@ void main() {
     vec3 normal = mat3(params.modelMat) * inNormal;
 
     // warping goes here
+    // float stationRadius = 150;
+    // position.y += stationRadius - sqrt(stationRadius * stationRadius - position.x * position.x);
 
     SceneVertex vertex;
     vertex.positionAndNormalX = vec4(position.xyz, normal.x);
