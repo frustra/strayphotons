@@ -14,6 +14,9 @@ namespace sp::vulkan::renderer {
         3,
         "Change the voxel grid clearing operation used between frames "
         "(0: no clear, 1: clear radiance, 2: clear counters: 3: clear all)");
+    static CVar<size_t> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
+        4,
+        "The number of fragments that can be written to a voxel.");
 
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
         voxelGridSize = glm::ivec3(0);
@@ -77,12 +80,11 @@ namespace sp::vulkan::renderer {
             uint16_t radiance[3]; // half-float formatted
         };
 
-        // Separate buffers store lists as GPUVoxelFragment[count]
-        struct GPUVoxelFragmentCounts {
-            uint32_t fragmentCount;
-            uint32_t overflowCount[3];
-            VkDispatchIndirectCommand fragmentsCmd;
-            VkDispatchIndirectCommand overflowCmd[3];
+        struct GPUVoxelFragmentList {
+            uint32_t count;
+            uint32_t capacity;
+            VkDispatchIndirectCommand cmd;
+            // GPUVoxelFragment list[];
         };
 
         ecs::View ortho;
@@ -115,6 +117,8 @@ namespace sp::vulkan::renderer {
         auto fragmentListSize = (voxelGridSize.x * voxelGridSize.y * voxelGridSize.z) / 2;
         auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
 
+        fragmentListBuffers.clear();
+
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
@@ -128,29 +132,16 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
 
-                builder.CreateBuffer("FragmentCounts",
-                    sizeof(GPUVoxelFragmentCounts),
-                    Residency::GPU_ONLY,
-                    Access::TransferWrite);
-
-                builder.CreateBuffer("FragmentList",
-                    sizeof(GPUVoxelFragment) * fragmentListSize,
-                    Residency::GPU_ONLY,
-                    Access::None);
-                builder.CreateBuffer("OverflowList0",
-                    sizeof(GPUVoxelFragment) * fragmentListSize,
-                    Residency::GPU_ONLY,
-                    Access::None);
-                builder.CreateBuffer("OverflowList1",
-                    sizeof(GPUVoxelFragment) * fragmentListSize,
-                    Residency::GPU_ONLY,
-                    Access::None);
-                builder.CreateBuffer("OverflowList2",
-                    sizeof(GPUVoxelFragment) * fragmentListSize,
-                    Residency::GPU_ONLY,
-                    Access::None);
+                for (size_t i = 0; i < CVarVoxelFragmentBuckets.Get(); i++) {
+                    auto buf = builder.CreateBuffer(
+                        sizeof(GPUVoxelFragmentList) + sizeof(GPUVoxelFragment) * fragmentListSize,
+                        Residency::GPU_ONLY,
+                        Access::TransferWrite);
+                    fragmentListBuffers.emplace_back(buf.id);
+                }
             })
-            .Execute([clearRadiance, clearCounters](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, clearRadiance, clearCounters, fragmentListSize](rg::Resources &resources,
+                         CommandContext &cmd) {
                 if (clearRadiance) {
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
@@ -176,24 +167,15 @@ namespace sp::vulkan::renderer {
                         {range});
                 }
 
-                auto countsBuffer = resources.GetBuffer("FragmentCounts");
-                cmd.Raw().fillBuffer(*countsBuffer, 0, sizeof(GPUVoxelFragmentCounts), 0);
-                cmd.Raw().fillBuffer(*countsBuffer,
-                    offsetof(GPUVoxelFragmentCounts, fragmentsCmd.y),
-                    sizeof(uint32_t) * 2,
-                    1);
-                cmd.Raw().fillBuffer(*countsBuffer,
-                    offsetof(GPUVoxelFragmentCounts, overflowCmd[0].y),
-                    sizeof(uint32_t) * 2,
-                    1);
-                cmd.Raw().fillBuffer(*countsBuffer,
-                    offsetof(GPUVoxelFragmentCounts, overflowCmd[1].y),
-                    sizeof(uint32_t) * 2,
-                    1);
-                cmd.Raw().fillBuffer(*countsBuffer,
-                    offsetof(GPUVoxelFragmentCounts, overflowCmd[2].y),
-                    sizeof(uint32_t) * 2,
-                    1);
+                for (auto &resourceId : fragmentListBuffers) {
+                    auto listBuffer = resources.GetBuffer(resourceId);
+                    cmd.Raw().fillBuffer(*listBuffer, 0, sizeof(GPUVoxelFragmentList), 0);
+                    cmd.Raw().fillBuffer(*listBuffer,
+                        offsetof(GPUVoxelFragmentList, capacity),
+                        sizeof(uint32_t),
+                        fragmentListSize);
+                    cmd.Raw().fillBuffer(*listBuffer, offsetof(GPUVoxelFragmentList, cmd.y), sizeof(uint32_t) * 2, 1);
+                }
             });
 
         graph.AddPass("Fill")
@@ -205,11 +187,9 @@ namespace sp::vulkan::renderer {
                 builder.ReadUniform("LightState");
                 builder.Read("ShadowMapLinear", Access::FragmentShaderSampleImage);
 
-                builder.Write("FragmentCounts", Access::FragmentShaderWrite);
-                builder.Write("FragmentList", Access::FragmentShaderWrite);
-                builder.Write("OverflowList0", Access::FragmentShaderWrite);
-                builder.Write("OverflowList1", Access::FragmentShaderWrite);
-                builder.Write("OverflowList2", Access::FragmentShaderWrite);
+                for (auto &resourceId : fragmentListBuffers) {
+                    builder.Write(resourceId, Access::FragmentShaderWrite);
+                }
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawID.drawCommandsBuffer, Access::IndirectBuffer);
@@ -257,11 +237,11 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 4, resources.GetImageView("FillCounters"));
                 cmd.SetImageView(0, 5, resources.GetImageView("Radiance"));
 
-                cmd.SetStorageBuffer(3, 0, resources.GetBuffer("FragmentCounts"));
-                cmd.SetStorageBuffer(3, 1, resources.GetBuffer("FragmentList"));
-                cmd.SetStorageBuffer(3, 2, resources.GetBuffer("OverflowList0"));
-                cmd.SetStorageBuffer(3, 3, resources.GetBuffer("OverflowList1"));
-                cmd.SetStorageBuffer(3, 4, resources.GetBuffer("OverflowList2"));
+                uint32 binding = 0;
+                for (auto &resourceId : fragmentListBuffers) {
+                    // TODO: somehow make this work like bindless?
+                    cmd.SetStorageBuffer(3, binding++, resources.GetBuffer(resourceId));
+                }
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -271,36 +251,26 @@ namespace sp::vulkan::renderer {
                 cmd.EndRenderPass();
             });
 
-        static const char *passNames[3] = {"Merge0", "Merge1", "Merge2"};
-        for (uint32_t i = 0; i < 3; i++) {
-            graph.AddPass(passNames[i])
+        for (uint32_t i = 1; i < fragmentListBuffers.size(); i++) {
+            graph.AddPass("Merge")
                 .Build([&](rg::PassBuilder &builder) {
                     builder.Read("FillCounters", Access::ComputeShaderSampleImage);
                     builder.Write("Radiance", Access::ComputeShaderWrite);
 
-                    builder.Read("FragmentCounts", Access::IndirectBuffer);
-                    builder.Read("FragmentList", Access::ComputeShaderReadStorage);
-                    builder.Read("OverflowList0", Access::ComputeShaderReadStorage);
-                    builder.Read("OverflowList1", Access::ComputeShaderReadStorage);
-                    builder.Read("OverflowList2", Access::ComputeShaderReadStorage);
+                    builder.Write(fragmentListBuffers[i], Access::IndirectBuffer);
                 })
-                .Execute([i](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_merge.comp");
 
                     cmd.SetImageView(0, 0, resources.GetImageView("FillCounters"));
                     cmd.SetImageView(0, 1, resources.GetImageView("Radiance"));
 
-                    cmd.SetStorageBuffer(1, 0, resources.GetBuffer("FragmentCounts"));
-                    cmd.SetStorageBuffer(1, 1, resources.GetBuffer("FragmentList"));
-                    cmd.SetStorageBuffer(1, 2, resources.GetBuffer("OverflowList0"));
-                    cmd.SetStorageBuffer(1, 3, resources.GetBuffer("OverflowList1"));
-                    cmd.SetStorageBuffer(1, 4, resources.GetBuffer("OverflowList2"));
-
                     cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
 
-                    cmd.DispatchIndirect(resources.GetBuffer("FragmentCounts"),
-                        offsetof(GPUVoxelFragmentCounts, overflowCmd) +
-                            i * sizeof(GPUVoxelFragmentCounts::overflowCmd[0]));
+                    auto buffer = resources.GetBuffer(fragmentListBuffers[i]);
+                    cmd.SetStorageBuffer(1, 0, buffer);
+
+                    cmd.DispatchIndirect(buffer, offsetof(GPUVoxelFragmentList, cmd));
                 });
         }
     }

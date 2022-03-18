@@ -4,6 +4,8 @@
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 3) in;
 
+layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
+
 #define DIFFUSE_ONLY_SHADING
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
@@ -20,6 +22,14 @@ layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 
 #include "lib/voxel_data_buffers.glsl"
+
+layout(std430, set = 3, binding = 0) buffer VoxelFragmentList {
+    uint count;
+    uint capacity;
+    VkDispatchIndirectCommand cmd;
+    VoxelFragment list[];
+}
+fragmentLists[];
 
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"
@@ -42,28 +52,15 @@ void main() {
 
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
 
-    // Write the front voxel
-    uint count = imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1);
-    if (count == 0) {
-        uint index = atomicAdd(fragmentCount, 1);
-        if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentsCmd.x, 1);
-        fragmentList[index].position = u16vec3(uvec3(inVoxelPos));
-        fragmentList[index].radiance = f16vec3(pixelRadiance);
+    uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
+    uint index = atomicAdd(fragmentLists[bucket].count, 1);
+    if (index >= fragmentLists[bucket].capacity) return;
+    if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentLists[bucket].cmd.x, 1);
+    fragmentLists[bucket].list[index].position = u16vec3(uvec3(inVoxelPos));
+    fragmentLists[bucket].list[index].radiance = f16vec3(pixelRadiance);
+
+    if (bucket == 0) {
+        // First fragment is written to the voxel grid directly
         imageStore(radianceOut, ivec3(inVoxelPos), vec4(pixelRadiance, 1.0));
-    } else if (count == 1) {
-        uint index = atomicAdd(overflowCount[0], 1);
-        if (index % MipmapWorkGroupSize == 0) atomicAdd(overflowCmd[0].x, 1);
-        overflowList0[index].position = u16vec3(uvec3(inVoxelPos));
-        overflowList0[index].radiance = f16vec3(pixelRadiance);
-    } else if (count == 2) {
-        uint index = atomicAdd(overflowCount[1], 1);
-        if (index % MipmapWorkGroupSize == 0) atomicAdd(overflowCmd[1].x, 1);
-        overflowList1[index].position = u16vec3(uvec3(inVoxelPos));
-        overflowList1[index].radiance = f16vec3(pixelRadiance);
-    } else {
-        uint index = atomicAdd(overflowCount[2], 1);
-        if (index % MipmapWorkGroupSize == 0) atomicAdd(overflowCmd[2].x, 1);
-        overflowList2[index].position = u16vec3(uvec3(inVoxelPos));
-        overflowList2[index].radiance = f16vec3(pixelRadiance);
     }
 }
