@@ -75,7 +75,7 @@ void main() {
         }
     }
 
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
+    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0) /*gl_FragCoord.xy*/);
 
     vec3 directDiffuseColor = baseColor - baseColor * metalness;
     vec3 directLight =

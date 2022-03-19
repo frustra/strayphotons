@@ -42,7 +42,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, float offset) {
     vec4 result = vec4(0);
 
     // TODO: Fix this constant
-    for (int level = 0; level < 5; level++) {
+    for (int level = 0; level < 8; level++) {
         vec3 position = voxelPos + voxelDir * dist;
         vec4 value = textureLod(voxelRadiance, position / voxelInfo.gridSize, level);
         result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
@@ -69,11 +69,11 @@ vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCo
             float offset = InterleavedGradientNoise(vec2(rOffset, fragCoord.y));
             vec4 sampleColor = ConeTraceGridDiffuse(samplePos, sampleDir, offset);
 
-            indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale * 0.5;
+            indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale;
         }
     }
 
-    return indirectDiffuse.rgb * 0.5;
+    return indirectDiffuse.rgb * 0.333;
 }
 
 #endif
