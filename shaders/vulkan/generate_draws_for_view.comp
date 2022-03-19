@@ -12,7 +12,7 @@ layout(push_constant) uniform PushConstants {
     uint visibilityMask;
 };
 
-#include "lib/indirect_commands.glsl"
+#include "../lib/indirect_commands.glsl"
 #include "lib/scene.glsl"
 
 layout(std430, set = 0, binding = 0) readonly buffer Renderables {

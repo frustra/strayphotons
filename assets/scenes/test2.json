@@ -1,13 +1,61 @@
 {
 	"entities": [
 		{
-			"renderable": "level1",
+			"name": "level1",
 			"transform": {
 				"translate": [0, 0, 0]
 			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "level1",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		},
+		{
+			"name": "level1.Walls_Cube.001",
 			"physics": {
-				"model": "level1",
-				"dynamic": false
+				"model": {
+					"model": "level1",
+					"mesh_index": 6
+				},
+				"dynamic": false,
+				"decomposeHull": true
+			}
+		},
+		{
+			"name": "level1.Exterior_Cube.006",
+			"physics": {
+				"model": {
+					"model": "level1",
+					"mesh_index": 4
+				},
+				"dynamic": false,
+				"decomposeHull": true
+			}
+		},
+		{
+			"name": "level1.Ceiling_Cube.007",
+			"physics": {
+				"model": {
+					"model": "level1",
+					"mesh_index": 3
+				},
+				"dynamic": false,
+				"decomposeHull": true
+			}
+		},
+		{
+			"name": "level1.Floor_Cube.008",
+			"physics": {
+				"model": {
+					"model": "level1",
+					"mesh_index": 2
+				},
+				"dynamic": false,
+				"decomposeHull": true
 			}
 		},
 		{
@@ -32,10 +80,15 @@
 			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 1.75, 0]
+			}
+		},
+		{
+			"transform": {
+				"translate": [-2.1, -0.1, -5.1],
+				"scale": [0.04, 0.04, 0.04]
 			},
-			"voxels": {
-				"min": [-2, 0, -5],
-				"max": [6.5, 3, 3]
+			"voxel_area": {
+				"extents": [205, 80, 205]
 			}
 		},
 		{

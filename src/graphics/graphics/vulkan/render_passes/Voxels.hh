@@ -17,6 +17,8 @@ namespace sp::vulkan::renderer {
     private:
         GPUScene &scene;
 
+        std::vector<ResourceID> fragmentListBuffers;
+
         ecs::Transform voxelToWorld;
         glm::ivec3 voxelGridSize;
     };

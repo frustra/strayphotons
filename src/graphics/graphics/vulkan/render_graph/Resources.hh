@@ -44,6 +44,10 @@ namespace sp::vulkan::render_graph {
             return imageDesc.format;
         }
 
+        size_t BufferSize() const {
+            return bufferDesc.size;
+        }
+
         ResourceID id = InvalidResource;
         Type type = Type::Undefined;
 

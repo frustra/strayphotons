@@ -74,14 +74,19 @@
 				"translate": [-0.01, 0.2, 9.6],
 				"rotate": [0, 0, 1, 0]
 			},
-			"voxels": {
-				"min": [-2, 0, -2.1],
-				"max": [2, 4, 2]
-			},
 			"trigger_area": {
 				"player": {
-					"command": "r.Exposure 0.5; r.FieldOfView 30"
+					"command": "r.FieldOfView 30"
 				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [-2.3, -0.3, -2.3],
+				"scale": [0.018, 0.018, 0.018]
+			},
+			"voxel_area": {
+				"extents": [256, 256, 256]
 			}
 		},
 		{

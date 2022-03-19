@@ -1,6 +1,4 @@
 loadscene sponza
-setsignal player:flashlight/on 1
-steplogic
 screenshot sponza-render-init.png
 stepgraphics
 stepphysics

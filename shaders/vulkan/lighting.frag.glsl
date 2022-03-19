@@ -26,6 +26,7 @@ layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
 #include "../lib/shading.glsl"
+#include "../lib/voxel_trace_shared.glsl"
 
 layout(constant_id = 0) const uint MODE = 1;
 
@@ -52,15 +53,29 @@ void main() {
     vec3 worldNormal = mat3(view.invViewMat) * viewNormal;
     vec3 flatWorldNormal = mat3(view.invViewMat) * flatViewNormal;
 
+    // Trace.
     vec3 rayDir = normalize(worldPosition - worldFragPosition);
     vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
-    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
-    vec4 voxelSample = texture(voxelRadiance, voxelPos / voxelInfo.gridSize);
-    if (voxelSample.a > 0.00001) voxelSample /= voxelSample.a;
-
     vec3 indirectSpecular = vec3(0);
-    vec3 indirectDiffuse = voxelSample.rgb;
+    {
+        // specular
+        vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
+        if (any(greaterThan(directSpecularColor, vec3(0.0))) && roughness < 1.0) {
+            float specularConeRatio = roughness * 0.8;
+            vec4 sampleColor =
+                ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, flatWorldNormal, gl_FragCoord.xy);
+
+            vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor,
+                roughness,
+                rayReflectDir,
+                -rayDir,
+                worldNormal);
+            indirectSpecular = sampleColor.rgb * brdf;
+        }
+    }
+
+    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0) /*gl_FragCoord.xy*/);
 
     vec3 directDiffuseColor = baseColor - baseColor * metalness;
     vec3 directLight =
