@@ -11,7 +11,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
     vec4 result = vec4(0);
 
     // TODO: Fix this constant
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 200; i++) {
         float size = max(1.0, ratio * dist);
         float planeDist = dot(surfaceNormal, voxelDir * dist) - AxisVoxelWidth(voxelDir);
         // If the sample intersects the surface, move it over
