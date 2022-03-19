@@ -44,8 +44,16 @@ namespace sp::vulkan::render_graph {
             return imageDesc.format;
         }
 
+        vk::Extent3D ImageExtents() const {
+            return imageDesc.extent;
+        }
+
+        uint32 ImageLayers() const {
+            return imageDesc.arrayLayers;
+        }
+
         size_t BufferSize() const {
-            return bufferDesc.size;
+            return bufferDesc.layout.size;
         }
 
         ResourceID id = InvalidResource;

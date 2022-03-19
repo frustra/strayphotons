@@ -8,19 +8,21 @@
 
 namespace sp::vulkan {
     GPUScene::GPUScene(DeviceContext &device) : device(device), workQueue("", 0), textures(device, workQueue) {
-        indexBuffer = device.AllocateBuffer(1024 * 1024 * 10,
+        indexBuffer = device.AllocateBuffer({sizeof(uint32), 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        vertexBuffer = device.AllocateBuffer(1024 * 1024 * 100,
+        vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), 1024 * 1024},
             vk::BufferUsageFlagBits::eVertexBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        primitiveLists = device.AllocateBuffer(1024 * 1024 * sizeof(GPUMeshPrimitive),
+        primitiveLists = device.AllocateBuffer({sizeof(GPUMeshPrimitive), 1024 * 1024},
             vk::BufferUsageFlagBits::eStorageBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        models = device.AllocateBuffer(1024 * 10, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        models = device.AllocateBuffer({sizeof(GPUMeshModel), 1024},
+            vk::BufferUsageFlagBits::eStorageBuffer,
+            VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
 
     void GPUScene::Flush() {
@@ -69,7 +71,7 @@ namespace sp::vulkan {
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer("RenderableEntities",
-                    std::max(size_t(1), renderables.size()) * sizeof(renderables.front()),
+                    {sizeof(renderables.front()), std::max(size_t(1), renderables.size())},
                     Residency::CPU_TO_GPU,
                     Access::HostWrite);
             })
@@ -113,7 +115,7 @@ namespace sp::vulkan {
                 graph.AddPass("Clear")
                     .Build([&](rg::PassBuilder &builder) {
                         auto drawCmds = builder.CreateBuffer(
-                            sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand),
+                            {sizeof(uint32), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
                             Residency::GPU_ONLY,
                             Access::TransferWrite);
                         bufferIDs.drawCommandsBuffer = drawCmds.id;
@@ -126,7 +128,7 @@ namespace sp::vulkan {
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
-                auto drawParams = builder.CreateBuffer(maxDraws * sizeof(uint16) * 2,
+                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 2, maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
@@ -184,7 +186,7 @@ namespace sp::vulkan {
                 graph.AddPass("Clear")
                     .Build([&](rg::PassBuilder &builder) {
                         builder.CreateBuffer("WarpedVertexDrawCmds",
-                            sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand),
+                            {sizeof(uint32), sizeof(VkDrawIndirectCommand), maxDraws},
                             Residency::GPU_ONLY,
                             Access::TransferWrite);
                     })
@@ -196,7 +198,7 @@ namespace sp::vulkan {
                 builder.Write("WarpedVertexDrawCmds", Access::ComputeShaderWrite);
 
                 builder.CreateBuffer("WarpedVertexDrawParams",
-                    maxDraws * sizeof(glm::vec4) * 5,
+                    {sizeof(glm::vec4) * 5, maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
             })
@@ -224,7 +226,7 @@ namespace sp::vulkan {
                 builder.Read("WarpedVertexDrawParams", Access::VertexShaderReadStorage);
 
                 builder.CreateBuffer("WarpedVertexBuffer",
-                    sizeof(SceneVertex) * std::max(1u, vertexCount),
+                    {sizeof(SceneVertex), std::max(1u, vertexCount)},
                     Residency::GPU_ONLY,
                     Access::VertexShaderWrite);
             })

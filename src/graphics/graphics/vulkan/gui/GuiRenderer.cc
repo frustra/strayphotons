@@ -123,13 +123,13 @@ namespace sp::vulkan {
         if (totalVtxSize == 0 || totalIdxSize == 0) return;
 
         BufferDesc vtxDesc;
-        vtxDesc.size = totalVtxSize;
+        vtxDesc.layout = totalVtxSize;
         vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
         vtxDesc.residency = Residency::CPU_TO_GPU;
         auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
 
         BufferDesc idxDesc;
-        idxDesc.size = totalIdxSize;
+        idxDesc.layout = totalIdxSize;
         idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
         idxDesc.residency = Residency::CPU_TO_GPU;
         auto indexBuffer = cmd.Device().GetBuffer(idxDesc);

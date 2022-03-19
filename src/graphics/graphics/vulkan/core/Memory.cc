@@ -56,8 +56,12 @@ namespace sp::vulkan {
 
     Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
-    Buffer::Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
-        : UniqueMemory(allocator), bufferInfo(bufferInfo) {
+    Buffer::Buffer(vk::BufferCreateInfo bufferInfo,
+        VmaAllocationCreateInfo allocInfo,
+        VmaAllocator allocator,
+        size_t arrayStride,
+        size_t arrayCount)
+        : UniqueMemory(allocator), bufferInfo(bufferInfo), arrayStride(arrayStride), arrayCount(arrayCount) {
         ZoneScoped;
         ZoneValue(bufferInfo.size);
 
@@ -83,7 +87,13 @@ namespace sp::vulkan {
     vk::DeviceSize Buffer::SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment) {
         if (subAllocationBlock == VK_NULL_HANDLE) {
             VmaVirtualBlockCreateInfo blockCreateInfo = {};
-            blockCreateInfo.size = bufferInfo.size;
+            if (arrayStride > 0 && arrayCount > 0) {
+                blockCreateInfo.size = arrayStride * arrayCount;
+                DebugAssert(blockCreateInfo.size <= bufferInfo.size,
+                    "declared array size greater than actual buffer size");
+            } else {
+                blockCreateInfo.size = bufferInfo.size;
+            }
             auto result = vmaCreateVirtualBlock(&blockCreateInfo, &subAllocationBlock);
             AssertVKSuccess(result, "creating virtual block");
         }
@@ -92,31 +102,25 @@ namespace sp::vulkan {
         allocCreateInfo.size = size;
         allocCreateInfo.alignment = alignment;
 
-        VkDeviceSize allocOffset;
+        vk::DeviceSize allocOffset;
         auto result = vmaVirtualAllocate(subAllocationBlock, &allocCreateInfo, &allocOffset);
         AssertVKSuccess(result, "creating virtual allocation");
         return allocOffset;
     }
 
-    SubBufferPtr Buffer::ArrayAllocate(size_t elementCount, vk::DeviceSize bytesPerElement) {
-        Assertf(subBufferBytesPerElement == 0 || subBufferBytesPerElement == bytesPerElement,
-            "buffer is sub-allocated with %d bytes per element, not %d",
-            subBufferBytesPerElement,
-            bytesPerElement);
+    SubBufferPtr Buffer::ArrayAllocate(size_t elementCount) {
+        Assertf(arrayStride > 0, "buffer is not an array");
 
-        subBufferBytesPerElement = bytesPerElement;
-        auto size = elementCount * bytesPerElement;
+        auto size = elementCount * arrayStride;
         auto offsetBytes = SubAllocateRaw(size, 1);
-        Assert(offsetBytes % bytesPerElement == 0, "suballocation was not aligned to the array");
-        return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size, bytesPerElement);
+        DebugAssert(offsetBytes % arrayStride == 0, "suballocation was not aligned to the array");
+        offsetBytes += bufferInfo.size - arrayCount * arrayStride; // align to end
+        return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size, offsetBytes / arrayStride);
     }
 
     SubBufferPtr Buffer::SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment) {
-        Assertf(subBufferBytesPerElement == 0 || subBufferBytesPerElement == 1,
-            "buffer is sub-allocated with %d bytes per element, not 1",
-            subBufferBytesPerElement);
+        Assertf(arrayStride == 0, "buffer is an array");
 
-        subBufferBytesPerElement = 1;
         auto offsetBytes = SubAllocateRaw(size, alignment);
         return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
     }

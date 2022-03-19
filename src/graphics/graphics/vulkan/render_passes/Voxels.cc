@@ -4,6 +4,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
+#include "graphics/vulkan/render_passes/Readback.hh"
 
 namespace sp::vulkan::renderer {
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
@@ -78,7 +79,9 @@ namespace sp::vulkan::renderer {
 
         struct GPUVoxelFragment {
             uint16_t position[3];
+            uint16_t _padding0[1];
             uint16_t radiance[3]; // half-float formatted
+            uint16_t _padding1[1];
         };
 
         struct GPUVoxelFragmentList {
@@ -141,7 +144,7 @@ namespace sp::vulkan::renderer {
 
                 for (size_t i = 0; i < CVarVoxelFragmentBuckets.Get() && i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
                     auto buf = builder.CreateBuffer(
-                        sizeof(GPUVoxelFragmentList) + sizeof(GPUVoxelFragment) * fragmentListSize,
+                        {sizeof(GPUVoxelFragmentList), sizeof(GPUVoxelFragment), (size_t)fragmentListSize},
                         Residency::GPU_ONLY,
                         Access::TransferWrite);
                     fragmentListBuffers.emplace_back(buf.id);
@@ -303,37 +306,10 @@ namespace sp::vulkan::renderer {
                 });
         }
 
-        // graph.AddPass("FillReadback")
-        //     .Build([&](rg::PassBuilder &builder) {
-        //         builder.Read(fragmentListBuffers[0], Access::TransferRead);
-
-        //         builder.CreateBuffer("FillReadback",
-        //             sizeof(GPUVoxelFragmentList),
-        //             Residency::GPU_TO_CPU,
-        //             Access::TransferWrite);
-        //     })
-        //     .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-        //         auto srcBuffer = resources.GetBuffer(fragmentListBuffers[0]);
-        //         auto dstBuffer = resources.GetBuffer("FillReadback");
-
-        //         vk::BufferCopy region;
-        //         region.size = sizeof(GPUVoxelFragmentList);
-        //         cmd.Raw().copyBuffer(*srcBuffer, *dstBuffer, {region});
-        //     });
-
-        // graph.AddPass("FillReadback2")
-        //     .Build([&](rg::PassBuilder &builder) {
-        //         builder.RequirePass();
-        //         builder.ReadPreviousFrame("FillReadback", Access::HostRead);
-        //     })
-        //     .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-        //         auto resourceId = resources.GetID("FillReadback", false, 1);
-        //         if (resourceId == InvalidResource) return;
-
-        //         auto buffer = resources.GetBuffer(resourceId);
-        //         auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
-        //         Logf("Fragment count: %u", map->count);
-        //     });
+        // AddBufferReadback(graph, fragmentListBuffers[0], 0, sizeof(GPUVoxelFragmentList), [](BufferPtr buffer) {
+        //     auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
+        //     Logf("Fragment count: %u", map->count);
+        // });
     }
 
     void Voxels::AddDebugPass(RenderGraph &graph) {

@@ -49,8 +49,21 @@ namespace sp::vulkan {
         GPU_TO_CPU = VMA_MEMORY_USAGE_GPU_TO_CPU,
     };
 
+    struct BufferLayout {
+        BufferLayout() = default;
+        BufferLayout(size_t size) : size(size) {}
+        BufferLayout(size_t arrayStride, size_t arrayCount)
+            : size(arrayStride * arrayCount), arrayStride(arrayStride), arrayCount(arrayCount) {}
+        BufferLayout(size_t baseSize, size_t arrayStride, size_t arrayCount)
+            : size(baseSize + arrayStride * arrayCount), arrayStride(arrayStride), arrayCount(arrayCount) {}
+
+        size_t size = 0, arrayStride = 0, arrayCount = 0;
+
+        bool operator==(const BufferLayout &other) const = default;
+    };
+
     struct BufferDesc {
-        size_t size;
+        BufferLayout layout;
         vk::BufferUsageFlags usage;
         Residency residency = Residency::UNKNOWN;
 
@@ -135,16 +148,16 @@ namespace sp::vulkan {
             VmaVirtualBlock subAllocationBlock,
             vk::DeviceSize offsetBytes,
             vk::DeviceSize size,
-            vk::DeviceSize bytesPerElement = 1)
+            vk::DeviceSize arrayOffset = std::numeric_limits<vk::DeviceSize>::max())
             : parentBuffer(buffer), subAllocationBlock(subAllocationBlock), offsetBytes(offsetBytes), size(size),
-              bytesPerElement(bytesPerElement) {}
+              arrayOffset(arrayOffset) {}
 
         ~SubBuffer();
 
         void *Mapped();
 
         vk::DeviceSize ArrayOffset() const {
-            return offsetBytes / bytesPerElement;
+            return arrayOffset;
         }
 
         vk::DeviceSize Size() const {
@@ -158,13 +171,17 @@ namespace sp::vulkan {
     private:
         Buffer *parentBuffer;
         VmaVirtualBlock subAllocationBlock;
-        vk::DeviceSize offsetBytes, size, bytesPerElement;
+        vk::DeviceSize offsetBytes, size, arrayOffset;
     };
 
     class Buffer : public UniqueMemory {
     public:
         Buffer();
-        Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
+        Buffer(vk::BufferCreateInfo bufferInfo,
+            VmaAllocationCreateInfo allocInfo,
+            VmaAllocator allocator,
+            size_t arrayStride = 0,
+            size_t arrayCount = 0);
         ~Buffer();
 
         vk::Buffer operator*() const {
@@ -183,13 +200,24 @@ namespace sp::vulkan {
             return bufferInfo.usage;
         }
 
-        // Treats the buffer as an array with all elements having `bytesPerElement` size.
-        // Allocates `elementCount` elements from this array.
-        // SubAllocate cannot be called after calling ArrayAllocate.
-        SubBufferPtr ArrayAllocate(size_t elementCount, vk::DeviceSize bytesPerElement);
+        /**
+         * Treats the buffer as an array with all elements having `bytesPerElement` size.
+         * Allocates `elementCount` elements from this array.
+         * Can be called only if the buffer was created with an arrayStride.
+         *
+         * If bufferInfo.size is not a multiple of arrayStride, the array is aligned to the end of the buffer,
+         * since runtime sized arrays are placed at the end of GPU buffers in shader storage.
+         */
+        SubBufferPtr ArrayAllocate(size_t elementCount);
 
-        // Treats the buffer as a heap containing arbitrarily sized allocations.
-        // ArrayAllocate cannot be called after calling SubAllocate.
+        vk::DeviceSize ArrayStride() const {
+            return arrayStride;
+        }
+
+        /**
+         * Treats the buffer as a heap containing arbitrarily sized allocations.
+         * Can be called only if the buffer was created without an arrayStride.
+         */
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
         Access LastAccess() const {
@@ -204,7 +232,7 @@ namespace sp::vulkan {
         vk::BufferCreateInfo bufferInfo;
         vk::Buffer buffer;
 
-        vk::DeviceSize subBufferBytesPerElement = 0;
+        size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 
         Access lastAccess = Access::None;
@@ -219,7 +247,9 @@ namespace std {
 
         result_type operator()(argument_type const &s) const {
             result_type h = 0;
-            sp::hash_combine(h, s.size);
+            sp::hash_combine(h, s.layout.size);
+            sp::hash_combine(h, s.layout.arrayStride);
+            sp::hash_combine(h, s.layout.arrayCount);
             sp::hash_combine(h, VkBufferUsageFlags(s.usage));
             sp::hash_combine(h, s.residency);
             return h;

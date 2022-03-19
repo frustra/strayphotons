@@ -15,7 +15,7 @@ namespace sp::vulkan {
             return buffer;
         }
 
-        bufferList.pending.push_back(device.AllocateBuffer(desc.size, desc.usage, (VmaMemoryUsage)desc.residency));
+        bufferList.pending.push_back(device.AllocateBuffer(desc.layout, desc.usage, (VmaMemoryUsage)desc.residency));
         return bufferList.pending.back();
     }
 

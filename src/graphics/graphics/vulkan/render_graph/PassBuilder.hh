@@ -46,8 +46,8 @@ namespace sp::vulkan::render_graph {
             return resources.GetResourceRef(id).DeriveImage();
         }
 
-        Resource CreateBuffer(size_t size, Residency residency, Access access);
-        Resource CreateBuffer(string_view name, size_t size, Residency residency, Access access);
+        Resource CreateBuffer(BufferLayout layout, Residency residency, Access access);
+        Resource CreateBuffer(string_view name, BufferLayout layout, Residency residency, Access access);
 
         Resource CreateUniform(string_view name, size_t size) {
             return CreateBuffer(name, size, Residency::CPU_TO_GPU, Access::HostWrite);
