@@ -1,4 +1,5 @@
 loadscene cornell-box-1
+r.Exposure 0.5
 stepphysics
 screenshot cornell-box-1.png
 stepgraphics

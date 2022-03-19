@@ -76,7 +76,7 @@
 			},
 			"trigger_area": {
 				"player": {
-					"command": "r.Exposure 0.5; r.FieldOfView 30"
+					"command": "r.FieldOfView 30"
 				}
 			}
 		},
