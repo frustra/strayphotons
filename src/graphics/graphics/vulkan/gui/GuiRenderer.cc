@@ -62,7 +62,7 @@ namespace sp::vulkan {
         fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
         ImageViewCreateInfo fontViewInfo;
-        fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
+        fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClampEdge);
 
         fontView = device.CreateImageAndView(fontImageInfo,
             fontViewInfo,

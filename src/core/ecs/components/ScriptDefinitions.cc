@@ -411,7 +411,7 @@ namespace ecs {
                     }
 
                     targetPosition = voxelRotation * targetPosition + voxelOffset;
-                    targetPosition = glm::floor(targetPosition / voxelScale) * voxelScale;
+                    targetPosition = glm::floor(targetPosition / (voxelScale * 16.0f)) * voxelScale * 16.0f;
                     transform.pose.SetPosition(glm::inverse(voxelRotation) * targetPosition);
                     transform.pose.SetScale(glm::vec3(voxelScale));
                 }
