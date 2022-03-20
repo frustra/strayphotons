@@ -138,7 +138,7 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eR32Uint;
                 builder.CreateImage("FillCounters", desc, clearCounters ? Access::TransferWrite : Access::None);
 
-                desc.sampler = SamplerType::TrilinearClamp;
+                desc.sampler = SamplerType::TrilinearClampBorder;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
 
@@ -296,6 +296,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetComputeShader("voxel_mipmap.comp");
 
                     cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", i - 1));
+                    cmd.SetSampler(0, 0, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
                     cmd.SetImageView(0, 1, resources.GetImageMipView("Radiance", i));
 
                     cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
