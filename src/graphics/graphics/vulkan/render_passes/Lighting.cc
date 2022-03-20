@@ -123,7 +123,8 @@ namespace sp::vulkan::renderer {
             })
 
             .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
+                cmd.SetShaders("shadow_map.vert",
+                    (CVarVSM.Get() && !CVarPCF.Get()) ? "shadow_map_vsm.frag" : "shadow_map.frag");
 
                 for (int i = 0; i < lightCount; i++) {
                     auto &view = views[i];
@@ -175,7 +176,7 @@ namespace sp::vulkan::renderer {
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
             .Execute([this, depthTarget](rg::Resources &resources, CommandContext &cmd) {
-                auto frag = CVarVSM.Get() ? "lighting_vsm.frag" : CVarPCF.Get() ? "lighting_pcf.frag" : "lighting.frag";
+                auto frag = CVarPCF.Get() ? "lighting_pcf.frag" : CVarVSM.Get() ? "lighting_vsm.frag" : "lighting.frag";
                 cmd.SetShaders("screen_cover.vert", frag);
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);
