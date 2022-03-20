@@ -986,11 +986,32 @@
 					0.1
 				]
 			},
-			"voxel_area": {
+			"_voxel_area": {
 				"extents": [
 					141,
 					51,
 					80
+				]
+			}
+		},
+		{
+			"transform": {},
+			"script": {
+				"onTick": "voxel_controller",
+				"parameters": {
+					"follow_target": "player:player",
+					"voxel_stride": 16,
+					"voxel_scale": 0.1,
+					"voxel_offset_x": -0.5,
+					"voxel_offset_y": -0.1,
+					"voxel_offset_z": -0.5
+				}
+			},
+			"voxel_area": {
+				"extents": [
+					256,
+					64,
+					360
 				]
 			}
 		},
