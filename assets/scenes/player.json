@@ -15,13 +15,19 @@
             "signal_output": {}
         },
         {
-            "transform": {
-                "parent": "player",
-                "translate": [-7.5, -5, -7.5],
-                "scale": [0.1, 0.1, 0.1]
+            "transform": {},
+            "script": {
+                "onTick": "voxel_controller",
+                "parameters": {
+                    "follow_target": "player",
+                    "voxel_scale": 0.1,
+                    "voxel_offset_x": -0.5,
+                    "voxel_offset_y": -0.1,
+                    "voxel_offset_z": -0.5
+                }
             },
-            "_voxel_area": {
-                "extents": [150, 100, 150]
+            "voxel_area": {
+                "extents": [180, 128, 180]
             }
         },
         {

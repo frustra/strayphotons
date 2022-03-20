@@ -378,5 +378,43 @@ namespace ecs {
                     }
                 }
             }},
+        {"voxel_controller",
+            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                if (ent.Has<TransformTree, VoxelArea>(lock)) {
+                    auto scene = state.scene.lock();
+                    auto &transform = ent.Get<TransformTree>(lock);
+                    auto &voxelArea = ent.Get<VoxelArea>(lock);
+                    auto voxelRotation = transform.GetGlobalRotation(lock);
+
+                    auto voxelScale = (float)state.GetParam<double>("voxel_scale");
+                    glm::vec3 voxelOffset;
+                    voxelOffset.x = state.GetParam<double>("voxel_offset_x");
+                    voxelOffset.y = state.GetParam<double>("voxel_offset_y");
+                    voxelOffset.z = state.GetParam<double>("voxel_offset_z");
+                    voxelOffset *= glm::vec3(voxelArea.extents) * voxelScale;
+
+                    auto targetPosition = glm::vec3(0);
+                    auto fullTargetName = state.GetParam<std::string>("follow_target");
+                    ecs::Name targetName;
+                    if (targetName.Parse(fullTargetName, scene.get())) {
+                        auto targetEntity = state.GetParam<NamedEntity>("target_entity");
+                        if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+
+                        auto target = targetEntity.Get(lock);
+                        if (target) {
+                            state.SetParam<NamedEntity>("target_entity", targetEntity);
+
+                            if (target.Has<TransformSnapshot>(lock)) {
+                                targetPosition = target.Get<TransformSnapshot>(lock).GetPosition();
+                            }
+                        }
+                    }
+
+                    targetPosition = voxelRotation * targetPosition + voxelOffset;
+                    targetPosition = glm::floor(targetPosition / voxelScale) * voxelScale;
+                    transform.pose.SetPosition(glm::inverse(voxelRotation) * targetPosition);
+                    transform.pose.SetScale(glm::vec3(voxelScale));
+                }
+            }},
     };
 } // namespace ecs
