@@ -387,6 +387,7 @@ namespace ecs {
                     auto voxelRotation = transform.GetGlobalRotation(lock);
 
                     auto voxelScale = (float)state.GetParam<double>("voxel_scale");
+                    auto voxelStride = std::max(1.0f, (float)state.GetParam<double>("voxel_stride"));
                     glm::vec3 voxelOffset;
                     voxelOffset.x = state.GetParam<double>("voxel_offset_x");
                     voxelOffset.y = state.GetParam<double>("voxel_offset_y");
@@ -411,7 +412,7 @@ namespace ecs {
                     }
 
                     targetPosition = voxelRotation * targetPosition + voxelOffset;
-                    targetPosition = glm::floor(targetPosition / (voxelScale * 16.0f)) * voxelScale * 16.0f;
+                    targetPosition = glm::floor(targetPosition / voxelStride / voxelScale) * voxelScale * voxelStride;
                     transform.pose.SetPosition(glm::inverse(voxelRotation) * targetPosition);
                     transform.pose.SetScale(glm::vec3(voxelScale));
                 }

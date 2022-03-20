@@ -9,14 +9,14 @@
 namespace sp::vulkan::renderer {
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
-        "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace)");
+        "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
         3,
         "Change the voxel grid clearing operation used between frames "
         "(0: no clear, 1: clear radiance, 2: clear counters: 3: clear all)");
     static CVar<size_t> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
-        4,
+        9,
         "The number of fragments that can be written to a voxel.");
 
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
@@ -345,7 +345,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 4, resources.GetImageView("Voxels.Radiance"));
                 cmd.SetImageView(0, 5, resources.GetImageView(resources.LastOutputID()));
 
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebugBlend.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());
 
                 cmd.Draw(3);
             });

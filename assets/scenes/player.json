@@ -15,22 +15,6 @@
             "signal_output": {}
         },
         {
-            "transform": {},
-            "script": {
-                "onTick": "voxel_controller",
-                "parameters": {
-                    "follow_target": "player",
-                    "voxel_scale": 0.1,
-                    "voxel_offset_x": -0.5,
-                    "voxel_offset_y": -0.1,
-                    "voxel_offset_z": -0.5
-                }
-            },
-            "voxel_area": {
-                "extents": [180, 128, 180]
-            }
-        },
-        {
             "name": "flatview",
             "view": {
                 "clip": [0.1, 350]

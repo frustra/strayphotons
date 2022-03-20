@@ -23,7 +23,8 @@ layout(binding = 3, r32ui) readonly uniform uimage3D fillCounters;
 layout(binding = 4) uniform sampler3D voxelRadiance;
 layout(binding = 5) uniform sampler2DArray overlayTex;
 
-layout(constant_id = 0) const float BLEND_WEIGHT = 0;
+layout(constant_id = 0) const int DEBUG_MODE = 0;
+layout(constant_id = 1) const float BLEND_WEIGHT = 0;
 
 #include "../lib/voxel_trace_debug.glsl"
 #include "../lib/voxel_trace_shared.glsl"
@@ -36,10 +37,13 @@ void main() {
     vec3 rayDir = normalize(rayPos.xyz - view.invViewMat[3].xyz);
 
     vec3 sampleRadiance;
-    float count = TraceVoxelGrid(rayPos.xyz, rayDir, 0, sampleRadiance);
-    // sampleRadiance = ConeTraceGrid(1 / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy).rgb;
-    // sampleRadiance = ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, 0).rgb;
-    // sampleRadiance = vec3(1 / count);
+    if (DEBUG_MODE == 1) {
+        TraceVoxelGrid(rayPos.xyz, rayDir, 0, sampleRadiance);
+    } else if (DEBUG_MODE == 2) {
+        sampleRadiance = ConeTraceGrid(1 / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy).rgb;
+    } else if (DEBUG_MODE == 3) {
+        sampleRadiance = ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, 0).rgb;
+    }
 
     vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed
     outFragColor = vec4(mix(sampleRadiance * exposure, overlay, BLEND_WEIGHT), 1.0);

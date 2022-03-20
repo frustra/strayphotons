@@ -7,7 +7,7 @@
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
-    static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering");
+    static CVar<int> CVarPCF("r.PCF", 1, "Enable screen space shadow filtering (0: off, 1: on, 2: shadow map blur");
     static CVar<int> CVarLightingMode("r.LightingMode",
         1,
         "Toggle between different lighting shader modes "
@@ -153,7 +153,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto depthTarget = CVarVSM.Get() ? "ShadowMapBlur.LastOutput" : "ShadowMapLinear";
+        auto depthTarget = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMapLinear";
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
@@ -175,8 +175,14 @@ namespace sp::vulkan::renderer {
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
             .Execute([this, depthTarget](rg::Resources &resources, CommandContext &cmd) {
-                auto frag = CVarVSM.Get() ? "lighting_vsm.frag" : CVarPCF.Get() ? "lighting_pcf.frag" : "lighting.frag";
-                cmd.SetShaders("screen_cover.vert", frag);
+                if (CVarVSM.Get()) {
+                    cmd.SetShaders("screen_cover.vert", "lighting_vsm.frag");
+                } else if (CVarPCF.Get() > 0) {
+                    cmd.SetShaders("screen_cover.vert", "lighting_pcf.frag");
+                } else {
+                    cmd.SetShaders("screen_cover.vert", "lighting.frag");
+                }
+
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
