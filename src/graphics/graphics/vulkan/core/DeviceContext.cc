@@ -864,13 +864,13 @@ namespace sp::vulkan {
         }
     }
 
-    BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
+    BufferPtr DeviceContext::AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
         vk::BufferCreateInfo bufferInfo;
-        bufferInfo.size = size;
+        bufferInfo.size = layout.size;
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get(), layout.arrayStride, layout.arrayCount);
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo) {
@@ -1270,7 +1270,7 @@ namespace sp::vulkan {
         if (genMipmap) {
             viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
         } else {
-            viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClamp);
+            viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
         return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
     }
@@ -1288,14 +1288,17 @@ namespace sp::vulkan {
         vk::SamplerCreateInfo samplerInfo;
 
         switch (type) {
-        case SamplerType::BilinearClamp:
+        case SamplerType::BilinearClampBorder:
+        case SamplerType::BilinearClampEdge:
         case SamplerType::BilinearTiled:
-        case SamplerType::TrilinearClamp:
+        case SamplerType::TrilinearClampBorder:
+        case SamplerType::TrilinearClampEdge:
         case SamplerType::TrilinearTiled:
             samplerInfo.magFilter = vk::Filter::eLinear;
             samplerInfo.minFilter = vk::Filter::eLinear;
             break;
-        case SamplerType::NearestClamp:
+        case SamplerType::NearestClampBorder:
+        case SamplerType::NearestClampEdge:
         case SamplerType::NearestTiled:
             samplerInfo.magFilter = vk::Filter::eNearest;
             samplerInfo.minFilter = vk::Filter::eNearest;
@@ -1303,7 +1306,8 @@ namespace sp::vulkan {
         }
 
         switch (type) {
-        case SamplerType::TrilinearClamp:
+        case SamplerType::TrilinearClampBorder:
+        case SamplerType::TrilinearClampEdge:
         case SamplerType::TrilinearTiled:
             samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
             samplerInfo.maxAnisotropy = 4.0f;
@@ -1323,10 +1327,17 @@ namespace sp::vulkan {
             samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
             samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
             break;
-        default:
+        case SamplerType::TrilinearClampEdge:
+        case SamplerType::BilinearClampEdge:
+        case SamplerType::NearestClampEdge:
             samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
             samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
             samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+            break;
+        default:
+            samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToBorder;
+            samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToBorder;
+            samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToBorder;
         }
 
         samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;

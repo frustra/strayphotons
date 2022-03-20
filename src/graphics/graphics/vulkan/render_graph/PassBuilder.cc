@@ -87,15 +87,15 @@ namespace sp::vulkan::render_graph {
         pass.primaryAttachmentIndex = index;
     }
 
-    Resource PassBuilder::CreateBuffer(size_t size, Residency residency, Access access) {
-        return CreateBuffer("", size, residency, access);
+    Resource PassBuilder::CreateBuffer(BufferLayout layout, Residency residency, Access access) {
+        return CreateBuffer("", layout, residency, access);
     }
 
-    Resource PassBuilder::CreateBuffer(string_view name, size_t size, Residency residency, Access access) {
-        Assert(size > 0, "can't create a buffer of size 0");
+    Resource PassBuilder::CreateBuffer(string_view name, BufferLayout layout, Residency residency, Access access) {
+        Assert(layout.size > 0, "can't create a buffer of size 0");
 
         BufferDesc desc;
-        desc.size = size;
+        desc.layout = layout;
         desc.residency = residency;
         Resource resource(desc);
         resources.Register(name, resource);

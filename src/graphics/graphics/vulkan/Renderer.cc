@@ -427,7 +427,7 @@ namespace sp::vulkan {
                     }
 
                     desc.mipLevels = CalculateMipmapLevels(desc.extent);
-                    desc.sampler = SamplerType::TrilinearClamp;
+                    desc.sampler = SamplerType::TrilinearClampEdge;
 
                     const auto &name = gui.manager->Name();
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});

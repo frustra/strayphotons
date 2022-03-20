@@ -40,11 +40,14 @@ namespace sp::vulkan {
     };
 
     enum class SamplerType {
-        BilinearClamp,
+        BilinearClampEdge,
+        BilinearClampBorder,
         BilinearTiled,
-        TrilinearClamp,
+        TrilinearClampEdge,
+        TrilinearClampBorder,
         TrilinearTiled,
-        NearestClamp,
+        NearestClampEdge,
+        NearestClampBorder,
         NearestTiled,
     };
 

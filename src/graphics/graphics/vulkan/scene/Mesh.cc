@@ -28,11 +28,11 @@ namespace sp::vulkan {
             vertexCount += assetPrimitive.positionBuffer.Count();
         }
 
-        indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount, sizeof(uint32));
+        indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount);
         auto indexData = (uint32 *)indexBuffer->Mapped();
         auto indexDataStart = indexData;
 
-        vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount, sizeof(SceneVertex));
+        vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount);
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
@@ -72,8 +72,8 @@ namespace sp::vulkan {
                 TextureType::MetallicRoughness);
         }
 
-        primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size(), sizeof(GPUMeshPrimitive));
-        modelEntry = scene.models->ArrayAllocate(1, sizeof(GPUMeshModel));
+        primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size());
+        modelEntry = scene.models->ArrayAllocate(1);
 
         auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
         auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();

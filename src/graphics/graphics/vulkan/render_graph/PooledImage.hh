@@ -11,7 +11,7 @@ namespace sp::vulkan::render_graph {
         vk::Format format = vk::Format::eUndefined;
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::ImageViewType primaryViewType = vk::ImageViewType::e2D; // when e2D, derived from imageType
-        SamplerType sampler = SamplerType::BilinearClamp;
+        SamplerType sampler = SamplerType::BilinearClampEdge;
 
         vk::ImageUsageFlags usage; // set by the render graph
 

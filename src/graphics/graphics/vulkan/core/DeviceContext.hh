@@ -104,7 +104,7 @@ namespace sp::vulkan {
             vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
             vk::Fence fence = {});
 
-        BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        BufferPtr AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);
 
         template<typename T>
@@ -188,6 +188,22 @@ namespace sp::vulkan {
 
         void FlushMainQueue() {
             frameEndQueue.Flush(true);
+        }
+
+        template<typename CallbackFn>
+        void ExecuteAfterFence(vk::Fence fence, CallbackFn &&callback) {
+            frameEndQueue.Dispatch<void>([this, callback, fence]() {
+                if (device->getFenceStatus(fence) == vk::Result::eSuccess) {
+                    callback();
+                } else {
+                    ExecuteAfterFence(fence, callback);
+                }
+            });
+        }
+
+        template<typename CallbackFn>
+        void ExecuteAfterFrameFence(CallbackFn &&callback) {
+            ExecuteAfterFence(*Frame().inFlightFence, std::forward<CallbackFn>(callback));
         }
 
         PerfTimer *GetPerfTimer() const {

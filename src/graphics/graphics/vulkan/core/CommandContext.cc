@@ -320,6 +320,7 @@ namespace sp::vulkan {
         bufferBinding.buffer = **buffer;
         bufferBinding.offset = 0;
         bufferBinding.range = buffer->Size();
+        bindingDesc.arrayStride = buffer->ArrayStride();
         SetDescriptorDirty(set);
     }
 
@@ -333,12 +334,13 @@ namespace sp::vulkan {
         bufferBinding.buffer = **buffer;
         bufferBinding.offset = 0;
         bufferBinding.range = buffer->Size();
+        bindingDesc.arrayStride = buffer->ArrayStride();
         SetDescriptorDirty(set);
     }
 
     BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
         BufferDesc desc;
-        desc.size = size;
+        desc.layout = size;
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
         auto buffer = device.GetBuffer(desc);
