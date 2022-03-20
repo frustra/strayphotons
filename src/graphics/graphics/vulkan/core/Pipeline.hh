@@ -67,7 +67,7 @@ namespace sp::vulkan {
         DescriptorSetLayoutInfo descriptorSets[MAX_BOUND_DESCRIPTOR_SETS];
 
         struct MemorySize {
-            VkDeviceSize sizeBase = 0, sizeIncrement = 0;
+            vk::DeviceSize sizeBase = 0, sizeIncrement = 0;
         };
         std::array<std::array<MemorySize, MAX_BINDINGS_PER_DESCRIPTOR_SET>, MAX_BOUND_DESCRIPTOR_SETS> sizes;
     };

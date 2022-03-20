@@ -141,7 +141,7 @@ namespace sp::vulkan {
                     } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
                         setInfo.storageBuffersMask |= (1 << binding);
 
-                        VkDeviceSize sizeBase = 0, sizeIncrement = 0;
+                        vk::DeviceSize sizeBase = 0, sizeIncrement = 0;
 
                         if (desc->block.member_count > 0) {
                             auto &lastMember = desc->block.members[desc->block.member_count - 1];
@@ -252,40 +252,49 @@ namespace sp::vulkan {
 
             ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32 binding) {
                 auto size = bindings[binding].buffer.range - bindings[binding].buffer.offset;
-                auto expectedMinimumSize = sizes[binding].sizeBase;
-                if (size == expectedMinimumSize) return;
+                auto minSize = sizes[binding].sizeBase;
+                if (size == minSize) return;
 
-                auto expectedSizeIncrement = sizes[binding].sizeIncrement;
-                int64_t extra = size - expectedMinimumSize;
+                auto bindingArrayStride = sizes[binding].sizeIncrement;
+                auto bufferArrayStride = bindings[binding].arrayStride;
 
-                if (expectedSizeIncrement > 0 && extra > 0 && (extra % expectedSizeIncrement) == 0) return;
+                if (bufferArrayStride > 0 && bufferArrayStride == bindingArrayStride) {
+                    int64_t delta = size - minSize;
+                    if (delta > 0 && (delta % bufferArrayStride) == 0) return;
+                }
+
                 errors = true;
 
-                size_t i;
-                for (i = 0; i < (size_t)ShaderStage::Count; i++) {
-                    if (setLayout.stages[binding] & ShaderStageToFlagBits[i]) break;
+                spv_reflect::ShaderModule *reflect = nullptr;
+
+                std::stringstream message;
+                message << "Incompatible buffer layout in binding " << set << "." << binding << " accessed by shaders ";
+
+                for (size_t i = 0; i < (size_t)ShaderStage::Count; i++) {
+                    if (setLayout.stages[binding] & ShaderStageToFlagBits[i]) {
+                        if (reflect) message << ", ";
+                        message << shaders[i]->name;
+                        reflect = &shaders[i]->reflection;
+                    }
                 }
+                message << "\n";
 
-                std::stringstream reflectionStr;
-                string_view shaderName = "";
-
-                if (i < (size_t)ShaderStage::Count && shaders[i]) {
-                    shaderName = shaders[i]->name;
-                    auto desc = shaders[i]->reflection.GetDescriptorBinding(binding, set);
-                    StreamWriteDescriptorBinding(reflectionStr, *desc, true, false, "  ");
+                if (bufferArrayStride > 0 || bindingArrayStride > 0) {
+                    message << "buffer (total size " << size << ", array stride " << bufferArrayStride << ")\n";
+                    message << "binding (minimum size " << minSize << ", array stride " << bindingArrayStride << ")\n";
                 } else {
-                    reflectionStr << "trying to write a descriptor value that's not accessed by any shader";
+                    message << "buffer (size " << size << ")\n";
+                    message << "binding (size " << minSize << ")\n";
                 }
 
-                Errorf("layout mismatch in shader=%s set=%d binding=%d buffer_size=%d expected_minimum_size=%d "
-                       "expected_size_increment=%d\n%s",
-                    shaderName,
-                    set,
-                    binding,
-                    size,
-                    expectedMinimumSize,
-                    expectedSizeIncrement,
-                    reflectionStr.str());
+                if (!reflect) {
+                    message << "trying to write a descriptor value that's not accessed by any shader";
+                } else {
+                    auto desc = reflect->GetDescriptorBinding(binding, set);
+                    StreamWriteDescriptorBinding(message, *desc, true, false, "  ");
+                }
+
+                Errorf("%s", message.str());
             });
 
             Assert(!errors, "error validating descriptor set");

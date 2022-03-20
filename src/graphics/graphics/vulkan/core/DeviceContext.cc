@@ -864,13 +864,13 @@ namespace sp::vulkan {
         }
     }
 
-    BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
+    BufferPtr DeviceContext::AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
         vk::BufferCreateInfo bufferInfo;
-        bufferInfo.size = size;
+        bufferInfo.size = layout.size;
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get(), layout.arrayStride, layout.arrayCount);
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo) {

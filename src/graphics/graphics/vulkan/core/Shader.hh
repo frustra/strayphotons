@@ -61,6 +61,7 @@ namespace sp::vulkan {
         };
         vk::DeviceSize offset;
         UniqueID uniqueID = 0;
+        uint32 arrayStride = 0;
     };
 
     struct DescriptorSetBindings {
