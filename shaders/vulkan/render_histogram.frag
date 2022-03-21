@@ -9,6 +9,9 @@ layout(num_views = 2) in;
 layout(binding = 0) uniform sampler2DArray luminanceTex;
 layout(binding = 1, r32ui) uniform uimage2D histogram;
 
+INCLUDE_LAYOUT(binding = 2)
+#include "lib/exposure_state.glsl"
+
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
@@ -21,7 +24,7 @@ void main() {
     uint count = imageLoad(histogram, ivec2(bin, 0)).r;
     float height = count * (histDownsample * histDownsample / histSampleScale) / float(size.x * size.y);
 
-    float binLuminance = luminanceFromRatio(float(bin) / HistogramBins);
+    float binLuminance = exposure * luminanceFromRatio(float(bin) / HistogramBins);
     float y = 1 - inTexCoord.y;
     vec2 edge = step(vec2(y), vec2(height, height + 0.005));
     vec3 bar = (edge[1] - edge[0]) * vec3(0, 0.5, 0);
