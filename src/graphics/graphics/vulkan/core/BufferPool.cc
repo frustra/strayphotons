@@ -9,31 +9,38 @@ namespace sp::vulkan {
         auto &bufferList = buffers[desc];
 
         if (!bufferList.free.empty()) {
-            auto buffer = std::move(bufferList.free.back());
+            auto entry = std::move(bufferList.free.back());
             bufferList.free.pop_back();
-            bufferList.pending.push_back(buffer);
-            return buffer;
+
+            entry.unusedFrames = 0;
+            bufferList.pending.push_back(entry);
+            return entry.ptr;
         }
 
-        bufferList.pending.push_back(device.AllocateBuffer(desc.layout, desc.usage, (VmaMemoryUsage)desc.residency));
-        return bufferList.pending.back();
+        bufferList.pending.emplace_back(device.AllocateBuffer(desc.layout, desc.usage, (VmaMemoryUsage)desc.residency),
+            0);
+        return bufferList.pending.back().ptr;
     }
 
     void BufferPool::Tick() {
         ZoneScoped;
         for (auto &[desc, list] : buffers) {
+            erase_if(list.free, [&](auto &entry) {
+                return entry.unusedFrames++ > 4;
+            });
+
             list.free.insert(list.free.end(), list.pendingFree.begin(), list.pendingFree.end());
             list.pendingFree.clear();
 
             for (int i = list.pending.size() - 1; i >= 0; i--) {
-                auto &x = list.pending[i];
-                if (x.use_count() == 1) {
+                auto &entry = list.pending[i];
+                if (entry.ptr.use_count() == 1) {
                     // Host visible memory may be mapped and written while GPU work is still ongoing.
                     // Double buffer in this case, so the next frame can start without synchronizing.
-                    if (x->Properties() & vk::MemoryPropertyFlagBits::eHostVisible)
-                        list.pendingFree.push_back(std::move(x));
+                    if (entry.ptr->Properties() & vk::MemoryPropertyFlagBits::eHostVisible)
+                        list.pendingFree.push_back(std::move(entry));
                     else
-                        list.free.push_back(std::move(x));
+                        list.free.push_back(std::move(entry));
                     list.pending.erase(list.pending.begin() + i);
                 }
             }
@@ -50,19 +57,22 @@ namespace sp::vulkan {
         std::unordered_map<VkMemoryPropertyFlags, entry> stats;
 
         for (auto &[desc, list] : buffers) {
-            for (auto &buf : list.pending) {
+            for (auto &entry : list.pending) {
+                auto &buf = entry.ptr;
                 auto &ent = stats[VkMemoryPropertyFlags(buf->Properties())];
                 ent.allocated.bytes += buf->ByteSize();
                 ent.allocated.count += 1;
                 any = true;
             }
-            for (auto &buf : list.free) {
+            for (auto &entry : list.free) {
+                auto &buf = entry.ptr;
                 auto &ent = stats[VkMemoryPropertyFlags(buf->Properties())];
                 ent.free.bytes += buf->ByteSize();
                 ent.free.count += 1;
                 any = true;
             }
-            for (auto &buf : list.pendingFree) {
+            for (auto &entry : list.pendingFree) {
+                auto &buf = entry.ptr;
                 auto &ent = stats[VkMemoryPropertyFlags(buf->Properties())];
                 ent.pendingFree.bytes += buf->ByteSize();
                 ent.pendingFree.count += 1;

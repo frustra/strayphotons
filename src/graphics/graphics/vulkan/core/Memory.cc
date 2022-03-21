@@ -104,6 +104,10 @@ namespace sp::vulkan {
 
         vk::DeviceSize allocOffset;
         auto result = vmaVirtualAllocate(subAllocationBlock, &allocCreateInfo, &allocOffset);
+        Assertf(result != VK_ERROR_OUT_OF_DEVICE_MEMORY,
+            "out of memory in buffer, trying to suballocate %d bytes, buffer size %d bytes",
+            size,
+            bufferInfo.size);
         AssertVKSuccess(result, "creating virtual allocation");
         return allocOffset;
     }

@@ -8,7 +8,7 @@
 
 namespace sp::vulkan {
     GPUScene::GPUScene(DeviceContext &device) : device(device), workQueue("", 0), textures(device, workQueue) {
-        indexBuffer = device.AllocateBuffer({sizeof(uint32), 1024 * 1024},
+        indexBuffer = device.AllocateBuffer({sizeof(uint32), 10 * 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
@@ -16,7 +16,7 @@ namespace sp::vulkan {
             vk::BufferUsageFlagBits::eVertexBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        primitiveLists = device.AllocateBuffer({sizeof(GPUMeshPrimitive), 1024 * 1024},
+        primitiveLists = device.AllocateBuffer({sizeof(GPUMeshPrimitive), 10 * 1024},
             vk::BufferUsageFlagBits::eStorageBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
