@@ -84,6 +84,13 @@ namespace sp::vulkan {
         }
     }
 
+    static char *virtualAllocInfoString(VmaVirtualBlock block) {
+        // Leaks str, use only before aborting.
+        char *str;
+        vmaBuildVirtualBlockStatsString(block, &str, false);
+        return str;
+    }
+
     vk::DeviceSize Buffer::SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment) {
         if (subAllocationBlock == VK_NULL_HANDLE) {
             VmaVirtualBlockCreateInfo blockCreateInfo = {};
@@ -104,6 +111,11 @@ namespace sp::vulkan {
 
         vk::DeviceSize allocOffset;
         auto result = vmaVirtualAllocate(subAllocationBlock, &allocCreateInfo, &allocOffset);
+        Assertf(result != VK_ERROR_OUT_OF_DEVICE_MEMORY,
+            "out of memory in buffer, trying to suballocate %d bytes, buffer size %d bytes\n%s",
+            size,
+            bufferInfo.size,
+            virtualAllocInfoString(subAllocationBlock));
         AssertVKSuccess(result, "creating virtual allocation");
         return allocOffset;
     }

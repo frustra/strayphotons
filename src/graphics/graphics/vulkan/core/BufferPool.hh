@@ -16,10 +16,15 @@ namespace sp::vulkan {
     private:
         DeviceContext &device;
 
+        struct BufferEntry {
+            BufferPtr ptr;
+            int unusedFrames;
+        };
+
         struct BufferList {
-            vector<BufferPtr> free;
-            vector<BufferPtr> pendingFree;
-            vector<BufferPtr> pending;
+            vector<BufferEntry> free;
+            vector<BufferEntry> pendingFree;
+            vector<BufferEntry> pending;
         };
         robin_hood::unordered_map<BufferDesc, BufferList> buffers;
     };
