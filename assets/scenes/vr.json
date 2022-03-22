@@ -2,13 +2,7 @@
     "entities": [
         {
             "name": "left_hand_input",
-            "renderable": {
-                "model": "box"
-            },
-            "transform": {
-                "scale": [0.01, 0.01, 0.01],
-                "rotate": [180, 0, 1, 0]
-            },
+            "transform": {},
             "script": [
                 {
                     "onTick": "auto_attach",
@@ -23,13 +17,7 @@
         },
         {
             "name": "right_hand_input",
-            "renderable": {
-                "model": "box"
-            },
-            "transform": {
-                "scale": [0.01, 0.01, 0.01],
-                "rotate": [180, 0, 1, 0]
-            },
+            "transform": {},
             "script": [
                 {
                     "onTick": "auto_attach",
@@ -43,9 +31,30 @@
             "signal_output": {}
         },
         {
+            "name": "left_hand_origin",
+            "renderable": {
+                "model": "box"
+            },
+            "transform": {
+                "parent": "left_hand_input",
+                "scale": [0.01, 0.01, 0.01]
+            }
+        },
+        {
+            "name": "right_hand_origin",
+            "renderable": {
+                "model": "box"
+            },
+            "transform": {
+                "parent": "right_hand_input",
+                "scale": [0.01, 0.01, 0.01]
+            }
+        },
+        {
             "name": "left_hand",
             "transform": {
-                "parent": "left_hand_input"
+                "parent": "left_hand_input",
+                "rotate": [180, 0, 1, 0]
             },
             "script": {
                 "prefab": "gltf",
@@ -58,7 +67,8 @@
         {
             "name": "right_hand",
             "transform": {
-                "parent": "right_hand_input"
+                "parent": "right_hand_input",
+                "rotate": [180, 0, 1, 0]
             },
             "script": {
                 "prefab": "gltf",
@@ -67,32 +77,6 @@
                     "render": true
                 }
             }
-        },
-		{
-			"name": "testbones",
-			"transform": {
-				"translate": [1, 1, -1],
-                "scale": [10, 10, 10]
-			},
-			"script": [
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "vr_glove_right",
-						"render": true,
-						"physics_group": "noclip",
-						"physics_joints": "spherical"
-					}
-				},
-				{
-					"onTick": "rotate",
-					"parameters": {
-						"axis_x": 1.0,
-						"axis_y": 1.0,
-						"speed": 0
-					}
-				}
-			]
-		}
+        }
     ]
 }
