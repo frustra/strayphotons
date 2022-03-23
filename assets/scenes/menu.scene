@@ -138,7 +138,6 @@
 			load_signal: "global:ship_airlock-zone/playerPresent"
 		}) %>,
 		<%- include('prefab/button', {
-			scene: 'menu',
 			name: 'airlock_in_button',
 			transform: {
 				"translate": [4.95, 1.5, 2.5]
@@ -162,6 +161,13 @@
 				]
 			}
 		},
+		<%- include('prefab/articulating_arm', {
+			name: 'articulating_arm',
+			transform: {
+				"translate": [1, 0.1, -1],
+				"scale": [4, 4, 4]
+			}
+		}) %>,
 		{
 			"name": "global:spawn",
 			"transform": {

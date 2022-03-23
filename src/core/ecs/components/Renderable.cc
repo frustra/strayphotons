@@ -22,7 +22,7 @@ namespace ecs {
                     }
                 } else if (param.first == "model") {
                     r.model = sp::GAssets.LoadGltf(param.second.get<string>());
-                } else if (param.first == "mesh") {
+                } else if (param.first == "mesh_index") {
                     r.meshIndex = (size_t)param.second.get<double>();
                 }
             }

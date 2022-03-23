@@ -44,6 +44,7 @@ namespace sp {
         ecs::Transform pose;
         glm::vec3 scale = glm::vec3(1);
         glm::vec3 velocity = glm::vec3(0);
+        float angularDamping, linearDamping;
         ecs::PhysicsGroup physicsGroup;
         std::shared_ptr<const ConvexHullSet> shapeCache;
 

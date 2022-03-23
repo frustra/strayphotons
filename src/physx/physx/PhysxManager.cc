@@ -477,7 +477,14 @@ namespace sp {
         }
 
         auto dynamic = actor->is<PxRigidDynamic>();
-        if (dynamic) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+        if (dynamic) {
+            PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+            dynamic->setAngularDamping(ph.angularDamping);
+            dynamic->setLinearDamping(ph.linearDamping);
+
+            userData->angularDamping = ph.angularDamping;
+            userData->linearDamping = ph.linearDamping;
+        }
 
         SetCollisionGroup(actor, ph.group);
         return actor;
@@ -491,6 +498,7 @@ namespace sp {
         }
         auto &actor = actors[e];
         if (!actor->getScene()) scene->addActor(*actor);
+        auto dynamic = actor->is<PxRigidDynamic>();
 
         auto &ph = e.Get<ecs::Physics>(lock);
         auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
@@ -518,7 +526,6 @@ namespace sp {
             }
 
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
-            auto dynamic = actor->is<PxRigidDynamic>();
             if (dynamic) {
                 if (scaleChanged) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
                 if (ph.kinematic) {
@@ -534,6 +541,16 @@ namespace sp {
             userData->pose = transform;
         }
         if (userData->physicsGroup != ph.group) SetCollisionGroup(actor, ph.group);
+        if (dynamic) {
+            if (userData->angularDamping != ph.angularDamping) {
+                dynamic->setAngularDamping(ph.angularDamping);
+                userData->angularDamping = ph.angularDamping;
+            }
+            if (userData->linearDamping != ph.linearDamping) {
+                dynamic->setLinearDamping(ph.linearDamping);
+                userData->linearDamping = ph.linearDamping;
+            }
+        }
     }
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {

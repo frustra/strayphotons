@@ -101,6 +101,8 @@ namespace ecs {
         bool kinematic = false; // only dynamic actors can be kinematic
         bool decomposeHull = false;
         float density = 1.0f;
+        float angularDamping = 0.05f;
+        float linearDamping = 0.0f;
 
         Entity jointTarget;
         PhysicsJointType jointType = PhysicsJointType::Count;

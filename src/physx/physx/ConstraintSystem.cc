@@ -153,6 +153,7 @@ namespace sp {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
             if (manager.actors.count(entity) == 0) continue;
 
+            auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
             auto &physics = entity.Get<ecs::Physics>(lock);
             auto const &actor = manager.actors[entity];
 
@@ -183,20 +184,22 @@ namespace sp {
 
             if (physics.jointTarget) {
                 physx::PxRigidActor *jointActor = nullptr;
-                PxTransform localTransform(GlmVec3ToPxVec3(physics.jointLocalOffset),
+                PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * physics.jointLocalOffset),
                     GlmQuatToPxQuat(physics.jointLocalOrient));
                 PxTransform remoteTransform(PxIdentity);
 
                 if (manager.actors.count(physics.jointTarget) > 0) {
                     jointActor = manager.actors[physics.jointTarget];
-                    remoteTransform.p = GlmVec3ToPxVec3(physics.jointRemoteOffset);
+                    auto userData = (ActorUserData *)jointActor->userData;
+                    Assert(userData, "Physics jointActor is missing UserData");
+                    remoteTransform.p = GlmVec3ToPxVec3(userData->scale * physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(physics.jointRemoteOrient);
                 }
                 if (!jointActor && physics.jointTarget.Has<ecs::TransformTree>(lock)) {
-                    auto transform = physics.jointTarget.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
-                    auto rotate = transform.GetRotation();
-                    remoteTransform.p = GlmVec3ToPxVec3(transform.GetPosition() + rotate * physics.jointRemoteOffset);
-                    remoteTransform.q = GlmQuatToPxQuat(rotate * physics.jointRemoteOrient);
+                    auto targetTransform = physics.jointTarget.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                    remoteTransform.p = GlmVec3ToPxVec3(
+                        targetTransform.GetPosition() + glm::mat3(targetTransform.matrix) * physics.jointRemoteOffset);
+                    remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation() * physics.jointRemoteOrient);
                 }
 
                 auto &joint = manager.joints[entity];
@@ -268,7 +271,6 @@ namespace sp {
             }
 
             if (physics.constraint.Has<ecs::TransformTree>(lock)) {
-                auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                 auto &targetTransform = physics.constraint.Get<ecs::TransformTree>(lock);
                 glm::vec3 targetVelocity(0);
 

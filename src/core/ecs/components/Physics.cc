@@ -74,6 +74,10 @@ namespace ecs {
                 physics.decomposeHull = param.second.get<bool>();
             } else if (param.first == "density") {
                 physics.density = param.second.get<double>();
+            } else if (param.first == "angular_damping") {
+                physics.angularDamping = param.second.get<double>();
+            } else if (param.first == "linear_damping") {
+                physics.linearDamping = param.second.get<double>();
             } else if (param.first == "group") {
                 auto groupString = param.second.get<string>();
                 sp::to_upper(groupString);
