@@ -170,6 +170,8 @@ namespace sp::vulkan {
             return physicalDeviceDescriptorIndexingProperties;
         }
 
+        vk::FormatProperties FormatProperties(vk::Format format) const;
+
         tracy::VkCtx *GetTracyContext(CommandContextType type);
 
         uint32 QueueFamilyIndex(CommandContextType type) {

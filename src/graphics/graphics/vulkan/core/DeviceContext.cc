@@ -1449,6 +1449,10 @@ namespace sp::vulkan {
         if (printBufferStats.exchange(false)) bufferPool->LogStats();
     }
 
+    vk::FormatProperties DeviceContext::FormatProperties(vk::Format format) const {
+        return physicalDevice.getFormatProperties(format);
+    }
+
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {
         return tracing.tracyContexts[(size_t)type];
     }
