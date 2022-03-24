@@ -228,9 +228,6 @@ namespace sp::vulkan {
         Assert(queueFamilyIndex[QUEUE_TYPE_TRANSFER] != queueFamilyIndex[QUEUE_TYPE_GRAPHICS],
             "transfer queue family overlaps graphics queue");
 
-        imageTransferGranularity = queueFamilies[queueFamilyIndex[QUEUE_TYPE_TRANSFER]].minImageTransferGranularity;
-        Assert(imageTransferGranularity.depth <= 1, "transfer queue doesn't support 2D images");
-
         std::vector<vk::DeviceQueueCreateInfo> queueInfos;
         for (uint32 i = 0; i < queueFamilies.size(); i++) {
             if (queuesUsedCount[i] == 0) continue;

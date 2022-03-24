@@ -197,7 +197,7 @@ namespace sp::vulkan {
                 builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
                 builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = vk::Format::eD16UnormS8Uint;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
@@ -286,7 +286,7 @@ namespace sp::vulkan {
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = vk::Format::eD16UnormS8Uint;
                 rg::AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
                 attachment.arrayIndex = 0;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, attachment);

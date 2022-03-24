@@ -179,11 +179,12 @@ namespace sp::vulkan::renderer {
 
                 for (auto &resourceId : fragmentListBuffers) {
                     auto listBuffer = resources.GetBuffer(resourceId);
-                    cmd.Raw().fillBuffer(*listBuffer, 0, sizeof(GPUVoxelFragmentList), 0);
+                    cmd.Raw().fillBuffer(*listBuffer, offsetof(GPUVoxelFragmentList, count), sizeof(uint32_t), 0);
                     cmd.Raw().fillBuffer(*listBuffer,
                         offsetof(GPUVoxelFragmentList, capacity),
                         sizeof(uint32_t),
                         fragmentListSize);
+                    cmd.Raw().fillBuffer(*listBuffer, offsetof(GPUVoxelFragmentList, cmd.x), sizeof(uint32_t), 0);
                     cmd.Raw().fillBuffer(*listBuffer, offsetof(GPUVoxelFragmentList, cmd.y), sizeof(uint32_t) * 2, 1);
                 }
             });
