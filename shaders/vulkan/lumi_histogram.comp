@@ -1,12 +1,15 @@
 #version 450
 
+layout(local_size_x = 16, local_size_y = 16) in;
+
 #include "../lib/histogram_common.glsl"
 #include "../lib/util.glsl"
 
 layout(binding = 0) uniform sampler2D lumiTex;
 layout(binding = 1, r32ui) uniform uimage2D finalHistogram;
 
-layout(local_size_x = 16, local_size_y = 16) in;
+INCLUDE_LAYOUT(binding = 2)
+#include "lib/exposure_state.glsl"
 
 shared uint Histogram[HistogramBins];
 
@@ -25,7 +28,7 @@ void main() {
 
     if (texCoord.x < 1.0 && texCoord.y < 1.0) {
         vec3 c = texture(lumiTex, texCoord).rgb;
-        float bin = histogramBinFromPixel(c);
+        float bin = histogramBinFromPixel(c / exposure);
 
         int bin0 = int(bin);
         int bin1 = min(bin0 + 1, HistogramBins - 1);
