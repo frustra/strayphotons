@@ -45,7 +45,8 @@ namespace sp::vulkan {
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
-        SelectDepthStencilFormat();
+        depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
+            {vk::Format::eD24UnormS8Uint, vk::Format::eD16UnormS8Uint});
     }
 
     Renderer::~Renderer() {
@@ -533,17 +534,5 @@ namespace sp::vulkan {
 
     void Renderer::SetDebugGui(GuiManager &gui) {
         debugGui = &gui;
-    }
-
-    void Renderer::SelectDepthStencilFormat() {
-        depthStencilFormat = vk::Format::eD24UnormS8Uint;
-        if (device.FormatProperties(depthStencilFormat).optimalTilingFeatures &
-            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
-            return;
-
-        depthStencilFormat = vk::Format::eD16UnormS8Uint;
-        if (device.FormatProperties(depthStencilFormat).optimalTilingFeatures &
-            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
-            return;
     }
 } // namespace sp::vulkan

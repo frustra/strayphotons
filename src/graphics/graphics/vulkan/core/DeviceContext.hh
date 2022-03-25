@@ -172,6 +172,14 @@ namespace sp::vulkan {
 
         vk::FormatProperties FormatProperties(vk::Format format) const;
 
+        vk::Format SelectSupportedFormat(vk::FormatProperties requiredProps,
+            vk::ArrayProxy<const vk::Format> possibleFormats);
+
+        vk::Format SelectSupportedFormat(vk::FormatFeatureFlags optimalTilingFeatures,
+            vk::ArrayProxy<const vk::Format> possibleFormats) {
+            return SelectSupportedFormat({{}, optimalTilingFeatures, {}}, possibleFormats);
+        }
+
         tracy::VkCtx *GetTracyContext(CommandContextType type);
 
         uint32 QueueFamilyIndex(CommandContextType type) {
