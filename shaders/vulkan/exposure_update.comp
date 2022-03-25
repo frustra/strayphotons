@@ -62,7 +62,6 @@ void main() {
 
     luminance = min(luminance, eyeAdaptationMaxLuminance);
     luminance = max(luminance, eyeAdaptationMinLuminance);
-    luminance /= lastExposureState.exposure;
 
     float autoKeyComp = 1.03 - 2.0 / (log(luminance * 1000.0 + 1.0) / log(10) + 2.0);
     autoKeyComp = eyeAdaptationKeyComp * autoKeyComp + 1.0 - eyeAdaptationKeyComp;

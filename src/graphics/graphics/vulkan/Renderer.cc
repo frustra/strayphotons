@@ -44,6 +44,8 @@ namespace sp::vulkan {
 
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
+
+        SelectDepthStencilFormat();
     }
 
     Renderer::~Renderer() {
@@ -197,7 +199,7 @@ namespace sp::vulkan {
                 builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
                 builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = depthStencilFormat;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
@@ -286,7 +288,7 @@ namespace sp::vulkan {
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = depthStencilFormat;
                 rg::AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
                 attachment.arrayIndex = 0;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, attachment);
@@ -531,5 +533,17 @@ namespace sp::vulkan {
 
     void Renderer::SetDebugGui(GuiManager &gui) {
         debugGui = &gui;
+    }
+
+    void Renderer::SelectDepthStencilFormat() {
+        depthStencilFormat = vk::Format::eD24UnormS8Uint;
+        if (device.FormatProperties(depthStencilFormat).optimalTilingFeatures &
+            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+            return;
+
+        depthStencilFormat = vk::Format::eD16UnormS8Uint;
+        if (device.FormatProperties(depthStencilFormat).optimalTilingFeatures &
+            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+            return;
     }
 } // namespace sp::vulkan

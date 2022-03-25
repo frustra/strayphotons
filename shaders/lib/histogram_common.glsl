@@ -3,8 +3,8 @@
 
 #include "lighting_util.glsl"
 
-#define HistogramBins 64
-const float lumMin = -8, lumMax = 4;
+#define HistogramBins 128
+const float lumMin = -15, lumMax = 6;
 const float powLumMin = pow(2, lumMin);
 const float histSampleScale = 10.0;
 const float histDownsample = 2.0;

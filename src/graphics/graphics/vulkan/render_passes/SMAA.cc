@@ -39,7 +39,7 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eR8G8B8A8Unorm;
                 builder.OutputColorAttachment(0, "edges", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = vk::Format::eS8Uint;
                 builder.OutputDepthAttachment("stencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.ReadUniform("ViewState");
