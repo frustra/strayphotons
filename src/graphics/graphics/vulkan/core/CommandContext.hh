@@ -330,9 +330,20 @@ namespace sp::vulkan {
         }
 
         void SetBlendFunc(vk::BlendFactor srcFactor, vk::BlendFactor dstFactor) {
-            if (srcFactor != pipelineInput.state.srcBlendFactor || dstFactor != pipelineInput.state.dstBlendFactor) {
-                pipelineInput.state.srcBlendFactor = srcFactor;
-                pipelineInput.state.dstBlendFactor = dstFactor;
+            SetBlendFuncSeparate(srcFactor, dstFactor, srcFactor, dstFactor);
+        }
+
+        void SetBlendFuncSeparate(vk::BlendFactor srcRGB,
+            vk::BlendFactor dstRGB,
+            vk::BlendFactor srcAlpha,
+            vk::BlendFactor dstAlpha) {
+            if (srcRGB != pipelineInput.state.srcBlendFactor || dstRGB != pipelineInput.state.dstBlendFactor ||
+                srcAlpha != pipelineInput.state.srcAlphaBlendFactor ||
+                dstAlpha != pipelineInput.state.dstAlphaBlendFactor) {
+                pipelineInput.state.srcBlendFactor = srcRGB;
+                pipelineInput.state.srcAlphaBlendFactor = srcAlpha;
+                pipelineInput.state.dstBlendFactor = dstRGB;
+                pipelineInput.state.dstAlphaBlendFactor = dstAlpha;
                 SetDirty(DirtyBits::Pipeline);
             }
         }

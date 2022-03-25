@@ -25,8 +25,8 @@ namespace sp::vulkan {
         vk::CullModeFlags cullMode;
         vk::FrontFace frontFaceWinding;
         vk::BlendOp blendOp;
-        vk::BlendFactor srcBlendFactor;
-        vk::BlendFactor dstBlendFactor;
+        vk::BlendFactor srcBlendFactor, srcAlphaBlendFactor;
+        vk::BlendFactor dstBlendFactor, dstAlphaBlendFactor;
         unsigned depthWrite : 1;
         unsigned depthTest : 1;
         unsigned blendEnable : 1;
