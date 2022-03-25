@@ -40,7 +40,7 @@ namespace ecs {
     struct LaserSensor;
     struct Light;
     class LightSensor;
-    struct Mirror;
+    struct OpticalElement;
     struct Physics;
     struct PhysicsQuery;
     struct Renderable;
@@ -73,7 +73,7 @@ namespace ecs {
         LaserSensor,
         Light,
         LightSensor,
-        Mirror,
+        OpticalElement,
         Physics,
         PhysicsQuery,
         Renderable,
@@ -135,7 +135,7 @@ TECS_NAME_COMPONENT(ecs::LaserLine, "LaserLine");
 TECS_NAME_COMPONENT(ecs::LaserSensor, "LaserSensor");
 TECS_NAME_COMPONENT(ecs::Light, "Light");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
-TECS_NAME_COMPONENT(ecs::Mirror, "Mirror");
+TECS_NAME_COMPONENT(ecs::OpticalElement, "OpticalElement");
 TECS_NAME_COMPONENT(ecs::Physics, "Physics");
 TECS_NAME_COMPONENT(ecs::PhysicsQuery, "PhysicsQuery");
 TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");

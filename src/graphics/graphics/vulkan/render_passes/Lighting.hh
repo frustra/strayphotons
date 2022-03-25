@@ -9,7 +9,8 @@ namespace sp::vulkan::renderer {
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}
-        void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
+        void LoadState(RenderGraph &graph,
+            ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
         void AddGelTextures(RenderGraph &graph);
@@ -19,6 +20,7 @@ namespace sp::vulkan::renderer {
         GPUScene &scene;
 
         int lightCount;
+        int opticCount;
         glm::ivec2 shadowAtlasSize = {};
         ecs::View views[MAX_LIGHTS];
 

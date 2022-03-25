@@ -9,8 +9,8 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     LaserSensor.cc
     Light.cc
     LightSensor.cc
-    Mirror.cc
     Name.cc
+    OpticalElement.cc
     Physics.cc
     PrefabDefinitions.cc
     Renderable.cc

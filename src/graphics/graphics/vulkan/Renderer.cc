@@ -81,7 +81,7 @@ namespace sp::vulkan {
             ecs::Renderable,
             ecs::View,
             ecs::XRView,
-            ecs::Mirror,
+            ecs::OpticalElement,
             ecs::Gui,
             ecs::Screen,
             ecs::FocusLock>>();

@@ -37,6 +37,7 @@ namespace sp::vulkan {
         renderableCount = 0;
         primitiveCount = 0;
         vertexCount = 0;
+        opticCount = 0;
 
         for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
@@ -60,6 +61,8 @@ namespace sp::vulkan {
             gpuRenderable.visibilityMask = renderable.visibility.to_ulong();
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
+            if (ent.Has<ecs::OpticalElement>(lock)) gpuRenderable.opticID = ++opticCount;
+
             renderables.push_back(gpuRenderable);
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
@@ -128,7 +131,7 @@ namespace sp::vulkan {
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
-                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 2, maxDraws},
+                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 3, maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;

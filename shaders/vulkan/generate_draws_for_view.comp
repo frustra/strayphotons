@@ -58,6 +58,7 @@ void main() {
         DrawParams drawParam;
         drawParam.baseColorTexID = uint16_t(prim.baseColorTexID);
         drawParam.metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
+        drawParam.opticID = uint16_t(renderable.opticID);
 
         drawCommands[drawIndex] = draw;
         drawParams[drawIndex] = drawParam;

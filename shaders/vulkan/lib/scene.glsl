@@ -16,6 +16,7 @@ struct RenderableEntity {
     uint modelIndex;
     uint visibilityMask;
     uint vertexOffset;
+    uint opticID;
 };
 
 struct SceneVertex {

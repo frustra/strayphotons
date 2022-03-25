@@ -16,7 +16,7 @@ namespace sp {
 
     LaserSystem::LaserSystem(PhysxManager &manager) : manager(manager) {}
 
-    void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::Mirror>,
+    void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
         ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
@@ -72,7 +72,10 @@ namespace sp {
                         auto userData = (ActorUserData *)hitActor->userData;
                         if (userData) {
                             auto hitEntity = userData->entity;
-                            if (hitEntity.Has<ecs::Mirror>(lock)) reflect = true;
+                            if (hitEntity.Has<ecs::OpticalElement>(lock)) {
+                                auto &optic = hitEntity.Get<ecs::OpticalElement>(lock);
+                                reflect = (optic.type == ecs::OpticType::Mirror);
+                            }
                             if (hitEntity.Has<ecs::LaserSensor>(lock)) {
                                 auto &sensor = hitEntity.Get<ecs::LaserSensor>(lock);
                                 sensor.illuminance += emitter.color * emitter.intensity;
