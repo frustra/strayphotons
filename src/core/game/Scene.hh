@@ -109,7 +109,7 @@ namespace sp {
         std::shared_ptr<const Asset> asset;
         bool active = false;
 
-        robin_hood::unordered_flat_map<ecs::Name, ecs::Entity> namedEntities;
+        std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
 
         friend class SceneManager;
     };

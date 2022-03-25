@@ -1,13 +1,21 @@
 {
 	"name": <%= name %>,
     "transform": <%= transform %>,
-    "script": {
-        "prefab": "gltf",
-        "parameters": {
-            "model": "articulating-arm",
-            "render": true
+    "script": [
+        {
+            "prefab": "gltf",
+            "parameters": {
+                "model": "articulating-arm",
+                "render": true
+            }
+        },
+        {
+            "onTick": "articulating_arm"
         }
-    }
+    ],
+	"signal_bindings": {
+		"locked_ratio": <%= name + ".Knob/value" %>
+	}
 },
 {
 	"name": <%= name + ".Ball_0" %>,
@@ -50,7 +58,6 @@
 	"name": <%= name + ".Socket_0" %>,
     "physics": {
         "angular_damping": 50,
-        "linear_damping": 50,
         "model": {
             "model": "articulating-arm",
             "mesh_index": 6
@@ -66,7 +73,6 @@
 	"name": <%= name + ".Knob" %>,
     "physics": {
         "angular_damping": 100,
-        "linear_damping": 100,
         "model": {
             "model": "articulating-arm",
             "mesh_index": 4
@@ -78,13 +84,15 @@
                 "translate": [0, 0.1043, 0]
             }
         }
+    },
+    "signal_output": {
+        "value": 1
     }
 },
 {
 	"name": <%= name + ".Shaft" %>,
     "physics": {
         "angular_damping": 50,
-        "linear_damping": 50,
         "model": {
             "model": "articulating-arm",
             "mesh_index": 5
@@ -122,7 +130,6 @@
 	"name": <%= name + ".Socket_1" %>,
     "physics": {
         "angular_damping": 50,
-        "linear_damping": 50,
         "model": {
             "model": "articulating-arm",
             "mesh_index": 7

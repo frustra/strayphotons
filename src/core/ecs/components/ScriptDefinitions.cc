@@ -4,6 +4,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 
 #include <cmath>
 #include <glm/glm.hpp>
@@ -415,6 +416,48 @@ namespace ecs {
                     targetPosition = glm::floor(targetPosition / voxelStride / voxelScale) * voxelScale * voxelStride;
                     transform.pose.SetPosition(glm::inverse(voxelRotation) * targetPosition);
                     transform.pose.SetScale(glm::vec3(voxelScale));
+                }
+            }},
+        {"articulating_arm",
+            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                if (!ent.Has<ecs::Name, ecs::SignalBindings>(lock)) return;
+
+                float lockedRatio = SignalBindings::GetSignal(lock, ent, "locked_ratio");
+
+                if (state.userData.has_value() && std::any_cast<float>(state.userData) == lockedRatio) return;
+
+                state.userData = lockedRatio;
+
+                auto rootName = ent.Get<ecs::Name>(lock);
+
+                struct ArmJoint {
+                    bool fixed;
+                    int angularDampingMultiplier;
+                    ecs::Name name;
+                };
+
+                std::array jointNodes = {
+                    ArmJoint{false, 10, {rootName.scene, rootName.entity + ".Ball_0"}},
+                    ArmJoint{false, 1, {rootName.scene, rootName.entity + ".Arm_0"}},
+                    ArmJoint{false, 1, {rootName.scene, rootName.entity + ".Arm_1"}},
+                    ArmJoint{false, 10, {rootName.scene, rootName.entity + ".Ball_1"}},
+
+                    ArmJoint{true, 1, {rootName.scene, rootName.entity + ".Socket_0"}},
+                    ArmJoint{true, 1, {rootName.scene, rootName.entity + ".Shaft"}},
+                    ArmJoint{true, 1, {rootName.scene, rootName.entity + ".Socket_1"}},
+                };
+
+                for (auto &node : jointNodes) {
+                    auto child = ecs::EntityWith<ecs::Name>(lock, node.name);
+                    if (!child.Has<ecs::Physics>(lock)) continue;
+
+                    auto &ph = child.Get<ecs::Physics>(lock);
+                    ph.angularDamping = lockedRatio * 100 * node.angularDampingMultiplier;
+                    ph.linearDamping = lockedRatio * 100;
+
+                    if (!node.fixed && lockedRatio > 0.999) {
+                        // create fixed joint
+                    }
                 }
             }},
     };

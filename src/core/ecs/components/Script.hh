@@ -5,6 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
 
+#include <any>
 #include <functional>
 #include <robin_hood.h>
 #include <variant>
@@ -53,6 +54,8 @@ namespace ecs {
 
         ScenePtr scene;
         std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
+
+        std::any userData;
 
     private:
         robin_hood::unordered_flat_map<std::string, ParameterType> parameters;

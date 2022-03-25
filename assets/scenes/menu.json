@@ -977,12 +977,20 @@
 					4
 				]
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "articulating-arm",
-					"render": true
+			"script": [
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "articulating-arm",
+						"render": true
+					}
+				},
+				{
+					"onTick": "articulating_arm"
 				}
+			],
+			"signal_bindings": {
+				"locked_ratio": "articulating_arm.Knob/value"
 			}
 		},
 		{
@@ -1043,7 +1051,6 @@
 			"name": "articulating_arm.Socket_0",
 			"physics": {
 				"angular_damping": 50,
-				"linear_damping": 50,
 				"model": {
 					"model": "articulating-arm",
 					"mesh_index": 6
@@ -1059,7 +1066,6 @@
 			"name": "articulating_arm.Knob",
 			"physics": {
 				"angular_damping": 100,
-				"linear_damping": 100,
 				"model": {
 					"model": "articulating-arm",
 					"mesh_index": 4
@@ -1075,13 +1081,15 @@
 						]
 					}
 				}
+			},
+			"signal_output": {
+				"value": 1
 			}
 		},
 		{
 			"name": "articulating_arm.Shaft",
 			"physics": {
 				"angular_damping": 50,
-				"linear_damping": 50,
 				"model": {
 					"model": "articulating-arm",
 					"mesh_index": 5
@@ -1127,7 +1135,6 @@
 			"name": "articulating_arm.Socket_1",
 			"physics": {
 				"angular_damping": 50,
-				"linear_damping": 50,
 				"model": {
 					"model": "articulating-arm",
 					"mesh_index": 7
@@ -1177,6 +1184,24 @@
 						]
 					}
 				}
+			}
+		},
+		{
+			"transform": {
+				"parent": "articulating_arm.Ball_1",
+				"translate": [
+					0,
+					0.04,
+					0
+				]
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"color": [
+					1,
+					0,
+					0
+				]
 			}
 		},
 		{

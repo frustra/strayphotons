@@ -169,6 +169,16 @@
 			}
 		}) %>,
 		{
+			"transform": {
+				"parent": "articulating_arm.Ball_1",
+				"translate": [0, 0.04, 0]
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"color": [1, 0, 0]
+			}
+		},
+		{
 			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 0.05, 0]
