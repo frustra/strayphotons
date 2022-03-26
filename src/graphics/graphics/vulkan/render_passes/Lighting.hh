@@ -10,7 +10,7 @@ namespace sp::vulkan::renderer {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}
         void LoadState(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
+            ecs::Lock<ecs::Read<ecs::Name, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
         void AddGelTextures(RenderGraph &graph);
@@ -19,13 +19,16 @@ namespace sp::vulkan::renderer {
     private:
         GPUScene &scene;
 
-        int lightCount;
-        int opticCount;
+        uint32_t lightCount;
         glm::ivec2 shadowAtlasSize = {};
         ecs::View views[MAX_LIGHTS];
+        std::vector<ecs::Entity> lightEntities;
 
         std::pair<string, const TextureIndex *> gelTextures[MAX_LIGHTS];
         robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
+
+        std::vector<InlineVector<uint32_t, MAX_LIGHTS>> lightPaths;
+        std::vector<InlineVector<ecs::Entity, MAX_LIGHTS>> previousLightPaths;
 
         struct GPULight {
             glm::vec3 position;

@@ -15,11 +15,12 @@ namespace sp::vulkan::renderer {
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
 
     void Lighting::LoadState(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::Name, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         lightCount = 0;
-        opticCount = 0;
         shadowAtlasSize = glm::ivec2(0, 0);
         gelTextureCache.clear();
+        lightEntities.clear();
+        lightPaths.clear();
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
@@ -61,22 +62,26 @@ namespace sp::vulkan::renderer {
                 gelTextures[lightCount] = {};
             }
 
+            lightEntities.emplace_back(entity);
+            lightPaths.push_back({lightCount});
+
             shadowAtlasSize.x += extent;
             if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
             if (++lightCount >= MAX_LIGHTS) break;
         }
         glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
-        for (int i = 0; i < lightCount; i++) {
+        for (uint32_t i = 0; i < lightCount; i++) {
             gpuData.lights[i].mapOffset /= mapOffsetScale;
         }
         gpuData.count = lightCount;
 
-        for (auto entity : lock.EntitiesWith<ecs::OpticalElement>()) {
-            if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
-
-            // auto &optic = entity.Get<ecs::OpticalElement>(lock);
-            // TOOD: Add more lights based on past frame visibility
-            opticCount++;
+        for (auto &path : previousLightPaths) {
+            std::string str;
+            for (auto &e : path) {
+                if (!str.empty()) str += ",";
+                str += ecs::ToString(lock, e);
+            }
+            Logf("Visible path: %s", str);
         }
 
         graph.AddPass("LightState")
@@ -108,23 +113,28 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
-        vector<GPUScene::DrawBufferIDs> drawIDs;
-        drawIDs.reserve(lightCount);
-        for (int i = 0; i < lightCount; i++) {
-            drawIDs.push_back(scene.GenerateDrawsForView(graph, views[i].visibilityMask));
+        vector<GPUScene::DrawBufferIDs> drawAllIDs, drawOpticIDs;
+        drawAllIDs.reserve(lightCount);
+        drawOpticIDs.reserve(lightCount);
+        for (uint32_t i = 0; i < lightCount; i++) {
+            drawAllIDs.push_back(scene.GenerateDrawsForView(graph, views[i].visibilityMask));
+
+            auto opticMask = views[i].visibilityMask;
+            opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
+            drawOpticIDs.push_back(scene.GenerateDrawsForView(graph, opticMask));
         }
 
-        // graph.AddPass("InitOptics")
-        //     .Build([&](rg::PassBuilder &builder) {
-        //         builder.CreateBuffer("OpticVisibility",
-        //             {sizeof(uint32_t), MAX_LIGHTS * MAX_OPTICS},
-        //             Residency::GPU_ONLY,
-        //             Access::TransferWrite);
-        //     })
-        //     .Execute([](rg::Resources &resources, CommandContext &cmd) {
-        //         auto visBuffer = resources.GetBuffer("OpticVisibility");
-        //         cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
-        //     });
+        graph.AddPass("InitOptics")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateBuffer("OpticVisibility",
+                    {sizeof(uint32_t), MAX_LIGHTS * MAX_OPTICS},
+                    Residency::GPU_ONLY,
+                    Access::TransferWrite);
+            })
+            .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                auto visBuffer = resources.GetBuffer("OpticVisibility");
+                cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
+            });
 
         graph.AddPass("ShadowMaps")
             .Build([&](rg::PassBuilder &builder) {
@@ -138,29 +148,21 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
-                // builder.Write("OpticVisibility", Access::FragmentShaderWrite);
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                for (auto &ids : drawIDs) {
+                for (auto &ids : drawAllIDs) {
                     builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
                     builder.Read(ids.drawParamsBuffer, Access::VertexShaderReadStorage);
                 }
             })
-            .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
 
-                struct {
-                    uint32_t lightIndex;
-                } constants;
-
-                // auto visBuffer = resources.GetBuffer("OpticVisibility");
-
-                for (int i = 0; i < lightCount; i++) {
+                for (uint32_t i = 0; i < lightCount; i++) {
                     auto &view = views[i];
 
                     GPUViewState lightViews[] = {{view}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
-                    // cmd.SetStorageBuffer(0, 1, visBuffer);
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(view.extents.x, view.extents.y);
@@ -168,10 +170,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
 
-                    constants.lightIndex = i;
-                    cmd.PushConstants(constants);
-
-                    auto &ids = drawIDs[i];
+                    auto &ids = drawAllIDs[i];
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(ids.drawCommandsBuffer),
@@ -179,19 +178,101 @@ namespace sp::vulkan::renderer {
                 }
             });
 
-        // AddBufferReadback(graph,
-        //     "OpticVisibility",
-        //     0,
-        //     sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
-        //     [](BufferPtr buffer) {
-        //         auto map = (const uint32_t *)buffer->Mapped();
-        //         size_t count = 0;
-        //         for (size_t i = 0; i < (MAX_LIGHTS * MAX_OPTICS); i++) {
-        //             if (map[i] > 1) Abortf("Uhhh");
-        //             if (map[i] > 0) count++;
-        //         }
-        //         if (count > 0) Logf("Visible optics: %u", count);
-        //     });
+        graph.AddPass("OpticsVisibility")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.SetDepthAttachment("ShadowMapDepth", {LoadOp::Load, StoreOp::Store});
+
+                builder.Write("OpticVisibility", Access::FragmentShaderWrite);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+
+                for (auto &ids : drawOpticIDs) {
+                    builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
+                    builder.Read(ids.drawParamsBuffer, Access::VertexShaderReadStorage);
+                }
+            })
+            .Execute([this, drawOpticIDs](rg::Resources &resources, CommandContext &cmd) {
+                cmd.SetShaders("optic_visibility.vert", "optic_visibility.frag");
+
+                struct {
+                    uint32_t lightIndex;
+                } constants;
+
+                auto visBuffer = resources.GetBuffer("OpticVisibility");
+
+                for (uint32_t i = 0; i < lightCount; i++) {
+                    auto &view = views[i];
+
+                    GPUViewState lightViews[] = {{view}, {}};
+                    cmd.UploadUniformData(0, 0, lightViews, 2);
+                    cmd.SetStorageBuffer(0, 1, visBuffer);
+
+                    vk::Rect2D viewport;
+                    viewport.extent = vk::Extent2D(view.extents.x, view.extents.y);
+                    viewport.offset = vk::Offset2D(view.offset.x, view.offset.y);
+                    cmd.SetViewport(viewport);
+                    cmd.SetYDirection(YDirection::Down);
+                    cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
+                    cmd.SetDepthTest(true, false);
+
+                    constants.lightIndex = i;
+                    cmd.PushConstants(constants);
+
+                    auto &ids = drawOpticIDs[i];
+                    scene.DrawSceneIndirect(cmd,
+                        resources.GetBuffer("WarpedVertexBuffer"),
+                        resources.GetBuffer(ids.drawCommandsBuffer),
+                        resources.GetBuffer(ids.drawParamsBuffer));
+                }
+            });
+
+        AddBufferReadback(graph,
+            "OpticVisibility",
+            0,
+            sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
+            [this,
+                lightCount = this->lightCount,
+                optics = this->scene.opticEntities,
+                lights = this->lightEntities,
+                paths = this->lightPaths](BufferPtr buffer) {
+                auto visibility = (const uint32_t *)buffer->Mapped();
+                for (size_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
+                    for (size_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
+                        uint32 visible = visibility[lightIndex * MAX_OPTICS + opticIndex];
+                        if (visible > 1) Abortf("Uhhh");
+                        if (visible > 0 && opticIndex >= optics.size()) Abortf("Optic index out of range");
+                    }
+                }
+
+                previousLightPaths.clear();
+                for (uint32_t lightIndex = 0; lightIndex < paths.size(); lightIndex++) {
+                    auto &path = paths[lightIndex];
+                    if (path.size() == 0) continue;
+
+                    // Check if the path to the current light is still valid, else skip this light.
+                    bool pathValid = true;
+                    for (uint32_t i = 1; i < path.size(); i++) {
+                        Assertf(path[i] < optics.size(), "Light path contains invalid index");
+                        if (visibility[lightIndex * MAX_OPTICS + path[i]] == 0) {
+                            pathValid = false;
+                            break;
+                        }
+                    }
+                    if (!pathValid) continue;
+
+                    for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
+                        if (visibility[lightIndex * MAX_OPTICS + opticIndex] == 1) {
+                            Assertf(path[0] < lights.size(), "Light path contains invalid light index");
+                            auto &newPath = previousLightPaths.emplace_back();
+                            newPath.emplace_back(lights[path[0]]);
+                            for (uint32_t i = 1; i < path.size(); i++) {
+                                Assertf(path[i] < optics.size(), "Light path contains invalid optic index");
+                                newPath.emplace_back(optics[path[i]]);
+                            }
+                            newPath.emplace_back(optics[opticIndex]);
+                        }
+                    }
+                }
+            });
 
         graph.BeginScope("ShadowMapBlur");
         auto sourceID = graph.LastOutputID();

@@ -90,7 +90,7 @@ namespace sp::vulkan {
         BufferPtr models;
 
         uint32 renderableCount = 0;
-        uint32 opticCount = 0;
+        std::vector<ecs::Entity> opticEntities;
 
         uint32 vertexCount = 0;
         uint32 primitiveCount = 0;
