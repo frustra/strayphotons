@@ -239,7 +239,7 @@ namespace sp::vulkan::renderer {
                     for (size_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
                         uint32 visible = visibility[lightIndex * MAX_OPTICS + opticIndex];
                         if (visible > 1) {
-                            Tracef("Uhhh");
+                            Abort("Uhhh");
                             break;
                         }
                         if (visible == 1 && opticIndex >= optics.size()) Abortf("Optic index out of range");
