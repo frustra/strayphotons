@@ -28,7 +28,7 @@ namespace sp::vulkan::renderer {
         robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
 
         std::vector<InlineVector<uint32_t, MAX_LIGHTS>> lightPaths;
-        std::vector<InlineVector<ecs::Entity, MAX_LIGHTS>> previousLightPaths;
+        std::vector<InlineVector<ecs::Entity, MAX_LIGHTS>> readbackLightPaths;
 
         struct GPULight {
             glm::vec3 position;
