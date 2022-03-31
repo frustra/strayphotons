@@ -97,20 +97,6 @@
 			}
 		},
 		{
-			"transform": {
-				"translate": [0, 0.5, 1],
-				"scale": [4, 4, 4]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "articulating-arm",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
 			"name": "sensor1",
 			"renderable": "box",
 			"transform": {
@@ -269,7 +255,7 @@
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"physics": {
-				"model": "occluder",
+				"model": "occluder"
 			},
 			"physics_joints": [{
 				"target": "mova-mirror",
