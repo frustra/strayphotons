@@ -66,8 +66,6 @@ namespace sp::vulkan {
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock);
         void AddMenuOverlay();
 
-        void SelectDepthStencilFormat();
-
         CFuncCollection funcs;
         vk::Format depthStencilFormat;
 

@@ -97,20 +97,6 @@
 			}
 		},
 		{
-			"transform": {
-				"translate": [0, 0.5, 1],
-				"scale": [4, 4, 4]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "articulating-arm",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
 			"name": "sensor1",
 			"renderable": "box",
 			"transform": {
@@ -269,16 +255,16 @@
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"physics": {
-				"model": "occluder",
-				"joint": {
-					"target": "mova-mirror",
-					"type": "Fixed",
-					"remote_offset": {
-						"translate": [0.5, 0, 0],
-						"rotate": [90, 0, 1, 0]
-					}
-				}
+				"model": "occluder"
 			},
+			"physics_joints": [{
+				"target": "mova-mirror",
+				"type": "Fixed",
+				"remote_offset": {
+					"translate": [0.5, 0, 0],
+					"rotate": [90, 0, 1, 0]
+				}
+			}],
 			"transform": {
 				"parent": "mova-mirror",
 				"translate": [0.5, 0, 0],

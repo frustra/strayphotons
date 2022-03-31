@@ -444,9 +444,9 @@ namespace sp::vulkan {
                     blendState.colorBlendOp = state.blendOp;
                     blendState.alphaBlendOp = state.blendOp;
                     blendState.srcColorBlendFactor = state.srcBlendFactor;
-                    blendState.srcAlphaBlendFactor = state.srcBlendFactor;
+                    blendState.srcAlphaBlendFactor = state.srcAlphaBlendFactor;
                     blendState.dstColorBlendFactor = state.dstBlendFactor;
-                    blendState.dstAlphaBlendFactor = state.dstBlendFactor;
+                    blendState.dstAlphaBlendFactor = state.dstAlphaBlendFactor;
                 }
                 blendState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                                             vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;

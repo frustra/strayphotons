@@ -7,7 +7,7 @@
 namespace sp::vulkan::renderer {
     /**
      * Copies a buffer to the CPU.
-     * After the copy is done, at the end of the frame, the callback is called with a BufferPtr containing the data.
+     * After the copy is done, at the end of a frame, the callback is called with a BufferPtr containing the data.
      * The buffer will be mappable for access on the CPU.
      */
     template<typename Callback, typename ResourceName>
@@ -53,7 +53,7 @@ namespace sp::vulkan::renderer {
 
     /**
      * Copies an image to the CPU.
-     * After the copy is done, at the end of the frame, the callback is called with a BufferPtr containing the data.
+     * After the copy is done, at the end of a frame, the callback is called with a BufferPtr containing the data.
      * The buffer will be mappable for access on the CPU.
      */
     template<typename Callback, typename ResourceName>

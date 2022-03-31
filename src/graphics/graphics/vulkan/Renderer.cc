@@ -12,6 +12,7 @@
 #include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
+#include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
@@ -45,7 +46,8 @@ namespace sp::vulkan {
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
-        SelectDepthStencilFormat();
+        depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
+            {vk::Format::eD24UnormS8Uint, vk::Format::eD16UnormS8Uint});
     }
 
     Renderer::~Renderer() {
@@ -112,6 +114,7 @@ namespace sp::vulkan {
             AddFlatView(lock);
             if (graph.HasResource("GBuffer0")) {
                 AddDeferredPasses(lock);
+                renderer::AddCrosshair(graph);
                 if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
             }
         }
@@ -533,17 +536,5 @@ namespace sp::vulkan {
 
     void Renderer::SetDebugGui(GuiManager &gui) {
         debugGui = &gui;
-    }
-
-    void Renderer::SelectDepthStencilFormat() {
-        depthStencilFormat = vk::Format::eD24UnormS8Uint;
-        if (device.FormatProperties(depthStencilFormat).optimalTilingFeatures &
-            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
-            return;
-
-        depthStencilFormat = vk::Format::eD16UnormS8Uint;
-        if (device.FormatProperties(depthStencilFormat).optimalTilingFeatures &
-            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
-            return;
     }
 } // namespace sp::vulkan
