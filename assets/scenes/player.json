@@ -81,7 +81,7 @@
             },
             "signal_output": {
                 "on": 0,
-                "angle": 50,
+                "angle": 20,
                 "intensity": 50
             },
             "focus": "GAME",

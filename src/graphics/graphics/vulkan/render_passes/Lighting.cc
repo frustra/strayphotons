@@ -16,6 +16,17 @@ namespace sp::vulkan::renderer {
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
 
+    glm::mat4 makeProjectionMatrix(glm::vec3 viewSpaceMirrorPos, glm::vec2 clip, glm::vec4 bounds) {
+        return glm::mat4(
+            // clang-format off
+            2*clip.x,          0,                 0,                                0,
+            0,                 2*clip.x,          0,                                0,
+            bounds.y+bounds.x, bounds.z+bounds.w, -(clip.y+clip.x)/(clip.y-clip.x), -1,
+            0,                  0,                -2*clip.y*clip.x/(clip.y-clip.x), 0
+            // clang-format on
+        );
+    }
+
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Name, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         lightCount = 0;
@@ -76,13 +87,13 @@ namespace sp::vulkan::renderer {
             if (lightCount >= MAX_LIGHTS) break;
             if (path.size() < 2) continue;
             if (!path[0].Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
-            auto &lightTransform = path[0].Get<ecs::TransformSnapshot>(lock);
+            auto &sourceTransform = path[0].Get<ecs::TransformSnapshot>(lock);
             auto light = path[0].Get<ecs::Light>(lock);
             if (!light.on) continue;
 
-            glm::vec3 lightOrigin = lightTransform.GetPosition();
-            glm::vec3 lightDir = lightTransform.GetForward();
-            glm::mat4 lastTransform = lightTransform.matrix;
+            glm::vec3 lightOrigin = sourceTransform.GetPosition();
+            glm::vec3 lightDir = sourceTransform.GetForward();
+            ecs::Transform lastOpticTransform = sourceTransform;
 
             size_t i = 1;
             for (; i < path.size(); i++) {
@@ -92,7 +103,7 @@ namespace sp::vulkan::renderer {
                 if (optic.type == ecs::OpticType::Mirror) {
                     auto &opticTransform = path[i].Get<ecs::TransformSnapshot>(lock);
                     auto opticNormal = -opticTransform.GetForward();
-                    lastTransform = opticTransform.matrix;
+                    lastOpticTransform = opticTransform;
                     lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
                                   opticTransform.GetPosition();
                     lightDir = glm::reflect(lightDir, opticNormal);
@@ -100,17 +111,24 @@ namespace sp::vulkan::renderer {
             }
             if (i < path.size()) continue;
 
-            int extent = (int)std::pow(2, light.shadowMapSize);
-
             auto &view = views[lightCount];
 
+            ecs::Transform lightTransform = lastOpticTransform;
+            lightTransform.SetPosition(lightOrigin);
+            view.invViewMat = lightTransform.matrix;
+            view.viewMat = glm::inverse(view.invViewMat);
+            glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
+
+            int extent = (int)std::pow(2, light.shadowMapSize);
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
-            view.clip = light.shadowMapClip;
-            view.UpdateProjectionMatrix();
-            view.SetInvViewMat(glm::lookAt(lightOrigin, lightDir, glm::vec3(lastTransform * glm::vec4(0, 1, 0, 0))));
+            view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
+            view.projMat = makeProjectionMatrix(lightViewMirrorPos,
+                view.clip,
+                glm::vec4(lightViewMirrorPos.x + glm::vec2(-0.5, 0.5), lightViewMirrorPos.y + glm::vec2(-0.5, 0.5)));
+            view.invProjMat = glm::inverse(view.projMat);
 
             auto &data = gpuData.lights[lightCount];
             data.position = lightOrigin;
@@ -133,18 +151,17 @@ namespace sp::vulkan::renderer {
                 gelTextures[lightCount] = {};
             }
 
-            std::string str;
             auto &lightPath = lightPaths.emplace_back();
             auto foundIndex = std::find(lightEntities.begin(), lightEntities.end(), path[0]) - lightEntities.begin();
-            str += ecs::ToString(lock, path[0]) + ":" + std::to_string(foundIndex);
+            std::string str = ecs::ToString(lock, path[0]) + ":" + std::to_string(foundIndex);
             lightPath.push_back(foundIndex);
             for (i = 1; i < path.size(); i++) {
                 foundIndex = std::find(scene.opticEntities.begin(), scene.opticEntities.end(), path[i]) -
                              scene.opticEntities.begin();
-                str += "," + ecs::ToString(lock, path[i]) + ":" + std::to_string(foundIndex);
+                // str += "," + ecs::ToString(lock, path[i]) + ":" + std::to_string(foundIndex);
                 lightPath.push_back(foundIndex);
             }
-            Logf("Visible path: %s", str);
+            // Logf("Visible path: %s", str);
 
             shadowAtlasSize.x += extent;
             if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
@@ -335,7 +352,7 @@ namespace sp::vulkan::renderer {
                             break;
                         }
                     }
-                    if (!pathValid) continue;
+                    if (!pathValid || path.size() == path.capacity()) continue;
 
                     for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
                         if (visibility[lightIndex * MAX_OPTICS + opticIndex] == 1) {
