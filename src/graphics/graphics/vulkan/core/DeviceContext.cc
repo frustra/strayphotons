@@ -228,9 +228,6 @@ namespace sp::vulkan {
         Assert(queueFamilyIndex[QUEUE_TYPE_TRANSFER] != queueFamilyIndex[QUEUE_TYPE_GRAPHICS],
             "transfer queue family overlaps graphics queue");
 
-        imageTransferGranularity = queueFamilies[queueFamilyIndex[QUEUE_TYPE_TRANSFER]].minImageTransferGranularity;
-        Assert(imageTransferGranularity.depth <= 1, "transfer queue doesn't support 2D images");
-
         std::vector<vk::DeviceQueueCreateInfo> queueInfos;
         for (uint32 i = 0; i < queueFamilies.size(); i++) {
             if (queuesUsedCount[i] == 0) continue;
@@ -1452,6 +1449,35 @@ namespace sp::vulkan {
 
         bufferPool->Tick();
         if (printBufferStats.exchange(false)) bufferPool->LogStats();
+    }
+
+    vk::FormatProperties DeviceContext::FormatProperties(vk::Format format) const {
+        return physicalDevice.getFormatProperties(format);
+    }
+
+    vk::Format DeviceContext::SelectSupportedFormat(vk::FormatProperties requiredProps,
+        vk::ArrayProxy<const vk::Format> possibleFormats) {
+
+        auto reqOptimal = requiredProps.optimalTilingFeatures, reqLinear = requiredProps.linearTilingFeatures,
+             reqBuffer = requiredProps.bufferFeatures;
+
+        for (auto format : possibleFormats) {
+            auto props = FormatProperties(format);
+            if (reqOptimal && (props.optimalTilingFeatures & reqOptimal) != reqOptimal) continue;
+            if (reqLinear && (props.linearTilingFeatures & reqLinear) != reqLinear) continue;
+            if (reqBuffer && (props.bufferFeatures & reqBuffer) != reqBuffer) continue;
+            return format;
+        }
+
+        std::stringstream err;
+        err << "device does not support any format from list:";
+        for (auto format : possibleFormats) {
+            err << " " << vk::to_string(format);
+        }
+        if (reqOptimal) err << ", having optimal tiling features: " << vk::to_string(reqOptimal);
+        if (reqLinear) err << ", having linear tiling features: " << vk::to_string(reqLinear);
+        if (reqBuffer) err << ", having buffer features: " << vk::to_string(reqBuffer);
+        Abortf("%s", err.str());
     }
 
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {

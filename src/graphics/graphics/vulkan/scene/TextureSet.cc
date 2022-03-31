@@ -80,10 +80,6 @@ namespace sp::vulkan {
             double rf = material.pbrMetallicRoughness.roughnessFactor,
                    mf = material.pbrMetallicRoughness.metallicFactor;
             if (rf != 1 || mf != 1) factor = {0.0, rf, mf, 0.0};
-            // The spec says these should be linear, but we have srgb files right now.
-            // Linear makes sense, there's no reason to have more precision for lower values.
-            // TODO: reencode as linear
-            srgb = true;
             break;
         }
         case TextureType::Height:

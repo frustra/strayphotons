@@ -138,7 +138,6 @@
 			load_signal: "global:ship_airlock-zone/playerPresent"
 		}) %>,
 		<%- include('prefab/button', {
-			scene: 'menu',
 			name: 'airlock_in_button',
 			transform: {
 				"translate": [4.95, 1.5, 2.5]
@@ -160,6 +159,23 @@
 					[-90, 1, 0, 0],
 					[-30, 0, 1, 0]
 				]
+			}
+		},
+		<%- include('prefab/articulating_arm', {
+			name: 'articulating_arm',
+			transform: {
+				"translate": [1, 0.1, -1],
+				"scale": [4, 4, 4]
+			}
+		}) %>,
+		{
+			"transform": {
+				"parent": "articulating_arm.Ball_1",
+				"translate": [0, 0.04, 0]
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"color": [1, 0, 0]
 			}
 		},
 		{

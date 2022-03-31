@@ -68,7 +68,7 @@ namespace sp::vulkan::renderer {
                     screens.push_back(std::move(screen));
                 }
             })
-            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this](Resources &resources, CommandContext &cmd) {
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);

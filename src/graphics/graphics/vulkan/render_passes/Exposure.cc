@@ -65,7 +65,7 @@ namespace sp::vulkan::renderer {
     }
 
     void AddExposureUpdate(RenderGraph &graph) {
-        const int bins = 64;
+        const int bins = 128;
         const int wgsize = 16;
         const int downsample = 2; // read every N pixels
 
@@ -92,15 +92,16 @@ namespace sp::vulkan::renderer {
                     });
 
                 builder.Read(source, Access::ComputeShaderSampleImage);
+                builder.Read("ExposureState", Access::ComputeShaderReadStorage);
                 builder.Write("LuminanceHistogram", Access::ComputeShaderWrite);
             })
             .Execute([source](rg::Resources &resources, CommandContext &cmd) {
                 auto luminance = resources.GetImageLayerView(source, 0);
-                auto histogram = resources.GetImageView("LuminanceHistogram");
 
                 cmd.SetComputeShader("lumi_histogram.comp");
                 cmd.SetImageView(0, 0, luminance);
-                cmd.SetImageView(0, 1, histogram);
+                cmd.SetImageView(0, 1, resources.GetImageView("LuminanceHistogram"));
+                cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
 
                 auto width = luminance->Extent().width / downsample;
                 auto height = luminance->Extent().height / downsample;
@@ -143,6 +144,7 @@ namespace sp::vulkan::renderer {
                 .Build([&](rg::PassBuilder &builder) {
                     builder.Read("LuminanceHistogram", Access::FragmentShaderReadStorage);
                     builder.Read(source, Access::FragmentShaderSampleImage);
+                    builder.Read("ExposureState", Access::ComputeShaderReadStorage);
 
                     auto desc = builder.DeriveImage(source);
                     builder.OutputColorAttachment(0, "ViewH", desc, {LoadOp::DontCare, StoreOp::Store});
@@ -151,6 +153,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaders("screen_cover.vert", "render_histogram.frag");
                     cmd.SetImageView(0, 0, resources.GetImageView(source));
                     cmd.SetImageView(0, 1, resources.GetImageView("LuminanceHistogram"));
+                    cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
                     cmd.Draw(3);
                 });
     }

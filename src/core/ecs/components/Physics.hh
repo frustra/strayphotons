@@ -14,7 +14,6 @@ namespace sp {
 
 namespace physx {
     class PxRigidActor;
-    class PxJoint;
     class PxScene;
     class PxControllerManager;
 } // namespace physx
@@ -35,15 +34,6 @@ namespace ecs {
         PHYSICS_GROUP_INTERACTIVE = 1 << (size_t)PhysicsGroup::Interactive,
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
         PHYSICS_GROUP_PLAYER_HANDS = 1 << (size_t)PhysicsGroup::PlayerHands,
-    };
-
-    enum class PhysicsJointType {
-        Fixed = 0,
-        Distance,
-        Spherical,
-        Hinge,
-        Slider,
-        Count,
     };
 
     struct PhysicsShape {
@@ -101,12 +91,8 @@ namespace ecs {
         bool kinematic = false; // only dynamic actors can be kinematic
         bool decomposeHull = false;
         float density = 1.0f;
-
-        Entity jointTarget;
-        PhysicsJointType jointType = PhysicsJointType::Count;
-        glm::vec2 jointRange;
-        glm::vec3 jointLocalOffset, jointRemoteOffset;
-        glm::quat jointLocalOrient, jointRemoteOrient;
+        float angularDamping = 0.05f;
+        float linearDamping = 0.0f;
 
         glm::vec3 constantForce;
 
@@ -114,26 +100,6 @@ namespace ecs {
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
-
-        void SetJoint(Entity target,
-            PhysicsJointType type,
-            glm::vec2 range = glm::vec2(),
-            glm::vec3 localOffset = glm::vec3(),
-            glm::quat localOrient = glm::quat(),
-            glm::vec3 remoteOffset = glm::vec3(),
-            glm::quat remoteOrient = glm::quat()) {
-            jointTarget = target;
-            jointType = type;
-            jointRange = range;
-            jointLocalOffset = localOffset;
-            jointRemoteOffset = remoteOffset;
-            jointLocalOrient = localOrient;
-            jointRemoteOrient = remoteOrient;
-        }
-
-        void RemoveJoint() {
-            SetJoint(Entity(), PhysicsJointType::Count);
-        }
 
         void SetConstraint(Entity target,
             float maxDistance = 0.0f,

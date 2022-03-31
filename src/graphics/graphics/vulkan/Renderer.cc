@@ -12,6 +12,7 @@
 #include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
+#include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
@@ -44,6 +45,9 @@ namespace sp::vulkan {
 
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
+
+        depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
+            {vk::Format::eD24UnormS8Uint, vk::Format::eD16UnormS8Uint});
     }
 
     Renderer::~Renderer() {
@@ -110,6 +114,7 @@ namespace sp::vulkan {
             AddFlatView(lock);
             if (graph.HasResource("GBuffer0")) {
                 AddDeferredPasses(lock);
+                renderer::AddCrosshair(graph);
                 if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
             }
         }
@@ -197,7 +202,7 @@ namespace sp::vulkan {
                 builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
                 builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = depthStencilFormat;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
@@ -286,7 +291,7 @@ namespace sp::vulkan {
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
-                desc.format = vk::Format::eD24UnormS8Uint;
+                desc.format = depthStencilFormat;
                 rg::AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
                 attachment.arrayIndex = 0;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, attachment);

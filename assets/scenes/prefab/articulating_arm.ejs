@@ -1,0 +1,166 @@
+{
+	"name": <%= name %>,
+    "transform": <%= transform %>,
+    "script": [
+        {
+            "prefab": "gltf",
+            "parameters": {
+                "model": "articulating-arm",
+                "render": true
+            }
+        },
+        {
+            "onTick": "articulating_arm"
+        }
+    ],
+	"signal_bindings": {
+		"locked_ratio": <%= name + ".Knob/value" %>
+	}
+},
+{
+	"name": <%= name + ".Ball_0" %>,
+    "physics": {
+        "angular_damping": 50,
+        "linear_damping": 50,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 2
+        },
+        "dynamic": false,
+        "group": "noclip"
+    }
+},
+{
+	"name": <%= name + ".Arm_0" %>,
+    "physics": {
+        "angular_damping": 50,
+        "linear_damping": 50,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 0
+        },
+        "group": "noclip"
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Ball_0" %>,
+        "type": "spherical",
+        "range": [90, 90],
+        "local_offset": {
+            "rotate": [90, 0, 0, 1]
+        },
+        "remote_offset": {
+            "translate": [0, 0.023, 0],
+            "rotate": [90, 0, 0, 1]
+        }
+    }]
+},
+{
+	"name": <%= name + ".Socket_0" %>,
+    "physics": {
+        "angular_damping": 50,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 6
+        },
+        "group": "noclip"
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Arm_0" %>,
+        "type": "fixed"
+    }]
+},
+{
+	"name": <%= name + ".Knob" %>,
+    "physics": {
+        "angular_damping": 100,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 4
+        }
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Arm_0" %>,
+        "type": "hinge",
+        "remote_offset": {
+            "translate": [0, 0.1043, 0]
+        }
+    }],
+    "signal_output": {
+        "value": 1
+    }
+},
+{
+	"name": <%= name + ".Shaft" %>,
+    "physics": {
+        "angular_damping": 50,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 5
+        },
+        "group": "noclip"
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Arm_0" %>,
+        "type": "fixed",
+        "remote_offset": {
+            "translate": [0, 0.1043, 0]
+        }
+    }]
+},
+{
+	"name": <%= name + ".Arm_1" %>,
+    "physics": {
+        "angular_damping": 50,
+        "linear_damping": 50,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 1
+        },
+        "group": "noclip"
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Arm_0" %>,
+        "type": "hinge",
+        "remote_offset": {
+            "translate": [-0.0174, 0.1043, 0]
+        }
+    }]
+},
+{
+	"name": <%= name + ".Socket_1" %>,
+    "physics": {
+        "angular_damping": 50,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 7
+        },
+        "group": "noclip"
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Arm_1" %>,
+        "type": "fixed"
+    }]
+},
+{
+	"name": <%= name + ".Ball_1" %>,
+    "physics": {
+        "angular_damping": 100,
+        "linear_damping": 100,
+        "model": {
+            "model": "articulating-arm",
+            "mesh_index": 3
+        }
+    },
+    "physics_joints": [{
+        "target": <%= name + ".Arm_1" %>,
+        "type": "spherical",
+        "range": [90, 90],
+        "local_offset": {
+            "rotate": [90, 0, 0, 1]
+        },
+        "remote_offset": {
+            "translate": [0, 0.1043, 0],
+            "rotate": [90, 0, 0, 1]
+        }
+    }]
+}

@@ -67,6 +67,7 @@ namespace sp::vulkan {
         void AddMenuOverlay();
 
         CFuncCollection funcs;
+        vk::Format depthStencilFormat;
 
         GPUScene scene;
 
