@@ -19,10 +19,10 @@ namespace sp::vulkan::renderer {
     glm::mat4 makeProjectionMatrix(glm::vec3 viewSpaceMirrorPos, glm::vec2 clip, glm::vec4 bounds) {
         return glm::mat4(
             // clang-format off
-            2*clip.x,          0,                 0,                                0,
-            0,                 2*clip.x,          0,                                0,
-            bounds.y+bounds.x, bounds.z+bounds.w, -(clip.y+clip.x)/(clip.y-clip.x), -1,
-            0,                  0,                -2*clip.y*clip.x/(clip.y-clip.x), 0
+            2*clip.x,          0,                 0,                             0,
+            0,                 2*clip.x,          0,                             0,
+            bounds.y+bounds.x, bounds.z+bounds.w, -clip.y/(clip.y-clip.x),       -1,
+            0,                  0,                -clip.y*clip.x/(clip.y-clip.x), 0
             // clang-format on
         );
     }
@@ -339,20 +339,23 @@ namespace sp::vulkan::renderer {
                 }
 
                 readbackLightPaths.clear();
+                InlineVector<bool, MAX_LIGHTS> lightValid;
+                lightValid.resize(paths.size());
+                std::fill(lightValid.begin(), lightValid.end(), true);
                 for (uint32_t lightIndex = 0; lightIndex < paths.size(); lightIndex++) {
                     auto &path = paths[lightIndex];
-                    if (path.size() == 0) continue;
+                    if (path.size() == 0 || path.size() >= path.capacity()) continue;
 
                     // Check if the path to the current light is still valid, else skip this light.
-                    bool pathValid = true;
                     for (uint32_t i = 1; i < path.size(); i++) {
                         Assertf(path[i] < optics.size(), "Light path contains invalid index");
+                        // TODO: Fix his broken logic, the index isn't correct
                         if (visibility[lightIndex * MAX_OPTICS + path[i]] == 0) {
-                            pathValid = false;
+                            lightValid[lightIndex] = false;
                             break;
                         }
                     }
-                    if (!pathValid || path.size() == path.capacity()) continue;
+                    if (!lightValid[lightIndex]) continue;
 
                     for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
                         if (visibility[lightIndex * MAX_OPTICS + opticIndex] == 1) {
