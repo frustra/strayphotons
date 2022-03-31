@@ -14,7 +14,9 @@ namespace sp {
         ConstraintSystem(PhysxManager &manager);
         ~ConstraintSystem() {}
 
-        void Frame(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics>> lock);
+        void Frame(
+            ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints>> lock);
+
         void BreakConstraints(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>> lock);
 
     private:
@@ -23,6 +25,13 @@ namespace sp {
             ecs::Transform transform,
             ecs::Transform targetTransform,
             glm::vec3 targetVelocity);
+
+        void UpdateJoints(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints>> lock,
+            ecs::Entity entity,
+            physx::PxRigidActor *actor,
+            ecs::Transform transform);
+
+        void ReleaseJoints(ecs::Entity entity, physx::PxRigidActor *actor);
 
         PhysxManager &manager;
     };

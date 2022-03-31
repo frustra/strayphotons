@@ -95,58 +95,6 @@ namespace ecs {
                     Errorf("Unknown physics group: %s", groupString);
                     return false;
                 }
-            } else if (param.first == "joint") {
-                Assert(scene, "Physics::Load must have valid scene to define joint");
-                Entity jointTarget;
-                PhysicsJointType jointType = PhysicsJointType::Fixed;
-                glm::vec2 jointRange;
-                Transform localTransform, remoteTransform;
-                for (auto jointParam : param.second.get<picojson::object>()) {
-                    if (jointParam.first == "target") {
-                        jointTarget = scene->GetEntity(jointParam.second.get<string>());
-                    } else if (jointParam.first == "type") {
-                        auto typeString = jointParam.second.get<string>();
-                        sp::to_upper(typeString);
-                        if (typeString == "FIXED") {
-                            jointType = PhysicsJointType::Fixed;
-                        } else if (typeString == "DISTANCE") {
-                            jointType = PhysicsJointType::Distance;
-                        } else if (typeString == "SPHERICAL") {
-                            jointType = PhysicsJointType::Spherical;
-                        } else if (typeString == "HINGE") {
-                            jointType = PhysicsJointType::Hinge;
-                        } else if (typeString == "SLIDER") {
-                            jointType = PhysicsJointType::Slider;
-                        } else {
-                            Errorf("Unknown joint type: %s", typeString);
-                            return false;
-                        }
-                    } else if (jointParam.first == "range") {
-                        jointRange = sp::MakeVec2(jointParam.second);
-                    } else if (jointParam.first == "local_offset") {
-                        if (!Component<Transform>::Load(scene, localTransform, jointParam.second)) {
-                            Errorf("Couldn't parse physics joint local_offset as Transform");
-                            return false;
-                        }
-                    } else if (jointParam.first == "remote_offset") {
-                        if (!Component<Transform>::Load(scene, remoteTransform, jointParam.second)) {
-                            Errorf("Couldn't parse physics joint remote_offset as Transform");
-                            return false;
-                        }
-                    }
-                }
-                if (jointTarget) {
-                    physics.SetJoint(jointTarget,
-                        jointType,
-                        jointRange,
-                        localTransform.GetPosition(),
-                        localTransform.GetRotation(),
-                        remoteTransform.GetPosition(),
-                        remoteTransform.GetRotation());
-                } else {
-                    Errorf("Component<Physics>::Load joint name does not exist: %s", jointTarget);
-                    return false;
-                }
             } else if (param.first == "force") {
                 physics.constantForce = sp::MakeVec3(param.second);
             } else if (param.first == "constraint") {
@@ -196,12 +144,6 @@ namespace ecs {
     void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) {
         if (src.Has<Physics>(srcLock) && !dst.Has<Physics>(dstLock)) {
             auto &physics = dst.Set<Physics>(dstLock, src.Get<Physics>(srcLock));
-
-            // Map physics joints from staging id to live id
-            if (physics.jointTarget && physics.jointTarget.Has<SceneInfo>(srcLock)) {
-                auto &sceneInfo = physics.jointTarget.Get<SceneInfo>(srcLock);
-                physics.jointTarget = sceneInfo.liveId;
-            }
 
             // Map physics constraint from staging id to live id
             if (physics.constraint && physics.constraint.Has<SceneInfo>(srcLock)) {

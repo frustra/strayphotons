@@ -22,7 +22,8 @@ namespace sp {
     using namespace physx;
 
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
-    CVar<bool> CVarPhysxDebugLines("x.DebugLines", false, "Show physx debug visualization lines");
+    CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
+    CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
     PhysxManager::PhysxManager(bool stepMode)
         : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
@@ -81,8 +82,10 @@ namespace sp {
         StopThread();
 
         controllerManager.reset();
-        for (auto &joint : joints) {
-            joint.second->release();
+        for (auto &entry : joints) {
+            for (auto &joint : entry.second) {
+                joint.pxJoint->release();
+            }
         }
         joints.clear();
         for (auto &actor : actors) {
@@ -166,10 +169,13 @@ namespace sp {
             }
         }
 
-        if (CVarPhysxDebugLines.Changed()) {
-            float scale = CVarPhysxDebugLines.Get(true);
-            scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, scale);
-            scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, scale);
+        if (CVarPhysxDebugCollision.Changed() || CVarPhysxDebugJoints.Changed()) {
+            bool collision = CVarPhysxDebugCollision.Get(true);
+            bool joints = CVarPhysxDebugJoints.Get(true);
+            scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, collision || joints ? 1 : 0);
+            scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, collision);
+            scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, joints);
+            scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, joints);
         }
 
         animationSystem.Frame();
@@ -181,7 +187,8 @@ namespace sp {
                                                         ecs::SignalBindings,
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
-                                                        ecs::Physics>,
+                                                        ecs::Physics,
+                                                        ecs::PhysicsJoints>,
                 ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController, ecs::EventInput>>();
 
             // Delete actors for removed entities
@@ -272,7 +279,7 @@ namespace sp {
                 auto &laser = debugLines.Get<ecs::LaserLine>(lock);
                 auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);
                 segments.clear();
-                if (CVarPhysxDebugLines.Get()) {
+                if (CVarPhysxDebugCollision.Get() || CVarPhysxDebugJoints.Get()) {
                     auto &rb = scene->getRenderBuffer();
                     for (size_t i = 0; i < rb.getNbLines(); i++) {
                         auto &line = rb.getLines()[i];
@@ -280,6 +287,22 @@ namespace sp {
                         segment.start = PxVec3ToGlmVec3(line.pos0);
                         segment.end = PxVec3ToGlmVec3(line.pos1);
                         segment.color = PxColorToGlmVec3(line.color0);
+                        segments.push_back(segment);
+                    }
+                    for (size_t i = 0; i < rb.getNbTriangles(); i++) {
+                        auto &triangle = rb.getTriangles()[i];
+                        ecs::LaserLine::Segment segment;
+                        segment.start = PxVec3ToGlmVec3(triangle.pos0);
+                        segment.end = PxVec3ToGlmVec3(triangle.pos1);
+                        segment.color = PxColorToGlmVec3(triangle.color0);
+                        segments.push_back(segment);
+                        segment.start = PxVec3ToGlmVec3(triangle.pos1);
+                        segment.end = PxVec3ToGlmVec3(triangle.pos2);
+                        segment.color = PxColorToGlmVec3(triangle.color1);
+                        segments.push_back(segment);
+                        segment.start = PxVec3ToGlmVec3(triangle.pos2);
+                        segment.end = PxVec3ToGlmVec3(triangle.pos0);
+                        segment.color = PxColorToGlmVec3(triangle.color2);
                         segments.push_back(segment);
                     }
                 }

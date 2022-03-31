@@ -270,15 +270,15 @@
 			"renderable": "mirror",
 			"physics": {
 				"model": "occluder",
-				"joint": {
-					"target": "mova-mirror",
-					"type": "Fixed",
-					"remote_offset": {
-						"translate": [0.5, 0, 0],
-						"rotate": [90, 0, 1, 0]
-					}
-				}
 			},
+			"physics_joints": [{
+				"target": "mova-mirror",
+				"type": "Fixed",
+				"remote_offset": {
+					"translate": [0.5, 0, 0],
+					"rotate": [90, 0, 1, 0]
+				}
+			}],
 			"transform": {
 				"parent": "mova-mirror",
 				"translate": [0.5, 0, 0],

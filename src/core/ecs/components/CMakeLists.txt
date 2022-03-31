@@ -12,6 +12,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Mirror.cc
     Name.cc
     Physics.cc
+    PhysicsJoints.cc
     PrefabDefinitions.cc
     Renderable.cc
     SceneConnection.cc

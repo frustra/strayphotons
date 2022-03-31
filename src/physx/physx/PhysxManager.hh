@@ -122,7 +122,12 @@ namespace sp {
         AnimationSystem animationSystem;
 
         EntityMap<physx::PxRigidActor *> actors;
-        EntityMap<physx::PxJoint *> joints;
+
+        struct Joint {
+            ecs::PhysicsJoint ecsJoint;
+            physx::PxJoint *pxJoint;
+        };
+        EntityMap<vector<Joint>> joints;
 
         std::mutex cacheMutex;
         PreservingMap<string, Async<ConvexHullSet>> cache;
