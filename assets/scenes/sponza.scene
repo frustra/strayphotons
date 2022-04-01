@@ -252,7 +252,7 @@
 			"transform": {
 				"parent":"sponza-physics",
 				"scale": [15, 0.1, 30],
-				"translate": [0, -1.06, 0]
+				"translate": [0, -1.07, 0]
 			},
 			"physics": {
 				"model": "box",

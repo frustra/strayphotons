@@ -43,6 +43,7 @@ struct Light {
     mat4 invProj;
     mat4 view;
     vec4 mapOffset;
+    vec4 bounds;
     vec2 clip;
 
     int gelId;

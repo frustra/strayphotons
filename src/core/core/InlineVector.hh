@@ -41,7 +41,7 @@ namespace sp {
         }
 
         void resize(size_type size) {
-            Assert(size < MaxSize, "InlineVector overflow");
+            Assert(size <= MaxSize, "InlineVector overflow");
             offset = size;
         }
 

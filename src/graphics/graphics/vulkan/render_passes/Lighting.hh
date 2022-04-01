@@ -44,11 +44,12 @@ namespace sp::vulkan::renderer {
             glm::mat4 invProj;
             glm::mat4 view;
             glm::vec4 mapOffset;
+            glm::vec4 bounds;
             glm::vec2 clip;
             int gelId;
             float padding[1];
         };
-        static_assert(sizeof(GPULight) == 17 * 4 * sizeof(float), "GPULight size incorrect");
+        static_assert(sizeof(GPULight) == 18 * 4 * sizeof(float), "GPULight size incorrect");
 
         struct GPUData {
             GPULight lights[MAX_LIGHTS];

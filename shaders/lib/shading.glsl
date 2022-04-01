@@ -104,14 +104,14 @@ vec3 DirectShading(vec3 worldPosition,
         vec3 surfaceNormal = normalize(mat3(lights[i].view) * flatNormal);
         float occlusion = step(lights[i].clip.x, -shadowMapPos.z);
 
-        vec2 viewBounds = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]) * lights[i].clip.x;
+        // vec2 viewBounds = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]) * lights[i].clip.x;
         ShadowInfo info = ShadowInfo(i,
             shadowMapPos,
             lights[i].proj,
             lights[i].invProj,
             lights[i].mapOffset,
             lights[i].clip,
-            vec4(-viewBounds, viewBounds * 2.0));
+            lights[i].bounds); // vec4(-viewBounds, viewBounds * 2.0));
 
 #ifdef SHADOWS_ENABLED
     #ifdef USE_VSM

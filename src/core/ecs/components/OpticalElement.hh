@@ -12,7 +12,7 @@ namespace ecs {
 
     struct OpticalElement {
         OpticType type = OpticType::Nop;
-        glm::vec3 tint;
+        glm::vec3 tint = glm::vec3(1);
     };
 
     static Component<OpticalElement> ComponentOpticalElement("optic");

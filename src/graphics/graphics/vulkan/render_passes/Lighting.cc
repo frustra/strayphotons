@@ -64,6 +64,8 @@ namespace sp::vulkan::renderer {
             data.view = view.viewMat;
             data.clip = view.clip;
             data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
+            auto viewBounds = glm::vec2(data.invProj[0][0], data.invProj[1][1]) * data.clip.x;
+            data.bounds = {-viewBounds, viewBounds * 2.0f};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
 
@@ -99,10 +101,14 @@ namespace sp::vulkan::renderer {
             for (; i < path.size(); i++) {
                 if (!path[i].Has<ecs::TransformSnapshot, ecs::OpticalElement>(lock)) break;
                 auto &optic = path[i].Get<ecs::OpticalElement>(lock);
-                // light.tint *= optic.tint;
-                if (optic.type == ecs::OpticType::Mirror) {
+                light.tint *= optic.tint;
+                if (optic.type == ecs::OpticType::Nop) {
                     auto &opticTransform = path[i].Get<ecs::TransformSnapshot>(lock);
-                    auto opticNormal = -opticTransform.GetForward();
+                    lastOpticTransform = opticTransform;
+                    lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
+                } else if (optic.type == ecs::OpticType::Mirror) {
+                    auto &opticTransform = path[i].Get<ecs::TransformSnapshot>(lock);
+                    auto opticNormal = opticTransform.GetForward();
                     lastOpticTransform = opticTransform;
                     lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
                                   opticTransform.GetPosition();
@@ -140,6 +146,7 @@ namespace sp::vulkan::renderer {
             data.view = view.viewMat;
             data.clip = view.clip;
             data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
+            data.bounds = {lightViewMirrorPos.x - 0.5, lightViewMirrorPos.y - 0.5, 1, 1};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
 
@@ -324,10 +331,10 @@ namespace sp::vulkan::renderer {
                 optics = this->scene.opticEntities,
                 lights = this->lightEntities,
                 paths = this->lightPaths](BufferPtr buffer) {
-                auto visibility = (const uint32_t *)buffer->Mapped();
-                for (size_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
-                    for (size_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
-                        uint32 visible = visibility[lightIndex * MAX_OPTICS + opticIndex];
+                auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
+                for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
+                    for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
+                        uint32 visible = visibility[lightIndex][opticIndex];
                         if (visible > 1) {
                             Tracef("Uhhh");
                             Logf("Uhhh");
@@ -350,15 +357,15 @@ namespace sp::vulkan::renderer {
                     for (uint32_t i = 1; i < path.size(); i++) {
                         Assertf(path[i] < optics.size(), "Light path contains invalid index");
                         // TODO: Fix his broken logic, the index isn't correct
-                        if (visibility[lightIndex * MAX_OPTICS + path[i]] == 0) {
-                            lightValid[lightIndex] = false;
+                        if (visibility[lightIndex][path[i]] == 0) {
+                            // lightValid[lightIndex] = false;
                             break;
                         }
                     }
                     if (!lightValid[lightIndex]) continue;
 
                     for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
-                        if (visibility[lightIndex * MAX_OPTICS + opticIndex] == 1) {
+                        if (visibility[lightIndex][opticIndex] == 1) {
                             Assertf(path[0] < lights.size(), "Light path contains invalid light index");
                             auto &newPath = readbackLightPaths.emplace_back();
                             newPath.emplace_back(lights[path[0]]);
