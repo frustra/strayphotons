@@ -210,6 +210,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
+        graph.BeginScope("ShadowMap");
         vector<GPUScene::DrawBufferIDs> drawAllIDs, drawOpticIDs;
         drawAllIDs.reserve(lightCount);
         drawOpticIDs.reserve(lightCount);
@@ -233,17 +234,17 @@ namespace sp::vulkan::renderer {
                 cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
             });
 
-        graph.AddPass("ShadowMaps")
+        graph.AddPass("RenderDepth")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
                 auto extent = glm::max(glm::ivec2(1), shadowAtlasSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
                 desc.format = CVarVSM.Get() ? vk::Format::eR32G32Sfloat : vk::Format::eR32Sfloat;
-                builder.OutputColorAttachment(0, "ShadowMapLinear", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputColorAttachment(0, "Linear", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eD16Unorm;
-                builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
@@ -277,7 +278,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("OpticsVisibility")
             .Build([&](rg::PassBuilder &builder) {
-                builder.SetDepthAttachment("ShadowMapDepth", {LoadOp::Load, StoreOp::Store});
+                builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::Store});
 
                 builder.Write("OpticVisibility", Access::FragmentShaderWrite);
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
@@ -378,6 +379,7 @@ namespace sp::vulkan::renderer {
                     }
                 }
             });
+        graph.EndScope();
 
         graph.BeginScope("ShadowMapBlur");
         auto sourceID = graph.LastOutputID();
@@ -387,7 +389,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto depthTarget = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMapLinear";
+        auto depthTarget = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
