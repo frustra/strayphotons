@@ -1,4 +1,4 @@
-add_library(${PROJECT_INPUT_GLFW_LIB} STATIC)
+add_library(${PROJECT_INPUT_GLFW_LIB} OBJECT)
 
 target_include_directories(${PROJECT_INPUT_GLFW_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

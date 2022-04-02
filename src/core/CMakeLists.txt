@@ -1,4 +1,4 @@
-add_library(${PROJECT_CORE_LIB} STATIC)
+add_library(${PROJECT_CORE_LIB} OBJECT)
 
 target_include_directories(${PROJECT_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

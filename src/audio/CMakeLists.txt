@@ -1,4 +1,4 @@
-add_library(${PROJECT_AUDIO_LIB} STATIC)
+add_library(${PROJECT_AUDIO_LIB} OBJECT)
 
 target_include_directories(${PROJECT_AUDIO_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
