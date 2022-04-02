@@ -6,6 +6,9 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
+    robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
+    robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
+
     bool parseScriptState(ScriptState &state, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {

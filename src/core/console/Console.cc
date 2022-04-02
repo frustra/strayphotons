@@ -243,5 +243,3 @@ namespace sp {
     }
 #endif
 } // namespace sp
-
-#include "ConsoleTracy.cc"

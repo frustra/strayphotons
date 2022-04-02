@@ -16,6 +16,8 @@ set(PROJECT_AUDIO_LIB ${PROJECT_BASE_NAME}-audio CACHE INTERNAL "Library impleme
 set(PROJECT_XR_CORE_LIB ${PROJECT_BASE_NAME}-xr-core CACHE INTERNAL "Library containing generic XR/VR support")
 set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library implementing XR support using OpenVR")
 
+set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library containing internal scripts")
+
 set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interface library to enable CLI test mode")
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
@@ -43,6 +45,7 @@ add_module_configuration(
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_AUDIO_LIB}
         ${PROJECT_XR_OPENVR_LIB}
+        ${PROJECT_SCRIPTS_LIB}
 )
 
 # EGL-based executable used for CI testing purposes
@@ -54,6 +57,7 @@ add_module_configuration(
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
+        ${PROJECT_SCRIPTS_LIB}
 )
 
 add_subdirectory(core)
@@ -63,3 +67,4 @@ add_subdirectory(input)
 add_subdirectory(main)
 add_subdirectory(physx)
 add_subdirectory(xr)
+add_subdirectory(scripts)
