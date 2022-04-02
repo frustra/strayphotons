@@ -29,11 +29,9 @@ namespace sp::vulkan::renderer {
 
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Name, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
-        lightCount = 0;
         shadowAtlasSize = glm::ivec2(0, 0);
         gelTextureCache.clear();
-        lightEntities.clear();
-        lightPaths.clear();
+        lights.clear();
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
@@ -41,27 +39,31 @@ namespace sp::vulkan::renderer {
             auto &light = entity.Get<ecs::Light>(lock);
             if (!light.on) continue;
 
+            auto &vLight = lights.emplace_back();
+            vLight.source = entity;
+            vLight.sourceIndex = lights.size() - 1;
+            vLight.opticIndex = ~(uint32_t)0;
+
             int extent = (int)std::pow(2, light.shadowMapSize);
 
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
-            auto &view = views[lightCount];
 
-            view.extents = {extent, extent};
-            view.fov = light.spotAngle * 2.0f;
-            view.offset = {shadowAtlasSize.x, 0};
-            view.clip = light.shadowMapClip;
-            view.UpdateProjectionMatrix();
-            view.UpdateViewMatrix(lock, entity);
+            vLight.view.extents = {extent, extent};
+            vLight.view.fov = light.spotAngle * 2.0f;
+            vLight.view.offset = {shadowAtlasSize.x, 0};
+            vLight.view.clip = light.shadowMapClip;
+            vLight.view.UpdateProjectionMatrix();
+            vLight.view.UpdateViewMatrix(lock, entity);
 
-            auto &data = gpuData.lights[lightCount];
+            auto &data = gpuData.lights[lights.size() - 1];
             data.position = transform.GetPosition();
             data.tint = light.tint;
             data.direction = transform.GetForward();
             data.spotAngleCos = cos(light.spotAngle);
-            data.proj = view.projMat;
-            data.invProj = view.invProjMat;
-            data.view = view.viewMat;
-            data.clip = view.clip;
+            data.proj = vLight.view.projMat;
+            data.invProj = vLight.view.invProjMat;
+            data.view = vLight.view.viewMat;
+            data.clip = vLight.view.clip;
             data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
             auto viewBounds = glm::vec2(data.invProj[0][0], data.invProj[1][1]) * data.clip.x;
             data.bounds = {-viewBounds, viewBounds * 2.0f};
@@ -71,33 +73,40 @@ namespace sp::vulkan::renderer {
             data.gelId = 0;
             if (!light.gelName.empty()) {
                 auto it = gelTextureCache.emplace(light.gelName, 0).first;
-                gelTextures[lightCount] = std::make_pair(light.gelName, &it->second);
-            } else {
-                gelTextures[lightCount] = {};
+                vLight.gelName = light.gelName;
+                vLight.gelTexture = &it->second;
             }
-
-            lightEntities.emplace_back(entity);
-            lightPaths.push_back({lightCount});
 
             shadowAtlasSize.x += extent;
             if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
-            if (++lightCount >= MAX_LIGHTS) break;
+            if (lights.size() >= MAX_LIGHTS) break;
         }
 
-        for (auto &path : readbackLightPaths) {
-            if (lightCount >= MAX_LIGHTS) break;
-            if (path.size() < 2) continue;
-            if (!path[0].Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
-            auto &sourceTransform = path[0].Get<ecs::TransformSnapshot>(lock);
-            auto light = path[0].Get<ecs::Light>(lock);
+        for (uint32_t lightIndex = 0; lightIndex < readbackLights.size(); lightIndex++) {
+            if (lights.size() >= MAX_LIGHTS) break;
+            if (readbackLights[lightIndex].sourceIndex == lightIndex) continue;
+
+            InlineVector<ecs::Entity, MAX_LIGHTS> path;
+            uint32_t pathIndex = lightIndex;
+            while (pathIndex < readbackLights.size() && readbackLights[pathIndex].sourceIndex != pathIndex) {
+                path.emplace_back(readbackLights[pathIndex].source);
+                pathIndex = readbackLights[pathIndex].sourceIndex;
+            }
+            if (pathIndex >= readbackLights.size()) break;
+            path.emplace_back(readbackLights[pathIndex].source);
+
+            auto &sourceLight = path.back();
+            if (!sourceLight.Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
+            auto &sourceTransform = sourceLight.Get<ecs::TransformSnapshot>(lock);
+            auto light = sourceLight.Get<ecs::Light>(lock);
             if (!light.on) continue;
 
             glm::vec3 lightOrigin = sourceTransform.GetPosition();
             glm::vec3 lightDir = sourceTransform.GetForward();
             ecs::Transform lastOpticTransform = sourceTransform;
 
-            size_t i = 1;
-            for (; i < path.size(); i++) {
+            int i = path.size() - 2;
+            for (; i >= 0; i--) {
                 if (!path[i].Has<ecs::TransformSnapshot, ecs::OpticalElement>(lock)) break;
                 auto &optic = path[i].Get<ecs::OpticalElement>(lock);
                 light.tint *= optic.tint;
@@ -114,35 +123,42 @@ namespace sp::vulkan::renderer {
                     lightDir = glm::reflect(lightDir, opticNormal);
                 }
             }
-            if (i < path.size()) continue;
+            if (i >= 0) continue;
 
-            auto &view = views[lightCount];
+            auto &vLight = lights.emplace_back();
+            vLight.source = path.front();
+            vLight.sourceIndex = std::find_if(lights.begin(), lights.end(), [search = path[1]](auto &&light) {
+                // TODO: Fix this, it can find the wrong entity if the path hits the same mirror twice
+                return light.source == search;
+            }) - lights.begin();
+            vLight.opticIndex = std::find(scene.opticEntities.begin(), scene.opticEntities.end(), vLight.source) -
+                                scene.opticEntities.begin();
 
             ecs::Transform lightTransform = lastOpticTransform;
             lightTransform.SetPosition(lightOrigin);
-            view.invViewMat = lightTransform.matrix;
-            view.viewMat = glm::inverse(view.invViewMat);
-            glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
+            vLight.view.invViewMat = lightTransform.matrix;
+            vLight.view.viewMat = glm::inverse(vLight.view.invViewMat);
+            glm::vec3 lightViewMirrorPos = vLight.view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
 
             int extent = (int)std::pow(2, light.shadowMapSize);
-            view.extents = {extent, extent};
-            view.fov = light.spotAngle * 2.0f;
-            view.offset = {shadowAtlasSize.x, 0};
-            view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
-            view.projMat = makeProjectionMatrix(lightViewMirrorPos,
-                view.clip,
+            vLight.view.extents = {extent, extent};
+            vLight.view.fov = light.spotAngle * 2.0f;
+            vLight.view.offset = {shadowAtlasSize.x, 0};
+            vLight.view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
+            vLight.view.projMat = makeProjectionMatrix(lightViewMirrorPos,
+                vLight.view.clip,
                 glm::vec4(lightViewMirrorPos.x + glm::vec2(-0.5, 0.5), lightViewMirrorPos.y + glm::vec2(-0.5, 0.5)));
-            view.invProjMat = glm::inverse(view.projMat);
+            vLight.view.invProjMat = glm::inverse(vLight.view.projMat);
 
-            auto &data = gpuData.lights[lightCount];
+            auto &data = gpuData.lights[lights.size() - 1];
             data.position = lightOrigin;
             data.tint = light.tint;
             data.direction = lightDir;
             data.spotAngleCos = cos(light.spotAngle);
-            data.proj = view.projMat;
-            data.invProj = view.invProjMat;
-            data.view = view.viewMat;
-            data.clip = view.clip;
+            data.proj = vLight.view.projMat;
+            data.invProj = vLight.view.invProjMat;
+            data.view = vLight.view.viewMat;
+            data.clip = vLight.view.clip;
             data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
             data.bounds = {lightViewMirrorPos.x - 0.5, lightViewMirrorPos.y - 0.5, 1, 1};
             data.intensity = light.intensity;
@@ -151,33 +167,19 @@ namespace sp::vulkan::renderer {
             data.gelId = 0;
             if (!light.gelName.empty()) {
                 auto it = gelTextureCache.emplace(light.gelName, 0).first;
-                gelTextures[lightCount] = std::make_pair(light.gelName, &it->second);
-            } else {
-                gelTextures[lightCount] = {};
+                vLight.gelName = light.gelName;
+                vLight.gelTexture = &it->second;
             }
-
-            auto &lightPath = lightPaths.emplace_back();
-            auto foundIndex = std::find(lightEntities.begin(), lightEntities.end(), path[0]) - lightEntities.begin();
-            std::string str = ecs::ToString(lock, path[0]) + ":" + std::to_string(foundIndex);
-            lightPath.push_back(foundIndex);
-            for (i = 1; i < path.size(); i++) {
-                foundIndex = std::find(scene.opticEntities.begin(), scene.opticEntities.end(), path[i]) -
-                             scene.opticEntities.begin();
-                // str += "," + ecs::ToString(lock, path[i]) + ":" + std::to_string(foundIndex);
-                lightPath.push_back(foundIndex);
-            }
-            // Logf("Visible path: %s", str);
 
             shadowAtlasSize.x += extent;
             if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
-            if (++lightCount >= MAX_LIGHTS) break;
         }
 
         glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
-        for (uint32_t i = 0; i < lightCount; i++) {
+        for (uint32_t i = 0; i < lights.size(); i++) {
             gpuData.lights[i].mapOffset /= mapOffsetScale;
         }
-        gpuData.count = lightCount;
+        gpuData.count = lights.size();
 
         graph.AddPass("LightState")
             .Build([&](rg::PassBuilder &builder) {
@@ -200,8 +202,8 @@ namespace sp::vulkan::renderer {
                 for (auto &gel : gelTextureCache) {
                     gel.second = scene.textures.Add(resources.GetImageView(gel.first)).index;
                 }
-                for (size_t i = 0; i < MAX_LIGHTS; i++) {
-                    if (gelTextures[i].second) gpuData.lights[i].gelId = *gelTextures[i].second;
+                for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
+                    if (lights[i].gelTexture) gpuData.lights[i].gelId = *lights[i].gelTexture;
                 }
                 resources.GetBuffer("LightState")->CopyFrom(&gpuData);
             });
@@ -259,8 +261,8 @@ namespace sp::vulkan::renderer {
             .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
 
-                for (uint32_t i = 0; i < lightCount; i++) {
-                    auto &view = views[i];
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    auto &view = lights[i].view;
 
                     GPUViewState lightViews[] = {{view}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
@@ -300,8 +302,8 @@ namespace sp::vulkan::renderer {
 
                 auto visBuffer = resources.GetBuffer("OpticVisibility");
 
-                for (uint32_t i = 0; i < lightCount; i++) {
-                    auto &view = views[i];
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    auto &view = lights[i].view;
 
                     GPUViewState lightViews[] = {{view}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
@@ -330,11 +332,7 @@ namespace sp::vulkan::renderer {
             "OpticVisibility",
             0,
             sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
-            [this,
-                lightCount = this->lightCount,
-                optics = this->scene.opticEntities,
-                lights = this->lightEntities,
-                paths = this->lightPaths](BufferPtr buffer) {
+            [this, lights = this->lights, optics = this->scene.opticEntities](BufferPtr buffer) {
                 auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
                 for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
                     for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
@@ -342,42 +340,45 @@ namespace sp::vulkan::renderer {
                         if (visible > 1) {
                             Tracef("Uhhh");
                             Abortf("Uhhh");
-                            lightIndex = MAX_LIGHTS;
-                            break;
                         }
                         if (visible == 1 && opticIndex >= optics.size()) Abortf("Optic index out of range");
                     }
                 }
 
-                readbackLightPaths.clear();
+                readbackLights.clear();
                 InlineVector<bool, MAX_LIGHTS> lightValid;
-                lightValid.resize(paths.size());
+                lightValid.resize(lights.size());
                 std::fill(lightValid.begin(), lightValid.end(), true);
-                for (uint32_t lightIndex = 0; lightIndex < paths.size(); lightIndex++) {
-                    auto &path = paths[lightIndex];
-                    if (path.size() == 0 || path.size() >= path.capacity()) continue;
+                for (uint32_t lightIndex = 0; lightIndex < lights.size(); lightIndex++) {
+                    // Forward all real lights first
+                    if (lights[lightIndex].sourceIndex != lightIndex || readbackLights.size() >= MAX_LIGHTS) break;
+                    readbackLights.emplace_back(lights[lightIndex]);
+                }
+                for (uint32_t lightIndex = 0; lightIndex < lights.size(); lightIndex++) {
+                    auto &vLight = lights[lightIndex];
+                    if (vLight.sourceIndex >= lights.size()) continue;
 
                     // Check if the path to the current light is still valid, else skip this light.
-                    for (uint32_t i = 1; i < path.size(); i++) {
-                        Assertf(path[i] < optics.size(), "Light path contains invalid index");
-                        // TODO: Fix his broken logic, the index isn't correct
-                        if (visibility[lightIndex][path[i]] == 0) {
-                            // lightValid[lightIndex] = false;
-                            break;
+                    if (vLight.sourceIndex != lightIndex) {
+                        if (!lightValid[vLight.sourceIndex]) continue;
+                        Assertf(vLight.opticIndex < MAX_OPTICS,
+                            "Virtual light optic index is out of range: %u",
+                            vLight.opticIndex);
+                        if (visibility[vLight.sourceIndex][vLight.opticIndex] != 1) {
+                            lightValid[lightIndex] = false;
+                            continue;
                         }
                     }
-                    if (!lightValid[lightIndex]) continue;
 
+                    // Check if any optics are visible from the end of the current light path.
                     for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
+                        if (opticIndex == vLight.opticIndex) continue;
                         if (visibility[lightIndex][opticIndex] == 1) {
-                            Assertf(path[0] < lights.size(), "Light path contains invalid light index");
-                            auto &newPath = readbackLightPaths.emplace_back();
-                            newPath.emplace_back(lights[path[0]]);
-                            for (uint32_t i = 1; i < path.size(); i++) {
-                                Assertf(path[i] < optics.size(), "Light path contains invalid optic index");
-                                newPath.emplace_back(optics[path[i]]);
-                            }
-                            newPath.emplace_back(optics[opticIndex]);
+                            auto &newLight = readbackLights.emplace_back(vLight);
+                            newLight.source = optics[opticIndex];
+                            newLight.opticIndex = opticIndex;
+                            newLight.sourceIndex = lightIndex;
+                            if (readbackLights.size() >= MAX_LIGHTS) break;
                         }
                     }
                 }

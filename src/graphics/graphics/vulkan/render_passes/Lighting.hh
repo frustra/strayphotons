@@ -19,16 +19,22 @@ namespace sp::vulkan::renderer {
     private:
         GPUScene &scene;
 
-        uint32_t lightCount;
         glm::ivec2 shadowAtlasSize = {};
-        ecs::View views[MAX_LIGHTS];
-        std::vector<ecs::Entity> lightEntities;
 
-        std::pair<string, const TextureIndex *> gelTextures[MAX_LIGHTS];
+        struct VirtualLight {
+            ecs::View view;
+            ecs::Entity source; // Real light or last optic entity in source light path
+            uint32_t sourceIndex; // Virtual light index of source
+            uint32_t opticIndex = ~(uint32_t)0; // Optic index of output optic
+
+            std::string gelName;
+            const TextureIndex *gelTexture = nullptr;
+        };
+
         robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
 
-        std::vector<InlineVector<uint32_t, MAX_LIGHTS>> lightPaths;
-        std::vector<InlineVector<ecs::Entity, MAX_LIGHTS>> readbackLightPaths;
+        std::vector<VirtualLight> lights;
+        std::vector<VirtualLight> readbackLights;
 
         struct GPULight {
             glm::vec3 position;
