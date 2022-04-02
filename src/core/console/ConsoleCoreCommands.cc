@@ -1,5 +1,3 @@
-// Included directly into Console.cc
-
 #include "console/Console.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"

@@ -95,11 +95,25 @@ namespace ecs {
 
     static Component<Script> ComponentScript("script");
 
-    extern robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
-    extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
-
     template<>
     bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
+
+    extern robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
+    extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
+
+    class InternalScript {
+    public:
+        InternalScript(const std::string &name, OnTickFunc &&func) {
+            ScriptDefinitions[name] = std::move(func);
+        }
+    };
+
+    class InternalPrefab {
+    public:
+        InternalPrefab(const std::string &name, PrefabFunc &&func) {
+            PrefabDefinitions[name] = std::move(func);
+        }
+    };
 } // namespace ecs
