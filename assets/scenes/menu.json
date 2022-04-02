@@ -937,7 +937,7 @@
 					1,
 					0.5
 				],
-				"intensity": 10,
+				"intensity": 1,
 				"spotAngle": 10,
 				"shadowMapSize": 10,
 				"shadowMapClip": [

@@ -133,35 +133,10 @@ namespace ecs {
                         if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
 
                         auto &transform = ent.Get<TransformTree>(lock);
-                        auto parent = parentEntity.Get(lock);
-                        if (parent.Has<TransformTree>(lock)) {
-                            if (ent.Has<Renderable>(lock)) {
-                                auto &renderable = ent.Get<Renderable>(lock);
-                                renderable.visibility.set();
-                            }
-                        } else {
-                            parent = Entity();
-                            if (ent.Has<Renderable>(lock)) {
-                                auto &renderable = ent.Get<Renderable>(lock);
-                                renderable.visibility.reset();
-                            }
-                        }
-                        transform.parent = parent;
+                        transform.parent = parentEntity.Get(lock);
                         state.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
                     } else {
                         Errorf("Attach parent name is invalid: %s", fullParentName);
-                    }
-                }
-            }},
-        {"lazy_load_model",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Renderable>(lock)) {
-                    auto modelName = state.GetParam<std::string>("model_name");
-
-                    auto &renderable = ent.Get<Renderable>(lock);
-                    if (!renderable.model && sp::GAssets.IsGltfRegistered(modelName)) {
-                        renderable.model = sp::GAssets.LoadGltf(modelName);
-                        renderable.visibility.set();
                     }
                 }
             }},
@@ -329,6 +304,10 @@ namespace ecs {
                         if (ph.constraint != ent) {
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
+                            if (target.Has<Renderable>(lock)) {
+                                target.Get<Renderable>(lock).visibility.reset(
+                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                            }
                             target = Entity();
                         }
                     }
@@ -340,6 +319,10 @@ namespace ecs {
                             auto &ph = target.Get<Physics>(lock);
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
+                            if (target.Has<Renderable>(lock)) {
+                                target.Get<Renderable>(lock).visibility.reset(
+                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                            }
                             target = Entity();
                         } else if (query.raycastHitTarget.Has<Physics, TransformSnapshot>(lock)) {
                             // Grab the entity being looked at
@@ -358,6 +341,23 @@ namespace ecs {
                                     invParentRotate * hitTransform.GetRotation());
                             }
                         }
+                    }
+
+                    if (state.userData.has_value()) {
+                        auto lastSelection = std::any_cast<Entity>(state.userData);
+                        if (lastSelection && lastSelection.Has<Renderable>(lock)) {
+                            lastSelection.Get<Renderable>(lock).visibility.reset(
+                                ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                        }
+                    }
+
+                    auto selection = target;
+                    if (!selection) selection = query.raycastHitTarget;
+
+                    if (selection && selection.Has<Renderable>(lock)) {
+                        selection.Get<Renderable>(lock).visibility.set(
+                            ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                        state.userData = selection;
                     }
 
                     auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");

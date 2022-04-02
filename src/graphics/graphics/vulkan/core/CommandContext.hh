@@ -156,6 +156,20 @@ namespace sp::vulkan {
             }
         }
 
+        void SetPolygonMode(vk::PolygonMode mode) {
+            if (mode != pipelineInput.state.polygonMode) {
+                pipelineInput.state.polygonMode = mode;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetLineWidth(float width) {
+            if (width != pipelineInput.state.lineWidth) {
+                pipelineInput.state.lineWidth = width;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
         void SetScissor(const vk::Rect2D &newScissor) {
             if (pipelineInput.state.scissorCount != 1) {
                 pipelineInput.state.scissorCount = 1;
