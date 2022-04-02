@@ -46,7 +46,6 @@ namespace sp::vulkan::renderer {
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
             auto &view = views[lightCount];
 
-            view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
@@ -126,7 +125,6 @@ namespace sp::vulkan::renderer {
             glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
 
             int extent = (int)std::pow(2, light.shadowMapSize);
-            view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
@@ -211,16 +209,21 @@ namespace sp::vulkan::renderer {
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
         graph.BeginScope("ShadowMap");
-        vector<GPUScene::DrawBufferIDs> drawAllIDs, drawOpticIDs;
-        drawAllIDs.reserve(lightCount);
-        drawOpticIDs.reserve(lightCount);
-        for (uint32_t i = 0; i < lightCount; i++) {
-            drawAllIDs.push_back(scene.GenerateDrawsForView(graph, views[i].visibilityMask));
+        // vector<GPUScene::DrawBufferIDs> drawAllIDs, drawOpticIDs;
+        // drawAllIDs.reserve(lightCount);
+        // drawOpticIDs.reserve(lightCount);
+        // for (uint32_t i = 0; i < lightCount; i++) {
+        //     drawAllIDs.push_back(scene.GenerateDrawsForView(graph, views[i].visibilityMask));
 
-            auto opticMask = views[i].visibilityMask;
-            opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
-            drawOpticIDs.push_back(scene.GenerateDrawsForView(graph, opticMask));
-        }
+        //     auto opticMask = views[i].visibilityMask;
+        //     opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
+        //     drawOpticIDs.push_back(scene.GenerateDrawsForView(graph, opticMask));
+        // }
+        ecs::Renderable::VisibilityMask opticMask;
+        opticMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
+        auto drawAllIDs = scene.GenerateDrawsForView(graph, opticMask);
+        opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
+        auto drawOpticIDs = scene.GenerateDrawsForView(graph, opticMask);
 
         graph.AddPass("InitOptics")
             .Build([&](rg::PassBuilder &builder) {
@@ -248,10 +251,10 @@ namespace sp::vulkan::renderer {
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                for (auto &ids : drawAllIDs) {
-                    builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
-                    builder.Read(ids.drawParamsBuffer, Access::VertexShaderReadStorage);
-                }
+                // for (auto &ids : drawAllIDs) {
+                builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
+                // }
             })
             .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
@@ -268,11 +271,11 @@ namespace sp::vulkan::renderer {
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
 
-                    auto &ids = drawAllIDs[i];
+                    // auto &ids = drawAllIDs[i];
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
-                        resources.GetBuffer(ids.drawCommandsBuffer),
-                        resources.GetBuffer(ids.drawParamsBuffer));
+                        resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
+                        resources.GetBuffer(drawAllIDs.drawParamsBuffer));
                 }
             });
 
@@ -283,10 +286,10 @@ namespace sp::vulkan::renderer {
                 builder.Write("OpticVisibility", Access::FragmentShaderWrite);
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                for (auto &ids : drawOpticIDs) {
-                    builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
-                    builder.Read(ids.drawParamsBuffer, Access::VertexShaderReadStorage);
-                }
+                // for (auto &ids : drawOpticIDs) {
+                builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
+                // }
             })
             .Execute([this, drawOpticIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("optic_visibility.vert", "optic_visibility.frag");
@@ -315,11 +318,11 @@ namespace sp::vulkan::renderer {
                     constants.lightIndex = i;
                     cmd.PushConstants(constants);
 
-                    auto &ids = drawOpticIDs[i];
+                    // auto &ids = drawOpticIDs[i];
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
-                        resources.GetBuffer(ids.drawCommandsBuffer),
-                        resources.GetBuffer(ids.drawParamsBuffer));
+                        resources.GetBuffer(drawOpticIDs.drawCommandsBuffer),
+                        resources.GetBuffer(drawOpticIDs.drawParamsBuffer));
                 }
             });
 
@@ -338,7 +341,7 @@ namespace sp::vulkan::renderer {
                         uint32 visible = visibility[lightIndex][opticIndex];
                         if (visible > 1) {
                             Tracef("Uhhh");
-                            Logf("Uhhh");
+                            Abortf("Uhhh");
                             lightIndex = MAX_LIGHTS;
                             break;
                         }
