@@ -3,13 +3,14 @@
 #include "Common.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
-#include <span>
+#include <optional>
 
 namespace sp::vulkan::renderer {
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}
-        void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
+        void LoadState(RenderGraph &graph,
+            ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
         void AddGelTextures(RenderGraph &graph);
@@ -18,12 +19,22 @@ namespace sp::vulkan::renderer {
     private:
         GPUScene &scene;
 
-        int lightCount;
         glm::ivec2 shadowAtlasSize = {};
-        ecs::View views[MAX_LIGHTS];
 
-        std::pair<string, const TextureIndex *> gelTextures[MAX_LIGHTS];
+        struct VirtualLight {
+            InlineVector<ecs::Entity, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
+            std::optional<uint32_t> parentIndex;
+            std::optional<uint32_t> opticIndex;
+
+            std::string gelName;
+            const TextureIndex *gelTexture = nullptr;
+        };
+
         robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
+
+        std::array<ecs::View, MAX_LIGHTS> views;
+        std::vector<VirtualLight> lights;
+        std::vector<VirtualLight> readbackLights;
 
         struct GPULight {
             glm::vec3 position;
@@ -39,11 +50,12 @@ namespace sp::vulkan::renderer {
             glm::mat4 invProj;
             glm::mat4 view;
             glm::vec4 mapOffset;
+            glm::vec4 bounds;
             glm::vec2 clip;
             int gelId;
             float padding[1];
         };
-        static_assert(sizeof(GPULight) == 17 * 4 * sizeof(float), "GPULight size incorrect");
+        static_assert(sizeof(GPULight) == 18 * 4 * sizeof(float), "GPULight size incorrect");
 
         struct GPUData {
             GPULight lights[MAX_LIGHTS];

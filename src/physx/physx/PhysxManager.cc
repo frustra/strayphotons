@@ -229,7 +229,7 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::LaserEmitter,
-                                                        ecs::Mirror>,
+                                                        ecs::OpticalElement>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,

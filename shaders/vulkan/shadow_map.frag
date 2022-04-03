@@ -9,7 +9,7 @@ layout(location = 0) out vec4 outLinearDepth;
 
 #include "../lib/types_common.glsl"
 
-INCLUDE_LAYOUT(binding = 10)
+INCLUDE_LAYOUT(binding = 0)
 #include "lib/view_states_uniform.glsl"
 
 void main() {

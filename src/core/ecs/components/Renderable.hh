@@ -17,6 +17,7 @@ namespace ecs {
             VISIBLE_REFLECTED,
             VISIBLE_LIGHTING_SHADOW,
             VISIBLE_LIGHTING_VOXEL,
+            VISIBLE_OPTICS,
             VISIBLE_OUTLINE_SELECTION,
             VISIBILITY_COUNT,
         };

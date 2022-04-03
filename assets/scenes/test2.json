@@ -59,7 +59,7 @@
 			}
 		},
 		{
-			"mirror": [1, 1],
+			"optic": "mirror",
 			"renderable": "mirror",
 			"transform": {
 				"translate": [0, 0.01, 2],
@@ -68,7 +68,7 @@
 			}
 		},
 		{
-			"mirror": [1, 1],
+			"optic": "mirror",
 			"renderable": "mirror",
 			"transform": {
 				"translate": [0, 2.49, 2],

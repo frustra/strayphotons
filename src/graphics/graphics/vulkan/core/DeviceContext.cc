@@ -65,7 +65,7 @@ namespace sp::vulkan {
 
     DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
         : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
-          frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
+          frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
         glfwSetErrorCallback(glfwErrorCallback);
 
@@ -687,6 +687,8 @@ namespace sp::vulkan {
 
             queueLastSubmit[i] = prevQueueSubmitFrame;
         }
+
+        frameBeginQueue.Flush();
     }
 
     void DeviceContext::PrepareResourcesForFrame() {

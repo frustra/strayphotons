@@ -53,7 +53,7 @@ namespace sp::vulkan {
         uint32 meshIndex;
         uint32 visibilityMask;
         uint32 vertexOffset;
-        float _padding[1];
+        uint32 opticID = 0;
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
@@ -70,7 +70,7 @@ namespace sp::vulkan {
 
         struct DrawBufferIDs {
             rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
-            rg::ResourceID drawParamsBuffer;
+            rg::ResourceID drawParamsBuffer = 0;
         };
 
         DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
@@ -90,6 +90,7 @@ namespace sp::vulkan {
         BufferPtr models;
 
         uint32 renderableCount = 0;
+        std::vector<ecs::Entity> opticEntities;
 
         uint32 vertexCount = 0;
         uint32 primitiveCount = 0;

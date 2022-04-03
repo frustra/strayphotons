@@ -34,6 +34,7 @@ namespace sp::vulkan {
     void GPUScene::LoadState(rg::RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
         renderables.clear();
+        opticEntities.clear();
         renderableCount = 0;
         primitiveCount = 0;
         vertexCount = 0;
@@ -60,6 +61,11 @@ namespace sp::vulkan {
             gpuRenderable.visibilityMask = renderable.visibility.to_ulong();
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
+            if (ent.Has<ecs::OpticalElement>(lock)) {
+                opticEntities.emplace_back(ent);
+                gpuRenderable.opticID = opticEntities.size();
+            }
+
             renderables.push_back(gpuRenderable);
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
@@ -128,19 +134,17 @@ namespace sp::vulkan {
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
-                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 2, maxDraws},
+                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 3, maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
-                auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
-
                 cmd.SetComputeShader("generate_draws_for_view.comp");
                 cmd.SetStorageBuffer(0, 0, resources.GetBuffer("RenderableEntities"));
                 cmd.SetStorageBuffer(0, 1, models);
                 cmd.SetStorageBuffer(0, 2, primitiveLists);
-                cmd.SetStorageBuffer(0, 3, drawBuffer);
+                cmd.SetStorageBuffer(0, 3, resources.GetBuffer(bufferIDs.drawCommandsBuffer));
                 cmd.SetStorageBuffer(0, 4, resources.GetBuffer(bufferIDs.drawParamsBuffer));
 
                 struct {

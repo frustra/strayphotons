@@ -202,7 +202,7 @@ namespace sp::vulkan {
 
         template<typename CallbackFn>
         void ExecuteAfterFence(vk::Fence fence, CallbackFn &&callback) {
-            frameEndQueue.Dispatch<void>([this, callback, fence]() {
+            frameBeginQueue.Dispatch<void>([this, callback, fence]() {
                 if (device->getFenceStatus(fence) == vk::Result::eSuccess) {
                     callback();
                 } else {
@@ -349,7 +349,7 @@ namespace sp::vulkan {
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         GLFWwindow *window = nullptr;
 
-        DispatchQueue frameEndQueue, allocatorQueue;
+        DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         unique_ptr<CFuncCollection> funcs;
     };

@@ -3,7 +3,10 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
+#include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
+
+#include <algorithm>
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
@@ -13,10 +16,22 @@ namespace sp::vulkan::renderer {
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
 
-    void Lighting::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
-        lightCount = 0;
+    glm::mat4 makeProjectionMatrix(glm::vec3 viewSpaceMirrorPos, glm::vec2 clip, glm::vec4 bounds) {
+        return glm::mat4(
+            // clang-format off
+            2*clip.x,          0,                 0,                             0,
+            0,                 2*clip.x,          0,                             0,
+            bounds.y+bounds.x, bounds.z+bounds.w, -clip.y/(clip.y-clip.x),       -1,
+            0,                  0,                -clip.y*clip.x/(clip.y-clip.x), 0
+            // clang-format on
+        );
+    }
+
+    void Lighting::LoadState(RenderGraph &graph,
+        ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         shadowAtlasSize = glm::ivec2(0, 0);
         gelTextureCache.clear();
+        lights.clear();
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
@@ -24,12 +39,14 @@ namespace sp::vulkan::renderer {
             auto &light = entity.Get<ecs::Light>(lock);
             if (!light.on) continue;
 
+            auto &vLight = lights.emplace_back();
+            vLight.lightPath = {entity};
+
             int extent = (int)std::pow(2, light.shadowMapSize);
 
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
-            auto &view = views[lightCount];
 
-            view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
+            auto &view = views[lights.size() - 1];
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
@@ -37,7 +54,7 @@ namespace sp::vulkan::renderer {
             view.UpdateProjectionMatrix();
             view.UpdateViewMatrix(lock, entity);
 
-            auto &data = gpuData.lights[lightCount];
+            auto &data = gpuData.lights[lights.size() - 1];
             data.position = transform.GetPosition();
             data.tint = light.tint;
             data.direction = transform.GetForward();
@@ -47,26 +64,115 @@ namespace sp::vulkan::renderer {
             data.view = view.viewMat;
             data.clip = view.clip;
             data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
+            auto viewBounds = glm::vec2(data.invProj[0][0], data.invProj[1][1]) * data.clip.x;
+            data.bounds = {-viewBounds, viewBounds * 2.0f};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
 
             data.gelId = 0;
             if (!light.gelName.empty()) {
                 auto it = gelTextureCache.emplace(light.gelName, 0).first;
-                gelTextures[lightCount] = std::make_pair(light.gelName, &it->second);
-            } else {
-                gelTextures[lightCount] = {};
+                vLight.gelName = light.gelName;
+                vLight.gelTexture = &it->second;
             }
 
             shadowAtlasSize.x += extent;
             if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
-            if (++lightCount >= MAX_LIGHTS) break;
+            if (lights.size() >= MAX_LIGHTS) break;
         }
+
+        for (uint32_t lightIndex = 0; lightIndex < readbackLights.size(); lightIndex++) {
+            if (lights.size() >= MAX_LIGHTS) break;
+            auto &rbLight = readbackLights[lightIndex];
+
+            auto &sourceLight = rbLight.lightPath.front();
+            if (!sourceLight.Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
+            auto &sourceTransform = sourceLight.Get<ecs::TransformSnapshot>(lock);
+            auto light = sourceLight.Get<ecs::Light>(lock);
+            if (!light.on) continue;
+
+            glm::vec3 lightOrigin = sourceTransform.GetPosition();
+            glm::vec3 lightDir = sourceTransform.GetForward();
+            ecs::Transform lastOpticTransform = sourceTransform;
+
+            size_t i = 1;
+            for (; i < rbLight.lightPath.size(); i++) {
+                if (!rbLight.lightPath[i].Has<ecs::TransformSnapshot, ecs::OpticalElement>(lock)) break;
+                auto &optic = rbLight.lightPath[i].Get<ecs::OpticalElement>(lock);
+                light.tint *= optic.tint;
+                if (light.tint == glm::vec3(0)) break;
+                if (optic.type == ecs::OpticType::Gel) {
+                    auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
+                    lastOpticTransform = opticTransform;
+                    lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
+                } else if (optic.type == ecs::OpticType::Mirror) {
+                    auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
+                    auto opticNormal = opticTransform.GetForward();
+                    lastOpticTransform = opticTransform;
+                    lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
+                                  opticTransform.GetPosition();
+                    lightDir = glm::reflect(lightDir, opticNormal);
+                }
+            }
+            if (i < rbLight.lightPath.size()) continue;
+
+            auto &vLight = lights.emplace_back(rbLight);
+            vLight.parentIndex = std::find_if(lights.begin(), lights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() + 1 == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - lights.begin();
+            vLight.opticIndex = std::find(scene.opticEntities.begin(),
+                                    scene.opticEntities.end(),
+                                    vLight.lightPath.back()) -
+                                scene.opticEntities.begin();
+
+            auto &view = views[lights.size() - 1];
+            ecs::Transform lightTransform = lastOpticTransform;
+            lightTransform.SetPosition(lightOrigin);
+            view.invViewMat = lightTransform.matrix;
+            view.viewMat = glm::inverse(view.invViewMat);
+            glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
+
+            int extent = (int)std::pow(2, light.shadowMapSize);
+            view.extents = {extent, extent};
+            view.fov = light.spotAngle * 2.0f;
+            view.offset = {shadowAtlasSize.x, 0};
+            view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
+            view.projMat = makeProjectionMatrix(lightViewMirrorPos,
+                view.clip,
+                glm::vec4(lightViewMirrorPos.x + glm::vec2(-0.5, 0.5), lightViewMirrorPos.y + glm::vec2(-0.5, 0.5)));
+            view.invProjMat = glm::inverse(view.projMat);
+
+            auto &data = gpuData.lights[lights.size() - 1];
+            data.position = lightOrigin;
+            data.tint = light.tint;
+            data.direction = lightDir;
+            data.spotAngleCos = cos(light.spotAngle);
+            data.proj = view.projMat;
+            data.invProj = view.invProjMat;
+            data.view = view.viewMat;
+            data.clip = view.clip;
+            data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
+            data.bounds = {lightViewMirrorPos.x - 0.5, lightViewMirrorPos.y - 0.5, 1, 1};
+            data.intensity = light.intensity;
+            data.illuminance = light.illuminance;
+
+            data.gelId = 0;
+            if (!light.gelName.empty()) {
+                auto it = gelTextureCache.emplace(light.gelName, 0).first;
+                vLight.gelName = light.gelName;
+                vLight.gelTexture = &it->second;
+            }
+
+            shadowAtlasSize.x += extent;
+            if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
+        }
+
         glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
-        for (int i = 0; i < lightCount; i++) {
+        for (uint32_t i = 0; i < lights.size(); i++) {
             gpuData.lights[i].mapOffset /= mapOffsetScale;
         }
-        gpuData.count = lightCount;
+        gpuData.count = lights.size();
 
         graph.AddPass("LightState")
             .Build([&](rg::PassBuilder &builder) {
@@ -89,61 +195,167 @@ namespace sp::vulkan::renderer {
                 for (auto &gel : gelTextureCache) {
                     gel.second = scene.textures.Add(resources.GetImageView(gel.first)).index;
                 }
-                for (size_t i = 0; i < MAX_LIGHTS; i++) {
-                    if (gelTextures[i].second) gpuData.lights[i].gelId = *gelTextures[i].second;
+                for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
+                    if (lights[i].gelTexture) gpuData.lights[i].gelId = *lights[i].gelTexture;
                 }
                 resources.GetBuffer("LightState")->CopyFrom(&gpuData);
             });
     }
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
-        vector<GPUScene::DrawBufferIDs> drawIDs;
-        drawIDs.reserve(lightCount);
-        for (int i = 0; i < lightCount; i++) {
-            drawIDs.push_back(scene.GenerateDrawsForView(graph, views[i].visibilityMask));
-        }
+        graph.BeginScope("ShadowMap");
 
-        graph.AddPass("ShadowMaps")
+        ecs::Renderable::VisibilityMask opticMask;
+        opticMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
+        auto drawAllIDs = scene.GenerateDrawsForView(graph, opticMask);
+        opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
+        auto drawOpticIDs = scene.GenerateDrawsForView(graph, opticMask);
+
+        graph.AddPass("InitOptics")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateBuffer("OpticVisibility",
+                    {sizeof(uint32_t), MAX_LIGHTS * MAX_OPTICS},
+                    Residency::GPU_ONLY,
+                    Access::TransferWrite);
+            })
+            .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                auto visBuffer = resources.GetBuffer("OpticVisibility");
+                cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
+            });
+
+        graph.AddPass("RenderDepth")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
                 auto extent = glm::max(glm::ivec2(1), shadowAtlasSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
                 desc.format = CVarVSM.Get() ? vk::Format::eR32G32Sfloat : vk::Format::eR32Sfloat;
-                builder.OutputColorAttachment(0, "ShadowMapLinear", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputColorAttachment(0, "Linear", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eD16Unorm;
-                builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                for (auto &ids : drawIDs) {
-                    builder.Read(ids.drawCommandsBuffer, Access::IndirectBuffer);
-                }
+                builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
-
-            .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
 
-                for (int i = 0; i < lightCount; i++) {
-                    auto &view = views[i];
-
-                    GPUViewState lightViews[] = {{view}, {}};
-                    cmd.UploadUniformData(0, 10, lightViews, 2);
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    GPUViewState lightViews[] = {{views[i]}, {}};
+                    cmd.UploadUniformData(0, 0, lightViews, 2);
 
                     vk::Rect2D viewport;
-                    viewport.extent = vk::Extent2D(view.extents.x, view.extents.y);
-                    viewport.offset = vk::Offset2D(view.offset.x, view.offset.y);
+                    viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
+                    viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
 
-                    auto &ids = drawIDs[i];
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
-                        resources.GetBuffer(ids.drawCommandsBuffer),
-                        {});
+                        resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
+                        resources.GetBuffer(drawAllIDs.drawParamsBuffer));
                 }
             });
+
+        graph.AddPass("OpticsVisibility")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::Store});
+
+                builder.Write("OpticVisibility", Access::FragmentShaderWrite);
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+
+                builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
+            })
+            .Execute([this, drawOpticIDs](rg::Resources &resources, CommandContext &cmd) {
+                cmd.SetShaders("optic_visibility.vert", "optic_visibility.frag");
+
+                struct {
+                    uint32_t lightIndex;
+                } constants;
+
+                auto visBuffer = resources.GetBuffer("OpticVisibility");
+
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    GPUViewState lightViews[] = {{views[i]}, {}};
+                    cmd.UploadUniformData(0, 0, lightViews, 2);
+                    cmd.SetStorageBuffer(0, 1, visBuffer);
+
+                    vk::Rect2D viewport;
+                    viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
+                    viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
+                    cmd.SetViewport(viewport);
+                    cmd.SetYDirection(YDirection::Down);
+                    cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
+                    cmd.SetDepthTest(true, false);
+
+                    constants.lightIndex = i;
+                    cmd.PushConstants(constants);
+
+                    scene.DrawSceneIndirect(cmd,
+                        resources.GetBuffer("WarpedVertexBuffer"),
+                        resources.GetBuffer(drawOpticIDs.drawCommandsBuffer),
+                        resources.GetBuffer(drawOpticIDs.drawParamsBuffer));
+                }
+            });
+
+        AddBufferReadback(graph,
+            "OpticVisibility",
+            0,
+            sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
+            [this, lights = this->lights, optics = this->scene.opticEntities](BufferPtr buffer) {
+                ZoneScopedN("OpticVisibilityReadback");
+                auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
+                for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
+                    for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
+                        uint32 visible = visibility[lightIndex][opticIndex];
+                        if (visible > 1) {
+                            Tracef("Uhhh");
+                            Abortf("Uhhh");
+                        }
+                        if (visible == 1 && opticIndex >= optics.size()) Abortf("Optic index out of range");
+                    }
+                }
+
+                readbackLights.clear();
+                InlineVector<bool, MAX_LIGHTS> lightValid;
+                lightValid.resize(lights.size());
+                std::fill(lightValid.begin(), lightValid.end(), true);
+                for (uint32_t lightIndex = 0; lightIndex < lights.size(); lightIndex++) {
+                    auto &vLight = lights[lightIndex];
+                    if (vLight.lightPath.size() >= MAX_LIGHTS) continue;
+
+                    // Check if the path to the current light is still valid, else skip this light.
+                    if (vLight.parentIndex && vLight.opticIndex) {
+                        Assertf(*vLight.parentIndex < lightValid.size(), "Virtual light parent index is out of range");
+                        if (!lightValid[*vLight.parentIndex]) {
+                            lightValid[lightIndex] = false;
+                            continue;
+                        }
+                        Assertf(vLight.opticIndex < MAX_OPTICS, "Virtual light optic index is out of range");
+                        if (visibility[*vLight.parentIndex][*vLight.opticIndex] != 1) {
+                            lightValid[lightIndex] = false;
+                            continue;
+                        }
+                    }
+
+                    // Check if any optics are visible from the end of the current light path.
+                    for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
+                        if (readbackLights.size() >= MAX_LIGHTS) break;
+                        if (vLight.opticIndex && opticIndex == *vLight.opticIndex) continue;
+                        if (visibility[lightIndex][opticIndex] == 1) {
+                            auto &newLight = readbackLights.emplace_back(vLight);
+                            newLight.parentIndex = lightIndex;
+                            newLight.opticIndex = opticIndex;
+                            newLight.lightPath.emplace_back(optics[opticIndex]);
+                        }
+                    }
+                }
+            });
+        graph.EndScope();
 
         graph.BeginScope("ShadowMapBlur");
         auto sourceID = graph.LastOutputID();
@@ -153,7 +365,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto depthTarget = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMapLinear";
+        auto depthTarget = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {

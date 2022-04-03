@@ -156,10 +156,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube1",
 				"rotate": [
@@ -224,10 +221,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube2",
 				"rotate": [
@@ -262,10 +256,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube2",
 				"rotate": [
@@ -300,10 +291,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube2",
 				"rotate": [
@@ -338,10 +326,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube2",
 				"rotate": [
@@ -1453,7 +1438,7 @@
 				],
 				"translate": [
 					0,
-					-1.06,
+					-1.07,
 					0
 				]
 			},

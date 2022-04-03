@@ -1,12 +1,6 @@
 #include "lighting_util.glsl"
-#include "spatial_util.glsl"
-
-#ifdef INCLUDE_MIRRORS
-    #define MIRROR_SAMPLE
-    #include "shadow_sample.glsl"
-    #undef MIRROR_SAMPLE
-#endif
 #include "shadow_sample.glsl"
+#include "spatial_util.glsl"
 
 vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
     vec3 H = normalize(V + L);
@@ -104,14 +98,13 @@ vec3 DirectShading(vec3 worldPosition,
         vec3 surfaceNormal = normalize(mat3(lights[i].view) * flatNormal);
         float occlusion = step(lights[i].clip.x, -shadowMapPos.z);
 
-        vec2 viewBounds = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]) * lights[i].clip.x;
         ShadowInfo info = ShadowInfo(i,
             shadowMapPos,
             lights[i].proj,
             lights[i].invProj,
             lights[i].mapOffset,
             lights[i].clip,
-            vec4(-viewBounds, viewBounds * 2.0));
+            lights[i].bounds);
 
 #ifdef SHADOWS_ENABLED
     #ifdef USE_VSM
@@ -137,80 +130,6 @@ vec3 DirectShading(vec3 worldPosition,
         // Sum output.
         pixelLuminance += occlusion * lightTint * luminance;
     }
-
-#ifdef INCLUDE_MIRRORS
-    for (int i = 0; i < mirrorData.count[0]; i++) {
-        vec3 sourcePos = vec3(mirrorData.invViewMat[i] * vec4(0, 0, 0, 1));
-        uint lightId = mirrorData.sourceLight[i];
-
-        vec3 sampleToLightRay = sourcePos - worldPosition;
-        vec3 incidence = normalize(sampleToLightRay);
-
-        vec3 currLightColor = lights[lightId].tint;
-        float illuminance = lights[lightId].illuminance;
-
-        float notHasIllum = step(illuminance, 0);
-        float hasIllum = 1.0 - notHasIllum;
-
-        {
-            float lightDistance = length(abs(sourcePos - worldPosition));
-            float lightDistanceSq = lightDistance * lightDistance;
-            float falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
-
-            illuminance = notHasIllum * lights[lightId].intensity * falloff + hasIllum * illuminance;
-            illuminance *= max(dot(normal, incidence), 0);
-        }
-
-        // Evaluate BRDF and calculate luminance.
-    #ifdef DIFFUSE_ONLY_SHADING
-        vec3 brdf = BRDF_Diffuse_Lambert(baseColor);
-    #else
-        vec3 diffuseColor = baseColor - baseColor * metalness;
-        vec3 specularColor = mix(vec3(0.04), baseColor, metalness);
-        vec3 brdf = EvaluateBRDF(diffuseColor, specularColor, roughness, incidence, directionToView, normal);
-    #endif
-        vec3 luminance = brdf * illuminance * currLightColor;
-
-        // Spotlight attenuation.
-        float cosSpotAngle = lights[lightId].spotAngleCos;
-        vec3 currLightDir = normalize(mat3(mirrorData.invLightViewMat[i]) * vec3(0, 0, -1));
-        float spotTerm = dot(incidence, -currLightDir);
-        float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * notHasIllum + hasIllum;
-
-        // Calculate direct occlusion.
-        vec3 shadowMapPos = (mirrorData.viewMat[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
-        vec3 surfaceNormal = normalize(mat3(mirrorData.viewMat[i]) * flatNormal);
-        float occlusion = step(mirrorData.clip[i].x, -shadowMapPos.z);
-
-        ShadowInfo info = ShadowInfo(i,
-            shadowMapPos,
-            mirrorData.projMat[i],
-            mirrorData.invProjMat[i],
-            vec4(0, 0, 1, 1),
-            mirrorData.clip[i],
-            mirrorData.nearInfo[i]);
-
-    #ifdef SHADOWS_ENABLED
-        #ifdef USE_PCF
-        occlusion *= DirectOcclusionMirror(info, surfaceNormal, rotation);
-        #else
-        occlusion *= SimpleOcclusionMirror(info);
-        #endif
-    #endif
-
-        vec3 lightTint = vec3(spotFalloff);
-    #ifdef LIGHTING_GELS
-        if (lights[lightId].gelId > 0) {
-            vec4 lightSpacePosition = mirrorData.lightViewMat[i] * vec4(worldPosition, 1.0);
-            vec2 coord = ViewPosToScreenPos(lightSpacePosition.xyz, lights[lightId].proj).xy;
-            lightTint = texture(textures[gelId], vec2(coord.x, 1 - coord.y)).rgb * float(coord == clamp(coord, 0, 1));
-        }
-    #endif
-
-        // Sum output.
-        pixelLuminance += occlusion * lightTint * luminance;
-    }
-#endif
 
     return pixelLuminance;
 }

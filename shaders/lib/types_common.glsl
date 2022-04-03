@@ -2,7 +2,11 @@
 #define TYPES_COMMON_GLSL_INCLUDED
 
 #ifndef MAX_LIGHTS
-    #define MAX_LIGHTS 16
+    #define MAX_LIGHTS 64
+#endif
+
+#ifndef MAX_OPTICS
+    #define MAX_OPTICS 16
 #endif
 
 #ifndef MAX_VOXEL_FRAGMENT_LISTS
@@ -39,6 +43,7 @@ struct Light {
     mat4 invProj;
     mat4 view;
     vec4 mapOffset;
+    vec4 bounds;
     vec2 clip;
 
     int gelId;

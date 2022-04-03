@@ -196,7 +196,7 @@ namespace sp::vulkan::renderer {
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
-                builder.Read("ShadowMapLinear", Access::FragmentShaderSampleImage);
+                builder.Read("ShadowMap.Linear", Access::FragmentShaderSampleImage);
 
                 for (auto &resourceId : fragmentListBuffers) {
                     builder.Write(resourceId, Access::FragmentShaderWrite);
@@ -244,7 +244,7 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
-                cmd.SetImageView(0, 3, resources.GetImageView("ShadowMapLinear"));
+                cmd.SetImageView(0, 3, resources.GetImageView("ShadowMap.Linear"));
                 cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
                 cmd.SetImageView(0, 5, resources.GetImageMipView("Radiance", 0));
 

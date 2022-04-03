@@ -40,6 +40,11 @@ namespace sp {
             return ArrayT::size();
         }
 
+        void resize(size_type size) {
+            Assert(size <= MaxSize, "InlineVector overflow");
+            offset = size;
+        }
+
         bool empty() const {
             return !offset;
         }

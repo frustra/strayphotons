@@ -55,39 +55,26 @@
 				"dynamic": false
 			}
 		},
-		{
-			"name": "duck",
-			"renderable": "duck",
-			"transform": {
-				"translate": [0, 0, -2]
-			},
-			"physics": {
-				"model": "duck"
-			}
-		},
+        {
+            "name": "testlight",
+            "transform": {
+                "translate": [-1.15, 0.5, 1]
+            },
+            "light": {
+                "tint": [1, 1, 1],
+                "shadowMapSize": 7,
+                "shadowMapClip": [0.1, 64],
+                "spotAngle": 5,
+                "intensity": 100,
+                "_illuminance": 1
+            }
+        },
 		{
 			"name": "mirrorbox",
 			"renderable": "box",
 			"transform": {
-				"translate": [2, 0, -2]
-			},
-			"physics": {
-				"model": "box"
-			}
-		},
-		{
-			"mirror": [1, 1],
-			"renderable": "mirror",
-			"transform": {
-				"parent": "mirrorbox",
-				"translate": [0, 0, 0.5001],
-				"rotate": [-180, 0, 1, 0]
-			}
-		},
-		{
-			"renderable": "box",
-			"transform": {
-				"translate": [-0.2, 3, 0.5]
+				"translate": [4, 0.5, -2.5],
+				"rotate": [-90, 0, 1, 0]
 			},
 			"physics": {
 				"model": "box"
@@ -97,38 +84,74 @@
 			"renderable": "box",
 			"name": "mirrorbox2",
 			"transform": {
-				"translate": [0.5, 5, 0.5]
+				"translate": [-1.5, 0.5, -3],
+				"rotate": [45.2, 0, 1, 0]
 			},
 			"physics": {
 				"model": "box"
 			}
 		},
 		{
-			"mirror": [1, 1],
+			"renderable": "box",
+			"name": "mirrorbox3",
+			"transform": {
+				"translate": [-1, 0.5, 3],
+				"rotate": [180, 0, 1, 0]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"optic": {
+				"type": "mirror",
+                "_tint": [1, 0.5, 0.5]
+			},
 			"renderable": "mirror",
 			"transform": {
-				"parent": "mirrorbox2",
-				"translate": [0, 0, 0.5001],
+				"parent": "mirrorbox",
+				"translate": [0, 0, 0.501],
 				"rotate": [-180, 0, 1, 0]
 			}
 		},
 		{
-			"renderable": "dodecahedron",
-			"transform": {
-				"translate": [3, 10, -0.5]
+			"optic": {
+				"type": "mirror",
+                "_tint": [0.5, 1, 0.5]
 			},
-			"physics": {
-				"model": "dodecahedron"
+			"renderable": "mirror",
+			"transform": {
+				"parent": "mirrorbox2",
+				"translate": [0, 0, 0.501],
+				"rotate": [-180, 0, 1, 0]
+			}
+		},
+		{
+			"optic": {
+				"type": "mirror",
+                "_tint": [0.5, 0.5, 1]
+			},
+			"renderable": "mirror",
+			"transform": {
+				"parent": "mirrorbox3",
+				"translate": [0, 0, 0.501],
+				"rotate": [-180, 0, 1, 0]
 			}
 		},
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [0, 2, 0]
+				"translate": [4.14, 0, 3.9],
+				"rotate": [35, 0, 1, 0]
+			}
+		},
+		{
+			"transform": {
+				"translate": [-5.1, -0.1, -5.1],
+				"scale": [0.04, 0.04, 0.04]
 			},
-			"voxels": {
-				"min": [-5, -0, -5],
-				"max": [5, 10, 5]
+			"voxel_area": {
+				"extents": [256, 256, 256]
 			}
 		}
 	]

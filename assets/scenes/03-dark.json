@@ -1604,10 +1604,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube1",
 				"rotate": [
@@ -2136,10 +2133,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube2",
 				"rotate": [
@@ -2212,10 +2206,7 @@
 		},
 		{
 			"renderable": "mirror",
-			"mirror": [
-				1,
-				1
-			],
+			"optic": "mirror",
 			"transform": {
 				"parent": "mirrorcube3",
 				"rotate": [
