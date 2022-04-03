@@ -325,6 +325,7 @@ namespace sp::vulkan::renderer {
             0,
             sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
             [this, lights = this->lights, optics = this->scene.opticEntities](BufferPtr buffer) {
+                ZoneScopedN("OpticVisibilityReadback");
                 auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
                 for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
                     for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
