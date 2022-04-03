@@ -1,15 +1,17 @@
 loadscene mirrortest
 r.Exposure 2
+# Hack to stop DeviceLostError from submitting too many frames ahead
+r.MaxFPS 30
 stepphysics
-screenshot mirrortest-frame0.png
+screenshot mirrortest-frame000.png
 stepgraphics
-screenshot mirrortest-frame1.png
+screenshot mirrortest-frame001.png
 stepgraphics
-screenshot mirrortest-frame2.png
+screenshot mirrortest-frame002.png
 stepgraphics
-screenshot mirrortest-frame3.png
+screenshot mirrortest-frame003.png
 stepgraphics
-screenshot mirrortest-frame4.png
+screenshot mirrortest-frame004.png
 stepgraphics 95
 screenshot mirrortest-frame100.png
 stepgraphics
