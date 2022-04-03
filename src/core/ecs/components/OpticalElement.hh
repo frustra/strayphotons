@@ -5,13 +5,13 @@
 
 namespace ecs {
     enum class OpticType {
-        Nop = 0,
+        Gel = 0,
         Mirror,
         Count,
     };
 
     struct OpticalElement {
-        OpticType type = OpticType::Nop;
+        OpticType type = OpticType::Gel;
         glm::vec3 tint = glm::vec3(1);
     };
 

@@ -28,7 +28,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::LoadState(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Name, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         shadowAtlasSize = glm::ivec2(0, 0);
         gelTextureCache.clear();
         lights.clear();
@@ -40,14 +40,13 @@ namespace sp::vulkan::renderer {
             if (!light.on) continue;
 
             auto &vLight = lights.emplace_back();
-            vLight.thisIndex = lights.size() - 1;
             vLight.lightPath = {entity};
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
-            auto &view = views[vLight.thisIndex];
+            auto &view = views[lights.size() - 1];
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
@@ -85,7 +84,6 @@ namespace sp::vulkan::renderer {
         for (uint32_t lightIndex = 0; lightIndex < readbackLights.size(); lightIndex++) {
             if (lights.size() >= MAX_LIGHTS) break;
             auto &rbLight = readbackLights[lightIndex];
-            Assertf(rbLight.thisIndex == lightIndex, "Virtual light is invalid");
 
             auto &sourceLight = rbLight.lightPath.front();
             if (!sourceLight.Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
@@ -103,7 +101,7 @@ namespace sp::vulkan::renderer {
                 auto &optic = rbLight.lightPath[i].Get<ecs::OpticalElement>(lock);
                 light.tint *= optic.tint;
                 if (light.tint == glm::vec3(0)) break;
-                if (optic.type == ecs::OpticType::Nop) {
+                if (optic.type == ecs::OpticType::Gel) {
                     auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
                     lastOpticTransform = opticTransform;
                     lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
@@ -119,7 +117,6 @@ namespace sp::vulkan::renderer {
             if (i < rbLight.lightPath.size()) continue;
 
             auto &vLight = lights.emplace_back(rbLight);
-            vLight.thisIndex = lights.size() - 1;
             vLight.parentIndex = std::find_if(lights.begin(), lights.end(), [&vLight](auto &light) {
                 return light.lightPath.size() + 1 == vLight.lightPath.size() &&
                        std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
@@ -129,7 +126,7 @@ namespace sp::vulkan::renderer {
                                     vLight.lightPath.back()) -
                                 scene.opticEntities.begin();
 
-            auto &view = views[vLight.thisIndex];
+            auto &view = views[lights.size() - 1];
             ecs::Transform lightTransform = lastOpticTransform;
             lightTransform.SetPosition(lightOrigin);
             view.invViewMat = lightTransform.matrix;
@@ -207,16 +204,7 @@ namespace sp::vulkan::renderer {
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
         graph.BeginScope("ShadowMap");
-        // vector<GPUScene::DrawBufferIDs> drawAllIDs, drawOpticIDs;
-        // drawAllIDs.reserve(lightCount);
-        // drawOpticIDs.reserve(lightCount);
-        // for (uint32_t i = 0; i < lightCount; i++) {
-        //     drawAllIDs.push_back(scene.GenerateDrawsForView(graph, views[i].visibilityMask));
 
-        //     auto opticMask = views[i].visibilityMask;
-        //     opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
-        //     drawOpticIDs.push_back(scene.GenerateDrawsForView(graph, opticMask));
-        // }
         ecs::Renderable::VisibilityMask opticMask;
         opticMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
         auto drawAllIDs = scene.GenerateDrawsForView(graph, opticMask);
@@ -249,10 +237,8 @@ namespace sp::vulkan::renderer {
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                // for (auto &ids : drawAllIDs) {
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
-                // }
             })
             .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
@@ -267,7 +253,6 @@ namespace sp::vulkan::renderer {
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
 
-                    // auto &ids = drawAllIDs[i];
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
@@ -282,10 +267,8 @@ namespace sp::vulkan::renderer {
                 builder.Write("OpticVisibility", Access::FragmentShaderWrite);
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                // for (auto &ids : drawOpticIDs) {
                 builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
-                // }
             })
             .Execute([this, drawOpticIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("optic_visibility.vert", "optic_visibility.frag");
@@ -312,7 +295,6 @@ namespace sp::vulkan::renderer {
                     constants.lightIndex = i;
                     cmd.PushConstants(constants);
 
-                    // auto &ids = drawOpticIDs[i];
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(drawOpticIDs.drawCommandsBuffer),
@@ -344,7 +326,6 @@ namespace sp::vulkan::renderer {
                 std::fill(lightValid.begin(), lightValid.end(), true);
                 for (uint32_t lightIndex = 0; lightIndex < lights.size(); lightIndex++) {
                     auto &vLight = lights[lightIndex];
-                    Assertf(vLight.thisIndex == lightIndex, "Virtual light is invalid");
                     if (vLight.lightPath.size() >= MAX_LIGHTS) continue;
 
                     // Check if the path to the current light is still valid, else skip this light.
@@ -367,7 +348,6 @@ namespace sp::vulkan::renderer {
                         if (vLight.opticIndex && opticIndex == *vLight.opticIndex) continue;
                         if (visibility[lightIndex][opticIndex] == 1) {
                             auto &newLight = readbackLights.emplace_back(vLight);
-                            newLight.thisIndex = readbackLights.size() - 1;
                             newLight.parentIndex = lightIndex;
                             newLight.opticIndex = opticIndex;
                             newLight.lightPath.emplace_back(optics[opticIndex]);

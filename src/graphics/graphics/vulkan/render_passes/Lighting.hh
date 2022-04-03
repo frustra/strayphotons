@@ -3,14 +3,14 @@
 #include "Common.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
-#include <span>
+#include <optional>
 
 namespace sp::vulkan::renderer {
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}
         void LoadState(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Name, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
+            ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
         void AddGelTextures(RenderGraph &graph);
@@ -23,7 +23,6 @@ namespace sp::vulkan::renderer {
 
         struct VirtualLight {
             InlineVector<ecs::Entity, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
-            uint32_t thisIndex;
             std::optional<uint32_t> parentIndex;
             std::optional<uint32_t> opticIndex;
 

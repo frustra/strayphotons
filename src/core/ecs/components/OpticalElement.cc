@@ -10,8 +10,8 @@ namespace ecs {
         if (src.is<std::string>()) {
             auto typeStr = src.get<std::string>();
             sp::to_lower(typeStr);
-            if (typeStr == "tint") {
-                optic.type = OpticType::Nop;
+            if (typeStr == "tint" || typeStr == "gel") {
+                optic.type = OpticType::Gel;
             } else if (typeStr == "mirror") {
                 optic.type = OpticType::Mirror;
             } else {
@@ -19,7 +19,7 @@ namespace ecs {
                 return false;
             }
         } else if (src.is<picojson::array>()) {
-            optic.type = OpticType::Nop;
+            optic.type = OpticType::Gel;
             optic.tint = sp::MakeVec3(src);
         } else if (src.is<picojson::object>()) {
             for (auto param : src.get<picojson::object>()) {
@@ -28,8 +28,8 @@ namespace ecs {
                 } else if (param.first == "type") {
                     auto typeStr = param.second.get<std::string>();
                     sp::to_lower(typeStr);
-                    if (typeStr == "tint") {
-                        optic.type = OpticType::Nop;
+                    if (typeStr == "tint" || typeStr == "gel") {
+                        optic.type = OpticType::Gel;
                     } else if (typeStr == "mirror") {
                         optic.type = OpticType::Mirror;
                     } else {

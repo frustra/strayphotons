@@ -45,11 +45,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([readbackID, callback](rg::Resources &resources, DeviceContext &device) {
                 auto buffer = resources.GetBuffer(readbackID);
-                static size_t count = 0;
-                size_t foo = count++;
-                Tracef("Foo Before: %u", foo);
-                device.ExecuteAfterFrameFence([callback, buffer, foo]() {
-                    Tracef("Foo After: %u", foo);
+                device.ExecuteAfterFrameFence([callback, buffer]() {
                     callback(buffer);
                 });
             });
