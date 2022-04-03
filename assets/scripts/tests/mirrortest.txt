@@ -1,5 +1,5 @@
 loadscene mirrortest
-r.Exposure 1
+r.Exposure 2
 stepphysics
 screenshot mirrortest-frame0.png
 stepgraphics
@@ -10,14 +10,6 @@ stepgraphics
 screenshot mirrortest-frame3.png
 stepgraphics
 screenshot mirrortest-frame4.png
-stepgraphics
-screenshot mirrortest-frame5.png
-stepgraphics
-screenshot mirrortest-frame6.png
-stepgraphics
-screenshot mirrortest-frame7.png
-stepgraphics
-screenshot mirrortest-frame8.png
-stepgraphics
-screenshot mirrortest-frame9.png
+stepgraphics 95
+screenshot mirrortest-frame100.png
 stepgraphics

@@ -58,8 +58,7 @@
         {
             "name": "testlight",
             "transform": {
-                "translate": [-1.15, 0.5, 1],
-				"rotate": [3, 0, 1, 0]
+                "translate": [-1.15, 0.5, 1]
             },
             "light": {
                 "tint": [1, 1, 1],
@@ -138,14 +137,6 @@
 				"translate": [0, 0, 0.501],
 				"rotate": [-180, 0, 1, 0]
 			}
-		},
-		{
-			"renderable": "mirror",
-			"name": "lightfilter",
-			"transform": {
-				"translate": [-1, 0.5, -1]
-			},
-			"optic": [1, 0.25, 0.25]
 		},
 		{
 			"name": "global:spawn",
