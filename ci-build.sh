@@ -69,8 +69,14 @@ function inline_image {
     fi
 }
 
+rm -rf traces
+mkdir -p traces/tests/
+
 for file in ../assets/scripts/tests/*.txt; do
     testscript=`realpath --relative-to=../assets/scripts $file`
+    trace_path=traces/${testscript%.txt}.tracy
+    ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" 1>/dev/null &
+
     echo "Running test: $testscript"
     ./sp-test "$@" "$testscript"
     result=$?
@@ -87,6 +93,7 @@ for file in ../assets/scripts/tests/*.txt; do
         buildkite-agent artifact upload "$output_path/${file##*/}"
         inline_image "artifact://$output_path/${file##*/}" "$output_path/${file##*/}"
     done
+    [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
 done
 
 if [ $success -ne 0 ]; then
