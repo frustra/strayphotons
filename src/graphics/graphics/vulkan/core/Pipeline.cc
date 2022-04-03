@@ -415,10 +415,10 @@ namespace sp::vulkan {
         dynamicState.pDynamicStates = states;
 
         vk::PipelineRasterizationStateCreateInfo rasterizer;
-        rasterizer.polygonMode = vk::PolygonMode::eFill;
+        rasterizer.polygonMode = state.polygonMode;
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = !shaders[(size_t)ShaderStage::Fragment];
-        rasterizer.lineWidth = 1.0f;
+        rasterizer.lineWidth = state.lineWidth;
         rasterizer.cullMode = state.cullMode;
         rasterizer.frontFace = state.frontFaceWinding;
 

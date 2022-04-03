@@ -59,15 +59,15 @@
             "name": "testlight",
             "transform": {
                 "translate": [-1.15, 0.5, 1],
-				"rotate": [180, 0, 1, 0]
+				"rotate": [3, 0, 1, 0]
             },
             "light": {
                 "tint": [1, 1, 1],
                 "shadowMapSize": 7,
                 "shadowMapClip": [0.1, 64],
                 "spotAngle": 5,
-                "_intensity": 100,
-                "illuminance": 1
+                "intensity": 100,
+                "_illuminance": 1
             }
         },
 		{
@@ -86,7 +86,7 @@
 			"name": "mirrorbox2",
 			"transform": {
 				"translate": [-1.5, 0.5, -3],
-				"rotate": [45, 0, 1, 0]
+				"rotate": [45.2, 0, 1, 0]
 			},
 			"physics": {
 				"model": "box"
@@ -106,7 +106,7 @@
 		{
 			"optic": {
 				"type": "mirror",
-                "tint": [1, 0.5, 0.5]
+                "_tint": [1, 0.5, 0.5]
 			},
 			"renderable": "mirror",
 			"transform": {
@@ -118,7 +118,7 @@
 		{
 			"optic": {
 				"type": "mirror",
-                "tint": [0.5, 1, 0.5]
+                "_tint": [0.5, 1, 0.5]
 			},
 			"renderable": "mirror",
 			"transform": {
@@ -130,7 +130,7 @@
 		{
 			"optic": {
 				"type": "mirror",
-                "tint": [0.5, 0.5, 1]
+                "_tint": [0.5, 0.5, 1]
 			},
 			"renderable": "mirror",
 			"transform": {

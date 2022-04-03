@@ -1,6 +1,4 @@
-#include "Script.hh"
 #include "assets/AssetManager.hh"
-#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
@@ -8,100 +6,12 @@
 
 #include <cmath>
 #include <glm/glm.hpp>
-#include <robin_hood.h>
-#include <sstream>
 
-namespace ecs {
-    static sp::CVar<std::string> CVarFlashlightParent("r.FlashlightParent",
-        "player:flatview",
-        "Flashlight parent entity name");
+namespace sp::scripts {
+    using namespace ecs;
 
-    robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions = {
-        {"flashlight",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Light, TransformTree, SignalOutput, EventInput>(lock)) {
-                    auto &light = ent.Get<Light>(lock);
-                    auto &signalComp = ent.Get<SignalOutput>(lock);
-
-                    light.on = signalComp.GetSignal("on") >= 0.5;
-                    light.intensity = signalComp.GetSignal("intensity");
-                    light.spotAngle = glm::radians(signalComp.GetSignal("angle"));
-
-                    Event event;
-                    while (EventInput::Poll(lock, ent, "/action/flashlight/toggle", event)) {
-                        signalComp.SetSignal("on", light.on ? 0.0 : 1.0);
-                        light.on = !light.on;
-                    }
-                    while (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
-                        auto &transform = ent.Get<TransformTree>(lock);
-                        if (transform.parent.Has<TransformTree>(lock)) {
-                            transform.pose = transform.GetGlobalTransform(lock);
-                            transform.parent = Entity();
-                        } else {
-                            ecs::Name parentName;
-                            if (parentName.Parse(CVarFlashlightParent.Get())) {
-                                Entity parent = EntityWith<Name>(lock, parentName);
-                                if (parent) {
-                                    transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
-                                    transform.pose.SetRotation(glm::quat());
-                                    transform.parent = parent;
-                                } else {
-                                    Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
-                                }
-                            } else {
-                                Errorf("Flashlight parent entity name is invalid: %s", CVarFlashlightParent.Get());
-                            }
-                        }
-                    }
-                }
-            }},
-        {"sun",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<TransformTree, SignalOutput>(lock)) {
-                    auto &transform = ent.Get<TransformTree>(lock);
-                    auto &signalComp = ent.Get<SignalOutput>(lock);
-
-                    auto sunPos = signalComp.GetSignal("position");
-                    if (signalComp.GetSignal("fix_position") == 0.0) {
-                        float intervalSeconds = interval.count() / 1e9;
-                        sunPos += intervalSeconds * (0.05 + std::abs(sin(sunPos) * 0.1));
-                        if (sunPos > M_PI_2) sunPos = -M_PI_2;
-                        signalComp.SetSignal("position", sunPos);
-                    }
-
-                    transform.pose.SetRotation(glm::quat());
-                    transform.pose.Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
-                    transform.pose.Rotate(sunPos, glm::vec3(0, 1, 0));
-                    transform.pose.SetPosition(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
-                }
-            }},
-        {"light_sensor",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<LightSensor, SignalOutput>(lock)) {
-                    auto &sensorComp = ent.Get<LightSensor>(lock);
-                    auto &outputComp = ent.Get<SignalOutput>(lock);
-
-                    outputComp.SetSignal("light_value_r", sensorComp.illuminance.r);
-                    outputComp.SetSignal("light_value_g", sensorComp.illuminance.g);
-                    outputComp.SetSignal("light_value_b", sensorComp.illuminance.b);
-                    auto triggerParam = state.GetParam<double>("trigger_level");
-                    bool enabled = glm::all(
-                        glm::greaterThanEqual(sensorComp.illuminance, glm::vec3(std::abs(triggerParam))));
-                    if (triggerParam < 0) { enabled = !enabled; }
-                    outputComp.SetSignal("value", enabled ? 1.0 : 0.0);
-
-                    // add emissiveness to sensor when it is active
-                    if (ent.Has<Renderable>(lock)) {
-                        auto &renderable = ent.Get<Renderable>(lock);
-                        if (triggerParam >= 0) {
-                            renderable.emissive = enabled ? glm::vec3(0, 1, 0) : glm::vec3(0);
-                        } else {
-                            renderable.emissive = enabled ? glm::vec3(0) : glm::vec3(1, 0, 0);
-                        }
-                    }
-                }
-            }},
-        {"joystick_calibration",
+    std::array miscScripts = {
+        InternalScript("joystick_calibration",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Name, EventInput, EventBindings>(lock)) {
                     auto &eventBindings = ent.Get<EventBindings>(lock);
@@ -121,8 +31,8 @@ namespace ecs {
                         }
                     }
                 }
-            }},
-        {"auto_attach",
+            }),
+        InternalScript("auto_attach",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree>(lock)) {
                     auto fullParentName = state.GetParam<std::string>("attach_parent");
@@ -133,39 +43,14 @@ namespace ecs {
                         if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
 
                         auto &transform = ent.Get<TransformTree>(lock);
-                        auto parent = parentEntity.Get(lock);
-                        if (parent.Has<TransformTree>(lock)) {
-                            if (ent.Has<Renderable>(lock)) {
-                                auto &renderable = ent.Get<Renderable>(lock);
-                                renderable.visibility.set();
-                            }
-                        } else {
-                            parent = Entity();
-                            if (ent.Has<Renderable>(lock)) {
-                                auto &renderable = ent.Get<Renderable>(lock);
-                                renderable.visibility.reset();
-                            }
-                        }
-                        transform.parent = parent;
+                        transform.parent = parentEntity.Get(lock);
                         state.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
                     } else {
                         Errorf("Attach parent name is invalid: %s", fullParentName);
                     }
                 }
-            }},
-        {"lazy_load_model",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Renderable>(lock)) {
-                    auto modelName = state.GetParam<std::string>("model_name");
-
-                    auto &renderable = ent.Get<Renderable>(lock);
-                    if (!renderable.model && sp::GAssets.IsGltfRegistered(modelName)) {
-                        renderable.model = sp::GAssets.LoadGltf(modelName);
-                        renderable.visibility.set();
-                    }
-                }
-            }},
-        {"relative_movement",
+            }),
+        InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
                     auto fullTargetName = state.GetParam<std::string>("relative_to");
@@ -209,8 +94,8 @@ namespace ecs {
                         Errorf("Relative target name is invalid: %s", fullTargetName);
                     }
                 }
-            }},
-        {"camera_view",
+            }),
+        InternalScript("camera_view",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformTree>(lock)) {
                     Event event;
@@ -239,8 +124,8 @@ namespace ecs {
                         }
                     }
                 }
-            }},
-        {"model_spawner",
+            }),
+        InternalScript("model_spawner",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput>(lock)) {
                     auto scene = state.scene.lock();
@@ -289,8 +174,8 @@ namespace ecs {
                         }).detach();
                     }
                 }
-            }},
-        {"rotate",
+            }),
+        InternalScript("rotate",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree>(lock)) {
                     glm::vec3 rotationAxis;
@@ -305,8 +190,8 @@ namespace ecs {
                         (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
                         rotationAxis));
                 }
-            }},
-        {"latch_signals",
+            }),
+        InternalScript("latch_signals",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
                     auto &signalOutput = ent.Get<SignalOutput>(lock);
@@ -315,8 +200,8 @@ namespace ecs {
                         if (value >= 0.5) signalOutput.SetSignal(latchName, value);
                     }
                 }
-            }},
-        {"grab_object",
+            }),
+        InternalScript("grab_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
                     auto &query = ent.Get<PhysicsQuery>(lock);
@@ -329,6 +214,10 @@ namespace ecs {
                         if (ph.constraint != ent) {
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
+                            if (target.Has<Renderable>(lock)) {
+                                target.Get<Renderable>(lock).visibility.reset(
+                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                            }
                             target = Entity();
                         }
                     }
@@ -340,6 +229,10 @@ namespace ecs {
                             auto &ph = target.Get<Physics>(lock);
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
+                            if (target.Has<Renderable>(lock)) {
+                                target.Get<Renderable>(lock).visibility.reset(
+                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                            }
                             target = Entity();
                         } else if (query.raycastHitTarget.Has<Physics, TransformSnapshot>(lock)) {
                             // Grab the entity being looked at
@@ -360,6 +253,23 @@ namespace ecs {
                         }
                     }
 
+                    if (state.userData.has_value()) {
+                        auto lastSelection = std::any_cast<Entity>(state.userData);
+                        if (lastSelection && lastSelection.Has<Renderable>(lock)) {
+                            lastSelection.Get<Renderable>(lock).visibility.reset(
+                                ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                        }
+                    }
+
+                    auto selection = target;
+                    if (!selection) selection = query.raycastHitTarget;
+
+                    if (selection && selection.Has<Renderable>(lock)) {
+                        selection.Get<Renderable>(lock).visibility.set(
+                            ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                        state.userData = selection;
+                    }
+
                     auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");
                     if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
                     bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
@@ -378,8 +288,8 @@ namespace ecs {
                         }
                     }
                 }
-            }},
-        {"voxel_controller",
+            }),
+        InternalScript("voxel_controller",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree, VoxelArea>(lock)) {
                     auto scene = state.scene.lock();
@@ -417,81 +327,6 @@ namespace ecs {
                     transform.pose.SetPosition(glm::inverse(voxelRotation) * targetPosition);
                     transform.pose.SetScale(glm::vec3(voxelScale));
                 }
-            }},
-        {"articulating_arm",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (!ent.Has<ecs::Name, ecs::SignalBindings>(lock)) return;
-
-                float lockedRatio = SignalBindings::GetSignal(lock, ent, "locked_ratio");
-
-                if (state.userData.has_value() && std::any_cast<float>(state.userData) == lockedRatio) return;
-
-                state.userData = lockedRatio;
-
-                auto rootName = ent.Get<ecs::Name>(lock);
-
-                struct ArmJoint {
-                    bool fixed;
-                    int angularDampingMultiplier;
-                    ecs::Name name;
-                };
-
-                std::array jointNodes = {
-                    ArmJoint{false, 4, {rootName.scene, rootName.entity + ".Ball_0"}},
-                    ArmJoint{false, 1, {rootName.scene, rootName.entity + ".Arm_0"}},
-                    ArmJoint{false, 1, {rootName.scene, rootName.entity + ".Arm_1"}},
-                    ArmJoint{false, 4, {rootName.scene, rootName.entity + ".Ball_1"}},
-
-                    ArmJoint{true, 1, {rootName.scene, rootName.entity + ".Socket_0"}},
-                    ArmJoint{true, 1, {rootName.scene, rootName.entity + ".Shaft"}},
-                    ArmJoint{true, 1, {rootName.scene, rootName.entity + ".Socket_1"}},
-                };
-
-                ecs::Entity lastNode;
-
-                for (auto &node : jointNodes) {
-                    auto child = ecs::EntityWith<ecs::Name>(lock, node.name);
-                    if (!child.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) {
-                        lastNode = child;
-                        continue;
-                    }
-
-                    auto &ph = child.Get<ecs::Physics>(lock);
-                    ph.angularDamping = lockedRatio * 100 * node.angularDampingMultiplier;
-                    ph.linearDamping = lockedRatio * 100;
-
-                    if (!node.fixed && lastNode) {
-                        auto &joints = child.Get<ecs::PhysicsJoints>(lock).joints;
-                        if (lockedRatio > 0.999) {
-                            bool createFixed = true;
-                            for (auto it = joints.begin(); it != joints.end(); it++) {
-                                if (it->type == ecs::PhysicsJointType::Fixed) {
-                                    createFixed = false;
-                                    break;
-                                }
-                            }
-                            if (createFixed) {
-                                auto lastTrans = lastNode.Get<ecs::TransformSnapshot>(lock);
-                                auto thisTrans = child.Get<ecs::TransformSnapshot>(lock);
-                                ecs::PhysicsJoint joint = joints.front();
-                                joint.localOrient = glm::inverse(thisTrans.GetRotation()) * lastTrans.GetRotation();
-                                joint.remoteOrient = {};
-                                joint.target = lastNode;
-                                joint.type = ecs::PhysicsJointType::Fixed;
-                                joints.push_back(joint);
-                            }
-                        } else {
-                            for (auto it = joints.begin(); it != joints.end(); it++) {
-                                if (it->type == ecs::PhysicsJointType::Fixed) {
-                                    joints.erase(it);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    lastNode = child;
-                }
-            }},
+            }),
     };
-} // namespace ecs
+} // namespace sp::scripts

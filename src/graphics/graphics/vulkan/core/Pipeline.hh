@@ -22,8 +22,10 @@ namespace sp::vulkan {
         ShaderHandleSet shaders = {};
         VertexLayout vertexLayout;
         vk::PrimitiveTopology primitiveTopology = vk::PrimitiveTopology::eTriangleList;
+        vk::PolygonMode polygonMode = vk::PolygonMode::eFill;
         vk::CullModeFlags cullMode;
         vk::FrontFace frontFaceWinding;
+        float lineWidth = 1.0f;
         vk::BlendOp blendOp;
         vk::BlendFactor srcBlendFactor, srcAlphaBlendFactor;
         vk::BlendFactor dstBlendFactor, dstAlphaBlendFactor;

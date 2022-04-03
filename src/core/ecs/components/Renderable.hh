@@ -18,6 +18,7 @@ namespace ecs {
             VISIBLE_LIGHTING_SHADOW,
             VISIBLE_LIGHTING_VOXEL,
             VISIBLE_OPTICS,
+            VISIBLE_OUTLINE_SELECTION,
             VISIBILITY_COUNT,
         };
 
@@ -29,7 +30,7 @@ namespace ecs {
         sp::AsyncPtr<sp::Gltf> model;
         size_t meshIndex;
 
-        VisibilityMask visibility = VisibilityMask().set();
+        VisibilityMask visibility = VisibilityMask().set().reset(Visibility::VISIBLE_OUTLINE_SELECTION);
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };
 

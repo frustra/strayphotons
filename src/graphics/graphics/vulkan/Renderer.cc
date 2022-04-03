@@ -15,6 +15,7 @@
 #include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
+#include "graphics/vulkan/render_passes/Outline.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
@@ -454,6 +455,7 @@ namespace sp::vulkan {
         emissive.AddPass(graph, lock);
         voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
+        renderer::AddOutlines(graph, scene);
         renderer::AddBloom(graph);
         renderer::AddTonemap(graph);
 

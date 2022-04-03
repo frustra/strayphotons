@@ -20,7 +20,6 @@
 #include <sstream>
 
 namespace sp {
-
     ConsoleManager &GetConsoleManager() {
         static ConsoleManager GConsoleManager;
         return GConsoleManager;
@@ -244,6 +243,3 @@ namespace sp {
     }
 #endif
 } // namespace sp
-
-#include "ConsoleCoreCommands.hh"
-#include "ConsoleTracy.cc"

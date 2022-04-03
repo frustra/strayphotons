@@ -22,10 +22,10 @@ namespace sp::vulkan::renderer {
         glm::ivec2 shadowAtlasSize = {};
 
         struct VirtualLight {
-            ecs::View view;
-            ecs::Entity source; // Real light or last optic entity in source light path
-            uint32_t sourceIndex; // Virtual light index of source
-            uint32_t opticIndex = ~(uint32_t)0; // Optic index of output optic
+            InlineVector<ecs::Entity, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
+            uint32_t thisIndex;
+            std::optional<uint32_t> parentIndex;
+            std::optional<uint32_t> opticIndex;
 
             std::string gelName;
             const TextureIndex *gelTexture = nullptr;
@@ -33,6 +33,7 @@ namespace sp::vulkan::renderer {
 
         robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
 
+        std::array<ecs::View, MAX_LIGHTS> views;
         std::vector<VirtualLight> lights;
         std::vector<VirtualLight> readbackLights;
 

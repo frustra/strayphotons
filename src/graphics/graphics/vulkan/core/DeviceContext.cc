@@ -42,16 +42,14 @@ namespace sp::vulkan {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         string_view message(pCallbackData->pMessage);
 
-        switch (messageSeverity) {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
-            Errorf("VK %s %s", typeStr, message);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            Warnf("VK %s %s", typeStr, message);
-            break;
-        default:
-            break;
+        if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+            if (message.find("CoreValidation-DrawState-QueryNotReset") == string_view::npos) {
+                Errorf("VK %s %s", typeStr, message);
+            }
+        } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+            if (!(messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
+                Warnf("VK %s %s", typeStr, message);
+            }
         }
         Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
@@ -276,6 +274,7 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
         Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
         Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
+        Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableVulkan11Features.multiview, "device must support multiview");
         Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
         Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
@@ -317,6 +316,7 @@ namespace sp::vulkan {
         enabledDeviceFeatures.multiViewport = true;
         enabledDeviceFeatures.shaderInt16 = true;
         enabledDeviceFeatures.fragmentStoresAndAtomics = true;
+        enabledDeviceFeatures.wideLines = true;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();

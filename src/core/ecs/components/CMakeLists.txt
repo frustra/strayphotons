@@ -13,13 +13,11 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     OpticalElement.cc
     Physics.cc
     PhysicsJoints.cc
-    PrefabDefinitions.cc
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc
     Screen.cc
     Script.cc
-    ScriptDefinitions.cc
     Sound.cc
     Signals.cc
     Transform.cc
