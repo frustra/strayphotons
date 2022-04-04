@@ -73,6 +73,7 @@ namespace sp {
 
     namespace boost_replacements {
         bool starts_with(const string &str, const string &prefix);
+        bool starts_with(const string_view &str, const string_view &prefix);
         bool ends_with(const string &str, const string &suffix);
         string to_lower(string &str);
         string to_upper(string &str);

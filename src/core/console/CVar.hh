@@ -3,7 +3,9 @@
 #include "core/Common.hh"
 #include "core/StreamOverloads.hh"
 
+#include <atomic>
 #include <functional>
+#include <mutex>
 #include <sstream>
 
 namespace sp {
@@ -19,8 +21,38 @@ namespace sp {
             return name;
         }
 
+        const string &GetNameLower() const {
+            return nameLower;
+        }
+
         const string &GetDescription() const {
             return description;
+        }
+
+        template<typename Callback>
+        void EachCompletion(Callback callback) {
+            std::lock_guard lock(completionMutex);
+            for (const auto &str : completions) {
+                callback(str);
+            }
+        }
+
+        void RequestCompletion() {
+            pendingCompletion = true;
+        }
+
+        bool PendingCompletion() const {
+            return pendingCompletion;
+        }
+
+        template<typename Callback>
+        void UpdateCompletions(Callback callback) {
+            if (!pendingCompletion) return;
+
+            std::lock_guard lock(completionMutex);
+            completions.clear();
+            callback(completions);
+            pendingCompletion = false;
         }
 
         virtual string StringValue() = 0;
@@ -36,7 +68,11 @@ namespace sp {
         bool dirty = true;
 
     private:
-        string name, description;
+        string name, nameLower, description;
+
+        vector<string> completions;
+        std::atomic_bool pendingCompletion = false;
+        std::mutex completionMutex;
     };
 
     template<typename VarType>

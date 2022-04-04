@@ -23,6 +23,7 @@ namespace sp {
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
             ImVec2 popupPos;
+            bool requestNewCompletions = false;
 
             ImGui::Begin("Console", nullptr, flags);
             {
@@ -75,17 +76,16 @@ namespace sp {
                 }
 
                 if (ImGui::IsItemEdited() && !skipEditCheck) {
-                    string line(inputBuf);
-                    if (!line.empty()) {
-                        completionEntries = GetConsoleManager().AllCompletions(line);
-                        completionMode = COMPLETION_INPUT;
-                    } else {
-                        completionEntries.clear();
-                        completionMode = COMPLETION_NONE;
-                    }
-                    completionPopupVisible = !completionEntries.empty();
+                    requestNewCompletions = true;
+                    completionPending = true;
                     completionSelectedIndex = 0;
                     completionSelectionChanged = true;
+                    completionPopupVisible = false;
+                    if (inputBuf[0] != '\0') {
+                        completionMode = COMPLETION_INPUT;
+                    } else {
+                        completionMode = COMPLETION_NONE;
+                    }
                 }
                 skipEditCheck = false;
 
@@ -98,6 +98,14 @@ namespace sp {
                 popupPos = ImGui::GetItemRectMin();
             }
             ImGui::End();
+
+            if (completionMode == COMPLETION_INPUT && completionPending) {
+                string line(inputBuf);
+                auto result = GetConsoleManager().AllCompletions(line, requestNewCompletions);
+                completionPending = result.pending;
+                completionEntries = result.values;
+                completionPopupVisible = !completionEntries.empty();
+            }
 
             if (completionPopupVisible) {
                 ImGuiWindowFlags popupFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
@@ -151,7 +159,7 @@ namespace sp {
                     string line = completionEntries[completionSelectedIndex];
                     if (line[line.size() - 1] != ' ') line += " ";
 
-                    SetInput(data, line.c_str(), true);
+                    SetInput(data, line.c_str(), completionMode == COMPLETION_HISTORY);
                     completionPopupVisible = false;
                     completionSelectedIndex = -1;
                 }
@@ -196,7 +204,8 @@ namespace sp {
         bool skipEditCheck = false, reclaimInputFocus = false;
 
         CompletionMode completionMode = COMPLETION_NONE;
-        bool completionPopupVisible = false, completionSelectionChanged = false, syncInputFromCompletion = false;
+        bool completionPopupVisible = false, completionSelectionChanged = false, syncInputFromCompletion = false,
+             completionPending = false;
         vector<string> completionEntries;
         int completionSelectedIndex = 0;
     };
