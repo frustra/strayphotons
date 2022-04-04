@@ -113,6 +113,29 @@ namespace sp::xr {
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::SignalOutput>(lock);
                             ent.Set<ecs::Renderable>(lock, GAssets.LoadGltf("box"));
+
+                            if (action.type == Action::DataType::Skeleton) {
+                                uint32_t boneCount = 0;
+                                vr::EVRInputError inputError = vr::VRInput()->GetBoneCount(action.handle, &boneCount);
+
+                                if (inputError != vr::EVRInputError::VRInputError_None) {
+                                    Errorf("Failed to get bone count for action skeleton");
+                                    continue;
+                                }
+
+                                std::vector<std::string> boneNames;
+                                boneNames.resize(boneCount);
+
+                                for (size_t i = 0; i < boneCount; i++) {
+                                    boneNames[i].resize(vr::k_unMaxBoneNameLength);
+                                    vr::VRInput()->GetBoneName(action.handle,
+                                        i,
+                                        &boneNames[i].front(),
+                                        vr::k_unMaxBoneNameLength);
+                                    boneNames[i].erase(boneNames[i].find('\0'));
+                                    Logf("OpenVR Bone: %s", boneNames[i]);
+                                }
+                            }
                         }
                     }
                 }
