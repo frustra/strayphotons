@@ -48,7 +48,7 @@ namespace sp::vulkan {
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
-            {vk::Format::eD24UnormS8Uint, vk::Format::eD16UnormS8Uint});
+            {vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16UnormS8Uint});
     }
 
     Renderer::~Renderer() {
@@ -57,6 +57,20 @@ namespace sp::vulkan {
 
     void Renderer::RenderFrame() {
         BuildFrameGraph();
+
+        CVarWindowViewTarget.UpdateCompletions([&](vector<string> &completions) {
+            auto list = graph.AllImages();
+            for (const auto &info : list) {
+                completions.push_back(info.name);
+            }
+        });
+
+        CVarXRViewTarget.UpdateCompletions([&](vector<string> &completions) {
+            auto list = graph.AllImages();
+            for (const auto &info : list) {
+                completions.push_back(info.name);
+            }
+        });
 
         if (listImages) {
             listImages = false;
@@ -134,22 +148,21 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 builder.RequirePass();
 
-                auto sourceName = CVarWindowViewTarget.Get();
-                auto res = builder.GetResource(sourceName);
-                if (!res && sourceName != defaultWindowViewTarget) {
-                    Errorf("view target %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
+                auto &sourceName = CVarWindowViewTarget.Get();
+                sourceID = builder.GetID(sourceName, false);
+                if (sourceID == rg::InvalidResource && sourceName != defaultWindowViewTarget) {
+                    Errorf("image %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                     CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                    res = builder.GetResource(defaultWindowViewTarget);
+                    sourceID = builder.GetID(defaultWindowViewTarget, false);
                 }
 
                 auto loadOp = LoadOp::DontCare;
 
-                if (res) {
+                if (sourceID != rg::InvalidResource) {
+                    auto res = builder.GetResource(sourceID);
                     auto format = res.ImageFormat();
                     auto layer = CVarWindowViewTargetLayer.Get();
-                    if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
-                        sourceID = res.id;
-                    } else {
+                    if (FormatComponentCount(format) != 4 || FormatByteSize(format) != 4 || layer != 0) {
                         sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
                     builder.Read(sourceID, Access::FragmentShaderSampleImage);
@@ -371,23 +384,22 @@ namespace sp::vulkan {
         rg::ResourceID sourceID;
         graph.AddPass("XRSubmit")
             .Build([&](rg::PassBuilder &builder) {
-                auto res = builder.GetResource(CVarXRViewTarget.Get());
-                if (!res) {
-                    Errorf("view target %s does not exist, defaulting to %s",
-                        CVarXRViewTarget.Get(),
-                        defaultXRViewTarget);
+                auto &sourceName = CVarXRViewTarget.Get();
+                sourceID = builder.GetID(sourceName, false);
+                if (sourceID == rg::InvalidResource && sourceName != defaultXRViewTarget) {
+                    Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXRViewTarget);
                     CVarXRViewTarget.Set(defaultXRViewTarget);
-                    res = builder.GetResource(defaultXRViewTarget);
+                    sourceID = builder.GetID(defaultXRViewTarget, false);
                 }
 
-                auto format = res.ImageFormat();
-                if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
-                    sourceID = res.id;
-                } else {
-                    sourceID = renderer::VisualizeBuffer(graph, res.id);
+                if (sourceID != rg::InvalidResource) {
+                    auto res = builder.GetResource(sourceID);
+                    auto format = res.ImageFormat();
+                    if (FormatComponentCount(format) != 4 || FormatByteSize(format) != 4) {
+                        sourceID = renderer::VisualizeBuffer(graph, res.id);
+                    }
+                    builder.Read(sourceID, Access::TransferRead);
                 }
-
-                builder.Read(sourceID, Access::TransferRead);
                 builder.FlushCommands();
                 builder.RequirePass();
             })

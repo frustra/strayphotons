@@ -51,9 +51,15 @@ namespace sp {
         void QueueParseAndExecute(const string line,
             chrono_clock::time_point wait_until = chrono_clock::now(),
             std::condition_variable *handled = nullptr);
+
         void AddHistory(const string &input);
         vector<string> AllHistory(size_t maxEntries);
-        vector<string> AllCompletions(const string &input);
+
+        struct Completions {
+            vector<string> values;
+            bool pending;
+        };
+        Completions AllCompletions(const string &input, bool requestNewCompletions);
 
         const std::map<string, CVarBase *> CVars() {
             return cvars;

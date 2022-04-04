@@ -35,7 +35,8 @@ namespace sp {
         }
     } // namespace logging
 
-    CVarBase::CVarBase(const string &name, const string &description) : name(name), description(description) {
+    CVarBase::CVarBase(const string &name, const string &description)
+        : name(name), nameLower(to_lower_copy(name)), description(description) {
         GetConsoleManager().AddCVar(this);
     }
 
@@ -52,11 +53,11 @@ namespace sp {
     }
 
     void ConsoleManager::AddCVar(CVarBase *cvar) {
-        cvars[to_lower_copy(cvar->GetName())] = cvar;
+        cvars[cvar->GetNameLower()] = cvar;
     }
 
     void ConsoleManager::RemoveCVar(CVarBase *cvar) {
-        cvars.erase(to_lower_copy(cvar->GetName()));
+        cvars.erase(cvar->GetNameLower());
     }
 
     void ConsoleManager::InputLoop() {
@@ -214,30 +215,47 @@ namespace sp {
         return results;
     }
 
-    vector<string> ConsoleManager::AllCompletions(const string &rawInput) {
-        vector<string> results;
+    ConsoleManager::Completions ConsoleManager::AllCompletions(const string &rawInput, bool requestNewCompletions) {
+        Completions result;
+        result.pending = false;
 
         auto input = to_lower_copy(rawInput);
         auto it = cvars.lower_bound(input);
 
+        if (it != cvars.begin()) {
+            it--;
+            auto cvar = it->second;
+            auto &name = cvar->GetName();
+            if (input.size() > name.size() && input[name.size()] == ' ' && starts_with(input, cvar->GetNameLower())) {
+                if (requestNewCompletions) cvar->RequestCompletion();
+                if (cvar->PendingCompletion()) result.pending = true;
+
+                auto restOfLine = string_view(input).substr(name.size() + 1);
+                cvar->EachCompletion([&](const string &completion) {
+                    if (starts_with(to_lower_copy(completion), restOfLine)) {
+                        result.values.push_back(name + " " + completion);
+                    }
+                });
+            }
+            it++;
+        }
+
         for (; it != cvars.end(); it++) {
             auto cvar = it->second;
-            auto name = cvar->GetName();
-
-            if (starts_with(to_lower_copy(name), input)) {
-                results.push_back(name);
+            if (starts_with(cvar->GetNameLower(), input)) {
+                result.values.push_back(cvar->GetName());
             } else {
                 break;
             }
         }
 
-        return results;
+        return result;
     }
 
 #ifdef USE_LINENOISE_CLI
     void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc) {
-        auto completions = GetConsoleManager().AllCompletions(string(buf));
-        for (auto str : completions) {
+        auto completions = GetConsoleManager().AllCompletions(string(buf), true);
+        for (auto str : completions.values) {
             linenoiseAddCompletion(lc, str.c_str());
         }
     }
