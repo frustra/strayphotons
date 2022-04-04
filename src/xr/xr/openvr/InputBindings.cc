@@ -5,6 +5,8 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
+#include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
@@ -95,6 +97,35 @@ namespace sp::xr {
                 }
             }
         }
+
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            "input",
+            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                for (auto &actionSet : actionSets) {
+                    for (auto &action : actionSet.actions) {
+                        if (action.type == Action::DataType::Pose || action.type == Action::DataType::Skeleton) {
+                            Logf("%s %s %s", scene->name, actionSet.name, action.name);
+                            // auto actionEnt = scene->NewSystemEntity(lock, scene, actionSet);
+                        }
+                    }
+                }
+                // auto vrOrigin = scene->NewSystemEntity(lock, scene, vrOriginEntity.Name());
+                // vrOrigin.Set<ecs::TransformTree>(lock);
+
+                // static const std::array specialEntities = {vrHmdEntity,
+                //     vrControllerLeftEntity,
+                //     vrControllerRightEntity};
+                // for (auto &namedEntity : specialEntities) {
+                //     auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
+                //     ent.Set<ecs::TransformTree>(lock);
+                //     ent.Set<ecs::EventBindings>(lock);
+                //     ent.Set<ecs::SignalOutput>(lock);
+                // }
+
+                // for (size_t i = 0; i < reservedEntities.size(); i++) {
+                //     reservedEntities[i] = ecs::NamedEntity("vr", "device" + std::to_string(i));
+                // }
+            });
     }
 
     void InputBindings::Frame() {
