@@ -9,6 +9,8 @@
 #include "xr/openvr/OpenVrSystem.hh"
 
 #include <fstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <openvr.h>
 #include <picojson/picojson.h>
 
@@ -20,7 +22,7 @@ namespace sp::xr {
         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
 
         auto actionManifest = GAssets.Load(actionManifestPath, AssetType::External, true)->Get();
-        Assertf(actionManifest, "Failed to load vr action manifest: ", actionManifestPath);
+        Assertf(actionManifest, "Failed to load vr action manifest: %s", actionManifestPath);
 
         picojson::value root;
         string err = picojson::parse(root, actionManifest->String());
@@ -37,8 +39,9 @@ namespace sp::xr {
                         auto name = param.second.get<string>();
                         vr::VRActionSetHandle_t actionSetHandle;
                         error = vr::VRInput()->GetActionSetHandle(name.c_str(), &actionSetHandle);
-                        Assert(error == vr::EVRInputError::VRInputError_None,
-                            "Failed to load OpenVR input action set: " + name);
+                        Assertf(error == vr::EVRInputError::VRInputError_None,
+                            "Failed to load OpenVR input action set: %s",
+                            name);
 
                         actionSets.emplace_back(name, actionSetHandle);
                     }
@@ -54,8 +57,9 @@ namespace sp::xr {
                     if (param.first == "name") {
                         action.name = param.second.get<string>();
                         error = vr::VRInput()->GetActionHandle(action.name.c_str(), &action.handle);
-                        Assert(error == vr::EVRInputError::VRInputError_None,
-                            "Failed to load OpenVR input action set: " + action.name);
+                        Assertf(error == vr::EVRInputError::VRInputError_None,
+                            "Failed to load OpenVR input action set: %s",
+                            action.name);
                     } else if (param.first == "type") {
                         auto typeStr = param.second.get<string>();
                         to_lower(typeStr);
@@ -98,7 +102,7 @@ namespace sp::xr {
 
         auto lock =
             ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings>,
-                ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
+                ecs::Write<ecs::EventInput, ecs::SignalOutput, ecs::TransformTree>>();
 
         for (auto &actionSet : actionSets) {
             vr::VRActiveActionSet_t activeActionSet = {};
@@ -107,14 +111,16 @@ namespace sp::xr {
             vr::EVRInputError error = vr::VRInput()->UpdateActionState(&activeActionSet,
                 sizeof(vr::VRActiveActionSet_t),
                 1);
-            Assert(error == vr::EVRInputError::VRInputError_None,
-                "Failed to sync OpenVR actions for: " + actionSet.name);
+            Assertf(error == vr::EVRInputError::VRInputError_None,
+                "Failed to sync OpenVR actions for: %s",
+                actionSet.name);
 
             for (auto &action : actionSet.actions) {
                 error =
                     vr::VRInput()->GetActionOrigins(actionSet.handle, action.handle, origins.data(), origins.size());
-                Assert(error == vr::EVRInputError::VRInputError_None,
-                    "Failed to read OpenVR action sources for: " + action.name);
+                Assertf(error == vr::EVRInputError::VRInputError_None,
+                    "Failed to read OpenVR action sources for: %s",
+                    action.name);
 
                 for (auto &originHandle : origins) {
                     if (originHandle) {
@@ -134,14 +140,17 @@ namespace sp::xr {
                         if (entity) {
                             vr::InputDigitalActionData_t digitalActionData;
                             vr::InputAnalogActionData_t analogActionData;
+                            vr::InputPoseActionData_t poseActionData;
+                            vr::InputSkeletalActionData_t skeletalActionData;
                             switch (action.type) {
                             case Action::DataType::Bool:
                                 error = vr::VRInput()->GetDigitalActionData(action.handle,
                                     &digitalActionData,
                                     sizeof(vr::InputDigitalActionData_t),
                                     originInfo.devicePath);
-                                Assert(error == vr::EVRInputError::VRInputError_None,
-                                    "Failed to read OpenVR digital action: " + action.name);
+                                Assertf(error == vr::EVRInputError::VRInputError_None,
+                                    "Failed to read OpenVR digital action: %s",
+                                    action.name);
 
                                 if (entity.Has<ecs::EventBindings>(lock)) {
                                     auto &bindings = entity.Get<ecs::EventBindings>(lock);
@@ -168,8 +177,9 @@ namespace sp::xr {
                                     &analogActionData,
                                     sizeof(vr::InputAnalogActionData_t),
                                     originInfo.devicePath);
-                                Assert(error == vr::EVRInputError::VRInputError_None,
-                                    "Failed to read OpenVR analog action: " + action.name);
+                                Assertf(error == vr::EVRInputError::VRInputError_None,
+                                    "Failed to read OpenVR analog action: %s",
+                                    action.name);
 
                                 if (entity.Has<ecs::EventBindings>(lock)) {
                                     auto &bindings = entity.Get<ecs::EventBindings>(lock);
@@ -218,6 +228,64 @@ namespace sp::xr {
                                         signalOutput.ClearSignal(actionSignal + "_x");
                                         signalOutput.ClearSignal(actionSignal + "_y");
                                         signalOutput.ClearSignal(actionSignal + "_z");
+                                    }
+                                }
+                                break;
+                            case Action::DataType::Pose:
+                                // error = vr::VRInput()->GetPoseActionDataForNextFrame(action.handle,
+                                //     vr::ETrackingUniverseOrigin::TrackingUniverseStanding,
+                                //     &poseActionData,
+                                //     sizeof(vr::InputPoseActionData_t),
+                                //     originInfo.devicePath);
+                                // Assertf(error == vr::EVRInputError::VRInputError_None,
+                                //     "Failed to read OpenVR pose action: %s",
+                                //     action.name);
+
+                                // if (poseActionData.bActive) {
+                                //     if (poseActionData.pose.bDeviceIsConnected && poseActionData.pose.bPoseIsValid) {
+                                //         ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
+                                //         // TODO: This is the wrong entity
+                                //         if (entity.Has<ecs::TransformTree>(lock)) {
+                                //             auto &transform = entity.Get<ecs::TransformTree>(lock);
+
+                                //             auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
+                                //             transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
+                                //             transform.parent = vrOrigin;
+                                //         }
+                                //     }
+                                // }
+                                break;
+                            case Action::DataType::Skeleton:
+                                error = vr::VRInput()->GetSkeletalActionData(action.handle,
+                                    &skeletalActionData,
+                                    sizeof(vr::InputSkeletalActionData_t));
+                                Assertf(error == vr::EVRInputError::VRInputError_None,
+                                    "Failed to read OpenVR skeleton action: %s",
+                                    action.name);
+
+                                if (skeletalActionData.bActive) {
+                                    error = vr::VRInput()->GetPoseActionDataForNextFrame(action.handle,
+                                        vr::ETrackingUniverseOrigin::TrackingUniverseStanding,
+                                        &poseActionData,
+                                        sizeof(vr::InputPoseActionData_t),
+                                        vr::k_ulInvalidInputValueHandle);
+                                    Assertf(error == vr::EVRInputError::VRInputError_None,
+                                        "Failed to read OpenVR pose action: %s",
+                                        action.name);
+
+                                    if (poseActionData.bActive) {
+                                        if (poseActionData.pose.bDeviceIsConnected &&
+                                            poseActionData.pose.bPoseIsValid) {
+                                            ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
+                                            // TODO: This is the wrong entity
+                                            if (entity.Has<ecs::TransformTree>(lock)) {
+                                                auto &transform = entity.Get<ecs::TransformTree>(lock);
+
+                                                auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
+                                                transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
+                                                transform.parent = vrOrigin;
+                                            }
+                                        }
                                     }
                                 }
                                 break;
