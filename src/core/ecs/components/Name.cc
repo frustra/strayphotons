@@ -5,6 +5,11 @@
 #include "game/Scene.hh"
 
 namespace ecs {
+    Name::Name(std::string scene, std::string entity) : scene(scene), entity(entity) {
+        Assertf(scene.find_first_of(":/ ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
+        Assertf(entity.find_first_of(":/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
+    }
+
     bool Name::Parse(std::string fullName, const sp::Scene *currentScene) {
         size_t i = fullName.find(':');
         if (i != std::string::npos) {

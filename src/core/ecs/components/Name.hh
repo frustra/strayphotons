@@ -12,7 +12,7 @@ namespace ecs {
         std::string scene, entity;
 
         Name() {}
-        Name(std::string scene, std::string entity) : scene(scene), entity(entity) {}
+        Name(std::string scene, std::string entity);
 
         bool Parse(std::string fullName, const sp::Scene *currentScene = nullptr);
 

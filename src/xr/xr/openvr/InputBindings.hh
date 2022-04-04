@@ -10,6 +10,7 @@ namespace sp::xr {
     class InputBindings {
     public:
         InputBindings(OpenVrSystem &vrSystem, std::string actionManifestPath);
+        ~InputBindings();
 
         void Frame();
 
@@ -25,11 +26,12 @@ namespace sp::xr {
                 Haptic,
                 Pose,
                 Skeleton,
-                Invalid,
+                Count,
             };
 
             std::string name;
             vr::VRActionHandle_t handle;
+            ecs::NamedEntity inputEntity;
             DataType type;
 
             Action() {}

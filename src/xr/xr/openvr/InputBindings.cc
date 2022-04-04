@@ -65,7 +65,7 @@ namespace sp::xr {
                     } else if (param.first == "type") {
                         auto typeStr = param.second.get<string>();
                         to_lower(typeStr);
-                        action.type = Action::DataType::Invalid;
+                        action.type = Action::DataType::Count;
                         if (typeStr == "boolean") {
                             action.type = Action::DataType::Bool;
                         } else if (typeStr == "vector1") {
@@ -99,33 +99,28 @@ namespace sp::xr {
         }
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "input",
+            "vr_input",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 for (auto &actionSet : actionSets) {
                     for (auto &action : actionSet.actions) {
                         if (action.type == Action::DataType::Pose || action.type == Action::DataType::Skeleton) {
-                            Logf("%s %s %s", scene->name, actionSet.name, action.name);
-                            // auto actionEnt = scene->NewSystemEntity(lock, scene, actionSet);
+                            auto inputName = "vr" + action.name;
+                            std::transform(inputName.begin(), inputName.end(), inputName.begin(), [](unsigned char c) {
+                                return (c == ':' || c == '/') ? '_' : c;
+                            });
+                            action.inputEntity = ecs::NamedEntity("input", inputName);
+                            auto ent = scene->NewSystemEntity(lock, scene, action.inputEntity.Name());
+                            ent.Set<ecs::TransformTree>(lock);
+                            ent.Set<ecs::SignalOutput>(lock);
+                            ent.Set<ecs::Renderable>(lock, GAssets.LoadGltf("box"));
                         }
                     }
                 }
-                // auto vrOrigin = scene->NewSystemEntity(lock, scene, vrOriginEntity.Name());
-                // vrOrigin.Set<ecs::TransformTree>(lock);
-
-                // static const std::array specialEntities = {vrHmdEntity,
-                //     vrControllerLeftEntity,
-                //     vrControllerRightEntity};
-                // for (auto &namedEntity : specialEntities) {
-                //     auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
-                //     ent.Set<ecs::TransformTree>(lock);
-                //     ent.Set<ecs::EventBindings>(lock);
-                //     ent.Set<ecs::SignalOutput>(lock);
-                // }
-
-                // for (size_t i = 0; i < reservedEntities.size(); i++) {
-                //     reservedEntities[i] = ecs::NamedEntity("vr", "device" + std::to_string(i));
-                // }
             });
+    }
+
+    InputBindings::~InputBindings() {
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_input");
     }
 
     void InputBindings::Frame() {
@@ -263,28 +258,29 @@ namespace sp::xr {
                                 }
                                 break;
                             case Action::DataType::Pose:
-                                // error = vr::VRInput()->GetPoseActionDataForNextFrame(action.handle,
-                                //     vr::ETrackingUniverseOrigin::TrackingUniverseStanding,
-                                //     &poseActionData,
-                                //     sizeof(vr::InputPoseActionData_t),
-                                //     originInfo.devicePath);
-                                // Assertf(error == vr::EVRInputError::VRInputError_None,
-                                //     "Failed to read OpenVR pose action: %s",
-                                //     action.name);
+                                error = vr::VRInput()->GetPoseActionDataForNextFrame(action.handle,
+                                    vr::ETrackingUniverseOrigin::TrackingUniverseStanding,
+                                    &poseActionData,
+                                    sizeof(vr::InputPoseActionData_t),
+                                    originInfo.devicePath);
+                                Assertf(error == vr::EVRInputError::VRInputError_None,
+                                    "Failed to read OpenVR pose action: %s",
+                                    action.name);
 
-                                // if (poseActionData.bActive) {
-                                //     if (poseActionData.pose.bDeviceIsConnected && poseActionData.pose.bPoseIsValid) {
-                                //         ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
-                                //         // TODO: This is the wrong entity
-                                //         if (entity.Has<ecs::TransformTree>(lock)) {
-                                //             auto &transform = entity.Get<ecs::TransformTree>(lock);
+                                if (poseActionData.bActive) {
+                                    if (poseActionData.pose.bDeviceIsConnected && poseActionData.pose.bPoseIsValid) {
+                                        ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
+                                        ecs::Entity inputEntity = action.inputEntity.Get(lock);
+                                        if (inputEntity.Has<ecs::TransformTree>(lock)) {
+                                            auto &transform = inputEntity.Get<ecs::TransformTree>(lock);
 
-                                //             auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
-                                //             transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
-                                //             transform.parent = vrOrigin;
-                                //         }
-                                //     }
-                                // }
+                                            auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
+                                            transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
+                                            transform.parent = vrOrigin;
+                                            transform.pose.Scale(glm::vec3(0.01f));
+                                        }
+                                    }
+                                }
                                 break;
                             case Action::DataType::Skeleton:
                                 error = vr::VRInput()->GetSkeletalActionData(action.handle,
@@ -308,13 +304,14 @@ namespace sp::xr {
                                         if (poseActionData.pose.bDeviceIsConnected &&
                                             poseActionData.pose.bPoseIsValid) {
                                             ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
-                                            // TODO: This is the wrong entity
-                                            if (entity.Has<ecs::TransformTree>(lock)) {
-                                                auto &transform = entity.Get<ecs::TransformTree>(lock);
+                                            ecs::Entity inputEntity = action.inputEntity.Get(lock);
+                                            if (inputEntity.Has<ecs::TransformTree>(lock)) {
+                                                auto &transform = inputEntity.Get<ecs::TransformTree>(lock);
 
                                                 auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
                                                 transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
                                                 transform.parent = vrOrigin;
+                                                transform.pose.Scale(glm::vec3(0.01f));
                                             }
                                         }
                                     }
