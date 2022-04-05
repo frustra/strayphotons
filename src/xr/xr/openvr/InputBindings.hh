@@ -31,7 +31,8 @@ namespace sp::xr {
 
             std::string name;
             vr::VRActionHandle_t handle;
-            ecs::NamedEntity inputEntity;
+            ecs::NamedEntity poseEntity;
+            std::vector<ecs::NamedEntity> boneEntities;
             DataType type;
 
             Action() {}
