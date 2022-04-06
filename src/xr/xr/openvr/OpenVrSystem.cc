@@ -207,7 +207,7 @@ namespace sp::xr {
         }
         bool missingEntities = false;
         {
-            ZoneScopedN("Sync to ECS");
+            ZoneScopedN("OpenVRSystem Sync to ECS");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformTree>>();
 
             for (auto namedEntity : trackedDevices) {
