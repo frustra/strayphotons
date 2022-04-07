@@ -17,6 +17,8 @@
 #include <vector>
 
 namespace sp {
+    class DispatchQueue;
+
     namespace detail {
         template<typename... T, std::size_t... I>
         constexpr auto subtuple(std::tuple<T...> &&t, std::index_sequence<I...>) {
@@ -83,14 +85,15 @@ namespace sp {
         private:
             AsyncPtr<T> future;
         };
+
+        template<typename FutT, typename T>
+        void ForwardAsync(DispatchQueue &queue, FutT from, const AsyncPtr<T> &to);
     } // namespace detail
 
     struct DispatchQueueWorkItemBase {
         virtual void Process() = 0;
         virtual bool Ready() = 0;
     };
-
-    class DispatchQueue;
 
     template<typename ReturnType, typename Fn, typename... Futures>
     struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
@@ -125,7 +128,7 @@ namespace sp {
             } else {
                 auto result = std::apply(func, args);
                 if constexpr (std::is_constructible<detail::Future<decltype(result)>, decltype(result)>()) {
-                    queue.ForwardAsync(result, returnValue);
+                    detail::ForwardAsync(queue, result, returnValue);
                 } else {
                     returnValue->Set(result);
                 }
@@ -224,4 +227,11 @@ namespace sp {
         std::condition_variable workReady;
         bool exit = false, dropPendingWork = false;
     };
+
+    namespace detail {
+        template<typename FutT, typename T>
+        void ForwardAsync(DispatchQueue &queue, FutT from, const AsyncPtr<T> &to) {
+            queue.ForwardAsync(from, to);
+        }
+    } // namespace detail
 } // namespace sp
