@@ -66,6 +66,7 @@ namespace sp::vulkan {
 
         auto imageFut = GAssets.LoadImage(name);
         auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=](shared_ptr<sp::Image> image) {
+            if (!image) return make_shared<Async<ImageView>>(GetBlankPixel());
             return device.LoadAssetImage(image, genMipmap, srgb);
         });
         auto pending = Add(imageView);
