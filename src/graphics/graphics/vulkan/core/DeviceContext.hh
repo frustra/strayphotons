@@ -96,13 +96,15 @@ namespace sp::vulkan {
             vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
             vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
             vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
-            vk::Fence fence = {});
+            vk::Fence fence = {},
+            bool lastSubmit = false);
 
         void Submit(vk::ArrayProxy<CommandContextPtr> cmds,
             vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
             vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
             vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
-            vk::Fence fence = {});
+            vk::Fence fence = {},
+            bool lastSubmit = false);
 
         BufferPtr AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);

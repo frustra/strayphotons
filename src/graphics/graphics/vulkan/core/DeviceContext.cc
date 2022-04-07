@@ -646,13 +646,13 @@ namespace sp::vulkan {
             }
         }
 
-        if (swapchain) {
-            {
-                ZoneScopedN("WaitForFrameFence");
-                auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
-                AssertVKSuccess(result, "timed out waiting for fence");
-            }
+        {
+            ZoneScopedN("WaitForFrameFence");
+            auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
+            AssertVKSuccess(result, "timed out waiting for fence");
+        }
 
+        if (swapchain) {
             try {
                 ZoneScopedN("AcquireNextImage");
                 auto acquireResult =
@@ -793,15 +793,17 @@ namespace sp::vulkan {
         vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
         vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-        vk::Fence fence) {
-        Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence);
+        vk::Fence fence,
+        bool lastSubmit) {
+        Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence, lastSubmit);
     }
 
     void DeviceContext::Submit(vk::ArrayProxy<CommandContextPtr> cmds,
         vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
         vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-        vk::Fence fence) {
+        vk::Fence fence,
+        bool lastSubmit) {
         ZoneScoped;
         Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread (for now)");
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
@@ -817,6 +819,12 @@ namespace sp::vulkan {
 
         QueueType queue = QUEUE_TYPES_COUNT;
 
+        if (lastSubmit) {
+            Assert(!fence, "can't use custom fence on frame's last submit call");
+            fence = *Frame().inFlightFence;
+            device->resetFences({fence});
+        }
+
         for (auto &cmd : cmds) {
             auto cmdFence = cmd->Fence();
             auto cmdQueue = QueueType(cmd->GetType());
@@ -825,12 +833,10 @@ namespace sp::vulkan {
                 waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
                 waitSemArray.push_back(*Frame().imageAvailableSemaphore);
                 signalSemArray.push_back(*Frame().renderCompleteSemaphore);
+                Assert(lastSubmit, "swapchain write must be in the last submit batch of the frame");
+            }
 
-                Assert(!fence, "can't use custom fence on submission to swapchain");
-                Assert(!cmdFence, "can't use command context fence on submission to swapchain");
-                fence = *Frame().inFlightFence;
-                device->resetFences({fence});
-            } else if (cmdFence) {
+            if (cmdFence) {
                 Assert(!fence, "can't submit with multiple fences");
                 fence = cmdFence;
             }
