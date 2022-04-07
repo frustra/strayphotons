@@ -1,7 +1,13 @@
 #include "TextureSet.hh"
 
+#include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+
+#ifdef LoadImage
+    // I hate windows.h
+    #undef LoadImage
+#endif
 
 namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device, DispatchQueue &workQueue) : device(device), workQueue(workQueue) {
@@ -12,12 +18,7 @@ namespace sp::vulkan {
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
         const InitialData &data) {
-        auto i = AllocateTextureIndex();
-        auto imageViewFut = device.CreateImageAndView(imageInfo, viewInfo, data);
-        return {i, workQueue.Dispatch<void>(imageViewFut, [this, i](ImageViewPtr view) {
-                    textures[i] = view;
-                    texturesToFlush.push_back(i);
-                })};
+        return Add(device.CreateImageAndView(imageInfo, viewInfo, data));
     }
 
     TextureHandle TextureSet::Add(const ImageViewPtr &ptr) {
@@ -28,6 +29,16 @@ namespace sp::vulkan {
         textures[i] = ptr;
         texturesToFlush.push_back(i);
         return {i, {}};
+    }
+
+    TextureHandle TextureSet::Add(const AsyncPtr<ImageView> &asyncPtr) {
+        if (asyncPtr->Ready()) return Add(asyncPtr->Get());
+
+        auto i = AllocateTextureIndex();
+        return {i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
+                    textures[i] = view;
+                    texturesToFlush.push_back(i);
+                })};
     }
 
     TextureIndex TextureSet::AllocateTextureIndex() {
@@ -46,6 +57,22 @@ namespace sp::vulkan {
         textures[i].reset();
         freeTextureIndexes.push_back(i);
         texturesToFlush.push_back(i);
+    }
+
+    TextureHandle TextureSet::LoadAssetImage(const string &name, bool genMipmap, bool srgb) {
+        string key = "asset:" + name;
+        auto it = textureCache.find(key);
+        if (it != textureCache.end()) return it->second;
+
+        auto image = GAssets.LoadImage(name);
+        auto imageView = workQueue.Dispatch<ImageView>(image, [=](shared_ptr<sp::Image> image) {
+            auto imageViewFut = device.LoadAssetImage(image, genMipmap, srgb);
+            device.FlushMainQueue();
+            return imageViewFut->Get(); // TODO nonblocking
+        });
+        auto pending = Add(imageView);
+        textureCache[key] = pending;
+        return pending;
     }
 
     TextureHandle TextureSet::LoadGltfMaterial(const shared_ptr<const Gltf> &source,

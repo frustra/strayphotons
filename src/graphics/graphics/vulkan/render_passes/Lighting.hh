@@ -30,7 +30,7 @@ namespace sp::vulkan::renderer {
             const TextureIndex *gelTexture = nullptr;
         };
 
-        robin_hood::unordered_map<string, TextureIndex> gelTextureCache;
+        robin_hood::unordered_map<string, TextureHandle> gelTextureCache;
 
         std::array<ecs::View, MAX_LIGHTS> views;
         std::vector<VirtualLight> lights;

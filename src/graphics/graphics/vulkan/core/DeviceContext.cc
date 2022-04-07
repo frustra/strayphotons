@@ -495,7 +495,7 @@ namespace sp::vulkan {
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
 
-        vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+        vk::PresentModeKHR presentMode = vk::PresentModeKHR::eImmediate;
         for (auto &mode : presentModes) {
             if (mode == vk::PresentModeKHR::eMailbox) {
                 presentMode = vk::PresentModeKHR::eMailbox;
