@@ -18,5 +18,8 @@ namespace ecs {
     static Component<OpticalElement> ComponentOpticalElement("optic");
 
     template<>
-    bool Component<OpticalElement>::Load(ScenePtr scenePtr, OpticalElement &dst, const picojson::value &src);
+    bool Component<OpticalElement>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        OpticalElement &dst,
+        const picojson::value &src);
 } // namespace ecs

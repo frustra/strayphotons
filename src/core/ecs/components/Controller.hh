@@ -34,5 +34,8 @@ namespace ecs {
     static Component<CharacterController> ComponenCharacterController("character_controller");
 
     template<>
-    bool Component<CharacterController>::Load(ScenePtr scenePtr, CharacterController &dst, const picojson::value &src);
+    bool Component<CharacterController>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        CharacterController &dst,
+        const picojson::value &src);
 } // namespace ecs

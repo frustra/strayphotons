@@ -453,7 +453,7 @@ namespace sp {
 
                     ecs::Entity entity = lock.NewEntity();
                     auto &name = entity.Set<ecs::Name>(lock);
-                    if (name.Parse(fullName, scene.get())) {
+                    if (name.Parse(fullName, ecs::Name(sceneName, ""))) {
                         Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", fullName);
                         scene->namedEntities.emplace(name, entity);
                     }
@@ -467,7 +467,7 @@ namespace sp {
                 ecs::Entity entity;
                 if (ent.count("name")) {
                     auto fullName = ent["name"].get<string>();
-                    entity = scene->GetStagingEntity(fullName);
+                    entity = scene->GetStagingEntity(fullName, ecs::Name(scene->name, ""));
                     if (!entity) {
                         Errorf("Skipping entity with invalid name: %s", fullName);
                         continue;
@@ -536,7 +536,7 @@ namespace sp {
                     Abortf("Binding entity does not have scene name: %s", fullName);
                 }
                 ecs::Name name;
-                if (name.Parse(fullName, scene.get())) {
+                if (name.Parse(fullName, ecs::Name())) {
                     auto entity = lock.NewEntity();
                     entity.Set<ecs::Name>(lock, name);
                     entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);

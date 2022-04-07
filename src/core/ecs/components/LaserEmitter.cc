@@ -8,7 +8,10 @@
 
 namespace ecs {
     template<>
-    bool Component<LaserEmitter>::Load(ScenePtr scenePtr, LaserEmitter &dst, const picojson::value &src) {
+    bool Component<LaserEmitter>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        LaserEmitter &dst,
+        const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
                 dst.intensity = param.second.get<double>();

@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Light>::Load(ScenePtr scenePtr, Light &light, const picojson::value &src) {
+    bool Component<Light>::Load(ScenePtr scenePtr, const Name &scope, Light &light, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
                 light.intensity = param.second.get<double>();

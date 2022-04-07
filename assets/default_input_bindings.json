@@ -42,7 +42,7 @@
             },
             "/keyboard/key/z": {
                 "target": "console:input/action/run_command",
-                "set_value": "togglesignal menu:articulating_arm.Knob 0.1 0.5 1"
+                "set_value": "togglesignal menu:articulating_arm.arm.Knob 0.1 0.5 1"
             }
         }
     },

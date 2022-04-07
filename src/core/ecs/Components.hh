@@ -2,6 +2,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/components/SceneInfo.hh"
+#include "game/Scene.hh"
 
 #include <cstring>
 #include <iostream>
@@ -17,6 +18,7 @@ namespace sp {
 } // namespace sp
 
 namespace ecs {
+    struct Name;
     using ScenePtr = std::weak_ptr<sp::Scene>;
 
     class ComponentBase {
@@ -48,12 +50,22 @@ namespace ecs {
 
         bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) override {
             ScenePtr scene;
+            Name scope;
             if (dst.Has<SceneInfo>(lock)) {
                 auto &sceneInfo = dst.Get<SceneInfo>(lock);
                 scene = sceneInfo.scene;
+                if (sceneInfo.prefabStagingId.Has<Name>(lock)) {
+                    scope = sceneInfo.prefabStagingId.Get<Name>(lock);
+                } else {
+                    auto parentScene = scene.lock();
+                    if (parentScene) scope.scene = parentScene->name;
+                    if (sceneInfo.prefabStagingId) {
+                        scope.entity = std::to_string(sceneInfo.prefabStagingId.generation);
+                    }
+                }
             }
             auto &comp = dst.Set<CompType>(lock);
-            return Load(scene, comp, src);
+            return Load(scene, scope, comp, src);
         }
 
         bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) override {
@@ -68,7 +80,7 @@ namespace ecs {
             }
         }
 
-        static bool Load(ScenePtr scenePtr, CompType &dst, const picojson::value &src) {
+        static bool Load(ScenePtr scenePtr, const Name &scope, CompType &dst, const picojson::value &src) {
             std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }

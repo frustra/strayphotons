@@ -2,6 +2,7 @@
 
 #include "core/Tracing.hh"
 #include "game/SceneManager.hh"
+#include "game/SceneImpl.hh"
 
 namespace sp {
     void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
@@ -22,10 +23,10 @@ namespace sp {
             stagingId = stagingInfo.nextStagingId;
         }
         while (!stagingIds.empty()) {
-            Scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
+            scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
             stagingIds.pop_back();
         }
-        Scene::RemoveDanglingComponents(ecs::Lock<ecs::ReadAll>(staging), live, sceneInfo.liveId);
+        scene::RemoveDanglingComponents(ecs::Lock<ecs::ReadAll>(staging), live, sceneInfo.liveId);
     }
 
     void ApplyComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
@@ -39,7 +40,7 @@ namespace sp {
 
         if (liveSceneInfo.stagingId == e) {
             // Entity is the linked-list root, which can be applied directly.
-            Scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, sceneInfo.liveId);
+            scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, sceneInfo.liveId);
             return;
         }
 
@@ -116,8 +117,8 @@ namespace sp {
                 if (!sceneInfo.liveId) {
                     // No entity exists in the live scene
                     sceneInfo.liveId = live.NewEntity();
-                    ApplyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
-                    ApplyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
+                    scene::ApplyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
+                    scene::ApplyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
                 }
             }
         }

@@ -14,7 +14,7 @@ namespace ecs {
         Name() {}
         Name(std::string scene, std::string entity);
 
-        bool Parse(std::string fullName, const sp::Scene *currentScene = nullptr);
+        bool Parse(const std::string &fullName, const Name &scope = Name());
 
         std::string String() const {
             if (scene.empty()) return entity;

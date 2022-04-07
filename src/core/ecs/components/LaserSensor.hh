@@ -17,5 +17,8 @@ namespace ecs {
     static Component<LaserSensor> ComponentLaserSensor("laser_sensor");
 
     template<>
-    bool Component<LaserSensor>::Load(ScenePtr scenePtr, LaserSensor &dst, const picojson::value &src);
+    bool Component<LaserSensor>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        LaserSensor &dst,
+        const picojson::value &src);
 } // namespace ecs

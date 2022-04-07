@@ -29,5 +29,5 @@ namespace ecs {
     static Component<LaserLine> ComponentLaserLine("laser_line");
 
     template<>
-    bool Component<LaserLine>::Load(ScenePtr scenePtr, LaserLine &dst, const picojson::value &src);
+    bool Component<LaserLine>::Load(ScenePtr scenePtr, const Name &scope, LaserLine &dst, const picojson::value &src);
 } // namespace ecs

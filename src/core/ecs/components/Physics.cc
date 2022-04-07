@@ -9,7 +9,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Physics>::Load(ScenePtr scenePtr, Physics &physics, const picojson::value &src) {
+    bool Component<Physics>::Load(ScenePtr scenePtr, const Name &scope, Physics &physics, const picojson::value &src) {
         auto scene = scenePtr.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
@@ -60,7 +60,7 @@ namespace ecs {
                 }
             } else if (param.first == "shape_transform") {
                 Transform shapeTransform;
-                if (Component<Transform>::Load(scene, shapeTransform, param.second)) {
+                if (Component<Transform>::Load(scene, scope, shapeTransform, param.second)) {
                     physics.shapeTransform = shapeTransform;
                 } else {
                     Errorf("Couldn't parse physics shape transform");
@@ -103,15 +103,19 @@ namespace ecs {
                 float constraintMaxDistance = 0.0f;
                 Transform constraintTransform;
                 if (param.second.is<string>()) {
-                    constraintTarget = scene->GetStagingEntity(param.second.get<string>());
+                    constraintTarget = scene->GetStagingEntity(param.second.get<string>(), scope);
                 } else if (param.second.is<picojson::object>()) {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
-                            constraintTarget = scene->GetStagingEntity(constraintParam.second.get<string>());
+                            constraintTarget = scene->GetStagingEntity(constraintParam.second.get<string>(),
+                                scope);
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {
-                            if (!Component<Transform>::Load(scene, constraintTransform, constraintParam.second)) {
+                            if (!Component<Transform>::Load(scene,
+                                    scope,
+                                    constraintTransform,
+                                    constraintParam.second)) {
                                 Errorf("Couldn't parse physics constraint offset as Transform");
                                 return false;
                             }
@@ -133,7 +137,10 @@ namespace ecs {
     }
 
     template<>
-    bool Component<PhysicsQuery>::Load(ScenePtr scenePtr, PhysicsQuery &query, const picojson::value &src) {
+    bool Component<PhysicsQuery>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        PhysicsQuery &query,
+        const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "raycast") query.raycastQueryDistance = param.second.get<double>();
         }

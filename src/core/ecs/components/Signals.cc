@@ -4,13 +4,17 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 
 #include <optional>
 #include <picojson/picojson.h>
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(ScenePtr scenePtr, SignalOutput &output, const picojson::value &src) {
+    bool Component<SignalOutput>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        SignalOutput &output,
+        const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<bool>()) {
                 output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
@@ -22,11 +26,13 @@ namespace ecs {
     }
 
     template<>
-    bool Component<SignalBindings>::Load(ScenePtr scenePtr, SignalBindings &bindings, const picojson::value &src) {
-        auto scene = scenePtr.lock();
+    bool Component<SignalBindings>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        SignalBindings &bindings,
+        const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             if (bind.second.is<std::string>()) {
-                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scene.get());
+                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scope);
                 if (originName) {
                     bindings.Bind(bind.first, NamedEntity(originName), signalName);
                 } else {
@@ -62,7 +68,7 @@ namespace ecs {
                             return false;
                         }
                         for (auto origin : source.second.get<picojson::array>()) {
-                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scene.get());
+                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scope);
                             if (originName) {
                                 bindings.Bind(bind.first, NamedEntity(originName), signalName);
                             } else {
@@ -118,10 +124,10 @@ namespace ecs {
         }
     }
 
-    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const sp::Scene *currentScene) {
+    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const Name &scope) {
         size_t delimiter = str.find('/');
         ecs::Name entityName;
-        if (entityName.Parse(str.substr(0, delimiter), currentScene)) {
+        if (entityName.Parse(str.substr(0, delimiter), scope)) {
             std::string signalName = "value";
             if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
             return std::make_pair(entityName, signalName);

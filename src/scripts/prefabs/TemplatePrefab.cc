@@ -14,7 +14,10 @@ namespace ecs {
         Assertf(scene, "Template prefab does not have a valid scene: %s", ToString(lock, ent));
 
         auto sourceName = state.GetParam<std::string>("source");
-        Logf("Loading template: %s", sourceName);
+
+        ecs::Name scope(scene->name, "");
+        if (ent.Has<Name>(lock)) scope = ent.Get<Name>(lock);
+        Logf("Loading template: %s with scope %s", sourceName, scope.String());
 
         auto asset = sp::GAssets.Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
         if (!asset) {
@@ -37,7 +40,8 @@ namespace ecs {
             if (obj.count("name")) {
                 auto fullName = obj["name"].get<string>();
                 ecs::Name name;
-                if (name.Parse(fullName, scene.get())) scene->NewPrefabEntity(lock, ent, name);
+                name.Parse(fullName, scope);
+                scene->NewPrefabEntity(lock, ent, name);
             }
         }
 
@@ -48,7 +52,7 @@ namespace ecs {
             ecs::Entity newEntity;
             if (obj.count("name")) {
                 auto fullName = obj["name"].get<string>();
-                newEntity = scene->GetStagingEntity(fullName);
+                newEntity = scene->GetStagingEntity(fullName, scope);
                 if (!newEntity) {
                     Errorf("Skipping entity with invalid name: %s", fullName);
                     continue;
@@ -69,8 +73,12 @@ namespace ecs {
                     Errorf("Unknown component, ignoring: %s", comp.first);
                 }
             }
-            // Special case so TransformSnapshot doesn't get removed as a dangling component
-            if (newEntity.Has<ecs::TransformTree>(lock)) newEntity.Set<ecs::TransformSnapshot>(lock);
+
+            if (newEntity.Has<ecs::TransformTree>(lock)) {
+                auto &transform = newEntity.Get<ecs::TransformTree>(lock);
+                if (!transform.parent && ent.Has<TransformTree>(lock)) transform.parent = ent;
+                newEntity.Set<ecs::TransformSnapshot>(lock);
+            }
 
             entities.emplace_back(newEntity);
         }

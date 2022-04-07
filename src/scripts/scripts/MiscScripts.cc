@@ -36,9 +36,8 @@ namespace sp::scripts {
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree>(lock)) {
                     auto fullParentName = state.GetParam<std::string>("attach_parent");
-                    auto scene = state.scene.lock();
                     ecs::Name parentName;
-                    if (parentName.Parse(fullParentName, scene.get())) {
+                    if (parentName.Parse(fullParentName, state.scope)) {
                         auto parentEntity = state.GetParam<NamedEntity>("attach_parent_entity");
                         if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
 
@@ -55,8 +54,7 @@ namespace sp::scripts {
                 if (ent.Has<SignalOutput>(lock)) {
                     auto fullTargetName = state.GetParam<std::string>("relative_to");
                     ecs::Name targetName;
-                    auto scene = state.scene.lock();
-                    if (targetName.Parse(fullTargetName, scene.get())) {
+                    if (targetName.Parse(fullTargetName, state.scope)) {
                         auto targetEntity = state.GetParam<NamedEntity>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
 
@@ -128,8 +126,6 @@ namespace sp::scripts {
         InternalScript("model_spawner",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput>(lock)) {
-                    auto scene = state.scene.lock();
-
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
                         glm::vec3 position;
@@ -140,7 +136,7 @@ namespace sp::scripts {
 
                         auto fullTargetName = state.GetParam<std::string>("relative_to");
                         ecs::Name targetName;
-                        if (targetName.Parse(fullTargetName, scene.get())) {
+                        if (targetName.Parse(fullTargetName, state.scope)) {
                             auto targetEntity = state.GetParam<NamedEntity>("target_entity");
                             if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
 
@@ -292,7 +288,6 @@ namespace sp::scripts {
         InternalScript("voxel_controller",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree, VoxelArea>(lock)) {
-                    auto scene = state.scene.lock();
                     auto &transform = ent.Get<TransformTree>(lock);
                     auto &voxelArea = ent.Get<VoxelArea>(lock);
                     auto voxelRotation = transform.GetGlobalRotation(lock);
@@ -308,7 +303,7 @@ namespace sp::scripts {
                     auto targetPosition = glm::vec3(0);
                     auto fullTargetName = state.GetParam<std::string>("follow_target");
                     ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, scene.get())) {
+                    if (targetName.Parse(fullTargetName, state.scope)) {
                         auto targetEntity = state.GetParam<NamedEntity>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
 

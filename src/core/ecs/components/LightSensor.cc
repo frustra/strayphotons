@@ -6,7 +6,10 @@
 
 namespace ecs {
     template<>
-    bool Component<LightSensor>::Load(ScenePtr scenePtr, LightSensor &sensor, const picojson::value &src) {
+    bool Component<LightSensor>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        LightSensor &sensor,
+        const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "translate") {
                 sensor.position = sp::MakeVec3(param.second);

@@ -10,14 +10,18 @@ namespace ecs {
         Assertf(entity.find_first_of(":/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
     }
 
-    bool Name::Parse(std::string fullName, const sp::Scene *currentScene) {
+    bool Name::Parse(const std::string &fullName, const Name &scope) {
         size_t i = fullName.find(':');
         if (i != std::string::npos) {
             scene = fullName.substr(0, i);
             entity = fullName.substr(i + 1);
-        } else if (currentScene != nullptr) {
-            scene = currentScene->name;
-            entity = fullName;
+        } else if (!scope.scene.empty()) {
+            scene = scope.scene;
+            if (scope.entity.empty()) {
+                entity = fullName;
+            } else if (!sp::starts_with(fullName, scope.entity + ".")) {
+                entity = scope.entity + "." + fullName;
+            }
         } else {
             Errorf("Invalid name has no scene: %s", fullName);
             return false;

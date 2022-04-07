@@ -12,7 +12,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::Load(ScenePtr scenePtr, Transform &transform, const picojson::value &src) {
+    bool Component<Transform>::Load(ScenePtr scenePtr, const Name &scope, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "scale") {
                 transform.Scale(sp::MakeVec3(subTransform.second));
@@ -41,20 +41,23 @@ namespace ecs {
     }
 
     template<>
-    bool Component<TransformTree>::Load(ScenePtr scenePtr, TransformTree &transform, const picojson::value &src) {
+    bool Component<TransformTree>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        TransformTree &transform,
+        const picojson::value &src) {
         auto scene = scenePtr.lock();
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
                 auto parentName = subTransform.second.get<string>();
-                transform.parent = scene->GetStagingEntity(parentName);
+                transform.parent = scene->GetStagingEntity(parentName, scope);
                 if (!transform.parent) {
                     Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
                     return false;
                 }
             }
         }
-        return Component<Transform>::Load(scenePtr, transform.pose, src);
+        return Component<Transform>::Load(scenePtr, scope, transform.pose, src);
     }
 
     template<>

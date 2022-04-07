@@ -1,6 +1,7 @@
 #include "Events.hh"
 
 #include "core/Logging.hh"
+#include "game/Scene.hh"
 
 #include <optional>
 #include <picojson/picojson.h>
@@ -8,7 +9,10 @@
 
 namespace ecs {
     template<>
-    bool Component<EventInput>::Load(ScenePtr scenePtr, EventInput &input, const picojson::value &src) {
+    bool Component<EventInput>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        EventInput &input,
+        const picojson::value &src) {
         for (auto event : src.get<picojson::array>()) {
             input.Register(event.get<std::string>());
         }
@@ -29,9 +33,9 @@ namespace ecs {
         return true;
     }
 
-    bool parseEventBinding(sp::Scene *scene, EventBindings::Binding &binding, const picojson::value &src) {
+    bool parseEventBinding(const Name &scope, EventBindings::Binding &binding, const picojson::value &src) {
         if (src.is<std::string>()) {
-            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scene);
+            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope);
             if (targetName) {
                 binding.target = NamedEntity(targetName);
                 binding.destQueue = eventName;
@@ -43,7 +47,7 @@ namespace ecs {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "target") {
                     if (param.second.is<std::string>()) {
-                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scene);
+                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope);
                         if (targetName) {
                             binding.target = NamedEntity(targetName);
                             binding.destQueue = eventName;
@@ -76,18 +80,21 @@ namespace ecs {
     }
 
     template<>
-    bool Component<EventBindings>::Load(ScenePtr scenePtr, EventBindings &bindings, const picojson::value &src) {
+    bool Component<EventBindings>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        EventBindings &bindings,
+        const picojson::value &src) {
         auto scene = scenePtr.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<picojson::array>()) {
                 for (auto bind : param.second.get<picojson::array>()) {
                     EventBindings::Binding binding;
-                    if (!parseEventBinding(scene.get(), binding, bind)) return false;
+                    if (!parseEventBinding(scope, binding, bind)) return false;
                     bindings.Bind(param.first, binding);
                 }
             } else {
                 EventBindings::Binding binding;
-                if (!parseEventBinding(scene.get(), binding, param.second)) return false;
+                if (!parseEventBinding(scope, binding, param.second)) return false;
                 bindings.Bind(param.first, binding);
             }
         }
@@ -134,10 +141,10 @@ namespace ecs {
         return out;
     }
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const sp::Scene *currentScene) {
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope) {
         size_t delimiter = str.find('/');
         ecs::Name entityName;
-        if (entityName.Parse(str.substr(0, delimiter), currentScene)) {
+        if (entityName.Parse(str.substr(0, delimiter), scope)) {
             if (delimiter != std::string::npos) {
                 return std::make_pair(entityName, str.substr(delimiter));
             } else {

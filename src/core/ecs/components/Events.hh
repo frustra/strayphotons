@@ -97,15 +97,18 @@ namespace ecs {
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const sp::Scene *currentScene = nullptr);
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope = Name());
 
     static Component<EventInput> ComponentEventInput("event_input");
     static Component<EventBindings> ComponentEventBindings("event_bindings");
 
     template<>
-    bool Component<EventInput>::Load(ScenePtr scenePtr, EventInput &dst, const picojson::value &src);
+    bool Component<EventInput>::Load(ScenePtr scenePtr, const Name &scope, EventInput &dst, const picojson::value &src);
     template<>
-    bool Component<EventBindings>::Load(ScenePtr scenePtr, EventBindings &dst, const picojson::value &src);
+    bool Component<EventBindings>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        EventBindings &dst,
+        const picojson::value &src);
     template<>
     void Component<EventInput>::Apply(const EventInput &src, Lock<AddRemove> lock, Entity dst);
     template<>

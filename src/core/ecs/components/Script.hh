@@ -29,9 +29,11 @@ namespace ecs {
             std::vector<std::string>>;
 
         ScriptState() : callback(std::monostate()) {}
-        ScriptState(ScenePtr scene) : scene(scene), callback(std::monostate()) {}
-        ScriptState(ScenePtr scene, OnTickFunc callback) : scene(scene), callback(callback) {}
-        ScriptState(ScenePtr scene, PrefabFunc callback) : scene(scene), callback(callback) {}
+        ScriptState(ScenePtr scene, const Name &scope) : scene(scene), scope(scope), callback(std::monostate()) {}
+        ScriptState(ScenePtr scene, const Name &scope, OnTickFunc callback)
+            : scene(scene), scope(scope), callback(callback) {}
+        ScriptState(ScenePtr scene, const Name &scope, PrefabFunc callback)
+            : scene(scene), scope(scope), callback(callback) {}
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
@@ -53,6 +55,7 @@ namespace ecs {
         }
 
         ScenePtr scene;
+        Name scope;
         std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
 
         std::any userData;
@@ -64,12 +67,12 @@ namespace ecs {
     };
 
     struct Script {
-        ScriptState &AddOnTick(ScenePtr scene, OnTickFunc callback) {
-            return scripts.emplace_back(scene, callback);
+        ScriptState &AddOnTick(ScenePtr scene, const Name &scope, OnTickFunc callback) {
+            return scripts.emplace_back(scene, scope, callback);
         }
 
-        ScriptState &AddPrefab(ScenePtr scene, PrefabFunc callback) {
-            return scripts.emplace_back(scene, callback);
+        ScriptState &AddPrefab(ScenePtr scene, const Name &scope, PrefabFunc callback) {
+            return scripts.emplace_back(scene, scope, callback);
         }
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
@@ -96,7 +99,7 @@ namespace ecs {
     static Component<Script> ComponentScript("script");
 
     template<>
-    bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src);
+    bool Component<Script>::Load(ScenePtr scenePtr, const Name &scope, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 
