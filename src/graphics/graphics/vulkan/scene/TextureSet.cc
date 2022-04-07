@@ -64,11 +64,9 @@ namespace sp::vulkan {
         auto it = textureCache.find(key);
         if (it != textureCache.end()) return it->second;
 
-        auto image = GAssets.LoadImage(name);
-        auto imageView = workQueue.Dispatch<ImageView>(image, [=](shared_ptr<sp::Image> image) {
-            auto imageViewFut = device.LoadAssetImage(image, genMipmap, srgb);
-            device.FlushMainQueue();
-            return imageViewFut->Get(); // TODO nonblocking
+        auto imageFut = GAssets.LoadImage(name);
+        auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=](shared_ptr<sp::Image> image) {
+            return device.LoadAssetImage(image, genMipmap, srgb);
         });
         auto pending = Add(imageView);
         textureCache[key] = pending;
