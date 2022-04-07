@@ -37,6 +37,20 @@ namespace sp::vulkan::renderer {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);
+            auto &gelName = light.gelName;
+
+            if (!gelName.empty() && gelTextureCache.find(gelName) == gelTextureCache.end()) {
+                if (starts_with(gelName, "graph:")) {
+                    gelTextureCache[gelName] = {};
+                } else if (starts_with(gelName, "asset:")) {
+                    auto handle = scene.textures.LoadAssetImage(gelName.substr(6));
+                    gelTextureCache[gelName] = handle;
+
+                    // cull lights that don't have their gel loaded yet
+                    if (!handle.Ready()) continue;
+                }
+            }
+
             if (!light.on) continue;
 
             auto &vLight = lights.emplace_back();
@@ -68,12 +82,11 @@ namespace sp::vulkan::renderer {
             data.bounds = {-viewBounds, viewBounds * 2.0f};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
-
             data.gelId = 0;
-            if (!light.gelName.empty()) {
-                auto it = gelTextureCache.emplace(light.gelName, 0).first;
-                vLight.gelName = light.gelName;
-                vLight.gelTexture = &it->second;
+
+            if (!gelName.empty()) {
+                vLight.gelName = gelName;
+                vLight.gelTexture = &gelTextureCache[gelName].index;
             }
 
             shadowAtlasSize.x += extent;
@@ -159,9 +172,8 @@ namespace sp::vulkan::renderer {
 
             data.gelId = 0;
             if (!light.gelName.empty()) {
-                auto it = gelTextureCache.emplace(light.gelName, 0).first;
                 vLight.gelName = light.gelName;
-                vLight.gelTexture = &it->second;
+                vLight.gelTexture = &gelTextureCache[light.gelName].index;
             }
 
             shadowAtlasSize.x += extent;
@@ -187,13 +199,15 @@ namespace sp::vulkan::renderer {
         graph.AddPass("GelTextures")
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &gel : gelTextureCache) {
-                    builder.Read(gel.first, Access::FragmentShaderSampleImage);
+                    if (gel.second.index != 0) continue;
+                    builder.Read(gel.first.substr(6), Access::FragmentShaderSampleImage);
                 }
                 builder.Write("LightState", Access::HostWrite);
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 for (auto &gel : gelTextureCache) {
-                    gel.second = scene.textures.Add(resources.GetImageView(gel.first)).index;
+                    if (gel.second.index != 0) continue;
+                    gel.second = scene.textures.Add(resources.GetImageView(gel.first.substr(6)));
                 }
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
                     if (lights[i].gelTexture) gpuData.lights[i].gelId = *lights[i].gelTexture;
