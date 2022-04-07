@@ -66,15 +66,10 @@
         },
         {
             "name": "right_hand",
-            "transform": {
-                "parent": "right_hand_input",
-                "rotate": [180, 0, 1, 0]
-            },
             "script": {
-                "prefab": "gltf",
+                "prefab": "template",
                 "parameters": {
-                    "model": "vr_glove_right",
-                    "render": true
+                    "source": "vr_hand_right"
                 }
             }
         }

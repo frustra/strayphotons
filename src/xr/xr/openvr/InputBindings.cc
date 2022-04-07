@@ -375,7 +375,7 @@ namespace sp::xr {
                                                                 boneTransforms[i].orientation.x,
                                                                 boneTransforms[i].orientation.y,
                                                                 boneTransforms[i].orientation.z));
-                                                        transform.pose.SetScale(glm::vec3(0.01f));
+                                                        // transform.pose.SetScale(glm::vec3(0.01f));
                                                         transform.pose.SetPosition(
                                                             glm::make_vec3(boneTransforms[i].position.v));
                                                         transform.parent = poseEntity;
@@ -407,7 +407,7 @@ namespace sp::xr {
                                     auto ent = scene->NewSystemEntity(lock, scene, boneEnt.Name());
                                     ent.Set<ecs::TransformTree>(lock);
                                     ent.Set<ecs::SignalOutput>(lock);
-                                    ent.Set<ecs::Renderable>(lock, GAssets.LoadGltf("box"));
+                                    // ent.Set<ecs::Renderable>(lock, GAssets.LoadGltf("box"));
                                 }
                             }
                         }

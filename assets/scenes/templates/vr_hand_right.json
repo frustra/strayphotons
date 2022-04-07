@@ -1,0 +1,23 @@
+{
+    "entities": [
+        {
+            "name": "right_hand",
+            "transform": {
+                "rotate": [180, 0, 1, 0]
+            },
+            "script": [
+                {
+                    "onTick": "auto_attach",
+                    "parameters": { "attach_parent": "input:vr_actions_main_in_righthand_anim" }
+                },
+                {
+                    "prefab": "gltf",
+                    "parameters": {
+                        "model": "vr_glove_right",
+                        "render": true
+                    }
+                }
+            ]
+        }
+    ]
+}

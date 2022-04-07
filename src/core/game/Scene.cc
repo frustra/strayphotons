@@ -54,7 +54,7 @@ namespace sp {
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
         if (entityName) {
-            auto existing = GetEntity(entityName);
+            auto existing = GetStagingEntity(entityName);
             if (existing) return existing;
         }
 
@@ -71,7 +71,7 @@ namespace sp {
         ecs::Entity prefabRoot,
         ecs::Name entityName) {
         if (entityName) {
-            auto existing = GetEntity(entityName);
+            auto existing = GetStagingEntity(entityName);
             if (existing) return existing;
         }
 

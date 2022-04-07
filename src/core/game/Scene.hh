@@ -33,13 +33,13 @@ namespace sp {
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
-        ecs::Entity GetEntity(const ecs::Name &entityName) const {
+        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const {
             auto it = namedEntities.find(entityName);
             if (it != namedEntities.end()) return it->second;
             return {};
         }
 
-        ecs::Entity GetEntity(const std::string &fullName) const {
+        ecs::Entity GetStagingEntity(const std::string &fullName) const {
             ecs::Name entityName;
             if (entityName.Parse(fullName, this)) {
                 auto it = namedEntities.find(entityName);

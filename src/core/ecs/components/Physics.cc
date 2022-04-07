@@ -103,11 +103,11 @@ namespace ecs {
                 float constraintMaxDistance = 0.0f;
                 Transform constraintTransform;
                 if (param.second.is<string>()) {
-                    constraintTarget = scene->GetEntity(param.second.get<string>());
+                    constraintTarget = scene->GetStagingEntity(param.second.get<string>());
                 } else if (param.second.is<picojson::object>()) {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
-                            constraintTarget = scene->GetEntity(constraintParam.second.get<string>());
+                            constraintTarget = scene->GetStagingEntity(constraintParam.second.get<string>());
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {

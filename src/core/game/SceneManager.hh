@@ -79,6 +79,10 @@ namespace sp {
         void PreloadSceneGraphics(ScenePreloadCallback callback);
         void PreloadScenePhysics(ScenePreloadCallback callback);
 
+        std::shared_ptr<Scene> LoadSceneJson(const std::string &name,
+            SceneType sceneType,
+            ecs::SceneInfo::Priority priority);
+
     private:
         void RunSceneActions();
         void UpdateSceneConnections();
@@ -93,10 +97,6 @@ namespace sp {
         void PrintScene(std::string sceneName);
         void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
             ecs::Entity player);
-
-        std::shared_ptr<Scene> LoadSceneJson(const std::string &name,
-            SceneType sceneType,
-            ecs::SceneInfo::Priority priority);
 
         std::shared_ptr<Scene> LoadBindingsJson();
 

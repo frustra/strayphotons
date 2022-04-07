@@ -250,7 +250,7 @@ namespace sp {
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
-                        auto stagingPlayer = scene->GetEntity(ecs::Name("player", "player"));
+                        auto stagingPlayer = scene->GetStagingEntity(ecs::Name("player", "player"));
                         if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
                             auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
                             player = sceneInfo.liveId;
@@ -427,7 +427,7 @@ namespace sp {
 
         auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
         if (!asset) {
-            Errorf("Scene not found");
+            Errorf("Scene not found: %s", sceneName);
             return nullptr;
         }
 
@@ -467,7 +467,7 @@ namespace sp {
                 ecs::Entity entity;
                 if (ent.count("name")) {
                     auto fullName = ent["name"].get<string>();
-                    entity = scene->GetEntity(fullName);
+                    entity = scene->GetStagingEntity(fullName);
                     if (!entity) {
                         Errorf("Skipping entity with invalid name: %s", fullName);
                         continue;

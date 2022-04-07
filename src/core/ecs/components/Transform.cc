@@ -47,7 +47,7 @@ namespace ecs {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
                 auto parentName = subTransform.second.get<string>();
-                transform.parent = scene->GetEntity(parentName);
+                transform.parent = scene->GetStagingEntity(parentName);
                 if (!transform.parent) {
                     Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
                     return false;
