@@ -156,14 +156,24 @@ namespace ecs {
     }
 
     Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {
-        if (!parentEntity.Has<TransformTree>(lock)) return pose;
+        if (!parentEntity) return pose;
+
+        if (!parentEntity.Has<TransformTree>(lock)) {
+            Tracef("TransformTree parent %s does not have a TransformTree", std::to_string(parentEntity));
+            return pose;
+        }
 
         auto parentTransform = parentEntity.Get<TransformTree>(lock).GetGlobalTransform(lock);
         return Transform(parentTransform.matrix * glm::mat4(pose.matrix));
     }
 
     glm::quat TransformTree::GetGlobalRotation(Lock<Read<TransformTree>> lock) const {
-        if (!parentEntity.Has<TransformTree>(lock)) return pose.GetRotation();
+        if (!parentEntity) return pose.GetRotation();
+
+        if (!parentEntity.Has<TransformTree>(lock)) {
+            Tracef("TransformTree parent %s does not have a TransformTree", std::to_string(parentEntity));
+            return pose.GetRotation();
+        }
 
         return parentEntity.Get<TransformTree>(lock).GetGlobalRotation(lock) * pose.GetRotation();
     }
