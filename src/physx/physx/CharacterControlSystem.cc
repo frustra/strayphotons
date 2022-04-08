@@ -97,7 +97,7 @@ namespace sp {
             auto &controller = entity.Get<ecs::CharacterController>(lock);
             if (!controller.pxController) continue;
             auto &transformTree = entity.Get<ecs::TransformTree>(lock);
-            Assertf(!transformTree.parent,
+            Assertf(!transformTree.parentEntity,
                 "CharacterController should not have a TransformTree parent: %s",
                 ecs::ToString(lock, entity));
             auto &transform = transformTree.pose;
@@ -110,7 +110,7 @@ namespace sp {
             glm::vec3 targetPosition = transform.GetPosition();
 
             auto target = controller.target.Get(lock);
-            if (!target.Has<ecs::TransformTree>(lock) || !target.Get<const ecs::TransformTree>(lock).parent) {
+            if (!target.Has<ecs::TransformTree>(lock) || !target.Get<const ecs::TransformTree>(lock).parentEntity) {
                 target = controller.fallbackTarget.Get(lock);
             }
             if (target.Has<ecs::TransformTree>(lock)) {

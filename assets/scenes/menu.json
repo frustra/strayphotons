@@ -990,17 +990,12 @@
 		},
 		{
 			"transform": {
+				"parent": "articulating_arm.arm.Ball_1",
 				"translate": [
 					0,
 					0.04,
 					0
 				]
-			},
-			"script": {
-				"onTick": "auto_attach",
-				"parameters": {
-					"attach_parent": "articulating_arm.arm.Ball_1"
-				}
 			},
 			"laser_line": {},
 			"laser_emitter": {

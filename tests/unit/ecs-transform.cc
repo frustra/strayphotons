@@ -22,15 +22,15 @@ namespace EcsTransformTests {
 
             a = lock.NewEntity();
             auto &transformA = a.Set<ecs::TransformTree>(lock, glm::vec3(4, 0, 0));
-            transformA.parent = root;
+            transformA.parentEntity = root;
 
             b = lock.NewEntity();
             auto &transformB = b.Set<ecs::TransformTree>(lock, glm::vec3(0, 5, 0));
-            transformB.parent = a;
+            transformB.parentEntity = a;
 
             c = lock.NewEntity();
             auto &transformC = c.Set<ecs::TransformTree>(lock, glm::vec3(0, 0, 6));
-            transformC.parent = a;
+            transformC.parentEntity = a;
         }
         {
             Timer t("Try reading transform positions");

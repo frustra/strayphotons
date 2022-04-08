@@ -267,7 +267,11 @@ namespace sp {
 
             for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
                 if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock)) continue;
-                ent.Set<ecs::TransformSnapshot>(lock, ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
+                auto &transform = ent.Get<ecs::TransformTree>(lock);
+                if (!transform.parentEntity && transform.parentName) {
+                    transform.parentEntity = ecs::EntityWith<ecs::Name>(lock, transform.parentName);
+                }
+                ent.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
             }
 
             constraintSystem.BreakConstraints(lock);

@@ -110,7 +110,7 @@ namespace sp::xr {
                     ent.Set<ecs::XRView>(lock, eye);
 
                     auto &transform = ent.Set<ecs::TransformTree>(lock);
-                    transform.parent = vrOrigin;
+                    transform.parentEntity = vrOrigin;
 
                     auto &view = ent.Set<ecs::View>(lock);
                     view.extents = {vrWidth, vrHeight};
@@ -226,7 +226,7 @@ namespace sp::xr {
                             auto &transform = ent.Get<ecs::TransformTree>(lock);
                             auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
                             transform.pose = glm::transpose(glm::make_mat3x4((float *)pose));
-                            transform.parent = vrOrigin;
+                            transform.parentEntity = vrOrigin;
                         }
                     }
                 }

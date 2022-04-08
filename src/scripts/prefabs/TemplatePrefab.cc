@@ -76,7 +76,9 @@ namespace ecs {
 
             if (newEntity.Has<ecs::TransformTree>(lock)) {
                 auto &transform = newEntity.Get<ecs::TransformTree>(lock);
-                if (!transform.parent && ent.Has<TransformTree>(lock)) transform.parent = ent;
+                if (!transform.parentEntity && !transform.parentName && ent.Has<TransformTree>(lock)) {
+                    transform.parentEntity = ent;
+                }
                 newEntity.Set<ecs::TransformSnapshot>(lock);
             }
 

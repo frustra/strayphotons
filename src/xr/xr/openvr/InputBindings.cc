@@ -288,7 +288,7 @@ namespace sp::xr {
 
                                                 auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
                                                 transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
-                                                transform.parent = vrOrigin;
+                                                transform.parentEntity = vrOrigin;
                                             }
                                         }
                                     }
@@ -320,7 +320,7 @@ namespace sp::xr {
 
                                                 auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
                                                 transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
-                                                transform.parent = vrOrigin;
+                                                transform.parentEntity = vrOrigin;
                                             }
 
                                             uint32_t boneCount = 0;
@@ -378,7 +378,7 @@ namespace sp::xr {
                                                         // transform.pose.SetScale(glm::vec3(0.01f));
                                                         transform.pose.SetPosition(
                                                             glm::make_vec3(boneTransforms[i].position.v));
-                                                        transform.parent = poseEntity;
+                                                        transform.parentEntity = poseEntity;
                                                     }
                                                 }
                                             }

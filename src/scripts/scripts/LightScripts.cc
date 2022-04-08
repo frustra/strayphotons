@@ -27,9 +27,9 @@ namespace sp::scripts {
                     }
                     while (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
                         auto &transform = ent.Get<TransformTree>(lock);
-                        if (transform.parent.Has<TransformTree>(lock)) {
+                        if (transform.parentEntity.Has<TransformTree>(lock)) {
                             transform.pose = transform.GetGlobalTransform(lock);
-                            transform.parent = Entity();
+                            transform.parentEntity = Entity();
                         } else {
                             ecs::Name parentName;
                             if (parentName.Parse(CVarFlashlightParent.Get())) {
@@ -37,7 +37,7 @@ namespace sp::scripts {
                                 if (parent) {
                                     transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
                                     transform.pose.SetRotation(glm::quat());
-                                    transform.parent = parent;
+                                    transform.parentEntity = parent;
                                 } else {
                                     Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
                                 }

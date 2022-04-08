@@ -32,23 +32,6 @@ namespace sp::scripts {
                     }
                 }
             }),
-        InternalScript("auto_attach",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<TransformTree>(lock)) {
-                    auto fullParentName = state.GetParam<std::string>("attach_parent");
-                    ecs::Name parentName;
-                    if (parentName.Parse(fullParentName, state.scope)) {
-                        auto parentEntity = state.GetParam<NamedEntity>("attach_parent_entity");
-                        if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
-
-                        auto &transform = ent.Get<TransformTree>(lock);
-                        transform.parent = parentEntity.Get(lock);
-                        state.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
-                    } else {
-                        Errorf("Attach parent name is invalid: %s", fullParentName);
-                    }
-                }
-            }),
         InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {

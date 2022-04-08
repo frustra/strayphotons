@@ -3,6 +3,8 @@
 #include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
+    #include "ecs/components/Name.hh"
+
 namespace ecs {
     extern "C" {
 #endif
@@ -49,13 +51,17 @@ namespace ecs {
     void transform_get_rotation(GlmQuat *out, const Transform *t);
     void transform_get_scale(GlmVec3 *out, const Transform *t);
 
+#ifdef __cplusplus
+    // If this changes, make sure it is the same in Rust and WASM
+    static_assert(sizeof(Transform) == 48, "Wrong Transform size");
+
     typedef Transform TransformSnapshot;
 
-    typedef struct TransformTree {
+    struct TransformTree {
         Transform pose;
-        TecsEntity parent;
+        TecsEntity parentEntity;
+        ecs::Name parentName;
 
-#ifdef __cplusplus
     #ifndef SP_WASM_BUILD
         TransformTree() {}
         TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
@@ -66,12 +72,7 @@ namespace ecs {
         Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
         glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
     #endif
-#endif
-    } TransformTree;
-
-#ifdef __cplusplus
-    // If this changes, make sure it is the same in Rust and WASM
-    static_assert(sizeof(Transform) == 48, "Wrong Transform size");
+    };
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
@@ -80,7 +81,10 @@ namespace ecs {
     template<>
     bool Component<Transform>::Load(ScenePtr scenePtr, const Name &scope, Transform &dst, const picojson::value &src);
     template<>
-    bool Component<TransformTree>::Load(ScenePtr scenePtr, const Name &scope, TransformTree &dst, const picojson::value &src);
+    bool Component<TransformTree>::Load(ScenePtr scenePtr,
+        const Name &scope,
+        TransformTree &dst,
+        const picojson::value &src);
     template<>
     void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt);
     template<>

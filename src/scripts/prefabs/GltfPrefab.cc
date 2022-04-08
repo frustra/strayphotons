@@ -51,7 +51,7 @@ namespace ecs {
             }
 
             TransformTree transform(node.transform);
-            if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
+            if (parentEnt.Has<TransformTree>(lock)) transform.parentEntity = parentEnt;
             Component<TransformTree>::Apply(transform, lock, newEntity);
 
             PhysicsGroup group = PhysicsGroup::World;
@@ -100,11 +100,11 @@ namespace ecs {
             }
 
             auto jointsParam = state.GetParam<std::string>("physics_joints");
-            if (!jointsParam.empty() && transform.parent.Has<TransformTree>(lock)) {
+            if (!jointsParam.empty() && transform.parentEntity.Has<TransformTree>(lock)) {
                 auto it = jointNodes.find(nodeId);
                 if (it != jointNodes.end()) {
                     sp::to_lower(jointsParam);
-                    auto parentTransform = transform.parent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                    auto parentTransform = transform.parentEntity.Get<TransformTree>(lock).GetGlobalTransform(lock);
                     auto globalTransform = transform.GetGlobalTransform(lock);
                     glm::vec3 boneVector = globalTransform.GetPosition() - parentTransform.GetPosition();
                     float boneLength = glm::length(boneVector);
@@ -115,12 +115,12 @@ namespace ecs {
                         physics.shape = PhysicsShape::Sphere(0.01f * globalTransform.GetScale().x);
                     }
                     if (jointsParam == "spherical") {
-                        // physics.SetJoint(transform.parent,
+                        // physics.SetJoint(transform.parentEntity,
                         //     PhysicsJointType::Spherical,
                         //     glm::vec2(),
                         //     -boneVector);
                     } else if (jointsParam == "hinge") {
-                        // physics.SetJoint(transform.parent, PhysicsJointType::Hinge, glm::vec2(),
+                        // physics.SetJoint(transform.parentEntity, PhysicsJointType::Hinge, glm::vec2(),
                         // -boneVector);
                     } else {
                         Abortf("Unknown physics_joints param: %s", jointsParam);
