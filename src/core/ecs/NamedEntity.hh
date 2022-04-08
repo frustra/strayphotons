@@ -9,31 +9,25 @@ namespace ecs {
     class NamedEntity {
     public:
         NamedEntity() {}
-        NamedEntity(const std::string &sceneName, const std::string &entityName, Entity ent = Entity())
-            : name(sceneName, entityName), ent(ent) {}
-        NamedEntity(const ecs::Name &name, Entity ent = Entity()) : name(name), ent(ent) {}
+        NamedEntity(const Tecs::Entity &ent) : ent(ent) {}
+        NamedEntity(const ecs::Name &name) : name(name) {}
+        NamedEntity(const std::string &sceneName, const std::string &entityName) : name(sceneName, entityName) {}
 
         const ecs::Name &Name() const {
             return name;
         }
 
+        operator const Entity &() const {
+            return ent;
+        }
+
         const Entity &Get(Lock<Read<ecs::Name>> lock);
 
-        Entity Get(Lock<Read<ecs::Name>> lock) const;
-
         bool operator==(const NamedEntity &other) const {
-            return name && name == other.name;
+            return (name && name == other.name) || (ent && ent == other.ent);
         }
 
         bool operator!=(const NamedEntity &other) const {
-            return !(*this == other);
-        }
-
-        bool operator==(const ecs::Name &other) const {
-            return name && name == other;
-        }
-
-        bool operator!=(const ecs::Name &other) const {
             return !(*this == other);
         }
 

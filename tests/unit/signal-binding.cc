@@ -30,13 +30,13 @@ namespace SignalBindingTests {
             hand.Set<ecs::SignalOutput>(lock);
 
             auto &playerBindings = player.Set<ecs::SignalBindings>(lock);
-            playerBindings.Bind(TEST_SIGNAL_ACTION1, ecs::NamedEntity("", "player", player), TEST_SOURCE_KEY);
-            playerBindings.Bind(TEST_SIGNAL_ACTION2, ecs::NamedEntity("", "player", player), TEST_SOURCE_KEY);
-            playerBindings.Bind(TEST_SIGNAL_ACTION2, ecs::NamedEntity("", "player", player), TEST_SOURCE_BUTTON);
+            playerBindings.Bind(TEST_SIGNAL_ACTION1, player, TEST_SOURCE_KEY);
+            playerBindings.Bind(TEST_SIGNAL_ACTION2, player, TEST_SOURCE_KEY);
+            playerBindings.Bind(TEST_SIGNAL_ACTION2, player, TEST_SOURCE_BUTTON);
 
             auto &handBindings = hand.Set<ecs::SignalBindings>(lock);
-            handBindings.Bind(TEST_SIGNAL_ACTION1, ecs::NamedEntity("", "player", player), TEST_SOURCE_BUTTON);
-            handBindings.Bind(TEST_SIGNAL_ACTION3, ecs::NamedEntity("", "unknown"), TEST_SOURCE_BUTTON);
+            handBindings.Bind(TEST_SIGNAL_ACTION1, player, TEST_SOURCE_BUTTON);
+            handBindings.Bind(TEST_SIGNAL_ACTION3, ecs::Name("", "unknown"), TEST_SOURCE_BUTTON);
         }
         {
             Timer t("Try looking up some bindings");

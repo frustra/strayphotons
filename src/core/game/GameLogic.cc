@@ -128,9 +128,8 @@ namespace sp {
                 auto list = bindings.Lookup(bindingName);
                 Logf("    %s:%s", bindingName, list->empty() ? " none" : "");
                 for (auto &binding : *list) {
-                    auto e = binding.target.Get(lock);
-                    if (e) {
-                        Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, e));
+                    if (binding.target) {
+                        Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, binding.target));
                     } else {
                         Logf("      %s on %s(missing)", binding.destQueue, binding.target.Name().String());
                     }

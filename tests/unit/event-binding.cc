@@ -30,9 +30,9 @@ namespace EventBindingTests {
             AssertEqual(eventInput.events.size(), 2u, "EventInput did not save correctly");
 
             auto &playerBindings = player.Set<ecs::EventBindings>(lock);
-            playerBindings.Bind(TEST_SOURCE_BUTTON, ecs::NamedEntity("", "hand", hand), TEST_EVENT_ACTION1);
-            playerBindings.Bind(TEST_SOURCE_KEY, ecs::NamedEntity("", "hand", hand), TEST_EVENT_ACTION2);
-            playerBindings.Bind(TEST_SOURCE_KEY, ecs::NamedEntity("", "player", player), TEST_EVENT_ACTION2);
+            playerBindings.Bind(TEST_SOURCE_BUTTON, hand, TEST_EVENT_ACTION1);
+            playerBindings.Bind(TEST_SOURCE_KEY, hand, TEST_EVENT_ACTION2);
+            playerBindings.Bind(TEST_SOURCE_KEY, player, TEST_EVENT_ACTION2);
         }
         {
             Timer t("Try reading some bindings");
@@ -63,9 +63,9 @@ namespace EventBindingTests {
                     ecs::Write<ecs::EventInput>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, TEST_SOURCE_BUTTON, ecs::NamedEntity("", "player", player), 42);
-            bindings.SendEvent(lock, TEST_SOURCE_KEY, ecs::NamedEntity("", "player", player), 'a');
-            bindings.SendEvent(lock, TEST_SOURCE_KEY, ecs::NamedEntity("", "player", player), 'b');
+            bindings.SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
+            bindings.SendEvent(lock, TEST_SOURCE_KEY, player, 'a');
+            bindings.SendEvent(lock, TEST_SOURCE_KEY, player, 'b');
         }
         {
             Timer t("Read the test events");

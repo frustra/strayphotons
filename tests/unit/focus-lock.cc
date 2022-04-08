@@ -30,11 +30,11 @@ namespace FocusLockTests {
             player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
             player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
-            signalBindings.Bind(TEST_SIGNAL_ACTION, ecs::NamedEntity("", "mouse", mouse), TEST_SIGNAL_BUTTON);
+            signalBindings.Bind(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
 
             keyboard.Set<ecs::Name>(lock, "", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
-            eventBindings.Bind(TEST_EVENT_KEY, ecs::NamedEntity("", "player", player), TEST_EVENT_ACTION);
+            eventBindings.Bind(TEST_EVENT_KEY, player, TEST_EVENT_ACTION);
 
             mouse.Set<ecs::Name>(lock, "", "mouse");
             auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);
@@ -51,7 +51,7 @@ namespace FocusLockTests {
                 ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("", "keyboard", keyboard), 42);
+            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
@@ -85,7 +85,7 @@ namespace FocusLockTests {
                 ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("", "keyboard", keyboard), 42);
+            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;

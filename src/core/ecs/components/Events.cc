@@ -283,8 +283,7 @@ namespace ecs {
         return nullptr;
     }
 
-    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
-        const Event &event) const {
+    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) {
         const FocusLock *focusLock = nullptr;
         if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
         auto list = sourceToDest.find(event.name);

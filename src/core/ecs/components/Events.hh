@@ -83,12 +83,12 @@ namespace ecs {
         void UnbindDest(NamedEntity target, std::string dest);
 
         const BindingList *Lookup(const std::string source) const;
-        void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) const;
+        void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event);
         template<typename T>
         inline void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
             const std::string &name,
             const NamedEntity &source,
-            T data) const {
+            T data) {
             SendEvent(lock, Event(name, source, data));
         }
         std::vector<std::string> GetBindingNames() const;
