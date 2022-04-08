@@ -61,11 +61,16 @@ namespace sp {
             std::lock_guard lock(actionMutex);
             actionQueue.clear();
         }
-        graphicsPreload.test_and_set();
-        graphicsPreload.notify_all();
-        physicsPreload.test_and_set();
-        physicsPreload.notify_all();
-        StopThread();
+        {
+            // Make sure we don't deadlock on shutdown due to waiting on a preload.
+            std::lock_guard lock(preloadMutex);
+            graphicsPreload.test_and_set();
+            graphicsPreload.notify_all();
+            physicsPreload.test_and_set();
+            physicsPreload.notify_all();
+            StopThread(false);
+        }
+        StopThread(true);
 
         auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
         auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
@@ -390,6 +395,7 @@ namespace sp {
         {
             std::lock_guard lock(preloadMutex);
             Assertf(!preloadScene, "Already preloading %s when trying to preload %s", preloadScene->name, scene->name);
+            if (exiting.load()) return;
             preloadScene = scene;
             graphicsPreload.clear();
             physicsPreload.clear();
