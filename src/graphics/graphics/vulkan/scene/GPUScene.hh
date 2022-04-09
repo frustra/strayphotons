@@ -35,6 +35,7 @@ namespace sp::vulkan {
     struct GPUMeshPrimitive {
         uint32 firstIndex, vertexOffset;
         uint32 indexCount, vertexCount; // count of elements in the index/vertex buffers
+        uint32 jointsVertexOffset;
         uint16 baseColorTexID, metallicRoughnessTexID;
         // other material properties of the primitive can be stored here (or material ID)
     };
@@ -53,7 +54,9 @@ namespace sp::vulkan {
         uint32 meshIndex;
         uint32 visibilityMask;
         uint32 vertexOffset;
+        uint32 jointPosesOffset = 0xffffffff;
         uint32 opticID = 0;
+        float _padding[3];
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
@@ -65,7 +68,8 @@ namespace sp::vulkan {
     public:
         GPUScene(DeviceContext &device);
         void Flush();
-        void LoadState(rg::RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
+        void LoadState(rg::RenderGraph &graph,
+            ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock);
         shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
@@ -86,11 +90,13 @@ namespace sp::vulkan {
 
         BufferPtr indexBuffer;
         BufferPtr vertexBuffer;
+        BufferPtr jointsBuffer;
         BufferPtr primitiveLists;
         BufferPtr models;
 
         uint32 renderableCount = 0;
         std::vector<ecs::Entity> opticEntities;
+        std::vector<glm::mat4> jointPoses;
 
         uint32 vertexCount = 0;
         uint32 primitiveCount = 0;

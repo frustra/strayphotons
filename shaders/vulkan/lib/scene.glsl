@@ -1,6 +1,7 @@
 struct MeshPrimitive {
     uint firstIndex, vertexOffset;
     uint indexCount, vertexCount;
+    uint jointsVertexOffset;
     uint16_t baseColorTexID, metallicRoughnessTexID;
 };
 
@@ -16,6 +17,7 @@ struct RenderableEntity {
     uint modelIndex;
     uint visibilityMask;
     uint vertexOffset;
+    uint jointPosesOffset;
     uint opticID;
 };
 

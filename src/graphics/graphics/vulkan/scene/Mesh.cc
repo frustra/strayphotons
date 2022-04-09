@@ -26,6 +26,7 @@ namespace sp::vulkan {
         for (auto &assetPrimitive : mesh->primitives) {
             indexCount += assetPrimitive.indexBuffer.Count();
             vertexCount += assetPrimitive.positionBuffer.Count();
+            jointsCount += assetPrimitive.jointsBuffer.Count();
         }
 
         indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount);
@@ -35,6 +36,14 @@ namespace sp::vulkan {
         vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount);
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
+
+        JointVertex *jointsData = nullptr, *jointsDataStart = nullptr;
+
+        if (jointsCount > 0) {
+            jointsBuffer = scene.jointsBuffer->ArrayAllocate(jointsCount);
+            jointsData = (JointVertex *)jointsBuffer->Mapped();
+            jointsDataStart = jointsData;
+        }
 
         for (auto &assetPrimitive : mesh->primitives) {
             ZoneScopedN("CreatePrimitive");
@@ -55,12 +64,22 @@ namespace sp::vulkan {
             vkPrimitive.vertexCount = assetPrimitive.positionBuffer.Count();
             vkPrimitive.vertexOffset = vertexData - vertexDataStart;
 
+            vkPrimitive.jointsVertexCount = assetPrimitive.jointsBuffer.Count();
+            vkPrimitive.jointsVertexOffset = jointsData - jointsDataStart;
+
             for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
                 SceneVertex &vertex = *vertexData++;
 
                 vertex.position = assetPrimitive.positionBuffer.Read(i);
                 if (i < assetPrimitive.normalBuffer.Count()) vertex.normal = assetPrimitive.normalBuffer.Read(i);
                 if (i < assetPrimitive.texcoordBuffer.Count()) vertex.uv = assetPrimitive.texcoordBuffer.Read(i);
+
+                if (jointsData && i < assetPrimitive.jointsBuffer.Count()) {
+                    Assert(i < assetPrimitive.weightsBuffer.Count(), "must have one weight per joint index");
+                    JointVertex &joints = *jointsData++;
+                    joints.jointIndexes = assetPrimitive.jointsBuffer.Read(i);
+                    joints.jointWeights = assetPrimitive.weightsBuffer.Read(i);
+                }
             }
 
             vkPrimitive.baseColor = scene.textures.LoadGltfMaterial(source,
@@ -85,6 +104,9 @@ namespace sp::vulkan {
                 gpuPrim->vertexCount = p.vertexCount;
                 gpuPrim->firstIndex = p.indexOffset;
                 gpuPrim->vertexOffset = p.vertexOffset;
+                gpuPrim->jointsVertexOffset = p.jointsVertexCount > 0
+                                                  ? jointsBuffer->ArrayOffset() + p.jointsVertexOffset
+                                                  : 0xffffffff;
                 gpuPrim->baseColorTexID = p.baseColor.index;
                 gpuPrim->metallicRoughnessTexID = p.metallicRoughness.index;
                 gpuPrim++;

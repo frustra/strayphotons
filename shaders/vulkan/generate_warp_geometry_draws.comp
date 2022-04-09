@@ -52,6 +52,8 @@ void main() {
         WarpGeometryParams params;
         params.modelMat = renderable.modelToWorld;
         params.outputVertexOffset = renderable.vertexOffset + prim.vertexOffset;
+        params.jointsVertexOffset = prim.jointsVertexOffset;
+        params.jointPosesOffset = renderable.jointPosesOffset;
         drawParams[drawIndex] = params;
     }
 }

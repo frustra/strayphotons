@@ -16,6 +16,10 @@ namespace sp::vulkan {
             vk::BufferUsageFlagBits::eVertexBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
+        jointsBuffer = device.AllocateBuffer({sizeof(JointVertex), 128 * 1024},
+            vk::BufferUsageFlagBits::eStorageBuffer,
+            VMA_MEMORY_USAGE_CPU_TO_GPU);
+
         primitiveLists = device.AllocateBuffer({sizeof(GPUMeshPrimitive), 10 * 1024},
             vk::BufferUsageFlagBits::eStorageBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -32,9 +36,10 @@ namespace sp::vulkan {
     }
 
     void GPUScene::LoadState(rg::RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock) {
         renderables.clear();
         opticEntities.clear();
+        jointPoses.clear();
         renderableCount = 0;
         primitiveCount = 0;
         vertexCount = 0;
@@ -66,6 +71,19 @@ namespace sp::vulkan {
                 gpuRenderable.opticID = opticEntities.size();
             }
 
+            if (!renderable.joints.empty()) gpuRenderable.jointPosesOffset = jointPoses.size();
+
+            for (auto &joint : renderable.joints) {
+                auto jointEntity = ecs::EntityWith<ecs::Name>(lock, joint.entity); // TODO rely on EntityRef
+                if (!jointEntity || !jointEntity.Has<ecs::TransformSnapshot>(lock)) {
+                    jointPoses.emplace_back(); // missing joints get an identity matrix
+                    continue;
+                }
+
+                auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock);
+                jointPoses.push_back(glm::mat4(jointTransform.matrix) * joint.inverseBindPose);
+            }
+
             renderables.push_back(gpuRenderable);
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
@@ -80,9 +98,13 @@ namespace sp::vulkan {
                     {sizeof(renderables.front()), std::max(size_t(1), renderables.size())},
                     Residency::CPU_TO_GPU,
                     Access::HostWrite);
+
+                Assertf(jointPoses.size() <= 100, "too many joints: %d", jointPoses.size());
+                builder.CreateUniform("JointPoses", sizeof(glm::mat4) * 100); // TODO: don't hardcode to 100 joints
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());
+                resources.GetBuffer("JointPoses")->CopyFrom(jointPoses.data(), jointPoses.size());
             });
     }
 
@@ -228,6 +250,7 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 builder.Read("WarpedVertexDrawCmds", Access::IndirectBuffer);
                 builder.Read("WarpedVertexDrawParams", Access::VertexShaderReadStorage);
+                builder.Read("JointPoses", Access::VertexShaderReadUniform);
 
                 builder.CreateBuffer("WarpedVertexBuffer",
                     {sizeof(SceneVertex), std::max(1u, vertexCount)},
@@ -245,6 +268,9 @@ namespace sp::vulkan {
                 cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
                 cmd.SetStorageBuffer(0, 0, paramBuffer);
                 cmd.SetStorageBuffer(0, 1, warpedVertexBuffer);
+                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("JointPoses"));
+                cmd.SetStorageBuffer(0, 3, jointsBuffer);
+
                 cmd.SetVertexLayout(SceneVertex::Layout());
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::ePointList);
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
