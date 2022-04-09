@@ -59,9 +59,6 @@ namespace ecs {
                 } else {
                     auto parentScene = scene.lock();
                     if (parentScene) scope.scene = parentScene->name;
-                    if (sceneInfo.prefabStagingId) {
-                        scope.entity = std::to_string(sceneInfo.prefabStagingId.generation);
-                    }
                 }
             }
             auto &comp = dst.Set<CompType>(lock);

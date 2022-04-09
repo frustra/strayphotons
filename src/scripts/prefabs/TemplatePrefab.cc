@@ -17,7 +17,7 @@ namespace ecs {
 
         ecs::Name scope(scene->name, "");
         if (ent.Has<Name>(lock)) scope = ent.Get<Name>(lock);
-        Logf("Loading template: %s with scope %s", sourceName, scope.String());
+        Logf("Loading template: %s with scope '%s'", sourceName, scope.String());
 
         auto asset = sp::GAssets.Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
         if (!asset) {
