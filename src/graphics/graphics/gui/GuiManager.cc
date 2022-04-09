@@ -3,6 +3,7 @@
 #include "ConsoleGui.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -37,8 +38,9 @@ namespace sp {
         io.KeyMap[ImGuiKey_Y] = KEY_Y;
         io.KeyMap[ImGuiKey_Z] = KEY_Z;
 
-        guiEntity = ecs::NamedEntity("gui", name);
-        keyboardEntity = ecs::NamedEntity("input", "keyboard");
+        guiEntity = ecs::GEntityRefs.Get("gui", name);
+        keyboardEntity = ecs::GEntityRefs.Get("input", "keyboard");
+        playerEntity = ecs::GEntityRefs.Get("player", "player");
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "gui",
@@ -49,18 +51,12 @@ namespace sp {
                 ent.Set<ecs::Gui>(lock).manager = this;
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
-                    ecs::NamedEntity("player", "player"),
-                    INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER, playerEntity, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                    ecs::NamedEntity("player", "player"),
+                    playerEntity,
                     INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X,
-                    ecs::NamedEntity("player", "player"),
-                    INPUT_SIGNAL_MENU_CURSOR_X);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y,
-                    ecs::NamedEntity("player", "player"),
-                    INPUT_SIGNAL_MENU_CURSOR_Y);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, playerEntity, INPUT_SIGNAL_MENU_CURSOR_X);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, playerEntity, INPUT_SIGNAL_MENU_CURSOR_Y);
             });
     }
 
@@ -90,7 +86,7 @@ namespace sp {
                 hasFocus = focusLock.HasPrimaryFocus(focusLayer);
             }
 
-            auto keyboard = keyboardEntity.Get(lock);
+            auto keyboard = keyboardEntity.Get();
             if (keyboard.Has<ecs::SignalOutput>(lock)) {
                 auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
                 for (int keyCode = KEY_SPACE; keyCode < KEY_BACKTICK; keyCode++) {
@@ -117,7 +113,7 @@ namespace sp {
             io.MouseWheel = 0.0f;
             io.MouseWheelH = 0.0f;
             if (hasFocus) {
-                auto gui = guiEntity.Get(lock);
+                auto gui = guiEntity.Get();
                 if (gui.Has<ecs::EventInput>(lock)) {
                     ecs::Event event;
                     while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_SCROLL, event)) {

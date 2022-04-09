@@ -1,6 +1,7 @@
 #include "Events.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <optional>
@@ -37,7 +38,7 @@ namespace ecs {
         if (src.is<std::string>()) {
             auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope);
             if (targetName) {
-                binding.target = NamedEntity(targetName);
+                binding.target = GEntityRefs.Get(targetName);
                 binding.destQueue = eventName;
             } else {
                 Errorf("Invalid event binding target: %s", src.get<std::string>());
@@ -49,7 +50,7 @@ namespace ecs {
                     if (param.second.is<std::string>()) {
                         auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope);
                         if (targetName) {
-                            binding.target = NamedEntity(targetName);
+                            binding.target = GEntityRefs.Get(targetName);
                             binding.destQueue = eventName;
                         } else {
                             Errorf("Invalid event binding target: %s", param.second.get<std::string>());
@@ -129,8 +130,10 @@ namespace ecs {
                     out << glm::to_string(arg);
                 } else if constexpr (std::is_same_v<T, glm::vec3>) {
                     out << glm::to_string(arg);
+                } else if constexpr (std::is_same_v<T, EntityRef>) {
+                    out << arg.Name().String();
                 } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                    out << "Entity(" << arg.id << ")";
+                    out << std::to_string(arg);
                 } else if constexpr (std::is_same_v<T, std::string>) {
                     out << "\"" << arg << "\"";
                 } else {
@@ -226,14 +229,14 @@ namespace ecs {
         }
     }
 
-    void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
+    void EventBindings::Bind(std::string source, EntityRef target, std::string dest) {
         Binding binding;
         binding.target = target;
         binding.destQueue = dest;
         Bind(source, binding);
     }
 
-    void EventBindings::Unbind(std::string source, NamedEntity target, std::string dest) {
+    void EventBindings::Unbind(std::string source, EntityRef target, std::string dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             auto binding = list->second.begin();
@@ -251,7 +254,7 @@ namespace ecs {
         sourceToDest.erase(source);
     }
 
-    void EventBindings::UnbindTarget(NamedEntity target) {
+    void EventBindings::UnbindTarget(EntityRef target) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -264,7 +267,7 @@ namespace ecs {
         }
     }
 
-    void EventBindings::UnbindDest(NamedEntity target, std::string dest) {
+    void EventBindings::UnbindDest(EntityRef target, std::string dest) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -283,13 +286,14 @@ namespace ecs {
         return nullptr;
     }
 
-    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) {
+    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
+        const Event &event) const {
         const FocusLock *focusLock = nullptr;
         if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
-                auto ent = binding.target.Get(lock);
+                auto ent = binding.target.Get();
                 if (focusLock && ent.Has<FocusLayer>(lock)) {
                     auto &layer = ent.Get<FocusLayer>(lock);
                     if (!focusLock->HasPrimaryFocus(layer)) continue;

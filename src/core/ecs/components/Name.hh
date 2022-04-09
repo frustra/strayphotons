@@ -1,7 +1,8 @@
 #pragma once
 
 #include <functional>
-#include <string>
+#include <iostream>
+#include <string_view>
 
 namespace sp {
     class Scene;
@@ -12,7 +13,7 @@ namespace ecs {
         std::string scene, entity;
 
         Name() {}
-        Name(std::string scene, std::string entity);
+        Name(std::string_view scene, std::string_view entity);
 
         bool Parse(const std::string &fullName, const Name &scope = Name());
 
@@ -29,6 +30,8 @@ namespace ecs {
             return scene == other.scene && entity == other.entity;
         }
     };
+
+    std::ostream &operator<<(std::ostream &out, const Name &v);
 } // namespace ecs
 
 namespace std {

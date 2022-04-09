@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ecs/Components.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
@@ -26,7 +26,7 @@ namespace ecs {
     const float PLAYER_PUSH_FORCE = 0.3f;
 
     struct CharacterController {
-        NamedEntity target, fallbackTarget, movementProxy;
+        EntityRef target, fallbackTarget, movementProxy;
 
         physx::PxCapsuleController *pxController = nullptr;
     };

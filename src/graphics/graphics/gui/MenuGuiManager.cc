@@ -27,7 +27,7 @@ namespace sp {
             auto lock =
                 ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
-            auto gui = guiEntity.Get(lock);
+            auto gui = guiEntity.Get();
             Assert(gui.Has<ecs::EventInput>(lock), "Expected menu_gui to start with an EventInput");
 
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
@@ -53,7 +53,7 @@ namespace sp {
                 ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto gui = guiEntity.Get(lock);
+            auto gui = guiEntity.Get();
             if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
                 while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_OPEN, event)) {
@@ -123,7 +123,7 @@ namespace sp {
             auto lock =
                 ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::FocusLayer, ecs::FocusLock>>();
 
-            auto gui = guiEntity.Get(lock);
+            auto gui = guiEntity.Get();
             if (gui.Has<ecs::FocusLayer>(lock)) gui.Set<ecs::FocusLayer>(lock, focusLayer);
             auto &focusLock = lock.Get<ecs::FocusLock>();
             if (MenuOpen()) {

@@ -2,7 +2,7 @@
 
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 #include "xr/XrSystem.hh"
 #include "xr/openvr/EventHandler.hh"
 #include "xr/openvr/InputBindings.hh"
@@ -39,7 +39,7 @@ namespace sp {
             void Frame() override;
 
             void RegisterModels();
-            ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
+            ecs::Entity GetEntityForDeviceIndex(size_t index);
 
             GraphicsContext *context;
 
@@ -48,16 +48,12 @@ namespace sp {
             EventHandler eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
-            EnumArray<ecs::NamedEntity, ecs::XrEye> views = {
-                {ecs::NamedEntity("vr", "left_eye"), ecs::NamedEntity("vr", "right_eye")},
-            };
+            EnumArray<ecs::EntityRef, ecs::XrEye> views;
 
-            ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("vr", "origin");
-            ecs::NamedEntity vrHmdEntity = ecs::NamedEntity("vr", "hmd");
-            ecs::NamedEntity vrControllerLeftEntity = ecs::NamedEntity("vr", "controller_left");
-            ecs::NamedEntity vrControllerRightEntity = ecs::NamedEntity("vr", "controller_right");
-            std::array<ecs::NamedEntity, vr::k_unMaxTrackedDeviceCount> reservedEntities = {};
-            std::array<ecs::NamedEntity *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
+            ecs::EntityRef vrOriginEntity, vrHmdEntity;
+            ecs::EntityRef vrControllerLeftEntity, vrControllerRightEntity;
+            std::array<ecs::EntityRef, vr::k_unMaxTrackedDeviceCount> reservedEntities = {};
+            std::array<ecs::EntityRef *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
             uint32 frameCountWorkaround = 0;
             int texWidth = 0, texHeight = 0;

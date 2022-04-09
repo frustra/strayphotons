@@ -5,7 +5,7 @@
 #include "game/Scene.hh"
 
 namespace ecs {
-    Name::Name(std::string scene, std::string entity) : scene(scene), entity(entity) {
+    Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {
         Assertf(scene.find_first_of(":/ ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
         Assertf(entity.find_first_of(":/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
     }
@@ -35,6 +35,10 @@ namespace ecs {
             return false;
         }
         return true;
+    }
+
+    std::ostream &operator<<(std::ostream &out, const Name &v) {
+        return out << v.String();
     }
 } // namespace ecs
 

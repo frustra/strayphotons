@@ -2,7 +2,7 @@
 
 #include "core/Common.hh"
 #include "ecs/Components.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/components/Focus.hh"
 
 #include <glm/glm.hpp>
@@ -17,17 +17,17 @@
 
 namespace ecs {
     struct Event {
-        using EventData = std::variant<bool, char, int, double, glm::vec2, glm::vec3, NamedEntity, std::string>;
+        using EventData = std::variant<bool, char, int, double, glm::vec2, glm::vec3, EntityRef, Tecs::Entity, std::string>;
 
         std::string name;
-        NamedEntity source;
+        EntityRef source;
         EventData data;
 
         Event() {}
-        Event(const std::string &name, const NamedEntity &source) : name(name), source(source), data(true) {}
+        Event(const std::string &name, const EntityRef &source) : name(name), source(source), data(true) {}
 
         template<typename T>
-        Event(const std::string &name, const NamedEntity &source, T data) : name(name), source(source), data(data) {}
+        Event(const std::string &name, const EntityRef &source, T data) : name(name), source(source), data(data) {}
 
         std::string toString() const;
     };
@@ -61,7 +61,7 @@ namespace ecs {
         EventBindings() {}
 
         struct Binding {
-            NamedEntity target;
+            EntityRef target;
             std::string destQueue;
 
             std::optional<Event::EventData> setValue;
@@ -76,19 +76,19 @@ namespace ecs {
         void CopyBindings(const EventBindings &src);
 
         void Bind(std::string source, const Binding &binding);
-        void Bind(std::string source, NamedEntity target, std::string dest);
-        void Unbind(std::string source, NamedEntity target, std::string dest);
+        void Bind(std::string source, EntityRef target, std::string dest);
+        void Unbind(std::string source, EntityRef target, std::string dest);
         void UnbindSource(std::string source);
-        void UnbindTarget(NamedEntity target);
-        void UnbindDest(NamedEntity target, std::string dest);
+        void UnbindTarget(EntityRef target);
+        void UnbindDest(EntityRef target, std::string dest);
 
         const BindingList *Lookup(const std::string source) const;
-        void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event);
+        void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) const;
         template<typename T>
         inline void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
             const std::string &name,
-            const NamedEntity &source,
-            T data) {
+            const EntityRef &source,
+            T data) const {
             SendEvent(lock, Event(name, source, data));
         }
         std::vector<std::string> GetBindingNames() const;

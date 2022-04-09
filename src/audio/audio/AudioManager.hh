@@ -5,7 +5,7 @@
 #include "core/DispatchQueue.hh"
 #include "core/EntityMap.hh"
 #include "core/RegisteredThread.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <libnyquist/Decoders.h>
 
@@ -49,7 +49,7 @@ namespace sp {
         std::mutex soundsMutex;
         EntityMap<SoundSource> sounds;
 
-        ecs::NamedEntity headEntity, headEntityFallback;
+        ecs::EntityRef headEntity, headEntityFallback;
 
         ecs::ComponentObserver<ecs::Sound> soundObserver;
 

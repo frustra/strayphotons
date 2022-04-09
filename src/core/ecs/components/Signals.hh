@@ -2,7 +2,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <limits>
 #include <map>
@@ -30,7 +30,7 @@ namespace ecs {
 
         SignalBindings() {}
 
-        using Binding = typename std::pair<NamedEntity, std::string>;
+        using Binding = typename std::pair<EntityRef, std::string>;
         struct BindingList {
             BindingList(std::initializer_list<Binding> sources = {})
                 : operation(CombineOperator::ADD), sources(sources) {}
@@ -44,11 +44,11 @@ namespace ecs {
         void CopyBindings(const SignalBindings &src);
 
         void SetCombineOperation(const std::string &name, CombineOperator operation);
-        void Bind(const std::string &name, NamedEntity origin, std::string source);
-        void Unbind(const std::string &name, NamedEntity origin, std::string source);
+        void Bind(const std::string &name, EntityRef origin, std::string source);
+        void Unbind(const std::string &name, EntityRef origin, std::string source);
         void UnbindAll(const std::string &name);
-        void UnbindOrigin(NamedEntity origin);
-        void UnbindSource(NamedEntity origin, std::string source);
+        void UnbindOrigin(EntityRef origin);
+        void UnbindSource(EntityRef origin, std::string source);
 
         const BindingList *Lookup(const std::string name) const;
         static double GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,

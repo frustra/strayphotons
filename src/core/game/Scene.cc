@@ -1,8 +1,9 @@
 #include "Scene.hh"
 
 #include "core/Tracing.hh"
-#include "game/SceneManager.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/SceneImpl.hh"
+#include "game/SceneManager.hh"
 
 namespace sp {
     void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
@@ -100,25 +101,29 @@ namespace sp {
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
             // Skip entities that have already been added
-            if (!sceneInfo.liveId) {
-                // Find matching named entity in live scene
-                if (e.Has<ecs::Name>(staging)) {
-                    auto &entityName = e.Get<const ecs::Name>(staging);
-                    sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, entityName);
-                    if (sceneInfo.liveId) {
-                        // Entity overlaps with another scene
-                        ZoneScopedN("MergeEntity");
-                        ZoneStr(entityName.String());
-                        Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
-                        auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
-                        liveSceneInfo.InsertWithPriority(staging, sceneInfo);
-                    }
+            if (sceneInfo.liveId) continue;
+
+            // Find matching named entity in live scene
+            if (e.Has<ecs::Name>(staging)) {
+                auto &entityName = e.Get<const ecs::Name>(staging);
+                sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, entityName);
+                if (sceneInfo.liveId) {
+                    // Entity overlaps with another scene
+                    ZoneScopedN("MergeEntity");
+                    ZoneStr(entityName.String());
+                    Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
+                    auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
+                    liveSceneInfo.InsertWithPriority(staging, sceneInfo);
                 }
-                if (!sceneInfo.liveId) {
-                    // No entity exists in the live scene
-                    sceneInfo.liveId = live.NewEntity();
-                    scene::ApplyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
-                    scene::ApplyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
+            }
+            if (!sceneInfo.liveId) {
+                // No entity exists in the live scene
+                sceneInfo.liveId = live.NewEntity();
+                scene::ApplyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
+                scene::ApplyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
+                if (sceneInfo.liveId.Has<ecs::Name>(live)) {
+                    auto &liveName = sceneInfo.liveId.Get<ecs::Name>(live);
+                    ecs::GEntityRefs.Set(liveName, sceneInfo.liveId);
                 }
             }
         }

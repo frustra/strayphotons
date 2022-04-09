@@ -3,7 +3,7 @@
 #include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <any>
 #include <functional>
@@ -23,7 +23,7 @@ namespace ecs {
             double,
             std::string,
             Entity,
-            NamedEntity,
+            EntityRef,
             std::vector<bool>,
             std::vector<double>,
             std::vector<std::string>>;

@@ -6,6 +6,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -33,6 +34,15 @@ namespace sp::xr {
 
     OpenVrSystem::OpenVrSystem(GraphicsContext *context)
         : RegisteredThread("OpenVR", 120.0, true), context(context), eventHandler(*this) {
+        views = {
+            ecs::GEntityRefs.Get("vr", "left_eye"),
+            ecs::GEntityRefs.Get("vr", "right_eye"),
+        };
+
+        vrOriginEntity = ecs::GEntityRefs.Get("vr", "origin");
+        vrHmdEntity = ecs::GEntityRefs.Get("vr", "hmd");
+        vrControllerLeftEntity = ecs::GEntityRefs.Get("vr", "controller_left");
+        vrControllerRightEntity = ecs::GEntityRefs.Get("vr", "controller_right");
         StartThread();
     }
 
@@ -96,7 +106,7 @@ namespace sp::xr {
                 }
 
                 for (size_t i = 0; i < reservedEntities.size(); i++) {
-                    reservedEntities[i] = ecs::NamedEntity("vr", "device" + std::to_string(i));
+                    reservedEntities[i] = ecs::GEntityRefs.Get("vr", "device" + std::to_string(i));
                 }
 
                 uint32_t vrWidth, vrHeight;
@@ -164,10 +174,10 @@ namespace sp::xr {
             "WaitGetPoses failed: " + std::to_string((int)error));
     }
 
-    ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
-        if (index >= trackedDevices.size() || trackedDevices[index] == nullptr) return ecs::NamedEntity();
+    ecs::Entity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
+        if (index >= trackedDevices.size() || trackedDevices[index] == nullptr) return ecs::Entity();
 
-        return *trackedDevices[index];
+        return trackedDevices[index]->Get();
     }
 
     void OpenVrSystem::Frame() {
@@ -210,18 +220,18 @@ namespace sp::xr {
             ZoneScopedN("OpenVRSystem Sync to ECS");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformTree>>();
 
-            for (auto namedEntity : trackedDevices) {
-                if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {
+            for (auto entityRef : trackedDevices) {
+                if (entityRef != nullptr && !entityRef->Get().Exists(lock)) {
                     missingEntities = true;
                     break;
                 }
             }
 
-            ecs::Entity vrOrigin = vrOriginEntity.Get(lock);
+            ecs::Entity vrOrigin = vrOriginEntity.Get();
             if (vrOrigin && vrOrigin.Has<ecs::TransformTree>(lock)) {
                 for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
                     if (trackedDevices[i] != nullptr) {
-                        ecs::Entity ent = trackedDevices[i]->Get(lock);
+                        ecs::Entity ent = trackedDevices[i]->Get();
                         if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
                             auto &transform = ent.Get<ecs::TransformTree>(lock);
                             auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
@@ -237,9 +247,9 @@ namespace sp::xr {
             GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
                 "vr_system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                    for (auto namedEntity : trackedDevices) {
-                        if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {
-                            auto ent = scene->NewSystemEntity(lock, scene, namedEntity->Name());
+                    for (auto entityRef : trackedDevices) {
+                        if (entityRef != nullptr && !entityRef->Get().Exists(lock)) {
+                            auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
                             ent.Set<ecs::TransformSnapshot>(lock);
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);

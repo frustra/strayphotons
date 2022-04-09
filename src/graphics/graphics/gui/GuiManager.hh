@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -33,8 +33,7 @@ namespace sp {
         }
 
     protected:
-        ecs::NamedEntity guiEntity;
-        ecs::NamedEntity keyboardEntity;
+        ecs::EntityRef guiEntity, keyboardEntity, playerEntity;
 
         std::string name;
         ecs::FocusLayer focusLayer;

@@ -5,6 +5,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -108,7 +109,7 @@ namespace sp::xr {
                             std::transform(inputName.begin(), inputName.end(), inputName.begin(), [](unsigned char c) {
                                 return (c == ':' || c == '/') ? '_' : c;
                             });
-                            action.poseEntity = ecs::NamedEntity("input", inputName);
+                            action.poseEntity = ecs::GEntityRefs.Get("input", inputName);
                             auto ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::SignalOutput>(lock);
@@ -166,10 +167,8 @@ namespace sp::xr {
                                 actionSignal = actionSignal.substr(1);
                             }
 
-                            ecs::NamedEntity originEntity = vrSystem.GetEntityForDeviceIndex(
-                                originInfo.trackedDeviceIndex);
-                            ecs::Entity entity = originEntity.Get(lock);
-                            if (entity) {
+                            auto originEntity = vrSystem.GetEntityForDeviceIndex(originInfo.trackedDeviceIndex);
+                            if (originEntity) {
                                 vr::InputDigitalActionData_t digitalActionData;
                                 vr::InputAnalogActionData_t analogActionData;
                                 vr::InputPoseActionData_t poseActionData;
@@ -184,8 +183,8 @@ namespace sp::xr {
                                         "Failed to read OpenVR digital action: %s",
                                         action.name);
 
-                                    if (entity.Has<ecs::EventBindings>(lock)) {
-                                        auto &bindings = entity.Get<ecs::EventBindings>(lock);
+                                    if (originEntity.Has<ecs::EventBindings>(lock)) {
+                                        auto &bindings = originEntity.Get<ecs::EventBindings>(lock);
 
                                         if (digitalActionData.bActive && digitalActionData.bChanged) {
                                             bindings.SendEvent(lock,
@@ -195,8 +194,8 @@ namespace sp::xr {
                                         }
                                     }
 
-                                    if (entity.Has<ecs::SignalOutput>(lock)) {
-                                        auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+                                    if (originEntity.Has<ecs::SignalOutput>(lock)) {
+                                        auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
 
                                         if (digitalActionData.bActive) {
                                             signalOutput.SetSignal(actionSignal, digitalActionData.bState);
@@ -216,8 +215,8 @@ namespace sp::xr {
                                         "Failed to read OpenVR analog action: %s",
                                         action.name);
 
-                                    if (entity.Has<ecs::EventBindings>(lock)) {
-                                        auto &bindings = entity.Get<ecs::EventBindings>(lock);
+                                    if (originEntity.Has<ecs::EventBindings>(lock)) {
+                                        auto &bindings = originEntity.Get<ecs::EventBindings>(lock);
 
                                         if (analogActionData.bActive &&
                                             (analogActionData.x != 0.0f || analogActionData.y != 0.0f ||
@@ -246,8 +245,8 @@ namespace sp::xr {
                                         }
                                     }
 
-                                    if (entity.Has<ecs::SignalOutput>(lock)) {
-                                        auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+                                    if (originEntity.Has<ecs::SignalOutput>(lock)) {
+                                        auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
 
                                         if (analogActionData.bActive) {
                                             switch (action.type) {
@@ -281,8 +280,8 @@ namespace sp::xr {
                                     if (poseActionData.bActive) {
                                         if (poseActionData.pose.bDeviceIsConnected &&
                                             poseActionData.pose.bPoseIsValid) {
-                                            ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
-                                            ecs::Entity poseEntity = action.poseEntity.Get(lock);
+                                            ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get();
+                                            ecs::Entity poseEntity = action.poseEntity.Get();
                                             if (poseEntity.Has<ecs::TransformTree>(lock)) {
                                                 auto &transform = poseEntity.Get<ecs::TransformTree>(lock);
 
@@ -313,8 +312,8 @@ namespace sp::xr {
 
                                         if (poseActionData.bActive && poseActionData.pose.bDeviceIsConnected &&
                                             poseActionData.pose.bPoseIsValid) {
-                                            ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get(lock);
-                                            ecs::Entity poseEntity = action.poseEntity.Get(lock);
+                                            ecs::Entity vrOrigin = vrSystem.vrOriginEntity.Get();
+                                            ecs::Entity poseEntity = action.poseEntity.Get();
                                             if (poseEntity.Has<ecs::TransformTree>(lock)) {
                                                 auto &transform = poseEntity.Get<ecs::TransformTree>(lock);
 
@@ -363,10 +362,10 @@ namespace sp::xr {
                                                 entityName.entity += "." + boneName;
 
                                                 if (action.boneEntities[i].Name() != entityName) {
-                                                    action.boneEntities[i] = ecs::NamedEntity(entityName);
+                                                    action.boneEntities[i] = ecs::GEntityRefs.Get(entityName);
                                                     missingEntities = true;
                                                 } else {
-                                                    ecs::Entity boneEntity = action.boneEntities[i].Get(lock);
+                                                    ecs::Entity boneEntity = action.boneEntities[i].Get();
                                                     if (boneEntity.Has<ecs::TransformTree>(lock)) {
                                                         auto &transform = boneEntity.Get<ecs::TransformTree>(lock);
 

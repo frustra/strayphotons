@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 
@@ -28,8 +28,7 @@ namespace sp {
     private:
         GLFWwindow *window = nullptr;
 
-        ecs::NamedEntity keyboardEntity;
-        ecs::NamedEntity mouseEntity;
+        ecs::EntityRef keyboardEntity, mouseEntity;
 
         glm::vec2 prevMousePos;
 

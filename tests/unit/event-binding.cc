@@ -42,16 +42,16 @@ namespace EventBindingTests {
             auto targets = bindings.Lookup(TEST_SOURCE_BUTTON);
             Assert(targets != nullptr, "Expected source button to have bindings");
             AssertEqual(targets->size(), 1u, "Unexpected binding count");
-            AssertEqual(targets->begin()->target, ecs::Name("", "hand"), "Expected button to be bound on hand");
+            AssertEqual(targets->begin()->target.Get(), hand, "Expected button to be bound on hand");
             AssertEqual(targets->begin()->destQueue, TEST_EVENT_ACTION1, "Expected button to be bound to action1");
 
             targets = bindings.Lookup(TEST_SOURCE_KEY);
             Assert(targets != nullptr, "Expected source key to have bindings");
             auto it = targets->begin();
-            AssertEqual(it->target, ecs::Name("", "hand"), "Expected key to be bound on hand");
+            AssertEqual(it->target.Get(), hand, "Expected key to be bound on hand");
             AssertEqual(it->destQueue, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
             it++;
-            AssertEqual(it->target, ecs::Name("", "player"), "Expected key to be bound on player");
+            AssertEqual(it->target.Get(), player, "Expected key to be bound on player");
             AssertEqual(it->destQueue, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
             it++;
             Assert(it == targets->end(), "Expected key to have no more bindings");
@@ -80,11 +80,11 @@ namespace EventBindingTests {
 
             Assert(playerEvents.Poll(TEST_EVENT_ACTION2, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_SOURCE_KEY, "Unexpected event name");
-            AssertEqual(event.source, ecs::Name("", "player"), "Unexpected event source");
+            AssertEqual(event.source.Get(), player, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData('a'), "Unexpected event data");
             Assert(playerEvents.Poll(TEST_EVENT_ACTION2, event), "Expected to receive a second event");
             AssertEqual(event.name, TEST_SOURCE_KEY, "Unexpected event name");
-            AssertEqual(event.source, ecs::Name("", "player"), "Unexpected event source");
+            AssertEqual(event.source.Get(), player, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData('b'), "Unexpected event data");
             Assert(!playerEvents.Poll(TEST_EVENT_ACTION2, event), "Unexpected third event");
             AssertEqual(event.name, "", "Event data should not be set");
@@ -94,7 +94,7 @@ namespace EventBindingTests {
             auto &handEvents = hand.Get<ecs::EventInput>(lock);
             Assert(handEvents.Poll(TEST_EVENT_ACTION1, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_SOURCE_BUTTON, "Unexpected event name");
-            AssertEqual(event.source, ecs::Name("", "player"), "Unexpected event source");
+            AssertEqual(event.source.Get(), player, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
             Assert(!handEvents.Poll(TEST_EVENT_ACTION1, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
@@ -103,11 +103,11 @@ namespace EventBindingTests {
 
             Assert(handEvents.Poll(TEST_EVENT_ACTION2, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_SOURCE_KEY, "Unexpected event name");
-            AssertEqual(event.source, ecs::Name("", "player"), "Unexpected event source");
+            AssertEqual(event.source.Get(), player, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData('a'), "Unexpected event data");
             Assert(handEvents.Poll(TEST_EVENT_ACTION2, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_SOURCE_KEY, "Unexpected event name");
-            AssertEqual(event.source, ecs::Name("", "player"), "Unexpected event source");
+            AssertEqual(event.source.Get(), player, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData('b'), "Unexpected event data");
             Assert(!handEvents.Poll(TEST_EVENT_ACTION2, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");

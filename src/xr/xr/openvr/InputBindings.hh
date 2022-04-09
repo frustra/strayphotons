@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ecs/EntityRef.hh"
+
 #include <openvr.h>
 #include <string>
 #include <vector>
@@ -31,8 +33,8 @@ namespace sp::xr {
 
             std::string name;
             vr::VRActionHandle_t handle;
-            ecs::NamedEntity poseEntity;
-            std::vector<ecs::NamedEntity> boneEntities;
+            ecs::EntityRef poseEntity;
+            std::vector<ecs::EntityRef> boneEntities;
             DataType type;
 
             Action() {}

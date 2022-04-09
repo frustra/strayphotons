@@ -2,6 +2,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -38,12 +39,12 @@ namespace sp::scripts {
                     auto fullTargetName = state.GetParam<std::string>("relative_to");
                     ecs::Name targetName;
                     if (targetName.Parse(fullTargetName, state.scope)) {
-                        auto targetEntity = state.GetParam<NamedEntity>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                        if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
 
-                        auto target = targetEntity.Get(lock);
+                        auto target = targetEntity.Get();
                         if (target) {
-                            state.SetParam<NamedEntity>("target_entity", targetEntity);
+                            state.SetParam<EntityRef>("target_entity", targetEntity);
 
                             glm::vec3 movement = glm::vec3(0);
                             movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
@@ -120,12 +121,12 @@ namespace sp::scripts {
                         auto fullTargetName = state.GetParam<std::string>("relative_to");
                         ecs::Name targetName;
                         if (targetName.Parse(fullTargetName, state.scope)) {
-                            auto targetEntity = state.GetParam<NamedEntity>("target_entity");
-                            if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                            auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                            if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
 
-                            auto target = targetEntity.Get(lock);
+                            auto target = targetEntity.Get();
                             if (target) {
-                                state.SetParam<NamedEntity>("target_entity", targetEntity);
+                                state.SetParam<EntityRef>("target_entity", targetEntity);
 
                                 if (target.Has<TransformSnapshot>(lock)) {
                                     transform.pose.matrix = target.Get<TransformSnapshot>(lock).matrix *
@@ -287,12 +288,12 @@ namespace sp::scripts {
                     auto fullTargetName = state.GetParam<std::string>("follow_target");
                     ecs::Name targetName;
                     if (targetName.Parse(fullTargetName, state.scope)) {
-                        auto targetEntity = state.GetParam<NamedEntity>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                        if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
 
-                        auto target = targetEntity.Get(lock);
+                        auto target = targetEntity.Get();
                         if (target) {
-                            state.SetParam<NamedEntity>("target_entity", targetEntity);
+                            state.SetParam<EntityRef>("target_entity", targetEntity);
 
                             if (target.Has<TransformSnapshot>(lock)) {
                                 targetPosition = target.Get<TransformSnapshot>(lock).GetPosition();

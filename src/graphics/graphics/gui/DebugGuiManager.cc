@@ -10,7 +10,7 @@ namespace sp {
     DebugGuiManager::DebugGuiManager() : GuiManager("debug_gui", ecs::FocusLayer::ALWAYS) {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>>();
 
-        auto gui = guiEntity.Get(lock);
+        auto gui = guiEntity.Get();
         Assert(gui.Has<ecs::EventInput>(lock), "Expected debug_gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
@@ -47,7 +47,7 @@ namespace sp {
                 ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto gui = guiEntity.Get(lock);
+            auto gui = guiEntity.Get();
             if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
                 while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_TOGGLE_CONSOLE, event)) {

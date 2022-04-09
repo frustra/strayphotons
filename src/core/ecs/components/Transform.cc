@@ -56,11 +56,7 @@ namespace ecs {
                 transform.parentName.Parse(fullName, scope);
                 transform.parentEntity = scene->GetStagingEntity(transform.parentName);
                 if (!transform.parentEntity) {
-                    Warnf("Transform::Load parent %s at %s = %s %s",
-                        fullName,
-                        scope.String(),
-                        transform.parentName.String(),
-                        std::to_string(transform.parentEntity));
+                    Tracef("Transform::Load parent missing on load: %s", transform.parentName.String());
                 }
             }
         }
