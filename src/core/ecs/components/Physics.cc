@@ -107,8 +107,7 @@ namespace ecs {
                 } else if (param.second.is<picojson::object>()) {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
-                            constraintTarget = scene->GetStagingEntity(constraintParam.second.get<string>(),
-                                scope);
+                            constraintTarget = scene->GetStagingEntity(constraintParam.second.get<string>(), scope);
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {
