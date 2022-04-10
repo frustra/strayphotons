@@ -65,6 +65,7 @@ namespace sp {
         if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
             namedEntities.emplace(entityName, entity);
+            ecs::GEntityRefs.Set(entityName, entity);
         }
         return entity;
     }
@@ -87,6 +88,7 @@ namespace sp {
         if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
             namedEntities.emplace(entityName, entity);
+            ecs::GEntityRefs.Set(entityName, entity);
         }
         return entity;
     }
@@ -125,6 +127,7 @@ namespace sp {
                     auto &liveName = sceneInfo.liveId.Get<ecs::Name>(live);
                     ecs::GEntityRefs.Set(liveName, sceneInfo.liveId);
                 }
+                ecs::GEntityRefs.Set(e, sceneInfo.liveId);
             }
         }
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {

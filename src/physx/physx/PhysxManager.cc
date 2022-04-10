@@ -56,8 +56,6 @@ namespace sp {
 
         scratchBlock.resize(0x1000000); // 16MiB
 
-        debugLineEntity = ecs::GEntityRefs.Get("physx", "debug_lines");
-
         CreatePhysxScene();
         if (stepMode) {
             funcs.Register<unsigned int>("stepphysics",
@@ -271,9 +269,6 @@ namespace sp {
             for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
                 if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock)) continue;
                 auto &transform = ent.Get<ecs::TransformTree>(lock);
-                if (!transform.parentEntity && transform.parentName) {
-                    transform.parentEntity = ecs::EntityWith<ecs::Name>(lock, transform.parentName);
-                }
                 ent.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
             }
 

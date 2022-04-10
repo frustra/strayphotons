@@ -1,6 +1,8 @@
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
+#include "ecs/EntityReferenceManager.hh"
 
 namespace sp::scripts {
     using namespace ecs;
@@ -27,20 +29,15 @@ namespace sp::scripts {
                     }
                     while (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
                         auto &transform = ent.Get<TransformTree>(lock);
-                        if (transform.parentEntity.Has<TransformTree>(lock)) {
+                        if (transform.parent) {
                             transform.pose = transform.GetGlobalTransform(lock);
-                            transform.parentEntity = Entity();
+                            transform.parent = EntityRef();
                         } else {
                             ecs::Name parentName;
                             if (parentName.Parse(CVarFlashlightParent.Get())) {
-                                Entity parent = EntityWith<Name>(lock, parentName);
-                                if (parent) {
-                                    transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
-                                    transform.pose.SetRotation(glm::quat());
-                                    transform.parentEntity = parent;
-                                } else {
-                                    Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
-                                }
+                                transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
+                                transform.pose.SetRotation(glm::quat());
+                                transform.parent = ecs::GEntityRefs.Get(parentName);
                             } else {
                                 Errorf("Flashlight parent entity name is invalid: %s", CVarFlashlightParent.Get());
                             }

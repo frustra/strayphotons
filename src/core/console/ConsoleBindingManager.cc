@@ -10,9 +10,6 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        consoleInputEntity = ecs::GEntityRefs.Get("console", "input");
-        keyboardEntity = ecs::GEntityRefs.Get("input", "keyboard");
-
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "console",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {

@@ -28,7 +28,8 @@ namespace sp {
     private:
         GLFWwindow *window = nullptr;
 
-        ecs::EntityRef keyboardEntity, mouseEntity;
+        ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
+        ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
 
         glm::vec2 prevMousePos;
 

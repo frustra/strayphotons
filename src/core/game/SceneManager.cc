@@ -599,7 +599,7 @@ namespace sp {
                 if (sceneInfo.scene.lock() != scene) continue;
 
                 auto &transform = e.Get<ecs::TransformTree>(stagingLock);
-                if (!transform.parentEntity.Has<ecs::TransformTree>(stagingLock)) {
+                if (!transform.parent) {
                     transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
                     transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
 
@@ -647,7 +647,7 @@ namespace sp {
             if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
                 auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock);
                 auto &playerTree = player.Get<ecs::TransformTree>(lock);
-                Assert(!playerTree.parentEntity, "Player entity should not have a TransformTree parent");
+                Assert(!playerTree.parent, "Player entity should not have a TransformTree parent");
                 playerTransform = spawnTransform;
                 playerTree.pose = spawnTransform;
             }
@@ -655,7 +655,7 @@ namespace sp {
             if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(lock);
                 auto &vrTree = vrOrigin.Get<ecs::TransformTree>(lock);
-                Assert(!vrTree.parentEntity, "VR Origin entity should not have a TransformTree parent");
+                Assert(!vrTree.parent, "VR Origin entity should not have a TransformTree parent");
                 vrTransform = spawnTransform;
                 vrTree.pose = spawnTransform;
             }

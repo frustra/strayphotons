@@ -17,6 +17,7 @@ namespace sp {
 
         CFuncCollection funcs;
 
-        ecs::EntityRef consoleInputEntity, keyboardEntity;
+        ecs::EntityRef consoleInputEntity = ecs::Name("console", "input");
+        ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
     };
 } // namespace sp

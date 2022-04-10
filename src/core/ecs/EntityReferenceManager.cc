@@ -9,25 +9,36 @@ namespace ecs {
     EntityReferenceManager GEntityRefs;
 
     EntityRef EntityReferenceManager::Get(const Name &name) {
-        std::shared_lock lock(mutex);
+        EntityRef ref = nameRefs.Load(name);
+        if (!ref) {
+            std::lock_guard lock(mutex);
+            ref = nameRefs.Load(name);
+            if (ref) return ref;
 
-        auto result = references.emplace(name, EntityRef{name, Entity()});
-        return result.first->second;
-    }
-
-    EntityRef EntityReferenceManager::Get(std::string_view scene, std::string_view entity) {
-        Name name(scene, entity);
-        return Get(name);
-    }
-
-    void EntityReferenceManager::Set(const Name &name, const Entity &ent) {
-        std::unique_lock lock(mutex);
-
-        auto it = references.find(name);
-        if (it != references.end()) {
-            it->second.Set(ent);
-        } else {
-            references.emplace(name, EntityRef{name, ent});
+            ref = make_shared<EntityRef::Ref>(name);
+            nameRefs.Register(name, ref.ptr);
         }
+        return ref;
+    }
+
+    EntityRef EntityReferenceManager::Get(const Entity &stagingEntity) {
+        EntityRef ref = stagingRefs.Load(stagingEntity);
+        if (!ref) {
+            std::lock_guard lock(mutex);
+            ref = stagingRefs.Load(stagingEntity);
+            if (ref) return ref;
+
+            ref = make_shared<EntityRef::Ref>(stagingEntity);
+            stagingRefs.Register(stagingEntity, ref.ptr);
+        }
+        return ref;
+    }
+
+    void EntityReferenceManager::Set(const Name &name, const Entity &liveEntity) {
+        return Get(name).Set(liveEntity);
+    }
+
+    void EntityReferenceManager::Set(const Entity &stagingEntity, const Entity &liveEntity) {
+        return Get(stagingEntity).Set(liveEntity);
     }
 } // namespace ecs

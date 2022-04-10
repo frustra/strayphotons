@@ -17,9 +17,6 @@ namespace sp {
     bool AudioManager::ThreadInit() {
         ZoneScoped;
 
-        headEntity = ecs::GEntityRefs.Get("vr", "hmd");
-        headEntityFallback = ecs::GEntityRefs.Get("player", "flatview");
-
         soundio = soundio_create();
 
         int err = soundio_connect(soundio);

@@ -27,9 +27,6 @@ namespace sp {
         glfwSetMouseButtonCallback(window, MouseButtonCallback);
         glfwSetCursorPosCallback(window, MouseMoveCallback);
 
-        keyboardEntity = ecs::GEntityRefs.Get("input", "keyboard");
-        mouseEntity = ecs::GEntityRefs.Get("input", "mouse");
-
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "input",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {

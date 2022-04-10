@@ -109,7 +109,7 @@ namespace sp::xr {
                             std::transform(inputName.begin(), inputName.end(), inputName.begin(), [](unsigned char c) {
                                 return (c == ':' || c == '/') ? '_' : c;
                             });
-                            action.poseEntity = ecs::GEntityRefs.Get("input", inputName);
+                            action.poseEntity = ecs::Name("input", inputName);
                             auto ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::SignalOutput>(lock);
@@ -287,7 +287,7 @@ namespace sp::xr {
 
                                                 auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
                                                 transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
-                                                transform.parentEntity = vrOrigin;
+                                                transform.parent = vrOrigin;
                                             }
                                         }
                                     }
@@ -319,7 +319,7 @@ namespace sp::xr {
 
                                                 auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
                                                 transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
-                                                transform.parentEntity = vrOrigin;
+                                                transform.parent = vrOrigin;
                                             }
 
                                             uint32_t boneCount = 0;
@@ -377,7 +377,7 @@ namespace sp::xr {
                                                         // transform.pose.SetScale(glm::vec3(0.01f));
                                                         transform.pose.SetPosition(
                                                             glm::make_vec3(boneTransforms[i].position.v));
-                                                        transform.parentEntity = poseEntity;
+                                                        transform.parent = poseEntity;
                                                     }
                                                 }
                                             }

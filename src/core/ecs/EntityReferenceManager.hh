@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/LockFreeMutex.hh"
+#include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
@@ -14,13 +15,15 @@ namespace ecs {
         EntityReferenceManager() {}
 
         EntityRef Get(const Name &name);
-        EntityRef Get(std::string_view scene, std::string_view entity);
+        EntityRef Get(const Entity &stagingEntity);
 
-        void Set(const Name &name, const Entity &ent);
+        void Set(const Name &name, const Entity &liveEntity);
+        void Set(const Entity &stagingEntity, const Entity &liveEntity);
 
     private:
         sp::LockFreeMutex mutex;
-        robin_hood::unordered_map<Name, EntityRef> references;
+        sp::PreservingMap<Name, EntityRef::Ref> nameRefs;
+        sp::PreservingMap<Entity, EntityRef::Ref> stagingRefs;
     };
 
     extern EntityReferenceManager GEntityRefs;

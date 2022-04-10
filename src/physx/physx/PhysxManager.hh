@@ -113,7 +113,7 @@ namespace sp {
 #endif
 
         ecs::ComponentObserver<ecs::Physics> physicsObserver;
-        ecs::EntityRef debugLineEntity;
+        ecs::EntityRef debugLineEntity = ecs::Name("physx", "debug_lines");
 
         CharacterControlSystem characterControlSystem;
         ConstraintSystem constraintSystem;

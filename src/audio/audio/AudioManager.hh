@@ -49,7 +49,8 @@ namespace sp {
         std::mutex soundsMutex;
         EntityMap<SoundSource> sounds;
 
-        ecs::EntityRef headEntity, headEntityFallback;
+        ecs::EntityRef headEntity = ecs::Name("vr", "hmd");
+        ecs::EntityRef headEntityFallback = ecs::Name("player", "flatview");
 
         ecs::ComponentObserver<ecs::Sound> soundObserver;
 

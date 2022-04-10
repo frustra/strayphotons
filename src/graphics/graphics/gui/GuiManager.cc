@@ -38,9 +38,7 @@ namespace sp {
         io.KeyMap[ImGuiKey_Y] = KEY_Y;
         io.KeyMap[ImGuiKey_Z] = KEY_Z;
 
-        guiEntity = ecs::GEntityRefs.Get("gui", name);
-        keyboardEntity = ecs::GEntityRefs.Get("input", "keyboard");
-        playerEntity = ecs::GEntityRefs.Get("player", "player");
+        guiEntity = ecs::Name("gui", name);
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "gui",

@@ -48,10 +48,16 @@ namespace sp {
             EventHandler eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
-            EnumArray<ecs::EntityRef, ecs::XrEye> views;
+            EnumArray<ecs::EntityRef, ecs::XrEye> views = {
+                ecs::Name("vr", "left_eye"),
+                ecs::Name("vr", "right_eye"),
+            };
 
-            ecs::EntityRef vrOriginEntity, vrHmdEntity;
-            ecs::EntityRef vrControllerLeftEntity, vrControllerRightEntity;
+            ecs::EntityRef vrOriginEntity = ecs::Name("vr", "origin");
+            ecs::EntityRef vrHmdEntity = ecs::Name("vr", "hmd");
+            ecs::EntityRef vrControllerLeftEntity = ecs::Name("vr", "controller_left");
+            ecs::EntityRef vrControllerRightEntity = ecs::Name("vr", "controller_right");
+
             std::array<ecs::EntityRef, vr::k_unMaxTrackedDeviceCount> reservedEntities = {};
             std::array<ecs::EntityRef *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 

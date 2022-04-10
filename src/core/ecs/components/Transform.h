@@ -3,7 +3,7 @@
 #include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
-    #include "ecs/components/Name.hh"
+    #include "ecs/EntityRef.hh"
 
 namespace ecs {
     extern "C" {
@@ -59,8 +59,7 @@ namespace ecs {
 
     struct TransformTree {
         Transform pose;
-        TecsEntity parentEntity;
-        ecs::Name parentName;
+        EntityRef parent;
 
     #ifndef SP_WASM_BUILD
         TransformTree() {}

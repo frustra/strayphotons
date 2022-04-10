@@ -34,15 +34,6 @@ namespace sp::xr {
 
     OpenVrSystem::OpenVrSystem(GraphicsContext *context)
         : RegisteredThread("OpenVR", 120.0, true), context(context), eventHandler(*this) {
-        views = {
-            ecs::GEntityRefs.Get("vr", "left_eye"),
-            ecs::GEntityRefs.Get("vr", "right_eye"),
-        };
-
-        vrOriginEntity = ecs::GEntityRefs.Get("vr", "origin");
-        vrHmdEntity = ecs::GEntityRefs.Get("vr", "hmd");
-        vrControllerLeftEntity = ecs::GEntityRefs.Get("vr", "controller_left");
-        vrControllerRightEntity = ecs::GEntityRefs.Get("vr", "controller_right");
         StartThread();
     }
 
@@ -106,7 +97,7 @@ namespace sp::xr {
                 }
 
                 for (size_t i = 0; i < reservedEntities.size(); i++) {
-                    reservedEntities[i] = ecs::GEntityRefs.Get("vr", "device" + std::to_string(i));
+                    reservedEntities[i] = ecs::Name("vr", "device" + std::to_string(i));
                 }
 
                 uint32_t vrWidth, vrHeight;
@@ -120,7 +111,7 @@ namespace sp::xr {
                     ent.Set<ecs::XRView>(lock, eye);
 
                     auto &transform = ent.Set<ecs::TransformTree>(lock);
-                    transform.parentEntity = vrOrigin;
+                    transform.parent = vrOriginEntity;
 
                     auto &view = ent.Set<ecs::View>(lock);
                     view.extents = {vrWidth, vrHeight};
@@ -227,17 +218,14 @@ namespace sp::xr {
                 }
             }
 
-            ecs::Entity vrOrigin = vrOriginEntity.Get();
-            if (vrOrigin && vrOrigin.Has<ecs::TransformTree>(lock)) {
-                for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                    if (trackedDevices[i] != nullptr) {
-                        ecs::Entity ent = trackedDevices[i]->Get();
-                        if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
-                            auto &transform = ent.Get<ecs::TransformTree>(lock);
-                            auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
-                            transform.pose = glm::transpose(glm::make_mat3x4((float *)pose));
-                            transform.parentEntity = vrOrigin;
-                        }
+            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+                if (trackedDevices[i] != nullptr) {
+                    ecs::Entity ent = trackedDevices[i]->Get();
+                    if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
+                        auto &transform = ent.Get<ecs::TransformTree>(lock);
+                        auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
+                        transform.pose = glm::transpose(glm::make_mat3x4((float *)pose));
+                        transform.parent = vrOriginEntity;
                     }
                 }
             }

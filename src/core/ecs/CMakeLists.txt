@@ -2,6 +2,7 @@
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Components.cc
     Ecs.cc
+    EntityRef.cc
     EntityReferenceManager.cc
 )
 

@@ -7,29 +7,34 @@
 #include <memory>
 
 namespace ecs {
-    struct Name;
-    class EntityReferenceManager;
-
     class EntityRef {
     private:
         struct Ref {
             ecs::Name name;
-            std::atomic<Entity> entity;
+            std::atomic<Entity> stagingEntity;
+            std::atomic<Entity> liveEntity;
 
-            Ref(const ecs::Name &name, const Entity &ent) : name(name), entity(ent) {}
+            Ref(const ecs::Name &name) : name(name) {}
+            Ref(const Entity &ent);
         };
 
     public:
         EntityRef() {}
-        EntityRef(const Entity &ent) : ptr(make_shared<Ref>(ecs::Name(), ent)) {}
+        EntityRef(const ecs::Name &name);
+        EntityRef(const Entity &ent);
+        EntityRef(const EntityRef &ref) : ptr(ref.ptr) {}
+        EntityRef(const std::shared_ptr<Ref> &ptr) : ptr(ptr) {}
 
         ecs::Name Name() const {
             return ptr ? ptr->name : ecs::Name();
         }
 
         Entity Get() const {
-            Assertf(ptr, "EntityRef is null");
-            return ptr->entity.load();
+            return ptr->liveEntity.load();
+        }
+
+        Entity GetStaging() const {
+            return ptr->stagingEntity.load();
         }
 
         operator bool() const {
@@ -48,14 +53,9 @@ namespace ecs {
             return ptr != other.ptr;
         }
 
+        void Set(const Entity &ent);
+
     private:
-        EntityRef(const ecs::Name &name, const Entity &ent) : ptr(make_shared<Ref>(name, ent)) {}
-
-        void Set(const Entity &ent) {
-            Assertf(ptr, "Can't set entity on null EntityRef");
-            ptr->entity.store(ent);
-        }
-
         std::shared_ptr<Ref> ptr;
 
         friend class EntityReferenceManager;

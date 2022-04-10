@@ -178,7 +178,7 @@ namespace sp {
                             break;
                         }
                     }
-                    e = e.Get<ecs::TransformTree>(lock).parentEntity;
+                    e = e.Get<ecs::TransformTree>(lock).parent.Get();
                 }
 
                 HandleForceLimitConstraint(actor,

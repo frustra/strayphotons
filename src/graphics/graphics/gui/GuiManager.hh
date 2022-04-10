@@ -33,7 +33,9 @@ namespace sp {
         }
 
     protected:
-        ecs::EntityRef guiEntity, keyboardEntity, playerEntity;
+        ecs::EntityRef guiEntity;
+        ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
+        ecs::EntityRef playerEntity = ecs::Name("player", "player");
 
         std::string name;
         ecs::FocusLayer focusLayer;
