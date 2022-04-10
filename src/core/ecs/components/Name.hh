@@ -1,8 +1,11 @@
 #pragma once
 
-#include <functional>
-#include <iostream>
 #include <string_view>
+
+#ifndef SP_WASM_BUILD
+    #include <functional>
+    #include <iostream>
+#endif
 
 namespace sp {
     class Scene;
@@ -31,12 +34,16 @@ namespace ecs {
         }
     };
 
+#ifndef SP_WASM_BUILD
     std::ostream &operator<<(std::ostream &out, const Name &v);
+#endif
 } // namespace ecs
 
+#ifndef SP_WASM_BUILD
 namespace std {
     template<>
     struct hash<ecs::Name> {
         std::size_t operator()(const ecs::Name &n) const;
     };
 } // namespace std
+#endif
