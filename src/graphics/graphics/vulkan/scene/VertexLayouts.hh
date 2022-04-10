@@ -63,4 +63,22 @@ namespace sp::vulkan {
         }
     };
 
+    struct JointVertex {
+        glm::vec4 jointWeights;
+        glm::u16vec4 jointIndexes;
+        float _padding[2];
+
+        static void AddLayout(VertexLayout &layout, int binding) {
+            layout.PushBinding(binding, sizeof(JointVertex));
+            layout.PushAttribute(0, 0, vk::Format::eR16G16B16A16Uint, offsetof(JointVertex, jointIndexes));
+            layout.PushAttribute(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(JointVertex, jointWeights));
+        }
+
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) AddLayout(info, 0);
+            return info;
+        }
+    };
+
 } // namespace sp::vulkan

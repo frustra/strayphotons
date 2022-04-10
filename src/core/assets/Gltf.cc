@@ -160,7 +160,7 @@ namespace sp {
             if (!meshes[meshIndex]) { meshes[meshIndex] = gltf::Mesh(model, model.meshes[meshIndex]); }
         }
 
-        auto skinIndex = model.nodes[nodeIndex].mesh;
+        auto skinIndex = model.nodes[nodeIndex].skin;
         if (skinIndex >= 0 && (size_t)skinIndex < skins.size() && (size_t)skinIndex < model.skins.size()) {
             node->skinIndex = (size_t)skinIndex;
             if (!skins[skinIndex]) { skins[skinIndex] = gltf::Skin(model, model.skins[skinIndex]); }

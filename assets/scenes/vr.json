@@ -53,8 +53,7 @@
         {
             "name": "left_hand",
             "transform": {
-                "parent": "left_hand_input",
-                "rotate": [180, 0, 1, 0]
+                "parent": "left_hand_input"
             },
             "script": {
                 "prefab": "gltf",
@@ -67,8 +66,7 @@
         {
             "name": "right_hand",
             "transform": {
-                "parent": "right_hand_input",
-                "rotate": [180, 0, 1, 0]
+                "parent": "right_hand_input"
             },
             "script": {
                 "prefab": "gltf",

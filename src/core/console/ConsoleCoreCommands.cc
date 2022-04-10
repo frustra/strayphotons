@@ -93,6 +93,57 @@ namespace sp {
             }
         });
 
+    template<typename LockWrite, typename Callback>
+    void mutateEntity(const string &entityStr, Callback callback) {
+        ecs::Name entityName;
+        if (!entityName.Parse(entityStr)) {
+            Logf("Could not parse entity %s", entityStr);
+            return;
+        }
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, LockWrite>();
+        auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+        if (!entity) {
+            Logf("Entity %s not found", entityName.String());
+            return;
+        }
+        callback(lock, entity);
+    }
+
+    template<typename Callback>
+    void mutateEntityTransform(const string &entityStr, Callback callback) {
+        mutateEntity<ecs::Write<ecs::TransformTree>>(entityStr, [&](auto lock, ecs::Entity entity) {
+            if (!entity.Has<ecs::TransformTree>(lock)) {
+                Logf("Entity %s has no transform", entityStr);
+                return;
+            }
+            callback(lock, entity.Get<ecs::TransformTree>(lock));
+        });
+    }
+
+    CFunc<string, glm::vec3> CFuncTranslate("translate",
+        "Moves an entity a relative amount (translate <entity> <x> <y> <z>)",
+        [](string entityStr, glm::vec3 value) {
+            mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
+                transform.pose.Translate(value);
+            });
+        });
+
+    CFunc<string, float, glm::vec3> CFuncRotate("rotate",
+        "Rotates an entity a relative amount (rotate <entity> <degrees> <x> <y> <z>)",
+        [](string entityStr, float degrees, glm::vec3 plane) {
+            mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
+                transform.pose.Rotate(glm::radians(degrees), plane);
+            });
+        });
+
+    CFunc<string, glm::vec3> CFuncScale("scale",
+        "Scales an entity a relative amount (scale <entity> <x> <y> <z>)",
+        [](string entityStr, glm::vec3 value) {
+            mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
+                transform.pose.Scale(value);
+            });
+        });
+
     CFunc<string, double> CFuncSetSignal("setsignal",
         "Set a signal value (setsignal <entity>/<signal> <value>)",
         [](string signalStr, double value) {

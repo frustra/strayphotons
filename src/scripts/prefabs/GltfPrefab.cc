@@ -18,6 +18,19 @@ namespace ecs {
         auto scene = state.scene.lock();
         Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
 
+        auto getNodeName = [&](size_t nodeId) {
+            auto &node = *model->nodes[nodeId];
+            if (!ent.Has<Name>(lock)) return ecs::Name();
+
+            auto name = ent.Get<Name>(lock);
+            if (node.name.empty()) {
+                name.entity += ".gltf" + std::to_string(nodeId);
+            } else {
+                name.entity += "." + node.name;
+            }
+            return name;
+        };
+
         robin_hood::unordered_set<size_t> jointNodes;
         for (auto &skin : model->skins) {
             if (skin) {
@@ -37,18 +50,7 @@ namespace ecs {
             Assertf(model->nodes[nodeId], "Gltf node %u is not defined", nodeId);
             auto &node = *model->nodes[nodeId];
 
-            Entity newEntity;
-            if (ent.Has<Name>(lock)) {
-                auto name = ent.Get<Name>(lock);
-                if (node.name.empty()) {
-                    name.entity += ".gltf" + std::to_string(nodeId);
-                } else {
-                    name.entity += "." + node.name;
-                }
-                newEntity = scene->NewPrefabEntity(lock, ent, name);
-            } else {
-                newEntity = scene->NewPrefabEntity(lock, ent);
-            }
+            Entity newEntity = scene->NewPrefabEntity(lock, ent, getNodeName(nodeId));
 
             TransformTree transform(node.transform);
             if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
@@ -76,6 +78,17 @@ namespace ecs {
             if (node.meshIndex) {
                 if (state.GetParam<bool>("render")) {
                     Renderable renderable(asyncGltf, *node.meshIndex);
+
+                    if (node.skinIndex) {
+                        auto &skin = model->skins[*node.skinIndex];
+                        if (!skin) {
+                            Errorf("gltf %s missing skin %d", modelName, *node.skinIndex);
+                        } else {
+                            for (auto &j : skin->joints) {
+                                renderable.joints.emplace_back(getNodeName(j.jointNodeIndex), j.inverseBindPose);
+                            }
+                        }
+                    }
                     Component<Renderable>::Apply(renderable, lock, newEntity);
                 }
 
