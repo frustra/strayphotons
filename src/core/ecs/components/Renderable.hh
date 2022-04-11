@@ -30,6 +30,12 @@ namespace ecs {
         sp::AsyncPtr<sp::Gltf> model;
         size_t meshIndex;
 
+        struct Joint {
+            Name entity; // TODO use EntityRef
+            glm::mat4 inverseBindPose;
+        };
+        vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
+
         VisibilityMask visibility = VisibilityMask().set().reset(Visibility::VISIBLE_OUTLINE_SELECTION);
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };

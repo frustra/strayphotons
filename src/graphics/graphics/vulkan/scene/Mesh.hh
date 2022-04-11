@@ -24,6 +24,7 @@ namespace sp::vulkan {
         struct Primitive {
             size_t indexOffset, indexCount;
             size_t vertexOffset, vertexCount;
+            size_t jointsVertexOffset, jointsVertexCount;
             TextureHandle baseColor, metallicRoughness;
         };
 
@@ -56,8 +57,8 @@ namespace sp::vulkan {
 
         vector<Primitive> primitives;
 
-        uint32 vertexCount = 0, indexCount = 0;
-        SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
+        uint32 vertexCount = 0, indexCount = 0, jointsCount = 0;
+        SubBufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
 
         bool ready = false;
     };

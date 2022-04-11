@@ -63,14 +63,14 @@ namespace sp::vulkan::render_graph {
         vector<CommandContextPtr> pendingCmds;
         CommandContextPtr cmd;
 
-        auto submitPendingCmds = [&]() {
+        auto submitPendingCmds = [&](bool lastSubmit) {
             if (cmd) {
                 pendingCmds.push_back(cmd);
                 cmd.reset();
             }
 
             if (!pendingCmds.empty()) {
-                device.Submit({(uint32)pendingCmds.size(), pendingCmds.data()});
+                device.Submit({(uint32)pendingCmds.size(), pendingCmds.data()}, {}, {}, {}, {}, lastSubmit);
                 pendingCmds.clear();
             }
         };
@@ -81,7 +81,7 @@ namespace sp::vulkan::render_graph {
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
             AddPreBarriers(cmd, pass); // creates cmd if necessary
-            if (pass.flushCommands) submitPendingCmds();
+            if (pass.flushCommands) submitPendingCmds(false);
 
             RenderPassInfo renderPassInfo;
 
@@ -186,7 +186,7 @@ namespace sp::vulkan::render_graph {
             UpdateLastOutput(pass);
         }
 
-        submitPendingCmds();
+        submitPendingCmds(true);
         AdvanceFrame();
     }
 

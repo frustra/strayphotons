@@ -24,9 +24,6 @@
         },
         {
             "name": "left_hand_origin",
-            "renderable": {
-                "model": "box"
-            },
             "transform": {
                 "parent": "left_hand_input",
                 "scale": [0.01, 0.01, 0.01]
@@ -34,9 +31,6 @@
         },
         {
             "name": "right_hand_origin",
-            "renderable": {
-                "model": "box"
-            },
             "transform": {
                 "parent": "right_hand_input",
                 "scale": [0.01, 0.01, 0.01]
@@ -45,8 +39,7 @@
         {
             "name": "left_hand",
             "transform": {
-                "parent": "left_hand_input",
-                "rotate": [180, 0, 1, 0]
+                "parent": "left_hand_input"
             },
             "script": {
                 "prefab": "gltf",

@@ -13,6 +13,7 @@
 #include <queue>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 namespace sp {
@@ -89,38 +90,24 @@ namespace sp {
         virtual bool Ready() = 0;
     };
 
+    class DispatchQueue;
+
     template<typename ReturnType, typename Fn, typename... Futures>
     struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
         using FutureTuple = std::tuple<detail::Future<Futures>...>;
         using ResultTuple = std::tuple<typename detail::Future<Futures>::ReturnType...>;
 
         template<typename... Args>
-        DispatchQueueWorkItem(Fn &&func, Args &&...args)
-            : returnValue(std::make_shared<Async<ReturnType>>()), func(std::move(func)),
+        DispatchQueueWorkItem(DispatchQueue &queue, Fn &&func, Args &&...args)
+            : queue(queue), returnValue(std::make_shared<Async<ReturnType>>()), func(std::move(func)),
               waitForFutures(std::make_tuple(detail::Future<std::remove_cvref_t<Args>>(args)...)) {}
 
+        DispatchQueue &queue;
         AsyncPtr<ReturnType> returnValue;
         Fn func;
         FutureTuple waitForFutures;
 
-        void Process() {
-            ZoneScoped;
-            ResultTuple args;
-            {
-                ZoneScopedN("ResolveFutures");
-                args = std::apply(
-                    [](auto &&...x) {
-                        return std::make_tuple(x.Get()...);
-                    },
-                    waitForFutures);
-            }
-            if constexpr (std::is_same<ReturnType, void>()) {
-                std::apply(func, args);
-                returnValue->Set(nullptr);
-            } else {
-                returnValue->Set(std::apply(func, args));
-            }
-        }
+        void Process();
 
         bool Ready() {
             return std::apply(
@@ -152,6 +139,9 @@ namespace sp {
          * After input futures are ready, the function will be called with their values.
          * Supported input types are std::future, std::shared_future, and sp::AsyncPtr
          *
+         * If the return value of the function is itself a future, the future returned
+         * from Dispatch will be set to its value once it is ready.
+         *
          * Usage: Dispatch<R>(FutureType<T>..., [](T...) { return std::make_shared<R>(); });
          * Example:
          *  auto image = queue.Dispatch<Image>([]() { return std::make_shared<Image>(); });
@@ -171,11 +161,25 @@ namespace sp {
                 futures);
         }
 
+        /**
+         * When `from` is ready, its value will be set in `to`
+         */
+        template<typename FutT, typename T>
+        void ForwardAsync(FutT from, const AsyncPtr<T> &to) {
+            if (from->Ready()) {
+                to->Set(from->Get());
+            } else {
+                Dispatch<void>(from, [to](auto &fromValue) {
+                    to->Set(fromValue);
+                });
+            }
+        }
+
     private:
         template<typename ReturnType, typename Fn, typename... Futures>
         AsyncPtr<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
-            auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(
+            auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(*this,
                 std::move(func),
                 std::move(futures)...);
 
@@ -197,4 +201,30 @@ namespace sp {
         std::condition_variable workReady;
         bool exit = false, dropPendingWork = false;
     };
+
+    template<typename ReturnType, typename Fn, typename... Futures>
+    void DispatchQueueWorkItem<ReturnType, Fn, Futures...>::Process() {
+        ZoneScoped;
+        ResultTuple args;
+        {
+            ZoneScopedN("ResolveFutures");
+            args = std::apply(
+                [](auto &&...x) {
+                    return std::make_tuple(x.Get()...);
+                },
+                waitForFutures);
+        }
+
+        if constexpr (std::is_same<ReturnType, void>()) {
+            std::apply(func, args);
+            returnValue->Set(nullptr);
+        } else {
+            auto result = std::apply(func, args);
+            if constexpr (std::is_constructible<detail::Future<decltype(result)>, decltype(result)>()) {
+                queue.ForwardAsync(result, returnValue);
+            } else {
+                returnValue->Set(result);
+            }
+        }
+    }
 } // namespace sp

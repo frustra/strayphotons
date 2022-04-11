@@ -1067,7 +1067,7 @@
 				],
 				"intensity": 300,
 				"spotAngle": 45,
-				"gel": "menu_gui",
+				"gel": "graph:menu_gui",
 				"shadowMapSize": 10,
 				"shadowMapClip": [
 					0.1,
