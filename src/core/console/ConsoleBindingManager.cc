@@ -17,8 +17,7 @@ namespace sp {
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_RUN_COMMAND);
                 auto &script = ent.Set<ecs::Script>(lock);
-                script.AddOnTick(scene,
-                    ecs::Name(scene->name, ""),
+                script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,

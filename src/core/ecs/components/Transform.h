@@ -78,12 +78,9 @@ namespace ecs {
     static Component<TransformTree> ComponentTransformTree("transform");
 
     template<>
-    bool Component<Transform>::Load(ScenePtr scenePtr, const Name &scope, Transform &dst, const picojson::value &src);
+    bool Component<Transform>::Load(const EntityScope &scope, Transform &dst, const picojson::value &src);
     template<>
-    bool Component<TransformTree>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        TransformTree &dst,
-        const picojson::value &src);
+    bool Component<TransformTree>::Load(const EntityScope &scope, TransformTree &dst, const picojson::value &src);
     template<>
     void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt);
     template<>

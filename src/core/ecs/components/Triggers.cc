@@ -7,10 +7,7 @@
 
 namespace ecs {
     template<>
-    bool Component<TriggerGroup>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        TriggerGroup &trigger,
-        const picojson::value &src) {
+    bool Component<TriggerGroup>::Load(const EntityScope &scope, TriggerGroup &trigger, const picojson::value &src) {
         auto group = src.get<std::string>();
         sp::to_upper(group);
         if (group == "PLAYER") {
@@ -25,10 +22,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<TriggerArea>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        TriggerArea &area,
-        const picojson::value &src) {
+    bool Component<TriggerArea>::Load(const EntityScope &scope, TriggerArea &area, const picojson::value &src) {
         for (auto groupObj : src.get<picojson::object>()) {
             auto groupStr = sp::to_upper_copy(groupObj.first);
             TriggerGroup group;

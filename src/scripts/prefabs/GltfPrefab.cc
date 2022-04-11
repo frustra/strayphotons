@@ -15,7 +15,7 @@ namespace ecs {
             return;
         }
 
-        auto scene = state.scene.lock();
+        auto scene = state.scope.scene.lock();
         Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
 
         auto getNodeName = [&](size_t nodeId) {

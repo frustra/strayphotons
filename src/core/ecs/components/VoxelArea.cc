@@ -8,10 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<VoxelArea>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        VoxelArea &voxelArea,
-        const picojson::value &src) {
+    bool Component<VoxelArea>::Load(const EntityScope &scope, VoxelArea &voxelArea, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "extents") {
                 if (param.second.is<double>()) {

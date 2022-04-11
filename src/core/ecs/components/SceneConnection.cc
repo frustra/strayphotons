@@ -7,11 +7,8 @@
 
 namespace ecs {
     template<>
-    bool Component<SceneConnection>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        SceneConnection &dst,
-        const picojson::value &src) {
-        auto scene = scenePtr.lock();
+    bool Component<SceneConnection>::Load(const EntityScope &scope, SceneConnection &dst, const picojson::value &src) {
+        auto scene = scope.scene.lock();
         if (scene) dst.scenes.emplace_back(scene->name);
 
         if (src.is<std::string>()) {

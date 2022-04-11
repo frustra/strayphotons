@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "game/Scene.hh"
 
@@ -18,8 +19,10 @@ namespace sp {
 } // namespace sp
 
 namespace ecs {
-    struct Name;
-    using ScenePtr = std::weak_ptr<sp::Scene>;
+    struct EntityScope {
+        std::weak_ptr<sp::Scene> scene;
+        Name prefix;
+    };
 
     class ComponentBase {
     public:
@@ -49,20 +52,19 @@ namespace ecs {
         }
 
         bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) override {
-            ScenePtr scene;
-            Name scope;
+            EntityScope scope;
             if (dst.Has<SceneInfo>(lock)) {
                 auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scene = sceneInfo.scene;
+                scope.scene = sceneInfo.scene;
                 if (sceneInfo.prefabStagingId.Has<Name>(lock)) {
-                    scope = sceneInfo.prefabStagingId.Get<Name>(lock);
+                    scope.prefix = sceneInfo.prefabStagingId.Get<Name>(lock);
                 } else {
-                    auto parentScene = scene.lock();
-                    if (parentScene) scope.scene = parentScene->name;
+                    auto parentScene = scope.scene.lock();
+                    if (parentScene) scope.prefix.scene = parentScene->name;
                 }
             }
             auto &comp = dst.Set<CompType>(lock);
-            return Load(scene, scope, comp, src);
+            return Load(scope, comp, src);
         }
 
         bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) override {
@@ -77,7 +79,7 @@ namespace ecs {
             }
         }
 
-        static bool Load(ScenePtr scenePtr, const Name &scope, CompType &dst, const picojson::value &src) {
+        static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
             std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }

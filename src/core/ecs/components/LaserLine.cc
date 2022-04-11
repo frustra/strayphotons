@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<LaserLine>::Load(ScenePtr scenePtr, const Name &scope, LaserLine &dst, const picojson::value &src) {
+    bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src) {
         ecs::LaserLine::Line line;
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {

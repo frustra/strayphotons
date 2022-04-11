@@ -13,5 +13,5 @@ namespace ecs {
     static Component<VoxelArea> ComponentVoxelArea("voxel_area");
 
     template<>
-    bool Component<VoxelArea>::Load(ScenePtr scenePtr, const Name &scope, VoxelArea &dst, const picojson::value &src);
+    bool Component<VoxelArea>::Load(const EntityScope &scope, VoxelArea &dst, const picojson::value &src);
 } // namespace ecs

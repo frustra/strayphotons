@@ -10,10 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<EventInput>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        EventInput &input,
-        const picojson::value &src) {
+    bool Component<EventInput>::Load(const EntityScope &scope, EventInput &input, const picojson::value &src) {
         for (auto event : src.get<picojson::array>()) {
             input.Register(event.get<std::string>());
         }
@@ -34,9 +31,9 @@ namespace ecs {
         return true;
     }
 
-    bool parseEventBinding(const Name &scope, EventBindings::Binding &binding, const picojson::value &src) {
+    bool parseEventBinding(const EntityScope &scope, EventBindings::Binding &binding, const picojson::value &src) {
         if (src.is<std::string>()) {
-            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope);
+            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope.prefix);
             if (targetName) {
                 binding.target = GEntityRefs.Get(targetName);
                 binding.destQueue = eventName;
@@ -48,7 +45,7 @@ namespace ecs {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "target") {
                     if (param.second.is<std::string>()) {
-                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope);
+                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope.prefix);
                         if (targetName) {
                             binding.target = GEntityRefs.Get(targetName);
                             binding.destQueue = eventName;
@@ -81,11 +78,8 @@ namespace ecs {
     }
 
     template<>
-    bool Component<EventBindings>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        EventBindings &bindings,
-        const picojson::value &src) {
-        auto scene = scenePtr.lock();
+    bool Component<EventBindings>::Load(const EntityScope &scope, EventBindings &bindings, const picojson::value &src) {
+        auto scene = scope.scene.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<picojson::array>()) {
                 for (auto bind : param.second.get<picojson::array>()) {

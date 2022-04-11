@@ -38,7 +38,7 @@ namespace sp::scripts {
                 if (ent.Has<SignalOutput>(lock)) {
                     auto fullTargetName = state.GetParam<std::string>("relative_to");
                     ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, state.scope)) {
+                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
 
@@ -120,7 +120,7 @@ namespace sp::scripts {
 
                         auto fullTargetName = state.GetParam<std::string>("relative_to");
                         ecs::Name targetName;
-                        if (targetName.Parse(fullTargetName, state.scope)) {
+                        if (targetName.Parse(fullTargetName, state.scope.prefix)) {
                             auto targetEntity = state.GetParam<EntityRef>("target_entity");
                             if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
 
@@ -287,7 +287,7 @@ namespace sp::scripts {
                     auto targetPosition = glm::vec3(0);
                     auto fullTargetName = state.GetParam<std::string>("follow_target");
                     ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, state.scope)) {
+                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
 

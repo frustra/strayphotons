@@ -12,10 +12,7 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        SignalOutput &output,
-        const picojson::value &src) {
+    bool Component<SignalOutput>::Load(const EntityScope &scope, SignalOutput &output, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<bool>()) {
                 output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
@@ -27,13 +24,12 @@ namespace ecs {
     }
 
     template<>
-    bool Component<SignalBindings>::Load(ScenePtr scenePtr,
-        const Name &scope,
+    bool Component<SignalBindings>::Load(const EntityScope &scope,
         SignalBindings &bindings,
         const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             if (bind.second.is<std::string>()) {
-                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scope);
+                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scope.prefix);
                 if (originName) {
                     auto originRef = GEntityRefs.Get(originName);
                     bindings.Bind(bind.first, originRef, signalName);
@@ -70,7 +66,7 @@ namespace ecs {
                             return false;
                         }
                         for (auto origin : source.second.get<picojson::array>()) {
-                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scope);
+                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scope.prefix);
                             if (originName) {
                                 auto originRef = GEntityRefs.Get(originName);
                                 bindings.Bind(bind.first, originRef, signalName);

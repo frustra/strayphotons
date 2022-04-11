@@ -10,7 +10,7 @@
 
 namespace ecs {
     InternalPrefab templatePrefab("template", [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
-        auto scene = state.scene.lock();
+        auto scene = state.scope.scene.lock();
         Assertf(scene, "Template prefab does not have a valid scene: %s", ToString(lock, ent));
 
         auto sourceName = state.GetParam<std::string>("source");

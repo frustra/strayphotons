@@ -135,12 +135,9 @@ namespace ecs {
     static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
 
     template<>
-    bool Component<Physics>::Load(ScenePtr scenePtr, const Name &scope, Physics &dst, const picojson::value &src);
+    bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);
     template<>
-    bool Component<PhysicsQuery>::Load(ScenePtr scenePtr,
-        const Name &scope,
-        PhysicsQuery &dst,
-        const picojson::value &src);
+    bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &dst, const picojson::value &src);
     template<>
     void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst);
 } // namespace ecs

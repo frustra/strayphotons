@@ -10,10 +10,8 @@ namespace ecs {
         if (!ent) return;
 
         if (Tecs::IdentifierFromGeneration(ent.generation) == ecs::World.GetInstanceId()) {
-            // This is a live ECS entity
             liveEntity = ent;
         } else {
-            // This is (likely) a staging ECS entity
             stagingEntity = ent;
         }
     }
@@ -45,10 +43,8 @@ namespace ecs {
         Assertf(ent, "Trying to set EntityRef with null Entity");
 
         if (Tecs::IdentifierFromGeneration(ent.generation) == ecs::World.GetInstanceId()) {
-            // This is a live ECS entity
             ptr->liveEntity = ent;
         } else {
-            // This is (likely) a staging ECS entity
             ptr->stagingEntity = ent;
         }
     }

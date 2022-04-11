@@ -7,15 +7,14 @@
 
 namespace ecs {
     template<>
-    bool Component<CharacterController>::Load(ScenePtr scenePtr,
-        const Name &scope,
+    bool Component<CharacterController>::Load(const EntityScope &scope,
         CharacterController &controller,
         const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "target") {
                 auto fullTargetName = param.second.get<string>();
                 ecs::Name targetName;
-                if (targetName.Parse(param.second.get<string>(), scope)) {
+                if (targetName.Parse(param.second.get<string>(), scope.prefix)) {
                     controller.target = GEntityRefs.Get(targetName);
                 } else {
                     Errorf("Invalid character controller target name: %s", fullTargetName);
@@ -24,7 +23,7 @@ namespace ecs {
             } else if (param.first == "fallback_target") {
                 auto fullTargetName = param.second.get<string>();
                 ecs::Name fallbackName;
-                if (fallbackName.Parse(param.second.get<string>(), scope)) {
+                if (fallbackName.Parse(param.second.get<string>(), scope.prefix)) {
                     controller.fallbackTarget = GEntityRefs.Get(fallbackName);
                 } else {
                     Errorf("Invalid character controller fallback name: %s", fullTargetName);
@@ -33,7 +32,7 @@ namespace ecs {
             } else if (param.first == "movement_proxy") {
                 auto fullProxyName = param.second.get<string>();
                 ecs::Name proxyName;
-                if (proxyName.Parse(param.second.get<string>(), scope)) {
+                if (proxyName.Parse(param.second.get<string>(), scope.prefix)) {
                     controller.movementProxy = GEntityRefs.Get(proxyName);
                 } else {
                     Errorf("Invalid character controller proxy name: %s", fullProxyName);
