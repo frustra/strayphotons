@@ -6,8 +6,8 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
 
-#include <robin_hood.h>
 #include <atomic>
+#include <robin_hood.h>
 
 namespace ecs {
     class EntityReferenceManager {
@@ -25,7 +25,7 @@ namespace ecs {
         sp::PreservingMap<Name, EntityRef::Ref> nameRefs;
         sp::PreservingMap<Entity, EntityRef::Ref> stagingRefs;
     };
-    
+
     struct EntityRef::Ref {
         ecs::Name name;
         std::atomic<Entity> stagingEntity;
