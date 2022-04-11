@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string_view>
-
 #ifndef SP_WASM_BUILD
     #include <functional>
     #include <iostream>
@@ -16,7 +14,7 @@ namespace ecs {
         std::string scene, entity;
 
         Name() {}
-        Name(std::string_view scene, std::string_view entity);
+        Name(const std::string &scene, const std::string &entity);
 
         bool Parse(const std::string &fullName, const Name &scope = Name());
 
