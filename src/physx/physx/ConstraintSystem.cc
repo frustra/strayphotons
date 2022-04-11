@@ -300,7 +300,7 @@ namespace sp {
                 default:
                     Abortf("Unsupported PhysX joint type: %u", ecsJoint.type);
                 }
-                pxJoints.emplace_back(ecsJoint, pxJoint);
+                pxJoints.emplace_back(PhysxManager::Joint{ecsJoint, pxJoint});
             } else if (ecsJoint == *oldEcsJoint) {
                 // joint is up to date
                 continue;

@@ -48,10 +48,10 @@ namespace sp {
             EventHandler eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
-            EnumArray<ecs::EntityRef, ecs::XrEye> views = {
+            EnumArray<ecs::EntityRef, ecs::XrEye> views = {{
                 ecs::Name("vr", "left_eye"),
                 ecs::Name("vr", "right_eye"),
-            };
+            }};
 
             ecs::EntityRef vrOriginEntity = ecs::Name("vr", "origin");
             ecs::EntityRef vrHmdEntity = ecs::Name("vr", "hmd");

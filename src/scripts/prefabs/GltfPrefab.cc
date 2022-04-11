@@ -89,7 +89,8 @@ namespace ecs {
                             Errorf("gltf %s missing skin %d", modelName, *node.skinIndex);
                         } else {
                             for (auto &j : skin->joints) {
-                                renderable.joints.emplace_back(getNodeName(j.jointNodeIndex), j.inverseBindPose);
+                                renderable.joints.emplace_back(
+                                    Renderable::Joint{getNodeName(j.jointNodeIndex), j.inverseBindPose});
                             }
                         }
                     }

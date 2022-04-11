@@ -7,7 +7,7 @@
 #include "ecs/components/Name.hh"
 
 #include <robin_hood.h>
-#include <string_view>
+#include <atomic>
 
 namespace ecs {
     class EntityReferenceManager {
@@ -24,6 +24,15 @@ namespace ecs {
         sp::LockFreeMutex mutex;
         sp::PreservingMap<Name, EntityRef::Ref> nameRefs;
         sp::PreservingMap<Entity, EntityRef::Ref> stagingRefs;
+    };
+    
+    struct EntityRef::Ref {
+        ecs::Name name;
+        std::atomic<Entity> stagingEntity;
+        std::atomic<Entity> liveEntity;
+
+        Ref(const ecs::Name &name) : name(name) {}
+        Ref(const Entity &ent);
     };
 
     extern EntityReferenceManager GEntityRefs;

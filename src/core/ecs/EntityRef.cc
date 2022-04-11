@@ -3,6 +3,8 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 
+#include <atomic>
+
 namespace ecs {
     EntityRef::Ref::Ref(const Entity &ent) {
         if (!ent) return;
@@ -24,6 +26,18 @@ namespace ecs {
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
         ptr = GEntityRefs.Get(ent).ptr;
+    }
+
+    ecs::Name EntityRef::Name() const {
+        return ptr ? ptr->name : ecs::Name();
+    }
+
+    Entity EntityRef::Get() const {
+        return ptr->liveEntity.load();
+    }
+
+    Entity EntityRef::GetStaging() const {
+        return ptr->stagingEntity.load();
     }
 
     void EntityRef::Set(const Entity &ent) {
