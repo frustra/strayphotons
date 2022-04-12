@@ -3,6 +3,7 @@
 #include "assets/Async.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>
@@ -96,12 +97,12 @@ namespace ecs {
 
         glm::vec3 constantForce;
 
-        Entity constraint;
+        EntityRef constraint;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
 
-        void SetConstraint(Entity target,
+        void SetConstraint(EntityRef target,
             float maxDistance = 0.0f,
             glm::vec3 offset = glm::vec3(),
             glm::quat rotation = glm::quat()) {
@@ -138,6 +139,4 @@ namespace ecs {
     bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);
     template<>
     bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &dst, const picojson::value &src);
-    template<>
-    void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst);
 } // namespace ecs

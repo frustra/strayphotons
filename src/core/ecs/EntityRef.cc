@@ -31,7 +31,7 @@ namespace ecs {
     }
 
     Entity EntityRef::Get() const {
-        return ptr->liveEntity.load();
+        return ptr ? ptr->liveEntity.load() : Entity();
     }
 
     Entity EntityRef::GetStaging() const {
