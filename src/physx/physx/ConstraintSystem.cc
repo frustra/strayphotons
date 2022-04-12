@@ -136,7 +136,7 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
-            auto constraintEntity = physics.constraint.Get();
+            auto constraintEntity = physics.constraint.Get(lock);
             if (physics.constraintMaxDistance > 0.0f && constraintEntity.Has<ecs::TransformSnapshot>(lock)) {
                 auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
                 auto &targetTransform = constraintEntity.Get<ecs::TransformSnapshot>(lock);
@@ -160,7 +160,7 @@ namespace sp {
 
             UpdateJoints(lock, entity, actor, transform);
 
-            auto constraintEntity = physics.constraint.Get();
+            auto constraintEntity = physics.constraint.Get(lock);
             if (constraintEntity.Has<ecs::TransformTree>(lock)) {
                 auto &targetTransform = constraintEntity.Get<ecs::TransformTree>(lock);
                 glm::vec3 targetVelocity(0);
@@ -179,7 +179,7 @@ namespace sp {
                             break;
                         }
                     }
-                    constraintEntity = constraintEntity.Get<ecs::TransformTree>(lock).parent.Get();
+                    constraintEntity = constraintEntity.Get<ecs::TransformTree>(lock).parent.Get(lock);
                 }
 
                 HandleForceLimitConstraint(actor,
@@ -261,7 +261,7 @@ namespace sp {
             PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset),
                 GlmQuatToPxQuat(ecsJoint.localOrient));
             PxTransform remoteTransform(PxIdentity);
-            auto targetEntity = ecsJoint.target.Get();
+            auto targetEntity = ecsJoint.target.Get(lock);
 
             if (manager.actors.count(targetEntity) > 0) {
                 targetActor = manager.actors[targetEntity];

@@ -282,7 +282,7 @@ namespace ecs {
         case CombineOperator::MULTIPLY: {
             std::optional<double> output;
             for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get();
+                auto origin = signal.first.Get(lock);
                 auto val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1);
                 switch (bindingList->operation) {
                 case CombineOperator::ADD:
@@ -306,7 +306,7 @@ namespace ecs {
         case CombineOperator::COUNT: {
             double output = 0.0;
             for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get();
+                auto origin = signal.first.Get(lock);
                 if (SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5) output += 1.0;
             }
             return output;
@@ -315,7 +315,7 @@ namespace ecs {
         case CombineOperator::BINARY_OR: {
             std::optional<bool> output;
             for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get();
+                auto origin = signal.first.Get(lock);
                 bool val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5;
                 switch (bindingList->operation) {
                 case CombineOperator::BINARY_AND:

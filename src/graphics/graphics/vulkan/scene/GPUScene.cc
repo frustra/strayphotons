@@ -74,7 +74,7 @@ namespace sp::vulkan {
             if (!renderable.joints.empty()) gpuRenderable.jointPosesOffset = jointPoses.size();
 
             for (auto &joint : renderable.joints) {
-                auto jointEntity = joint.entity.Get();
+                auto jointEntity = joint.entity.Get(lock);
                 if (jointEntity.Has<ecs::TransformSnapshot>(lock)) {
                     auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock);
                     jointPoses.push_back(glm::mat4(jointTransform.matrix) * joint.inverseBindPose);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecs/Ecs.hh"
 #include "ecs/components/Name.hh"
 
 #include <memory>
@@ -17,7 +18,8 @@ namespace ecs {
         EntityRef(const std::shared_ptr<Ref> &ptr) : ptr(ptr) {}
 
         ecs::Name Name() const;
-        Entity Get() const;
+        Entity Get(const Lock<> &lock) const;
+        Entity GetLive() const;
         Entity GetStaging() const;
 
         operator bool() const {

@@ -275,7 +275,7 @@ namespace sp::xr {
 
                             if (poseActionData.bActive) {
                                 if (poseActionData.pose.bDeviceIsConnected && poseActionData.pose.bPoseIsValid) {
-                                    ecs::Entity poseEntity = action.poseEntity.Get();
+                                    ecs::Entity poseEntity = action.poseEntity.Get(lock);
                                     if (poseEntity.Has<ecs::TransformTree>(lock)) {
                                         auto &transform = poseEntity.Get<ecs::TransformTree>(lock);
 
@@ -306,7 +306,7 @@ namespace sp::xr {
 
                                 if (poseActionData.bActive && poseActionData.pose.bDeviceIsConnected &&
                                     poseActionData.pose.bPoseIsValid) {
-                                    ecs::Entity poseEntity = action.poseEntity.Get();
+                                    ecs::Entity poseEntity = action.poseEntity.Get(lock);
                                     if (poseEntity.Has<ecs::TransformTree>(lock)) {
                                         auto &transform = poseEntity.Get<ecs::TransformTree>(lock);
 
@@ -360,7 +360,7 @@ namespace sp::xr {
                                             continue;
                                         }
 
-                                        ecs::Entity boneEntity = action.boneEntities[i].Get();
+                                        ecs::Entity boneEntity = action.boneEntities[i].Get(lock);
                                         if (boneEntity.Has<ecs::TransformTree>(lock)) {
                                             auto &transform = boneEntity.Get<ecs::TransformTree>(lock);
 
@@ -381,7 +381,7 @@ namespace sp::xr {
                                                 continue;
                                             }
 
-                                            auto targetEntity = ecs::EntityRef(entityName).Get();
+                                            auto targetEntity = ecs::EntityRef(entityName).Get(lock);
                                             if (targetEntity && targetEntity.Has<ecs::TransformTree>(lock)) {
                                                 auto &targetTransform = targetEntity.Get<ecs::TransformTree>(lock);
                                                 targetTransform.parent = boneEntity;

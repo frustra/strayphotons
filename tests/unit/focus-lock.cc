@@ -55,7 +55,7 @@ namespace FocusLockTests {
             ecs::Event event;
             Assert(eventInput.Poll(TEST_EVENT_ACTION, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_KEY, "Unexpected event name");
-            AssertEqual(event.source.Get(), keyboard, "Unexpected event source");
+            AssertEqual(event.source.GetLive(), keyboard, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
             Assert(!eventInput.Poll(TEST_EVENT_ACTION, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
