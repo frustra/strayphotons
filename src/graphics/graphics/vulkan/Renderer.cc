@@ -14,6 +14,7 @@
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
+#include "graphics/vulkan/render_passes/LightSensors.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Outline.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
@@ -96,6 +97,7 @@ namespace sp::vulkan {
             ecs::TransformSnapshot,
             ecs::LaserLine,
             ecs::Light,
+            ecs::LightSensor,
             ecs::VoxelArea,
             ecs::Renderable,
             ecs::View,
@@ -114,6 +116,7 @@ namespace sp::vulkan {
         AddGuis(lock);
         lighting.AddGelTextures(graph);
         voxels.AddVoxelization(graph, lighting);
+        renderer::AddLightSensors(graph, scene, lock);
 
 #ifdef SP_XR_SUPPORT
         {

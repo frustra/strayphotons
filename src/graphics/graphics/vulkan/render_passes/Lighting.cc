@@ -16,13 +16,13 @@ namespace sp::vulkan::renderer {
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
 
-    glm::mat4 makeProjectionMatrix(glm::vec3 viewSpaceMirrorPos, glm::vec2 clip, glm::vec4 bounds) {
+    static glm::mat4 makeOpticProjectionMatrix(glm::vec2 clip, glm::vec4 bounds) {
         return glm::mat4(
             // clang-format off
-            2*clip.x,          0,                 0,                             0,
-            0,                 2*clip.x,          0,                             0,
+            2*clip.x,          0,                 0,                              0,
+            0,                 2*clip.x,          0,                              0,
             bounds.y+bounds.x, bounds.z+bounds.w, -clip.y/(clip.y-clip.x),       -1,
-            0,                  0,                -clip.y*clip.x/(clip.y-clip.x), 0
+            0,                 0,                 -clip.y*clip.x/(clip.y-clip.x), 0
             // clang-format on
         );
     }
@@ -151,8 +151,7 @@ namespace sp::vulkan::renderer {
             view.fov = light.spotAngle * 2.0f;
             view.offset = {shadowAtlasSize.x, 0};
             view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
-            view.projMat = makeProjectionMatrix(lightViewMirrorPos,
-                view.clip,
+            view.projMat = makeOpticProjectionMatrix(view.clip,
                 glm::vec4(lightViewMirrorPos.x + glm::vec2(-0.5, 0.5), lightViewMirrorPos.y + glm::vec2(-0.5, 0.5)));
             view.invProjMat = glm::inverse(view.projMat);
 
