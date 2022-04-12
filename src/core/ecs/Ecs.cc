@@ -11,7 +11,7 @@ namespace ecs {
         if (!e.Has<Name>(lock)) return std::to_string(e);
         auto ecsId = Tecs::IdentifierFromGeneration(e.generation);
         auto generation = Tecs::GenerationWithoutIdentifier(e.generation);
-        return e.Get<Name>(lock).String() + "(" + (ecsId != World.GetInstanceId() ? "staging " : "") +
-               std::to_string(generation) + ", " + std::to_string(e.index) + ")";
+        return e.Get<Name>(lock).String() + "(" + (ecsId != World.GetInstanceId() ? "staging gen " : "gen ") +
+               std::to_string(generation) + ", index " + std::to_string(e.index) + ")";
     }
 } // namespace ecs
