@@ -158,9 +158,7 @@ namespace sp {
 
         if (!flatviewEntity || CVarFlatviewEntity.Changed()) {
             ecs::Name flatviewName;
-            if (flatviewName.Parse(CVarFlatviewEntity.Get(true))) {
-                flatviewEntity = ecs::GEntityRefs.Get(flatviewName);
-            }
+            if (flatviewName.Parse(CVarFlatviewEntity.Get(true))) flatviewEntity = flatviewName;
         }
 
         {

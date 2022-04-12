@@ -51,8 +51,8 @@ namespace ecs {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
                 auto fullName = subTransform.second.get<string>();
                 Name parentName;
-                parentName.Parse(fullName, scope.prefix);
-                transform.parent = ecs::GEntityRefs.Get(parentName);
+                if (!parentName.Parse(fullName, scope.prefix)) return false;
+                transform.parent = parentName;
             }
         }
         return Component<Transform>::Load(scope, transform.pose, src);

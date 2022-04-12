@@ -31,7 +31,7 @@ namespace ecs {
             if (bind.second.is<std::string>()) {
                 auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scope.prefix);
                 if (originName) {
-                    auto originRef = GEntityRefs.Get(originName);
+                    auto originRef = originName;
                     bindings.Bind(bind.first, originRef, signalName);
                 } else {
                     Errorf("Invalid signal binding origin: %s", bind.second.get<std::string>());
@@ -68,7 +68,7 @@ namespace ecs {
                         for (auto origin : source.second.get<picojson::array>()) {
                             auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scope.prefix);
                             if (originName) {
-                                auto originRef = GEntityRefs.Get(originName);
+                                auto originRef = originName;
                                 bindings.Bind(bind.first, originRef, signalName);
                             } else {
                                 Errorf("Invalid signal binding origin: %s", origin.get<std::string>());

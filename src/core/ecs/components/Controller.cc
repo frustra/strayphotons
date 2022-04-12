@@ -15,7 +15,7 @@ namespace ecs {
                 auto fullTargetName = param.second.get<string>();
                 ecs::Name targetName;
                 if (targetName.Parse(param.second.get<string>(), scope.prefix)) {
-                    controller.target = GEntityRefs.Get(targetName);
+                    controller.target = targetName;
                 } else {
                     Errorf("Invalid character controller target name: %s", fullTargetName);
                     return false;
@@ -24,7 +24,7 @@ namespace ecs {
                 auto fullTargetName = param.second.get<string>();
                 ecs::Name fallbackName;
                 if (fallbackName.Parse(param.second.get<string>(), scope.prefix)) {
-                    controller.fallbackTarget = GEntityRefs.Get(fallbackName);
+                    controller.fallbackTarget = fallbackName;
                 } else {
                     Errorf("Invalid character controller fallback name: %s", fullTargetName);
                     return false;
@@ -33,7 +33,7 @@ namespace ecs {
                 auto fullProxyName = param.second.get<string>();
                 ecs::Name proxyName;
                 if (proxyName.Parse(param.second.get<string>(), scope.prefix)) {
-                    controller.movementProxy = GEntityRefs.Get(proxyName);
+                    controller.movementProxy = proxyName;
                 } else {
                     Errorf("Invalid character controller proxy name: %s", fullProxyName);
                     return false;

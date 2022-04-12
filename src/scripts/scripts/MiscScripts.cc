@@ -40,7 +40,7 @@ namespace sp::scripts {
                     ecs::Name targetName;
                     if (targetName.Parse(fullTargetName, state.scope.prefix)) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
+                        if (targetEntity.Name() != targetName) targetEntity = targetName;
 
                         auto target = targetEntity.Get();
                         if (target) {
@@ -122,7 +122,7 @@ namespace sp::scripts {
                         ecs::Name targetName;
                         if (targetName.Parse(fullTargetName, state.scope.prefix)) {
                             auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                            if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
+                            if (targetEntity.Name() != targetName) targetEntity = targetName;
 
                             auto target = targetEntity.Get();
                             if (target) {
@@ -289,7 +289,7 @@ namespace sp::scripts {
                     ecs::Name targetName;
                     if (targetName.Parse(fullTargetName, state.scope.prefix)) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = GEntityRefs.Get(targetName);
+                        if (targetEntity.Name() != targetName) targetEntity = targetName;
 
                         auto target = targetEntity.Get();
                         if (target) {

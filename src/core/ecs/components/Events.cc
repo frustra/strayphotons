@@ -35,7 +35,7 @@ namespace ecs {
         if (src.is<std::string>()) {
             auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope.prefix);
             if (targetName) {
-                binding.target = GEntityRefs.Get(targetName);
+                binding.target = targetName;
                 binding.destQueue = eventName;
             } else {
                 Errorf("Invalid event binding target: %s", src.get<std::string>());
@@ -47,7 +47,7 @@ namespace ecs {
                     if (param.second.is<std::string>()) {
                         auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope.prefix);
                         if (targetName) {
-                            binding.target = GEntityRefs.Get(targetName);
+                            binding.target = targetName;
                             binding.destQueue = eventName;
                         } else {
                             Errorf("Invalid event binding target: %s", param.second.get<std::string>());

@@ -37,7 +37,7 @@ namespace sp::scripts {
                             if (parentName.Parse(CVarFlashlightParent.Get())) {
                                 transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
                                 transform.pose.SetRotation(glm::quat());
-                                transform.parent = ecs::GEntityRefs.Get(parentName);
+                                transform.parent = parentName;
                             } else {
                                 Errorf("Flashlight parent entity name is invalid: %s", CVarFlashlightParent.Get());
                             }
