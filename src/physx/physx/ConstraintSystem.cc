@@ -260,16 +260,17 @@ namespace sp {
             PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset),
                 GlmQuatToPxQuat(ecsJoint.localOrient));
             PxTransform remoteTransform(PxIdentity);
+            auto targetEntity = ecsJoint.target.Get();
 
-            if (manager.actors.count(ecsJoint.target) > 0) {
-                targetActor = manager.actors[ecsJoint.target];
+            if (manager.actors.count(targetEntity) > 0) {
+                targetActor = manager.actors[targetEntity];
                 auto userData = (ActorUserData *)targetActor->userData;
                 Assert(userData, "Physics targetActor is missing UserData");
                 remoteTransform.p = GlmVec3ToPxVec3(userData->scale * ecsJoint.remoteOffset);
                 remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOrient);
             }
-            if (!targetActor && ecsJoint.target.Has<ecs::TransformTree>(lock)) {
-                auto targetTransform = ecsJoint.target.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+            if (!targetActor && targetEntity.Has<ecs::TransformTree>(lock)) {
+                auto targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                 remoteTransform.p = GlmVec3ToPxVec3(
                     targetTransform.GetPosition() + glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
                 remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation() * ecsJoint.remoteOrient);
