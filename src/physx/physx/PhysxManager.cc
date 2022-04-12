@@ -276,7 +276,7 @@ namespace sp {
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
 
-            auto debugLines = debugLineEntity.Get();
+            auto debugLines = debugLineEntity.Get(lock);
             if (debugLines.Has<ecs::LaserLine>(lock)) {
                 auto &laser = debugLines.Get<ecs::LaserLine>(lock);
                 auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);

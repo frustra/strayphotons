@@ -74,14 +74,13 @@ namespace sp::vulkan {
             if (!renderable.joints.empty()) gpuRenderable.jointPosesOffset = jointPoses.size();
 
             for (auto &joint : renderable.joints) {
-                auto jointEntity = ecs::EntityWith<ecs::Name>(lock, joint.entity); // TODO rely on EntityRef
-                if (!jointEntity || !jointEntity.Has<ecs::TransformSnapshot>(lock)) {
+                auto jointEntity = joint.entity.Get(lock);
+                if (jointEntity.Has<ecs::TransformSnapshot>(lock)) {
+                    auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock);
+                    jointPoses.push_back(glm::mat4(jointTransform.matrix) * joint.inverseBindPose);
+                } else {
                     jointPoses.emplace_back(); // missing joints get an identity matrix
-                    continue;
                 }
-
-                auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock);
-                jointPoses.push_back(glm::mat4(jointTransform.matrix) * joint.inverseBindPose);
             }
 
             renderables.push_back(gpuRenderable);

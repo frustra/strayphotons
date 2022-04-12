@@ -85,7 +85,7 @@ namespace sp {
         auto keyCode = GlfwKeyMapping.find(key);
         Assertf(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping %d", key);
 
-        auto keyboard = ctx->keyboardEntity.Get();
+        auto keyboard = ctx->keyboardEntity.Get(lock);
         if (action == GLFW_PRESS) {
             if (keyboard.Has<ecs::EventBindings>(lock)) {
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
@@ -114,7 +114,7 @@ namespace sp {
         Assert(ctx->frameLock, "CharInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto keyboard = ctx->keyboardEntity.Get();
+        auto keyboard = ctx->keyboardEntity.Get(lock);
         if (keyboard.Has<ecs::EventBindings>(lock)) {
             auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
             // TODO: Handle unicode somehow?
@@ -127,7 +127,7 @@ namespace sp {
         Assert(ctx->frameLock, "MouseMoveCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto mouse = ctx->mouseEntity.Get();
+        auto mouse = ctx->mouseEntity.Get(lock);
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             glm::vec2 mousePos(xPos, yPos);
@@ -147,7 +147,7 @@ namespace sp {
         Assert(ctx->frameLock, "MouseButtonCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto mouse = ctx->mouseEntity.Get();
+        auto mouse = ctx->mouseEntity.Get(lock);
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, ctx->mouseEntity, ctx->ImmediateCursor());
@@ -177,7 +177,7 @@ namespace sp {
         Assert(ctx->frameLock, "MouseScrollCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto mouse = ctx->mouseEntity.Get();
+        auto mouse = ctx->mouseEntity.Get(lock);
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, ctx->mouseEntity, glm::vec2(xOffset, yOffset));

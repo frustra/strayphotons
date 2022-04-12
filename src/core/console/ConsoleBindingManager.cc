@@ -58,7 +58,7 @@ namespace sp {
                 auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>,
                     ecs::Write<ecs::Script, ecs::EventInput, ecs::EventBindings>>();
 
-                auto keyboard = keyboardEntity.Get();
+                auto keyboard = keyboardEntity.Get(lock);
                 if (!keyboard.Has<ecs::EventBindings>(lock)) {
                     Errorf("Can't bind key without valid keyboard entity");
                     return;

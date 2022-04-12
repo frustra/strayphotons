@@ -30,12 +30,20 @@ namespace ecs {
         return ptr ? ptr->name : ecs::Name();
     }
 
-    Entity EntityRef::Get() const {
-        return ptr->liveEntity.load();
+    Entity EntityRef::Get(const ecs::Lock<> &lock) const {
+        if (lock.GetInstance().GetInstanceId() == ecs::World.GetInstanceId()) {
+            return GetLive();
+        } else {
+            return GetStaging();
+        }
+    }
+
+    Entity EntityRef::GetLive() const {
+        return ptr ? ptr->liveEntity.load() : Entity();
     }
 
     Entity EntityRef::GetStaging() const {
-        return ptr->stagingEntity.load();
+        return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
     void EntityRef::Set(const Entity &ent) {

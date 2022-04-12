@@ -95,8 +95,8 @@ namespace sp {
             sounds.erase(event.entity);
         }
 
-        auto head = headEntity.Get();
-        if (!head) head = headEntityFallback.Get();
+        auto head = headEntity.Get(lock);
+        if (!head) head = headEntityFallback.Get(lock);
         if (head && head.Has<ecs::Transform>(lock)) {
             auto transform = head.Get<ecs::Transform>(lock);
             auto pos = transform.GetPosition();

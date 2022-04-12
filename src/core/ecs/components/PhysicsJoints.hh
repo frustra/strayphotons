@@ -2,6 +2,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 
@@ -24,7 +25,7 @@ namespace ecs {
     };
 
     struct PhysicsJoint {
-        Entity target;
+        EntityRef target;
         PhysicsJointType type = PhysicsJointType::Count;
         glm::vec2 range = glm::vec2();
         glm::vec3 localOffset = glm::vec3(), remoteOffset = glm::vec3();
@@ -45,10 +46,4 @@ namespace ecs {
 
     template<>
     bool Component<PhysicsJoints>::Load(const EntityScope &scope, PhysicsJoints &dst, const picojson::value &src);
-
-    template<>
-    void Component<PhysicsJoints>::ApplyComponent(Lock<ReadAll> srcLock,
-        Entity src,
-        Lock<AddRemove> dstLock,
-        Entity dst);
 } // namespace ecs
