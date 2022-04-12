@@ -1,9 +1,9 @@
 #pragma once
 
-#ifndef SP_WASM_BUILD
-    #include <functional>
-    #include <iostream>
-#endif
+#include <functional>
+#include <iostream>
+#include <string>
+#include <string_view>
 
 namespace sp {
     class Scene;
@@ -14,9 +14,9 @@ namespace ecs {
         std::string scene, entity;
 
         Name() {}
-        Name(const std::string &scene, const std::string &entity);
+        Name(std::string_view scene, std::string_view entity);
 
-        bool Parse(const std::string &fullName, const Name &scope = Name());
+        bool Parse(std::string_view fullName, const Name &scope = Name());
 
         std::string String() const {
             if (scene.empty()) return entity;
@@ -32,16 +32,12 @@ namespace ecs {
         }
     };
 
-#ifndef SP_WASM_BUILD
     std::ostream &operator<<(std::ostream &out, const Name &v);
-#endif
 } // namespace ecs
 
-#ifndef SP_WASM_BUILD
 namespace std {
     template<>
     struct hash<ecs::Name> {
         std::size_t operator()(const ecs::Name &n) const;
     };
 } // namespace std
-#endif

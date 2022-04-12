@@ -5,12 +5,12 @@
 #include "game/Scene.hh"
 
 namespace ecs {
-    Name::Name(const std::string &scene, const std::string &entity) : scene(scene), entity(entity) {
+    Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {
         Assertf(scene.find_first_of(":/ ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
         Assertf(entity.find_first_of(":/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
     }
 
-    bool Name::Parse(const std::string &fullName, const Name &scope) {
+    bool Name::Parse(std::string_view fullName, const Name &scope) {
         size_t i = fullName.find(':');
         if (i != std::string::npos) {
             scene = fullName.substr(0, i);
@@ -20,7 +20,7 @@ namespace ecs {
             if (scope.entity.empty()) {
                 entity = fullName;
             } else if (!sp::starts_with(fullName, scope.entity + ".")) {
-                entity = scope.entity + "." + fullName;
+                entity = scope.entity + "." + std::string(fullName);
             }
         } else {
             Errorf("Invalid name has no scene: %s", fullName);

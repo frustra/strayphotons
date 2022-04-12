@@ -3,7 +3,9 @@
 #include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
-    #include "ecs/EntityRef.hh"
+    #ifndef SP_WASM_BUILD
+        #include "ecs/EntityRef.hh"
+    #endif
 
 namespace ecs {
     extern "C" {
@@ -55,13 +57,13 @@ namespace ecs {
     // If this changes, make sure it is the same in Rust and WASM
     static_assert(sizeof(Transform) == 48, "Wrong Transform size");
 
+    #ifndef SP_WASM_BUILD
     typedef Transform TransformSnapshot;
 
     struct TransformTree {
         Transform pose;
         EntityRef parent;
 
-    #ifndef SP_WASM_BUILD
         TransformTree() {}
         TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
         TransformTree(const Transform &pose) : pose(pose) {}
@@ -70,8 +72,8 @@ namespace ecs {
         // Returns a flattened Transform that includes all parent transforms.
         Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
         glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
-    #endif
     };
+    #endif
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
