@@ -161,16 +161,22 @@
 				]
 			}
 		},
-		<%- include('prefab/articulating_arm', {
-			name: 'articulating_arm',
-			transform: {
+		{
+			"name": "articulating_arm",
+			"transform": {
 				"translate": [1, 0.1, -1],
 				"scale": [4, 4, 4]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "articulating_arm"
+				}
 			}
-		}) %>,
+		},
 		{
 			"transform": {
-				"parent": "articulating_arm.Ball_1",
+				"parent": "articulating_arm.arm.Ball_1",
 				"translate": [0, 0.04, 0]
 			},
 			"laser_line": {},

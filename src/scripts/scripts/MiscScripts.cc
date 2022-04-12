@@ -2,6 +2,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -32,37 +33,18 @@ namespace sp::scripts {
                     }
                 }
             }),
-        InternalScript("auto_attach",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<TransformTree>(lock)) {
-                    auto fullParentName = state.GetParam<std::string>("attach_parent");
-                    auto scene = state.scene.lock();
-                    ecs::Name parentName;
-                    if (parentName.Parse(fullParentName, scene.get())) {
-                        auto parentEntity = state.GetParam<NamedEntity>("attach_parent_entity");
-                        if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
-
-                        auto &transform = ent.Get<TransformTree>(lock);
-                        transform.parent = parentEntity.Get(lock);
-                        state.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
-                    } else {
-                        Errorf("Attach parent name is invalid: %s", fullParentName);
-                    }
-                }
-            }),
         InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
                     auto fullTargetName = state.GetParam<std::string>("relative_to");
                     ecs::Name targetName;
-                    auto scene = state.scene.lock();
-                    if (targetName.Parse(fullTargetName, scene.get())) {
-                        auto targetEntity = state.GetParam<NamedEntity>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                        if (targetEntity.Name() != targetName) targetEntity = targetName;
 
-                        auto target = targetEntity.Get(lock);
+                        auto target = targetEntity.Get();
                         if (target) {
-                            state.SetParam<NamedEntity>("target_entity", targetEntity);
+                            state.SetParam<EntityRef>("target_entity", targetEntity);
 
                             glm::vec3 movement = glm::vec3(0);
                             movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
@@ -128,8 +110,6 @@ namespace sp::scripts {
         InternalScript("model_spawner",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput>(lock)) {
-                    auto scene = state.scene.lock();
-
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
                         glm::vec3 position;
@@ -140,13 +120,13 @@ namespace sp::scripts {
 
                         auto fullTargetName = state.GetParam<std::string>("relative_to");
                         ecs::Name targetName;
-                        if (targetName.Parse(fullTargetName, scene.get())) {
-                            auto targetEntity = state.GetParam<NamedEntity>("target_entity");
-                            if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                        if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                            auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                            if (targetEntity.Name() != targetName) targetEntity = targetName;
 
-                            auto target = targetEntity.Get(lock);
+                            auto target = targetEntity.Get();
                             if (target) {
-                                state.SetParam<NamedEntity>("target_entity", targetEntity);
+                                state.SetParam<EntityRef>("target_entity", targetEntity);
 
                                 if (target.Has<TransformSnapshot>(lock)) {
                                     transform.pose.matrix = target.Get<TransformSnapshot>(lock).matrix *
@@ -292,7 +272,6 @@ namespace sp::scripts {
         InternalScript("voxel_controller",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree, VoxelArea>(lock)) {
-                    auto scene = state.scene.lock();
                     auto &transform = ent.Get<TransformTree>(lock);
                     auto &voxelArea = ent.Get<VoxelArea>(lock);
                     auto voxelRotation = transform.GetGlobalRotation(lock);
@@ -308,13 +287,13 @@ namespace sp::scripts {
                     auto targetPosition = glm::vec3(0);
                     auto fullTargetName = state.GetParam<std::string>("follow_target");
                     ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, scene.get())) {
-                        auto targetEntity = state.GetParam<NamedEntity>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                        if (targetEntity.Name() != targetName) targetEntity = targetName;
 
-                        auto target = targetEntity.Get(lock);
+                        auto target = targetEntity.Get();
                         if (target) {
-                            state.SetParam<NamedEntity>("target_entity", targetEntity);
+                            state.SetParam<EntityRef>("target_entity", targetEntity);
 
                             if (target.Has<TransformSnapshot>(lock)) {
                                 targetPosition = target.Get<TransformSnapshot>(lock).GetPosition();

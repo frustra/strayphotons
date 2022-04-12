@@ -4,6 +4,7 @@
 
     #include "core/Common.hh"
     #include "ecs/Ecs.hh"
+    #include "ecs/EntityRef.hh"
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         #include "graphics/opengl/GLRenderTarget.hh"
@@ -57,7 +58,7 @@ namespace sp {
     private:
         Game *game;
         unique_ptr<GraphicsContext> context;
-        ecs::NamedEntity flatviewEntity;
+        ecs::EntityRef flatviewEntity;
 
         chrono_clock::time_point previousFrameEnd;
 

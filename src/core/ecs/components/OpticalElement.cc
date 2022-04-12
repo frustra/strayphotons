@@ -6,7 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<OpticalElement>::Load(ScenePtr scenePtr, OpticalElement &optic, const picojson::value &src) {
+    bool Component<OpticalElement>::Load(const EntityScope &scope, OpticalElement &optic, const picojson::value &src) {
         if (src.is<std::string>()) {
             auto typeStr = src.get<std::string>();
             sp::to_lower(typeStr);

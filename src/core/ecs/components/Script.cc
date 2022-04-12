@@ -85,14 +85,14 @@ namespace ecs {
     }
 
     template<>
-    bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src) {
+    bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src) {
         if (src.is<picojson::object>()) {
-            ScriptState state(scenePtr);
+            ScriptState state(scope);
             if (parseScriptState(state, src)) dst.scripts.push_back(std::move(state));
         } else if (src.is<picojson::array>()) {
             for (auto entry : src.get<picojson::array>()) {
                 if (entry.is<picojson::object>()) {
-                    ScriptState state(scenePtr);
+                    ScriptState state(scope);
                     if (parseScriptState(state, entry)) dst.scripts.push_back(std::move(state));
                 } else {
                     Errorf("Invalid script entry: %s", entry.to_str());

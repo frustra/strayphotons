@@ -44,7 +44,7 @@ namespace ecs {
     static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints");
 
     template<>
-    bool Component<PhysicsJoints>::Load(ScenePtr scenePtr, PhysicsJoints &dst, const picojson::value &src);
+    bool Component<PhysicsJoints>::Load(const EntityScope &scope, PhysicsJoints &dst, const picojson::value &src);
 
     template<>
     void Component<PhysicsJoints>::ApplyComponent(Lock<ReadAll> srcLock,

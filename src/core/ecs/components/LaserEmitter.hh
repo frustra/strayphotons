@@ -15,5 +15,5 @@ namespace ecs {
     static Component<LaserEmitter> ComponentLaserEmitter("laser_emitter");
 
     template<>
-    bool Component<LaserEmitter>::Load(ScenePtr scenePtr, LaserEmitter &dst, const picojson::value &src);
+    bool Component<LaserEmitter>::Load(const EntityScope &scope, LaserEmitter &dst, const picojson::value &src);
 } // namespace ecs

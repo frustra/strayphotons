@@ -9,6 +9,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
@@ -267,14 +268,15 @@ namespace sp {
 
             for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
                 if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock)) continue;
-                ent.Set<ecs::TransformSnapshot>(lock, ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
+                auto &transform = ent.Get<ecs::TransformTree>(lock);
+                ent.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
             }
 
             constraintSystem.BreakConstraints(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
 
-            auto debugLines = debugLineEntity.Get(lock);
+            auto debugLines = debugLineEntity.Get();
             if (debugLines.Has<ecs::LaserLine>(lock)) {
                 auto &laser = debugLines.Get<ecs::LaserLine>(lock);
                 auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);

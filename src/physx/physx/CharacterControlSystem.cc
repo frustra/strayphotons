@@ -99,7 +99,7 @@ namespace sp {
             auto &transformTree = entity.Get<ecs::TransformTree>(lock);
             Assertf(!transformTree.parent,
                 "CharacterController should not have a TransformTree parent: %s",
-                ecs::ToString(lock, entity));
+                transformTree.parent.Name().String());
             auto &transform = transformTree.pose;
 
             auto actor = controller.pxController->getActor();
@@ -109,9 +109,9 @@ namespace sp {
             float targetHeight = ecs::PLAYER_CAPSULE_HEIGHT;
             glm::vec3 targetPosition = transform.GetPosition();
 
-            auto target = controller.target.Get(lock);
+            auto target = controller.target.Get();
             if (!target.Has<ecs::TransformTree>(lock) || !target.Get<const ecs::TransformTree>(lock).parent) {
-                target = controller.fallbackTarget.Get(lock);
+                target = controller.fallbackTarget.Get();
             }
             if (target.Has<ecs::TransformTree>(lock)) {
                 auto &targetTree = target.Get<const ecs::TransformTree>(lock);
@@ -261,7 +261,7 @@ namespace sp {
             }
 
             auto newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
-            auto movementProxy = controller.movementProxy.Get(lock);
+            auto movementProxy = controller.movementProxy.Get();
             if (movementProxy.Has<ecs::TransformTree>(lock)) {
                 auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
                 proxyTransform.pose.Translate(newPosition - userData->actorData.pose.GetPosition() - targetDelta);

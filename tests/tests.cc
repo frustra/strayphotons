@@ -1,5 +1,7 @@
 #include "tests.hh"
 
+#include "ecs/EcsImpl.hh"
+
 #include <iostream>
 #include <vector>
 
@@ -19,6 +21,13 @@ int main(int argc, char **argv) {
         Timer t("Running tests");
         for (auto &test : registeredTests) {
             test();
+            {
+                // Reset the ECS between tests
+                auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+                for (auto &ent : lock.Entities()) {
+                    ent.Destroy(lock);
+                }
+            }
         }
     }
 

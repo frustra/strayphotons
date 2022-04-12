@@ -3,7 +3,7 @@
 #include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <any>
 #include <functional>
@@ -23,15 +23,15 @@ namespace ecs {
             double,
             std::string,
             Entity,
-            NamedEntity,
+            EntityRef,
             std::vector<bool>,
             std::vector<double>,
             std::vector<std::string>>;
 
         ScriptState() : callback(std::monostate()) {}
-        ScriptState(ScenePtr scene) : scene(scene), callback(std::monostate()) {}
-        ScriptState(ScenePtr scene, OnTickFunc callback) : scene(scene), callback(callback) {}
-        ScriptState(ScenePtr scene, PrefabFunc callback) : scene(scene), callback(callback) {}
+        ScriptState(const EntityScope &scope) : scope(scope), callback(std::monostate()) {}
+        ScriptState(const EntityScope &scope, OnTickFunc callback) : scope(scope), callback(callback) {}
+        ScriptState(const EntityScope &scope, PrefabFunc callback) : scope(scope), callback(callback) {}
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
@@ -52,7 +52,7 @@ namespace ecs {
             return !std::holds_alternative<std::monostate>(callback);
         }
 
-        ScenePtr scene;
+        EntityScope scope;
         std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
 
         std::any userData;
@@ -64,12 +64,12 @@ namespace ecs {
     };
 
     struct Script {
-        ScriptState &AddOnTick(ScenePtr scene, OnTickFunc callback) {
-            return scripts.emplace_back(scene, callback);
+        ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
+            return scripts.emplace_back(scope, callback);
         }
 
-        ScriptState &AddPrefab(ScenePtr scene, PrefabFunc callback) {
-            return scripts.emplace_back(scene, callback);
+        ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
+            return scripts.emplace_back(scope, callback);
         }
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
@@ -96,7 +96,7 @@ namespace ecs {
     static Component<Script> ComponentScript("script");
 
     template<>
-    bool Component<Script>::Load(ScenePtr scenePtr, Script &dst, const picojson::value &src);
+    bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 

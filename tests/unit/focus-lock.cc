@@ -7,8 +7,6 @@
 namespace FocusLockTests {
     using namespace testing;
 
-    ecs::ECS World;
-
     const std::string TEST_SIGNAL_BUTTON = "device1_button";
     const std::string TEST_EVENT_KEY = "/device2/key";
     const std::string TEST_SIGNAL_ACTION = "test_signal_action";
@@ -18,7 +16,7 @@ namespace FocusLockTests {
         Tecs::Entity player, keyboard, mouse;
         {
             Timer t("Set up player, keyboard, and mouse with event and signal bindings");
-            auto lock = World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             lock.Set<ecs::FocusLock>(ecs::FocusLayer::GAME);
 
@@ -30,11 +28,11 @@ namespace FocusLockTests {
             player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
             player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
-            signalBindings.Bind(TEST_SIGNAL_ACTION, ecs::NamedEntity("", "mouse", mouse), TEST_SIGNAL_BUTTON);
+            signalBindings.Bind(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
 
             keyboard.Set<ecs::Name>(lock, "", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
-            eventBindings.Bind(TEST_EVENT_KEY, ecs::NamedEntity("", "player", player), TEST_EVENT_ACTION);
+            eventBindings.Bind(TEST_EVENT_KEY, player, TEST_EVENT_ACTION);
 
             mouse.Set<ecs::Name>(lock, "", "mouse");
             auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);
@@ -42,22 +40,22 @@ namespace FocusLockTests {
         }
         {
             Timer t("Try sending events and reading signals with GAME focus");
-            auto lock = World.StartTransaction<ecs::Read<ecs::Name,
-                                                   ecs::SignalOutput,
-                                                   ecs::SignalBindings,
-                                                   ecs::EventBindings,
-                                                   ecs::FocusLayer,
-                                                   ecs::FocusLock>,
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                        ecs::SignalOutput,
+                                                        ecs::SignalBindings,
+                                                        ecs::EventBindings,
+                                                        ecs::FocusLayer,
+                                                        ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("", "keyboard", keyboard), 42);
+            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
             Assert(eventInput.Poll(TEST_EVENT_ACTION, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_KEY, "Unexpected event name");
-            AssertEqual(event.source, ecs::Name("", "keyboard"), "Unexpected event source");
+            AssertEqual(event.source.Get(), keyboard, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
             Assert(!eventInput.Poll(TEST_EVENT_ACTION, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
@@ -69,23 +67,23 @@ namespace FocusLockTests {
         }
         {
             Timer t("Change focus to MENU");
-            auto lock = World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             auto &focus = lock.Get<ecs::FocusLock>();
             Assert(focus.AcquireFocus(ecs::FocusLayer::MENU), "Expected to be able to acquire menu focus");
         }
         {
             Timer t("Try sending events and reading signals with MENU focus");
-            auto lock = World.StartTransaction<ecs::Read<ecs::Name,
-                                                   ecs::SignalOutput,
-                                                   ecs::SignalBindings,
-                                                   ecs::EventBindings,
-                                                   ecs::FocusLayer,
-                                                   ecs::FocusLock>,
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                        ecs::SignalOutput,
+                                                        ecs::SignalBindings,
+                                                        ecs::EventBindings,
+                                                        ecs::FocusLayer,
+                                                        ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("", "keyboard", keyboard), 42);
+            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;

@@ -35,9 +35,10 @@ namespace sp {
             return true;
         }
 
+        std::atomic_bool exiting;
+
     private:
         std::thread thread;
-        std::atomic_bool exiting;
 
         std::atomic_uint64_t stepCount, maxStepCount;
     };

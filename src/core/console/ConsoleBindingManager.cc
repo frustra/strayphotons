@@ -2,6 +2,7 @@
 
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -11,12 +12,12 @@ namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "console",
-            [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_RUN_COMMAND);
                 auto &script = ent.Set<ecs::Script>(lock);
-                script.AddOnTick(scene,
+                script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,
@@ -57,7 +58,7 @@ namespace sp {
                 auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>,
                     ecs::Write<ecs::Script, ecs::EventInput, ecs::EventBindings>>();
 
-                auto keyboard = keyboardEntity.Get(lock);
+                auto keyboard = keyboardEntity.Get();
                 if (!keyboard.Has<ecs::EventBindings>(lock)) {
                     Errorf("Can't bind key without valid keyboard entity");
                     return;

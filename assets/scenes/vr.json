@@ -2,32 +2,24 @@
     "entities": [
         {
             "name": "left_hand_input",
-            "transform": {},
-            "script": [
-                {
-                    "onTick": "auto_attach",
-                    "parameters": { "attach_parent": "vr:controller_left" }
-                },
-                {
-                    "onTick": "relative_movement",
-                    "parameters": { "relative_to": "vr:hmd" }
-                }
-            ],
+            "transform": {
+                "parent": "vr:controller_left"
+            },
+            "script": {
+                "onTick": "relative_movement",
+                "parameters": { "relative_to": "vr:hmd" }
+            },
             "signal_output": {}
         },
         {
             "name": "right_hand_input",
-            "transform": {},
-            "script": [
-                {
-                    "onTick": "auto_attach",
-                    "parameters": { "attach_parent": "vr:controller_right" }
-                },
-                {
-                    "onTick": "relative_movement",
-                    "parameters": { "relative_to": "vr:hmd" }
-                }
-            ],
+            "transform": {
+                "parent": "vr:controller_right"
+            },
+            "script": {
+                "onTick": "relative_movement",
+                "parameters": { "relative_to": "vr:hmd" }
+            },
             "signal_output": {}
         },
         {
@@ -58,15 +50,10 @@
             }
         },
         {
-            "name": "right_hand",
-            "transform": {
-                "parent": "right_hand_input"
-            },
             "script": {
-                "prefab": "gltf",
+                "prefab": "template",
                 "parameters": {
-                    "model": "vr_glove_right",
-                    "render": true
+                    "source": "vr_hand_right"
                 }
             }
         }

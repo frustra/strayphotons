@@ -3,6 +3,10 @@
 #include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
+    #ifndef SP_WASM_BUILD
+        #include "ecs/EntityRef.hh"
+    #endif
+
 namespace ecs {
     extern "C" {
 #endif
@@ -49,14 +53,17 @@ namespace ecs {
     void transform_get_rotation(GlmQuat *out, const Transform *t);
     void transform_get_scale(GlmVec3 *out, const Transform *t);
 
+#ifdef __cplusplus
+    // If this changes, make sure it is the same in Rust and WASM
+    static_assert(sizeof(Transform) == 48, "Wrong Transform size");
+
+    #ifndef SP_WASM_BUILD
     typedef Transform TransformSnapshot;
 
-    typedef struct TransformTree {
+    struct TransformTree {
         Transform pose;
-        TecsEntity parent;
+        EntityRef parent;
 
-#ifdef __cplusplus
-    #ifndef SP_WASM_BUILD
         TransformTree() {}
         TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
         TransformTree(const Transform &pose) : pose(pose) {}
@@ -65,22 +72,17 @@ namespace ecs {
         // Returns a flattened Transform that includes all parent transforms.
         Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
         glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
+    };
     #endif
-#endif
-    } TransformTree;
-
-#ifdef __cplusplus
-    // If this changes, make sure it is the same in Rust and WASM
-    static_assert(sizeof(Transform) == 48, "Wrong Transform size");
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
     static Component<TransformTree> ComponentTransformTree("transform");
 
     template<>
-    bool Component<Transform>::Load(ScenePtr scenePtr, Transform &dst, const picojson::value &src);
+    bool Component<Transform>::Load(const EntityScope &scope, Transform &dst, const picojson::value &src);
     template<>
-    bool Component<TransformTree>::Load(ScenePtr scenePtr, TransformTree &dst, const picojson::value &src);
+    bool Component<TransformTree>::Load(const EntityScope &scope, TransformTree &dst, const picojson::value &src);
     template<>
     void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt);
     template<>

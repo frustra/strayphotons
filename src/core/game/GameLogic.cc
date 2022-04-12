@@ -128,9 +128,9 @@ namespace sp {
                 auto list = bindings.Lookup(bindingName);
                 Logf("    %s:%s", bindingName, list->empty() ? " none" : "");
                 for (auto &binding : *list) {
-                    auto e = binding.target.Get(lock);
-                    if (e) {
-                        Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, e));
+                    auto target = binding.target.Get();
+                    if (target) {
+                        Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, target));
                     } else {
                         Logf("      %s on %s(missing)", binding.destQueue, binding.target.Name().String());
                     }
@@ -170,7 +170,7 @@ namespace sp {
                 }
                 Logf("    %s", ss.str());
                 for (auto &source : list->sources) {
-                    auto e = source.first.Get(lock);
+                    auto e = source.first.Get();
                     double value = ecs::SignalBindings::GetSignal(lock, e, source.second);
                     if (e) {
                         Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), value);

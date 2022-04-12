@@ -2,6 +2,7 @@
 
 #include "assets/AssetManager.hh"
 #include "core/Tracing.hh"
+#include "ecs/EntityReferenceManager.hh"
 
 #include <resonance-audio/resonance_audio/base/constants_and_types.h>
 #include <resonance_audio_api.h>
@@ -15,9 +16,6 @@ namespace sp {
 
     bool AudioManager::ThreadInit() {
         ZoneScoped;
-
-        headEntity = ecs::NamedEntity("vr", "hmd");
-        headEntityFallback = ecs::NamedEntity("player", "flatview");
 
         soundio = soundio_create();
 
@@ -97,8 +95,8 @@ namespace sp {
             sounds.erase(event.entity);
         }
 
-        auto head = headEntity.Get(lock);
-        if (!head) head = headEntityFallback.Get(lock);
+        auto head = headEntity.Get();
+        if (!head) head = headEntityFallback.Get();
         if (head && head.Has<ecs::Transform>(lock)) {
             auto transform = head.Get<ecs::Transform>(lock);
             auto pos = transform.GetPosition();

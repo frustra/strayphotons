@@ -4,6 +4,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -25,9 +26,6 @@ namespace sp {
         glfwSetScrollCallback(window, MouseScrollCallback);
         glfwSetMouseButtonCallback(window, MouseButtonCallback);
         glfwSetCursorPosCallback(window, MouseMoveCallback);
-
-        keyboardEntity = ecs::NamedEntity("input", "keyboard");
-        mouseEntity = ecs::NamedEntity("input", "mouse");
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "input",
@@ -87,7 +85,7 @@ namespace sp {
         auto keyCode = GlfwKeyMapping.find(key);
         Assertf(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping %d", key);
 
-        auto keyboard = ctx->keyboardEntity.Get(lock);
+        auto keyboard = ctx->keyboardEntity.Get();
         if (action == GLFW_PRESS) {
             if (keyboard.Has<ecs::EventBindings>(lock)) {
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
@@ -116,7 +114,7 @@ namespace sp {
         Assert(ctx->frameLock, "CharInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto keyboard = ctx->keyboardEntity.Get(lock);
+        auto keyboard = ctx->keyboardEntity.Get();
         if (keyboard.Has<ecs::EventBindings>(lock)) {
             auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
             // TODO: Handle unicode somehow?
@@ -129,7 +127,7 @@ namespace sp {
         Assert(ctx->frameLock, "MouseMoveCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto mouse = ctx->mouseEntity.Get(lock);
+        auto mouse = ctx->mouseEntity.Get();
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             glm::vec2 mousePos(xPos, yPos);
@@ -149,7 +147,7 @@ namespace sp {
         Assert(ctx->frameLock, "MouseButtonCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto mouse = ctx->mouseEntity.Get(lock);
+        auto mouse = ctx->mouseEntity.Get();
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, ctx->mouseEntity, ctx->ImmediateCursor());
@@ -179,7 +177,7 @@ namespace sp {
         Assert(ctx->frameLock, "MouseScrollCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto mouse = ctx->mouseEntity.Get(lock);
+        auto mouse = ctx->mouseEntity.Get();
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, ctx->mouseEntity, glm::vec2(xOffset, yOffset));

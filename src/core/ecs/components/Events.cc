@@ -1,6 +1,8 @@
 #include "Events.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EntityReferenceManager.hh"
+#include "game/Scene.hh"
 
 #include <optional>
 #include <picojson/picojson.h>
@@ -8,7 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<EventInput>::Load(ScenePtr scenePtr, EventInput &input, const picojson::value &src) {
+    bool Component<EventInput>::Load(const EntityScope &scope, EventInput &input, const picojson::value &src) {
         for (auto event : src.get<picojson::array>()) {
             input.Register(event.get<std::string>());
         }
@@ -29,11 +31,11 @@ namespace ecs {
         return true;
     }
 
-    bool parseEventBinding(sp::Scene *scene, EventBindings::Binding &binding, const picojson::value &src) {
+    bool parseEventBinding(const EntityScope &scope, EventBindings::Binding &binding, const picojson::value &src) {
         if (src.is<std::string>()) {
-            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scene);
+            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope.prefix);
             if (targetName) {
-                binding.target = NamedEntity(targetName);
+                binding.target = targetName;
                 binding.destQueue = eventName;
             } else {
                 Errorf("Invalid event binding target: %s", src.get<std::string>());
@@ -43,9 +45,9 @@ namespace ecs {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "target") {
                     if (param.second.is<std::string>()) {
-                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scene);
+                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope.prefix);
                         if (targetName) {
-                            binding.target = NamedEntity(targetName);
+                            binding.target = targetName;
                             binding.destQueue = eventName;
                         } else {
                             Errorf("Invalid event binding target: %s", param.second.get<std::string>());
@@ -76,18 +78,18 @@ namespace ecs {
     }
 
     template<>
-    bool Component<EventBindings>::Load(ScenePtr scenePtr, EventBindings &bindings, const picojson::value &src) {
-        auto scene = scenePtr.lock();
+    bool Component<EventBindings>::Load(const EntityScope &scope, EventBindings &bindings, const picojson::value &src) {
+        auto scene = scope.scene.lock();
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<picojson::array>()) {
                 for (auto bind : param.second.get<picojson::array>()) {
                     EventBindings::Binding binding;
-                    if (!parseEventBinding(scene.get(), binding, bind)) return false;
+                    if (!parseEventBinding(scope, binding, bind)) return false;
                     bindings.Bind(param.first, binding);
                 }
             } else {
                 EventBindings::Binding binding;
-                if (!parseEventBinding(scene.get(), binding, param.second)) return false;
+                if (!parseEventBinding(scope, binding, param.second)) return false;
                 bindings.Bind(param.first, binding);
             }
         }
@@ -122,8 +124,10 @@ namespace ecs {
                     out << glm::to_string(arg);
                 } else if constexpr (std::is_same_v<T, glm::vec3>) {
                     out << glm::to_string(arg);
+                } else if constexpr (std::is_same_v<T, EntityRef>) {
+                    out << arg.Name().String();
                 } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                    out << "Entity(" << arg.id << ")";
+                    out << std::to_string(arg);
                 } else if constexpr (std::is_same_v<T, std::string>) {
                     out << "\"" << arg << "\"";
                 } else {
@@ -134,10 +138,10 @@ namespace ecs {
         return out;
     }
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const sp::Scene *currentScene) {
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope) {
         size_t delimiter = str.find('/');
         ecs::Name entityName;
-        if (entityName.Parse(str.substr(0, delimiter), currentScene)) {
+        if (entityName.Parse(str.substr(0, delimiter), scope)) {
             if (delimiter != std::string::npos) {
                 return std::make_pair(entityName, str.substr(delimiter));
             } else {
@@ -219,14 +223,14 @@ namespace ecs {
         }
     }
 
-    void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
+    void EventBindings::Bind(std::string source, EntityRef target, std::string dest) {
         Binding binding;
         binding.target = target;
         binding.destQueue = dest;
         Bind(source, binding);
     }
 
-    void EventBindings::Unbind(std::string source, NamedEntity target, std::string dest) {
+    void EventBindings::Unbind(std::string source, EntityRef target, std::string dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             auto binding = list->second.begin();
@@ -244,7 +248,7 @@ namespace ecs {
         sourceToDest.erase(source);
     }
 
-    void EventBindings::UnbindTarget(NamedEntity target) {
+    void EventBindings::UnbindTarget(EntityRef target) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -257,7 +261,7 @@ namespace ecs {
         }
     }
 
-    void EventBindings::UnbindDest(NamedEntity target, std::string dest) {
+    void EventBindings::UnbindDest(EntityRef target, std::string dest) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -283,7 +287,7 @@ namespace ecs {
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
-                auto ent = binding.target.Get(lock);
+                auto ent = binding.target.Get();
                 if (focusLock && ent.Has<FocusLayer>(lock)) {
                     auto &layer = ent.Get<FocusLayer>(lock);
                     if (!focusLock->HasPrimaryFocus(layer)) continue;

@@ -61,11 +61,16 @@ namespace sp {
             std::lock_guard lock(actionMutex);
             actionQueue.clear();
         }
-        graphicsPreload.test_and_set();
-        graphicsPreload.notify_all();
-        physicsPreload.test_and_set();
-        physicsPreload.notify_all();
-        StopThread();
+        {
+            // Make sure we don't deadlock on shutdown due to waiting on a preload.
+            std::lock_guard lock(preloadMutex);
+            graphicsPreload.test_and_set();
+            graphicsPreload.notify_all();
+            physicsPreload.test_and_set();
+            physicsPreload.notify_all();
+            StopThread(false);
+        }
+        StopThread(true);
 
         auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
         auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
@@ -250,7 +255,7 @@ namespace sp {
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
-                        auto stagingPlayer = scene->GetEntity(ecs::Name("player", "player"));
+                        auto stagingPlayer = scene->GetStagingEntity(ecs::Name("player", "player"));
                         if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
                             auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
                             player = sceneInfo.liveId;
@@ -390,6 +395,7 @@ namespace sp {
         {
             std::lock_guard lock(preloadMutex);
             Assertf(!preloadScene, "Already preloading %s when trying to preload %s", preloadScene->name, scene->name);
+            if (exiting.load()) return;
             preloadScene = scene;
             graphicsPreload.clear();
             physicsPreload.clear();
@@ -427,7 +433,7 @@ namespace sp {
 
         auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
         if (!asset) {
-            Errorf("Scene not found");
+            Errorf("Scene not found: %s", sceneName);
             return nullptr;
         }
 
@@ -453,7 +459,7 @@ namespace sp {
 
                     ecs::Entity entity = lock.NewEntity();
                     auto &name = entity.Set<ecs::Name>(lock);
-                    if (name.Parse(fullName, scene.get())) {
+                    if (name.Parse(fullName, ecs::Name(sceneName, ""))) {
                         Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", fullName);
                         scene->namedEntities.emplace(name, entity);
                     }
@@ -467,7 +473,7 @@ namespace sp {
                 ecs::Entity entity;
                 if (ent.count("name")) {
                     auto fullName = ent["name"].get<string>();
-                    entity = scene->GetEntity(fullName);
+                    entity = scene->GetStagingEntity(fullName, ecs::Name(scene->name, ""));
                     if (!entity) {
                         Errorf("Skipping entity with invalid name: %s", fullName);
                         continue;
@@ -536,7 +542,7 @@ namespace sp {
                     Abortf("Binding entity does not have scene name: %s", fullName);
                 }
                 ecs::Name name;
-                if (name.Parse(fullName, scene.get())) {
+                if (name.Parse(fullName, ecs::Name())) {
                     auto entity = lock.NewEntity();
                     entity.Set<ecs::Name>(lock, name);
                     entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
@@ -593,7 +599,7 @@ namespace sp {
                 if (sceneInfo.scene.lock() != scene) continue;
 
                 auto &transform = e.Get<ecs::TransformTree>(stagingLock);
-                if (!transform.parent.Has<ecs::TransformTree>(stagingLock)) {
+                if (!transform.parent) {
                     transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
                     transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
 

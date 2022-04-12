@@ -9,6 +9,7 @@
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Transform.h"
 #include "physx/AnimationSystem.hh"
@@ -112,7 +113,7 @@ namespace sp {
 #endif
 
         ecs::ComponentObserver<ecs::Physics> physicsObserver;
-        ecs::NamedEntity debugLineEntity = ecs::NamedEntity("physx", "debug_lines");
+        ecs::EntityRef debugLineEntity = ecs::Name("physx", "debug_lines");
 
         CharacterControlSystem characterControlSystem;
         ConstraintSystem constraintSystem;

@@ -4,7 +4,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Screen>::Load(ScenePtr scenePtr, Screen &dst, const picojson::value &src) {
+    bool Component<Screen>::Load(const EntityScope &scope, Screen &dst, const picojson::value &src) {
         if (src.is<string>()) {
             dst.textureName = src.get<string>();
         } else {

@@ -1,5 +1,6 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 
 #include <glm/glm.hpp>
 #include <tests.hh>
@@ -30,13 +31,13 @@ namespace SignalBindingTests {
             hand.Set<ecs::SignalOutput>(lock);
 
             auto &playerBindings = player.Set<ecs::SignalBindings>(lock);
-            playerBindings.Bind(TEST_SIGNAL_ACTION1, ecs::NamedEntity("", "player", player), TEST_SOURCE_KEY);
-            playerBindings.Bind(TEST_SIGNAL_ACTION2, ecs::NamedEntity("", "player", player), TEST_SOURCE_KEY);
-            playerBindings.Bind(TEST_SIGNAL_ACTION2, ecs::NamedEntity("", "player", player), TEST_SOURCE_BUTTON);
+            playerBindings.Bind(TEST_SIGNAL_ACTION1, player, TEST_SOURCE_KEY);
+            playerBindings.Bind(TEST_SIGNAL_ACTION2, player, TEST_SOURCE_KEY);
+            playerBindings.Bind(TEST_SIGNAL_ACTION2, player, TEST_SOURCE_BUTTON);
 
             auto &handBindings = hand.Set<ecs::SignalBindings>(lock);
-            handBindings.Bind(TEST_SIGNAL_ACTION1, ecs::NamedEntity("", "player", player), TEST_SOURCE_BUTTON);
-            handBindings.Bind(TEST_SIGNAL_ACTION3, ecs::NamedEntity("", "unknown"), TEST_SOURCE_BUTTON);
+            handBindings.Bind(TEST_SIGNAL_ACTION1, player, TEST_SOURCE_BUTTON);
+            handBindings.Bind(TEST_SIGNAL_ACTION3, ecs::Name("", "unknown"), TEST_SOURCE_BUTTON);
         }
         {
             Timer t("Try looking up some bindings");
@@ -49,9 +50,7 @@ namespace SignalBindingTests {
                 ecs::SignalBindings::CombineOperator::ADD,
                 "Expected default combine operator");
             AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
-            AssertEqual(bindingList->sources.begin()->first,
-                ecs::Name("", "player"),
-                "Expected action1 to be bound on player");
+            AssertEqual(bindingList->sources.begin()->first.Get(), player, "Expected action1 to be bound on player");
             AssertEqual(bindingList->sources.begin()->second,
                 TEST_SOURCE_KEY,
                 "Expected action1 to be bound to key source");
@@ -62,10 +61,10 @@ namespace SignalBindingTests {
                 ecs::SignalBindings::CombineOperator::ADD,
                 "Expected default combine operator");
             auto it = bindingList->sources.begin();
-            AssertEqual(it->first, ecs::Name("", "player"), "Expected action2 to be bound on player");
+            AssertEqual(it->first.Get(), player, "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_KEY, "Expected action2 to be bound to key source");
             it++;
-            AssertEqual(it->first, ecs::Name("", "player"), "Expected action2 to be bound on player");
+            AssertEqual(it->first.Get(), player, "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_BUTTON, "Expected action2 to be bound to button source");
             it++;
             Assert(it == bindingList->sources.end(), "Expected action2 to have no more bindings");
@@ -77,9 +76,10 @@ namespace SignalBindingTests {
                 ecs::SignalBindings::CombineOperator::ADD,
                 "Expected default combine operator");
             AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
-            AssertEqual(bindingList->sources.begin()->first,
+            AssertEqual(bindingList->sources.begin()->first.Name(),
                 ecs::Name("", "unknown"),
                 "Expected action3 to be bound on unknown");
+            Assert(!bindingList->sources.begin()->first.Get(), "Expected action3 to be bound on unknown");
             AssertEqual(bindingList->sources.begin()->second,
                 TEST_SOURCE_BUTTON,
                 "Expected action3 to be bound to button source");
@@ -109,6 +109,8 @@ namespace SignalBindingTests {
 
             unknown = lock.NewEntity();
             unknown.Set<ecs::Name>(lock, "", "unknown");
+            ecs::GEntityRefs.Set(ecs::Name("", "unknown"), unknown);
+
             double val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 0.0, "Expected binding to invalid entity to read as 0");
 

@@ -4,13 +4,15 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
+#include "game/Scene.hh"
 
 #include <optional>
 #include <picojson/picojson.h>
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(ScenePtr scenePtr, SignalOutput &output, const picojson::value &src) {
+    bool Component<SignalOutput>::Load(const EntityScope &scope, SignalOutput &output, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<bool>()) {
                 output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
@@ -22,13 +24,15 @@ namespace ecs {
     }
 
     template<>
-    bool Component<SignalBindings>::Load(ScenePtr scenePtr, SignalBindings &bindings, const picojson::value &src) {
-        auto scene = scenePtr.lock();
+    bool Component<SignalBindings>::Load(const EntityScope &scope,
+        SignalBindings &bindings,
+        const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             if (bind.second.is<std::string>()) {
-                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scene.get());
+                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scope.prefix);
                 if (originName) {
-                    bindings.Bind(bind.first, NamedEntity(originName), signalName);
+                    auto originRef = originName;
+                    bindings.Bind(bind.first, originRef, signalName);
                 } else {
                     Errorf("Invalid signal binding origin: %s", bind.second.get<std::string>());
                     return false;
@@ -62,9 +66,10 @@ namespace ecs {
                             return false;
                         }
                         for (auto origin : source.second.get<picojson::array>()) {
-                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scene.get());
+                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scope.prefix);
                             if (originName) {
-                                bindings.Bind(bind.first, NamedEntity(originName), signalName);
+                                auto originRef = originName;
+                                bindings.Bind(bind.first, originRef, signalName);
                             } else {
                                 Errorf("Invalid signal binding origin: %s", origin.get<std::string>());
                                 return false;
@@ -118,10 +123,10 @@ namespace ecs {
         }
     }
 
-    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const sp::Scene *currentScene) {
+    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const Name &scope) {
         size_t delimiter = str.find('/');
         ecs::Name entityName;
-        if (entityName.Parse(str.substr(0, delimiter), currentScene)) {
+        if (entityName.Parse(str.substr(0, delimiter), scope)) {
             std::string signalName = "value";
             if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
             return std::make_pair(entityName, signalName);
@@ -176,7 +181,7 @@ namespace ecs {
         }
     }
 
-    void SignalBindings::Bind(const std::string &name, NamedEntity origin, std::string source) {
+    void SignalBindings::Bind(const std::string &name, EntityRef origin, std::string source) {
         Tracef("Binding %s to %s on %s", name, source, origin.Name().String());
         Binding newBinding(origin, source);
 
@@ -189,7 +194,7 @@ namespace ecs {
         }
     }
 
-    void SignalBindings::Unbind(const std::string &name, NamedEntity origin, std::string source) {
+    void SignalBindings::Unbind(const std::string &name, EntityRef origin, std::string source) {
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {
             auto &sources = list->second.sources;
@@ -208,7 +213,7 @@ namespace ecs {
         destToSource.erase(name);
     }
 
-    void SignalBindings::UnbindOrigin(NamedEntity origin) {
+    void SignalBindings::UnbindOrigin(EntityRef origin) {
         for (auto &list : destToSource) {
             auto &sources = list.second.sources;
             auto binding = sources.begin();
@@ -222,7 +227,7 @@ namespace ecs {
         }
     }
 
-    void SignalBindings::UnbindSource(NamedEntity origin, std::string source) {
+    void SignalBindings::UnbindSource(EntityRef origin, std::string source) {
         for (auto &list : destToSource) {
             auto &sources = list.second.sources;
             auto binding = sources.begin();
@@ -277,7 +282,7 @@ namespace ecs {
         case CombineOperator::MULTIPLY: {
             std::optional<double> output;
             for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get(lock);
+                auto origin = signal.first.Get();
                 auto val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1);
                 switch (bindingList->operation) {
                 case CombineOperator::ADD:
@@ -301,7 +306,7 @@ namespace ecs {
         case CombineOperator::COUNT: {
             double output = 0.0;
             for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get(lock);
+                auto origin = signal.first.Get();
                 if (SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5) output += 1.0;
             }
             return output;
@@ -310,7 +315,7 @@ namespace ecs {
         case CombineOperator::BINARY_OR: {
             std::optional<bool> output;
             for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get(lock);
+                auto origin = signal.first.Get();
                 bool val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5;
                 switch (bindingList->operation) {
                 case CombineOperator::BINARY_AND:

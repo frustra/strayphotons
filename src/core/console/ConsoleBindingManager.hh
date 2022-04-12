@@ -2,7 +2,7 @@
 
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/NamedEntity.hh"
+#include "ecs/EntityRef.hh"
 
 #include <string>
 
@@ -17,7 +17,7 @@ namespace sp {
 
         CFuncCollection funcs;
 
-        static inline ecs::NamedEntity consoleInputEntity = ecs::NamedEntity("console", "input");
-        static inline ecs::NamedEntity keyboardEntity = ecs::NamedEntity("input", "keyboard");
+        ecs::EntityRef consoleInputEntity = ecs::Name("console", "input");
+        ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
     };
 } // namespace sp

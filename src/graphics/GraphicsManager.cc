@@ -5,6 +5,7 @@
     #include "core/Logging.hh"
     #include "core/Tracing.hh"
     #include "ecs/EcsImpl.hh"
+    #include "ecs/EntityReferenceManager.hh"
     #include "graphics/core/GraphicsContext.hh"
     #include "main/Game.hh"
 
@@ -155,16 +156,16 @@ namespace sp {
         if (game->debugGui) game->debugGui->BeforeFrame();
         if (game->menuGui) game->menuGui->BeforeFrame();
 
-        if (flatviewEntity == ecs::NamedEntity() || CVarFlatviewEntity.Changed()) {
+        if (!flatviewEntity || CVarFlatviewEntity.Changed()) {
             ecs::Name flatviewName;
-            if (flatviewName.Parse(CVarFlatviewEntity.Get(true))) { flatviewEntity = ecs::NamedEntity(flatviewName); }
+            if (flatviewName.Parse(CVarFlatviewEntity.Get(true))) flatviewEntity = flatviewName;
         }
 
         {
             ZoneScopedN("SyncWindowView");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
 
-            auto flatview = flatviewEntity.Get(lock);
+            auto flatview = flatviewEntity.Get();
             if (flatview.Has<ecs::View>(lock)) {
                 auto &view = flatview.Get<ecs::View>(lock);
                 view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
@@ -237,7 +238,7 @@ namespace sp {
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
 
-            auto flatview = flatviewEntity.Get(lock);
+            auto flatview = flatviewEntity.Get();
             if (flatview.Has<ecs::View>(lock)) {
                 auto &view = flatview.Get<ecs::View>(lock);
                 view.UpdateViewMatrix(lock, flatview);

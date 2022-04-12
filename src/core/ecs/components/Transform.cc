@@ -2,6 +2,7 @@
 
 #include "assets/AssetHelpers.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <glm/glm.hpp>
@@ -12,7 +13,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::Load(ScenePtr scenePtr, Transform &transform, const picojson::value &src) {
+    bool Component<Transform>::Load(const EntityScope &scope, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "scale") {
                 transform.Scale(sp::MakeVec3(subTransform.second));
@@ -41,20 +42,20 @@ namespace ecs {
     }
 
     template<>
-    bool Component<TransformTree>::Load(ScenePtr scenePtr, TransformTree &transform, const picojson::value &src) {
-        auto scene = scenePtr.lock();
+    bool Component<TransformTree>::Load(const EntityScope &scope,
+        TransformTree &transform,
+        const picojson::value &src) {
+        auto scene = scope.scene.lock();
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
-                auto parentName = subTransform.second.get<string>();
-                transform.parent = scene->GetEntity(parentName);
-                if (!transform.parent) {
-                    Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
-                    return false;
-                }
+                auto fullName = subTransform.second.get<string>();
+                Name parentName;
+                if (!parentName.Parse(fullName, scope.prefix)) return false;
+                transform.parent = parentName;
             }
         }
-        return Component<Transform>::Load(scenePtr, transform.pose, src);
+        return Component<Transform>::Load(scope, transform.pose, src);
     }
 
     template<>
@@ -66,13 +67,7 @@ namespace ecs {
             auto &srcTree = src.Get<TransformTree>(srcLock);
             auto &dstTree = dst.Get<TransformTree>(dstLock);
 
-            // Map transform parent from staging id to live id
-            if (srcTree.parent.Has<SceneInfo>(srcLock)) {
-                auto &sceneInfo = srcTree.parent.Get<SceneInfo>(srcLock);
-                dstTree.parent = sceneInfo.liveId;
-            } else {
-                dstTree.parent = Entity();
-            }
+            if (!dstTree.parent) dstTree.parent = srcTree.parent;
             dstTree.pose = srcTree.pose;
             dst.Set<TransformSnapshot>(dstLock, srcTree.GetGlobalTransform(srcLock));
         }
@@ -82,12 +77,7 @@ namespace ecs {
     void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstTree = dst.Get<TransformTree>(lock);
 
-        // Map transform parent from staging id to live id
-        if (src.parent) {
-            dstTree.parent = src.parent;
-        } else {
-            dstTree.parent = Entity();
-        }
+        if (!dstTree.parent) dstTree.parent = src.parent;
         dstTree.pose = src.pose;
         dst.Get<TransformSnapshot>(lock);
     }
@@ -153,24 +143,26 @@ namespace ecs {
     Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose;
 
-        if (!parent.Has<TransformTree>(lock)) {
-            Errorf("TransformTree parent %s does not have a TransformTree", std::to_string(parent));
+        auto parentEntity = parent.Get();
+        if (!parentEntity.Has<TransformTree>(lock)) {
+            Tracef("TransformTree parent %s does not have a TransformTree", std::to_string(parentEntity));
             return pose;
         }
 
-        auto parentTransform = parent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+        auto parentTransform = parentEntity.Get<TransformTree>(lock).GetGlobalTransform(lock);
         return Transform(parentTransform.matrix * glm::mat4(pose.matrix));
     }
 
     glm::quat TransformTree::GetGlobalRotation(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose.GetRotation();
 
-        if (!parent.Has<TransformTree>(lock)) {
-            Errorf("TransformTree parent %s does not have a TransformTree", std::to_string(parent));
+        auto parentEntity = parent.Get();
+        if (!parentEntity.Has<TransformTree>(lock)) {
+            Tracef("TransformTree parent %s does not have a TransformTree", std::to_string(parentEntity));
             return pose.GetRotation();
         }
 
-        return parent.Get<TransformTree>(lock).GetGlobalRotation(lock) * pose.GetRotation();
+        return parentEntity.Get<TransformTree>(lock).GetGlobalRotation(lock) * pose.GetRotation();
     }
 
     void transform_identity(Transform *out) {

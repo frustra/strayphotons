@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<LaserSensor>::Load(ScenePtr scenePtr, LaserSensor &dst, const picojson::value &src) {
+    bool Component<LaserSensor>::Load(const EntityScope &scope, LaserSensor &dst, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "threshold") { dst.threshold = sp::MakeVec3(param.second); }
         }

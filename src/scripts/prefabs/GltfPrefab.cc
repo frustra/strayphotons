@@ -15,7 +15,7 @@ namespace ecs {
             return;
         }
 
-        auto scene = state.scene.lock();
+        auto scene = state.scope.scene.lock();
         Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
 
         auto getNodeName = [&](size_t nodeId) {
@@ -53,7 +53,11 @@ namespace ecs {
             Entity newEntity = scene->NewPrefabEntity(lock, ent, getNodeName(nodeId));
 
             TransformTree transform(node.transform);
-            if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
+            if (parentEnt.Has<TransformTree>(lock)) {
+                transform.parent = parentEnt;
+            } else {
+                parentEnt = Entity();
+            }
             Component<TransformTree>::Apply(transform, lock, newEntity);
 
             PhysicsGroup group = PhysicsGroup::World;
@@ -85,7 +89,8 @@ namespace ecs {
                             Errorf("gltf %s missing skin %d", modelName, *node.skinIndex);
                         } else {
                             for (auto &j : skin->joints) {
-                                renderable.joints.emplace_back(getNodeName(j.jointNodeIndex), j.inverseBindPose);
+                                renderable.joints.emplace_back(
+                                    Renderable::Joint{getNodeName(j.jointNodeIndex), j.inverseBindPose});
                             }
                         }
                     }
@@ -113,11 +118,11 @@ namespace ecs {
             }
 
             auto jointsParam = state.GetParam<std::string>("physics_joints");
-            if (!jointsParam.empty() && transform.parent.Has<TransformTree>(lock)) {
+            if (!jointsParam.empty() && parentEnt.Has<TransformTree>(lock)) {
                 auto it = jointNodes.find(nodeId);
                 if (it != jointNodes.end()) {
                     sp::to_lower(jointsParam);
-                    auto parentTransform = transform.parent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                    auto parentTransform = parentEnt.Get<TransformTree>(lock).GetGlobalTransform(lock);
                     auto globalTransform = transform.GetGlobalTransform(lock);
                     glm::vec3 boneVector = globalTransform.GetPosition() - parentTransform.GetPosition();
                     float boneLength = glm::length(boneVector);
@@ -128,13 +133,12 @@ namespace ecs {
                         physics.shape = PhysicsShape::Sphere(0.01f * globalTransform.GetScale().x);
                     }
                     if (jointsParam == "spherical") {
-                        // physics.SetJoint(transform.parent,
+                        // physics.SetJoint(parentEnt,
                         //     PhysicsJointType::Spherical,
                         //     glm::vec2(),
                         //     -boneVector);
                     } else if (jointsParam == "hinge") {
-                        // physics.SetJoint(transform.parent, PhysicsJointType::Hinge, glm::vec2(),
-                        // -boneVector);
+                        // physics.SetJoint(parentEnt, PhysicsJointType::Hinge, glm::vec2(), -boneVector);
                     } else {
                         Abortf("Unknown physics_joints param: %s", jointsParam);
                     }

@@ -1,0 +1,18 @@
+{
+    "entities": [
+        {
+            "name": "right_hand",
+            "transform": {
+                "parent": "input:vr_actions_main_in_righthand_anim",
+                "rotate": [180, 0, 1, 0]
+            },
+            "script": {
+                "prefab": "gltf",
+                "parameters": {
+                    "model": "vr_glove_right",
+                    "render": true
+                }
+            }
+        }
+    ]
+}
