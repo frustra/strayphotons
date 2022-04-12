@@ -3,15 +3,15 @@
 
 #define MAX_LIGHT_SENSORS 64
 
-#include "../lib/util.glsl"
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 
 layout(local_size_x = MAX_LIGHT_SENSORS) in;
 
 layout(binding = 0) uniform sampler2D shadowMap;
 
 layout(binding = 1) writeonly buffer LightSensorResults {
-	vec3 sensorIlluminance[MAX_LIGHT_SENSORS];
+    vec3 sensorIlluminance[MAX_LIGHT_SENSORS];
 };
 
 INCLUDE_LAYOUT(binding = 2)
@@ -23,8 +23,8 @@ struct LightSensor {
 };
 
 layout(binding = 3, std140) uniform LightSensorData {
-	int sensorCount;
-	LightSensor sensors[MAX_LIGHT_SENSORS];
+    int sensorCount;
+    LightSensor sensors[MAX_LIGHT_SENSORS];
 };
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
@@ -36,10 +36,9 @@ layout(set = 1, binding = 0) uniform sampler2D textures[];
 #include "../lib/shading.glsl"
 
 void main() {
-	uint index = gl_LocalInvocationIndex;
-	if (index >= sensorCount)
-		return;
+    uint index = gl_LocalInvocationIndex;
+    if (index >= sensorCount) return;
 
-	LightSensor sensor = sensors[index];
-	sensorIlluminance[index] = DirectShading(sensor.position, vec3(1.0), sensor.direction, sensor.direction, 1, 0);
+    LightSensor sensor = sensors[index];
+    sensorIlluminance[index] = DirectShading(sensor.position, vec3(1.0), sensor.direction, sensor.direction, 1, 0);
 }
