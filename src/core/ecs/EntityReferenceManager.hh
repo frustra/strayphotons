@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Common.hh"
 #include "core/LockFreeMutex.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
@@ -17,8 +18,10 @@ namespace ecs {
         EntityRef Get(const Name &name);
         EntityRef Get(const Entity &stagingEntity);
 
-        void Set(const Name &name, const Entity &liveEntity);
+        void Set(const Name &name, const Entity &entity);
         void Set(const Entity &stagingEntity, const Entity &liveEntity);
+
+        void Tick(chrono_clock::duration maxTickInterval);
 
     private:
         sp::LockFreeMutex mutex;

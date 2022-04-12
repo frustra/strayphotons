@@ -7,6 +7,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <algorithm>
@@ -255,11 +256,7 @@ namespace sp {
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
-                        auto stagingPlayer = scene->GetStagingEntity(ecs::Name("player", "player"));
-                        if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
-                            auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
-                            player = sceneInfo.liveId;
-                        }
+                        player = scene->GetEntityRef(ecs::Name("player", "player")).Get();
                         Assert(!!player, "Player scene doesn't contain an entity named player");
                         RespawnPlayer(liveLock, player);
                     });
@@ -346,6 +343,7 @@ namespace sp {
             scene->RemoveScene(stagingLock, liveLock);
             scene.reset();
         });
+        ecs::GEntityRefs.Tick(this->interval);
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
@@ -473,7 +471,7 @@ namespace sp {
                 ecs::Entity entity;
                 if (ent.count("name")) {
                     auto fullName = ent["name"].get<string>();
-                    entity = scene->GetStagingEntity(fullName, ecs::Name(scene->name, ""));
+                    entity = scene->GetEntityRef(fullName, ecs::Name(scene->name, "")).GetStaging();
                     if (!entity) {
                         Errorf("Skipping entity with invalid name: %s", fullName);
                         continue;

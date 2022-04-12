@@ -22,7 +22,7 @@ namespace ecs {
             for (auto jointParam : param.get<picojson::object>()) {
                 if (jointParam.first == "target") {
                     jointTargetName = jointParam.second.get<string>();
-                    joint.target = scene->GetStagingEntity(jointTargetName, scope.prefix);
+                    joint.target = scene->GetEntityRef(jointTargetName, scope.prefix).GetStaging();
                 } else if (jointParam.first == "type") {
                     auto typeString = jointParam.second.get<string>();
                     sp::to_upper(typeString);

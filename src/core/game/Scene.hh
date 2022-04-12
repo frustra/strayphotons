@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "game/SceneType.hh"
@@ -31,17 +32,17 @@ namespace sp {
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
-        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const {
+        ecs::EntityRef GetEntityRef(const ecs::Name &entityName) const {
             auto it = namedEntities.find(entityName);
             if (it != namedEntities.end()) return it->second;
             return {};
         }
 
-        ecs::Entity GetStagingEntity(const std::string &fullName, ecs::Name scope) const {
+        ecs::EntityRef GetEntityRef(const std::string &fullName, ecs::Name scope) const {
             if (scope.scene.empty()) scope.scene = this->name;
             ecs::Name entityName;
             if (entityName.Parse(fullName, scope)) {
-                return GetStagingEntity(entityName);
+                return GetEntityRef(entityName);
             } else {
                 Errorf("Invalid entity name: %s", fullName);
             }
@@ -52,7 +53,7 @@ namespace sp {
         std::shared_ptr<const Asset> asset;
         bool active = false;
 
-        std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
+        std::unordered_map<ecs::Name, ecs::EntityRef> namedEntities;
 
         friend class SceneManager;
     };

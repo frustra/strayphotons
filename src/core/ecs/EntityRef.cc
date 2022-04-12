@@ -16,14 +16,15 @@ namespace ecs {
         }
     }
 
-    EntityRef::EntityRef(const ecs::Name &name) {
-        if (!name) return;
-        ptr = GEntityRefs.Get(name).ptr;
-    }
-
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
         ptr = GEntityRefs.Get(ent).ptr;
+    }
+
+    EntityRef::EntityRef(const ecs::Name &name, const Entity &ent) {
+        if (!name) return;
+        ptr = GEntityRefs.Get(name).ptr;
+        if (ent) Set(ent);
     }
 
     ecs::Name EntityRef::Name() const {
@@ -31,11 +32,11 @@ namespace ecs {
     }
 
     Entity EntityRef::Get() const {
-        return ptr->liveEntity.load();
+        return ptr ? ptr->liveEntity.load() : Entity();
     }
 
     Entity EntityRef::GetStaging() const {
-        return ptr->stagingEntity.load();
+        return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
     void EntityRef::Set(const Entity &ent) {

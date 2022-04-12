@@ -56,7 +56,7 @@ namespace sp {
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
         if (entityName) {
-            auto existing = GetStagingEntity(entityName);
+            auto existing = GetEntityRef(entityName).GetStaging();
             if (existing) return existing;
         }
 
@@ -64,8 +64,7 @@ namespace sp {
         entity.Set<ecs::SceneInfo>(stagingLock, entity, ecs::SceneInfo::Priority::System, scene);
         if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
-            namedEntities.emplace(entityName, entity);
-            ecs::GEntityRefs.Set(entityName, entity);
+            namedEntities.emplace(entityName, ecs::EntityRef{entityName, entity});
         }
         return entity;
     }
@@ -74,7 +73,7 @@ namespace sp {
         ecs::Entity prefabRoot,
         ecs::Name entityName) {
         if (entityName) {
-            auto existing = GetStagingEntity(entityName);
+            auto existing = GetEntityRef(entityName).GetStaging();
             if (existing) return existing;
         }
 
@@ -87,8 +86,7 @@ namespace sp {
         entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, rootSceneInfo);
         if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
-            namedEntities.emplace(entityName, entity);
-            ecs::GEntityRefs.Set(entityName, entity);
+            namedEntities.emplace(entityName, ecs::EntityRef{entityName, entity});
         }
         return entity;
     }

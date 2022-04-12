@@ -34,11 +34,16 @@ namespace ecs {
         return ref;
     }
 
-    void EntityReferenceManager::Set(const Name &name, const Entity &liveEntity) {
-        return Get(name).Set(liveEntity);
+    void EntityReferenceManager::Set(const Name &name, const Entity &entity) {
+        return Get(name).Set(entity);
     }
 
     void EntityReferenceManager::Set(const Entity &stagingEntity, const Entity &liveEntity) {
         return Get(stagingEntity).Set(liveEntity);
+    }
+
+    void EntityReferenceManager::Tick(chrono_clock::duration maxTickInterval) {
+        nameRefs.Tick(maxTickInterval);
+        stagingRefs.Tick(maxTickInterval);
     }
 } // namespace ecs
