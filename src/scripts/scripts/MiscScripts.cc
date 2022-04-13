@@ -42,7 +42,7 @@ namespace sp::scripts {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = targetName;
 
-                        auto target = targetEntity.Get();
+                        auto target = targetEntity.Get(lock);
                         if (target) {
                             state.SetParam<EntityRef>("target_entity", targetEntity);
 
@@ -124,7 +124,7 @@ namespace sp::scripts {
                             auto targetEntity = state.GetParam<EntityRef>("target_entity");
                             if (targetEntity.Name() != targetName) targetEntity = targetName;
 
-                            auto target = targetEntity.Get();
+                            auto target = targetEntity.Get(lock);
                             if (target) {
                                 state.SetParam<EntityRef>("target_entity", targetEntity);
 
@@ -291,7 +291,7 @@ namespace sp::scripts {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = targetName;
 
-                        auto target = targetEntity.Get();
+                        auto target = targetEntity.Get(lock);
                         if (target) {
                             state.SetParam<EntityRef>("target_entity", targetEntity);
 

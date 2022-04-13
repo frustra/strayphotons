@@ -23,14 +23,17 @@ namespace ecs {
                 entity = scope.entity + "." + std::string(fullName);
             }
         } else {
+            entity.clear();
             Errorf("Invalid name has no scene: %s", fullName);
             return false;
         }
         if (scene.find_first_of(":/ ") != std::string::npos) {
+            entity.clear();
             Errorf("Scene name has invalid character: '%s'", scene);
             return false;
         }
         if (entity.find_first_of(":/ ") != std::string::npos) {
+            entity.clear();
             Errorf("Entity name has invalid character: '%s'", entity);
             return false;
         }

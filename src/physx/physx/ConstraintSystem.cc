@@ -136,9 +136,10 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
-            if (physics.constraintMaxDistance > 0.0f && physics.constraint.Has<ecs::TransformSnapshot>(lock)) {
+            auto constraintEntity = physics.constraint.Get(lock);
+            if (physics.constraintMaxDistance > 0.0f && constraintEntity.Has<ecs::TransformSnapshot>(lock)) {
                 auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
-                auto &targetTransform = physics.constraint.Get<ecs::TransformSnapshot>(lock);
+                auto &targetTransform = constraintEntity.Get<ecs::TransformSnapshot>(lock);
 
                 auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
                                 targetTransform.GetRotation() * physics.constraintOffset;
@@ -159,26 +160,26 @@ namespace sp {
 
             UpdateJoints(lock, entity, actor, transform);
 
-            if (physics.constraint.Has<ecs::TransformTree>(lock)) {
-                auto &targetTransform = physics.constraint.Get<ecs::TransformTree>(lock);
+            auto constraintEntity = physics.constraint.Get(lock);
+            if (constraintEntity.Has<ecs::TransformTree>(lock)) {
+                auto &targetTransform = constraintEntity.Get<ecs::TransformTree>(lock);
                 glm::vec3 targetVelocity(0);
 
                 // Try and determine the velocity of the constraint target entity
-                auto e = physics.constraint;
-                while (e.Has<ecs::TransformTree>(lock)) {
-                    if (manager.actors.count(e) > 0) {
-                        auto userData = (ActorUserData *)manager.actors[e]->userData;
+                while (constraintEntity.Has<ecs::TransformTree>(lock)) {
+                    if (manager.actors.count(constraintEntity) > 0) {
+                        auto userData = (ActorUserData *)manager.actors[constraintEntity]->userData;
                         if (userData) targetVelocity = userData->velocity;
                         break;
-                    } else if (e.Has<ecs::CharacterController>(lock)) {
-                        auto &targetController = e.Get<ecs::CharacterController>(lock);
+                    } else if (constraintEntity.Has<ecs::CharacterController>(lock)) {
+                        auto &targetController = constraintEntity.Get<ecs::CharacterController>(lock);
                         if (targetController.pxController) {
                             auto userData = (CharacterControllerUserData *)targetController.pxController->getUserData();
                             if (userData) targetVelocity = userData->actorData.velocity;
                             break;
                         }
                     }
-                    e = e.Get<ecs::TransformTree>(lock).parent.Get();
+                    constraintEntity = constraintEntity.Get<ecs::TransformTree>(lock).parent.Get(lock);
                 }
 
                 HandleForceLimitConstraint(actor,
@@ -260,16 +261,17 @@ namespace sp {
             PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset),
                 GlmQuatToPxQuat(ecsJoint.localOrient));
             PxTransform remoteTransform(PxIdentity);
+            auto targetEntity = ecsJoint.target.Get(lock);
 
-            if (manager.actors.count(ecsJoint.target) > 0) {
-                targetActor = manager.actors[ecsJoint.target];
+            if (manager.actors.count(targetEntity) > 0) {
+                targetActor = manager.actors[targetEntity];
                 auto userData = (ActorUserData *)targetActor->userData;
                 Assert(userData, "Physics targetActor is missing UserData");
                 remoteTransform.p = GlmVec3ToPxVec3(userData->scale * ecsJoint.remoteOffset);
                 remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOrient);
             }
-            if (!targetActor && ecsJoint.target.Has<ecs::TransformTree>(lock)) {
-                auto targetTransform = ecsJoint.target.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+            if (!targetActor && targetEntity.Has<ecs::TransformTree>(lock)) {
+                auto targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                 remoteTransform.p = GlmVec3ToPxVec3(
                     targetTransform.GetPosition() + glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
                 remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation() * ecsJoint.remoteOrient);

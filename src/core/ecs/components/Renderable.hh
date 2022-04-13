@@ -2,6 +2,7 @@
 
 #include "assets/Async.hh"
 #include "ecs/Components.hh"
+#include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 
@@ -31,7 +32,7 @@ namespace ecs {
         size_t meshIndex;
 
         struct Joint {
-            Name entity; // TODO use EntityRef
+            EntityRef entity;
             glm::mat4 inverseBindPose;
         };
         vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin

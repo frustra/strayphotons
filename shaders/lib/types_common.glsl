@@ -49,13 +49,6 @@ struct Light {
     int gelId;
 };
 
-struct LightSensor {
-    vec3 position;
-    float id0;
-    vec3 direction;
-    float id1;
-};
-
 struct VoxelState {
     mat4 worldToVoxel;
     ivec3 gridSize;

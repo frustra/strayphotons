@@ -287,7 +287,7 @@ namespace ecs {
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
-                auto ent = binding.target.Get();
+                auto ent = binding.target.Get(lock);
                 if (focusLock && ent.Has<FocusLayer>(lock)) {
                     auto &layer = ent.Get<FocusLayer>(lock);
                     if (!focusLock->HasPrimaryFocus(layer)) continue;

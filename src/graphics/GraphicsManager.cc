@@ -165,7 +165,7 @@ namespace sp {
             ZoneScopedN("SyncWindowView");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
 
-            auto flatview = flatviewEntity.Get();
+            auto flatview = flatviewEntity.Get(lock);
             if (flatview.Has<ecs::View>(lock)) {
                 auto &view = flatview.Get<ecs::View>(lock);
                 view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);

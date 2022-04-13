@@ -99,16 +99,15 @@ namespace ecs {
                 physics.constantForce = sp::MakeVec3(param.second);
             } else if (param.first == "constraint") {
                 Assert(scene, "Physics::Load must have valid scene to define constraint");
-                ecs::Entity constraintTarget;
+                Name constraintTargetName;
                 float constraintMaxDistance = 0.0f;
                 Transform constraintTransform;
                 if (param.second.is<string>()) {
-                    constraintTarget = scene->GetEntityRef(param.second.get<string>(), scope.prefix).GetStaging();
+                    constraintTargetName.Parse(param.second.get<string>(), scope.prefix);
                 } else if (param.second.is<picojson::object>()) {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
-                            constraintTarget =
-                                scene->GetEntityRef(constraintParam.second.get<string>(), scope.prefix).GetStaging();
+                            constraintTargetName.Parse(constraintParam.second.get<string>(), scope.prefix);
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {
@@ -119,13 +118,14 @@ namespace ecs {
                         }
                     }
                 }
-                if (constraintTarget) {
-                    physics.SetConstraint(constraintTarget,
+                if (constraintTargetName) {
+                    physics.SetConstraint(constraintTargetName,
                         constraintMaxDistance,
                         constraintTransform.GetPosition(),
                         constraintTransform.GetRotation());
                 } else {
-                    Errorf("Component<Physics>::Load constraint name does not exist: %s", constraintTarget);
+                    Errorf("Component<Physics>::Load constraint name does not exist: %s",
+                        constraintTargetName.String());
                     return false;
                 }
             }
@@ -139,18 +139,5 @@ namespace ecs {
             if (param.first == "raycast") query.raycastQueryDistance = param.second.get<double>();
         }
         return true;
-    }
-
-    template<>
-    void Component<Physics>::ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) {
-        if (src.Has<Physics>(srcLock) && !dst.Has<Physics>(dstLock)) {
-            auto &physics = dst.Set<Physics>(dstLock, src.Get<Physics>(srcLock));
-
-            // Map physics constraint from staging id to live id
-            if (physics.constraint && physics.constraint.Has<SceneInfo>(srcLock)) {
-                auto &sceneInfo = physics.constraint.Get<SceneInfo>(srcLock);
-                physics.constraint = sceneInfo.liveId;
-            }
-        }
     }
 } // namespace ecs

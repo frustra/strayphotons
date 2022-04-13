@@ -168,7 +168,7 @@ namespace sp::xr {
     ecs::Entity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
         if (index >= trackedDevices.size() || trackedDevices[index] == nullptr) return ecs::Entity();
 
-        return trackedDevices[index]->Get();
+        return trackedDevices[index]->GetLive();
     }
 
     void OpenVrSystem::Frame() {
@@ -212,7 +212,7 @@ namespace sp::xr {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformTree>>();
 
             for (auto entityRef : trackedDevices) {
-                if (entityRef != nullptr && !entityRef->Get().Exists(lock)) {
+                if (entityRef != nullptr && !entityRef->Get(lock).Exists(lock)) {
                     missingEntities = true;
                     break;
                 }
@@ -220,7 +220,7 @@ namespace sp::xr {
 
             for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
                 if (trackedDevices[i] != nullptr) {
-                    ecs::Entity ent = trackedDevices[i]->Get();
+                    ecs::Entity ent = trackedDevices[i]->Get(lock);
                     if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
                         auto &transform = ent.Get<ecs::TransformTree>(lock);
                         auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
@@ -236,7 +236,7 @@ namespace sp::xr {
                 "vr_system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto entityRef : trackedDevices) {
-                        if (entityRef != nullptr && !entityRef->Get().Exists(lock)) {
+                        if (entityRef != nullptr && !entityRef->Get(lock).Exists(lock)) {
                             auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
                             ent.Set<ecs::TransformSnapshot>(lock);
                             ent.Set<ecs::TransformTree>(lock);

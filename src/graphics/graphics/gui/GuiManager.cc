@@ -84,7 +84,7 @@ namespace sp {
                 hasFocus = focusLock.HasPrimaryFocus(focusLayer);
             }
 
-            auto keyboard = keyboardEntity.Get();
+            auto keyboard = keyboardEntity.Get(lock);
             if (keyboard.Has<ecs::SignalOutput>(lock)) {
                 auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
                 for (int keyCode = KEY_SPACE; keyCode < KEY_BACKTICK; keyCode++) {
@@ -111,7 +111,7 @@ namespace sp {
             io.MouseWheel = 0.0f;
             io.MouseWheelH = 0.0f;
             if (hasFocus) {
-                auto gui = guiEntity.Get();
+                auto gui = guiEntity.Get(lock);
                 if (gui.Has<ecs::EventInput>(lock)) {
                     ecs::Event event;
                     while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_SCROLL, event)) {

@@ -13,7 +13,7 @@ namespace ecs {
         auto scene = scope.scene.lock();
         Assert(scene, "PhysicsJoints::Load must have valid scene to define joint");
         for (auto param : src.get<picojson::array>()) {
-            string jointTargetName;
+            Name jointTargetName;
             PhysicsJoint joint;
 
             Transform localTransform, remoteTransform;
@@ -21,8 +21,7 @@ namespace ecs {
 
             for (auto jointParam : param.get<picojson::object>()) {
                 if (jointParam.first == "target") {
-                    jointTargetName = jointParam.second.get<string>();
-                    joint.target = scene->GetEntityRef(jointTargetName, scope.prefix).GetStaging();
+                    jointTargetName.Parse(jointParam.second.get<string>(), scope.prefix);
                 } else if (jointParam.first == "type") {
                     auto typeString = jointParam.second.get<string>();
                     sp::to_upper(typeString);
@@ -54,35 +53,18 @@ namespace ecs {
                     }
                 }
             }
-            if (joint.target) {
+            if (jointTargetName) {
+                joint.target = jointTargetName;
                 joint.localOffset = localTransform.GetPosition();
                 joint.localOrient = localTransform.GetRotation();
                 joint.remoteOffset = remoteTransform.GetPosition();
                 joint.remoteOrient = remoteTransform.GetRotation();
                 joints.Add(joint);
             } else {
-                Errorf("Component<PhysicsJoints>::Load joint name does not exist: %s", jointTargetName);
+                Errorf("Component<PhysicsJoints>::Load joint name does not exist: %s", jointTargetName.String());
                 return false;
             }
         }
         return true;
-    }
-
-    template<>
-    void Component<PhysicsJoints>::ApplyComponent(Lock<ReadAll> srcLock,
-        Entity src,
-        Lock<AddRemove> dstLock,
-        Entity dst) {
-        if (src.Has<PhysicsJoints>(srcLock) && !dst.Has<PhysicsJoints>(dstLock)) {
-            auto &joints = dst.Set<PhysicsJoints>(dstLock, src.Get<PhysicsJoints>(srcLock));
-
-            // Map physics joints from staging id to live id
-            for (auto &joint : joints.joints) {
-                if (joint.target && joint.target.Has<SceneInfo>(srcLock)) {
-                    auto &sceneInfo = joint.target.Get<SceneInfo>(srcLock);
-                    joint.target = sceneInfo.liveId;
-                }
-            }
-        }
     }
 } // namespace ecs

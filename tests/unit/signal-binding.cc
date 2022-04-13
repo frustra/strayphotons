@@ -50,7 +50,9 @@ namespace SignalBindingTests {
                 ecs::SignalBindings::CombineOperator::ADD,
                 "Expected default combine operator");
             AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
-            AssertEqual(bindingList->sources.begin()->first.Get(), player, "Expected action1 to be bound on player");
+            AssertEqual(bindingList->sources.begin()->first.GetLive(),
+                player,
+                "Expected action1 to be bound on player");
             AssertEqual(bindingList->sources.begin()->second,
                 TEST_SOURCE_KEY,
                 "Expected action1 to be bound to key source");
@@ -61,10 +63,10 @@ namespace SignalBindingTests {
                 ecs::SignalBindings::CombineOperator::ADD,
                 "Expected default combine operator");
             auto it = bindingList->sources.begin();
-            AssertEqual(it->first.Get(), player, "Expected action2 to be bound on player");
+            AssertEqual(it->first.GetLive(), player, "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_KEY, "Expected action2 to be bound to key source");
             it++;
-            AssertEqual(it->first.Get(), player, "Expected action2 to be bound on player");
+            AssertEqual(it->first.GetLive(), player, "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_BUTTON, "Expected action2 to be bound to button source");
             it++;
             Assert(it == bindingList->sources.end(), "Expected action2 to have no more bindings");
@@ -79,7 +81,7 @@ namespace SignalBindingTests {
             AssertEqual(bindingList->sources.begin()->first.Name(),
                 ecs::Name("", "unknown"),
                 "Expected action3 to be bound on unknown");
-            Assert(!bindingList->sources.begin()->first.Get(), "Expected action3 to be bound on unknown");
+            Assert(!bindingList->sources.begin()->first.GetLive(), "Expected action3 to be bound on unknown");
             AssertEqual(bindingList->sources.begin()->second,
                 TEST_SOURCE_BUTTON,
                 "Expected action3 to be bound to button source");
