@@ -1,3 +1,10 @@
+#extension GL_OVR_multiview2 : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+layout(num_views = 2) in;
+
+#define SHADOWS_ENABLED
+#define LIGHTING_GELS
+
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
 
