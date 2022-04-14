@@ -58,6 +58,11 @@
             "move_right": "vr:controller_right/actions/main/in/movement_x"
         }
     },
+    "vr:controller_right": {
+        "event_bindings": {
+            "/actions/main/in/grab": "vr:right_grabber/action/interact_grab"
+        }
+    },
     "player:player": {
         "signal_bindings": {
             "menu_primary_trigger": "input:mouse/mouse_button_left",
