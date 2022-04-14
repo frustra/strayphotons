@@ -65,7 +65,7 @@ namespace sp {
         if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
             namedEntities.emplace(entityName, entity);
-            ecs::GEntityRefs.Set(entityName, entity);
+            references.emplace_back(entityName, entity);
         }
         return entity;
     }
@@ -88,7 +88,7 @@ namespace sp {
         if (entityName) {
             entity.Set<ecs::Name>(stagingLock, entityName);
             namedEntities.emplace(entityName, entity);
-            ecs::GEntityRefs.Set(entityName, entity);
+            references.emplace_back(entityName, entity);
         }
         return entity;
     }

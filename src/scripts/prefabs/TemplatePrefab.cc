@@ -52,9 +52,15 @@ namespace ecs {
             ecs::Entity newEntity;
             if (obj.count("name")) {
                 auto fullName = obj["name"].get<string>();
-                newEntity = scene->GetStagingEntity(fullName, scope);
+                ecs::Name entityName;
+                if (entityName.Parse(fullName, scope)) {
+                    newEntity = scene->GetStagingEntity(entityName);
+                } else {
+                    Errorf("Template %s contains invalid entity name: %s", sourceName, fullName);
+                    continue;
+                }
                 if (!newEntity) {
-                    Errorf("Skipping entity with invalid name: %s", fullName);
+                    Errorf("Skipping entity with invalid name: %s", entityName.String());
                     continue;
                 }
             } else {

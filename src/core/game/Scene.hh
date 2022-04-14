@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "game/SceneType.hh"
@@ -37,22 +38,12 @@ namespace sp {
             return {};
         }
 
-        ecs::Entity GetStagingEntity(const std::string &fullName, ecs::Name scope) const {
-            if (scope.scene.empty()) scope.scene = this->name;
-            ecs::Name entityName;
-            if (entityName.Parse(fullName, scope)) {
-                return GetStagingEntity(entityName);
-            } else {
-                Errorf("Invalid entity name: %s", fullName);
-            }
-            return {};
-        }
-
     private:
         std::shared_ptr<const Asset> asset;
         bool active = false;
 
         std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
+        std::vector<ecs::EntityRef> references;
 
         friend class SceneManager;
     };

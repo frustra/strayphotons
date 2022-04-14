@@ -303,18 +303,26 @@ namespace sp {
                     Abortf("Unsupported PhysX joint type: %u", ecsJoint.type);
                 }
                 pxJoints.emplace_back(PhysxManager::Joint{ecsJoint, pxJoint});
-            } else if (ecsJoint == *oldEcsJoint) {
-                // joint is up to date
-                continue;
             } else {
-                *oldEcsJoint = ecsJoint;
+                if (pxJoint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
+                    wakeUp = true;
+                    pxJoint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
+                }
+                if (pxJoint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
+                    wakeUp = true;
+                    pxJoint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                }
+
+                if (ecsJoint == *oldEcsJoint) {
+                    // joint is up to date
+                    continue;
+                } else {
+                    *oldEcsJoint = ecsJoint;
+                }
             }
 
             wakeUp = true;
             pxJoint->setActors(actor, targetActor);
-            pxJoint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
-            pxJoint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
-
             if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
                 auto distanceJoint = pxJoint->is<PxDistanceJoint>();
                 distanceJoint->setMinDistance(ecsJoint.range.x);

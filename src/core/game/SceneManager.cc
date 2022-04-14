@@ -7,6 +7,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <algorithm>
@@ -113,15 +114,9 @@ namespace sp {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                     item.callback(stagingLock, scene);
 
-                    scene->namedEntities.clear();
                     for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
                         auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
                         if (sceneInfo.scene.lock() != scene) continue;
-
-                        if (e.Has<ecs::Name>(stagingLock)) {
-                            auto &name = e.Get<const ecs::Name>(stagingLock);
-                            scene->namedEntities.emplace(name, e);
-                        }
 
                         // Special case so TransformSnapshot doesn't get removed as a dangling component
                         if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
@@ -346,6 +341,7 @@ namespace sp {
             scene->RemoveScene(stagingLock, liveLock);
             scene.reset();
         });
+        ecs::GEntityRefs.Tick(this->interval);
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
@@ -462,6 +458,7 @@ namespace sp {
                     if (name.Parse(fullName, ecs::Name(sceneName, ""))) {
                         Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", fullName);
                         scene->namedEntities.emplace(name, entity);
+                        scene->references.emplace_back(entity);
                     }
                 }
             }
@@ -473,9 +470,15 @@ namespace sp {
                 ecs::Entity entity;
                 if (ent.count("name")) {
                     auto fullName = ent["name"].get<string>();
-                    entity = scene->GetStagingEntity(fullName, ecs::Name(scene->name, ""));
+                    ecs::Name entityName;
+                    if (entityName.Parse(fullName, ecs::Name(scene->name, ""))) {
+                        entity = scene->GetStagingEntity(entityName);
+                    } else {
+                        Errorf("Scene %s contains invalid entity name: %s", sceneName, fullName);
+                        continue;
+                    }
                     if (!entity) {
-                        Errorf("Skipping entity with invalid name: %s", fullName);
+                        Errorf("Skipping entity with invalid name: %s", entityName.String());
                         continue;
                     }
                 } else {

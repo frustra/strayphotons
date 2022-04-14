@@ -12,8 +12,8 @@ namespace ecs {
 
     public:
         EntityRef() {}
-        EntityRef(const ecs::Name &name);
         EntityRef(const Entity &ent);
+        EntityRef(const ecs::Name &name, const Entity &ent = Entity());
         EntityRef(const EntityRef &ref) : ptr(ref.ptr) {}
         EntityRef(const std::shared_ptr<Ref> &ptr) : ptr(ptr) {}
 
