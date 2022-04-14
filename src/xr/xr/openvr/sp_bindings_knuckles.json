@@ -1,17 +1,33 @@
 {
    "action_manifest_version" : 0,
    "alias_info" : {},
-   "app_key" : "system.generated.sp.exe",
+   "app_key" : "system.generated.sp-vk.exe",
    "bindings" : {
       "/actions/main" : {
          "poses" : [
             {
-               "output" : "/actions/main/in/lefthand",
+               "output" : "none",
                "path" : "/user/hand/left/pose/raw"
             },
             {
-               "output" : "/actions/main/in/righthand",
+               "output" : "none",
                "path" : "/user/hand/right/pose/raw"
+            },
+            {
+               "output" : "none",
+               "path" : "/user/hand/right/pose/handgrip"
+            },
+            {
+               "output" : "none",
+               "path" : "/user/hand/right/pose/base"
+            },
+            {
+               "output" : "/actions/main/in/righthand",
+               "path" : "/user/hand/right/pose/tip"
+            },
+            {
+               "output" : "/actions/main/in/lefthand",
+               "path" : "/user/hand/left/pose/tip"
             }
          ],
          "skeleton" : [
@@ -28,24 +44,6 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/main/in/grab"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/right/input/grip"
-            },
-            {
-               "inputs" : {
-                  "click" : {
-                     "output" : "/actions/main/in/grab"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/left/input/grip"
-            },
-            {
-               "inputs" : {
-                  "click" : {
                      "output" : "/actions/main/in/teleport"
                   }
                },
@@ -55,7 +53,7 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/main/in/teleport"
+                     "output" : "/actions/main/in/grab"
                   }
                },
                "mode" : "button",

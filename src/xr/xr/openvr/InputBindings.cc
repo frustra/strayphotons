@@ -107,13 +107,12 @@ namespace sp::xr {
                         if (action.type == Action::DataType::Pose || action.type == Action::DataType::Skeleton) {
                             auto inputName = "vr" + action.name;
                             std::transform(inputName.begin(), inputName.end(), inputName.begin(), [](unsigned char c) {
-                                return (c == ':' || c == '/') ? '_' : c;
+                                return (c == ':' || c == '/') ? '_' : tolower(c);
                             });
                             action.poseEntity = ecs::Name("input", inputName);
                             auto ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::SignalOutput>(lock);
-                            // ent.Set<ecs::Renderable>(lock, GAssets.LoadGltf("box"));
                         }
                     }
                 }

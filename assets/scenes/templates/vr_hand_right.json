@@ -3,8 +3,7 @@
         {
             "name": "right_hand",
             "transform": {
-                "parent": "input:vr_actions_main_in_righthand_anim",
-                "rotate": [180, 0, 1, 0]
+                "parent": "input:vr_actions_main_in_righthand"
             },
             "script": {
                 "prefab": "gltf",
@@ -12,6 +11,27 @@
                     "model": "vr_glove_right",
                     "render": true
                 }
+            }
+        },
+        {
+            "name": "right_grabber",
+            "transform": {
+                "parent": "right_hand",
+                "translate": [0, 0, 0]
+            },
+            "script": {
+                "onTick": "grab_object",
+                "parameters": { "rotate_sensitivity": 0.01 }
+            },
+            "event_input": [
+                "/action/interact_grab"
+            ],
+            "physics_query": {
+                "raycast": 0.5
+            },
+            "laser_line": {},
+            "laser_emitter": {
+                "color": [1, 0, 0]
             }
         }
     ]
