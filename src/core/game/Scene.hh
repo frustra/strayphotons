@@ -32,20 +32,9 @@ namespace sp {
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
-        ecs::EntityRef GetEntityRef(const ecs::Name &entityName) const {
+        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const {
             auto it = namedEntities.find(entityName);
             if (it != namedEntities.end()) return it->second;
-            return {};
-        }
-
-        ecs::EntityRef GetEntityRef(const std::string &fullName, ecs::Name scope) const {
-            if (scope.scene.empty()) scope.scene = this->name;
-            ecs::Name entityName;
-            if (entityName.Parse(fullName, scope)) {
-                return GetEntityRef(entityName);
-            } else {
-                Errorf("Invalid entity name: %s", fullName);
-            }
             return {};
         }
 
@@ -53,7 +42,8 @@ namespace sp {
         std::shared_ptr<const Asset> asset;
         bool active = false;
 
-        std::unordered_map<ecs::Name, ecs::EntityRef> namedEntities;
+        std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
+        std::vector<ecs::EntityRef> references;
 
         friend class SceneManager;
     };

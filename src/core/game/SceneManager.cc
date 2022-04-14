@@ -114,15 +114,9 @@ namespace sp {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                     item.callback(stagingLock, scene);
 
-                    scene->namedEntities.clear();
                     for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
                         auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
                         if (sceneInfo.scene.lock() != scene) continue;
-
-                        if (e.Has<ecs::Name>(stagingLock)) {
-                            auto &name = e.Get<const ecs::Name>(stagingLock);
-                            scene->namedEntities.emplace(name, e);
-                        }
 
                         // Special case so TransformSnapshot doesn't get removed as a dangling component
                         if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
@@ -256,7 +250,11 @@ namespace sp {
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
-                        player = scene->GetEntityRef(ecs::Name("player", "player")).Get();
+                        auto stagingPlayer = scene->GetStagingEntity(ecs::Name("player", "player"));
+                        if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
+                            auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
+                            player = sceneInfo.liveId;
+                        }
                         Assert(!!player, "Player scene doesn't contain an entity named player");
                         RespawnPlayer(liveLock, player);
                     });
@@ -460,6 +458,7 @@ namespace sp {
                     if (name.Parse(fullName, ecs::Name(sceneName, ""))) {
                         Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", fullName);
                         scene->namedEntities.emplace(name, entity);
+                        scene->references.emplace_back(entity);
                     }
                 }
             }
@@ -471,9 +470,15 @@ namespace sp {
                 ecs::Entity entity;
                 if (ent.count("name")) {
                     auto fullName = ent["name"].get<string>();
-                    entity = scene->GetEntityRef(fullName, ecs::Name(scene->name, "")).GetStaging();
+                    ecs::Name entityName;
+                    if (entityName.Parse(fullName, ecs::Name(scene->name, ""))) {
+                        entity = scene->GetStagingEntity(entityName);
+                    } else {
+                        Errorf("Scene %s contains invalid entity name: %s", sceneName, fullName);
+                        continue;
+                    }
                     if (!entity) {
-                        Errorf("Skipping entity with invalid name: %s", fullName);
+                        Errorf("Skipping entity with invalid name: %s", entityName.String());
                         continue;
                     }
                 } else {
