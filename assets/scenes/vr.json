@@ -1,45 +1,135 @@
 {
     "entities": [
         {
-            "name": "left_hand_input",
-            "transform": {
-                "parent": "vr:controller_left"
-            },
+            "name": "origin",
             "script": {
-                "onTick": "relative_movement",
+                "onTick": "snap_rotate",
                 "parameters": { "relative_to": "vr:hmd" }
             },
-            "signal_output": {}
-        },
-        {
-            "name": "right_hand_input",
-            "transform": {
-                "parent": "vr:controller_right"
-            },
-            "script": {
-                "onTick": "relative_movement",
-                "parameters": { "relative_to": "vr:hmd" }
-            },
-            "signal_output": {}
-        },
-        {
-            "name": "left_hand_origin",
-            "transform": {
-                "parent": "left_hand_input",
-                "scale": [0.01, 0.01, 0.01]
-            }
-        },
-        {
-            "name": "right_hand_origin",
-            "transform": {
-                "parent": "right_hand_input",
-                "scale": [0.01, 0.01, 0.01]
-            }
+            "event_input": [
+                "/action/snap_rotate"
+            ]
         },
         {
             "name": "left_hand",
             "transform": {
-                "parent": "left_hand_input"
+                "parent": "input:vr_actions_main_in_lefthand"
+            },
+            "script": [
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "vr:hmd" }
+                },
+                {
+                    "onTick": "grab_object",
+                    "parameters": { "rotate_sensitivity": 0.01 }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_left",
+                        "output_event": "/script/rotate_left",
+                        "upper_threshold": -0.7,
+                        "lower_threshold": -0.6
+                    }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_right",
+                        "output_event": "/script/rotate_right",
+                        "upper_threshold": 0.7,
+                        "lower_threshold": 0.6
+                    }
+                }
+            ],
+            "signal_output": {},
+            "event_input": [
+                "/action/interact_grab"
+            ],
+            "event_bindings": {
+                "/script/rotate_left": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": -45
+                },
+                "/script/rotate_right": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": 45
+                }
+            },
+            "physics_query": {
+                "raycast": 0.5
+            },
+            "laser_line": {
+                "media_density": 0
+            },
+            "laser_emitter": {
+                "color": [0, 1, 0]
+            }
+        },
+        {
+            "name": "right_hand",
+            "transform": {
+                "parent": "input:vr_actions_main_in_righthand"
+            },
+            "script": [
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "vr:hmd" }
+                },
+                {
+                    "onTick": "grab_object",
+                    "parameters": { "rotate_sensitivity": 0.01 }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_left",
+                        "output_event": "/script/rotate_left",
+                        "upper_threshold": -0.7,
+                        "lower_threshold": -0.6
+                    }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_right",
+                        "output_event": "/script/rotate_right",
+                        "upper_threshold": 0.7,
+                        "lower_threshold": 0.6
+                    }
+                }
+            ],
+            "signal_output": {},
+            "event_input": [
+                "/action/interact_grab"
+            ],
+            "event_bindings": {
+                "/script/rotate_left": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": -45
+                },
+                "/script/rotate_right": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": 45
+                }
+            },
+            "physics_query": {
+                "raycast": 0.5
+            },
+            "laser_line": {
+                "media_density": 0
+            },
+            "laser_emitter": {
+                "color": [0, 1, 0]
+            }
+        },
+        {
+            "name": "left_hand_skeleton",
+            "transform": {
+                "parent": "input:vr_actions_main_in_lefthand_anim",
+                "rotate": [180, 0, 1, 0],
+                "translate": [0, 0, 0.2]
             },
             "script": {
                 "prefab": "gltf",
@@ -50,10 +140,17 @@
             }
         },
         {
+            "name": "right_hand_skeleton",
+            "transform": {
+                "parent": "input:vr_actions_main_in_righthand_anim",
+                "rotate": [180, 0, 1, 0],
+                "translate": [0, 0, 0.2]
+            },
             "script": {
-                "prefab": "template",
+                "prefab": "gltf",
                 "parameters": {
-                    "source": "vr_hand_right"
+                    "model": "vr_glove_right",
+                    "render": true
                 }
             }
         }

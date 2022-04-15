@@ -46,21 +46,25 @@
             }
         }
     },
-    "vr:left_hand_input": {
+    "vr:left_hand": {
         "signal_bindings": {
             "move_forward": "vr:controller_left/actions/main/in/movement_y",
-            "move_right": "vr:controller_left/actions/main/in/movement_x"
+            "move_right": "vr:controller_left/actions/main/in/movement_x",
+            "rotate_left": "vr:controller_left/actions/main/in/rotation_x",
+            "rotate_right": "vr:controller_left/actions/main/in/rotation_x"
         }
     },
-    "vr:right_hand_input": {
+    "vr:right_hand": {
         "signal_bindings": {
             "move_forward": "vr:controller_right/actions/main/in/movement_y",
-            "move_right": "vr:controller_right/actions/main/in/movement_x"
+            "move_right": "vr:controller_right/actions/main/in/movement_x",
+            "rotate_left": "vr:controller_right/actions/main/in/rotation_x",
+            "rotate_right": "vr:controller_right/actions/main/in/rotation_x"
         }
     },
     "vr:controller_right": {
         "event_bindings": {
-            "/actions/main/in/grab": "vr:right_grabber/action/interact_grab"
+            "/actions/main/in/grab": ["vr:left_hand/action/interact_grab", "vr:right_hand/action/interact_grab"]
         }
     },
     "player:player": {
@@ -71,12 +75,12 @@
             "menu_cursor_y": "input:mouse/mouse_cursor_y",
             "move_world_x": {
                 "operator": "add",
-                "values": [ "player:flatview/move_world_x", "vr:left_hand_input/move_world_x", "vr:right_hand_input/move_world_x" ]
+                "values": [ "player:flatview/move_world_x", "vr:left_hand/move_world_x", "vr:right_hand/move_world_x" ]
             },
             "move_world_y": "player:flatview/move_world_y",
             "move_world_z": {
                 "operator": "add",
-                "values": [ "player:flatview/move_world_z", "vr:left_hand_input/move_world_z", "vr:right_hand_input/move_world_z" ]
+                "values": [ "player:flatview/move_world_z", "vr:left_hand/move_world_z", "vr:right_hand/move_world_z" ]
             },
             "move_sprint": "input:keyboard/key_left_shift"
         }

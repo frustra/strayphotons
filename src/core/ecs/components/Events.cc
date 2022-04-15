@@ -65,6 +65,13 @@ namespace ecs {
                         Errorf("Invalid event binding set_value: %s", param.second.to_str());
                         return false;
                     }
+                } else if (param.first == "multiply_value") {
+                    if (param.second.is<double>()) {
+                        binding.multiplyValue = param.second.get<double>();
+                    } else {
+                        Errorf("Unsupported multiply_value value: %s", param.second.to_str());
+                        return false;
+                    }
                 } else {
                     Errorf("Unknown event binding field: %s", param.first);
                     return false;
@@ -300,6 +307,25 @@ namespace ecs {
                         if (binding.setValue) {
                             Event modifiedEvent = event;
                             modifiedEvent.data = *binding.setValue;
+                            eventInput.Add(binding.destQueue, modifiedEvent);
+                        } else if (binding.multiplyValue) {
+                            Event modifiedEvent = event;
+                            std::visit(
+                                [&](auto &&arg) {
+                                    using T = std::decay_t<decltype(arg)>;
+                                    if constexpr (std::is_same_v<T, glm::vec2>) {
+                                        arg *= *binding.multiplyValue;
+                                    } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                                        arg *= *binding.multiplyValue;
+                                    } else if constexpr (std::is_same_v<T, int>) {
+                                        arg *= *binding.multiplyValue;
+                                    } else if constexpr (std::is_same_v<T, double>) {
+                                        arg *= *binding.multiplyValue;
+                                    } else {
+                                        Abortf("Unsupported event type for multiply_value: %s", typeid(arg).name());
+                                    }
+                                },
+                                modifiedEvent.data);
                             eventInput.Add(binding.destQueue, modifiedEvent);
                         } else {
                             eventInput.Add(binding.destQueue, event);

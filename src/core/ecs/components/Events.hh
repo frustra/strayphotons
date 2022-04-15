@@ -66,6 +66,7 @@ namespace ecs {
             std::string destQueue;
 
             std::optional<Event::EventData> setValue;
+            std::optional<double> multiplyValue;
 
             bool operator==(const Binding &other) const {
                 return target == other.target && destQueue == other.destQueue;

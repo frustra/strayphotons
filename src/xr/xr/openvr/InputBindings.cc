@@ -372,10 +372,10 @@ namespace sp::xr {
 
                                             // temporary hack to pose the hands
                                             if (action.poseEntity.Name().entity == "vr_actions_main_in_lefthand_anim") {
-                                                entityName.Parse("vr:left_hand." + boneName);
+                                                entityName.Parse("vr:left_hand_skeleton." + boneName);
                                             } else if (action.poseEntity.Name().entity ==
                                                        "vr_actions_main_in_righthand_anim") {
-                                                entityName.Parse("vr:right_hand." + boneName);
+                                                entityName.Parse("vr:right_hand_skeleton." + boneName);
                                             } else {
                                                 continue;
                                             }
