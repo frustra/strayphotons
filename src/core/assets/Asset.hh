@@ -7,9 +7,19 @@
 #include <vector>
 
 namespace sp {
+    static std::string parseFileExtension(const std::string &path) {
+        auto dotPos = path.rfind('.');
+        if (dotPos == path.npos) return "";
+
+        auto slashPos = path.rfind('/');
+        if (slashPos != path.npos && dotPos < slashPos) return "";
+
+        return path.substr(dotPos + 1);
+    }
+
     class Asset : public NonCopyable {
     public:
-        Asset(const std::string &path = "") : path(path) {}
+        Asset(const std::string &path = "") : path(path), extension(parseFileExtension(path)) {}
 
         std::string String() const {
             return std::string((char *)buffer.data(), buffer.size());
@@ -30,6 +40,7 @@ namespace sp {
         Hash128 Hash() const;
 
         const std::string path;
+        const std::string extension;
 
     private:
         std::vector<uint8_t> buffer;

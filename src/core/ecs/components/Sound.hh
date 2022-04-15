@@ -10,6 +10,12 @@ namespace sp {
 namespace ecs {
     class Sound {
     public:
+        enum class Type {
+            Object,
+            Stereo,
+            Ambisonic,
+        } type = Type::Object;
+
         sp::AsyncPtr<sp::Asset> file; // TODO: should make the asset system unpack the audio file
     };
 
