@@ -48,7 +48,7 @@ namespace sp {
         Assertf(framesPerBuffer < vraudio::kMaxSupportedNumFrames, "buffer too big: %d", framesPerBuffer);
         Assertf(framesPerBuffer >= 32, "buffer too small: %d", framesPerBuffer); // FftManager::kMinFftSize
 
-        resonance = vraudio::CreateResonanceAudioApi(2, framesPerBuffer, outstream->sample_rate);
+        resonance.reset(vraudio::CreateResonanceAudioApi(2, framesPerBuffer, outstream->sample_rate));
 
         err = soundio_outstream_start(outstream);
         Assertf(!err, "unable to start audio device: %s", soundio_strerror(err));
@@ -65,7 +65,6 @@ namespace sp {
         if (outstream) soundio_outstream_destroy(outstream);
         if (device) soundio_device_unref(device);
         if (soundio) soundio_destroy(soundio);
-        if (resonance) delete resonance;
     }
 
     void AudioManager::Frame() {
@@ -118,23 +117,31 @@ namespace sp {
                     [this](shared_ptr<Asset> asset) {
                         Assertf(asset, "Audio file missing");
                         auto audioBuffer = make_shared<nqr::AudioData>();
-                        loader.Load(audioBuffer.get(), "ogg", asset->Buffer());
+                        loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
                         return audioBuffer;
                     });
             }
 
-            if (state.resonanceID == -1) {
-                state.resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
+            if (state.resonanceID == -1 && state.audioBuffer->Ready()) {
+                if (source.type == ecs::Sound::Type::Object) {
+                    state.resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
+                } else if (source.type == ecs::Sound::Type::Stereo) {
+                    state.resonanceID = resonance->CreateStereoSource(state.audioBuffer->Get()->channelCount);
+                } else if (source.type == ecs::Sound::Type::Ambisonic) {
+                    state.resonanceID = resonance->CreateAmbisonicSource(state.audioBuffer->Get()->channelCount);
+                }
             }
 
-            resonance->SetSourceVolume(state.resonanceID, 0.5f);
+            if (state.resonanceID != -1) {
+                resonance->SetSourceVolume(state.resonanceID, 0.5f);
 
-            if (ent.Has<ecs::Transform>(lock)) {
-                auto &transform = ent.Get<ecs::Transform>(lock);
-                auto pos = transform.GetPosition();
-                auto rot = transform.GetRotation();
-                resonance->SetSourcePosition(state.resonanceID, pos.x, pos.y, pos.z);
-                resonance->SetSourceRotation(state.resonanceID, rot.x, rot.y, rot.z, rot.w);
+                if (ent.Has<ecs::Transform>(lock)) {
+                    auto &transform = ent.Get<ecs::Transform>(lock);
+                    auto pos = transform.GetPosition();
+                    auto rot = transform.GetRotation();
+                    resonance->SetSourcePosition(state.resonanceID, pos.x, pos.y, pos.z);
+                    resonance->SetSourceRotation(state.resonanceID, rot.x, rot.y, rot.z, rot.w);
+                }
             }
         }
     }
@@ -180,14 +187,19 @@ namespace sp {
                         if (!source.audioBuffer || !source.audioBuffer->Ready()) continue;
 
                         auto &audioBuffer = *source.audioBuffer->Get();
+                        auto floatsRemaining = audioBuffer.samples.size() - source.bufferOffset;
+
+                        auto framesRemaining = std::min((size_t)framesPerBuffer,
+                            floatsRemaining / audioBuffer.channelCount);
+
                         self->resonance->SetInterleavedBuffer(source.resonanceID,
                             &audioBuffer.samples[source.bufferOffset],
                             audioBuffer.channelCount,
-                            framesPerBuffer);
+                            framesRemaining);
 
                         auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
-                        source.bufferOffset = (source.bufferOffset + floatsPerSourceBuffer) %
-                                              (audioBuffer.samples.size() - floatsPerSourceBuffer + 1);
+                        source.bufferOffset += floatsPerSourceBuffer;
+                        if (source.bufferOffset >= audioBuffer.samples.size()) source.bufferOffset = 0;
                     }
                 }
 
