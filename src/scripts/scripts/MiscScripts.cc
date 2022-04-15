@@ -12,98 +12,34 @@ namespace sp::scripts {
     using namespace ecs;
 
     std::array miscScripts = {
-        InternalScript("joystick_calibration",
+        InternalScript("edge_trigger",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Name, EventInput, EventBindings>(lock)) {
+                if (ent.Has<EventBindings>(lock)) {
                     auto &eventBindings = ent.Get<EventBindings>(lock);
+                    auto inputName = state.GetParam<std::string>("input_signal");
+                    auto outputName = state.GetParam<std::string>("output_event");
+                    auto upperThreshold = state.GetParam<double>("upper_threshold");
+                    auto lowerThreshold = state.GetParam<double>("lower_threshold");
 
-                    Event event;
-                    while (EventInput::Poll(lock, ent, "/action/joystick_in", event)) {
-                        auto data = std::get_if<glm::vec2>(&event.data);
-                        if (data) {
-                            float factorParamX = state.GetParam<double>("scale_x");
-                            float factorParamY = state.GetParam<double>("scale_y");
-                            eventBindings.SendEvent(lock,
-                                "/script/joystick_out",
-                                event.source,
-                                glm::vec2(data->x * factorParamX, data->y * factorParamY));
-                        } else {
-                            Errorf("Unsupported joystick_in event type: %s", event.toString());
-                        }
-                    }
-                }
-            }),
-        InternalScript("relative_movement",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<SignalOutput>(lock)) {
-                    auto fullTargetName = state.GetParam<std::string>("relative_to");
-                    ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
-                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = targetName;
-
-                        auto target = targetEntity.Get(lock);
-                        if (target) {
-                            state.SetParam<EntityRef>("target_entity", targetEntity);
-
-                            glm::vec3 movement = glm::vec3(0);
-                            movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
-                            movement.z += SignalBindings::GetSignal(lock, ent, "move_back");
-                            movement.x -= SignalBindings::GetSignal(lock, ent, "move_left");
-                            movement.x += SignalBindings::GetSignal(lock, ent, "move_right");
-                            float vertical = SignalBindings::GetSignal(lock, ent, "move_up");
-                            vertical -= SignalBindings::GetSignal(lock, ent, "move_down");
-
-                            movement.x = std::clamp(movement.x, -1.0f, 1.0f);
-                            movement.z = std::clamp(movement.z, -1.0f, 1.0f);
-                            vertical = std::clamp(vertical, -1.0f, 1.0f);
-
-                            if (target.Has<TransformTree>(lock)) {
-                                auto parentRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
-                                movement = parentRotation * movement;
-                                if (std::abs(movement.y) > 0.999) {
-                                    movement = parentRotation * glm::vec3(0, -movement.y, 0);
-                                }
-                                movement.y = 0;
-                            }
-
-                            auto &outputComp = ent.Get<SignalOutput>(lock);
-                            outputComp.SetSignal("move_world_x", movement.x);
-                            outputComp.SetSignal("move_world_y", vertical);
-                            outputComp.SetSignal("move_world_z", movement.z);
+                    auto oldTriggered = state.GetParam<bool>("triggered");
+                    auto newTriggered = oldTriggered;
+                    auto value = SignalBindings::GetSignal(lock, ent, inputName);
+                    if (upperThreshold >= lowerThreshold) {
+                        if (value >= upperThreshold && !oldTriggered) {
+                            newTriggered = true;
+                        } else if (value <= lowerThreshold && oldTriggered) {
+                            newTriggered = false;
                         }
                     } else {
-                        Errorf("Relative target name is invalid: %s", fullTargetName);
-                    }
-                }
-            }),
-        InternalScript("camera_view",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformTree>(lock)) {
-                    Event event;
-                    while (EventInput::Poll(lock, ent, "/action/camera_rotate", event)) {
-                        auto angleDiff = std::get<glm::vec2>(event.data);
-                        if (SignalBindings::GetSignal(lock, ent, "interact_rotate") < 0.5) {
-                            auto sensitivity = state.GetParam<double>("view_sensitivity");
-
-                            // Apply pitch/yaw rotations
-                            auto &transform = ent.Get<TransformTree>(lock);
-                            auto rotation = glm::quat(glm::vec3(0, -angleDiff.x * sensitivity, 0)) *
-                                            transform.pose.GetRotation() *
-                                            glm::quat(glm::vec3(-angleDiff.y * sensitivity, 0, 0));
-
-                            auto up = rotation * glm::vec3(0, 1, 0);
-                            if (up.y < 0) {
-                                // Camera is turning upside-down, reset it
-                                auto right = rotation * glm::vec3(1, 0, 0);
-                                right.y = 0;
-                                up.y = 0;
-                                glm::vec3 forward = glm::cross(right, up);
-                                rotation = glm::quat_cast(
-                                    glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
-                            }
-                            transform.pose.SetRotation(rotation);
+                        if (value <= upperThreshold && !oldTriggered) {
+                            newTriggered = true;
+                        } else if (value >= lowerThreshold && oldTriggered) {
+                            newTriggered = false;
                         }
+                    }
+                    if (newTriggered != oldTriggered) {
+                        eventBindings.SendEvent(lock, outputName, ent, newTriggered);
+                        state.SetParam<bool>("triggered", newTriggered);
                     }
                 }
             }),
@@ -169,16 +105,6 @@ namespace sp::scripts {
                     transform.pose.SetRotation(glm::rotate(currentRotation,
                         (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
                         rotationAxis));
-                }
-            }),
-        InternalScript("latch_signals",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<SignalOutput>(lock)) {
-                    auto &signalOutput = ent.Get<SignalOutput>(lock);
-                    for (auto &latchName : state.GetParam<std::vector<std::string>>("latches_names")) {
-                        auto value = SignalBindings::GetSignal(lock, ent, latchName);
-                        if (value >= 0.5) signalOutput.SetSignal(latchName, value);
-                    }
                 }
             }),
         InternalScript("grab_object",

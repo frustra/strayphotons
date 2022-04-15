@@ -51,7 +51,9 @@ namespace sp {
                         desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
                         desc.stepOffset = ecs::PLAYER_STEP_HEIGHT;
                         desc.scaleCoeff = 1.0f; // Why is the default 0.8? No idea...
-                        desc.contactOffset = 0.01f;
+                        // Decreasing the contactOffset value causes the player to be able to stand on
+                        // very thin (and likely unintentional) ledges.
+                        desc.contactOffset = 0.05f;
                         desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
                         desc.userData = characterUserData;
@@ -121,7 +123,7 @@ namespace sp {
             }
 
             // If the origin moved, teleport the controller
-            if (transform.matrix != userData->actorData.pose.matrix) {
+            if (transform.GetPosition() != userData->actorData.pose.GetPosition()) {
                 controller.pxController->setHeight(targetHeight);
                 controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
 
@@ -194,6 +196,7 @@ namespace sp {
             if (userData->noclipping != noclip) {
                 manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 userData->noclipping = noclip;
+                controller.pxController->invalidateCache();
             }
 
             // Update the capsule position, velocity, and onGround flag
@@ -236,6 +239,14 @@ namespace sp {
                     userData->actorData.velocity += lateralMovement * ecs::PLAYER_AIR_STRAFE * dt;
                     displacement = userData->actorData.velocity * dt;
                 }
+                // Logf("Disp: %s + %s, State:%u, On:%u, In:%u, DeltaXp: %s, Vel: %s",
+                //     glm::to_string(displacement),
+                //     glm::to_string(targetDelta),
+                //     state.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN,
+                //     userData->onGround,
+                //     inGround,
+                //     glm::to_string(PxVec3ToGlmVec3(state.deltaXP)),
+                //     glm::to_string(userData->actorData.velocity));
                 displacement += targetDelta;
 
                 auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(displacement), 0, dt, moveQueryFilter);
@@ -243,17 +254,29 @@ namespace sp {
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                     userData->onGround = true;
+                    // Logf("OnGround, Vel: %s", glm::to_string(userData->actorData.velocity));
                 } else {
                     if (userData->onGround || inGround) {
                         userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                         userData->actorData.velocity.x += displacement.x / dt;
                         userData->actorData.velocity.z += displacement.z / dt;
                         if (jump) userData->actorData.velocity.y += ecs::PLAYER_JUMP_VELOCITY;
+                        // Logf("WasOn: %u, In: %u, Jump: %u, DeltaXp: %s, Vel: %s",
+                        //     userData->onGround,
+                        //     inGround,
+                        //     jump,
+                        //     glm::to_string(PxVec3ToGlmVec3(state.deltaXP)),
+                        //     glm::to_string(userData->actorData.velocity));
                     } else {
                         auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
                                         userData->actorData.pose.GetPosition() - targetDelta;
                         userData->actorData.velocity = deltaPos / dt;
                         userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
+                        // Logf("OffGround, DeltaPos: %s - %s, Vel: %s",
+                        //     glm::to_string(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
+                        //                    userData->actorData.pose.GetPosition()),
+                        //     glm::to_string(targetDelta),
+                        //     glm::to_string(userData->actorData.velocity));
                     }
 
                     userData->onGround = false;

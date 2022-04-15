@@ -264,7 +264,6 @@ namespace sp {
                 item.promise.set_value();
             } else if (item.action == SceneAction::ReloadBindings) {
                 ZoneScopedN("ReloadBindings");
-                // TODO: Remove console key bindings
                 if (bindingsScene) {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                     auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();

@@ -1,6 +1,16 @@
 {
     "entities": [
         {
+            "name": "origin",
+            "script": {
+                "onTick": "snap_rotate",
+                "parameters": { "relative_to": "vr:hmd" }
+            },
+            "event_input": [
+                "/action/snap_rotate"
+            ]
+        },
+        {
             "name": "left_hand_input",
             "transform": {
                 "parent": "vr:controller_left"
@@ -39,7 +49,7 @@
         {
             "name": "left_hand",
             "transform": {
-                "parent": "left_hand_input"
+                "parent": "input:vr_actions_main_in_lefthand_anim"
             },
             "script": {
                 "prefab": "gltf",
@@ -50,11 +60,86 @@
             }
         },
         {
+            "name": "right_hand",
+            "transform": {
+                "parent": "input:vr_actions_main_in_righthand_anim"
+            },
             "script": {
-                "prefab": "template",
+                "prefab": "gltf",
                 "parameters": {
-                    "source": "vr_hand_right"
+                    "model": "vr_glove_right",
+                    "render": true
                 }
+            }
+        },
+        {
+            "name": "left_grabber",
+            "transform": {
+                "parent": "input:vr_actions_main_in_lefthand"
+            },
+            "script": [
+                {
+                    "onTick": "grab_object",
+                    "parameters": { "rotate_sensitivity": 0.01 }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_left",
+                        "output_event": "/script/rotate_left",
+                        "upper_threshold": -0.9,
+                        "lower_threshold": -0.8
+                    }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_right",
+                        "output_event": "/script/rotate_right",
+                        "upper_threshold": 0.9,
+                        "lower_threshold": 0.8
+                    }
+                }
+            ],
+            "event_input": [
+                "/action/interact_grab"
+            ],
+            "event_bindings": {
+                "/script/rotate_left": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": -45
+                },
+                "/script/rotate_right": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": 45
+                }
+            },
+            "physics_query": {
+                "raycast": 0.5
+            },
+            "laser_line": {},
+            "laser_emitter": {
+                "color": [1, 0, 0]
+            }
+        },
+        {
+            "name": "right_grabber",
+            "transform": {
+                "parent": "input:vr_actions_main_in_righthand"
+            },
+            "script": {
+                "onTick": "grab_object",
+                "parameters": { "rotate_sensitivity": 0.01 }
+            },
+            "event_input": [
+                "/action/interact_grab"
+            ],
+            "physics_query": {
+                "raycast": 0.5
+            },
+            "laser_line": {},
+            "laser_emitter": {
+                "color": [1, 0, 0]
             }
         }
     ]

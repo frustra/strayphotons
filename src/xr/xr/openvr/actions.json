@@ -30,6 +30,11 @@
       "type": "vector2"
     },
     {
+      "name": "/actions/main/in/rotation",
+      "requirement": "mandatory",
+      "type": "vector2"
+    },
+    {
       "name": "/actions/main/in/RightHand",
       "requirement": "mandatory",
       "type": "pose"
