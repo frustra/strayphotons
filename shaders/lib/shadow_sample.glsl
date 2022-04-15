@@ -79,7 +79,7 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
                         step(testDepth - max(0, avgDepth - values[6]), values[6]) +
                         step(testDepth - max(0, avgDepth - values[7]), values[7]);
 
-    return edgeTerm.x * edgeTerm.y * smoothstep(2, 5, totalSample);
+    return edgeTerm.x * edgeTerm.y * smoothstep(1, 7, totalSample);
 }
 
 float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
