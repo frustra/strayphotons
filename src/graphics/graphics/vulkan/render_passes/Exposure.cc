@@ -13,8 +13,8 @@ namespace sp::vulkan::renderer {
     static CVar<float> CVarEyeAdaptationHigh("r.EyeAdaptationHigh", 92, "Ignore pixels with luminance above this percentage");
     static CVar<float> CVarEyeAdaptationMinLuminance("r.EyeAdaptationMinLuminance", 0.01, "Minimum target luminance for eye adaptation");
     static CVar<float> CVarEyeAdaptationMaxLuminance("r.EyeAdaptationMaxLuminance", 10000, "Maximum target luminance for eye adaptation");
-    static CVar<float> CVarEyeAdaptationUpRate("r.EyeAdaptationUpRate", 0.1, "Rate at which eye adapts to brighter scenes");
-    static CVar<float> CVarEyeAdaptationDownRate("r.EyeAdaptationDownRate", 0.04, "Rate at which eye adapts to darker scenes");
+    static CVar<float> CVarEyeAdaptationUpRate("r.EyeAdaptationUpRate", 0.01, "Rate at which eye adapts to brighter scenes");
+    static CVar<float> CVarEyeAdaptationDownRate("r.EyeAdaptationDownRate", 0.001, "Rate at which eye adapts to darker scenes");
     static CVar<float> CVarEyeAdaptationKeyComp("r.EyeAdaptationKeyComp", 1.0, "Amount of key compensation for eye adaptation (0-1)");
     static CVar<bool> CVarHistogram("r.Histogram", false, "Overlay luminance histogram in view");
     // clang-format on

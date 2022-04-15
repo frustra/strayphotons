@@ -191,6 +191,7 @@ namespace sp::vulkan::render_graph {
     }
 
     void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
+        ZoneScoped;
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
             if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
