@@ -38,7 +38,7 @@ namespace sp::scripts {
                         }
                     }
                     if (newTriggered != oldTriggered) {
-                        eventBindings.SendEvent(lock, outputName, ent, newTriggered);
+                        eventBindings.SendEvent(lock, outputName, ent, (double)newTriggered);
                         state.SetParam<bool>("triggered", newTriggered);
                     }
                 }

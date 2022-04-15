@@ -44,11 +44,11 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/main/in/teleport"
+                     "output" : "/actions/main/in/grab"
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/left/input/trigger"
+               "path" : "/user/hand/right/input/grip"
             },
             {
                "inputs" : {
@@ -57,12 +57,21 @@
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/right/input/trigger"
+               "path" : "/user/hand/left/input/grip"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/main/in/teleport"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/trigger"
             },
             {
                "inputs" : {
                   "position" : {
-                     "output" : "/actions/main/in/movement"
+                     "output" : "/actions/main/in/rotation"
                   }
                },
                "mode" : "joystick",

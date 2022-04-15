@@ -99,7 +99,7 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, "/action/snap_rotate", event)) {
                         auto angleDiff = std::get<double>(event.data);
 
-                        transform.pose.Rotate(glm::radians(angleDiff), glm::vec3(0, 1, 0));
+                        transform.pose.Rotate(glm::radians(angleDiff), glm::vec3(0, -1, 0));
                     }
 
                     auto newPosition = relativeTarget.GetGlobalTransform(lock).GetPosition();

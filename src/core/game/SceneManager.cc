@@ -103,30 +103,35 @@ namespace sp {
             if (item.action == SceneAction::ApplySystemScene) {
                 ZoneScopedN("ApplySystemScene");
                 ZoneStr(item.sceneName);
-                auto scene = stagedScenes.Load(item.sceneName);
-                if (!scene) {
-                    scene = std::make_shared<Scene>(item.sceneName, SceneType::System);
-                    stagedScenes.Register(item.sceneName, scene);
-                    scenes[SceneType::System].emplace_back(scene);
-                }
-
-                {
-                    auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
-                    item.callback(stagingLock, scene);
-
-                    for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
-                        auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
-                        if (sceneInfo.scene.lock() != scene) continue;
-
-                        // Special case so TransformSnapshot doesn't get removed as a dangling component
-                        if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
+                if (!item.callback) {
+                    // Load the System scene from json
+                    AddScene(item.sceneName, SceneType::System);
+                } else {
+                    auto scene = stagedScenes.Load(item.sceneName);
+                    if (!scene) {
+                        scene = std::make_shared<Scene>(item.sceneName, SceneType::System);
+                        stagedScenes.Register(item.sceneName, scene);
+                        scenes[SceneType::System].emplace_back(scene);
                     }
-                }
-                {
-                    Tracef("Applying system scene: %s", scene->name);
-                    auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-                    auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
-                    scene->ApplyScene(stagingLock, liveLock);
+
+                    {
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                        item.callback(stagingLock, scene);
+
+                        for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
+                            auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
+                            if (sceneInfo.scene.lock() != scene) continue;
+
+                            // Special case so TransformSnapshot doesn't get removed as a dangling component
+                            if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
+                        }
+                    }
+                    {
+                        Tracef("Applying system scene: %s", scene->name);
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                        scene->ApplyScene(stagingLock, liveLock);
+                    }
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::LoadScene) {

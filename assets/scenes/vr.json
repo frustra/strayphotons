@@ -11,73 +11,15 @@
             ]
         },
         {
-            "name": "left_hand_input",
-            "transform": {
-                "parent": "vr:controller_left"
-            },
-            "script": {
-                "onTick": "relative_movement",
-                "parameters": { "relative_to": "vr:hmd" }
-            },
-            "signal_output": {}
-        },
-        {
-            "name": "right_hand_input",
-            "transform": {
-                "parent": "vr:controller_right"
-            },
-            "script": {
-                "onTick": "relative_movement",
-                "parameters": { "relative_to": "vr:hmd" }
-            },
-            "signal_output": {}
-        },
-        {
-            "name": "left_hand_origin",
-            "transform": {
-                "parent": "left_hand_input",
-                "scale": [0.01, 0.01, 0.01]
-            }
-        },
-        {
-            "name": "right_hand_origin",
-            "transform": {
-                "parent": "right_hand_input",
-                "scale": [0.01, 0.01, 0.01]
-            }
-        },
-        {
             "name": "left_hand",
-            "transform": {
-                "parent": "input:vr_actions_main_in_lefthand_anim"
-            },
-            "script": {
-                "prefab": "gltf",
-                "parameters": {
-                    "model": "vr_glove_left",
-                    "render": true
-                }
-            }
-        },
-        {
-            "name": "right_hand",
-            "transform": {
-                "parent": "input:vr_actions_main_in_righthand_anim"
-            },
-            "script": {
-                "prefab": "gltf",
-                "parameters": {
-                    "model": "vr_glove_right",
-                    "render": true
-                }
-            }
-        },
-        {
-            "name": "left_grabber",
             "transform": {
                 "parent": "input:vr_actions_main_in_lefthand"
             },
             "script": [
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "vr:hmd" }
+                },
                 {
                     "onTick": "grab_object",
                     "parameters": { "rotate_sensitivity": 0.01 }
@@ -87,8 +29,8 @@
                     "parameters": {
                         "input_signal": "rotate_left",
                         "output_event": "/script/rotate_left",
-                        "upper_threshold": -0.9,
-                        "lower_threshold": -0.8
+                        "upper_threshold": -0.7,
+                        "lower_threshold": -0.6
                     }
                 },
                 {
@@ -96,11 +38,12 @@
                     "parameters": {
                         "input_signal": "rotate_right",
                         "output_event": "/script/rotate_right",
-                        "upper_threshold": 0.9,
-                        "lower_threshold": 0.8
+                        "upper_threshold": 0.7,
+                        "lower_threshold": 0.6
                     }
                 }
             ],
+            "signal_output": {},
             "event_input": [
                 "/action/interact_grab"
             ],
@@ -123,14 +66,21 @@
             }
         },
         {
-            "name": "right_grabber",
+            "name": "right_hand",
             "transform": {
                 "parent": "input:vr_actions_main_in_righthand"
             },
-            "script": {
-                "onTick": "grab_object",
-                "parameters": { "rotate_sensitivity": 0.01 }
-            },
+            "script": [
+                {
+                    "onTick": "relative_movement",
+                    "parameters": { "relative_to": "vr:hmd" }
+                },
+                {
+                    "onTick": "grab_object",
+                    "parameters": { "rotate_sensitivity": 0.01 }
+                }
+            ],
+            "signal_output": {},
             "event_input": [
                 "/action/interact_grab"
             ],
@@ -140,6 +90,36 @@
             "laser_line": {},
             "laser_emitter": {
                 "color": [1, 0, 0]
+            }
+        },
+        {
+            "name": "left_hand_skeleton",
+            "transform": {
+                "parent": "input:vr_actions_main_in_lefthand_anim",
+                "rotate": [180, 0, 1, 0],
+                "translate": [0, 0, 0.2]
+            },
+            "script": {
+                "prefab": "gltf",
+                "parameters": {
+                    "model": "vr_glove_left",
+                    "render": true
+                }
+            }
+        },
+        {
+            "name": "right_hand_skeleton",
+            "transform": {
+                "parent": "input:vr_actions_main_in_righthand_anim",
+                "rotate": [180, 0, 1, 0],
+                "translate": [0, 0, 0.2]
+            },
+            "script": {
+                "prefab": "gltf",
+                "parameters": {
+                    "model": "vr_glove_right",
+                    "render": true
+                }
             }
         }
     ]

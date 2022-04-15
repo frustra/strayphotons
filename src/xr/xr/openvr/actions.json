@@ -70,6 +70,7 @@
       "/actions/main/in/grab" : "Grab",
       "/actions/main/in/teleport" : "Teleport",
       "/actions/main/in/movement" : "Movement",
+      "/actions/main/in/rotation" : "Rotation",
       "/actions/main/in/RightHand" : "Right Hand",
       "/actions/main/in/LeftHand" : "Left Hand",
       "/actions/main/in/righthand_anim" : "Right Hand Skeleton",
