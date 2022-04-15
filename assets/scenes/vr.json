@@ -78,12 +78,40 @@
                 {
                     "onTick": "grab_object",
                     "parameters": { "rotate_sensitivity": 0.01 }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_left",
+                        "output_event": "/script/rotate_left",
+                        "upper_threshold": -0.7,
+                        "lower_threshold": -0.6
+                    }
+                },
+                {
+                    "onTick": "edge_trigger",
+                    "parameters": {
+                        "input_signal": "rotate_right",
+                        "output_event": "/script/rotate_right",
+                        "upper_threshold": 0.7,
+                        "lower_threshold": 0.6
+                    }
                 }
             ],
             "signal_output": {},
             "event_input": [
                 "/action/interact_grab"
             ],
+            "event_bindings": {
+                "/script/rotate_left": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": -45
+                },
+                "/script/rotate_right": {
+                    "target": "vr:origin/action/snap_rotate",
+                    "multiply_value": 45
+                }
+            },
             "physics_query": {
                 "raycast": 0.5
             },

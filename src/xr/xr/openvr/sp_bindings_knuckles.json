@@ -71,7 +71,7 @@
             {
                "inputs" : {
                   "position" : {
-                     "output" : "/actions/main/in/rotation"
+                     "output" : "/actions/main/in/movement"
                   }
                },
                "mode" : "joystick",
@@ -80,7 +80,7 @@
             {
                "inputs" : {
                   "position" : {
-                     "output" : "/actions/main/in/movement"
+                     "output" : "/actions/main/in/rotation"
                   }
                },
                "mode" : "joystick",
