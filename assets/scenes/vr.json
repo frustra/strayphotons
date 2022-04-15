@@ -60,9 +60,11 @@
             "physics_query": {
                 "raycast": 0.5
             },
-            "laser_line": {},
+            "laser_line": {
+                "media_density": 0
+            },
             "laser_emitter": {
-                "color": [1, 0, 0]
+                "color": [0, 1, 0]
             }
         },
         {
@@ -115,9 +117,11 @@
             "physics_query": {
                 "raycast": 0.5
             },
-            "laser_line": {},
+            "laser_line": {
+                "media_density": 0
+            },
             "laser_emitter": {
-                "color": [1, 0, 0]
+                "color": [0, 1, 0]
             }
         },
         {

@@ -40,6 +40,7 @@ namespace sp::xr {
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr");
         GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_system");
         loaded.clear();
         vrSystem.reset();
