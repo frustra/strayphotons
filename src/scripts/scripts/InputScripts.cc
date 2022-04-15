@@ -11,7 +11,7 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    std::array miscScripts = {
+    std::array inputScripts = {
         InternalScript("joystick_calibration",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<Name, EventInput, EventBindings>(lock)) {
