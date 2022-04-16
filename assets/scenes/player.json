@@ -47,8 +47,8 @@
             "event_input": [
                 "/script/joystick_in",
                 "/action/camera_rotate",
-                "/action/interact_grab",
-                "/action/interact_rotate"
+                "/interact/grab",
+                "/interact/rotate"
             ],
             "event_bindings": {
                 "/script/joystick_out": "player/action/camera_rotate"

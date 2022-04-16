@@ -125,7 +125,7 @@ namespace sp::scripts {
 
                     auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
 
-                    while (EventInput::Poll(lock, ent, "/action/grab", event)) {
+                    while (EventInput::Poll(lock, ent, "/interact/grab", event)) {
                         auto parentTransform = std::get_if<Transform>(&event.data);
                         if (parentTransform) {
                             if (ph.constraint) {
@@ -149,7 +149,7 @@ namespace sp::scripts {
                                 invParentRotate * (transform.GetPosition() - parentTransform->GetPosition()),
                                 invParentRotate * transform.GetRotation());
                         } else {
-                            Errorf("Unsupported /action/grab event type: %s", event.toString());
+                            Errorf("Unsupported /interact/grab event type: %s", event.toString());
                         }
                     }
                 }
@@ -176,7 +176,7 @@ namespace sp::scripts {
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/interact_grab", event)) {
+                    while (EventInput::Poll(lock, ent, "/interact/grab", event)) {
                         if (target.Has<Physics>(lock)) {
                             // Drop existing target entity
                             auto &ph = target.Get<Physics>(lock);
@@ -193,10 +193,14 @@ namespace sp::scripts {
                             if (ph.dynamic && !ph.kinematic && !ph.constraint) {
                                 target = query.raycastHitTarget;
 
-                                if (target.Has<EventInput>(lock)) {
-                                    auto &eventInput = target.Get<EventInput>(lock);
-                                    eventInput.Add("/action/grab", Event{"/action/grab", ent, transform});
-                                } else if (target.Has<TransformSnapshot>(lock)) {
+                                if (EventBindings::SendEvent(lock,
+                                        target,
+                                        "/interact/grab",
+                                        Event{"/interact/grab", ent, transform}) > 0) {
+                                    continue;
+                                }
+
+                                if (target.Has<TransformSnapshot>(lock)) {
                                     auto &hitTransform = target.Get<TransformSnapshot>(lock);
                                     auto invParentRotate = glm::inverse(transform.GetRotation());
 
@@ -231,7 +235,7 @@ namespace sp::scripts {
                     auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");
                     if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
                     bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
-                    while (EventInput::Poll(lock, ent, "/action/interact_rotate", event)) {
+                    while (EventInput::Poll(lock, ent, "/interact/rotate", event)) {
                         if (rotating && target.Has<Physics>(lock)) {
                             auto input = std::get<glm::vec2>(event.data) * inputSensitivity;
                             auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);

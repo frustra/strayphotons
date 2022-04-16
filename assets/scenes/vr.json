@@ -44,7 +44,7 @@
             ],
             "signal_output": {},
             "event_input": [
-                "/action/interact_grab"
+                "/interact/grab"
             ],
             "event_bindings": {
                 "/script/rotate_left": {
@@ -101,7 +101,7 @@
             ],
             "signal_output": {},
             "event_input": [
-                "/action/interact_grab"
+                "/interact/grab"
             ],
             "event_bindings": {
                 "/script/rotate_left": {

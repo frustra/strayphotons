@@ -7,12 +7,12 @@
 				"model": "cardboard-box"
 			},
             "event_input": [
-                "/action/grab",
+                "/interact/grab",
                 "/physics/broken_constraint"
             ],
             "script": {
                 "onEvent": "interactive_object",
-                "filter_events": ["/action/grab", "/physics/broken_constraint"],
+                "filter_events": ["/interact/grab", "/physics/broken_constraint"],
                 "parameters": {
                     "grab_break_distance": 0.5
                 }

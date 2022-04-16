@@ -2,7 +2,7 @@
     "input:mouse": {
         "event_bindings": {
             "/mouse/scroll": [ "gui:menu_gui/action/menu/scroll", "gui:debug_gui/action/menu/scroll" ],
-            "/mouse/move": [ "player:flatview/action/camera_rotate", "player:flatview/action/interact_rotate" ]
+            "/mouse/move": [ "player:flatview/action/camera_rotate", "player:flatview/interact/rotate" ]
         }
     },
     "input:keyboard": {
@@ -12,7 +12,7 @@
             "/keyboard/key/escape": [ "gui:menu_gui/action/menu/open", "gui:menu_gui/action/menu/back" ],
             "/keyboard/key/enter": "gui:menu_gui/action/menu/enter",
             "/keyboard/key/space": "player:player/action/jump",
-            "/keyboard/key/e": "player:flatview/action/interact_grab",
+            "/keyboard/key/e": "player:flatview/interact/grab",
             "/keyboard/key/q": "player:debug-spawner/action/spawn",
             "/keyboard/key/f": "player:flashlight/action/flashlight/toggle",
             "/keyboard/key/p": "player:flashlight/action/flashlight/grab",
@@ -64,7 +64,7 @@
     },
     "vr:controller_right": {
         "event_bindings": {
-            "/actions/main/in/grab": ["vr:left_hand/action/interact_grab", "vr:right_hand/action/interact_grab"]
+            "/actions/main/in/grab": ["vr:left_hand/interact/grab", "vr:right_hand/interact/grab"]
         }
     },
     "player:player": {
