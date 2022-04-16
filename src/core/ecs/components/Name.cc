@@ -19,7 +19,7 @@ namespace ecs {
             scene = scope.scene;
             if (scope.entity.empty()) {
                 entity = fullName;
-            } else if (!sp::starts_with(fullName, scope.entity + ".")) {
+            } else {
                 entity = scope.entity + "." + std::string(fullName);
             }
         } else {

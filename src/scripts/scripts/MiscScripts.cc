@@ -108,22 +108,39 @@ namespace sp::scripts {
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformSnapshot, Physics>(lock)) {
                     auto &ph = ent.Get<Physics>(lock);
-
                     Assertf(ph.dynamic && !ph.kinematic,
                         "Interactive object must have dynamic physics: %s",
                         ToString(lock, ent));
+
+                    auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
+
+                    struct ScriptData {
+                        Entity grabEntity, pointEntity;
+                        Transform pointTransform;
+                    };
+
+                    ScriptData scriptData;
+                    if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
                     Event event;
                     while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
                         ph.RemoveConstraint();
                         ph.group = PhysicsGroup::World;
-                        if (ent.Has<Renderable>(lock)) {
-                            ent.Get<Renderable>(lock).visibility.reset(
-                                Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                        }
+                        scriptData.grabEntity = {};
                     }
 
-                    auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
+                        auto pointTransform = std::get_if<Transform>(&event.data);
+                        if (pointTransform) {
+                            scriptData.pointTransform = *pointTransform;
+                            scriptData.pointEntity = event.source;
+                        } else if (std::holds_alternative<bool>(event.data)) {
+                            scriptData.pointTransform = {};
+                            scriptData.pointEntity = {};
+                        } else {
+                            Errorf("Unsupported point event type: %s", event.toString());
+                        }
+                    }
 
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         auto parentTransform = std::get_if<Transform>(&event.data);
@@ -131,27 +148,29 @@ namespace sp::scripts {
                             if (ph.constraint) {
                                 ph.RemoveConstraint();
                                 ph.group = PhysicsGroup::World;
-                                if (ent.Has<Renderable>(lock)) {
-                                    ent.Get<Renderable>(lock).visibility.reset(
-                                        Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                                }
-                            }
-                            auto &transform = ent.Get<TransformSnapshot>(lock);
-                            auto invParentRotate = glm::inverse(parentTransform->GetRotation());
+                                scriptData.grabEntity = {};
+                            } else {
+                                auto &transform = ent.Get<TransformSnapshot>(lock);
+                                auto invParentRotate = glm::inverse(parentTransform->GetRotation());
 
-                            if (ent.Has<Renderable>(lock)) {
-                                ent.Get<Renderable>(lock).visibility.set(
-                                    Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                                scriptData.grabEntity = event.source;
+                                ph.group = PhysicsGroup::PlayerHands;
+                                ph.SetConstraint(event.source,
+                                    grabBreakDistance,
+                                    invParentRotate * (transform.GetPosition() - parentTransform->GetPosition()),
+                                    invParentRotate * transform.GetRotation());
                             }
-                            ph.group = PhysicsGroup::PlayerHands;
-                            ph.SetConstraint(event.source,
-                                grabBreakDistance,
-                                invParentRotate * (transform.GetPosition() - parentTransform->GetPosition()),
-                                invParentRotate * transform.GetRotation());
                         } else {
-                            Errorf("Unsupported %s event type: %s", INTERACT_EVENT_INTERACT_GRAB, event.toString());
+                            Errorf("Unsupported grab event type: %s", event.toString());
                         }
                     }
+
+                    if (ent.Has<Renderable>(lock)) {
+                        ent.Get<Renderable>(lock).visibility.set(Renderable::Visibility::VISIBLE_OUTLINE_SELECTION,
+                            scriptData.grabEntity || scriptData.pointEntity);
+                    }
+
+                    state.userData = scriptData;
                 }
             }),
         InternalScript("interact_handler",
@@ -160,95 +179,80 @@ namespace sp::scripts {
                     auto &query = ent.Get<PhysicsQuery>(lock);
                     auto &transform = ent.Get<TransformSnapshot>(lock);
 
-                    auto &target = query.centerOfMassQuery;
-                    if (target.Has<Physics>(lock)) {
-                        // Remove target if the constraint broke
-                        auto &ph = target.Get<Physics>(lock);
-                        if (ph.constraint != ent) {
-                            ph.RemoveConstraint();
-                            ph.group = PhysicsGroup::World;
-                            if (target.Has<Renderable>(lock)) {
-                                target.Get<Renderable>(lock).visibility.reset(
-                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                            }
-                            target = Entity();
+                    struct ScriptData {
+                        Entity grabEntity, pointEntity;
+                    };
+
+                    ScriptData scriptData;
+                    if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
+
+                    // Make sure the held entity still has a valid constraint
+                    if (scriptData.grabEntity) {
+                        if (scriptData.grabEntity.Has<Physics>(lock)) {
+                            auto &ph = scriptData.grabEntity.Get<const Physics>(lock);
+                            if (ph.constraint != ent) scriptData.grabEntity = {};
+                        } else {
+                            scriptData.grabEntity = {};
                         }
                     }
 
                     Event event;
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
-                        if (target.Has<Physics>(lock)) {
-                            // Drop existing target entity
-                            auto &ph = target.Get<Physics>(lock);
-                            ph.RemoveConstraint();
-                            ph.group = PhysicsGroup::World;
-                            if (target.Has<Renderable>(lock)) {
-                                target.Get<Renderable>(lock).visibility.reset(
-                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                            }
-                            target = Entity();
+                        if (scriptData.grabEntity) {
+                            // Drop the currently held entity
+                            EventBindings::SendEvent(lock,
+                                scriptData.grabEntity,
+                                INTERACT_EVENT_INTERACT_GRAB,
+                                Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform});
+                            scriptData.grabEntity = {};
                         } else if (query.raycastHitTarget.Has<Physics>(lock)) {
                             // Grab the entity being looked at
-                            auto &ph = query.raycastHitTarget.Get<Physics>(lock);
-                            if (ph.dynamic && !ph.kinematic && !ph.constraint) {
-                                target = query.raycastHitTarget;
-
+                            auto &ph = query.raycastHitTarget.Get<const Physics>(lock);
+                            if (ph.dynamic && !ph.kinematic) {
                                 if (EventBindings::SendEvent(lock,
-                                        target,
+                                        query.raycastHitTarget,
                                         INTERACT_EVENT_INTERACT_GRAB,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    continue;
-                                }
-
-                                if (target.Has<TransformSnapshot>(lock)) {
-                                    auto &hitTransform = target.Get<TransformSnapshot>(lock);
-                                    auto invParentRotate = glm::inverse(transform.GetRotation());
-
-                                    ph.group = PhysicsGroup::PlayerHands;
-                                    ph.SetConstraint(ent,
-                                        query.raycastQueryDistance,
-                                        invParentRotate * (hitTransform.GetPosition() - transform.GetPosition() +
-                                                              glm::vec3(0, 0.1, 0)),
-                                        invParentRotate * hitTransform.GetRotation());
+                                    scriptData.grabEntity = query.raycastHitTarget;
                                 }
                             }
                         }
                     }
 
-                    if (state.userData.has_value()) {
-                        auto lastSelection = std::any_cast<Entity>(state.userData);
-                        if (lastSelection && lastSelection.Has<Renderable>(lock)) {
-                            lastSelection.Get<Renderable>(lock).visibility.reset(
-                                ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                        }
+                    if (scriptData.pointEntity && query.raycastHitTarget != scriptData.pointEntity) {
+                        EventBindings::SendEvent(lock,
+                            scriptData.pointEntity,
+                            INTERACT_EVENT_INTERACT_POINT,
+                            Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
+                    } else if (query.raycastHitTarget) {
+                        ecs::Transform pointTransfrom = transform;
+                        pointTransfrom.SetPosition(query.raycastHitPosition);
+                        EventBindings::SendEvent(lock,
+                            query.raycastHitTarget,
+                            INTERACT_EVENT_INTERACT_POINT,
+                            Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransfrom});
                     }
+                    scriptData.pointEntity = query.raycastHitTarget;
 
-                    auto selection = target;
-                    if (!selection) selection = query.raycastHitTarget;
+                    // auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");
+                    // if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
+                    // bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
+                    // while (EventInput::Poll(lock, ent, "/interact/rotate", event)) {
+                    //     if (rotating && target.Has<Physics>(lock)) {
+                    //         auto input = std::get<glm::vec2>(event.data) * inputSensitivity;
+                    //         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
+                    //         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
+                    //                            glm::angleAxis(input.x, upAxis);
 
-                    if (selection && selection.Has<Renderable>(lock)) {
-                        selection.Get<Renderable>(lock).visibility.set(
-                            ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                        state.userData = selection;
-                    }
+                    //         // Move the objects origin so it rotates around its center of mass
+                    //         auto &ph = target.Get<Physics>(lock);
+                    //         auto center = ph.constraintRotation * query.centerOfMass;
+                    //         ph.constraintOffset += center - (deltaRotate * center);
+                    //         ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                    //     }
+                    // }
 
-                    auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");
-                    if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
-                    bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
-                    while (EventInput::Poll(lock, ent, "/interact/rotate", event)) {
-                        if (rotating && target.Has<Physics>(lock)) {
-                            auto input = std::get<glm::vec2>(event.data) * inputSensitivity;
-                            auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
-                            auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
-                                               glm::angleAxis(input.x, upAxis);
-
-                            // Move the objects origin so it rotates around its center of mass
-                            auto &ph = target.Get<Physics>(lock);
-                            auto center = ph.constraintRotation * query.centerOfMass;
-                            ph.constraintOffset += center - (deltaRotate * center);
-                            ph.constraintRotation = deltaRotate * ph.constraintRotation;
-                        }
-                    }
+                    state.userData = scriptData;
                 }
             }),
         InternalScript("voxel_controller",

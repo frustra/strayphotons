@@ -320,11 +320,6 @@ namespace ecs {
             if (!focusLock->HasPrimaryFocus(layer)) return 0;
         }
 
-        if (!ent.Has<EventInput>(lock) && !ent.Has<EventBindings>(lock)) {
-            Errorf("Tried to send event to entity without EventInput or EventBindings: %s", target.Name().String());
-            return 0;
-        }
-
         size_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<EventInput>(lock);

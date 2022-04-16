@@ -116,11 +116,9 @@
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "duck",
-					"render": true,
-					"physics": "dynamic"
+					"source": "duck"
 				}
 			}
 		},
@@ -135,6 +133,12 @@
 			},
 			"physics": {
 				"model": "box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
@@ -200,6 +204,12 @@
 			},
 			"physics": {
 				"model": "box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
@@ -370,6 +380,12 @@
 			},
 			"physics": {
 				"model": "cardboard-box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
@@ -389,6 +405,12 @@
 			},
 			"physics": {
 				"model": "dodecahedron"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{

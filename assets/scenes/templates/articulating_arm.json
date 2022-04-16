@@ -89,7 +89,11 @@
             }],
             "signal_output": {
                 "value": 1
-            }
+            },
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
         },
         {
             "name": "arm.Shaft",
@@ -164,7 +168,11 @@
                     "translate": [0, 0.1043, 0],
                     "rotate": [90, 0, 0, 1]
                 }
-            }]
+            }],
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
         }
     ]
 }

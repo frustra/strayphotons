@@ -52,11 +52,9 @@
 				"translate": [0, 0, -7]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "duck",
-					"render": true,
-					"physics": "dynamic"
+					"source": "duck"
 				}
 			}
 		},
@@ -77,6 +75,10 @@
 			},
 			"physics": {
 				"model": "cardboard-box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{
@@ -87,6 +89,10 @@
 			},
 			"physics": {
 				"model": "dodecahedron"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{

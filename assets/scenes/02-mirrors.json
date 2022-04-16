@@ -1583,6 +1583,12 @@
 			},
 			"physics": {
 				"model": "box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
@@ -2115,6 +2121,12 @@
 			},
 			"physics": {
 				"model": "box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
