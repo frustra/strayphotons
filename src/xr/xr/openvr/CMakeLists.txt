@@ -33,5 +33,4 @@ foreach(_file ${_files_to_copy})
 
 endforeach()
 
-add_subdirectory(opengl)
 add_subdirectory(vulkan)

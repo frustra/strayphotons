@@ -1,4 +1,3 @@
-find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
 add_library(${PROJECT_GRAPHICS_CORE_LIB} STATIC)
@@ -18,18 +17,6 @@ target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ImGui
 )
 
-# target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
-#     ${PROJECT_GRAPHICS_CORE_LIB}
-#     GLEW
-#     glfw-egl
-#     OpenGL::GL
-# )
-# target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
-#     ${PROJECT_GRAPHICS_CORE_LIB}
-#     GLEW
-#     glfw
-#     OpenGL::GL
-# )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
     Vulkan::Vulkan
@@ -47,12 +34,6 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_XR_LIB} PUBLIC
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT
 )
-# target_compile_definitions(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
-#     SP_GRAPHICS_SUPPORT_GL
-# )
-# target_compile_definitions(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
-#     SP_GRAPHICS_SUPPORT_GL
-# )
 target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT_VK
     VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
@@ -62,8 +43,6 @@ target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC
 )
 
 target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-# target_precompile_headers(${PROJECT_GRAPHICS_EGL_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-# target_precompile_headers(${PROJECT_GRAPHICS_OPENGL_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_XR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
