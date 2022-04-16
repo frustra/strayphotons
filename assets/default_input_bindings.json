@@ -2,7 +2,7 @@
     "input:mouse": {
         "event_bindings": {
             "/mouse/scroll": [ "gui:menu_gui/action/menu/scroll", "gui:debug_gui/action/menu/scroll" ],
-            "/mouse/move": [ "player:flatview/action/camera_rotate", "player:flatview/interact/rotate" ]
+            "/mouse/move": [ "player:flatview/script/camera_rotate", "player:flatview/interact/rotate" ]
         }
     },
     "input:keyboard": {
@@ -13,7 +13,7 @@
             "/keyboard/key/enter": "gui:menu_gui/action/menu/enter",
             "/keyboard/key/space": "player:player/action/jump",
             "/keyboard/key/e": "player:flatview/interact/grab",
-            "/keyboard/key/q": "player:debug-spawner/action/spawn",
+            "/keyboard/key/q": "player:debug-spawner/script/spawn",
             "/keyboard/key/f": "player:flashlight/action/flashlight/toggle",
             "/keyboard/key/p": "player:flashlight/action/flashlight/grab",
             "/keyboard/key/f1": {

@@ -44,7 +44,7 @@ namespace sp::scripts {
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput>(lock)) {
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
+                    while (EventInput::Poll(lock, ent, "/script/spawn", event)) {
                         glm::vec3 position;
                         position.x = state.GetParam<double>("position_x");
                         position.y = state.GetParam<double>("position_y");
@@ -114,7 +114,7 @@ namespace sp::scripts {
                         ToString(lock, ent));
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/physics/broken_constraint", event)) {
+                    while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
                         ph.RemoveConstraint();
                         ph.group = PhysicsGroup::World;
                         if (ent.Has<Renderable>(lock)) {
@@ -125,7 +125,7 @@ namespace sp::scripts {
 
                     auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
 
-                    while (EventInput::Poll(lock, ent, "/interact/grab", event)) {
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         auto parentTransform = std::get_if<Transform>(&event.data);
                         if (parentTransform) {
                             if (ph.constraint) {
@@ -149,7 +149,7 @@ namespace sp::scripts {
                                 invParentRotate * (transform.GetPosition() - parentTransform->GetPosition()),
                                 invParentRotate * transform.GetRotation());
                         } else {
-                            Errorf("Unsupported /interact/grab event type: %s", event.toString());
+                            Errorf("Unsupported %s event type: %s", INTERACT_EVENT_INTERACT_GRAB, event.toString());
                         }
                     }
                 }
@@ -176,7 +176,7 @@ namespace sp::scripts {
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/interact/grab", event)) {
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (target.Has<Physics>(lock)) {
                             // Drop existing target entity
                             auto &ph = target.Get<Physics>(lock);
@@ -193,8 +193,8 @@ namespace sp::scripts {
                             if (ph.dynamic && !ph.kinematic && !ph.constraint) {
                                 if (EventBindings::SendEvent(lock,
                                         target,
-                                        "/interact/grab",
-                                        Event{"/interact/grab", ent, transform}) > 0) {
+                                        INTERACT_EVENT_INTERACT_GRAB,
+                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
                                     continue;
                                 }
 

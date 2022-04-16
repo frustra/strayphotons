@@ -46,12 +46,12 @@
             ],
             "event_input": [
                 "/script/joystick_in",
-                "/action/camera_rotate",
+                "/script/camera_rotate",
                 "/interact/grab",
                 "/interact/rotate"
             ],
             "event_bindings": {
-                "/script/joystick_out": "player/action/camera_rotate"
+                "/script/joystick_out": "player/script/camera_rotate"
             },
             "focus": "GAME",
             "physics_query": {
@@ -62,7 +62,7 @@
         {
             "name": "debug-spawner",
             "event_input": [
-                "/action/spawn"
+                "/script/spawn"
             ],
             "script": {
                 "onTick": "model_spawner",

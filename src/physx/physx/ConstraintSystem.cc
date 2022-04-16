@@ -5,6 +5,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -145,7 +146,7 @@ namespace sp {
                 auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
                                 targetTransform.GetRotation() * physics.constraintOffset;
                 if (glm::length(deltaPos) > physics.constraintMaxDistance) {
-                    ecs::EventBindings::SendEvent(lock, "/physics/broken_constraint", entity, physics.constraint);
+                    ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
                     physics.RemoveConstraint();
                 }
             }

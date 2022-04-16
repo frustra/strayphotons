@@ -38,6 +38,11 @@ namespace sp {
     static const std::string INPUT_SIGNAL_MOVE_SPRINT = "move_sprint";
     static const std::string INPUT_SIGNAL_MOVE_NOCLIP = "move_noclip";
 
+    // Interaction
+    static const std::string INTERACT_EVENT_INTERACT_POINT = "/interact/point"; // ecs::Transform
+    static const std::string INTERACT_EVENT_INTERACT_GRAB = "/interact/grab"; // ecs::Transform
+
     // Other
-    static const std::string INPUT_EVENT_RUN_COMMAND = "/action/run_command"; // string
+    static const std::string PHYSICS_EVENT_BROKEN_CONSTRAINT = "/physics/broken_constraint"; // EntityRef
+    static const std::string ACTION_EVENT_RUN_COMMAND = "/action/run_command"; // string
 } // namespace sp

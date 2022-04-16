@@ -22,11 +22,9 @@ namespace sp::scripts {
                             float factorParamX = state.GetParam<double>("scale_x");
                             float factorParamY = state.GetParam<double>("scale_y");
                             EventBindings::SendEvent(lock,
-                                ent,
                                 "/script/joystick_out",
-                                Event{"/script/joystick_out",
-                                    event.source,
-                                    glm::vec2(data->x * factorParamX, data->y * factorParamY)});
+                                ent,
+                                glm::vec2(data->x * factorParamX, data->y * factorParamY));
                         } else {
                             Errorf("Unsupported joystick_in event type: %s", event.toString());
                         }
@@ -110,7 +108,7 @@ namespace sp::scripts {
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformTree>(lock)) {
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/camera_rotate", event)) {
+                    while (EventInput::Poll(lock, ent, "/script/camera_rotate", event)) {
                         auto angleDiff = std::get<glm::vec2>(event.data);
                         if (SignalBindings::GetSignal(lock, ent, "interact_rotate") < 0.5) {
                             auto sensitivity = state.GetParam<double>("view_sensitivity");

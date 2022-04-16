@@ -15,7 +15,7 @@ namespace sp {
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
-                ent.Set<ecs::EventInput>(lock, INPUT_EVENT_RUN_COMMAND);
+                ent.Set<ecs::EventInput>(lock, ACTION_EVENT_RUN_COMMAND);
                 auto &script = ent.Set<ecs::Script>(lock);
                 script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
                     [](ecs::ScriptState &state,
@@ -24,7 +24,7 @@ namespace sp {
                         chrono_clock::duration interval) {
                         if (ent.Has<ecs::EventInput>(lock)) {
                             ecs::Event event;
-                            while (ecs::EventInput::Poll(lock, ent, INPUT_EVENT_RUN_COMMAND, event)) {
+                            while (ecs::EventInput::Poll(lock, ent, ACTION_EVENT_RUN_COMMAND, event)) {
                                 auto command = std::get_if<std::string>(&event.data);
                                 if (command && !command->empty()) {
                                     GetConsoleManager().QueueParseAndExecute(*command);
@@ -67,11 +67,11 @@ namespace sp {
                 Logf("Binding %s to command: %s", keyName, command);
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-                bindings.Unbind(eventName, consoleInputEntity, INPUT_EVENT_RUN_COMMAND);
+                bindings.Unbind(eventName, consoleInputEntity, ACTION_EVENT_RUN_COMMAND);
 
                 ecs::EventBindings::Binding binding;
                 binding.target = consoleInputEntity;
-                binding.destQueue = INPUT_EVENT_RUN_COMMAND;
+                binding.destQueue = ACTION_EVENT_RUN_COMMAND;
                 binding.setValue = command;
                 bindings.Bind(eventName, binding);
             }
