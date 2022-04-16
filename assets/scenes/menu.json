@@ -51,9 +51,11 @@
 					-3
 				]
 			},
-			"renderable": "cardboard-box",
-			"physics": {
-				"model": "cardboard-box"
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "cardboard_box"
+				}
 			}
 		},
 		{

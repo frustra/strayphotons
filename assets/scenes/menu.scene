@@ -22,9 +22,11 @@
 			"transform": {
 				"translate": [4, 1, -3]
 			},
-			"renderable": "cardboard-box",
-			"physics": {
-				"model": "cardboard-box"
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "cardboard_box"
+				}
 			}
 		},
 		{

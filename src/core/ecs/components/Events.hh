@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/components/Transform.h"
 #include "ecs/components/Focus.hh"
 
 #include <glm/glm.hpp>
@@ -17,18 +18,18 @@
 
 namespace ecs {
     struct Event {
-        using EventData =
-            std::variant<bool, char, int, double, glm::vec2, glm::vec3, EntityRef, Tecs::Entity, std::string>;
+        using EventData = std::
+            variant<bool, char, int, double, glm::vec2, glm::vec3, Transform, EntityRef, Tecs::Entity, std::string>;
 
         std::string name;
-        EntityRef source;
+        Entity source;
         EventData data;
 
         Event() {}
-        Event(const std::string &name, const EntityRef &source) : name(name), source(source), data(true) {}
+        Event(const std::string &name, const Entity &source) : name(name), source(source), data(true) {}
 
         template<typename T>
-        Event(const std::string &name, const EntityRef &source, T data) : name(name), source(source), data(data) {}
+        Event(const std::string &name, const Entity &source, T data) : name(name), source(source), data(data) {}
 
         std::string toString() const;
     };
@@ -89,7 +90,7 @@ namespace ecs {
         template<typename T>
         inline void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
             const std::string &name,
-            const EntityRef &source,
+            const Entity &source,
             T data) const {
             SendEvent(lock, Event(name, source, data));
         }

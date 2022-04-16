@@ -90,7 +90,7 @@ namespace sp {
             if (keyboard.Has<ecs::EventBindings>(lock)) {
                 std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-                bindings.SendEvent(lock, eventName, ctx->keyboardEntity, true);
+                bindings.SendEvent(lock, eventName, keyboard, true);
             }
         }
 
@@ -118,7 +118,7 @@ namespace sp {
         if (keyboard.Has<ecs::EventBindings>(lock)) {
             auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
             // TODO: Handle unicode somehow?
-            bindings.SendEvent(lock, INPUT_EVENT_KEYBOARD_CHARACTERS, ctx->keyboardEntity, (char)ch);
+            bindings.SendEvent(lock, INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch);
         }
     }
 
@@ -131,7 +131,7 @@ namespace sp {
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
             glm::vec2 mousePos(xPos, yPos);
-            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_MOVE, ctx->mouseEntity, mousePos - ctx->prevMousePos);
+            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos);
             ctx->prevMousePos = mousePos;
         }
 
@@ -150,7 +150,7 @@ namespace sp {
         auto mouse = ctx->mouseEntity.Get(lock);
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, ctx->mouseEntity, ctx->ImmediateCursor());
+            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, mouse, ctx->ImmediateCursor());
         }
 
         if (mouse.Has<ecs::SignalOutput>(lock)) {
@@ -180,7 +180,7 @@ namespace sp {
         auto mouse = ctx->mouseEntity.Get(lock);
         if (mouse.Has<ecs::EventBindings>(lock)) {
             auto &bindings = mouse.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, ctx->mouseEntity, glm::vec2(xOffset, yOffset));
+            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset));
         }
     }
 } // namespace sp

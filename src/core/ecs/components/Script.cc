@@ -10,6 +10,7 @@ namespace ecs {
     robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
 
     bool parseScriptState(ScriptState &state, const picojson::value &src) {
+        bool isOnEvent = false;
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
                 if (param.second.is<std::string>()) {
@@ -29,6 +30,25 @@ namespace ecs {
                     Errorf("Script onTick has invalid definition: %s", param.second.to_str());
                     return false;
                 }
+            } else if (param.first == "onEvent") {
+                if (param.second.is<std::string>()) {
+                    auto scriptName = param.second.get<std::string>();
+                    auto it = ScriptDefinitions.find(scriptName);
+                    if (it != ScriptDefinitions.end()) {
+                        if (state) {
+                            Errorf("Script has multiple definitions: %s", scriptName);
+                            return false;
+                        }
+                        state.callback = it->second;
+                        isOnEvent = true;
+                    } else {
+                        Errorf("Script has unknown onEvent definition: %s", scriptName);
+                        return false;
+                    }
+                } else {
+                    Errorf("Script onEvent has invalid definition: %s", param.second.to_str());
+                    return false;
+                }
             } else if (param.first == "prefab") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
@@ -46,6 +66,14 @@ namespace ecs {
                 } else {
                     Errorf("Script prefab has invalid definition: %s", param.second.to_str());
                     return false;
+                }
+            } else if (param.first == "filter_events") {
+                if (param.second.is<std::string>()) {
+                    state.filterEvents.emplace_back(param.second.get<std::string>());
+                } else if (param.second.is<picojson::array>()) {
+                    for (auto subParam : param.second.get<picojson::array>()) {
+                        state.filterEvents.emplace_back(subParam.get<std::string>());
+                    }
                 }
             } else if (param.first == "parameters") {
                 for (auto scriptParam : param.second.get<picojson::object>()) {
@@ -81,19 +109,29 @@ namespace ecs {
                 }
             }
         }
-        return state;
+        if (isOnEvent && state.filterEvents.empty()) {
+            Errorf("onEvent script has no event filters");
+            return false;
+        }
+        if (!isOnEvent && !state.filterEvents.empty()) {
+            Errorf("Only onEvent scripts can have event filters");
+            return false;
+        }
+        return true;
     }
 
     template<>
     bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src) {
         if (src.is<picojson::object>()) {
             ScriptState state(scope);
-            if (parseScriptState(state, src)) dst.scripts.push_back(std::move(state));
+            if (!parseScriptState(state, src)) return false;
+            dst.scripts.push_back(std::move(state));
         } else if (src.is<picojson::array>()) {
             for (auto entry : src.get<picojson::array>()) {
                 if (entry.is<picojson::object>()) {
                     ScriptState state(scope);
-                    if (parseScriptState(state, entry)) dst.scripts.push_back(std::move(state));
+                    if (!parseScriptState(state, entry)) return false;
+                    dst.scripts.push_back(std::move(state));
                 } else {
                     Errorf("Invalid script entry: %s", entry.to_str());
                     return false;
@@ -110,5 +148,39 @@ namespace ecs {
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstScript = dst.Get<Script>(lock);
         if (dstScript.scripts.empty()) dstScript.scripts.assign(src.scripts.begin(), src.scripts.end());
+    }
+
+    void Script::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
+        ZoneScopedN("OnTick");
+        ZoneStr(ecs::ToString(lock, ent));
+        for (auto &state : scripts) {
+            auto callback = std::get_if<OnTickFunc>(&state.callback);
+            if (callback) {
+                if (!state.filterEvents.empty()) {
+                    Assertf(ent.Has<EventInput>(lock),
+                        "OnEvent script is missing EventInput: %s",
+                        ecs::ToString(lock, ent));
+                    auto &eventInput = ent.Get<EventInput>(lock);
+                    bool hasEvents = false;
+                    for (auto &queueName : state.filterEvents) {
+                        if (eventInput.HasEvents(queueName)) {
+                            hasEvents = true;
+                            break;
+                        }
+                    }
+                    if (!hasEvents) continue;
+                }
+                (*callback)(state, lock, ent, interval);
+            }
+        }
+    }
+
+    void Script::Prefab(Lock<AddRemove> lock, const Entity &ent) {
+        ZoneScopedN("Prefab");
+        ZoneStr(ecs::ToString(lock, ent));
+        for (auto &state : scripts) {
+            auto callback = std::get_if<PrefabFunc>(&state.callback);
+            if (callback) (*callback)(state, lock, ent);
+        }
     }
 } // namespace ecs

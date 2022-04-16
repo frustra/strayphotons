@@ -1,0 +1,22 @@
+{
+    "entities": [
+		{
+			"transform": {},
+			"renderable": "cardboard-box",
+			"physics": {
+				"model": "cardboard-box"
+			},
+            "event_input": [
+                "/action/grab",
+                "/physics/broken_constraint"
+            ],
+            "script": {
+                "onEvent": "interactive_object",
+                "filter_events": ["/action/grab", "/physics/broken_constraint"],
+                "parameters": {
+                    "grab_break_distance": 0.5
+                }
+            }
+		}
+    ]
+}

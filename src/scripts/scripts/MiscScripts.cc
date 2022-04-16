@@ -107,6 +107,57 @@ namespace sp::scripts {
                         rotationAxis));
                 }
             }),
+        InternalScript("interactive_object",
+            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                Logf("interactive_object called");
+                if (ent.Has<EventInput, TransformSnapshot, Physics>(lock)) {
+                    auto &ph = ent.Get<Physics>(lock);
+
+                    Assertf(ph.dynamic && !ph.kinematic,
+                        "Interactive object must have dynamic physics: %s",
+                        ToString(lock, ent));
+
+                    Event event;
+                    while (EventInput::Poll(lock, ent, "/physics/broken_constraint", event)) {
+                        ph.RemoveConstraint();
+                        ph.group = PhysicsGroup::World;
+                        if (ent.Has<Renderable>(lock)) {
+                            ent.Get<Renderable>(lock).visibility.reset(
+                                Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                        }
+                    }
+
+                    auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
+
+                    while (EventInput::Poll(lock, ent, "/action/grab", event)) {
+                        auto parentTransform = std::get_if<Transform>(&event.data);
+                        if (parentTransform) {
+                            if (ph.constraint) {
+                                ph.RemoveConstraint();
+                                ph.group = PhysicsGroup::World;
+                                if (ent.Has<Renderable>(lock)) {
+                                    ent.Get<Renderable>(lock).visibility.reset(
+                                        Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                                }
+                            }
+                            auto &transform = ent.Get<TransformSnapshot>(lock);
+                            auto invParentRotate = glm::inverse(parentTransform->GetRotation());
+
+                            if (ent.Has<Renderable>(lock)) {
+                                ent.Get<Renderable>(lock).visibility.set(
+                                    Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+                            }
+                            ph.group = PhysicsGroup::PlayerHands;
+                            ph.SetConstraint(event.source,
+                                grabBreakDistance,
+                                invParentRotate * (transform.GetPosition() - parentTransform->GetPosition()),
+                                invParentRotate * transform.GetRotation());
+                        } else {
+                            Errorf("Unsupported /action/grab event type: %s", event.toString());
+                        }
+                    }
+                }
+            }),
         InternalScript("grab_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
@@ -140,21 +191,26 @@ namespace sp::scripts {
                                     ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
                             }
                             target = Entity();
-                        } else if (query.raycastHitTarget.Has<Physics, TransformSnapshot>(lock)) {
+                        } else if (query.raycastHitTarget.Has<Physics>(lock)) {
                             // Grab the entity being looked at
                             auto &ph = query.raycastHitTarget.Get<Physics>(lock);
                             if (ph.dynamic && !ph.kinematic && !ph.constraint) {
                                 target = query.raycastHitTarget;
 
-                                auto &hitTransform = target.Get<TransformSnapshot>(lock);
-                                auto invParentRotate = glm::inverse(transform.GetRotation());
+                                if (target.Has<EventInput>(lock)) {
+                                    auto &eventInput = target.Get<EventInput>(lock);
+                                    eventInput.Add("/action/grab", Event{"/action/grab", ent, transform});
+                                } else if (target.Has<TransformSnapshot>(lock)) {
+                                    auto &hitTransform = target.Get<TransformSnapshot>(lock);
+                                    auto invParentRotate = glm::inverse(transform.GetRotation());
 
-                                ph.group = PhysicsGroup::PlayerHands;
-                                ph.SetConstraint(ent,
-                                    query.raycastQueryDistance,
-                                    invParentRotate *
-                                        (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
-                                    invParentRotate * hitTransform.GetRotation());
+                                    ph.group = PhysicsGroup::PlayerHands;
+                                    ph.SetConstraint(ent,
+                                        query.raycastQueryDistance,
+                                        invParentRotate * (hitTransform.GetPosition() - transform.GetPosition() +
+                                                              glm::vec3(0, 0.1, 0)),
+                                        invParentRotate * hitTransform.GetRotation());
+                                }
                             }
                         }
                     }
