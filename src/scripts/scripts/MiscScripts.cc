@@ -191,6 +191,8 @@ namespace sp::scripts {
                             // Grab the entity being looked at
                             auto &ph = query.raycastHitTarget.Get<Physics>(lock);
                             if (ph.dynamic && !ph.kinematic && !ph.constraint) {
+                                target = query.raycastHitTarget;
+
                                 if (EventBindings::SendEvent(lock,
                                         target,
                                         INTERACT_EVENT_INTERACT_GRAB,
@@ -198,8 +200,7 @@ namespace sp::scripts {
                                     continue;
                                 }
 
-                                if (query.raycastHitTarget.Has<TransformSnapshot>(lock)) {
-                                    target = query.raycastHitTarget;
+                                if (target.Has<TransformSnapshot>(lock)) {
                                     auto &hitTransform = target.Get<TransformSnapshot>(lock);
                                     auto invParentRotate = glm::inverse(transform.GetRotation());
 
