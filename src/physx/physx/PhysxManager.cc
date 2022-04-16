@@ -227,6 +227,7 @@ namespace sp {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
                                                         ecs::SignalOutput,
                                                         ecs::SignalBindings,
+                                                        ecs::EventBindings,
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::LaserEmitter,
@@ -238,7 +239,8 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::SignalOutput>>();
+                    ecs::SignalOutput,
+                    ecs::EventInput>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
