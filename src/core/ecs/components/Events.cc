@@ -119,7 +119,7 @@ namespace ecs {
 
     std::string Event::toString() const {
         std::stringstream ss;
-        ss << this->data;
+        ss << this->name << ":" << this->data;
         return ss.str();
     }
 
@@ -289,59 +289,6 @@ namespace ecs {
         return nullptr;
     }
 
-    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
-        const Event &event) const {
-        const FocusLock *focusLock = nullptr;
-        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
-        auto list = sourceToDest.find(event.name);
-        if (list != sourceToDest.end()) {
-            for (auto &binding : list->second) {
-                auto ent = binding.target.Get(lock);
-                if (focusLock && ent.Has<FocusLayer>(lock)) {
-                    auto &layer = ent.Get<FocusLayer>(lock);
-                    if (!focusLock->HasPrimaryFocus(layer)) continue;
-                }
-                if (ent.Exists(lock)) {
-                    if (ent.Has<EventInput>(lock)) {
-                        auto &eventInput = ent.Get<EventInput>(lock);
-
-                        // Execute event modifiers before submitting to the destination queue
-                        if (binding.setValue) {
-                            Event modifiedEvent = event;
-                            modifiedEvent.data = *binding.setValue;
-                            eventInput.Add(binding.destQueue, modifiedEvent);
-                        } else if (binding.multiplyValue) {
-                            Event modifiedEvent = event;
-                            std::visit(
-                                [&](auto &&arg) {
-                                    using T = std::decay_t<decltype(arg)>;
-                                    if constexpr (std::is_same_v<T, glm::vec2>) {
-                                        arg *= *binding.multiplyValue;
-                                    } else if constexpr (std::is_same_v<T, glm::vec3>) {
-                                        arg *= *binding.multiplyValue;
-                                    } else if constexpr (std::is_same_v<T, int>) {
-                                        arg *= *binding.multiplyValue;
-                                    } else if constexpr (std::is_same_v<T, double>) {
-                                        arg *= *binding.multiplyValue;
-                                    } else {
-                                        Abortf("Unsupported event type for multiply_value: %s", typeid(arg).name());
-                                    }
-                                },
-                                modifiedEvent.data);
-                            eventInput.Add(binding.destQueue, modifiedEvent);
-                        } else {
-                            eventInput.Add(binding.destQueue, event);
-                        }
-                    } else {
-                        Errorf("Tried to send event to entity without EventInput: %s", binding.target.Name().String());
-                    }
-                } else {
-                    Errorf("Tried to send event to missing entity: %s", binding.target.Name().String());
-                }
-            }
-        }
-    }
-
     std::vector<std::string> EventBindings::GetBindingNames() const {
         std::vector<std::string> list(sourceToDest.size());
         size_t i = 0;
@@ -349,5 +296,72 @@ namespace ecs {
             list[i++] = entry.first;
         }
         return list;
+    }
+
+    size_t EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings>, Write<EventInput>> lock,
+        const EntityRef &target,
+        const std::string &bindingName,
+        const Event &event,
+        size_t depth) {
+        if (depth > MAX_EVENT_BINDING_DEPTH) {
+            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), bindingName);
+            return 0;
+        }
+        auto ent = target.Get(lock);
+        if (!ent.Exists(lock)) {
+            Errorf("Tried to send event to missing entity: %s", target.Name().String());
+            return 0;
+        }
+
+        const FocusLock *focusLock = nullptr;
+        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
+        if (focusLock && ent.Has<FocusLayer>(lock)) {
+            auto &layer = ent.Get<FocusLayer>(lock);
+            if (!focusLock->HasPrimaryFocus(layer)) return 0;
+        }
+
+        if (!ent.Has<EventInput>(lock) && !ent.Has<EventBindings>(lock)) {
+            Errorf("Tried to send event to entity without EventInput or EventBindings: %s", target.Name().String());
+            return 0;
+        }
+
+        size_t eventsSent = 0;
+        if (ent.Has<EventInput>(lock)) {
+            auto &eventInput = ent.Get<EventInput>(lock);
+            if (eventInput.Add(bindingName, event)) eventsSent++;
+        }
+        if (ent.Has<EventBindings>(lock)) {
+            auto &bindings = ent.Get<EventBindings>(lock);
+            auto list = bindings.sourceToDest.find(bindingName);
+            if (list != bindings.sourceToDest.end()) {
+                for (auto &binding : list->second) {
+                    // Execute event modifiers before submitting to the destination queue
+                    Event modifiedEvent = event;
+                    if (binding.setValue) {
+                        modifiedEvent.data = *binding.setValue;
+                    } else if (binding.multiplyValue) {
+                        std::visit(
+                            [&](auto &&arg) {
+                                using T = std::decay_t<decltype(arg)>;
+                                if constexpr (std::is_same_v<T, glm::vec2>) {
+                                    arg *= *binding.multiplyValue;
+                                } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                                    arg *= *binding.multiplyValue;
+                                } else if constexpr (std::is_same_v<T, int>) {
+                                    arg *= *binding.multiplyValue;
+                                } else if constexpr (std::is_same_v<T, double>) {
+                                    arg *= *binding.multiplyValue;
+                                } else {
+                                    Abortf("Unsupported event type for multiply_value: %s", typeid(arg).name());
+                                }
+                            },
+                            modifiedEvent.data);
+                    }
+                    eventsSent +=
+                        EventBindings::SendEvent(lock, binding.target, binding.destQueue, modifiedEvent, depth + 1);
+                }
+            }
+        }
+        return eventsSent;
     }
 } // namespace ecs

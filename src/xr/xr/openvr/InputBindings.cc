@@ -183,12 +183,11 @@ namespace sp::xr {
                                 "Failed to read OpenVR digital action: %s",
                                 action.name);
 
-                            if (originEntity.Has<ecs::EventBindings>(lock)) {
-                                auto &bindings = originEntity.Get<ecs::EventBindings>(lock);
-
-                                if (digitalActionData.bActive && digitalActionData.bChanged) {
-                                    bindings.SendEvent(lock, action.name, originEntity, digitalActionData.bState);
-                                }
+                            if (digitalActionData.bActive && digitalActionData.bChanged) {
+                                ecs::EventBindings::SendEvent(lock,
+                                    action.name,
+                                    originEntity,
+                                    digitalActionData.bState);
                             }
 
                             if (originEntity.Has<ecs::SignalOutput>(lock)) {
@@ -212,31 +211,26 @@ namespace sp::xr {
                                 "Failed to read OpenVR analog action: %s",
                                 action.name);
 
-                            if (originEntity.Has<ecs::EventBindings>(lock)) {
-                                auto &bindings = originEntity.Get<ecs::EventBindings>(lock);
-
-                                if (analogActionData.bActive &&
-                                    (analogActionData.x != 0.0f || analogActionData.y != 0.0f ||
-                                        analogActionData.z != 0.0f)) {
-                                    switch (action.type) {
-                                    case Action::DataType::Vec1:
-                                        bindings.SendEvent(lock, action.name, originEntity, analogActionData.x);
-                                        break;
-                                    case Action::DataType::Vec2:
-                                        bindings.SendEvent(lock,
-                                            action.name,
-                                            originEntity,
-                                            glm::vec2(analogActionData.x, analogActionData.y));
-                                        break;
-                                    case Action::DataType::Vec3:
-                                        bindings.SendEvent(lock,
-                                            action.name,
-                                            originEntity,
-                                            glm::vec3(analogActionData.x, analogActionData.y, analogActionData.z));
-                                        break;
-                                    default:
-                                        break;
-                                    }
+                            if (analogActionData.bActive && (analogActionData.x != 0.0f || analogActionData.y != 0.0f ||
+                                                                analogActionData.z != 0.0f)) {
+                                switch (action.type) {
+                                case Action::DataType::Vec1:
+                                    ecs::EventBindings::SendEvent(lock, action.name, originEntity, analogActionData.x);
+                                    break;
+                                case Action::DataType::Vec2:
+                                    ecs::EventBindings::SendEvent(lock,
+                                        action.name,
+                                        originEntity,
+                                        glm::vec2(analogActionData.x, analogActionData.y));
+                                    break;
+                                case Action::DataType::Vec3:
+                                    ecs::EventBindings::SendEvent(lock,
+                                        action.name,
+                                        originEntity,
+                                        glm::vec3(analogActionData.x, analogActionData.y, analogActionData.z));
+                                    break;
+                                default:
+                                    break;
                                 }
                             }
 

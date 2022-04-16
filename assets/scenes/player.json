@@ -40,7 +40,7 @@
                     "parameters": { "view_sensitivity": 0.001 }
                 },
                 {
-                    "onTick": "grab_object",
+                    "onTick": "interact_handler",
                     "parameters": { "rotate_sensitivity": 0.01 }
                 }
             ],

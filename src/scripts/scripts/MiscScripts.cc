@@ -14,33 +14,30 @@ namespace sp::scripts {
     std::array miscScripts = {
         InternalScript("edge_trigger",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventBindings>(lock)) {
-                    auto &eventBindings = ent.Get<EventBindings>(lock);
-                    auto inputName = state.GetParam<std::string>("input_signal");
-                    auto outputName = state.GetParam<std::string>("output_event");
-                    auto upperThreshold = state.GetParam<double>("upper_threshold");
-                    auto lowerThreshold = state.GetParam<double>("lower_threshold");
+                auto inputName = state.GetParam<std::string>("input_signal");
+                auto outputName = state.GetParam<std::string>("output_event");
+                auto upperThreshold = state.GetParam<double>("upper_threshold");
+                auto lowerThreshold = state.GetParam<double>("lower_threshold");
 
-                    auto oldTriggered = state.GetParam<bool>("triggered");
-                    auto newTriggered = oldTriggered;
-                    auto value = SignalBindings::GetSignal(lock, ent, inputName);
-                    if (upperThreshold >= lowerThreshold) {
-                        if (value >= upperThreshold && !oldTriggered) {
-                            newTriggered = true;
-                        } else if (value <= lowerThreshold && oldTriggered) {
-                            newTriggered = false;
-                        }
-                    } else {
-                        if (value <= upperThreshold && !oldTriggered) {
-                            newTriggered = true;
-                        } else if (value >= lowerThreshold && oldTriggered) {
-                            newTriggered = false;
-                        }
+                auto oldTriggered = state.GetParam<bool>("triggered");
+                auto newTriggered = oldTriggered;
+                auto value = SignalBindings::GetSignal(lock, ent, inputName);
+                if (upperThreshold >= lowerThreshold) {
+                    if (value >= upperThreshold && !oldTriggered) {
+                        newTriggered = true;
+                    } else if (value <= lowerThreshold && oldTriggered) {
+                        newTriggered = false;
                     }
-                    if (newTriggered != oldTriggered) {
-                        eventBindings.SendEvent(lock, outputName, ent, (double)newTriggered);
-                        state.SetParam<bool>("triggered", newTriggered);
+                } else {
+                    if (value <= upperThreshold && !oldTriggered) {
+                        newTriggered = true;
+                    } else if (value >= lowerThreshold && oldTriggered) {
+                        newTriggered = false;
                     }
+                }
+                if (newTriggered != oldTriggered) {
+                    EventBindings::SendEvent(lock, outputName, ent, (double)newTriggered);
+                    state.SetParam<bool>("triggered", newTriggered);
                 }
             }),
         InternalScript("model_spawner",
@@ -157,7 +154,7 @@ namespace sp::scripts {
                     }
                 }
             }),
-        InternalScript("grab_object",
+        InternalScript("interact_handler",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
                     auto &query = ent.Get<PhysicsQuery>(lock);

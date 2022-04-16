@@ -48,8 +48,8 @@ namespace FocusLockTests {
                                                         ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            Assert(sentCount == 1, "Expected to successfully queue 1 event");
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
@@ -82,8 +82,8 @@ namespace FocusLockTests {
                                                         ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            Assert(sentCount == 0, "Expected to not to queue any events");
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;

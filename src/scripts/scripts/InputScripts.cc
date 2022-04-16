@@ -14,19 +14,19 @@ namespace sp::scripts {
     std::array inputScripts = {
         InternalScript("joystick_calibration",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Name, EventInput, EventBindings>(lock)) {
-                    auto &eventBindings = ent.Get<EventBindings>(lock);
-
+                if (ent.Has<Name, EventInput>(lock)) {
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/joystick_in", event)) {
                         auto data = std::get_if<glm::vec2>(&event.data);
                         if (data) {
                             float factorParamX = state.GetParam<double>("scale_x");
                             float factorParamY = state.GetParam<double>("scale_y");
-                            eventBindings.SendEvent(lock,
+                            EventBindings::SendEvent(lock,
+                                ent,
                                 "/script/joystick_out",
-                                event.source,
-                                glm::vec2(data->x * factorParamX, data->y * factorParamY));
+                                Event{"/script/joystick_out",
+                                    event.source,
+                                    glm::vec2(data->x * factorParamX, data->y * factorParamY)});
                         } else {
                             Errorf("Unsupported joystick_in event type: %s", event.toString());
                         }
