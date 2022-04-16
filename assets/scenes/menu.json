@@ -2,7 +2,7 @@
 	"entities": [
 		{
 			"sound": {
-				"file": "test"
+				"file": "test.ogg"
 			},
 			"transform": {
 				"translate": [
