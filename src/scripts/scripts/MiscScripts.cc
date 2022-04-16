@@ -109,7 +109,6 @@ namespace sp::scripts {
             }),
         InternalScript("interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                Logf("interactive_object called");
                 if (ent.Has<EventInput, TransformSnapshot, Physics>(lock)) {
                     auto &ph = ent.Get<Physics>(lock);
 
