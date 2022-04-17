@@ -5,6 +5,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -132,7 +133,8 @@ namespace sp {
     }
 
     void ConstraintSystem::BreakConstraints(
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>> lock) {
+        ecs::Lock<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::TransformSnapshot, ecs::EventBindings>,
+            ecs::Write<ecs::Physics, ecs::EventInput>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
@@ -143,7 +145,10 @@ namespace sp {
 
                 auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
                                 targetTransform.GetRotation() * physics.constraintOffset;
-                if (glm::length(deltaPos) > physics.constraintMaxDistance) physics.RemoveConstraint();
+                if (glm::length(deltaPos) > physics.constraintMaxDistance) {
+                    ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
+                    physics.RemoveConstraint();
+                }
             }
         }
     }

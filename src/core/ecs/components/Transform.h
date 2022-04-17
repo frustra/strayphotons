@@ -33,6 +33,9 @@ namespace ecs {
         glm::vec3 GetScale() const;
         glm::vec3 GetForward() const;
 
+        bool operator==(const Transform &other) const;
+        bool operator!=(const Transform &other) const;
+
     #endif
 #endif
     } Transform;

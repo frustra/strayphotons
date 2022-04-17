@@ -140,6 +140,14 @@ namespace ecs {
         return glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
     }
 
+    bool Transform::operator==(const Transform &other) const {
+        return matrix == other.matrix;
+    }
+
+    bool Transform::operator!=(const Transform &other) const {
+        return matrix != other.matrix;
+    }
+
     Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose;
 

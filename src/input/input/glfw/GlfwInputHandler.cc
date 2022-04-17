@@ -86,12 +86,12 @@ namespace sp {
         Assertf(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping %d", key);
 
         auto keyboard = ctx->keyboardEntity.Get(lock);
+        std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
         if (action == GLFW_PRESS) {
-            if (keyboard.Has<ecs::EventBindings>(lock)) {
-                std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
-                auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-                bindings.SendEvent(lock, eventName, ctx->keyboardEntity, true);
-            }
+            ecs::EventBindings::SendEvent(lock, eventName, keyboard, true);
+        } else if (action == GLFW_RELEASE) {
+            // TODO: Set up event filters so we can support key-up events
+            // ecs::EventBindings::SendEvent(lock, eventName, keyboard, false);
         }
 
         if (keyboard.Has<ecs::SignalOutput>(lock)) {
@@ -115,11 +115,8 @@ namespace sp {
         auto &lock = *ctx->frameLock;
 
         auto keyboard = ctx->keyboardEntity.Get(lock);
-        if (keyboard.Has<ecs::EventBindings>(lock)) {
-            auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-            // TODO: Handle unicode somehow?
-            bindings.SendEvent(lock, INPUT_EVENT_KEYBOARD_CHARACTERS, ctx->keyboardEntity, (char)ch);
-        }
+        // TODO: Handle unicode somehow?
+        ecs::EventBindings::SendEvent(lock, INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch);
     }
 
     void GlfwInputHandler::MouseMoveCallback(GLFWwindow *window, double xPos, double yPos) {
@@ -128,12 +125,9 @@ namespace sp {
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);
-        if (mouse.Has<ecs::EventBindings>(lock)) {
-            auto &bindings = mouse.Get<ecs::EventBindings>(lock);
-            glm::vec2 mousePos(xPos, yPos);
-            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_MOVE, ctx->mouseEntity, mousePos - ctx->prevMousePos);
-            ctx->prevMousePos = mousePos;
-        }
+        glm::vec2 mousePos(xPos, yPos);
+        ecs::EventBindings::SendEvent(lock, INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos);
+        ctx->prevMousePos = mousePos;
 
         if (mouse.Has<ecs::SignalOutput>(lock)) {
             auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
@@ -148,10 +142,7 @@ namespace sp {
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);
-        if (mouse.Has<ecs::EventBindings>(lock)) {
-            auto &bindings = mouse.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, ctx->mouseEntity, ctx->ImmediateCursor());
-        }
+        ecs::EventBindings::SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, mouse, ctx->ImmediateCursor());
 
         if (mouse.Has<ecs::SignalOutput>(lock)) {
             std::string signalName;
@@ -178,9 +169,6 @@ namespace sp {
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);
-        if (mouse.Has<ecs::EventBindings>(lock)) {
-            auto &bindings = mouse.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, ctx->mouseEntity, glm::vec2(xOffset, yOffset));
-        }
+        ecs::EventBindings::SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset));
     }
 } // namespace sp

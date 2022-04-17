@@ -14,40 +14,37 @@ namespace sp::scripts {
     std::array miscScripts = {
         InternalScript("edge_trigger",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventBindings>(lock)) {
-                    auto &eventBindings = ent.Get<EventBindings>(lock);
-                    auto inputName = state.GetParam<std::string>("input_signal");
-                    auto outputName = state.GetParam<std::string>("output_event");
-                    auto upperThreshold = state.GetParam<double>("upper_threshold");
-                    auto lowerThreshold = state.GetParam<double>("lower_threshold");
+                auto inputName = state.GetParam<std::string>("input_signal");
+                auto outputName = state.GetParam<std::string>("output_event");
+                auto upperThreshold = state.GetParam<double>("upper_threshold");
+                auto lowerThreshold = state.GetParam<double>("lower_threshold");
 
-                    auto oldTriggered = state.GetParam<bool>("triggered");
-                    auto newTriggered = oldTriggered;
-                    auto value = SignalBindings::GetSignal(lock, ent, inputName);
-                    if (upperThreshold >= lowerThreshold) {
-                        if (value >= upperThreshold && !oldTriggered) {
-                            newTriggered = true;
-                        } else if (value <= lowerThreshold && oldTriggered) {
-                            newTriggered = false;
-                        }
-                    } else {
-                        if (value <= upperThreshold && !oldTriggered) {
-                            newTriggered = true;
-                        } else if (value >= lowerThreshold && oldTriggered) {
-                            newTriggered = false;
-                        }
+                auto oldTriggered = state.GetParam<bool>("triggered");
+                auto newTriggered = oldTriggered;
+                auto value = SignalBindings::GetSignal(lock, ent, inputName);
+                if (upperThreshold >= lowerThreshold) {
+                    if (value >= upperThreshold && !oldTriggered) {
+                        newTriggered = true;
+                    } else if (value <= lowerThreshold && oldTriggered) {
+                        newTriggered = false;
                     }
-                    if (newTriggered != oldTriggered) {
-                        eventBindings.SendEvent(lock, outputName, ent, (double)newTriggered);
-                        state.SetParam<bool>("triggered", newTriggered);
+                } else {
+                    if (value <= upperThreshold && !oldTriggered) {
+                        newTriggered = true;
+                    } else if (value >= lowerThreshold && oldTriggered) {
+                        newTriggered = false;
                     }
+                }
+                if (newTriggered != oldTriggered) {
+                    EventBindings::SendEvent(lock, outputName, ent, (double)newTriggered);
+                    state.SetParam<bool>("triggered", newTriggered);
                 }
             }),
         InternalScript("model_spawner",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput>(lock)) {
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
+                    while (EventInput::Poll(lock, ent, "/script/spawn", event)) {
                         glm::vec3 position;
                         position.x = state.GetParam<double>("position_x");
                         position.y = state.GetParam<double>("position_y");
@@ -107,92 +104,170 @@ namespace sp::scripts {
                         rotationAxis));
                 }
             }),
-        InternalScript("grab_object",
+        InternalScript("interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
-                    auto &query = ent.Get<PhysicsQuery>(lock);
-                    auto &transform = ent.Get<TransformSnapshot>(lock);
+                if (ent.Has<EventInput, TransformSnapshot, Physics>(lock)) {
+                    auto &ph = ent.Get<Physics>(lock);
+                    Assertf(ph.dynamic && !ph.kinematic,
+                        "Interactive object must have dynamic physics: %s",
+                        ToString(lock, ent));
 
-                    auto &target = query.centerOfMassQuery;
-                    if (target.Has<Physics>(lock)) {
-                        // Remove target if the constraint broke
-                        auto &ph = target.Get<Physics>(lock);
-                        if (ph.constraint != ent) {
-                            ph.RemoveConstraint();
-                            ph.group = PhysicsGroup::World;
-                            if (target.Has<Renderable>(lock)) {
-                                target.Get<Renderable>(lock).visibility.reset(
-                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                            }
-                            target = Entity();
+                    auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
+
+                    struct ScriptData {
+                        Entity grabEntity, pointEntity;
+                        Transform pointTransform;
+                    };
+
+                    ScriptData scriptData;
+                    if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
+
+                    glm::vec3 centerOfMass;
+                    if (ent.Has<PhysicsQuery>(lock)) {
+                        auto &query = ent.Get<PhysicsQuery>(lock);
+                        if (!query.centerOfMassQuery) {
+                            query.centerOfMassQuery = ent;
+                        } else if (query.centerOfMassQuery != ent) {
+                            Abortf("PhysicsQuery is pointing to wrong entity for interactive_object: %s",
+                                ToString(lock, ent));
+                        } else {
+                            centerOfMass = query.centerOfMass;
                         }
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/interact_grab", event)) {
-                        if (target.Has<Physics>(lock)) {
-                            // Drop existing target entity
-                            auto &ph = target.Get<Physics>(lock);
+                    while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
+                        ph.RemoveConstraint();
+                        ph.group = PhysicsGroup::World;
+                        scriptData.grabEntity = {};
+                    }
+
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
+                        auto pointTransform = std::get_if<Transform>(&event.data);
+                        if (pointTransform) {
+                            scriptData.pointTransform = *pointTransform;
+                            scriptData.pointEntity = event.source;
+                        } else if (std::holds_alternative<bool>(event.data)) {
+                            scriptData.pointTransform = {};
+                            scriptData.pointEntity = {};
+                        } else {
+                            Errorf("Unsupported point event type: %s", event.toString());
+                        }
+                    }
+
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
+                        if (std::holds_alternative<bool>(event.data)) {
+                            // Grab(false) = Drop
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
-                            if (target.Has<Renderable>(lock)) {
-                                target.Get<Renderable>(lock).visibility.reset(
-                                    ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                            }
-                            target = Entity();
-                        } else if (query.raycastHitTarget.Has<Physics, TransformSnapshot>(lock)) {
-                            // Grab the entity being looked at
-                            auto &ph = query.raycastHitTarget.Get<Physics>(lock);
-                            if (ph.dynamic && !ph.kinematic && !ph.constraint) {
-                                target = query.raycastHitTarget;
+                            scriptData.grabEntity = {};
+                        } else if (std::holds_alternative<Transform>(event.data)) {
+                            auto &parentTransform = std::get<Transform>(event.data);
+                            auto &transform = ent.Get<TransformSnapshot>(lock);
+                            auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
-                                auto &hitTransform = target.Get<TransformSnapshot>(lock);
-                                auto invParentRotate = glm::inverse(transform.GetRotation());
-
-                                ph.group = PhysicsGroup::PlayerHands;
-                                ph.SetConstraint(ent,
-                                    query.raycastQueryDistance,
-                                    invParentRotate *
-                                        (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
-                                    invParentRotate * hitTransform.GetRotation());
-                            }
+                            scriptData.grabEntity = event.source;
+                            ph.group = PhysicsGroup::PlayerHands;
+                            ph.SetConstraint(event.source,
+                                grabBreakDistance,
+                                invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
+                                invParentRotate * transform.GetRotation());
+                        } else {
+                            Errorf("Unsupported grab event type: %s", event.toString());
                         }
                     }
 
-                    if (state.userData.has_value()) {
-                        auto lastSelection = std::any_cast<Entity>(state.userData);
-                        if (lastSelection && lastSelection.Has<Renderable>(lock)) {
-                            lastSelection.Get<Renderable>(lock).visibility.reset(
-                                ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                        }
-                    }
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
+                        if (std::holds_alternative<glm::vec2>(event.data)) {
+                            if (!scriptData.grabEntity.Has<TransformSnapshot>(lock)) continue;
 
-                    auto selection = target;
-                    if (!selection) selection = query.raycastHitTarget;
+                            auto &input = std::get<glm::vec2>(event.data);
+                            auto &transform = scriptData.grabEntity.Get<const TransformSnapshot>(lock);
 
-                    if (selection && selection.Has<Renderable>(lock)) {
-                        selection.Get<Renderable>(lock).visibility.set(
-                            ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-                        state.userData = selection;
-                    }
-
-                    auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");
-                    if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
-                    bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
-                    while (EventInput::Poll(lock, ent, "/action/interact_rotate", event)) {
-                        if (rotating && target.Has<Physics>(lock)) {
-                            auto input = std::get<glm::vec2>(event.data) * inputSensitivity;
                             auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
                             auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
                                                glm::angleAxis(input.x, upAxis);
 
                             // Move the objects origin so it rotates around its center of mass
-                            auto &ph = target.Get<Physics>(lock);
-                            auto center = ph.constraintRotation * query.centerOfMass;
+                            auto center = ph.constraintRotation * centerOfMass;
                             ph.constraintOffset += center - (deltaRotate * center);
                             ph.constraintRotation = deltaRotate * ph.constraintRotation;
                         }
                     }
+
+                    if (ent.Has<Renderable>(lock)) {
+                        ent.Get<Renderable>(lock).visibility.set(Renderable::Visibility::VISIBLE_OUTLINE_SELECTION,
+                            scriptData.grabEntity || scriptData.pointEntity);
+                    }
+
+                    state.userData = scriptData;
+                }
+            }),
+        InternalScript("interact_handler",
+            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                if (ent.Has<EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
+                    auto &query = ent.Get<PhysicsQuery>(lock);
+                    auto &transform = ent.Get<TransformSnapshot>(lock);
+
+                    struct ScriptData {
+                        Entity grabEntity, pointEntity;
+                    };
+
+                    ScriptData scriptData;
+                    if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
+
+                    Event event;
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
+                        if (std::holds_alternative<bool>(event.data)) {
+                            auto &grabEvent = std::get<bool>(event.data);
+                            if (scriptData.grabEntity) {
+                                // Drop the currently held entity
+                                EventBindings::SendEvent(lock,
+                                    scriptData.grabEntity,
+                                    INTERACT_EVENT_INTERACT_GRAB,
+                                    Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                                scriptData.grabEntity = {};
+                            }
+                            if (grabEvent && query.raycastHitTarget) {
+                                // Grab the entity being looked at
+                                if (EventBindings::SendEvent(lock,
+                                        query.raycastHitTarget,
+                                        INTERACT_EVENT_INTERACT_GRAB,
+                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
+                                    scriptData.grabEntity = query.raycastHitTarget;
+                                }
+                            }
+                        } else {
+                            Errorf("Unsupported grab event type: %s", event.toString());
+                        }
+                    }
+
+                    bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
+                        if (rotating && scriptData.grabEntity) {
+                            ecs::EventBindings::SendEvent(lock,
+                                scriptData.grabEntity,
+                                INTERACT_EVENT_INTERACT_ROTATE,
+                                Event{INTERACT_EVENT_INTERACT_ROTATE, ent, event.data});
+                        }
+                    }
+
+                    if (scriptData.pointEntity && query.raycastHitTarget != scriptData.pointEntity) {
+                        EventBindings::SendEvent(lock,
+                            scriptData.pointEntity,
+                            INTERACT_EVENT_INTERACT_POINT,
+                            Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
+                    } else if (query.raycastHitTarget) {
+                        ecs::Transform pointTransfrom = transform;
+                        pointTransfrom.SetPosition(query.raycastHitPosition);
+                        EventBindings::SendEvent(lock,
+                            query.raycastHitTarget,
+                            INTERACT_EVENT_INTERACT_POINT,
+                            Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransfrom});
+                    }
+                    scriptData.pointEntity = query.raycastHitTarget;
+
+                    state.userData = scriptData;
                 }
             }),
         InternalScript("voxel_controller",

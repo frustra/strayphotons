@@ -54,6 +54,7 @@ namespace ecs {
 
         EntityScope scope;
         std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
+        std::vector<std::string> filterEvents;
 
         std::any userData;
 
@@ -72,23 +73,8 @@ namespace ecs {
             return scripts.emplace_back(scope, callback);
         }
 
-        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
-            ZoneScopedN("OnTick");
-            ZoneStr(ecs::ToString(lock, ent));
-            for (auto &state : scripts) {
-                auto callback = std::get_if<OnTickFunc>(&state.callback);
-                if (callback) (*callback)(state, lock, ent, interval);
-            }
-        }
-
-        void Prefab(Lock<AddRemove> lock, const Entity &ent) {
-            ZoneScopedN("Prefab");
-            ZoneStr(ecs::ToString(lock, ent));
-            for (auto &state : scripts) {
-                auto callback = std::get_if<PrefabFunc>(&state.callback);
-                if (callback) (*callback)(state, lock, ent);
-            }
-        }
+        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
+        void Prefab(Lock<AddRemove> lock, const Entity &ent);
 
         std::vector<ScriptState> scripts;
     };

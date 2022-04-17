@@ -4,6 +4,7 @@
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Focus.hh"
+#include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -16,19 +17,21 @@
 #include <variant>
 
 namespace ecs {
+    static const size_t MAX_EVENT_BINDING_DEPTH = 5;
+
     struct Event {
-        using EventData =
-            std::variant<bool, char, int, double, glm::vec2, glm::vec3, EntityRef, Tecs::Entity, std::string>;
+        using EventData = std::
+            variant<bool, char, int, double, glm::vec2, glm::vec3, Transform, EntityRef, Tecs::Entity, std::string>;
 
         std::string name;
-        EntityRef source;
+        Entity source;
         EventData data;
 
         Event() {}
-        Event(const std::string &name, const EntityRef &source) : name(name), source(source), data(true) {}
+        Event(const std::string &name, const Entity &source) : name(name), source(source), data(true) {}
 
         template<typename T>
-        Event(const std::string &name, const EntityRef &source, T data) : name(name), source(source), data(data) {}
+        Event(const std::string &name, const Entity &source, T data) : name(name), source(source), data(data) {}
 
         std::string toString() const;
     };
@@ -85,15 +88,21 @@ namespace ecs {
         void UnbindDest(EntityRef target, std::string dest);
 
         const BindingList *Lookup(const std::string source) const;
-        void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) const;
-        template<typename T>
-        inline void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
-            const std::string &name,
-            const EntityRef &source,
-            T data) const {
-            SendEvent(lock, Event(name, source, data));
-        }
         std::vector<std::string> GetBindingNames() const;
+
+        static size_t SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings>, Write<EventInput>> lock,
+            const EntityRef &target,
+            const std::string &bindingName,
+            const Event &event,
+            size_t depth = 0);
+
+        template<typename T>
+        static inline size_t SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings>, Write<EventInput>> lock,
+            const std::string &name,
+            const Entity &source,
+            T data) {
+            return SendEvent(lock, source, name, Event{name, source, data});
+        }
 
     private:
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;

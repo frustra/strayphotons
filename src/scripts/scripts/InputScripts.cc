@@ -14,18 +14,16 @@ namespace sp::scripts {
     std::array inputScripts = {
         InternalScript("joystick_calibration",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Name, EventInput, EventBindings>(lock)) {
-                    auto &eventBindings = ent.Get<EventBindings>(lock);
-
+                if (ent.Has<Name, EventInput>(lock)) {
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/joystick_in", event)) {
                         auto data = std::get_if<glm::vec2>(&event.data);
                         if (data) {
                             float factorParamX = state.GetParam<double>("scale_x");
                             float factorParamY = state.GetParam<double>("scale_y");
-                            eventBindings.SendEvent(lock,
+                            EventBindings::SendEvent(lock,
                                 "/script/joystick_out",
-                                event.source,
+                                ent,
                                 glm::vec2(data->x * factorParamX, data->y * factorParamY));
                         } else {
                             Errorf("Unsupported joystick_in event type: %s", event.toString());
@@ -110,16 +108,13 @@ namespace sp::scripts {
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformTree>(lock)) {
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/camera_rotate", event)) {
+                    while (EventInput::Poll(lock, ent, "/script/camera_rotate", event)) {
                         auto angleDiff = std::get<glm::vec2>(event.data);
                         if (SignalBindings::GetSignal(lock, ent, "interact_rotate") < 0.5) {
-                            auto sensitivity = state.GetParam<double>("view_sensitivity");
-
                             // Apply pitch/yaw rotations
                             auto &transform = ent.Get<TransformTree>(lock);
-                            auto rotation = glm::quat(glm::vec3(0, -angleDiff.x * sensitivity, 0)) *
-                                            transform.pose.GetRotation() *
-                                            glm::quat(glm::vec3(-angleDiff.y * sensitivity, 0, 0));
+                            auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *
+                                            glm::quat(glm::vec3(-angleDiff.y, 0, 0));
 
                             auto up = rotation * glm::vec3(0, 1, 0);
                             if (up.y < 0) {

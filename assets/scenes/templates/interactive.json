@@ -1,0 +1,18 @@
+{
+    "components": {
+        "event_input": [
+            "/interact/grab",
+            "/interact/point",
+            "/interact/rotate",
+            "/physics/broken_constraint"
+        ],
+        "script": {
+            "onEvent": "interactive_object",
+            "filter_events": ["/interact/grab", "/interact/point", "/interact/rotate", "/physics/broken_constraint"],
+            "parameters": {
+                "grab_break_distance": 1.0
+            }
+        },
+        "physics_query": {}
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "entities": [
+		{
+			"name": "duck",
+			"transform": {},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "duck",
+					"render": true,
+					"physics": "dynamic"
+				}
+			}
+		},
+        {
+            "name": "duck.gltf2",
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "interactive" }
+            },
+			"physics": {
+				"model": "duck",
+				"mesh": 0,
+				"decomposeHull": true
+			}
+        }
+    ]
+}

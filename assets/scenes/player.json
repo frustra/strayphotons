@@ -35,23 +35,17 @@
                     "onTick": "relative_movement",
                     "parameters": { "relative_to": "player:flatview" }
                 },
-                {
-                    "onTick": "camera_view",
-                    "parameters": { "view_sensitivity": 0.001 }
-                },
-                {
-                    "onTick": "grab_object",
-                    "parameters": { "rotate_sensitivity": 0.01 }
-                }
+                { "onTick": "camera_view" },
+                { "onTick": "interact_handler" }
             ],
             "event_input": [
                 "/script/joystick_in",
-                "/action/camera_rotate",
-                "/action/interact_grab",
-                "/action/interact_rotate"
+                "/script/camera_rotate",
+                "/interact/grab",
+                "/interact/rotate"
             ],
             "event_bindings": {
-                "/script/joystick_out": "player/action/camera_rotate"
+                "/script/joystick_out": "player/script/camera_rotate"
             },
             "focus": "GAME",
             "physics_query": {
@@ -62,7 +56,7 @@
         {
             "name": "debug-spawner",
             "event_input": [
-                "/action/spawn"
+                "/script/spawn"
             ],
             "script": {
                 "onTick": "model_spawner",

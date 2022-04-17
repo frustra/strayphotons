@@ -32,9 +32,34 @@ namespace ecs {
             return;
         }
 
-        auto entityList = root.get<picojson::object>()["entities"];
+        auto rootObj = root.get<picojson::object>();
+
+        // Add defined components to the template root entity
+        picojson::object componentList;
+        auto componentsIter = rootObj.find("components");
+        if (componentsIter != rootObj.end()) componentList = componentsIter->second.get<picojson::object>();
+
+        for (auto comp : componentList) {
+            if (comp.first.empty() || comp.first[0] == '_') continue;
+            Assertf(comp.first != "name", "Template components can't override entity name: %s", comp.second.to_str());
+
+            auto componentType = ecs::LookupComponent(comp.first);
+            if (componentType != nullptr) {
+                if (!componentType->LoadEntity(lock, ent, comp.second)) {
+                    Errorf("Failed to load component, ignoring: %s", comp.first);
+                }
+            } else {
+                Errorf("Unknown component, ignoring: %s", comp.first);
+            }
+        }
+
+        // Add defined entities as sub-entities of the template root
+        picojson::array entityList;
+        auto entitiesIter = rootObj.find("entities");
+        if (entitiesIter != rootObj.end()) entityList = entitiesIter->second.get<picojson::array>();
+
         // Find all named entities first so they can be referenced.
-        for (auto value : entityList.get<picojson::array>()) {
+        for (auto value : entityList) {
             auto obj = value.get<picojson::object>();
 
             if (obj.count("name")) {
@@ -46,7 +71,7 @@ namespace ecs {
         }
 
         std::vector<ecs::Entity> entities;
-        for (auto value : entityList.get<picojson::array>()) {
+        for (auto value : entityList) {
             auto obj = value.get<picojson::object>();
 
             ecs::Entity newEntity;

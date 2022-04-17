@@ -25,6 +25,10 @@
 			"renderable": "cardboard-box",
 			"physics": {
 				"model": "cardboard-box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{

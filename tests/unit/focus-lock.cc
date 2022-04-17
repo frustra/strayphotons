@@ -48,18 +48,18 @@ namespace FocusLockTests {
                                                         ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            Assert(sentCount == 1, "Expected to successfully queue 1 event");
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
             Assert(eventInput.Poll(TEST_EVENT_ACTION, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_KEY, "Unexpected event name");
-            AssertEqual(event.source.GetLive(), keyboard, "Unexpected event source");
+            AssertEqual(event.source, keyboard, "Unexpected event source");
             AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
             Assert(!eventInput.Poll(TEST_EVENT_ACTION, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
-            Assert(!event.source.Name(), "Event data should not be set");
+            Assert(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION);
@@ -82,14 +82,14 @@ namespace FocusLockTests {
                                                         ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
-            eventBindings.SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
+            Assert(sentCount == 0, "Expected to not to queue any events");
 
             auto &eventInput = player.Get<ecs::EventInput>(lock);
             ecs::Event event;
             Assert(!eventInput.Poll(TEST_EVENT_ACTION, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
-            Assert(!event.source.Name(), "Event data should not be set");
+            Assert(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION);
