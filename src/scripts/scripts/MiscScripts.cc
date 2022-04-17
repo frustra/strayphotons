@@ -143,23 +143,22 @@ namespace sp::scripts {
                     }
 
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
-                        auto parentTransform = std::get_if<Transform>(&event.data);
-                        if (parentTransform) {
-                            if (ph.constraint) {
-                                ph.RemoveConstraint();
-                                ph.group = PhysicsGroup::World;
-                                scriptData.grabEntity = {};
-                            } else {
-                                auto &transform = ent.Get<TransformSnapshot>(lock);
-                                auto invParentRotate = glm::inverse(parentTransform->GetRotation());
+                        if (std::holds_alternative<bool>(event.data)) {
+                            // Grab(false) = Drop
+                            ph.RemoveConstraint();
+                            ph.group = PhysicsGroup::World;
+                            scriptData.grabEntity = {};
+                        } else if (std::holds_alternative<Transform>(event.data)) {
+                            auto &parentTransform = std::get<Transform>(event.data);
+                            auto &transform = ent.Get<TransformSnapshot>(lock);
+                            auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
-                                scriptData.grabEntity = event.source;
-                                ph.group = PhysicsGroup::PlayerHands;
-                                ph.SetConstraint(event.source,
-                                    grabBreakDistance,
-                                    invParentRotate * (transform.GetPosition() - parentTransform->GetPosition()),
-                                    invParentRotate * transform.GetRotation());
-                            }
+                            scriptData.grabEntity = event.source;
+                            ph.group = PhysicsGroup::PlayerHands;
+                            ph.SetConstraint(event.source,
+                                grabBreakDistance,
+                                invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
+                                invParentRotate * transform.GetRotation());
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
                         }
@@ -186,36 +185,32 @@ namespace sp::scripts {
                     ScriptData scriptData;
                     if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
-                    // Make sure the held entity still has a valid constraint
-                    if (scriptData.grabEntity) {
-                        if (scriptData.grabEntity.Has<Physics>(lock)) {
-                            auto &ph = scriptData.grabEntity.Get<const Physics>(lock);
-                            if (ph.constraint != ent) scriptData.grabEntity = {};
-                        } else {
-                            scriptData.grabEntity = {};
-                        }
-                    }
-
                     Event event;
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
-                        if (scriptData.grabEntity) {
-                            // Drop the currently held entity
-                            EventBindings::SendEvent(lock,
-                                scriptData.grabEntity,
-                                INTERACT_EVENT_INTERACT_GRAB,
-                                Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform});
-                            scriptData.grabEntity = {};
-                        } else if (query.raycastHitTarget.Has<Physics>(lock)) {
-                            // Grab the entity being looked at
-                            auto &ph = query.raycastHitTarget.Get<const Physics>(lock);
-                            if (ph.dynamic && !ph.kinematic) {
-                                if (EventBindings::SendEvent(lock,
-                                        query.raycastHitTarget,
-                                        INTERACT_EVENT_INTERACT_GRAB,
-                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    scriptData.grabEntity = query.raycastHitTarget;
+                        if (std::holds_alternative<bool>(event.data)) {
+                            auto &grabEvent = std::get<bool>(event.data);
+                            if (scriptData.grabEntity) {
+                                // Drop the currently held entity
+                                EventBindings::SendEvent(lock,
+                                    scriptData.grabEntity,
+                                    INTERACT_EVENT_INTERACT_GRAB,
+                                    Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                                scriptData.grabEntity = {};
+                            }
+                            if (grabEvent && query.raycastHitTarget.Has<Physics>(lock)) {
+                                // Grab the entity being looked at
+                                auto &ph = query.raycastHitTarget.Get<const Physics>(lock);
+                                if (ph.dynamic && !ph.kinematic) {
+                                    if (EventBindings::SendEvent(lock,
+                                            query.raycastHitTarget,
+                                            INTERACT_EVENT_INTERACT_GRAB,
+                                            Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
+                                        scriptData.grabEntity = query.raycastHitTarget;
+                                    }
                                 }
                             }
+                        } else {
+                            Errorf("Unsupported grab event type: %s", event.toString());
                         }
                     }
 

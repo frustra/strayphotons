@@ -39,8 +39,8 @@ namespace sp {
     static const std::string INPUT_SIGNAL_MOVE_NOCLIP = "move_noclip";
 
     // Interaction
-    static const std::string INTERACT_EVENT_INTERACT_POINT = "/interact/point"; // ecs::Transform
-    static const std::string INTERACT_EVENT_INTERACT_GRAB = "/interact/grab"; // ecs::Transform
+    static const std::string INTERACT_EVENT_INTERACT_POINT = "/interact/point"; // ecs::Transform or false
+    static const std::string INTERACT_EVENT_INTERACT_GRAB = "/interact/grab"; // ecs::Transform or false
 
     // Other
     static const std::string PHYSICS_EVENT_BROKEN_CONSTRAINT = "/physics/broken_constraint"; // EntityRef
