@@ -2,7 +2,16 @@
     "input:mouse": {
         "event_bindings": {
             "/mouse/scroll": [ "gui:menu_gui/action/menu/scroll", "gui:debug_gui/action/menu/scroll" ],
-            "/mouse/move": [ "player:flatview/script/camera_rotate", "player:flatview/interact/rotate" ]
+            "/mouse/move": [
+                {
+                    "target": "player:flatview/script/camera_rotate",
+                    "multiply_value": 0.001
+                },
+                {
+                    "target": "player:flatview/interact/rotate",
+                    "multiply_value": 0.01
+                }
+            ]
         }
     },
     "input:keyboard": {

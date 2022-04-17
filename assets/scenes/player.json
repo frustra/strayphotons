@@ -35,14 +35,8 @@
                     "onTick": "relative_movement",
                     "parameters": { "relative_to": "player:flatview" }
                 },
-                {
-                    "onTick": "camera_view",
-                    "parameters": { "view_sensitivity": 0.001 }
-                },
-                {
-                    "onTick": "interact_handler",
-                    "parameters": { "rotate_sensitivity": 0.01 }
-                }
+                { "onTick": "camera_view" },
+                { "onTick": "interact_handler" }
             ],
             "event_input": [
                 "/script/joystick_in",

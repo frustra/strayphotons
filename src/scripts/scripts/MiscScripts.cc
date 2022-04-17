@@ -122,6 +122,19 @@ namespace sp::scripts {
                     ScriptData scriptData;
                     if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
+                    glm::vec3 centerOfMass;
+                    if (ent.Has<PhysicsQuery>(lock)) {
+                        auto &query = ent.Get<PhysicsQuery>(lock);
+                        if (!query.centerOfMassQuery) {
+                            query.centerOfMassQuery = ent;
+                        } else if (query.centerOfMassQuery != ent) {
+                            Abortf("PhysicsQuery is pointing to wrong entity for interactive_object: %s",
+                                ToString(lock, ent));
+                        } else {
+                            centerOfMass = query.centerOfMass;
+                        }
+                    }
+
                     Event event;
                     while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
                         ph.RemoveConstraint();
@@ -164,6 +177,24 @@ namespace sp::scripts {
                         }
                     }
 
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
+                        if (std::holds_alternative<glm::vec2>(event.data)) {
+                            if (!scriptData.grabEntity.Has<TransformSnapshot>(lock)) continue;
+
+                            auto &input = std::get<glm::vec2>(event.data);
+                            auto &transform = scriptData.grabEntity.Get<const TransformSnapshot>(lock);
+
+                            auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
+                            auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
+                                               glm::angleAxis(input.x, upAxis);
+
+                            // Move the objects origin so it rotates around its center of mass
+                            auto center = ph.constraintRotation * centerOfMass;
+                            ph.constraintOffset += center - (deltaRotate * center);
+                            ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                        }
+                    }
+
                     if (ent.Has<Renderable>(lock)) {
                         ent.Get<Renderable>(lock).visibility.set(Renderable::Visibility::VISIBLE_OUTLINE_SELECTION,
                             scriptData.grabEntity || scriptData.pointEntity);
@@ -197,20 +228,27 @@ namespace sp::scripts {
                                     Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                 scriptData.grabEntity = {};
                             }
-                            if (grabEvent && query.raycastHitTarget.Has<Physics>(lock)) {
+                            if (grabEvent && query.raycastHitTarget) {
                                 // Grab the entity being looked at
-                                auto &ph = query.raycastHitTarget.Get<const Physics>(lock);
-                                if (ph.dynamic && !ph.kinematic) {
-                                    if (EventBindings::SendEvent(lock,
-                                            query.raycastHitTarget,
-                                            INTERACT_EVENT_INTERACT_GRAB,
-                                            Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                        scriptData.grabEntity = query.raycastHitTarget;
-                                    }
+                                if (EventBindings::SendEvent(lock,
+                                        query.raycastHitTarget,
+                                        INTERACT_EVENT_INTERACT_GRAB,
+                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
+                                    scriptData.grabEntity = query.raycastHitTarget;
                                 }
                             }
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
+                        }
+                    }
+
+                    bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
+                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
+                        if (rotating && scriptData.grabEntity) {
+                            ecs::EventBindings::SendEvent(lock,
+                                scriptData.grabEntity,
+                                INTERACT_EVENT_INTERACT_ROTATE,
+                                Event{INTERACT_EVENT_INTERACT_ROTATE, ent, event.data});
                         }
                     }
 
@@ -228,24 +266,6 @@ namespace sp::scripts {
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransfrom});
                     }
                     scriptData.pointEntity = query.raycastHitTarget;
-
-                    // auto inputSensitivity = (float)state.GetParam<double>("rotate_sensitivity");
-                    // if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
-                    // bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
-                    // while (EventInput::Poll(lock, ent, "/interact/rotate", event)) {
-                    //     if (rotating && target.Has<Physics>(lock)) {
-                    //         auto input = std::get<glm::vec2>(event.data) * inputSensitivity;
-                    //         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
-                    //         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
-                    //                            glm::angleAxis(input.x, upAxis);
-
-                    //         // Move the objects origin so it rotates around its center of mass
-                    //         auto &ph = target.Get<Physics>(lock);
-                    //         auto center = ph.constraintRotation * query.centerOfMass;
-                    //         ph.constraintOffset += center - (deltaRotate * center);
-                    //         ph.constraintRotation = deltaRotate * ph.constraintRotation;
-                    //     }
-                    // }
 
                     state.userData = scriptData;
                 }

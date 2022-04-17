@@ -111,13 +111,10 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, "/script/camera_rotate", event)) {
                         auto angleDiff = std::get<glm::vec2>(event.data);
                         if (SignalBindings::GetSignal(lock, ent, "interact_rotate") < 0.5) {
-                            auto sensitivity = state.GetParam<double>("view_sensitivity");
-
                             // Apply pitch/yaw rotations
                             auto &transform = ent.Get<TransformTree>(lock);
-                            auto rotation = glm::quat(glm::vec3(0, -angleDiff.x * sensitivity, 0)) *
-                                            transform.pose.GetRotation() *
-                                            glm::quat(glm::vec3(-angleDiff.y * sensitivity, 0, 0));
+                            auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *
+                                            glm::quat(glm::vec3(-angleDiff.y, 0, 0));
 
                             auto up = rotation * glm::vec3(0, 1, 0);
                             if (up.y < 0) {
