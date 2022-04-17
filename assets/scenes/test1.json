@@ -215,18 +215,8 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "duck",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "duck.gltf0",
-			"physics": {
-				"model": "duck",
-				"decomposeHull": true
+				"prefab": "template",
+				"parameters": { "source": "duck" }
 			}
 		},
 		{
@@ -236,7 +226,11 @@
 			},
 			"physics": {
 				"model": "box"
-			}
+			},
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "interactive" }
+            }
 		},
 		{
 			"transform": {
@@ -286,7 +280,11 @@
 			},
 			"physics": {
 				"model": "box"
-			}
+			},
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "interactive" }
+            }
 		},
 		{
 			"transform": {
@@ -318,7 +316,11 @@
 			},
 			"physics": {
 				"model": "box"
-			}
+			},
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "interactive" }
+            }
 		},
 		{
 			"renderable": "box",
@@ -327,7 +329,11 @@
 			},
 			"physics": {
 				"model": "box"
-			}
+			},
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "interactive" }
+            }
 		},
 		{
 			"renderable": "dodecahedron",
@@ -336,7 +342,11 @@
 			},
 			"physics": {
 				"model": "dodecahedron"
-			}
+			},
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "interactive" }
+            }
 		},
 		{
 			"name": "global:spawn",

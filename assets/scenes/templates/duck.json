@@ -17,7 +17,12 @@
             "script": {
                 "prefab": "template",
                 "parameters": { "source": "interactive" }
-            }
+            },
+			"physics": {
+				"model": "duck",
+				"mesh": 0,
+				"decomposeHull": true
+			}
         }
     ]
 }
