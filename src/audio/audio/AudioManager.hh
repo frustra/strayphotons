@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/Async.hh"
+#include "audio/LockFreeAudioSet.hh"
 #include "core/DispatchQueue.hh"
 #include "core/EntityMap.hh"
 #include "core/RegisteredThread.hh"
@@ -46,8 +47,8 @@ namespace sp {
             AsyncPtr<nqr::AudioData> audioBuffer;
         };
 
-        std::mutex soundsMutex;
-        EntityMap<SoundSource> sounds;
+        EntityMap<size_t> soundEntityMap;
+        LockFreeAudioSet<SoundSource> sounds;
 
         ecs::EntityRef headEntity = ecs::Name("vr", "hmd");
         ecs::EntityRef headEntityFallback = ecs::Name("player", "flatview");

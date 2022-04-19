@@ -10,7 +10,8 @@
 
 namespace sp {
     AudioManager::AudioManager()
-        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), decoderQueue("AudioDecode") {
+        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), sounds(65535),
+          decoderQueue("AudioDecode") {
         StartThread();
     }
 
@@ -80,20 +81,6 @@ namespace sp {
         ZoneScoped;
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sound, ecs::Transform, ecs::Name>>();
 
-        ecs::ComponentEvent<ecs::Sound> event;
-        while (soundObserver.Poll(lock, event)) {
-            if (event.type != Tecs::EventType::REMOVED) continue;
-
-            auto it = sounds.find(event.entity);
-            if (it == sounds.end()) continue;
-
-            auto &state = it->second;
-            if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
-
-            std::lock_guard soundsLock(soundsMutex);
-            sounds.erase(event.entity);
-        }
-
         auto head = headEntity.Get(lock);
         if (!head) head = headEntityFallback.Get(lock);
         if (head && head.Has<ecs::Transform>(lock)) {
@@ -105,45 +92,72 @@ namespace sp {
         }
 
         for (auto ent : lock.EntitiesWith<ecs::Sound>()) {
+            size_t soundID;
+            SoundSource *state;
+
             auto &source = ent.Get<ecs::Sound>(lock);
+            auto entSound = soundEntityMap.find(ent);
 
-            std::lock_guard soundsLock(soundsMutex);
-            auto &state = sounds[ent];
+            if (entSound == soundEntityMap.end()) {
+                soundID = sounds.AllocateItem();
+                soundEntityMap[ent] = soundID;
 
-            if (!state.audioFile) state.audioFile = source.file;
-            if (!state.audioBuffer) {
-                state.bufferOffset = 0;
-                state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(state.audioFile,
+                state = &sounds.Get(soundID);
+                state->audioFile = source.file;
+                state->bufferOffset = 0;
+                state->audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(state->audioFile,
                     [this](shared_ptr<Asset> asset) {
                         Assertf(asset, "Audio file missing");
                         auto audioBuffer = make_shared<nqr::AudioData>();
                         loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
                         return audioBuffer;
                     });
+            } else {
+                soundID = entSound->second;
+                state = &sounds.Get(soundID);
             }
 
-            if (state.resonanceID == -1 && state.audioBuffer->Ready()) {
+            auto resonanceID = state->resonanceID;
+            if (resonanceID == -1 && state->audioBuffer->Ready()) {
+                auto channelCount = state->audioBuffer->Get()->channelCount;
                 if (source.type == ecs::Sound::Type::Object) {
-                    state.resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
+                    resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
                 } else if (source.type == ecs::Sound::Type::Stereo) {
-                    state.resonanceID = resonance->CreateStereoSource(state.audioBuffer->Get()->channelCount);
+                    resonanceID = resonance->CreateStereoSource(channelCount);
                 } else if (source.type == ecs::Sound::Type::Ambisonic) {
-                    state.resonanceID = resonance->CreateAmbisonicSource(state.audioBuffer->Get()->channelCount);
+                    resonanceID = resonance->CreateAmbisonicSource(channelCount);
                 }
+                state->resonanceID = resonanceID;
+                sounds.MakeItemValid(soundID);
             }
 
-            if (state.resonanceID != -1) {
-                resonance->SetSourceVolume(state.resonanceID, 0.5f);
+            if (resonanceID != -1) {
+                resonance->SetSourceVolume(resonanceID, source.volume);
 
                 if (ent.Has<ecs::Transform>(lock)) {
                     auto &transform = ent.Get<ecs::Transform>(lock);
                     auto pos = transform.GetPosition();
                     auto rot = transform.GetRotation();
-                    resonance->SetSourcePosition(state.resonanceID, pos.x, pos.y, pos.z);
-                    resonance->SetSourceRotation(state.resonanceID, rot.x, rot.y, rot.z, rot.w);
+                    resonance->SetSourcePosition(resonanceID, pos.x, pos.y, pos.z);
+                    resonance->SetSourceRotation(resonanceID, rot.x, rot.y, rot.z, rot.w);
                 }
             }
         }
+
+        ecs::ComponentEvent<ecs::Sound> event;
+        while (soundObserver.Poll(lock, event)) {
+            if (event.type != Tecs::EventType::REMOVED) continue;
+
+            auto it = soundEntityMap.find(event.entity);
+            if (it == soundEntityMap.end()) continue;
+
+            auto &state = sounds.Get(it->second);
+            if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
+
+            sounds.FreeItem(it->second);
+        }
+
+        sounds.UpdateIndexes();
     }
 
     const float Zeros[16] = {0};
@@ -179,28 +193,25 @@ namespace sp {
 
         while (framesToWrite >= framesPerBuffer) {
             if (self->resonance) {
-                {
-                    ZoneScopedN("UpdateSources");
-                    std::lock_guard lock(self->soundsMutex);
-                    for (auto &it : self->sounds) {
-                        auto &source = it.second;
-                        if (!source.audioBuffer || !source.audioBuffer->Ready()) continue;
+                auto validIndexPtr = self->sounds.GetValidIndexes();
+                for (auto soundID : *validIndexPtr) {
+                    auto &source = self->sounds.Get(soundID);
+                    if (!source.audioBuffer->Ready()) continue;
 
-                        auto &audioBuffer = *source.audioBuffer->Get();
-                        auto floatsRemaining = audioBuffer.samples.size() - source.bufferOffset;
+                    auto &audioBuffer = *source.audioBuffer->Get();
+                    auto floatsRemaining = audioBuffer.samples.size() - source.bufferOffset;
 
-                        auto framesRemaining = std::min((size_t)framesPerBuffer,
-                            floatsRemaining / audioBuffer.channelCount);
+                    auto framesRemaining = std::min((size_t)framesPerBuffer,
+                        floatsRemaining / audioBuffer.channelCount);
 
-                        self->resonance->SetInterleavedBuffer(source.resonanceID,
-                            &audioBuffer.samples[source.bufferOffset],
-                            audioBuffer.channelCount,
-                            framesRemaining);
+                    self->resonance->SetInterleavedBuffer(source.resonanceID,
+                        &audioBuffer.samples[source.bufferOffset],
+                        audioBuffer.channelCount,
+                        framesRemaining);
 
-                        auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
-                        source.bufferOffset += floatsPerSourceBuffer;
-                        if (source.bufferOffset >= audioBuffer.samples.size()) source.bufferOffset = 0;
-                    }
+                    auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
+                    source.bufferOffset += floatsPerSourceBuffer;
+                    if (source.bufferOffset >= audioBuffer.samples.size()) source.bufferOffset = 0;
                 }
 
                 ZoneScopedN("Render");
