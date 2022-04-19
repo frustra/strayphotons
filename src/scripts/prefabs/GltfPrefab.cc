@@ -117,39 +117,6 @@ namespace ecs {
                 }
             }
 
-            auto jointsParam = state.GetParam<std::string>("physics_joints");
-            if (!jointsParam.empty() && parentEnt.Has<TransformTree>(lock)) {
-                auto it = jointNodes.find(nodeId);
-                if (it != jointNodes.end()) {
-                    sp::to_lower(jointsParam);
-                    auto parentTransform = parentEnt.Get<TransformTree>(lock).GetGlobalTransform(lock);
-                    auto globalTransform = transform.GetGlobalTransform(lock);
-                    glm::vec3 boneVector = globalTransform.GetPosition() - parentTransform.GetPosition();
-                    float boneLength = glm::length(boneVector);
-                    Physics physics;
-                    if (boneLength > 0.0f) {
-                        physics.shape = PhysicsShape::Capsule(boneLength, 0.01f * globalTransform.GetScale().x);
-                    } else {
-                        physics.shape = PhysicsShape::Sphere(0.01f * globalTransform.GetScale().x);
-                    }
-                    if (jointsParam == "spherical") {
-                        // physics.SetJoint(parentEnt,
-                        //     PhysicsJointType::Spherical,
-                        //     glm::vec2(),
-                        //     -boneVector);
-                    } else if (jointsParam == "hinge") {
-                        // physics.SetJoint(parentEnt, PhysicsJointType::Hinge, glm::vec2(), -boneVector);
-                    } else {
-                        Abortf("Unknown physics_joints param: %s", jointsParam);
-                    }
-                    auto inversePose = glm::inverse(transform.pose.GetRotation());
-                    physics.shapeTransform = Transform(inversePose * glm::vec3(boneLength * 0.5f, 0, 0), inversePose);
-                    physics.group = group;
-                    physics.kinematic = true;
-                    Component<Physics>::Apply(physics, lock, newEntity);
-                }
-            }
-
             nodes.pop_front();
             for (auto &child : node.children) {
                 nodes.emplace_back(child, newEntity);

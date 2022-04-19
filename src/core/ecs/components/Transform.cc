@@ -49,10 +49,8 @@ namespace ecs {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
-                auto fullName = subTransform.second.get<string>();
-                Name parentName;
-                if (!parentName.Parse(fullName, scope.prefix)) return false;
-                transform.parent = parentName;
+                transform.parent = ecs::Name(subTransform.second.get<string>(), scope.prefix);
+                if (!transform.parent) return false;
             }
         }
         return Component<Transform>::Load(scope, transform.pose, src);

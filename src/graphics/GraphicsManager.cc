@@ -157,8 +157,8 @@ namespace sp {
         if (game->menuGui) game->menuGui->BeforeFrame();
 
         if (!flatviewEntity || CVarFlatviewEntity.Changed()) {
-            ecs::Name flatviewName;
-            if (flatviewName.Parse(CVarFlatviewEntity.Get(true))) flatviewEntity = flatviewName;
+            ecs::Name flatviewName(CVarFlatviewEntity.Get(true), ecs::Name());
+            if (flatviewName) flatviewEntity = flatviewName;
         }
 
         {

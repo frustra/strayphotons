@@ -103,11 +103,11 @@ namespace ecs {
                 float constraintMaxDistance = 0.0f;
                 Transform constraintTransform;
                 if (param.second.is<string>()) {
-                    constraintTargetName.Parse(param.second.get<string>(), scope.prefix);
+                    constraintTargetName = Name(param.second.get<string>(), scope.prefix);
                 } else if (param.second.is<picojson::object>()) {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
-                            constraintTargetName.Parse(constraintParam.second.get<string>(), scope.prefix);
+                            constraintTargetName = Name(constraintParam.second.get<string>(), scope.prefix);
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {

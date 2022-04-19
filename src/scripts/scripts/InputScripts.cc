@@ -34,9 +34,9 @@ namespace sp::scripts {
         InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
-                    auto fullTargetName = state.GetParam<std::string>("relative_to");
-                    ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                    auto relativeTargetName = state.GetParam<std::string>("relative_to");
+                    ecs::Name targetName(relativeTargetName, state.scope.prefix);
+                    if (targetName) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = targetName;
 
@@ -71,17 +71,16 @@ namespace sp::scripts {
                             outputComp.SetSignal("move_world_z", movement.z);
                         }
                     } else {
-                        Errorf("Relative target name is invalid: %s", fullTargetName);
+                        Errorf("Relative target name is invalid: %s", relativeTargetName);
                     }
                 }
             }),
         InternalScript("snap_rotate",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformTree>(lock)) {
-                    auto fullTargetName = state.GetParam<std::string>("relative_to");
+                    auto relativeTargetName = state.GetParam<std::string>("relative_to");
                     auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                    ecs::Name targetName;
-                    targetName.Parse(fullTargetName, state.scope.prefix);
+                    ecs::Name targetName(relativeTargetName, state.scope.prefix);
                     if (targetEntity.Name() != targetName) targetEntity = targetName;
 
                     auto target = targetEntity.Get(lock);

@@ -10,34 +10,33 @@ namespace ecs {
         Assertf(entity.find_first_of(":/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
     }
 
-    bool Name::Parse(std::string_view fullName, const Name &scope) {
-        size_t i = fullName.find(':');
+    Name::Name(std::string_view relativeName, const Name &scope) {
+        size_t i = relativeName.find(':');
         if (i != std::string::npos) {
-            scene = fullName.substr(0, i);
-            entity = fullName.substr(i + 1);
+            scene = relativeName.substr(0, i);
+            entity = relativeName.substr(i + 1);
         } else if (!scope.scene.empty()) {
             scene = scope.scene;
             if (scope.entity.empty()) {
-                entity = fullName;
+                entity = relativeName;
             } else {
-                entity = scope.entity + "." + std::string(fullName);
+                entity = scope.entity + "." + std::string(relativeName);
             }
         } else {
             entity.clear();
-            Errorf("Invalid name has no scene: %s", fullName);
-            return false;
+            Errorf("Invalid name has no scene: %s", relativeName);
+            return;
         }
         if (scene.find_first_of(":/ ") != std::string::npos) {
             entity.clear();
             Errorf("Scene name has invalid character: '%s'", scene);
-            return false;
+            return;
         }
         if (entity.find_first_of(":/ ") != std::string::npos) {
             entity.clear();
             Errorf("Entity name has invalid character: '%s'", entity);
-            return false;
+            return;
         }
-        return true;
     }
 
     std::ostream &operator<<(std::ostream &out, const Name &v) {
