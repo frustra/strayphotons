@@ -23,6 +23,8 @@ namespace ecs {
                 } else if (type == "AMBISONIC") {
                     dst.type = Sound::Type::Ambisonic;
                 }
+            } else if (param.first == "volume") {
+                dst.volume = param.second.get<double>();
             }
         }
         return true;
