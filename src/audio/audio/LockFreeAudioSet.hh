@@ -11,7 +11,7 @@ namespace sp {
 
     public:
         LockFreeAudioSet(size_t maxSize) {
-            validIndexes.store(make_shared<std::vector<size_t>>());
+            validIndexes = make_shared<std::vector<size_t>>();
             vec.reserve(maxSize);
         }
 
@@ -29,7 +29,11 @@ namespace sp {
          * will access them.
          */
         IndexVectorPtr GetValidIndexes() const {
+#ifdef __cpp_lib_atomic_shared_ptr
             return validIndexes.load();
+#else
+            return std::atomic_load(&validIndexes);
+#endif
         }
 
         /**
@@ -101,12 +105,20 @@ namespace sp {
             nextValidIndexes->reserve(nextValidIndexSet.size());
             nextValidIndexes->insert(nextValidIndexes->begin(), nextValidIndexSet.begin(), nextValidIndexSet.end());
 
+#ifdef __cpp_lib_atomic_shared_ptr
             validIndexes.store(nextValidIndexes);
+#else
+            std::atomic_store(&validIndexes, nextValidIndexes);
+#endif
         }
 
     private:
         std::vector<T> vec;
+#ifdef __cpp_lib_atomic_shared_ptr
         std::atomic<IndexVectorPtr> validIndexes;
+#else
+        IndexVectorPtr validIndexes; // must access with std::atomic_*
+#endif
         int currentFrameIndex = -1;
 
         std::vector<size_t> freeIndexes;
