@@ -150,11 +150,7 @@
 					-0.5
 				]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"name": "transition_zone",
@@ -306,11 +302,7 @@
 					0
 				]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"name": "global:spawn",
@@ -526,7 +518,7 @@
 				]
 			},
 			"signal_bindings": {
-				"load_scene_connection": "elevator_zone/playerPresent"
+				"load_scene_connection": "elevator_zone/trigger_player_count"
 			},
 			"scene_connection": []
 		},
@@ -777,13 +769,29 @@
 				"model": "box",
 				"dynamic": false
 			},
-			"trigger_area": {
-				"object": {
-					"command": "togglesignal global:ship_airlock-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open",
-					"signal": "button_pressed"
-				}
+			"trigger_area": {},
+			"sound": {
+				"file": "quack.ogg",
+				"volume": 0.3
 			},
-			"signal_output": {}
+			"signal_output": {},
+			"event_input": [
+				"/button/press",
+				"/sound/play"
+			],
+			"event_bindings": {
+				"/trigger/object/enter": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "togglesignal global:ship_airlock-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open"
+					},
+					"global:ship_airlock-button-out/button/press",
+					"global:ship_airlock-button-out/sound/play"
+				]
+			},
+			"signal_bindings": {
+				"button_pressed": "global:ship_airlock-button-out/trigger_object_enter"
+			}
 		},
 		{
 			"name": "global:ship_airlock-button-out_actuator",
@@ -1146,13 +1154,29 @@
 				"model": "box",
 				"dynamic": false
 			},
-			"trigger_area": {
-				"object": {
-					"command": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100",
-					"signal": "button_pressed"
-				}
+			"trigger_area": {},
+			"sound": {
+				"file": "quack.ogg",
+				"volume": 0.3
 			},
-			"signal_output": {}
+			"signal_output": {},
+			"event_input": [
+				"/button/press",
+				"/sound/play"
+			],
+			"event_bindings": {
+				"/trigger/object/enter": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
+					},
+					"elevator_button/button/press",
+					"elevator_button/sound/play"
+				]
+			},
+			"signal_bindings": {
+				"button_pressed": "elevator_button/trigger_object_enter"
+			}
 		},
 		{
 			"name": "elevator_button_actuator",
@@ -1346,9 +1370,11 @@
 				]
 			},
 			"signal_output": {},
-			"trigger_area": {
-				"object": {
-					"command": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
+			"trigger_area": {},
+			"event_bindings": {
+				"/trigger/object/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
 				}
 			}
 		},
@@ -1461,7 +1487,7 @@
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": "transition_zone/playerPresent"
+				"load_scene_connection": "transition_zone/trigger_player_count"
 			}
 		}
 	]

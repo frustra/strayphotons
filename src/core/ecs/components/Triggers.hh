@@ -14,29 +14,18 @@ namespace ecs {
         Count,
     };
 
+    static sp::EnumArray<std::string, TriggerGroup> TriggerGroupSignalNames = {
+        "trigger_player_count",
+        "trigger_object_count",
+    };
+
+    static sp::EnumArray<std::pair<std::string, std::string>, TriggerGroup> TriggerGroupEventNames = {
+        std::make_pair("/trigger/player/enter", "/trigger/player/leave"),
+        std::make_pair("/trigger/object/enter", "/trigger/object/leave"),
+    };
+
     struct TriggerArea {
-        struct TriggerCommand {
-            std::string command;
-            robin_hood::unordered_flat_set<Entity> contained_entities;
-
-            TriggerCommand(const std::string &command) : command(command) {}
-
-            bool operator==(const TriggerCommand &other) const {
-                return command == other.command;
-            }
-        };
-        struct TriggerSignal {
-            std::string outputSignal;
-            robin_hood::unordered_flat_set<Entity> contained_entities;
-
-            TriggerSignal(const std::string &signal) : outputSignal(signal) {}
-
-            bool operator==(const TriggerSignal &other) const {
-                return outputSignal == other.outputSignal;
-            }
-        };
-
-        sp::EnumArray<std::vector<std::variant<TriggerCommand, TriggerSignal>>, TriggerGroup> triggers;
+        sp::EnumArray<robin_hood::unordered_flat_set<Entity>, TriggerGroup> containedEntities;
     };
 
     static Component<TriggerGroup> ComponentTriggerGroup("trigger_group");
@@ -46,6 +35,4 @@ namespace ecs {
     bool Component<TriggerGroup>::Load(const EntityScope &scope, TriggerGroup &dst, const picojson::value &src);
     template<>
     bool Component<TriggerArea>::Load(const EntityScope &scope, TriggerArea &dst, const picojson::value &src);
-    template<>
-    void Component<TriggerArea>::Apply(const TriggerArea &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

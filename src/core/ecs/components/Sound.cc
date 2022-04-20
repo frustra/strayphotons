@@ -25,6 +25,10 @@ namespace ecs {
                 }
             } else if (param.first == "volume") {
                 dst.volume = param.second.get<double>();
+            } else if (param.first == "loop") {
+                dst.loop = param.second.get<bool>();
+            } else if (param.first == "play_on_load") {
+                dst.playOnLoad = param.second.get<bool>();
             }
         }
         return true;

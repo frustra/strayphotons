@@ -72,7 +72,7 @@ namespace ecs {
             std::optional<double> multiplyValue;
 
             bool operator==(const Binding &other) const {
-                return target == other.target && destQueue == other.destQueue;
+                return target == other.target && destQueue == other.destQueue && setValue == other.setValue;
             }
         };
 

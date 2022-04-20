@@ -5,12 +5,18 @@
 			translate: [0, 0.0, 1.5],
 			rotate: [180, 0, 1, 0],
 			scene_connection: "01-outside",
-			triggers: {
-				"player": {
-					"command": "r.MirrorRecursion 1; setsignal global:airlock1-2-out/door_open 1; wait 2000 removescene 01-outside"
+		}) %>,
+		{
+			"transform": {},
+			"trigger_area": {},
+			"trigger_group": "object",
+			"event_bindings": {
+				"/trigger/object/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "r.MirrorRecursion 1; setsignal global:airlock1-2-out/door_open 1; wait 2000 removescene 01-outside"
 				}
 			}
-		}) %>,
+		},
 		<%- include('prefab/airlock', {
 			name: 'airlock2-3',
 			translate: [10.5, 0, -3],

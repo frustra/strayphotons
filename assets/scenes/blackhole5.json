@@ -15,11 +15,7 @@
 					0
 				]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"__comment": "middle-floor",
@@ -1269,7 +1265,7 @@
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{
@@ -1288,7 +1284,7 @@
 			},
 			"scene_connection": "blackhole4",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{

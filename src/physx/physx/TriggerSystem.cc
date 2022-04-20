@@ -19,8 +19,13 @@ namespace sp {
 
     void TriggerSystem::Frame() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
-            ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                    ecs::TriggerGroup,
+                                                    ecs::TransformSnapshot,
+                                                    ecs::FocusLayer,
+                                                    ecs::FocusLock,
+                                                    ecs::EventBindings>,
+            ecs::Write<ecs::TriggerArea, ecs::SignalOutput, ecs::EventInput>>();
 
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;
@@ -30,14 +35,8 @@ namespace sp {
             ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
             while (triggerGroupObserver.Poll(lock, triggerEvent)) {
                 if (triggerEvent.type == Tecs::EventType::REMOVED) {
-                    for (auto &triggerGroup : area.triggers) {
-                        for (auto &trigger : triggerGroup) {
-                            std::visit(
-                                [&triggerEvent](auto &&arg) {
-                                    arg.contained_entities.erase(triggerEvent.entity);
-                                },
-                                trigger);
-                        }
+                    for (auto &containedEntities : area.containedEntities) {
+                        containedEntities.erase(triggerEvent.entity);
                     }
                 }
             }
@@ -50,46 +49,34 @@ namespace sp {
                               glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
 
                 auto &triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);
-                for (auto &trigger : area.triggers[triggerGroup]) {
-                    std::visit(
-                        [&lock, &entity, &triggerEnt, &entityPos, &inArea](auto &&arg) {
-                            if (arg.contained_entities.contains(triggerEnt) == inArea) return;
-                            if (inArea) {
-                                arg.contained_entities.insert(triggerEnt);
-                                Debugf("%s entered TriggerArea %s at: %f %f %f",
-                                    ecs::ToString(lock, triggerEnt),
-                                    ecs::ToString(lock, entity),
-                                    entityPos.x,
-                                    entityPos.y,
-                                    entityPos.z);
+                auto &containedEntities = area.containedEntities[triggerGroup];
+                if (containedEntities.contains(triggerEnt) == inArea) continue;
 
-                                using T = std::decay_t<decltype(arg)>;
-                                if constexpr (std::is_same<T, ecs::TriggerArea::TriggerCommand>()) {
-                                    Logf("TriggerArea running command: %s", arg.command);
-                                    GetConsoleManager().QueueParseAndExecute(arg.command);
-                                }
-                            } else {
-                                arg.contained_entities.erase(triggerEnt);
-                            }
-                        },
-                        trigger);
+                std::string *eventName;
+
+                if (inArea) {
+                    eventName = &ecs::TriggerGroupEventNames[triggerGroup].first;
+                    containedEntities.insert(triggerEnt);
+                    Debugf("%s entered TriggerArea %s at: %f %f %f",
+                        ecs::ToString(lock, triggerEnt),
+                        ecs::ToString(lock, entity),
+                        entityPos.x,
+                        entityPos.y,
+                        entityPos.z);
+                } else {
+                    eventName = &ecs::TriggerGroupEventNames[triggerGroup].second;
+                    containedEntities.erase(triggerEnt);
                 }
+
+                ecs::EventBindings::SendEvent(lock, *eventName, entity, triggerEnt);
             }
 
-            if (entity.Has<ecs::SignalOutput>(lock)) {
-                for (auto &triggerGroup : area.triggers) {
-                    for (auto &trigger : triggerGroup) {
-                        std::visit(
-                            [&lock, &entity](auto &&arg) {
-                                using T = std::decay_t<decltype(arg)>;
-                                if constexpr (std::is_same<T, ecs::TriggerArea::TriggerSignal>()) {
-                                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
-                                    signalOutput.SetSignal(arg.outputSignal,
-                                        arg.contained_entities.size() > 0 ? 1.0 : 0.0);
-                                }
-                            },
-                            trigger);
-                    }
+            for (size_t i = 0; i < (size_t)ecs::TriggerGroup::Count; i++) {
+                auto triggerGroup = (ecs::TriggerGroup)i;
+                auto entityCount = area.containedEntities[triggerGroup].size();
+                if (entity.Has<ecs::SignalOutput>(lock)) {
+                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+                    signalOutput.SetSignal(ecs::TriggerGroupSignalNames[triggerGroup], (double)entityCount);
                 }
             }
         }

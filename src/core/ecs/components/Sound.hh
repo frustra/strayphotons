@@ -18,6 +18,7 @@ namespace ecs {
 
         sp::AsyncPtr<sp::Asset> file; // TODO: should make the asset system unpack the audio file
         float volume = 1.0f;
+        bool loop = false, playOnLoad = false;
     };
 
     static Component<Sound> ComponentSound("sound");

@@ -14,15 +14,29 @@
         "model": "box",
         "dynamic": false
     },
-    "trigger_area": {
-        "object": {
-            <% if (locals.command) { %>
-                "command": <%= command %>,
-            <% } %>
-            "signal": <%= locals.output_signal ? output_signal : "button_pressed" %>
-        }
+    "trigger_area": {},
+    "sound": {
+        "file": "quack.ogg",
+        "volume": 0.3
     },
-    "signal_output": {}
+    "signal_output": {},
+    "event_input": [
+        "/button/press",
+        "/sound/play"
+    ],
+    "event_bindings": {
+        "/trigger/object/enter": [
+            <% if (locals.command) { %>{
+                "target": "console:input/action/run_command",
+                "set_value": <%= command %>
+            }<% } %>,
+            <%= name + "/button/press" %>,
+            <%= name + "/sound/play" %>
+        ]
+    },
+    "signal_bindings": {
+        "button_pressed": <%= name + "/trigger_object_enter" %>
+    }
 },
 {
 	"name": <%= name + "_actuator" %>,

@@ -17,11 +17,7 @@
 					1.5
 				]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"renderable": "box",
@@ -110,7 +106,7 @@
 			},
 			"scene_connection": "connect-test1",
 			"signal_bindings": {
-				"load_scene_connection": "loaded/playerPresent"
+				"load_scene_connection": "loaded/trigger_player_count"
 			},
 			"script": {
 				"prefab": "gltf",
@@ -422,7 +418,7 @@
 			},
 			"scene_connection": "connect-test3",
 			"signal_bindings": {
-				"load_scene_connection": "loaded/playerPresent"
+				"load_scene_connection": "loaded/trigger_player_count"
 			},
 			"script": {
 				"prefab": "gltf",

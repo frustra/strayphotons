@@ -8,11 +8,7 @@
 				"scale": [5, 164, 6],
 				"translate": [0, 82, -0.5]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"name": "transition_zone",
@@ -22,11 +18,7 @@
 				"scale": [20, 40, 20],
 				"translate": [0, 20, 0]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"name": "global:spawn",
@@ -134,7 +126,7 @@
 			transform: {
 				"translate": [0, 160, -5.1]
 			},
-			load_signal: "elevator_zone/playerPresent"
+			load_signal: "elevator_zone/trigger_player_count"
 		}) %>,
 		{
 			"name": "elevator",
@@ -243,9 +235,11 @@
 				"scale": [3, 0.5, 3]
 			},
 			"signal_output": {},
-			"trigger_area": {
-				"object": {
-					"command": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
+			"trigger_area": {},
+			"event_bindings": {
+				"/trigger/object/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
 				}
 			}
 		},
@@ -278,7 +272,7 @@
 			},
 			"scene_connection": "blackhole1",
 			"signal_bindings": {
-				"load_scene_connection": "transition_zone/playerPresent"
+				"load_scene_connection": "transition_zone/trigger_player_count"
 			}
 		}
 	]
