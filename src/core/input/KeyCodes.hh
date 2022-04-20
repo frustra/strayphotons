@@ -124,6 +124,7 @@ namespace sp {
         KEY_RIGHT_CONTROL = 345,
         KEY_RIGHT_ALT = 346,
         KEY_RIGHT_SUPER = 347,
+        KEY_CONTEXT_MENU = 348,
     };
 
     static robin_hood::unordered_flat_map<int, std::string> KeycodeNameLookup = {
@@ -244,6 +245,7 @@ namespace sp {
         {KEY_RIGHT_CONTROL, "right_control"},
         {KEY_RIGHT_ALT, "right_alt"},
         {KEY_RIGHT_SUPER, "right_super"},
+        {KEY_CONTEXT_MENU, "context_menu"},
     };
 
     // All inputs in lowercase to allow for case-insensitivity
@@ -322,13 +324,15 @@ namespace sp {
         {"numpad_equals", "equals_numpad"},
         {"num_equals", "equals_numpad"},
 
-        {"shift_left", "shift_left"},
-        {"control_left", "control_left"},
-        {"alt_left", "alt_left"},
-        {"super_left", "super_left"},
-        {"shift_right", "shift_right"},
-        {"control_right", "control_right"},
-        {"alt_right", "alt_right"},
-        {"super_right", "super_right"},
+        {"shift_left", "left_shift"},
+        {"control_left", "left_control"},
+        {"alt_left", "left_alt"},
+        {"super_left", "left_super"},
+        {"shift_right", "right_shift"},
+        {"control_right", "right_control"},
+        {"alt_right", "right_alt"},
+        {"super_right", "right_super"},
+
+        {"menu", "context_menu"},
     };
 } // namespace sp

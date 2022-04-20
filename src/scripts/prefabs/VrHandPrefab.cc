@@ -71,7 +71,7 @@ namespace ecs {
 
                 auto physicsEnt = scene->GetStagingEntity(physicsName);
                 if (!physicsEnt) {
-                    Errorf("VrHand prefab could not find physics entity: %s", physicsName.String());
+                    // Errorf("VrHand prefab could not find physics entity: %s", physicsName.String());
                     continue;
                 }
                 EntityRef inputEntity(inputName);

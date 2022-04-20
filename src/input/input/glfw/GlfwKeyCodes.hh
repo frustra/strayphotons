@@ -124,5 +124,6 @@ namespace sp {
         {GLFW_KEY_RIGHT_CONTROL, KEY_RIGHT_CONTROL},
         {GLFW_KEY_RIGHT_ALT, KEY_RIGHT_ALT},
         {GLFW_KEY_RIGHT_SUPER, KEY_RIGHT_SUPER},
+        {GLFW_KEY_MENU, KEY_CONTEXT_MENU},
     };
 } // namespace sp

@@ -131,7 +131,7 @@ namespace sp::xr {
             ZoneScopedN("InputBindings Sync to ECS");
             auto lock =
                 ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings>,
-                    ecs::Write<ecs::EventInput, ecs::SignalOutput, ecs::TransformTree, ecs::Physics>>();
+                    ecs::Write<ecs::EventInput, ecs::SignalOutput, ecs::TransformTree>>();
 
             for (auto &actionSet : actionSets) {
                 vr::VRActiveActionSet_t activeActionSet = {};
@@ -363,32 +363,6 @@ namespace sp::xr {
                                                 boneTransforms[i].orientation.z));
                                             transform.pose.SetPosition(glm::make_vec3(boneTransforms[i].position.v));
                                             transform.parent = poseEntity;
-
-                                            // temporary hack to pose the hands
-                                            // if (action.poseEntity.Name().entity ==
-                                            // "vr_actions_main_in_lefthand_anim") {
-                                            //     entityName = ecs::Name("vr:left_hand_skeleton." + boneName);
-                                            // } else if (action.poseEntity.Name().entity ==
-                                            //            "vr_actions_main_in_righthand_anim") {
-                                            //     entityName = ecs::Name("vr:right_hand_skeleton." + boneName);
-                                            // } else {
-                                            //     continue;
-                                            // }
-
-                                            // auto targetEntity = ecs::EntityRef(entityName).Get(lock);
-                                            // if (targetEntity && targetEntity.Has<ecs::TransformTree>(lock)) {
-                                            //     auto &targetTransform = targetEntity.Get<ecs::TransformTree>(lock);
-                                            //     targetTransform.parent = boneEntity;
-                                            //     targetTransform.pose = {};
-                                            // }
-
-                                            // auto targetEntity = ecs::EntityRef(entityName).Get(lock);
-                                            // if (targetEntity && targetEntity.Has<ecs::Physics>(lock)) {
-                                            //     auto &targetPhysics = targetEntity.Get<ecs::Physics>(lock);
-                                            //     targetPhysics.constraint = boneEntity;
-                                            //     targetPhysics.linearDamping = 100.0f;
-                                            //     targetPhysics.angularDamping = 100.0f;
-                                            // }
                                         }
                                     }
                                 }
