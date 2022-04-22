@@ -18,7 +18,7 @@
 namespace sp {
     class Asset;
     class Gltf;
-    class Script;
+    class ConsoleScript;
     class Image;
 
     enum class AssetType {
@@ -35,7 +35,7 @@ namespace sp {
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
         AsyncPtr<Image> LoadImage(const std::string &path);
 
-        AsyncPtr<Script> LoadScript(const std::string &path);
+        AsyncPtr<ConsoleScript> LoadScript(const std::string &path);
 
         void RegisterExternalGltf(const std::string &name, const std::string &path);
         bool IsGltfRegistered(const std::string &name);

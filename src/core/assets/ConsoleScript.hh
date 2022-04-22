@@ -5,9 +5,9 @@
 namespace sp {
     class Asset;
 
-    class Script : public NonCopyable {
+    class ConsoleScript : public NonCopyable {
     public:
-        Script(const string &path, shared_ptr<const Asset> asset);
+        ConsoleScript(const string &path, shared_ptr<const Asset> asset);
 
         const std::vector<string> &Lines() const;
 

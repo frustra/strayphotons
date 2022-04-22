@@ -71,7 +71,7 @@ namespace sp::scripts {
                         auto modelName = state.GetParam<std::string>("model");
                         auto model = sp::GAssets.LoadGltf(modelName);
 
-                        std::thread([ent, transform, model]() {
+                        std::thread([ent, transform, model, scope = state.scope]() {
                             auto lock = World.StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
                                 auto &sceneInfo = ent.Get<SceneInfo>(lock);
@@ -83,6 +83,20 @@ namespace sp::scripts {
 
                                 newEntity.Set<Renderable>(lock, model);
                                 newEntity.Set<Physics>(lock, model);
+                                newEntity.Set<PhysicsQuery>(lock);
+                                newEntity.Set<EventInput>(lock,
+                                    "/interact/grab",
+                                    "/interact/point",
+                                    "/interact/rotate",
+                                    "/physics/broken_constraint");
+                                auto &script = newEntity.Set<Script>(lock);
+                                auto &newState = script.AddOnTick(scope, ScriptDefinitions.at("interactive_object"));
+                                newState.filterEvents = {
+                                    "/interact/grab",
+                                    "/interact/point",
+                                    "/interact/rotate",
+                                    "/physics/broken_constraint",
+                                };
                             }
                         }).detach();
                     }

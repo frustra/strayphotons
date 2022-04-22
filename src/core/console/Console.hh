@@ -13,7 +13,7 @@
 #include <thread>
 
 namespace sp {
-    class Script;
+    class ConsoleScript;
 
     struct ConsoleLine {
         logging::Level level;
@@ -38,7 +38,7 @@ namespace sp {
         ConsoleManager();
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
-        void StartThread(const Script *startupScript);
+        void StartThread(const ConsoleScript *startupScript);
 
         void AddLog(logging::Level lvl, const string &line);
 
