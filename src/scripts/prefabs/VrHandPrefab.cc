@@ -52,16 +52,13 @@ namespace ecs {
                     continue;
                 }
 
-                if (physicsEnt.Has<TransformTree>(lock)) {
-                    auto globalTransform = physicsEnt.Get<TransformTree>(lock).GetGlobalTransform(lock);
-                    Physics physics;
-                    physics.shape = PhysicsShape::Sphere(0.01f);
+                Physics physics;
+                physics.shape = PhysicsShape::Sphere(0.01f);
 
-                    physics.constraint = inputEntity;
-                    physics.group = PhysicsGroup::Player;
-                    // physics.kinematic = true;
-                    Component<Physics>::Apply(physics, lock, physicsEnt);
-                }
+                physics.constraint = inputEntity;
+                physics.group = PhysicsGroup::Player;
+                // physics.kinematic = true;
+                Component<Physics>::Apply(physics, lock, physicsEnt);
             }
 
             for (auto &segmentName : fingerSegmentNames) {
@@ -103,16 +100,13 @@ namespace ecs {
                 return;
             }
 
-            if (physicsEnt.Has<TransformTree>(lock)) {
-                auto globalTransform = physicsEnt.Get<TransformTree>(lock).GetGlobalTransform(lock);
-                Physics physics;
-                physics.shape = PhysicsShape::Box(glm::vec3(0.04, 0.095, 0.11));
-                physics.shapeTransform.Translate(glm::vec3(0.005, 0.01, 0.03));
+            Physics physics;
+            physics.shape = PhysicsShape::Box(glm::vec3(0.04, 0.095, 0.11));
+            physics.shapeTransform.Translate(glm::vec3(0.005, 0.01, 0.03));
 
-                physics.constraint = inputEntity;
-                physics.group = PhysicsGroup::PlayerHands;
-                Component<Physics>::Apply(physics, lock, physicsEnt);
-            }
+            physics.constraint = inputEntity;
+            physics.group = PhysicsGroup::PlayerHands;
+            Component<Physics>::Apply(physics, lock, physicsEnt);
         }
     });
 } // namespace ecs
