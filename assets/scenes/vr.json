@@ -3,7 +3,7 @@
         {
             "name": "origin",
             "script": {
-                "onTick": "snap_rotate",
+                "onTick": "player_rotation",
                 "parameters": { "relative_to": "vr:hmd" }
             },
             "event_input": [
@@ -22,58 +22,12 @@
                 },
                 {
                     "onTick": "interact_handler"
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotation",
-                        "output_event": "/action/rotate_left",
-                        "upper_threshold": -0.7,
-                        "lower_threshold": -0.6
-                    }
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotation",
-                        "output_event": "/action/rotate_right",
-                        "upper_threshold": 0.7,
-                        "lower_threshold": 0.6
-                    }
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotate_left",
-                        "output_event": "/action/rotate_left",
-                        "upper_threshold": 0.5,
-                        "lower_threshold": 0.5
-                    }
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotate_right",
-                        "output_event": "/action/rotate_right",
-                        "upper_threshold": 0.5,
-                        "lower_threshold": 0.5
-                    }
                 }
             ],
             "signal_output": {},
             "event_input": [
                 "/interact/grab"
             ],
-            "event_bindings": {
-                "/action/rotate_left": {
-                    "target": "vr:origin/action/snap_rotate",
-                    "multiply_value": -45
-                },
-                "/action/rotate_right": {
-                    "target": "vr:origin/action/snap_rotate",
-                    "multiply_value": 45
-                }
-            },
             "physics_query": {
                 "raycast": 0.5
             },
@@ -97,58 +51,12 @@
                 },
                 {
                     "onTick": "interact_handler"
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotation",
-                        "output_event": "/action/rotate_left",
-                        "upper_threshold": -0.7,
-                        "lower_threshold": -0.6
-                    }
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotation",
-                        "output_event": "/action/rotate_right",
-                        "upper_threshold": 0.7,
-                        "lower_threshold": 0.6
-                    }
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotate_left",
-                        "output_event": "/action/rotate_left",
-                        "upper_threshold": 0.5,
-                        "lower_threshold": 0.5
-                    }
-                },
-                {
-                    "onTick": "edge_trigger",
-                    "parameters": {
-                        "input_signal": "rotate_right",
-                        "output_event": "/action/rotate_right",
-                        "upper_threshold": 0.5,
-                        "lower_threshold": 0.5
-                    }
                 }
             ],
             "signal_output": {},
             "event_input": [
                 "/interact/grab"
             ],
-            "event_bindings": {
-                "/action/rotate_left": {
-                    "target": "vr:origin/action/snap_rotate",
-                    "multiply_value": -45
-                },
-                "/action/rotate_right": {
-                    "target": "vr:origin/action/snap_rotate",
-                    "multiply_value": 45
-                }
-            },
             "physics_query": {
                 "raycast": 0.5
             },

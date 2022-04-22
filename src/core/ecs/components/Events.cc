@@ -338,8 +338,10 @@ namespace ecs {
                                     arg *= *binding.multiplyValue;
                                 } else if constexpr (std::is_same_v<T, glm::vec3>) {
                                     arg *= *binding.multiplyValue;
+                                } else if constexpr (std::is_same_v<T, bool>) {
+                                    modifiedEvent.data = ((double)arg) * (*binding.multiplyValue);
                                 } else if constexpr (std::is_same_v<T, int>) {
-                                    arg *= *binding.multiplyValue;
+                                    modifiedEvent.data = ((double)arg) * (*binding.multiplyValue);
                                 } else if constexpr (std::is_same_v<T, double>) {
                                     arg *= *binding.multiplyValue;
                                 } else {

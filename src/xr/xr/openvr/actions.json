@@ -31,17 +31,17 @@
     },
     {
       "name": "/actions/main/in/rotate_left",
-      "requirement": "optional",
+      "requirement": "suggested",
       "type": "boolean"
     },
     {
       "name": "/actions/main/in/rotate_right",
-      "requirement": "optional",
+      "requirement": "suggested",
       "type": "boolean"
     },
     {
       "name": "/actions/main/in/rotation",
-      "requirement": "optional",
+      "requirement": "suggested",
       "type": "vector2"
     },
     {
@@ -79,10 +79,10 @@
 
       "/actions/main/in/grab" : "Grab",
       "/actions/main/in/teleport" : "Teleport",
-      "/actions/main/in/movement" : "Movement",
-      "/actions/main/in/rotation" : "Rotation",
-      "/actions/main/in/rotate_left" : "Rotate Left",
-      "/actions/main/in/rotate_right" : "Rotate Right",
+      "/actions/main/in/movement" : "Smooth Movement",
+      "/actions/main/in/rotation" : "Smooth Rotation",
+      "/actions/main/in/rotate_left" : "Snap Rotate Left",
+      "/actions/main/in/rotate_right" : "Snap Rotate Right",
       "/actions/main/in/righthand" : "Right Hand",
       "/actions/main/in/lefthand" : "Left Hand",
       "/actions/main/in/righthand_anim" : "Right Hand Skeleton",
