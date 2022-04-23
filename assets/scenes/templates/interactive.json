@@ -13,6 +13,7 @@
                 "grab_break_distance": 1.0
             }
         },
+        "physics_joints": [],
         "physics_query": {}
     }
 }

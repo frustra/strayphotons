@@ -52,7 +52,7 @@ namespace sp::scripts {
                             break;
                         }
                     }
-                    if (createFixed) {
+                    if (createFixed && !joints.empty()) {
                         ecs::PhysicsJoint joint = joints.front();
                         auto jointTarget = joint.target.Get(lock);
                         if (jointTarget.Has<ecs::TransformSnapshot>(lock)) {
