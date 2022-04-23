@@ -73,17 +73,13 @@
     "vr:left_hand": {
         "signal_bindings": {
             "move_forward": "vr:controller_left/actions/main/in/movement_y",
-            "move_right": "vr:controller_left/actions/main/in/movement_x",
-            "rotate_left": "vr:controller_left/actions/main/in/rotate_left",
-            "rotate_right": "vr:controller_left/actions/main/in/rotate_right"
+            "move_right": "vr:controller_left/actions/main/in/movement_x"
         }
     },
     "vr:right_hand": {
         "signal_bindings": {
             "move_forward": "vr:controller_right/actions/main/in/movement_y",
-            "move_right": "vr:controller_right/actions/main/in/movement_x",
-            "rotate_left": "vr:controller_right/actions/main/in/rotate_left",
-            "rotate_right": "vr:controller_right/actions/main/in/rotate_right"
+            "move_right": "vr:controller_right/actions/main/in/movement_x"
         }
     },
     "vr:controller_left": {
