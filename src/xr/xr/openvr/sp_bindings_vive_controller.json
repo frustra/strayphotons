@@ -1,17 +1,17 @@
 {
    "action_manifest_version" : 0,
    "alias_info" : {},
-   "app_key" : "system.generated.sp.exe",
+   "app_key" : "system.generated.sp-vk.exe",
    "bindings" : {
       "/actions/main" : {
          "poses" : [
             {
                "output" : "/actions/main/in/lefthand",
-               "path" : "/user/hand/left/pose/raw"
+               "path" : "/user/hand/left/pose/tip"
             },
             {
                "output" : "/actions/main/in/righthand",
-               "path" : "/user/hand/right/pose/raw"
+               "path" : "/user/hand/right/pose/tip"
             }
          ],
          "skeleton" : [
@@ -45,8 +45,8 @@
             },
             {
                "inputs" : {
-                  "click" : {
-                     "output" : "/actions/main/in/teleport"
+                  "held" : {
+                     "output" : "/actions/main/in/grab"
                   }
                },
                "mode" : "button",
@@ -54,12 +54,48 @@
             },
             {
                "inputs" : {
-                  "click" : {
-                     "output" : "/actions/main/in/teleport"
+                  "held" : {
+                     "output" : "/actions/main/in/grab"
                   }
                },
                "mode" : "button",
                "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "east" : {
+                     "output" : "/actions/main/in/rotate_right"
+                  },
+                  "south" : {
+                     "output" : "/actions/main/in/teleport"
+                  },
+                  "west" : {
+                     "output" : "/actions/main/in/rotate_left"
+                  }
+               },
+               "mode" : "dpad",
+               "parameters" : {
+                  "sub_mode" : "click"
+               },
+               "path" : "/user/hand/right/input/trackpad"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/main/in/movement"
+                  }
+               },
+               "mode" : "trackpad",
+               "path" : "/user/hand/left/input/trackpad"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/main/in/rotation"
+                  }
+               },
+               "mode" : "trackpad",
+               "path" : "/user/hand/right/input/trackpad"
             }
          ]
       }

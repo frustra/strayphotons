@@ -6,22 +6,6 @@
       "/actions/main" : {
          "poses" : [
             {
-               "output" : "none",
-               "path" : "/user/hand/left/pose/raw"
-            },
-            {
-               "output" : "none",
-               "path" : "/user/hand/right/pose/raw"
-            },
-            {
-               "output" : "none",
-               "path" : "/user/hand/right/pose/handgrip"
-            },
-            {
-               "output" : "none",
-               "path" : "/user/hand/right/pose/base"
-            },
-            {
                "output" : "/actions/main/in/righthand",
                "path" : "/user/hand/right/pose/tip"
             },
@@ -48,6 +32,10 @@
                   }
                },
                "mode" : "button",
+               "parameters" : {
+                  "click_activate_threshold" : "0.75",
+                  "click_deactivate_threshold" : "0.7"
+               },
                "path" : "/user/hand/right/input/grip"
             },
             {
@@ -57,6 +45,10 @@
                   }
                },
                "mode" : "button",
+               "parameters" : {
+                  "click_activate_threshold" : "0.75",
+                  "click_deactivate_threshold" : "0.7"
+               },
                "path" : "/user/hand/left/input/grip"
             },
             {
@@ -88,11 +80,11 @@
             },
             {
                "inputs" : {
-                  "click" : {
+                  "held" : {
                      "output" : "/actions/main/in/grab"
                   }
                },
-               "mode" : "trigger",
+               "mode" : "button",
                "path" : "/user/hand/left/input/trigger"
             },
             {
@@ -103,6 +95,15 @@
                },
                "mode" : "button",
                "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/main/in/rotation"
+                  }
+               },
+               "mode" : "joystick",
+               "path" : "/user/hand/right/input/thumbstick"
             }
          ]
       }
