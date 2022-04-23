@@ -4,6 +4,7 @@
 #include "ecs/components/Name.hh"
 
 #include <memory>
+#include <string_view>
 
 namespace ecs {
     class EntityRef {

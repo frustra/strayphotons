@@ -29,7 +29,7 @@ namespace cxxopts {
 }
 
 namespace sp {
-    class Script;
+    class ConsoleScript;
 
 #ifdef SP_AUDIO_SUPPORT
     class AudioManager;
@@ -39,13 +39,13 @@ namespace sp {
         LogOnExit logOnExit = "Game shut down ========================================================";
 
     public:
-        Game(cxxopts::ParseResult &options, const Script *startupScript = nullptr);
+        Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript = nullptr);
         ~Game();
 
         int Start();
 
         cxxopts::ParseResult &options;
-        const Script *startupScript = nullptr;
+        const ConsoleScript *startupScript = nullptr;
 
         CFuncCollection funcs;
 

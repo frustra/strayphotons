@@ -11,6 +11,10 @@
 namespace sp::scripts {
     using namespace ecs;
 
+    static sp::CVar<bool> CVarSmoothRotation("p.SmoothRotation",
+        false,
+        "Enable Smooth Rotation instead of Snap Rotation");
+
     std::array inputScripts = {
         InternalScript("joystick_calibration",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -34,9 +38,9 @@ namespace sp::scripts {
         InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
-                    auto fullTargetName = state.GetParam<std::string>("relative_to");
-                    ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                    auto relativeTargetName = state.GetParam<std::string>("relative_to");
+                    ecs::Name targetName(relativeTargetName, state.scope.prefix);
+                    if (targetName) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = targetName;
 
@@ -71,17 +75,16 @@ namespace sp::scripts {
                             outputComp.SetSignal("move_world_z", movement.z);
                         }
                     } else {
-                        Errorf("Relative target name is invalid: %s", fullTargetName);
+                        Errorf("Relative target name is invalid: %s", relativeTargetName);
                     }
                 }
             }),
-        InternalScript("snap_rotate",
+        InternalScript("player_rotation",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<EventInput, TransformTree>(lock)) {
-                    auto fullTargetName = state.GetParam<std::string>("relative_to");
+                    auto relativeTargetName = state.GetParam<std::string>("relative_to");
                     auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                    ecs::Name targetName;
-                    targetName.Parse(fullTargetName, state.scope.prefix);
+                    ecs::Name targetName(relativeTargetName, state.scope.prefix);
                     if (targetEntity.Name() != targetName) targetEntity = targetName;
 
                     auto target = targetEntity.Get(lock);
@@ -92,16 +95,31 @@ namespace sp::scripts {
                     auto &relativeTarget = target.Get<TransformTree>(lock);
 
                     auto oldPosition = relativeTarget.GetGlobalTransform(lock).GetPosition();
+                    bool changed = false;
 
-                    Event event;
-                    while (EventInput::Poll(lock, ent, "/action/snap_rotate", event)) {
-                        auto angleDiff = std::get<double>(event.data);
-
-                        transform.pose.Rotate(glm::radians(angleDiff), glm::vec3(0, -1, 0));
+                    if (CVarSmoothRotation.Get()) {
+                        auto smoothRotation = SignalBindings::GetSignal(lock, ent, "smooth_rotation");
+                        if (smoothRotation != 0.0f) {
+                            // smooth_rotation unit is RPM
+                            transform.pose.Rotate(smoothRotation * M_PI * 2.0 / 60.0 * interval.count() / 1e9,
+                                glm::vec3(0, -1, 0));
+                            changed = true;
+                        }
+                    } else {
+                        Event event;
+                        while (EventInput::Poll(lock, ent, "/action/snap_rotate", event)) {
+                            auto angleDiff = std::get<double>(event.data);
+                            if (angleDiff != 0.0f) {
+                                transform.pose.Rotate(glm::radians(angleDiff), glm::vec3(0, -1, 0));
+                                changed = true;
+                            }
+                        }
                     }
 
-                    auto newPosition = relativeTarget.GetGlobalTransform(lock).GetPosition();
-                    transform.pose.Translate(oldPosition - newPosition);
+                    if (changed) {
+                        auto newPosition = relativeTarget.GetGlobalTransform(lock).GetPosition();
+                        transform.pose.Translate(oldPosition - newPosition);
+                    }
                 }
             }),
         InternalScript("camera_view",

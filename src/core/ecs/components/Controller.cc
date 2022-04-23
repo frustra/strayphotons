@@ -12,30 +12,24 @@ namespace ecs {
         const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "target") {
-                auto fullTargetName = param.second.get<string>();
-                ecs::Name targetName;
-                if (targetName.Parse(param.second.get<string>(), scope.prefix)) {
-                    controller.target = targetName;
-                } else {
-                    Errorf("Invalid character controller target name: %s", fullTargetName);
+                auto relativeName = param.second.get<string>();
+                controller.target = ecs::Name(relativeName, scope.prefix);
+                if (!controller.target) {
+                    Errorf("Invalid character controller target name: %s", relativeName);
                     return false;
                 }
             } else if (param.first == "fallback_target") {
-                auto fullTargetName = param.second.get<string>();
-                ecs::Name fallbackName;
-                if (fallbackName.Parse(param.second.get<string>(), scope.prefix)) {
-                    controller.fallbackTarget = fallbackName;
-                } else {
-                    Errorf("Invalid character controller fallback name: %s", fullTargetName);
+                auto relativeName = param.second.get<string>();
+                controller.fallbackTarget = ecs::Name(relativeName, scope.prefix);
+                if (!controller.fallbackTarget) {
+                    Errorf("Invalid character controller fallback name: %s", relativeName);
                     return false;
                 }
             } else if (param.first == "movement_proxy") {
-                auto fullProxyName = param.second.get<string>();
-                ecs::Name proxyName;
-                if (proxyName.Parse(param.second.get<string>(), scope.prefix)) {
-                    controller.movementProxy = proxyName;
-                } else {
-                    Errorf("Invalid character controller proxy name: %s", fullProxyName);
+                auto relativeName = param.second.get<string>();
+                controller.movementProxy = ecs::Name(relativeName, scope.prefix);
+                if (!controller.movementProxy) {
+                    Errorf("Invalid character controller proxy name: %s", relativeName);
                     return false;
                 }
             }

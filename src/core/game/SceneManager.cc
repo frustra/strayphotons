@@ -455,15 +455,17 @@ namespace sp {
                 auto ent = value.get<picojson::object>();
 
                 if (ent.count("name")) {
-                    auto fullName = ent["name"].get<string>();
+                    auto relativeName = ent["name"].get<string>();
 
                     ecs::Entity entity = lock.NewEntity();
-                    auto &name = entity.Set<ecs::Name>(lock);
-                    if (name.Parse(fullName, ecs::Name(sceneName, ""))) {
-                        Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", fullName);
-                        scene->namedEntities.emplace(name, entity);
-                        scene->references.emplace_back(entity);
+                    auto &name = entity.Set<ecs::Name>(lock, relativeName, ecs::Name(sceneName, ""));
+                    if (!name) {
+                        Errorf("Scene %s contains invalid entity name: %s", sceneName, relativeName);
+                        continue;
                     }
+                    Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", relativeName);
+                    scene->namedEntities.emplace(name, entity);
+                    scene->references.emplace_back(entity);
                 }
             }
 
@@ -473,14 +475,13 @@ namespace sp {
 
                 ecs::Entity entity;
                 if (ent.count("name")) {
-                    auto fullName = ent["name"].get<string>();
-                    ecs::Name entityName;
-                    if (entityName.Parse(fullName, ecs::Name(scene->name, ""))) {
-                        entity = scene->GetStagingEntity(entityName);
-                    } else {
-                        Errorf("Scene %s contains invalid entity name: %s", sceneName, fullName);
+                    auto relativeName = ent["name"].get<string>();
+                    ecs::Name entityName(relativeName, ecs::Name(scene->name, ""));
+                    if (!entityName) {
+                        Errorf("Scene %s contains invalid entity name: %s", sceneName, relativeName);
                         continue;
                     }
+                    entity = scene->GetStagingEntity(entityName);
                     if (!entity) {
                         Errorf("Skipping entity with invalid name: %s", entityName.String());
                         continue;
@@ -543,13 +544,12 @@ namespace sp {
             auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
             for (auto param : root.get<picojson::object>()) {
-                auto fullName = param.first;
-                Tracef("Loading input for: %s", fullName);
-                if (fullName.find(':') == std::string::npos) {
-                    Abortf("Binding entity does not have scene name: %s", fullName);
+                Tracef("Loading input for: %s", param.first);
+                if (param.first.find(':') == std::string::npos) {
+                    Abortf("Binding entity does not have scene name: %s", param.first);
                 }
-                ecs::Name name;
-                if (name.Parse(fullName, ecs::Name())) {
+                ecs::Name name(param.first, ecs::Name());
+                if (name) {
                     auto entity = lock.NewEntity();
                     entity.Set<ecs::Name>(lock, name);
                     entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
@@ -567,7 +567,7 @@ namespace sp {
                     // Special case so TransformSnapshot doesn't get removed as a dangling component
                     if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
                 } else {
-                    Errorf("Invalid binding entity name: %s", fullName);
+                    Errorf("Invalid binding entity name: %s", param.first);
                 }
             }
         }

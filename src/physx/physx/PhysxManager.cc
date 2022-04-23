@@ -536,16 +536,31 @@ namespace sp {
             if (scaleChanged) {
                 auto n = actor->getNbShapes();
                 if (n > 0) {
+                    auto avgScale = (scale.x + scale.y + scale.z) / 3;
                     std::vector<PxShape *> shapes(n);
                     actor->getShapes(&shapes[0], n);
                     for (uint32 i = 0; i < n; i++) {
-                        PxConvexMeshGeometry geom;
-                        if (shapes[i]->getConvexMeshGeometry(geom)) {
-                            geom.scale = PxMeshScale(GlmVec3ToPxVec3(scale));
-                            shapes[i]->setGeometry(geom);
+                        PxSphereGeometry sphereGeom;
+                        PxPlaneGeometry planeGeom;
+                        PxCapsuleGeometry capsuleGeom;
+                        PxBoxGeometry boxGeom;
+                        PxConvexMeshGeometry meshGeom;
+                        if (shapes[i]->getSphereGeometry(sphereGeom)) {
+                            sphereGeom.radius *= avgScale;
+                        } else if (shapes[i]->getGeometryType() == PxGeometryType::ePLANE) {
+                            // Planes can't be scaled
+                        } else if (shapes[i]->getCapsuleGeometry(capsuleGeom)) {
+                            capsuleGeom.halfHeight *= avgScale;
+                            capsuleGeom.radius *= avgScale;
+                        } else if (shapes[i]->getBoxGeometry(boxGeom)) {
+                            boxGeom.halfExtents.x *= scale.x;
+                            boxGeom.halfExtents.y *= scale.y;
+                            boxGeom.halfExtents.z *= scale.z;
+                        } else if (shapes[i]->getConvexMeshGeometry(meshGeom)) {
+                            meshGeom.scale = PxMeshScale(GlmVec3ToPxVec3(scale));
+                            shapes[i]->setGeometry(meshGeom);
                         } else {
-                            // TODO: figure out scale for other shapes
-                            Abort("Physx geometry type not implemented");
+                            Abortf("Physx geometry type not implemented: %u", shapes[i]->getGeometryType());
                         }
                     }
                 }

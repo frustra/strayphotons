@@ -30,17 +30,27 @@
       "type": "vector2"
     },
     {
+      "name": "/actions/main/in/rotate_left",
+      "requirement": "suggested",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/main/in/rotate_right",
+      "requirement": "suggested",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/main/in/rotation",
-      "requirement": "mandatory",
+      "requirement": "suggested",
       "type": "vector2"
     },
     {
-      "name": "/actions/main/in/RightHand",
+      "name": "/actions/main/in/righthand",
       "requirement": "mandatory",
       "type": "pose"
     },
     {
-      "name": "/actions/main/in/LeftHand",
+      "name": "/actions/main/in/lefthand",
       "requirement": "mandatory",
       "type": "pose"
     },
@@ -69,10 +79,12 @@
 
       "/actions/main/in/grab" : "Grab",
       "/actions/main/in/teleport" : "Teleport",
-      "/actions/main/in/movement" : "Movement",
-      "/actions/main/in/rotation" : "Rotation",
-      "/actions/main/in/RightHand" : "Right Hand",
-      "/actions/main/in/LeftHand" : "Left Hand",
+      "/actions/main/in/movement" : "Smooth Movement",
+      "/actions/main/in/rotation" : "Smooth Rotation",
+      "/actions/main/in/rotate_left" : "Snap Rotate Left",
+      "/actions/main/in/rotate_right" : "Snap Rotate Right",
+      "/actions/main/in/righthand" : "Right Hand",
+      "/actions/main/in/lefthand" : "Left Hand",
       "/actions/main/in/righthand_anim" : "Right Hand Skeleton",
       "/actions/main/in/lefthand_anim" : "Left Hand Skeleton"
     }

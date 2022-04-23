@@ -63,9 +63,12 @@ namespace ecs {
             auto obj = value.get<picojson::object>();
 
             if (obj.count("name")) {
-                auto fullName = obj["name"].get<string>();
-                ecs::Name name;
-                name.Parse(fullName, scope);
+                auto relativeName = obj["name"].get<string>();
+                ecs::Name name(relativeName, scope);
+                if (!name) {
+                    Errorf("Template %s contains invalid entity name: %s", sourceName, relativeName);
+                    continue;
+                }
                 scene->NewPrefabEntity(lock, ent, name);
             }
         }
@@ -76,14 +79,13 @@ namespace ecs {
 
             ecs::Entity newEntity;
             if (obj.count("name")) {
-                auto fullName = obj["name"].get<string>();
-                ecs::Name entityName;
-                if (entityName.Parse(fullName, scope)) {
-                    newEntity = scene->GetStagingEntity(entityName);
-                } else {
-                    Errorf("Template %s contains invalid entity name: %s", sourceName, fullName);
+                auto relativeName = obj["name"].get<string>();
+                ecs::Name entityName(relativeName, scope);
+                if (!entityName) {
+                    Errorf("Template %s contains invalid entity name: %s", sourceName, relativeName);
                     continue;
                 }
+                newEntity = scene->GetStagingEntity(entityName);
                 if (!newEntity) {
                     Errorf("Skipping entity with invalid name: %s", entityName.String());
                     continue;

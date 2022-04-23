@@ -10,7 +10,7 @@ using namespace std;
 
 #ifdef SP_TEST_MODE
     #include "assets/AssetManager.hh"
-    #include "assets/Script.hh"
+    #include "assets/ConsoleScript.hh"
 #endif
 
 #include <cstdio>

@@ -6,9 +6,9 @@ extern "C" {
 
 #include "assets/Asset.hh"
 #include "assets/AssetHelpers.hh"
+#include "assets/ConsoleScript.hh"
 #include "assets/Gltf.hh"
 #include "assets/Image.hh"
-#include "assets/Script.hh"
 #include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
@@ -248,17 +248,17 @@ namespace sp {
         return image;
     }
 
-    AsyncPtr<Script> AssetManager::LoadScript(const std::string &path) {
+    AsyncPtr<ConsoleScript> AssetManager::LoadScript(const std::string &path) {
         Logf("Loading script: %s", path);
 
         auto asset = Load("scripts/" + path);
-        return workQueue.Dispatch<Script>(asset, [path](std::shared_ptr<const Asset> asset) {
+        return workQueue.Dispatch<ConsoleScript>(asset, [path](std::shared_ptr<const Asset> asset) {
             if (!asset) {
                 Logf("Script not found: %s", path);
-                return std::shared_ptr<Script>();
+                return std::shared_ptr<ConsoleScript>();
             }
 
-            return std::make_shared<Script>(path, asset);
+            return std::make_shared<ConsoleScript>(path, asset);
         });
     }
 

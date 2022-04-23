@@ -5,7 +5,7 @@ target_sources(
         Asset.cc
         AssetHelpers.cc
         AssetManager.cc
+        ConsoleScript.cc
         Gltf.cc
         Image.cc
-        Script.cc
 )

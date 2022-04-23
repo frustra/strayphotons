@@ -36,7 +36,7 @@ namespace sp::scripts {
                     }
                 }
                 if (newTriggered != oldTriggered) {
-                    EventBindings::SendEvent(lock, outputName, ent, (double)newTriggered);
+                    if (newTriggered != 0.0f) EventBindings::SendEvent(lock, outputName, ent, (double)newTriggered);
                     state.SetParam<bool>("triggered", newTriggered);
                 }
             }),
@@ -52,8 +52,8 @@ namespace sp::scripts {
                         TransformTree transform(position);
 
                         auto fullTargetName = state.GetParam<std::string>("relative_to");
-                        ecs::Name targetName;
-                        if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                        ecs::Name targetName(fullTargetName, state.scope.prefix);
+                        if (targetName) {
                             auto targetEntity = state.GetParam<EntityRef>("target_entity");
                             if (targetEntity.Name() != targetName) targetEntity = targetName;
 
@@ -71,7 +71,7 @@ namespace sp::scripts {
                         auto modelName = state.GetParam<std::string>("model");
                         auto model = sp::GAssets.LoadGltf(modelName);
 
-                        std::thread([ent, transform, model]() {
+                        std::thread([ent, transform, model, scope = state.scope]() {
                             auto lock = World.StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
                                 auto &sceneInfo = ent.Get<SceneInfo>(lock);
@@ -83,6 +83,20 @@ namespace sp::scripts {
 
                                 newEntity.Set<Renderable>(lock, model);
                                 newEntity.Set<Physics>(lock, model);
+                                newEntity.Set<PhysicsQuery>(lock);
+                                newEntity.Set<EventInput>(lock,
+                                    "/interact/grab",
+                                    "/interact/point",
+                                    "/interact/rotate",
+                                    "/physics/broken_constraint");
+                                auto &script = newEntity.Set<Script>(lock);
+                                auto &newState = script.AddOnTick(scope, ScriptDefinitions.at("interactive_object"));
+                                newState.filterEvents = {
+                                    "/interact/grab",
+                                    "/interact/point",
+                                    "/interact/rotate",
+                                    "/physics/broken_constraint",
+                                };
                             }
                         }).detach();
                     }
@@ -287,8 +301,8 @@ namespace sp::scripts {
 
                     auto targetPosition = glm::vec3(0);
                     auto fullTargetName = state.GetParam<std::string>("follow_target");
-                    ecs::Name targetName;
-                    if (targetName.Parse(fullTargetName, state.scope.prefix)) {
+                    ecs::Name targetName(fullTargetName, state.scope.prefix);
+                    if (targetName) {
                         auto targetEntity = state.GetParam<EntityRef>("target_entity");
                         if (targetEntity.Name() != targetName) targetEntity = targetName;
 

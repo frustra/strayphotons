@@ -33,8 +33,8 @@ namespace sp::scripts {
                             transform.pose = transform.GetGlobalTransform(lock);
                             transform.parent = EntityRef();
                         } else {
-                            ecs::Name parentName;
-                            if (parentName.Parse(CVarFlashlightParent.Get())) {
+                            ecs::Name parentName(CVarFlashlightParent.Get(), ecs::Name());
+                            if (parentName) {
                                 transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
                                 transform.pose.SetRotation(glm::quat());
                                 transform.parent = parentName;

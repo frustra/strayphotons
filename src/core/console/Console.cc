@@ -8,7 +8,7 @@
     #include <linenoise.h>
 #endif
 
-#include "assets/Script.hh"
+#include "assets/ConsoleScript.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "core/Tracing.hh"
@@ -109,7 +109,7 @@ namespace sp {
         outputLines.push_back({lvl, line});
     }
 
-    void ConsoleManager::StartThread(const Script *startupScript) {
+    void ConsoleManager::StartThread(const ConsoleScript *startupScript) {
         if (startupScript) {
             exitOnEmptyQueue = true;
             for (string line : startupScript->Lines()) {

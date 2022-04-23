@@ -55,25 +55,57 @@
             }
         }
     },
+    "vr:origin": {
+        "signal_output": {
+            "rotation_rpm": 40
+        },
+        "signal_bindings": {
+            "smooth_rotation_unscaled": {
+                "operator": "add",
+                "values": [ "vr:controller_left/actions/main/in/rotation_x", "vr:controller_right/actions/main/in/rotation_x" ]
+            },
+            "smooth_rotation": {
+                "operator": "multiply",
+                "values": ["vr:origin/smooth_rotation_unscaled", "vr:origin/rotation_rpm"]
+            }
+        }
+    },
     "vr:left_hand": {
         "signal_bindings": {
             "move_forward": "vr:controller_left/actions/main/in/movement_y",
-            "move_right": "vr:controller_left/actions/main/in/movement_x",
-            "rotate_left": "vr:controller_left/actions/main/in/rotation_x",
-            "rotate_right": "vr:controller_left/actions/main/in/rotation_x"
+            "move_right": "vr:controller_left/actions/main/in/movement_x"
         }
     },
     "vr:right_hand": {
         "signal_bindings": {
             "move_forward": "vr:controller_right/actions/main/in/movement_y",
-            "move_right": "vr:controller_right/actions/main/in/movement_x",
-            "rotate_left": "vr:controller_right/actions/main/in/rotation_x",
-            "rotate_right": "vr:controller_right/actions/main/in/rotation_x"
+            "move_right": "vr:controller_right/actions/main/in/movement_x"
+        }
+    },
+    "vr:controller_left": {
+        "event_bindings": {
+            "/actions/main/in/grab": "vr:left_hand/interact/grab",
+            "/actions/main/in/rotate_left": {
+                "target": "vr:origin/action/snap_rotate",
+                "multiply_value": -45
+            },
+            "/actions/main/in/rotate_right": {
+                "target": "vr:origin/action/snap_rotate",
+                "multiply_value": 45
+            }
         }
     },
     "vr:controller_right": {
         "event_bindings": {
-            "/actions/main/in/grab": ["vr:left_hand/interact/grab", "vr:right_hand/interact/grab"]
+            "/actions/main/in/grab": "vr:right_hand/interact/grab",
+            "/actions/main/in/rotate_left": {
+                "target": "vr:origin/action/snap_rotate",
+                "multiply_value": -45
+            },
+            "/actions/main/in/rotate_right": {
+                "target": "vr:origin/action/snap_rotate",
+                "multiply_value": 45
+            }
         }
     },
     "player:player": {

@@ -1,6 +1,6 @@
 #include "Game.hh"
 
-#include "assets/Script.hh"
+#include "assets/ConsoleScript.hh"
 #include "console/Console.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
@@ -28,7 +28,7 @@
 #endif
 
 namespace sp {
-    Game::Game(cxxopts::ParseResult &options, const Script *startupScript)
+    Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),

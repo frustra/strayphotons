@@ -21,7 +21,7 @@ namespace ecs {
 
             for (auto jointParam : param.get<picojson::object>()) {
                 if (jointParam.first == "target") {
-                    jointTargetName.Parse(jointParam.second.get<string>(), scope.prefix);
+                    jointTargetName = Name(jointParam.second.get<string>(), scope.prefix);
                 } else if (jointParam.first == "type") {
                     auto typeString = jointParam.second.get<string>();
                     sp::to_upper(typeString);

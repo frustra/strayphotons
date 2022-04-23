@@ -1,4 +1,4 @@
-#include "Script.hh"
+#include "ConsoleScript.hh"
 
 #include "Asset.hh"
 #include "console/Console.hh"
@@ -7,7 +7,7 @@
 #include <sstream>
 
 namespace sp {
-    Script::Script(const string &path, shared_ptr<const Asset> asset) : path(path), asset(asset) {
+    ConsoleScript::ConsoleScript(const string &path, shared_ptr<const Asset> asset) : path(path), asset(asset) {
         std::stringstream ss(asset->String());
         string line;
         while (std::getline(ss, line, '\n')) {
@@ -15,7 +15,7 @@ namespace sp {
         }
     }
 
-    const std::vector<string> &Script::Lines() const {
+    const std::vector<string> &ConsoleScript::Lines() const {
         return lines;
     }
 } // namespace sp

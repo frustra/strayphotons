@@ -125,8 +125,8 @@ namespace ecs {
 
     std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const Name &scope) {
         size_t delimiter = str.find('/');
-        ecs::Name entityName;
-        if (entityName.Parse(str.substr(0, delimiter), scope)) {
+        ecs::Name entityName(str.substr(0, delimiter), scope);
+        if (entityName) {
             std::string signalName = "value";
             if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
             return std::make_pair(entityName, signalName);

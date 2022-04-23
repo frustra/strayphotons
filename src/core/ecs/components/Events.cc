@@ -149,15 +149,11 @@ namespace ecs {
 
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope) {
         size_t delimiter = str.find('/');
-        ecs::Name entityName;
-        if (entityName.Parse(str.substr(0, delimiter), scope)) {
-            if (delimiter != std::string::npos) {
-                return std::make_pair(entityName, str.substr(delimiter));
-            } else {
-                return std::make_pair(entityName, "");
-            }
+        ecs::Name entityName(str.substr(0, delimiter), scope);
+        if (entityName && delimiter != std::string::npos) {
+            return std::make_pair(entityName, str.substr(delimiter));
         } else {
-            return std::make_pair(ecs::Name(), "");
+            return std::make_pair(entityName, "");
         }
     }
 
@@ -342,8 +338,10 @@ namespace ecs {
                                     arg *= *binding.multiplyValue;
                                 } else if constexpr (std::is_same_v<T, glm::vec3>) {
                                     arg *= *binding.multiplyValue;
+                                } else if constexpr (std::is_same_v<T, bool>) {
+                                    modifiedEvent.data = ((double)arg) * (*binding.multiplyValue);
                                 } else if constexpr (std::is_same_v<T, int>) {
-                                    arg *= *binding.multiplyValue;
+                                    modifiedEvent.data = ((double)arg) * (*binding.multiplyValue);
                                 } else if constexpr (std::is_same_v<T, double>) {
                                     arg *= *binding.multiplyValue;
                                 } else {

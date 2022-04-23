@@ -95,8 +95,8 @@ namespace sp {
 
     template<typename LockWrite, typename Callback>
     void mutateEntity(const string &entityStr, Callback callback) {
-        ecs::Name entityName;
-        if (!entityName.Parse(entityStr)) {
+        ecs::Name entityName(entityStr, ecs::Name());
+        if (!entityName) {
             Logf("Could not parse entity %s", entityStr);
             return;
         }
