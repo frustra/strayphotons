@@ -41,6 +41,7 @@ namespace sp::vulkan::render_graph {
 
         const ImageViewPtr &LayerImageView(uint32 layer);
         const ImageViewPtr &MipImageView(uint32 mip);
+        const ImageViewPtr &DepthImageView();
 
         const ImageDesc &Desc() const {
             return desc;
@@ -56,6 +57,7 @@ namespace sp::vulkan::render_graph {
         ImageViewPtr imageView;
         vector<ImageViewPtr> layerImageViews;
         vector<ImageViewPtr> mipImageViews;
+        ImageViewPtr depthImageView;
     };
 
     typedef shared_ptr<PooledImage> PooledImagePtr;

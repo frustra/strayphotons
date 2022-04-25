@@ -378,14 +378,14 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto depthTarget = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
+        auto shadowDepth = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
                 auto gBuffer0 = builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
-                builder.Read(depthTarget, Access::FragmentShaderSampleImage);
+                builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
 
                 auto desc = builder.DeriveImage(gBuffer0);
@@ -397,9 +397,9 @@ namespace sp::vulkan::renderer {
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("LightState");
 
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
             })
-            .Execute([this, depthTarget](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, shadowDepth](rg::Resources &resources, CommandContext &cmd) {
                 if (CVarVSM.Get()) {
                     cmd.SetShaders("screen_cover.vert", "lighting_vsm.frag");
                 } else if (CVarPCF.Get() > 0) {
@@ -417,8 +417,9 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 0, resources.GetImageView("GBuffer0"));
                 cmd.SetImageView(0, 1, resources.GetImageView("GBuffer1"));
                 cmd.SetImageView(0, 2, resources.GetImageView("GBuffer2"));
-                cmd.SetImageView(0, 3, resources.GetImageView(depthTarget));
-                cmd.SetImageView(0, 4, resources.GetImageView("Voxels.Radiance"));
+                cmd.SetImageView(0, 3, resources.GetImageDepthView("GBufferDepthStencil"));
+                cmd.SetImageView(0, 4, resources.GetImageView(shadowDepth));
+                cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
 

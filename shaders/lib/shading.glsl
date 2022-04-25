@@ -27,14 +27,12 @@ vec3 EvaluateBRDFSpecularImportanceSampledGGX(vec3 specularColor, float roughnes
     vec3 H = normalize(V + L);
     float NdotV = max(dot(N, V), 1e-5); // see [Lagarde/Rousiers 2014]
     float NdotL = max(dot(N, L), 1e-5);
-    float NdotH = clamp(dot(N, H), 0.0, 0.99999);
     float VdotH = clamp(dot(V, H), 0.0, 0.99999);
 
-    float D = BRDF_D_GGX(roughness, NdotH);
     float Vis = BRDF_V_Schlick(roughness, NdotV, NdotL);
     vec3 F = BRDF_F_Schlick(specularColor, VdotH);
 
-    return D * Vis * F;
+    return Vis * F * VdotH;
 }
 
 #ifdef DIFFUSE_ONLY_SHADING

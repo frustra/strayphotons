@@ -33,4 +33,13 @@ namespace sp::vulkan::render_graph {
         view = device->CreateImageView(info);
         return view;
     }
+
+    const ImageViewPtr &PooledImage::DepthImageView() {
+        if (depthImageView) return depthImageView;
+
+        ImageViewCreateInfo info = imageView->CreateInfo();
+        info.aspectMask = vk::ImageAspectFlagBits::eDepth;
+        depthImageView = device->CreateImageView(info);
+        return depthImageView;
+    }
 } // namespace sp::vulkan::render_graph

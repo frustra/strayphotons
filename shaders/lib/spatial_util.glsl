@@ -26,20 +26,20 @@ vec3 ClipPosToViewPos(vec3 clipPos, mat4 invProj) {
 
 // Returns the homogenous view-space position of a screen-space texcoord and depth.
 vec4 ScreenPosToHViewPos(vec2 texCoord, float depth, mat4 invProj) {
-    vec3 clip = vec3(texCoord, depth) * 2.0 - 1.0;
+    vec3 clip = vec3(texCoord * 2.0 - 1.0, depth);
     return ClipPosToHViewPos(clip, invProj);
 }
 
 // Returns the view-space position of a screen-space texcoord and depth.
 vec3 ScreenPosToViewPos(vec2 texCoord, float depth, mat4 invProj) {
-    vec3 clip = vec3(texCoord, depth) * 2.0 - 1.0;
+    vec3 clip = vec3(texCoord * 2.0 - 1.0, depth);
     return ClipPosToViewPos(clip, invProj);
 }
 
 // Returns the screen-space texcoord of a view-space position.
 vec3 ViewPosToScreenPos(vec3 viewPos, mat4 projMat) {
     vec4 clip = projMat * vec4(viewPos, 1.0);
-    return clip.xyz / clip.w * vec3(0.5) + vec3(0.5);
+    return clip.xyz / clip.w * vec3(0.5, 0.5, 1) + vec3(0.5, 0.5, 0);
 }
 
 // Gradient noise in [0, 1] as in [Jimenez 2014]
