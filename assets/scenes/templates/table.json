@@ -1,0 +1,233 @@
+{
+    "entities": [
+		{
+			"transform": {
+				"translate": [0.02, 0, 0.02],
+				"scale": [1, 4, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.98, 0, 0.02],
+				"scale": [1, 4, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.98, 0, 0.98],
+				"scale": [1, 4, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.02, 0, 0.98],
+				"scale": [1, 4, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.02, 0.78, 0.04],
+				"rotate": [90, 1, 0, 0],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.98, 0.78, 0.04],
+				"rotate": [90, 1, 0, 0],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.04, 0.78, 0.02],
+				"rotate": [-90, 0, 0, 1],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.04, 0.78, 0.98],
+				"rotate": [-90, 0, 0, 1],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.02, 0.38, 0.04],
+				"rotate": [90, 1, 0, 0],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.98, 0.38, 0.04],
+				"rotate": [90, 1, 0, 0],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.04, 0.38, 0.02],
+				"rotate": [-90, 0, 0, 1],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.04, 0.38, 0.98],
+				"rotate": [-90, 0, 0, 1],
+				"scale": [1, 4.6, 1]
+			},
+			"physics": {
+				"model": "extrusion",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "extrusion",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0.5, 0.81, 0.5],
+				"scale": [1, 0.02, 1]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "box",
+					"render": true
+				}
+			}
+		}
+    ]
+}

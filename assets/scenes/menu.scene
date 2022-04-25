@@ -177,10 +177,23 @@
 			}
 		},
 		{
+			"name": "table",
+			"transform": {
+				"translate": [2, 0, 2]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "table"
+				}
+			}
+		},
+		{
 			"name": "articulating_arm",
 			"transform": {
-				"translate": [1, 0.1, -1],
-				"scale": [4, 4, 4]
+				"translate": [0.5, 0.82, 0.5],
+				"scale": [2, 2, 2],
+				"parent": "table"
 			},
 			"script": {
 				"prefab": "template",

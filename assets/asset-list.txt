@@ -98,6 +98,7 @@ e607aa0ab90e22f6749cb27ec36aadcd    models/door-panel-r-1.5x2/door-panel-r-1.5x2
 44d6d3e0f2bf1b623023897c40391a34    models/duck/Duck0.bin
 d68914109658ec1fc4fd09d8a954fe7f    models/duck/duckCM.png
 45df0c6862b1206c45c47457bb806f7e    models/duck/screenshot/screenshot.png
+b9efa01538a25b9cc219bb8359c42406    models/extrusion.glb
 9b03d8fd268344f700e686181e3ac717    models/ground-1x1x1/ground-1x1x1.bin
 4f757bb55168b03046859109677cab92    models/ground-1x1x1/ground-1x1x1.gltf
 2455b2d3987f10df36114a9f0c7d1955    models/ground-1x1x1/ground-1x1x1.obj
