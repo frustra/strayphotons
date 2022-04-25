@@ -4,13 +4,19 @@
 			name: 'airlock3-4',
 			translate: [4.5, 0, 9],
 			rotate: [-90, 0, 1, 0],
-			scene_connection: "03-dark",
-			triggers: {
-				"player": {
-					"command": "r.MirrorRecursion 3; setsignal global:airlock3-4-out/door_open 1; wait 2000 removescene 03-dark"
+			scene_connection: "03-dark"
+		}) %>,
+		{
+			"transform": {},
+			"trigger_area": {},
+			"trigger_group": "object",
+			"event_bindings": {
+				"/trigger/object/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "r.MirrorRecursion 3; setsignal global:airlock3-4-out/door_open 1; wait 2000 removescene 03-dark"
 				}
 			}
-		}) %>,
+		},
 		<%- include('prefab/airlock', {
 			name: 'airlock4-menu',
 			translate: [4.5, 0, -3],

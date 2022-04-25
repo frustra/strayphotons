@@ -4,13 +4,19 @@
 			name: 'airlock2-3',
 			translate: [0, 0.0, 1.5],
 			rotate: [180, 0, 1, 0],
-			scene_connection: "02-mirrors",
-			triggers: {
-				"player": {
-					"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global:airlock2-3-out/door_open 1; wait 2000 removescene 02-mirrors"
+			scene_connection: "02-mirrors"
+		}) %>,
+		{
+			"transform": {},
+			"trigger_area": {},
+			"trigger_group": "object",
+			"event_bindings": {
+				"/trigger/object/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global:airlock2-3-out/door_open 1; wait 2000 removescene 02-mirrors"
 				}
 			}
-		}) %>,
+		},
 		<%- include('prefab/airlock', {
 			name: 'airlock3-4',
 			translate: [7.5, 0, 12],

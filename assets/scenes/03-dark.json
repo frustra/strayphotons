@@ -26,28 +26,6 @@
 			}
 		},
 		{
-			"name": "global:airlock2-3-zone",
-			"transform": {
-				"parent": "global:airlock2-3",
-				"translate": [
-					1.5,
-					1.4,
-					0
-				],
-				"scale": [
-					2.5,
-					3,
-					2.5
-				]
-			},
-			"signal_output": {},
-			"trigger_area": {
-				"player": {
-					"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global:airlock2-3-out/door_open 1; wait 2000 removescene 02-mirrors"
-				}
-			}
-		},
-		{
 			"name": "global:airlock2-3-out",
 			"transform": {
 				"parent": "global:airlock2-3",
@@ -273,6 +251,17 @@
 			}
 		},
 		{
+			"transform": {},
+			"trigger_area": {},
+			"trigger_group": "object",
+			"event_bindings": {
+				"/trigger/object/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global:airlock2-3-out/door_open 1; wait 2000 removescene 02-mirrors"
+				}
+			}
+		},
+		{
 			"name": "global:airlock3-4",
 			"transform": {
 				"rotate": [
@@ -313,9 +302,11 @@
 				]
 			},
 			"signal_output": {},
-			"trigger_area": {
-				"player": {
-					"command": "setsignal global:airlock3-4-in/door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
+			"trigger_area": {},
+			"event_bindings": {
+				"/trigger/player/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "setsignal global:airlock3-4-in/door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
 				}
 			}
 		},

@@ -15,11 +15,7 @@
 					0
 				]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		{
 			"__comment": "middle-floor",
@@ -1388,13 +1384,29 @@
 				"model": "box",
 				"dynamic": false
 			},
-			"trigger_area": {
-				"object": {
-					"command": "setsignal player:flashlight/on 1",
-					"signal": "button_pressed"
-				}
+			"trigger_area": {},
+			"sound": {
+				"file": "quack.ogg",
+				"volume": 0.3
 			},
-			"signal_output": {}
+			"signal_output": {},
+			"event_input": [
+				"/button/press",
+				"/sound/play"
+			],
+			"event_bindings": {
+				"/trigger/object/enter": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "setsignal player:flashlight/on 1"
+					},
+					"flashlight_button/button/press",
+					"flashlight_button/sound/play"
+				]
+			},
+			"signal_bindings": {
+				"button_pressed": "flashlight_button/trigger_object_enter"
+			}
 		},
 		{
 			"name": "flashlight_button_actuator",
@@ -1452,7 +1464,7 @@
 			},
 			"scene_connection": "blackhole2",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{
@@ -1466,7 +1478,7 @@
 			},
 			"scene_connection": "blackhole5",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{
@@ -1486,7 +1498,7 @@
 			},
 			"scene_connection": "station-center",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{

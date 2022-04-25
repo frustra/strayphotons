@@ -5,14 +5,14 @@
 #include <vector>
 
 namespace sp {
-    template<typename T>
+    template<typename T, size_t MaxSize>
     class LockFreeAudioSet {
-        using IndexVectorPtr = std::shared_ptr<std::vector<size_t>>;
+        using IndexVector = std::vector<size_t>;
+        using IndexVectorPtr = std::shared_ptr<IndexVector>;
 
     public:
-        LockFreeAudioSet(size_t maxSize) {
-            validIndexes = make_shared<std::vector<size_t>>();
-            vec.reserve(maxSize);
+        LockFreeAudioSet() {
+            UpdateIndexes();
         }
 
         const T &Get(size_t index) const {
@@ -43,8 +43,7 @@ namespace sp {
         size_t AllocateItem() {
             size_t index;
             if (freeIndexes.empty()) {
-                index = vec.size();
-                vec.resize(vec.size() + 1);
+                index = vecSize++;
             } else {
                 index = freeIndexes.back();
                 freeIndexes.pop_back();
@@ -65,14 +64,7 @@ namespace sp {
          */
         void FreeItem(size_t index) {
             nextValidIndexSet.erase(index);
-
-            if (currentFrameIndex == -1) {
-                // no indexes have been made valid yet, so we can immediately free
-                freeIndexes.push_back(index);
-            } else {
-                // mark index to be freed after the current validIndexes has no references
-                frames[currentFrameIndex].indexesToFree.push_back(index);
-            }
+            frames[currentFrameIndex].indexesToFree.push_back(index);
         }
 
         /**
@@ -86,6 +78,7 @@ namespace sp {
 
                 if (!frame.indexesToFree.empty()) {
                     freeIndexes.insert(freeIndexes.end(), frame.indexesToFree.begin(), frame.indexesToFree.end());
+                    Logf("freeing %d indexes", frame.indexesToFree.size());
                     frame.indexesToFree.clear();
                 }
 
@@ -98,7 +91,7 @@ namespace sp {
 
             if (!nextValidIndexes) {
                 currentFrameIndex = (int)frames.size();
-                nextValidIndexes = make_shared<std::vector<size_t>>();
+                nextValidIndexes = make_shared<IndexVector>();
                 frames.emplace_back(Frame{nextValidIndexes, {}});
             }
 
@@ -113,7 +106,9 @@ namespace sp {
         }
 
     private:
-        std::vector<T> vec;
+        std::array<T, MaxSize> vec;
+        size_t vecSize = 0;
+
 #ifdef __cpp_lib_atomic_shared_ptr
         std::atomic<IndexVectorPtr> validIndexes;
 #else
@@ -121,12 +116,12 @@ namespace sp {
 #endif
         int currentFrameIndex = -1;
 
-        std::vector<size_t> freeIndexes;
+        IndexVector freeIndexes;
         std::set<size_t> nextValidIndexSet;
 
         struct Frame {
             IndexVectorPtr validIndexes;
-            std::vector<size_t> indexesToFree;
+            IndexVector indexesToFree;
         };
         std::vector<Frame> frames;
     };

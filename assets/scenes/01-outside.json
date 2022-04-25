@@ -136,9 +136,11 @@
 				]
 			},
 			"signal_output": {},
-			"trigger_area": {
-				"player": {
-					"command": "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
+			"trigger_area": {},
+			"event_bindings": {
+				"/trigger/player/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
 				}
 			}
 		},
@@ -401,6 +403,12 @@
 			},
 			"physics": {
 				"model": "cardboard-box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
@@ -420,6 +428,12 @@
 			},
 			"physics": {
 				"model": "cardboard-box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{
@@ -439,6 +453,12 @@
 			},
 			"physics": {
 				"model": "cardboard-box"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "interactive"
+				}
 			}
 		},
 		{

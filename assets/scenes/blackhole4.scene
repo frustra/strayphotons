@@ -7,11 +7,7 @@
 				"scale": [10, 5, 10],
 				"translate": [0, 2.5, 0]
 			},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {}
 		},
 		<% for (var x = -4.5; x <= 4.5; x++) { %>
 		{
@@ -135,7 +131,7 @@
 			},
 			"scene_connection": "blackhole5",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{
@@ -146,7 +142,7 @@
 			},
 			"scene_connection": "blackhole3",
 			"signal_bindings": {
-				"load_scene_connection": "zone/playerPresent"
+				"load_scene_connection": "zone/trigger_player_count"
 			}
 		},
 		{

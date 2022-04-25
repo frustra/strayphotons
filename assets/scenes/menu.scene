@@ -2,7 +2,22 @@
 	"entities": [
 		{
 			"sound": {
-				"file": "test.ogg"
+				"file": "test.ogg",
+				"volume": 0.5,
+				"loop": true,
+				"play_on_load": true
+			},
+			"transform": {
+				"translate": [0, 1, -4]
+			}
+		},
+		{
+			"sound": {
+				"file": "dryer.ogg",
+				"type": "ambisonic",
+				"volume": 0.1,
+				"loop": true,
+				"play_on_load": true
 			},
 			"transform": {
 				"translate": [0, 1, -4]
@@ -134,12 +149,8 @@
 				"rotate": [90, 0, 1, 0]
 			},
 			scene_connection: 'station-center',
-			triggers: {
-				"player": {
-					"signal": "playerPresent"
-				}
-			},
-			load_signal: "global:ship_airlock-zone/playerPresent"
+			triggers: {},
+			load_signal: "global:ship_airlock-zone/trigger_player_count"
 		}) %>,
 		<%- include('prefab/button', {
 			name: 'airlock_in_button',

@@ -10,8 +10,7 @@
 
 namespace sp {
     AudioManager::AudioManager()
-        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), sounds(65535),
-          decoderQueue("AudioDecode") {
+        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), decoderQueue("AudioDecode") {
         StartThread();
     }
 
@@ -79,7 +78,8 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sound, ecs::Transform, ecs::Name>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sound, ecs::Transform, ecs::Name>,
+            ecs::Write<ecs::EventInput>>();
 
         auto head = headEntity.Get(lock);
         if (!head) head = headEntityFallback.Get(lock);
@@ -103,13 +103,18 @@ namespace sp {
                 soundEntityMap[ent] = soundID;
 
                 state = &sounds.Get(soundID);
-                state->audioFile = source.file;
+                state->resonanceID = -1;
+                state->loop = source.loop;
+                state->play = source.playOnLoad;
                 state->bufferOffset = 0;
-                state->audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(state->audioFile,
+                state->audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
                     [this](shared_ptr<Asset> asset) {
                         Assertf(asset, "Audio file missing");
-                        auto audioBuffer = make_shared<nqr::AudioData>();
-                        loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
+                        auto audioBuffer = decoderCache.Load(asset.get());
+                        if (!audioBuffer) {
+                            audioBuffer = make_shared<nqr::AudioData>();
+                            loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
+                        }
                         return audioBuffer;
                     });
             } else {
@@ -142,6 +147,22 @@ namespace sp {
                     resonance->SetSourceRotation(resonanceID, rot.x, rot.y, rot.z, rot.w);
                 }
             }
+
+            if (ent.Has<ecs::EventInput>(lock)) {
+                ecs::Event event;
+                while (ecs::EventInput::Poll(lock, ent, "/sound/play", event)) {
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::PlayFromStart, soundID});
+                }
+                while (ecs::EventInput::Poll(lock, ent, "/sound/resume", event)) {
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Resume, soundID});
+                }
+                while (ecs::EventInput::Poll(lock, ent, "/sound/pause", event)) {
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Pause, soundID});
+                }
+                while (ecs::EventInput::Poll(lock, ent, "/sound/stop", event)) {
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Stop, soundID});
+                }
+            }
         }
 
         ecs::ComponentEvent<ecs::Sound> event;
@@ -155,9 +176,14 @@ namespace sp {
             if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
 
             sounds.FreeItem(it->second);
+            soundEntityMap.erase(it);
         }
 
         sounds.UpdateIndexes();
+
+        decoderQueue.Dispatch<void>([this] {
+            decoderCache.Tick(interval);
+        });
     }
 
     const float Zeros[16] = {0};
@@ -171,6 +197,22 @@ namespace sp {
 
         ZoneScoped;
         auto self = static_cast<AudioManager *>(outstream->userdata);
+
+        self->soundEvents.TryPollEvents([&](const SoundEvent &event) {
+            auto &sound = self->sounds.Get(event.soundID);
+            switch (event.type) {
+            case SoundEvent::Type::PlayFromStart:
+                sound.bufferOffset = 0;
+            case SoundEvent::Type::Resume:
+                sound.play = true;
+                break;
+            case SoundEvent::Type::Stop:
+                sound.bufferOffset = 0;
+            case SoundEvent::Type::Pause:
+                sound.play = false;
+                break;
+            }
+        });
 
         struct SoundIoChannelArea *areas;
         int framesPerBuffer = self->framesPerBuffer;
@@ -196,7 +238,7 @@ namespace sp {
                 auto validIndexPtr = self->sounds.GetValidIndexes();
                 for (auto soundID : *validIndexPtr) {
                     auto &source = self->sounds.Get(soundID);
-                    if (!source.audioBuffer->Ready()) continue;
+                    if (!source.play || !source.audioBuffer->Ready()) continue;
 
                     auto &audioBuffer = *source.audioBuffer->Get();
                     auto floatsRemaining = audioBuffer.samples.size() - source.bufferOffset;
@@ -211,7 +253,10 @@ namespace sp {
 
                     auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
                     source.bufferOffset += floatsPerSourceBuffer;
-                    if (source.bufferOffset >= audioBuffer.samples.size()) source.bufferOffset = 0;
+                    if (source.bufferOffset >= audioBuffer.samples.size()) {
+                        source.bufferOffset = 0;
+                        if (!source.loop) source.play = false;
+                    }
                 }
 
                 ZoneScopedN("Render");

@@ -2,7 +2,26 @@
 	"entities": [
 		{
 			"sound": {
-				"file": "test.ogg"
+				"file": "test.ogg",
+				"volume": 0.5,
+				"loop": true,
+				"play_on_load": true
+			},
+			"transform": {
+				"translate": [
+					0,
+					1,
+					-4
+				]
+			}
+		},
+		{
+			"sound": {
+				"file": "dryer.ogg",
+				"type": "ambisonic",
+				"volume": 0.1,
+				"loop": true,
+				"play_on_load": true
 			},
 			"transform": {
 				"translate": [
@@ -238,7 +257,7 @@
 				]
 			},
 			"signal_bindings": {
-				"load_scene_connection": "global:ship_airlock-zone/playerPresent"
+				"load_scene_connection": "global:ship_airlock-zone/trigger_player_count"
 			},
 			"scene_connection": "station-center"
 		},
@@ -393,11 +412,8 @@
 				]
 			},
 			"signal_output": {},
-			"trigger_area": {
-				"player": {
-					"signal": "playerPresent"
-				}
-			}
+			"trigger_area": {},
+			"event_bindings": {}
 		},
 		{
 			"name": "global:ship_airlock-in",
@@ -646,13 +662,29 @@
 				"model": "box",
 				"dynamic": false
 			},
-			"trigger_area": {
-				"object": {
-					"command": "togglesignal global:ship_airlock-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open",
-					"signal": "button_pressed"
-				}
+			"trigger_area": {},
+			"sound": {
+				"file": "quack.ogg",
+				"volume": 0.3
 			},
-			"signal_output": {}
+			"signal_output": {},
+			"event_input": [
+				"/button/press",
+				"/sound/play"
+			],
+			"event_bindings": {
+				"/trigger/object/enter": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "togglesignal global:ship_airlock-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open"
+					},
+					"global:ship_airlock-button-out/button/press",
+					"global:ship_airlock-button-out/sound/play"
+				]
+			},
+			"signal_bindings": {
+				"button_pressed": "global:ship_airlock-button-out/trigger_object_enter"
+			}
 		},
 		{
 			"name": "global:ship_airlock-button-out_actuator",
@@ -882,13 +914,29 @@
 				"model": "box",
 				"dynamic": false
 			},
-			"trigger_area": {
-				"object": {
-					"command": "togglesignal global:ship_airlock-in/door_open",
-					"signal": "button_pressed"
-				}
+			"trigger_area": {},
+			"sound": {
+				"file": "quack.ogg",
+				"volume": 0.3
 			},
-			"signal_output": {}
+			"signal_output": {},
+			"event_input": [
+				"/button/press",
+				"/sound/play"
+			],
+			"event_bindings": {
+				"/trigger/object/enter": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "togglesignal global:ship_airlock-in/door_open"
+					},
+					"airlock_in_button/button/press",
+					"airlock_in_button/sound/play"
+				]
+			},
+			"signal_bindings": {
+				"button_pressed": "airlock_in_button/trigger_object_enter"
+			}
 		},
 		{
 			"name": "airlock_in_button_actuator",
