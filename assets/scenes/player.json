@@ -28,43 +28,19 @@
                     "onTick": "relative_movement",
                     "parameters": { "relative_to": "player:flatview" }
                 },
-                { "onTick": "camera_view" }
+                { "onTick": "camera_view" },
+                { "onTick": "interact_handler" }
             ],
             "event_input": [
-                "/script/camera_rotate"
-            ],
-            "focus": "GAME",
-            "signal_output": {}
-        },
-        {
-            "name": "flatview_grabber",
-            "transform": {
-                "translate": [0, 1.8, 0]
-            },
-            "script": {
-                "onTick": "interact_handler"
-            },
-            "event_input": [
+                "/script/camera_rotate",
                 "/interact/grab",
                 "/interact/rotate"
             ],
             "focus": "GAME",
-            "physics": {
-                "sphere": 0.1,
-                "density": 100,
-                "group": "noclip",
-                "constraint": "flatview"
-            },
             "physics_query": {
                 "raycast": 2.0
             },
-            "laser_line": {
-                "radius": 0.001,
-                "media_density": 0
-            },
-            "laser_emitter": {
-                "color": [0, 1, 0]
-            }
+            "signal_output": {}
         },
         {
             "name": "debug-spawner",

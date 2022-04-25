@@ -148,6 +148,12 @@ namespace sp::scripts {
                     }
 
                     Event event;
+                    while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
+                        ph.RemoveConstraint();
+                        ph.group = PhysicsGroup::World;
+                        scriptData.grabEntity = {};
+                    }
+
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
                         auto pointTransform = std::get_if<Transform>(&event.data);
                         if (pointTransform) {
@@ -164,6 +170,7 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
+                            ph.RemoveConstraint();
                             joints.joints.erase(std::remove_if(joints.joints.begin(),
                                                     joints.joints.end(),
                                                     [&](auto &&joint) {
@@ -181,13 +188,20 @@ namespace sp::scripts {
                             scriptData.grabEntity = event.source;
                             ph.group = PhysicsGroup::PlayerHands;
 
-                            PhysicsJoint joint;
-                            joint.target = event.source;
-                            joint.type = PhysicsJointType::Fixed;
-                            joint.remoteOffset = invParentRotate *
-                                                 (transform.GetPosition() - parentTransform.GetPosition());
-                            joint.remoteOrient = invParentRotate * transform.GetRotation();
-                            joints.Add(joint);
+                            if (event.source.Has<Physics>(lock)) {
+                                PhysicsJoint joint;
+                                joint.target = event.source;
+                                joint.type = PhysicsJointType::Fixed;
+                                joint.remoteOffset = invParentRotate *
+                                                     (transform.GetPosition() - parentTransform.GetPosition());
+                                joint.remoteOrient = invParentRotate * transform.GetRotation();
+                                joints.Add(joint);
+                            } else {
+                                ph.SetConstraint(event.source,
+                                    0.0f,
+                                    invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
+                                    invParentRotate * transform.GetRotation());
+                            }
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
                         }
@@ -204,10 +218,21 @@ namespace sp::scripts {
                             auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
                                                glm::angleAxis(input.x, upAxis);
 
-                            // Move the objects origin so it rotates around its center of mass
-                            auto center = ph.constraintRotation * centerOfMass;
-                            ph.constraintOffset += center - (deltaRotate * center);
-                            ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                            for (auto &joint : joints.joints) {
+                                if (joint.target == scriptData.grabEntity && joint.type == PhysicsJointType::Fixed) {
+                                    // Move the objects origin so it rotates around its center of mass
+                                    auto center = joint.remoteOrient * centerOfMass;
+                                    joint.remoteOffset += center - (deltaRotate * center);
+                                    joint.remoteOrient = deltaRotate * joint.remoteOrient;
+                                    break;
+                                }
+                            }
+                            if (ph.constraint) {
+                                // Move the objects origin so it rotates around its center of mass
+                                auto center = ph.constraintRotation * centerOfMass;
+                                ph.constraintOffset += center - (deltaRotate * center);
+                                ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                            }
                         }
                     }
 

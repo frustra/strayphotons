@@ -65,6 +65,7 @@ namespace ecs {
         };
 
         std::variant<std::monostate, Sphere, Capsule, Box, Plane, ConvexMesh> shape;
+        Transform transform;
 
         PhysicsShape() : shape(std::monostate()) {}
         PhysicsShape(Sphere sphere) : shape(sphere) {}
@@ -82,10 +83,9 @@ namespace ecs {
     struct Physics {
         Physics() {}
         Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float density = 1.0f)
-            : shape(shape), group(group), dynamic(dynamic), density(density) {}
+            : shapes({shape}), group(group), dynamic(dynamic), density(density) {}
 
-        PhysicsShape shape;
-        Transform shapeTransform;
+        std::vector<PhysicsShape> shapes;
 
         PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;

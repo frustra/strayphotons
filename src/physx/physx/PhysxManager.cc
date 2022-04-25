@@ -134,13 +134,15 @@ namespace sp {
                 if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
 
                 auto &ph = ent.template Get<ecs::Physics>(lock);
-                auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&ph.shape.shape);
-                if (!mesh || !mesh->model) continue;
-                if (mesh->model->Ready()) {
-                    auto set = LoadConvexHullSet(mesh->model, mesh->meshIndex, ph.decomposeHull);
-                    if (!set || !set->Ready()) complete = false;
-                } else {
-                    complete = false;
+                for (auto &shape : ph.shapes) {
+                    auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
+                    if (!mesh || !mesh->model) continue;
+                    if (mesh->model->Ready()) {
+                        auto set = LoadConvexHullSet(mesh->model, mesh->meshIndex, ph.decomposeHull);
+                        if (!set || !set->Ready()) complete = false;
+                    } else {
+                        complete = false;
+                    }
                 }
             }
             return complete;
@@ -440,10 +442,14 @@ namespace sp {
     PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
         ecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
-        if (!ph.shape) return nullptr;
+        if (ph.shapes.empty()) return nullptr;
 
-        auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&ph.shape.shape);
-        if (mesh && !mesh->model) return nullptr;
+        const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
+        for (auto &shape : ph.shapes) {
+            if (mesh) Abortf("Physics actor can't have multiple meshes: %s", std::to_string(e));
+            mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
+            if (mesh && !mesh->model) return nullptr;
+        }
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
         auto globalTransform = transform.GetGlobalTransform(lock);
@@ -475,8 +481,9 @@ namespace sp {
                     PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
                     *mat);
             }
-        } else {
-            PxShape *shape = std::visit(
+        }
+        for (auto &shape : ph.shapes) {
+            PxShape *pxShape = std::visit(
                 [&actor, &mat](auto &&shape) {
                     using T = std::decay_t<decltype(shape)>;
                     if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
@@ -491,15 +498,19 @@ namespace sp {
                             *mat);
                     } else if constexpr (std::is_same<ecs::PhysicsShape::Plane, T>()) {
                         return PxRigidActorExt::createExclusiveShape(*actor, PxPlaneGeometry(), *mat);
+                    } else if constexpr (std::is_same<ecs::PhysicsShape::ConvexMesh, T>()) {
+                        // Skip meshes, since it will be handled above.
+                        return (PxShape *)nullptr;
                     } else {
+                        Errorf("Unknown PhysicsShape type: %s", typeid(T).name());
                         return (PxShape *)nullptr;
                     }
                 },
-                ph.shape.shape);
-            if (shape) {
-                PxTransform shapeTransform(GlmVec3ToPxVec3(ph.shapeTransform.GetPosition()),
-                    GlmQuatToPxQuat(ph.shapeTransform.GetRotation()));
-                shape->setLocalPose(shapeTransform);
+                shape.shape);
+            if (pxShape) {
+                PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
+                    GlmQuatToPxQuat(shape.transform.GetRotation()));
+                pxShape->setLocalPose(shapeTransform);
             }
         }
 

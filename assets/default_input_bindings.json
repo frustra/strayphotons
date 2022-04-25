@@ -8,7 +8,7 @@
                     "multiply_value": 0.001
                 },
                 {
-                    "target": "player:flatview_grabber/interact/rotate",
+                    "target": "player:flatview/interact/rotate",
                     "multiply_value": 0.01
                 }
             ]
@@ -21,7 +21,7 @@
             "/keyboard/key/escape": [ "gui:menu_gui/action/menu/open", "gui:menu_gui/action/menu/back" ],
             "/keyboard/key/enter": "gui:menu_gui/action/menu/enter",
             "/keyboard/key/space": "player:player/action/jump",
-            "/keyboard/key/e": "player:flatview_grabber/interact/grab",
+            "/keyboard/key/e": "player:flatview/interact/grab",
             "/keyboard/key/q": "player:debug-spawner/script/spawn",
             "/keyboard/key/f": "player:flashlight/action/flashlight/toggle",
             "/keyboard/key/p": "player:flashlight/action/flashlight/grab",
@@ -133,11 +133,7 @@
             "move_left": "input:keyboard/key_a",
             "move_back": "input:keyboard/key_s",
             "move_up": "input:keyboard/key_space",
-            "move_down": "input:keyboard/key_left_control"
-        }
-    },
-    "player:flatview_grabber": {
-        "signal_bindings": {
+            "move_down": "input:keyboard/key_left_control",
             "interact_rotate": "input:keyboard/key_r"
         }
     }
