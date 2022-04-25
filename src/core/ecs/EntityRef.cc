@@ -47,6 +47,11 @@ namespace ecs {
         return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
+    bool EntityRef::operator==(const Entity &other) const {
+        if (!ptr || !other) return false;
+        return ptr->liveEntity.load() == other || ptr->stagingEntity.load() == other;
+    }
+
     void EntityRef::Set(const Entity &ent) {
         Assertf(ptr, "Trying to set null EntityRef");
         Assertf(ent, "Trying to set EntityRef with null Entity");

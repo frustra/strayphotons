@@ -67,4 +67,14 @@ namespace ecs {
         }
         return true;
     }
+
+    template<>
+    void Component<PhysicsJoints>::Apply(const PhysicsJoints &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstJoints = dst.Get<PhysicsJoints>(lock);
+        for (auto &joint : src.joints) {
+            if (std::find(dstJoints.joints.begin(), dstJoints.joints.end(), joint) == dstJoints.joints.end()) {
+                dstJoints.joints.emplace_back(joint);
+            }
+        }
+    }
 } // namespace ecs

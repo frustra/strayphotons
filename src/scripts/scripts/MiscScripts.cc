@@ -83,6 +83,7 @@ namespace sp::scripts {
 
                                 newEntity.Set<Renderable>(lock, model);
                                 newEntity.Set<Physics>(lock, model);
+                                newEntity.Set<PhysicsJoints>(lock);
                                 newEntity.Set<PhysicsQuery>(lock);
                                 newEntity.Set<EventInput>(lock,
                                     "/interact/grab",
@@ -120,13 +121,12 @@ namespace sp::scripts {
             }),
         InternalScript("interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformSnapshot, Physics>(lock)) {
+                if (ent.Has<EventInput, TransformSnapshot, Physics, PhysicsJoints>(lock)) {
                     auto &ph = ent.Get<Physics>(lock);
+                    auto &joints = ent.Get<PhysicsJoints>(lock);
                     Assertf(ph.dynamic && !ph.kinematic,
                         "Interactive object must have dynamic physics: %s",
                         ToString(lock, ent));
-
-                    auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
 
                     struct ScriptData {
                         Entity grabEntity, pointEntity;
@@ -173,6 +173,13 @@ namespace sp::scripts {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
                             ph.RemoveConstraint();
+                            joints.joints.erase(std::remove_if(joints.joints.begin(),
+                                                    joints.joints.end(),
+                                                    [&](auto &&joint) {
+                                                        return joint.target == scriptData.grabEntity &&
+                                                               joint.type == PhysicsJointType::Fixed;
+                                                    }),
+                                joints.joints.end());
                             ph.group = PhysicsGroup::World;
                             scriptData.grabEntity = {};
                         } else if (std::holds_alternative<Transform>(event.data)) {
@@ -182,10 +189,21 @@ namespace sp::scripts {
 
                             scriptData.grabEntity = event.source;
                             ph.group = PhysicsGroup::PlayerHands;
-                            ph.SetConstraint(event.source,
-                                grabBreakDistance,
-                                invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
-                                invParentRotate * transform.GetRotation());
+
+                            if (event.source.Has<Physics>(lock)) {
+                                PhysicsJoint joint;
+                                joint.target = event.source;
+                                joint.type = PhysicsJointType::Fixed;
+                                joint.remoteOffset = invParentRotate *
+                                                     (transform.GetPosition() - parentTransform.GetPosition());
+                                joint.remoteOrient = invParentRotate * transform.GetRotation();
+                                joints.Add(joint);
+                            } else {
+                                ph.SetConstraint(event.source,
+                                    0.0f,
+                                    invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
+                                    invParentRotate * transform.GetRotation());
+                            }
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
                         }
@@ -202,10 +220,21 @@ namespace sp::scripts {
                             auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
                                                glm::angleAxis(input.x, upAxis);
 
-                            // Move the objects origin so it rotates around its center of mass
-                            auto center = ph.constraintRotation * centerOfMass;
-                            ph.constraintOffset += center - (deltaRotate * center);
-                            ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                            for (auto &joint : joints.joints) {
+                                if (joint.target == scriptData.grabEntity && joint.type == PhysicsJointType::Fixed) {
+                                    // Move the objects origin so it rotates around its center of mass
+                                    auto center = joint.remoteOrient * centerOfMass;
+                                    joint.remoteOffset += center - (deltaRotate * center);
+                                    joint.remoteOrient = deltaRotate * joint.remoteOrient;
+                                    break;
+                                }
+                            }
+                            if (ph.constraint) {
+                                // Move the objects origin so it rotates around its center of mass
+                                auto center = ph.constraintRotation * centerOfMass;
+                                ph.constraintOffset += center - (deltaRotate * center);
+                                ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                            }
                         }
                     }
 

@@ -25,13 +25,6 @@
             },
             "script": [
                 {
-                    "onTick": "joystick_calibration",
-                    "parameters": {
-                        "scale_x": 20.0,
-                        "scale_y": -20.0
-                    }
-                },
-                {
                     "onTick": "relative_movement",
                     "parameters": { "relative_to": "player:flatview" }
                 },
@@ -39,14 +32,10 @@
                 { "onTick": "interact_handler" }
             ],
             "event_input": [
-                "/script/joystick_in",
                 "/script/camera_rotate",
                 "/interact/grab",
                 "/interact/rotate"
             ],
-            "event_bindings": {
-                "/script/joystick_out": "player/script/camera_rotate"
-            },
             "focus": "GAME",
             "physics_query": {
                 "raycast": 2.0
