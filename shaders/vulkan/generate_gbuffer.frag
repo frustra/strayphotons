@@ -16,9 +16,9 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
 
-layout(location = 0) out vec4 gBuffer0; // rgba8
-layout(location = 1) out vec4 gBuffer1; // rgba16f
-layout(location = 2) out vec4 gBuffer2; // rgba16f
+layout(location = 0) out vec4 gBuffer0; // rgba8srgb
+layout(location = 1) out vec4 gBuffer1; // rg16f
+layout(location = 2) out vec4 gBuffer2; // r8unorm
 
 void main() {
     vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
@@ -29,9 +29,7 @@ void main() {
     float metallic = metallicRoughnessSample.b;
 
     gBuffer0.rgb = baseColor.rgb;
-    gBuffer0.a = roughness;
+    gBuffer0.a = metallic;
     gBuffer1.rg = EncodeNormal(inNormal);
-    gBuffer1.ba = vec2(0);
-    gBuffer2.rgb = inViewPos;
-    gBuffer2.a = metallic;
+    gBuffer2.r = roughness;
 }

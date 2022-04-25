@@ -63,15 +63,23 @@ namespace sp::vulkan {
             }
 
             if (depthStencilAttachment.loadOp == vk::AttachmentLoadOp::eLoad) {
-                // TODO: support other layouts
-                depthStencilAttachment.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+                if (depthStencilAttachment.storeOp == vk::AttachmentStoreOp::eDontCare) {
+                    depthStencilAttachment.initialLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+                } else {
+                    depthStencilAttachment.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+                }
             } else {
                 depthStencilAttachment.initialLayout = vk::ImageLayout::eUndefined;
             }
-            depthStencilAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+            if (depthStencilAttachment.storeOp == vk::AttachmentStoreOp::eDontCare) {
+                depthStencilAttachment.finalLayout = depthStencilAttachment.initialLayout;
+            } else {
+                depthStencilAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            }
 
             depthAttachmentRef.attachment = attachmentCount;
-            depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            depthAttachmentRef.layout = depthStencilAttachment.finalLayout;
 
             initialLayouts[attachmentCount] = depthStencilAttachment.initialLayout;
             finalLayouts[attachmentCount] = depthStencilAttachment.finalLayout;

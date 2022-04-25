@@ -80,7 +80,7 @@ namespace sp::vulkan {
         {vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
             vk::AccessFlagBits::eDepthStencilAttachmentRead,
             {},
-            vk::ImageUsageFlagBits::eDepthStencilAttachment,
+            vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
             vk::ImageLayout::eDepthStencilReadOnlyOptimal},
         // ComputeShaderSampleImage
         {vk::PipelineStageFlagBits::eComputeShader,
