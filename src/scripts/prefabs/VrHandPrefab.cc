@@ -57,7 +57,6 @@ namespace ecs {
 
                 physics.constraint = inputEntity;
                 physics.group = PhysicsGroup::Player;
-                // physics.kinematic = true;
                 Component<Physics>::Apply(physics, lock, physicsEnt);
             }
 
@@ -77,18 +76,11 @@ namespace ecs {
                     continue;
                 }
 
-                // if (physicsEnt.Has<TransformTree>(lock)) {
-                //     auto &transform = physicsEnt.Get<ecs::TransformTree>(lock);
-                //     transform.parent = inputEntity;
-                //     transform.pose = {};
-                // }
-
                 Physics physics;
                 physics.shapes.emplace_back(PhysicsShape::Capsule(0.5f, 0.01f));
 
                 physics.constraint = inputEntity;
                 physics.group = PhysicsGroup::Player;
-                // physics.kinematic = true;
                 Component<Physics>::Apply(physics, lock, physicsEnt);
             }
         }

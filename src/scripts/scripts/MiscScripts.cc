@@ -88,13 +88,15 @@ namespace sp::scripts {
                                 newEntity.Set<EventInput>(lock,
                                     "/interact/grab",
                                     "/interact/point",
-                                    "/interact/rotate");
+                                    "/interact/rotate",
+                                    "/physics/broken_constraint");
                                 auto &script = newEntity.Set<Script>(lock);
                                 auto &newState = script.AddOnTick(scope, ScriptDefinitions.at("interactive_object"));
                                 newState.filterEvents = {
                                     "/interact/grab",
                                     "/interact/point",
                                     "/interact/rotate",
+                                    "/physics/broken_constraint",
                                 };
                             }
                         }).detach();
