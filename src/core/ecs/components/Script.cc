@@ -147,7 +147,7 @@ namespace ecs {
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstScript = dst.Get<Script>(lock);
-        if (dstScript.scripts.empty()) dstScript.scripts.assign(src.scripts.begin(), src.scripts.end());
+        dstScript.scripts.insert(dstScript.scripts.end(), src.scripts.begin(), src.scripts.end());
     }
 
     void Script::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {

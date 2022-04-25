@@ -83,19 +83,18 @@ namespace sp::scripts {
 
                                 newEntity.Set<Renderable>(lock, model);
                                 newEntity.Set<Physics>(lock, model);
+                                newEntity.Set<PhysicsJoints>(lock);
                                 newEntity.Set<PhysicsQuery>(lock);
                                 newEntity.Set<EventInput>(lock,
                                     "/interact/grab",
                                     "/interact/point",
-                                    "/interact/rotate",
-                                    "/physics/broken_constraint");
+                                    "/interact/rotate");
                                 auto &script = newEntity.Set<Script>(lock);
                                 auto &newState = script.AddOnTick(scope, ScriptDefinitions.at("interactive_object"));
                                 newState.filterEvents = {
                                     "/interact/grab",
                                     "/interact/point",
                                     "/interact/rotate",
-                                    "/physics/broken_constraint",
                                 };
                             }
                         }).detach();
@@ -120,13 +119,12 @@ namespace sp::scripts {
             }),
         InternalScript("interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformSnapshot, Physics>(lock)) {
+                if (ent.Has<EventInput, TransformSnapshot, Physics, PhysicsJoints>(lock)) {
                     auto &ph = ent.Get<Physics>(lock);
+                    auto &joints = ent.Get<PhysicsJoints>(lock);
                     Assertf(ph.dynamic && !ph.kinematic,
                         "Interactive object must have dynamic physics: %s",
                         ToString(lock, ent));
-
-                    auto grabBreakDistance = state.GetParam<double>("grab_break_distance");
 
                     struct ScriptData {
                         Entity grabEntity, pointEntity;
@@ -150,12 +148,6 @@ namespace sp::scripts {
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
-                        ph.RemoveConstraint();
-                        ph.group = PhysicsGroup::World;
-                        scriptData.grabEntity = {};
-                    }
-
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
                         auto pointTransform = std::get_if<Transform>(&event.data);
                         if (pointTransform) {
@@ -172,7 +164,13 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
-                            ph.RemoveConstraint();
+                            joints.joints.erase(std::remove_if(joints.joints.begin(),
+                                                    joints.joints.end(),
+                                                    [&](auto &&joint) {
+                                                        return joint.target == scriptData.grabEntity &&
+                                                               joint.type == PhysicsJointType::Fixed;
+                                                    }),
+                                joints.joints.end());
                             ph.group = PhysicsGroup::World;
                             scriptData.grabEntity = {};
                         } else if (std::holds_alternative<Transform>(event.data)) {
@@ -182,10 +180,14 @@ namespace sp::scripts {
 
                             scriptData.grabEntity = event.source;
                             ph.group = PhysicsGroup::PlayerHands;
-                            ph.SetConstraint(event.source,
-                                grabBreakDistance,
-                                invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
-                                invParentRotate * transform.GetRotation());
+
+                            PhysicsJoint joint;
+                            joint.target = event.source;
+                            joint.type = PhysicsJointType::Fixed;
+                            joint.remoteOffset = invParentRotate *
+                                                 (transform.GetPosition() - parentTransform.GetPosition());
+                            joint.remoteOrient = invParentRotate * transform.GetRotation();
+                            joints.Add(joint);
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
                         }

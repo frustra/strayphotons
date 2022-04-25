@@ -58,6 +58,28 @@ namespace ecs {
                     Errorf("Unknown physics capsule value: %s", param.second.to_str());
                     return false;
                 }
+            } else if (param.first == "sphere") {
+                if (physics.shape) {
+                    Errorf("Physics component defines multiple shapes: sphere, %s", param.second.to_str());
+                    return false;
+                }
+                PhysicsShape::Sphere sphere;
+                if (param.second.is<double>()) {
+                    sphere.radius = param.second.get<double>();
+                } else if (param.second.is<picojson::object>()) {
+                    for (auto sphereParam : param.second.get<picojson::object>()) {
+                        if (sphereParam.first == "radius") {
+                            sphere.radius = sphereParam.second.get<double>();
+                        } else {
+                            Errorf("Unknown physics sphere field: %s", sphereParam.first);
+                            return false;
+                        }
+                    }
+                } else {
+                    Errorf("Unknown physics sphere value: %s", param.second.to_str());
+                    return false;
+                }
+                physics.shape = PhysicsShape(sphere);
             } else if (param.first == "shape_transform") {
                 Transform shapeTransform;
                 if (Component<Transform>::Load(scope, shapeTransform, param.second)) {

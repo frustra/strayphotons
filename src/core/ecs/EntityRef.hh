@@ -39,6 +39,8 @@ namespace ecs {
             return ptr != other.ptr;
         }
 
+        bool operator==(const Entity &other) const;
+
         void Set(const Entity &ent);
 
     private:

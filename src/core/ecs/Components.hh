@@ -66,7 +66,6 @@ namespace ecs {
             if (dst.Has<CompType>(lock)) {
                 CompType srcComp;
                 if (!Load(scope, srcComp, src)) return false;
-                auto &comp = dst.Get<CompType>(lock);
                 Apply(srcComp, lock, dst);
                 return true;
             } else {
