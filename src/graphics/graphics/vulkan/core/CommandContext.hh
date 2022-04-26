@@ -366,8 +366,19 @@ namespace sp::vulkan {
         void SetImageView(uint32 set, uint32 binding, const ImageView *view);
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
-        void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
-        void SetStorageBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
+        // Binds a buffer as to a uniform descriptor. Defaults to the whole buffer.
+        void SetUniformBuffer(uint32 set,
+            uint32 binding,
+            const BufferPtr &buffer,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
+
+        // Binds a buffer as to a storage descriptor. Defaults to the whole buffer.
+        void SetStorageBuffer(uint32 set,
+            uint32 binding,
+            const BufferPtr &buffer,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
 
         // Buffer is stored in a pool for this frame, and reused in later frames.
         BufferPtr AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size);

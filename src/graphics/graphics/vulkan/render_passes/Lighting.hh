@@ -6,6 +6,9 @@
 #include <optional>
 
 namespace sp::vulkan::renderer {
+    static const int MAX_LIGHTS = 64;
+    static const int MAX_OPTICS = 16;
+
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}

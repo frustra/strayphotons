@@ -251,7 +251,7 @@ namespace sp::vulkan {
             bool errors = false;
 
             ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32 binding) {
-                auto size = bindings[binding].buffer.range - bindings[binding].buffer.offset;
+                auto size = bindings[binding].buffer.range;
                 auto minSize = sizes[binding].sizeBase;
                 if (size == minSize) return;
 

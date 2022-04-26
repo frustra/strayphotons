@@ -19,14 +19,6 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 
-layout(std430, set = 3, binding = 0) buffer VoxelFragmentList {
-    uint count;
-    uint capacity;
-    VkDispatchIndirectCommand cmd;
-    VoxelFragment list[];
-}
-fragmentLists[MAX_VOXEL_FRAGMENT_LISTS];
-
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"
 
@@ -37,6 +29,21 @@ layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 layout(binding = 4, r32ui) uniform uimage3D fillCounters;
 layout(binding = 5, rgba16f) writeonly uniform image3D radianceOut;
+
+struct FragmentListMetadata {
+    uint count;
+    uint capacity;
+    uint offset;
+    VkDispatchIndirectCommand cmd;
+};
+
+layout(std430, binding = 6) buffer VoxelFragmentListMetadata {
+    FragmentListMetadata fragmentListMetadata[MAX_VOXEL_FRAGMENT_LISTS];
+};
+
+layout(std430, binding = 7) buffer VoxelFragmentList {
+    VoxelFragment fragmentLists[];
+};
 
 void main() {
     vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
@@ -49,11 +56,13 @@ void main() {
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
 
     uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
-    uint index = atomicAdd(fragmentLists[bucket].count, 1);
-    if (index >= fragmentLists[bucket].capacity) return;
-    if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentLists[bucket].cmd.x, 1);
-    fragmentLists[bucket].list[index].position = u16vec3(uvec3(inVoxelPos));
-    fragmentLists[bucket].list[index].radiance = f16vec3(pixelRadiance);
+    uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
+    if (index >= fragmentListMetadata[bucket].capacity) return;
+    if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentListMetadata[bucket].cmd.x, 1);
+
+    uint listOffset = fragmentListMetadata[bucket].offset + index;
+    fragmentLists[listOffset].position = u16vec3(uvec3(inVoxelPos));
+    fragmentLists[listOffset].radiance = f16vec3(pixelRadiance);
 
     if (bucket == 0) {
         // First fragment is written to the voxel grid directly
