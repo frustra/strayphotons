@@ -23,11 +23,7 @@
 			rotate: [-90, 0, 1, 0],
 			in_signal: "sensor2",
 			scene_connection: "03-dark",
-			triggers: {
-				"player": {
-					"command": "setsignal global:airlock2-3-in/door_open 0; addscene 03-dark"
-				}
-			}
+			trigger_command: "setsignal global:airlock2-3-in/door_open 0; addscene 03-dark"
 		}) %>,
 		<%- include("prefab/floor", {
 			y: 0,

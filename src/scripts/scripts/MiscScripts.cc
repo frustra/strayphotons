@@ -328,16 +328,44 @@ namespace sp::scripts {
                     voxelOffset.z = state.GetParam<double>("voxel_offset_z");
                     voxelOffset *= glm::vec3(voxelArea.extents) * voxelScale;
 
-                    auto targetPosition = glm::vec3(0);
-                    auto fullTargetName = state.GetParam<std::string>("follow_target");
-                    ecs::Name targetName(fullTargetName, state.scope.prefix);
-                    if (targetName) {
-                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = targetName;
+                    ecs::Name alignmentName(state.GetParam<std::string>("alignment_target"), state.scope.prefix);
+                    if (alignmentName) {
+                        auto alignmentEntity = state.GetParam<EntityRef>("alignment_entity");
+                        bool existingAlignment = (bool)alignmentEntity;
+                        if (alignmentEntity.Name() != alignmentName) alignmentEntity = alignmentName;
 
-                        auto target = targetEntity.Get(lock);
+                        auto previousAlignment = state.GetParam<glm::vec3>("previous_alignment");
+                        glm::vec3 alignmentOffset;
+                        auto target = alignmentEntity.Get(lock);
                         if (target) {
-                            state.SetParam<EntityRef>("target_entity", targetEntity);
+                            state.SetParam<EntityRef>("alignment_entity", alignmentEntity);
+
+                            if (target.Has<TransformSnapshot>(lock)) {
+                                if (existingAlignment) {
+                                    alignmentOffset = target.Get<TransformSnapshot>(lock).GetPosition() -
+                                                      previousAlignment;
+                                } else {
+                                    state.SetParam<glm::vec3>("previous_alignment",
+                                        target.Get<TransformSnapshot>(lock).GetPosition());
+                                }
+                            } else {
+                                state.SetParam<EntityRef>("alignment_entity", EntityRef());
+                            }
+                        } else {
+                            state.SetParam<EntityRef>("alignment_entity", EntityRef());
+                        }
+                        voxelOffset += glm::mod(alignmentOffset, voxelStride * voxelScale);
+                    }
+
+                    auto targetPosition = glm::vec3(0);
+                    ecs::Name targetName(state.GetParam<std::string>("follow_target"), state.scope.prefix);
+                    if (targetName) {
+                        auto followEntity = state.GetParam<EntityRef>("follow_entity");
+                        if (followEntity.Name() != targetName) followEntity = targetName;
+
+                        auto target = followEntity.Get(lock);
+                        if (target) {
+                            state.SetParam<EntityRef>("follow_entity", followEntity);
 
                             if (target.Has<TransformSnapshot>(lock)) {
                                 targetPosition = target.Get<TransformSnapshot>(lock).GetPosition();
@@ -345,9 +373,9 @@ namespace sp::scripts {
                         }
                     }
 
-                    targetPosition = voxelRotation * targetPosition + voxelOffset;
+                    targetPosition = voxelRotation * targetPosition;
                     targetPosition = glm::floor(targetPosition / voxelStride / voxelScale) * voxelScale * voxelStride;
-                    transform.pose.SetPosition(glm::inverse(voxelRotation) * targetPosition);
+                    transform.pose.SetPosition(glm::inverse(voxelRotation) * (targetPosition + voxelOffset));
                     transform.pose.SetScale(glm::vec3(voxelScale));
                 }
             }),

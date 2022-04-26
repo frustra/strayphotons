@@ -1097,17 +1097,18 @@
 				"onTick": "voxel_controller",
 				"parameters": {
 					"follow_target": "player:player",
+					"alignment_target": "station-center:elevator",
 					"voxel_stride": 16,
-					"voxel_scale": 0.1,
+					"voxel_scale": 0.11,
 					"voxel_offset_x": -0.5,
-					"voxel_offset_y": -0.1,
+					"voxel_offset_y": -0.2,
 					"voxel_offset_z": -0.5
 				}
 			},
 			"voxel_area": {
 				"extents": [
 					256,
-					64,
+					100,
 					360
 				]
 			}

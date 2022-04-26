@@ -23,11 +23,7 @@
 			rotate: [90, 0, 1, 0],
 			in_signal: "sensor2",
 			scene_connection: "04-symmetry",
-			triggers: {
-				"player": {
-					"command": "setsignal global:airlock3-4-in/door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
-				}
-			}
+			trigger_command: "setsignal global:airlock3-4-in/door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
 		}) %>,
 		<%- include("prefab/floor", {
 			y: 0,

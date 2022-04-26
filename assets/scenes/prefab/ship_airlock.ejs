@@ -11,7 +11,6 @@
 	<% } %>
 	"scene_connection": <%= locals.scene_connection || [] %>
 },
-<% if (locals.triggers) { %>
 {
 	"name": <%= name + "-zone" %>,
 	"transform": {
@@ -23,15 +22,14 @@
 	"signal_output": {},
 	"trigger_area": {},
 	"event_bindings": {
-		<% if (triggers.player && triggers.player.command) { %>
+		<% if (locals.trigger_command) { %>
 		"/trigger/player/enter": {
 			"target": "console:input/action/run_command",
-			"set_value": <%= triggers.player.command %>
+			"set_value": <%= trigger_command %>
 		}
 		<% } %>
 	}
 },
-<% } %>
 <%- include('slide_door', {
 	scene: (locals.scene ? scene : "global"),
 	name: name + '-in',

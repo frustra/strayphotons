@@ -118,6 +118,25 @@
 			}
 		},
 		{
+			"name": "global:airlock41-zone",
+			"transform": {
+				"parent": "global:airlock41",
+				"translate": [
+					1.5,
+					1.4,
+					0
+				],
+				"scale": [
+					2.5,
+					3,
+					2.5
+				]
+			},
+			"signal_output": {},
+			"trigger_area": {},
+			"event_bindings": {}
+		},
+		{
 			"name": "global:airlock41-out",
 			"transform": {
 				"parent": "global:airlock41",
@@ -428,6 +447,25 @@
 					"physics": "static"
 				}
 			}
+		},
+		{
+			"name": "global:airlock12-zone",
+			"transform": {
+				"parent": "global:airlock12",
+				"translate": [
+					1.5,
+					1.4,
+					0
+				],
+				"scale": [
+					2.5,
+					3,
+					2.5
+				]
+			},
+			"signal_output": {},
+			"trigger_area": {},
+			"event_bindings": {}
 		},
 		{
 			"name": "global:airlock12-out",

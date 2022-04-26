@@ -41,11 +41,7 @@
 			translate: [-8.1, 0.6, -7],
 			in_signal: "sensor1",
 			scene_connection: "02-mirrors",
-			triggers: {
-				"player": {
-					"command": "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
-				}
-			}
+			trigger_command: "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
 		}) %>,
 		{
 			"_comment": "airlock",
