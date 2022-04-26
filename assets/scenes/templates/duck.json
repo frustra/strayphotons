@@ -20,7 +20,6 @@
             },
 			"physics": {
 				"model": "duck",
-				"mesh": 0,
 				"decomposeHull": true
 			}
         }

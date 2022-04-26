@@ -15,6 +15,7 @@ namespace sp::vulkan {
     enum class StoreOp {
         DontCare,
         Store,
+        ReadOnly,
     };
 
     struct ImageCreateInfo {

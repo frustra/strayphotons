@@ -53,7 +53,7 @@ namespace sp::vulkan::renderer {
                 builder.ReadUniform("ViewState");
 
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
 
                 for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
                     if (!ent.Has<ecs::Transform>(lock)) continue;

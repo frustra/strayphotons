@@ -63,7 +63,8 @@ namespace sp::vulkan {
             }
 
             if (depthStencilAttachment.loadOp == vk::AttachmentLoadOp::eLoad) {
-                if (depthStencilAttachment.storeOp == vk::AttachmentStoreOp::eDontCare) {
+                if (depthStencilAttachment.storeOp == vk::AttachmentStoreOp::eDontCare ||
+                    state.ReadOnly(RenderPassState::DEPTH_STENCIL_INDEX)) {
                     depthStencilAttachment.initialLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
                 } else {
                     depthStencilAttachment.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -72,7 +73,8 @@ namespace sp::vulkan {
                 depthStencilAttachment.initialLayout = vk::ImageLayout::eUndefined;
             }
 
-            if (depthStencilAttachment.storeOp == vk::AttachmentStoreOp::eDontCare) {
+            if (depthStencilAttachment.storeOp == vk::AttachmentStoreOp::eDontCare ||
+                state.ReadOnly(RenderPassState::DEPTH_STENCIL_INDEX)) {
                 depthStencilAttachment.finalLayout = depthStencilAttachment.initialLayout;
             } else {
                 depthStencilAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;

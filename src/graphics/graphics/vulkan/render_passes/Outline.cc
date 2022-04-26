@@ -47,7 +47,7 @@ namespace sp::vulkan::renderer {
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
 
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
             .Execute([drawIDs, scene = &scene](Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "solid_color.frag");

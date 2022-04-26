@@ -397,7 +397,7 @@ namespace sp::vulkan::renderer {
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("LightState");
 
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
             .Execute([this, shadowDepth](rg::Resources &resources, CommandContext &cmd) {
                 if (CVarVSM.Get()) {
