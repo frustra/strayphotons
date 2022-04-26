@@ -72,7 +72,7 @@ namespace sp::vulkan::render_graph {
     }
 
     void PassBuilder::SetDepthAttachment(ResourceID id, const AttachmentInfo &info) {
-        if (info.loadOp == LoadOp::Load && info.storeOp == StoreOp::DontCare) {
+        if (info.loadOp == LoadOp::Load && (info.storeOp == StoreOp::DontCare || info.storeOp == StoreOp::ReadOnly)) {
             Read(id, Access::DepthStencilAttachmentRead);
         } else {
             Write(id, Access::DepthStencilAttachmentWrite);

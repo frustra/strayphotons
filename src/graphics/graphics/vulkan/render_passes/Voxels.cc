@@ -329,7 +329,7 @@ namespace sp::vulkan::renderer {
 
                 auto desc = builder.DeriveImage(builder.LastOutputID());
                 builder.OutputColorAttachment(0, "VoxelDebug", desc, {LoadOp::DontCare, StoreOp::Store});
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "voxel_debug.frag");

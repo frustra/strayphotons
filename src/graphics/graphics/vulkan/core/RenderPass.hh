@@ -19,6 +19,7 @@ namespace sp::vulkan {
         uint32 clearAttachments = 0;
         uint32 loadAttachments = 0;
         uint32 storeAttachments = 0;
+        uint32 readOnlyAttachments = 0;
 
         // each bit represents a specific array layer to enable rendering to
         uint32 multiviewMask = 0;
@@ -45,10 +46,15 @@ namespace sp::vulkan {
             } else {
                 loadAttachments &= ~attachmentBit;
             }
-            if (storeOp == StoreOp::Store) {
+            if (storeOp == StoreOp::Store || storeOp == StoreOp::ReadOnly) {
                 storeAttachments |= attachmentBit;
             } else {
                 storeAttachments &= ~attachmentBit;
+            }
+            if (storeOp == StoreOp::ReadOnly) {
+                readOnlyAttachments |= attachmentBit;
+            } else {
+                readOnlyAttachments &= ~attachmentBit;
             }
         }
 
@@ -63,6 +69,11 @@ namespace sp::vulkan {
             uint32 attachmentBit = 1 << index;
             if (storeAttachments & attachmentBit) return vk::AttachmentStoreOp::eStore;
             return vk::AttachmentStoreOp::eDontCare;
+        }
+
+        bool ReadOnly(uint32 index) const {
+            uint32 attachmentBit = 1 << index;
+            return readOnlyAttachments & attachmentBit;
         }
 
         bool ShouldClear(uint32 index) const {
