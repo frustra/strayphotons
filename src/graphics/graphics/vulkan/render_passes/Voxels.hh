@@ -4,6 +4,8 @@
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {
+    static const uint32 MAX_VOXEL_FRAGMENT_LISTS = 16;
+
     class Lighting;
 
     class Voxels {
@@ -17,7 +19,11 @@ namespace sp::vulkan::renderer {
     private:
         GPUScene &scene;
 
-        std::vector<ResourceID> fragmentListBuffers;
+        struct FragmentListSize {
+            uint32 capacity, offset;
+        };
+        std::array<FragmentListSize, MAX_VOXEL_FRAGMENT_LISTS> fragmentListSizes;
+        uint32 fragmentListCount;
 
         ecs::Transform voxelToWorld;
         glm::ivec3 voxelGridSize;

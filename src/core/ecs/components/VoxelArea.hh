@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/Config.hh"
 #include "ecs/Components.hh"
 
 #include <glm/glm.hpp>

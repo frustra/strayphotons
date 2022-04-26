@@ -310,7 +310,19 @@ namespace sp::vulkan {
         if (defaultSampler) SetSampler(set, binding, defaultSampler);
     }
 
-    void CommandContext::SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer) {
+    static void checkBufferOffsets(const BufferPtr &buffer, vk::DeviceSize offset, vk::DeviceSize range) {
+        Assertf(offset + range <= buffer->Size(),
+            "tried to bind past the end of a buffer, offset: %d, range: %d, size: %d",
+            offset,
+            range,
+            buffer->Size());
+    }
+
+    void CommandContext::SetUniformBuffer(uint32 set,
+        uint32 binding,
+        const BufferPtr &buffer,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
@@ -318,13 +330,19 @@ namespace sp::vulkan {
 
         auto &bufferBinding = bindingDesc.buffer;
         bufferBinding.buffer = **buffer;
-        bufferBinding.offset = 0;
-        bufferBinding.range = buffer->Size();
+        bufferBinding.offset = offset;
+        bufferBinding.range = range == 0 ? buffer->Size() - offset : range;
         bindingDesc.arrayStride = buffer->ArrayStride();
+
+        checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
         SetDescriptorDirty(set);
     }
 
-    void CommandContext::SetStorageBuffer(uint32 set, uint32 binding, const BufferPtr &buffer) {
+    void CommandContext::SetStorageBuffer(uint32 set,
+        uint32 binding,
+        const BufferPtr &buffer,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
@@ -332,9 +350,11 @@ namespace sp::vulkan {
 
         auto &bufferBinding = bindingDesc.buffer;
         bufferBinding.buffer = **buffer;
-        bufferBinding.offset = 0;
-        bufferBinding.range = buffer->Size();
+        bufferBinding.offset = offset;
+        bufferBinding.range = range == 0 ? buffer->Size() - offset : range;
         bindingDesc.arrayStride = buffer->ArrayStride();
+
+        checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
         SetDescriptorDirty(set);
     }
 
