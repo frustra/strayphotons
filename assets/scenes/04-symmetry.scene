@@ -108,13 +108,6 @@
 				"extents": [120, 50, 95]
 			}
 		},
-		{
-			"_comment": "blue room",
-			"voxels": {
-				"min": [-5.95, 0, 0],
-				"max": [13, 4, 10]
-			}
-		},
 		<%- include('prefab/spotlight', {
 			name: 'light1',
 			tint: [1, 0.8, 0.8],

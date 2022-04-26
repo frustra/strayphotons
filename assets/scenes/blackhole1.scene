@@ -279,10 +279,6 @@
 			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 0.05, 2]
-			},
-			"voxels": {
-				"min": [-5, -0, -5],
-				"max": [5, 10, 5]
 			}
 		},
 		<%- include('prefab/spotlight', {

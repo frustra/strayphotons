@@ -1894,21 +1894,6 @@
 			}
 		},
 		{
-			"_comment": "blue room",
-			"voxels": {
-				"min": [
-					-5.95,
-					0,
-					0
-				],
-				"max": [
-					13,
-					4,
-					10
-				]
-			}
-		},
-		{
 			"name": "light1",
 			"light": {
 				"tint": [
