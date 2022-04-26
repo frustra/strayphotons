@@ -78,7 +78,6 @@ namespace sp {
 
                 if (!frame.indexesToFree.empty()) {
                     freeIndexes.insert(freeIndexes.end(), frame.indexesToFree.begin(), frame.indexesToFree.end());
-                    Logf("freeing %d indexes", frame.indexesToFree.size());
                     frame.indexesToFree.clear();
                 }
 

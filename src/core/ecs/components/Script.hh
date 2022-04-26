@@ -24,6 +24,7 @@ namespace ecs {
             std::string,
             Entity,
             EntityRef,
+            glm::vec3,
             std::vector<bool>,
             std::vector<double>,
             std::vector<std::string>>;

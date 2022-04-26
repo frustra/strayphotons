@@ -6,6 +6,7 @@ layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 #define DIFFUSE_ONLY_SHADING
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
+#define USE_PCF
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"

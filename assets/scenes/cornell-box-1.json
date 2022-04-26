@@ -18,9 +18,11 @@
 				"translate": [-0.01, 0.2, 9.6],
 				"rotate": [0, 0, 1, 0]
 			},
-			"trigger_area": {
-				"player": {
-					"command": "r.FieldOfView 30"
+			"trigger_area": {},
+			"event_bindings": {
+				"/trigger/player/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "r.FieldOfView 30"
 				}
 			}
 		},
