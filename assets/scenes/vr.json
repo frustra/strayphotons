@@ -80,11 +80,12 @@
                     "prefab": "gltf",
                     "parameters": {
                         "model": "vr_glove_left",
-                        "render": true
+                        "render": true,
+                        "physics": "dynamic"
                     }
                 },
                 {
-                    "prefab": "vr_hand",
+                    "onTick": "vr_hand",
                     "parameters": {
                         "hand": "left"
                     }
@@ -103,11 +104,12 @@
                     "prefab": "gltf",
                     "parameters": {
                         "model": "vr_glove_right",
-                        "render": true
+                        "render": true,
+                        "physics": "dynamic"
                     }
                 },
                 {
-                    "prefab": "vr_hand",
+                    "onTick": "vr_hand",
                     "parameters": {
                         "hand": "right"
                     }
