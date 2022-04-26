@@ -192,6 +192,21 @@ namespace sp::vulkan::render_graph {
 
     void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
         ZoneScoped;
+        struct MemoryBarrier {
+            vk::PipelineStageFlags lastStages, nextStages;
+            vk::MemoryBarrier barrier;
+        } memory;
+
+        struct ImageBarrier {
+            const ImagePtr *image;
+
+            vk::PipelineStageFlags lastStages, nextStages;
+            vk::AccessFlags lastAccess, nextAccess;
+            vk::ImageLayout lastLayout, nextLayout;
+            Access nextAccessType;
+        };
+        InlineVector<ImageBarrier, 16> images;
+
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
             if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
@@ -209,35 +224,72 @@ namespace sp::vulkan::render_graph {
                 if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::None) continue;
 
                 auto last = GetAccessInfo(lastAccess);
-                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-                if (nextAccess == Access::ColorAttachmentWrite) last.imageLayout = vk::ImageLayout::eUndefined;
 
-                if (!cmd) cmd = device.GetFrameCommandContext();
+                ImageBarrier *barrier = nullptr;
+                for (auto &i : images) {
+                    if (*i.image == image) {
+                        barrier = &i;
+                        break;
+                    }
+                }
+                if (!barrier) {
+                    images.emplace_back();
+                    barrier = &images.back();
+                    barrier->image = &image;
+                    barrier->lastLayout = last.imageLayout;
+                }
 
-                cmd->ImageBarrier(image,
-                    last.imageLayout,
-                    next.imageLayout,
-                    last.stageMask,
-                    last.accessMask,
-                    next.stageMask,
-                    next.accessMask);
-
-                image->SetAccess(Access::None, nextAccess);
+                barrier->lastStages |= last.stageMask;
+                barrier->nextStages |= next.stageMask;
+                barrier->lastAccess |= last.accessMask;
+                barrier->nextAccess |= next.accessMask;
+                barrier->nextLayout = next.imageLayout;
+                barrier->nextAccessType = nextAccess;
             } else if (res.type == Resource::Type::Buffer) {
                 auto buffer = resources.GetBuffer(access.id);
                 auto lastAccess = buffer->LastAccess();
-                buffer->SetAccess(Access::None, nextAccess);
-
                 if (nextAccess == Access::HostWrite) continue;
                 if (lastAccess == Access::None) continue;
 
                 if (!cmd) cmd = device.GetFrameCommandContext();
 
                 auto last = GetAccessInfo(lastAccess);
-                vk::MemoryBarrier barrier;
-                barrier.srcAccessMask = last.accessMask;
-                barrier.dstAccessMask = next.accessMask;
-                cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
+                memory.barrier.srcAccessMask |= last.accessMask;
+                memory.barrier.dstAccessMask |= next.accessMask;
+                memory.lastStages |= last.stageMask;
+                memory.nextStages |= next.stageMask;
+            }
+        }
+
+        if (memory.barrier.srcAccessMask || memory.barrier.dstAccessMask) {
+            if (!cmd) cmd = device.GetFrameCommandContext();
+            cmd->Raw().pipelineBarrier(memory.lastStages, memory.nextStages, {}, {memory.barrier}, {}, {});
+        }
+
+        for (auto &i : images) {
+            if (i.lastStages == vk::PipelineStageFlags(0)) i.lastStages = vk::PipelineStageFlagBits::eTopOfPipe;
+            if (i.nextAccessType == Access::ColorAttachmentWrite) i.lastLayout = vk::ImageLayout::eUndefined;
+
+            if (!cmd) cmd = device.GetFrameCommandContext();
+            cmd->ImageBarrier(*i.image,
+                i.lastLayout,
+                i.nextLayout,
+                i.lastStages,
+                i.lastAccess,
+                i.nextStages,
+                i.nextAccess);
+
+            (*i.image)->SetAccess(Access::None, i.nextAccessType);
+        }
+
+        for (auto &access : pass.accesses) {
+            auto nextAccess = access.access;
+            if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
+
+            auto &res = resources.resources[access.id];
+            if (res.type == Resource::Type::Buffer) {
+                auto buffer = resources.GetBuffer(access.id);
+                buffer->SetAccess(Access::None, nextAccess);
             }
         }
     }
