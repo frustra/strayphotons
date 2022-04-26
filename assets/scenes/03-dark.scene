@@ -117,17 +117,12 @@
 			}
 		},
 		{
-			"_comment": "blue room",
-			"voxels": {
-				"min": [-2.95, 0, 0.05],
-				"max": [5.95, 4, 8.95]
-			}
-		},
-		{
-			"_comment": "red room",
-			"voxels": {
-				"min": [6.05, 0, 0.05],
-				"max": [11.95, 4, 8.95]
+			"transform": {
+				"translate": [-3.1, -0.1, -0.1],
+				"scale": [0.1, 0.1, 0.1]
+			},
+			"voxel_area": {
+				"extents": [155, 50, 95]
 			}
 		}
 	]

@@ -572,90 +572,6 @@
 			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [
-					-6,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					0,
-					3
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					0,
-					3
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
 					0,
 					0,
 					0
@@ -821,202 +737,6 @@
 			}
 		},
 		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					12,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					12,
-					0,
-					3
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					12,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					4,
-					-3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					4,
-					0
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					4,
-					3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					4,
-					6
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-6,
-					4,
-					9
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					4,
-					-3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					4,
-					0
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					4,
-					3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					4,
-					6
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					-3,
-					4,
-					9
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					0,
-					4,
-					-3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -1051,34 +771,6 @@
 					0,
 					4,
 					6
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					0,
-					4,
-					9
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					3,
-					4,
-					-3
 				]
 			},
 			"physics": {
@@ -1132,34 +824,6 @@
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
-					3,
-					4,
-					9
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					6,
-					4,
-					-3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
 					6,
 					4,
 					0
@@ -1202,34 +866,6 @@
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
-					6,
-					4,
-					9
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					9,
-					4,
-					-3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
 					9,
 					4,
 					0
@@ -1261,90 +897,6 @@
 					9,
 					4,
 					6
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					9,
-					4,
-					9
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					12,
-					4,
-					-3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					12,
-					4,
-					0
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					12,
-					4,
-					3
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					12,
-					4,
-					6
-				]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [
-					12,
-					4,
-					9
 				]
 			},
 			"physics": {
@@ -2317,6 +1869,27 @@
 					4.5,
 					0.05,
 					10.5
+				]
+			}
+		},
+		{
+			"transform": {
+				"translate": [
+					-0.1,
+					-0.1,
+					-0.1
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.1
+				]
+			},
+			"voxel_area": {
+				"extents": [
+					120,
+					50,
+					95
 				]
 			}
 		},

@@ -5,10 +5,6 @@
 			"transform": {
 				"translate": [0, 0, 0]
 			},
-			"voxels": {
-				"min": [-5.2, 0, -8.5],
-				"max": [4, 7, 4]
-			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
@@ -16,6 +12,15 @@
 					"render": true,
 					"physics": "static"
 				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [-5.2, -0.1, -8.5],
+				"scale": [0.1, 0.1, 0.1]
+			},
+			"voxel_area": {
+				"extents": [90, 64, 150]
 			}
 		},
 		{
@@ -43,13 +48,6 @@
 			scene_connection: "02-mirrors",
 			trigger_command: "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
 		}) %>,
-		{
-			"_comment": "airlock",
-			"voxels": {
-				"min": [-8, 0.7, -8.3],
-				"max": [-5.3, 3.2, -5.7]
-			}
-		},
 		{
 			"renderable": "cardboard-box",
 			"transform": {
