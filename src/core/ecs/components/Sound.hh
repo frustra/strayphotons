@@ -21,8 +21,12 @@ namespace ecs {
         bool loop = false, playOnLoad = false;
     };
 
-    static Component<Sound> ComponentSound("sound");
+    struct Sounds {
+        vector<Sound> sounds;
+    };
+
+    static Component<Sounds> ComponentSound("sound");
 
     template<>
-    bool Component<Sound>::Load(const EntityScope &scope, Sound &dst, const picojson::value &src);
+    bool Component<Sounds>::Load(const EntityScope &scope, Sounds &dst, const picojson::value &src);
 } // namespace ecs

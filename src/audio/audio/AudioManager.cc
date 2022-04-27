@@ -55,7 +55,7 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sound>>();
+            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sounds>>();
         }
         return true;
     }
@@ -78,7 +78,7 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sound, ecs::Transform, ecs::Name>,
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sounds, ecs::Transform, ecs::Name>,
             ecs::Write<ecs::EventInput>>();
 
         auto head = headEntity.Get(lock);
@@ -91,92 +91,110 @@ namespace sp {
             resonance->SetHeadRotation(rot.x, rot.y, rot.z, rot.w);
         }
 
-        for (auto ent : lock.EntitiesWith<ecs::Sound>()) {
-            size_t soundID;
-            SoundSource *state;
+        ecs::ComponentEvent<ecs::Sounds> compEvent;
+        while (soundObserver.Poll(lock, compEvent)) {
+            if (compEvent.type != Tecs::EventType::REMOVED) continue;
 
-            auto &source = ent.Get<ecs::Sound>(lock);
+            auto it = soundEntityMap.find(compEvent.entity);
+            if (it == soundEntityMap.end()) continue;
+
+            for (auto id : it->second) {
+                auto &state = sounds.Get(id);
+                if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
+                sounds.FreeItem(id);
+            }
+            soundEntityMap.erase(it);
+        }
+
+        for (auto ent : lock.EntitiesWith<ecs::Sounds>()) {
+            vector<size_t> *soundIDs;
+
+            auto &sources = ent.Get<ecs::Sounds>(lock);
             auto entSound = soundEntityMap.find(ent);
 
             if (entSound == soundEntityMap.end()) {
-                soundID = sounds.AllocateItem();
-                soundEntityMap[ent] = soundID;
+                soundIDs = &soundEntityMap[ent];
+                for (auto &source : sources.sounds) {
+                    auto soundID = sounds.AllocateItem();
+                    soundIDs->push_back(soundID);
 
-                state = &sounds.Get(soundID);
-                state->resonanceID = -1;
-                state->loop = source.loop;
-                state->play = source.playOnLoad;
-                state->bufferOffset = 0;
-                state->audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
-                    [this](shared_ptr<Asset> asset) {
-                        Assertf(asset, "Audio file missing");
-                        auto audioBuffer = decoderCache.Load(asset.get());
-                        if (!audioBuffer) {
-                            audioBuffer = make_shared<nqr::AudioData>();
-                            loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
-                        }
-                        return audioBuffer;
-                    });
-            } else {
-                soundID = entSound->second;
-                state = &sounds.Get(soundID);
-            }
-
-            auto resonanceID = state->resonanceID;
-            if (resonanceID == -1 && state->audioBuffer->Ready()) {
-                auto channelCount = state->audioBuffer->Get()->channelCount;
-                if (source.type == ecs::Sound::Type::Object) {
-                    resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
-                } else if (source.type == ecs::Sound::Type::Stereo) {
-                    resonanceID = resonance->CreateStereoSource(channelCount);
-                } else if (source.type == ecs::Sound::Type::Ambisonic) {
-                    resonanceID = resonance->CreateAmbisonicSource(channelCount);
+                    auto &state = sounds.Get(soundID);
+                    state.resonanceID = -1;
+                    state.loop = source.loop;
+                    state.play = source.playOnLoad;
+                    state.bufferOffset = 0;
+                    state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
+                        [this, file = source.file](shared_ptr<Asset> asset) {
+                            if (!asset) {
+                                Logf("Audio file missing: %s", file->Get()->path);
+                                return shared_ptr<nqr::AudioData>();
+                            }
+                            auto audioBuffer = decoderCache.Load(asset.get());
+                            if (!audioBuffer) {
+                                audioBuffer = make_shared<nqr::AudioData>();
+                                loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
+                            }
+                            return audioBuffer;
+                        });
                 }
-                state->resonanceID = resonanceID;
-                sounds.MakeItemValid(soundID);
+            } else {
+                soundIDs = &entSound->second;
             }
 
-            if (resonanceID != -1) {
-                resonance->SetSourceVolume(resonanceID, source.volume);
+            for (size_t i = 0; i < sources.sounds.size() && i < soundIDs->size(); i++) {
+                auto &source = sources.sounds[i];
+                auto id = soundIDs->at(i);
+                auto &state = sounds.Get(id);
+                auto resonanceID = state.resonanceID;
+                if (resonanceID == -1 && state.audioBuffer->Ready()) {
+                    auto channelCount = state.audioBuffer->Get()->channelCount;
+                    if (source.type == ecs::Sound::Type::Object) {
+                        resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
+                    } else if (source.type == ecs::Sound::Type::Stereo) {
+                        resonanceID = resonance->CreateStereoSource(channelCount);
+                    } else if (source.type == ecs::Sound::Type::Ambisonic) {
+                        resonanceID = resonance->CreateAmbisonicSource(channelCount);
+                    }
+                    state.resonanceID = resonanceID;
+                    sounds.MakeItemValid(id);
+                }
 
-                if (ent.Has<ecs::Transform>(lock)) {
-                    auto &transform = ent.Get<ecs::Transform>(lock);
-                    auto pos = transform.GetPosition();
-                    auto rot = transform.GetRotation();
-                    resonance->SetSourcePosition(resonanceID, pos.x, pos.y, pos.z);
-                    resonance->SetSourceRotation(resonanceID, rot.x, rot.y, rot.z, rot.w);
+                if (resonanceID != -1) {
+                    resonance->SetSourceVolume(resonanceID, source.volume);
+
+                    if (ent.Has<ecs::Transform>(lock)) {
+                        auto &transform = ent.Get<ecs::Transform>(lock);
+                        auto pos = transform.GetPosition();
+                        auto rot = transform.GetRotation();
+                        resonance->SetSourcePosition(resonanceID, pos.x, pos.y, pos.z);
+                        resonance->SetSourceRotation(resonanceID, rot.x, rot.y, rot.z, rot.w);
+                    }
                 }
             }
 
             if (ent.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
                 while (ecs::EventInput::Poll(lock, ent, "/sound/play", event)) {
+                    auto i = std::get_if<int>(&event.data);
+                    auto soundID = soundIDs->at(i ? *i : 0);
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::PlayFromStart, soundID});
                 }
                 while (ecs::EventInput::Poll(lock, ent, "/sound/resume", event)) {
+                    auto i = std::get_if<int>(&event.data);
+                    auto soundID = soundIDs->at(i ? *i : 0);
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Resume, soundID});
                 }
                 while (ecs::EventInput::Poll(lock, ent, "/sound/pause", event)) {
+                    auto i = std::get_if<int>(&event.data);
+                    auto soundID = soundIDs->at(i ? *i : 0);
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Pause, soundID});
                 }
                 while (ecs::EventInput::Poll(lock, ent, "/sound/stop", event)) {
+                    auto i = std::get_if<int>(&event.data);
+                    auto soundID = soundIDs->at(i ? *i : 0);
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Stop, soundID});
                 }
             }
-        }
-
-        ecs::ComponentEvent<ecs::Sound> event;
-        while (soundObserver.Poll(lock, event)) {
-            if (event.type != Tecs::EventType::REMOVED) continue;
-
-            auto it = soundEntityMap.find(event.entity);
-            if (it == soundEntityMap.end()) continue;
-
-            auto &state = sounds.Get(it->second);
-            if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
-
-            sounds.FreeItem(it->second);
-            soundEntityMap.erase(it);
         }
 
         sounds.UpdateIndexes();
