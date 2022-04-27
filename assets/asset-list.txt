@@ -1,3 +1,5 @@
+0884f29190846b325b86d234504cbe8a    audio/click1.ogg
+5e619b4c2544b450419f6e8e2a34ffe8    audio/click2.ogg
 4c3930a4636d2fa48940144a51e784c7    audio/dryer.ogg
 d898941580ba0847b81732689c07b44e    audio/quack.ogg
 184dd045ca32e7a45f28b864e42c246f    audio/test.ogg

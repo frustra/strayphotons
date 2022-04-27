@@ -663,10 +663,16 @@
 				"dynamic": false
 			},
 			"trigger_area": {},
-			"sound": {
-				"file": "quack.ogg",
-				"volume": 0.3
-			},
+			"sound": [
+				{
+					"file": "click1.ogg",
+					"volume": 0.3
+				},
+				{
+					"file": "click2.ogg",
+					"volume": 0.4
+				}
+			],
 			"signal_output": {},
 			"event_input": [
 				"/button/press",
@@ -680,6 +686,12 @@
 					},
 					"global:ship_airlock-button-out/button/press",
 					"global:ship_airlock-button-out/sound/play"
+				],
+				"/trigger/object/leave": [
+					{
+						"target": "global:ship_airlock-button-out/sound/play",
+						"set_value": 1
+					}
 				]
 			},
 			"signal_bindings": {
@@ -915,10 +927,16 @@
 				"dynamic": false
 			},
 			"trigger_area": {},
-			"sound": {
-				"file": "quack.ogg",
-				"volume": 0.3
-			},
+			"sound": [
+				{
+					"file": "click1.ogg",
+					"volume": 0.3
+				},
+				{
+					"file": "click2.ogg",
+					"volume": 0.4
+				}
+			],
 			"signal_output": {},
 			"event_input": [
 				"/button/press",
@@ -932,6 +950,12 @@
 					},
 					"airlock_in_button/button/press",
 					"airlock_in_button/sound/play"
+				],
+				"/trigger/object/leave": [
+					{
+						"target": "airlock_in_button/sound/play",
+						"set_value": 1
+					}
 				]
 			},
 			"signal_bindings": {

@@ -15,10 +15,13 @@
         "dynamic": false
     },
     "trigger_area": {},
-    "sound": {
-        "file": "quack.ogg",
+    "sound": [{
+        "file": "click1.ogg",
         "volume": 0.3
-    },
+    }, {
+        "file": "click2.ogg",
+        "volume": 0.4
+    }],
     "signal_output": {},
     "event_input": [
         "/button/press",
@@ -32,6 +35,12 @@
             }<% } %>,
             <%= name + "/button/press" %>,
             <%= name + "/sound/play" %>
+        ],
+        "/trigger/object/leave": [
+            {
+                "target": <%= name + "/sound/play" %>,
+                "set_value": 1
+            }
         ]
     },
     "signal_bindings": {

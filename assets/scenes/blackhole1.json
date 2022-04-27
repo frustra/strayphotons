@@ -1385,10 +1385,16 @@
 				"dynamic": false
 			},
 			"trigger_area": {},
-			"sound": {
-				"file": "quack.ogg",
-				"volume": 0.3
-			},
+			"sound": [
+				{
+					"file": "click1.ogg",
+					"volume": 0.3
+				},
+				{
+					"file": "click2.ogg",
+					"volume": 0.4
+				}
+			],
 			"signal_output": {},
 			"event_input": [
 				"/button/press",
@@ -1402,6 +1408,12 @@
 					},
 					"flashlight_button/button/press",
 					"flashlight_button/sound/play"
+				],
+				"/trigger/object/leave": [
+					{
+						"target": "flashlight_button/sound/play",
+						"set_value": 1
+					}
 				]
 			},
 			"signal_bindings": {
