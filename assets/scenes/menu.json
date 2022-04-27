@@ -1065,9 +1065,9 @@
 			"name": "articulating_arm",
 			"transform": {
 				"translate": [
-					0.5,
+					0.2,
 					0.82,
-					0.5
+					0.2
 				],
 				"scale": [
 					2,
@@ -1084,12 +1084,42 @@
 			}
 		},
 		{
+			"name": "laser-mount-1",
 			"transform": {
 				"parent": "articulating_arm.arm.Ball_1",
 				"translate": [
 					0,
-					0.04,
+					0.037,
 					0
+				]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "laser-plug-mount",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"parent": "laser-mount-1"
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "laser-plug",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"parent": "laser-mount-1",
+				"translate": [
+					0,
+					0,
+					-0.01
 				]
 			},
 			"laser_line": {},

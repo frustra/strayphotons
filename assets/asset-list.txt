@@ -110,6 +110,8 @@ b9efa01538a25b9cc219bb8359c42406    models/extrusion.glb
 b67e4c2ed71bb8441c2a55fe6da9d294    models/ground-3x3/ground-3x3.gltf
 aa95568f5f7dea1aa58d0083da7355a1    models/ground-3x3/ground-3x3.mtl
 5d504b5392a911a51a44b81e0a75cdda    models/ground-3x3/ground-3x3.obj
+b950bca1f3708d53494a4dff80b9f118    models/laser-plug.glb
+3000dfb30813452012abc6648a0ec131    models/laser-plug-mount.glb
 999fc11888892c457fdad9016901eae5    models/ledge-caged-1x0.5/ledge-caged-1x0.5.bin
 9b748eefcc87d00cb79897048cbca197    models/ledge-caged-1x0.5/ledge-caged-1x0.5.gltf
 70e55960224729ea1f80b2dda9039b68    models/ledge-caged-1x0.5/ledge-caged-1x0.5.mtl
