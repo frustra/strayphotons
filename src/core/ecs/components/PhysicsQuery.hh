@@ -34,7 +34,7 @@ namespace ecs {
         struct Sweep {
             PhysicsShape shape;
             PhysicsGroupMask filterGroup;
-            Transform sweepDirection;
+            glm::vec3 sweepDirection;
             float maxDistance;
 
             bool operator==(const Sweep &other) const {
@@ -50,9 +50,9 @@ namespace ecs {
             std::optional<Result> result;
 
             Sweep(const PhysicsShape &shape,
+                float maxDistance,
                 PhysicsGroupMask filterGroup = PHYSICS_GROUP_WORLD,
-                float maxDistance = 0.0f,
-                Transform sweepDirection = Transform())
+                glm::vec3 sweepDirection = glm::vec3(0, 0, -1))
                 : shape(shape), filterGroup(filterGroup), sweepDirection(sweepDirection), maxDistance(maxDistance) {}
         };
 

@@ -65,8 +65,6 @@ namespace sp {
         CharacterControllerUserData(ecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
     };
 
-    physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape);
-
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager(bool stepMode);
@@ -91,6 +89,8 @@ namespace sp {
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, size_t meshIndex, bool decomposeHull);
         bool LoadCollisionCache(ConvexHullSet &set, const Gltf &model, size_t meshIndex, bool decomposeHull);
         void SaveCollisionCache(const Gltf &model, size_t meshIndex, const ConvexHullSet &set, bool decomposeHull);
+
+        physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape);
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
@@ -141,4 +141,5 @@ namespace sp {
         friend class PhysicsQuerySystem;
         friend class LaserSystem;
     };
+
 } // namespace sp

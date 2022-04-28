@@ -138,6 +138,14 @@ namespace ecs {
         return glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
     }
 
+    glm::vec3 Transform::operator*(const glm::vec4 &rhs) const {
+        return matrix * rhs;
+    }
+
+    Transform Transform::operator*(const Transform &rhs) const {
+        return Transform(matrix * glm::mat4(rhs.matrix));
+    }
+
     bool Transform::operator==(const Transform &other) const {
         return matrix == other.matrix;
     }

@@ -226,7 +226,7 @@ namespace sp {
 
         { // Sync ECS state from physx
             ZoneScopedN("Sync to ECS");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+            auto lock = ecs::World.StartTransaction<ecs::Read<
                                                         ecs::SignalOutput,
                                                         ecs::SignalBindings,
                                                         ecs::EventBindings,
@@ -243,7 +243,7 @@ namespace sp {
                     ecs::LaserSensor,
                     ecs::SignalOutput,
                     ecs::EventInput,
-                    ecs::Script>>();
+                    ecs::Script>, ecs::PhysicsUpdateLock>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
@@ -492,30 +492,8 @@ namespace sp {
             }
         }
         for (auto &shape : ph.shapes) {
-            PxShape *pxShape = std::visit(
-                [&actor, &mat](auto &&shape) {
-                    using T = std::decay_t<decltype(shape)>;
-                    if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
-                        return PxRigidActorExt::createExclusiveShape(*actor, PxSphereGeometry(shape.radius), *mat);
-                    } else if constexpr (std::is_same<ecs::PhysicsShape::Capsule, T>()) {
-                        return PxRigidActorExt::createExclusiveShape(*actor,
-                            PxCapsuleGeometry(shape.radius, shape.height * 0.5f),
-                            *mat);
-                    } else if constexpr (std::is_same<ecs::PhysicsShape::Box, T>()) {
-                        return PxRigidActorExt::createExclusiveShape(*actor,
-                            PxBoxGeometry(GlmVec3ToPxVec3(shape.extents * 0.5f)),
-                            *mat);
-                    } else if constexpr (std::is_same<ecs::PhysicsShape::Plane, T>()) {
-                        return PxRigidActorExt::createExclusiveShape(*actor, PxPlaneGeometry(), *mat);
-                    } else if constexpr (std::is_same<ecs::PhysicsShape::ConvexMesh, T>()) {
-                        // Skip meshes, since it will be handled above.
-                        return (PxShape *)nullptr;
-                    } else {
-                        Errorf("Unknown PhysicsShape type: %s", typeid(T).name());
-                        return (PxShape *)nullptr;
-                    }
-                },
-                shape.shape);
+            if (std::holds_alternative<ecs::PhysicsShape::ConvexMesh>(shape.shape)) continue;
+            PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor, GeometryFromShape(shape).any(), *mat);
             if (pxShape) {
                 PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
                     GlmQuatToPxQuat(shape.transform.GetRotation()));
@@ -735,5 +713,31 @@ namespace sp {
 
             out.close();
         }
+    }
+
+    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape) {
+        auto scale = shape.transform.GetScale();
+        return std::visit(
+            [this, &scale](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
+                    auto avgScale = (scale.x + scale.y + scale.z) / 3.0f;
+                    return PxGeometryHolder(PxSphereGeometry(avgScale * arg.radius));
+                } else if constexpr (std::is_same<ecs::PhysicsShape::Capsule, T>()) {
+                    auto avgScaleYZ = (scale.y + scale.z) / 2.0f;
+                    return PxGeometryHolder(PxCapsuleGeometry(avgScaleYZ * arg.radius, scale.x * arg.height * 0.5f));
+                } else if constexpr (std::is_same<ecs::PhysicsShape::Box, T>()) {
+                    return PxGeometryHolder(PxBoxGeometry(GlmVec3ToPxVec3(scale * arg.extents * 0.5f)));
+                } else if constexpr (std::is_same<ecs::PhysicsShape::Plane, T>()) {
+                    return PxGeometryHolder(PxPlaneGeometry());
+                } else if constexpr (std::is_same<ecs::PhysicsShape::ConvexMesh, T>()) {
+                    Errorf("PhysxManager::GeometryFromShape does not support PhysicsShape::ConvexMesh");
+                    return PxGeometryHolder();
+                } else {
+                    Errorf("Unknown PhysicsShape type: %s", typeid(T).name());
+                    return PxGeometryHolder();
+                }
+            },
+            shape.shape);
     }
 } // namespace sp

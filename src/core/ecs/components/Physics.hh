@@ -53,9 +53,13 @@ namespace ecs {
         struct ConvexMesh {
             sp::AsyncPtr<sp::Gltf> model;
             size_t meshIndex = 0;
+            bool decomposeHull = false;
 
             ConvexMesh() {}
-            ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : model(model), meshIndex(meshIndex) {}
+            ConvexMesh(sp::AsyncPtr<sp::Gltf> model,
+                size_t meshIndex = 0,
+                bool decomposeHull = false)
+                : model(model), meshIndex(meshIndex), decomposeHull(decomposeHull) {}
         };
 
         std::variant<std::monostate, Sphere, Capsule, Box, Plane, ConvexMesh> shape;

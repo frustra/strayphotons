@@ -14,7 +14,7 @@
 namespace ecs {
     class ScriptState;
 
-    using PhysicsUpdateLock = Lock<Read<Name>, Write<TransformTree, Physics, PhysicsQuery>>;
+    using PhysicsUpdateLock = Lock<Read<Name, TransformSnapshot>, Write<TransformTree, Physics, PhysicsQuery, VoxelArea>>;
 
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;

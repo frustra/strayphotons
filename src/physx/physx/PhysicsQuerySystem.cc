@@ -58,25 +58,18 @@ namespace sp {
                                 PxFilterData filterData;
                                 filterData.word0 = (uint32_t)arg.filterGroup;
 
-                                glm::vec3 rayStart = transform.GetPosition();
-                                glm::vec3 rayDir = transform.GetForward();
-                                PxSweepBuffer hit;
-                                // GeometryFromShape
-                                PxCapsuleGeometry capsuleGeometry(ecs::PLAYER_RADIUS, currentHeight * 0.5f);
-                                auto sweepDist = targetHeight - currentHeight + contactOffset;
-                                bool status = manager.scene->sweep(capsuleGeometry,
-                                    actor->getGlobalPose(),
-                                    PxVec3(0, 1, 0),
-                                    sweepDist,
-                                    hit,
-                                    PxHitFlags(),
-                                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                                auto shapeTransform = transform * arg.shape.transform;
+                                PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                                    GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                                glm::vec3 sweepDir = transform * glm::vec4(arg.sweepDirection, 0.0f);
 
-                                bool status = manager.scene->sweep(GlmVec3ToPxVec3(rayStart),
-                                    GlmVec3ToPxVec3(rayDir),
+                                PxSweepBuffer hit;
+                                bool status = manager.scene->sweep(manager.GeometryFromShape(arg.shape).any(),
+                                    pxTransform,
+                                    GlmVec3ToPxVec3(sweepDir),
                                     arg.maxDistance,
                                     hit,
-                                    PxHitFlags(),
+                                    PxHitFlag::ePOSITION,
                                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
                                 if (status) {
@@ -86,13 +79,37 @@ namespace sp {
                                         if (userData) {
                                             auto &result = arg.result.emplace();
                                             result.target = userData->entity;
-                                            result.position = rayDir * hit.block.distance + rayStart;
+                                            result.position = PxVec3ToGlmVec3(hit.block.position);
                                             result.distance = hit.block.distance;
                                         }
                                     }
                                 }
                             }
                         } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Overlap>) {
+                            if (entity.Has<ecs::TransformSnapshot>(lock)) {
+                                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+
+                                PxFilterData filterData;
+                                filterData.word0 = (uint32_t)arg.filterGroup;
+
+                                auto shapeTransform = transform * arg.shape.transform;
+                                PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                                    GlmQuatToPxQuat(shapeTransform.GetRotation()));
+
+                                PxOverlapBuffer hit;
+                                bool status = manager.scene->overlap(manager.GeometryFromShape(arg.shape).any(),
+                                    pxTransform,
+                                    hit,
+                                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+
+                                if (status) {
+                                    physx::PxRigidActor *hitActor = hit.block.actor;
+                                    if (hitActor) {
+                                        auto userData = (ActorUserData *)hitActor->userData;
+                                        if (userData) arg.result.emplace(userData->entity);
+                                    }
+                                }
+                            }
                         } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Mass>) {
                             auto target = arg.targetActor.Get(lock);
                             if (target) {
