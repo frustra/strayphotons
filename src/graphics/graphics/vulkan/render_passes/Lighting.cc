@@ -29,7 +29,6 @@ namespace sp::vulkan::renderer {
 
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
-        shadowAtlasSize = glm::ivec2(0, 0);
         gelTextureCache.clear();
         lights.clear();
 
@@ -63,7 +62,6 @@ namespace sp::vulkan::renderer {
             auto &view = views[lights.size() - 1];
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
-            view.offset = {shadowAtlasSize.x, 0};
             view.clip = light.shadowMapClip;
             view.UpdateProjectionMatrix();
             view.UpdateViewMatrix(lock, entity);
@@ -77,7 +75,6 @@ namespace sp::vulkan::renderer {
             data.invProj = view.invProjMat;
             data.view = view.viewMat;
             data.clip = view.clip;
-            data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
             auto viewBounds = glm::vec2(data.invProj[0][0], data.invProj[1][1]) * data.clip.x;
             data.bounds = {-viewBounds, viewBounds * 2.0f};
             data.intensity = light.intensity;
@@ -89,8 +86,6 @@ namespace sp::vulkan::renderer {
                 vLight.gelTexture = &gelTextureCache[gelName].index;
             }
 
-            shadowAtlasSize.x += extent;
-            if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
             if (lights.size() >= MAX_LIGHTS) break;
         }
 
@@ -149,7 +144,6 @@ namespace sp::vulkan::renderer {
             int extent = (int)std::pow(2, light.shadowMapSize);
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
-            view.offset = {shadowAtlasSize.x, 0};
             view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
             view.projMat = makeOpticProjectionMatrix(view.clip,
                 glm::vec4(lightViewMirrorPos.x + glm::vec2(-0.5, 0.5), lightViewMirrorPos.y + glm::vec2(-0.5, 0.5)));
@@ -164,7 +158,6 @@ namespace sp::vulkan::renderer {
             data.invProj = view.invProjMat;
             data.view = view.viewMat;
             data.clip = view.clip;
-            data.mapOffset = {shadowAtlasSize.x, 0, extent, extent};
             data.bounds = {lightViewMirrorPos.x - 0.5, lightViewMirrorPos.y - 0.5, 1, 1};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
@@ -174,16 +167,10 @@ namespace sp::vulkan::renderer {
                 vLight.gelName = light.gelName;
                 vLight.gelTexture = &gelTextureCache[light.gelName].index;
             }
-
-            shadowAtlasSize.x += extent;
-            if (extent > shadowAtlasSize.y) shadowAtlasSize.y = extent;
         }
 
-        glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
-        for (uint32_t i = 0; i < lights.size(); i++) {
-            gpuData.lights[i].mapOffset /= mapOffsetScale;
-        }
         gpuData.count = lights.size();
+        AllocateShadowMap();
 
         graph.AddPass("LightState")
             .Build([&](rg::PassBuilder &builder) {
@@ -192,6 +179,53 @@ namespace sp::vulkan::renderer {
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 resources.GetBuffer("LightState")->CopyFrom(&gpuData);
             });
+    }
+
+    void Lighting::AllocateShadowMap() {
+        uint64 totalPixels = 0;
+        for (uint32 i = 0; i < lights.size(); i++) {
+            auto extents = views[i].extents;
+            totalPixels += extents.x * extents.y;
+        }
+
+        uint32 width = CeilToPowerOfTwo((uint32)sqrt((double)totalPixels));
+        shadowAtlasSize = glm::ivec2(width, width);
+
+        freeRectangles.clear();
+        freeRectangles.push_back({{0, 0}, {width, width}});
+
+        glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
+        for (uint32 i = 0; i < lights.size(); i++) {
+            auto extents = views[i].extents;
+            int rectIndex = -1;
+            for (int r = freeRectangles.size() - 1; r >= 0; r--) {
+                if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, extents))) {
+                    if (rectIndex == -1 ||
+                        glm::all(glm::lessThan(freeRectangles[r].second, freeRectangles[rectIndex].second))) {
+                        rectIndex = r;
+                    }
+                }
+            }
+            Assert(rectIndex >= 0, "ran out of shadow map space");
+
+            while (glm::all(glm::greaterThan(freeRectangles[rectIndex].second, extents))) {
+                auto rect = freeRectangles[rectIndex];
+                auto freeExtent = rect.second - rect.second / 2;
+                rect.second /= 2;
+                freeRectangles[rectIndex].second = rect.second;
+
+                freeRectangles.push_back({{rect.first.x, rect.first.y + rect.second.y}, {rect.second.x, freeExtent.y}});
+                freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y}, {freeExtent.x, rect.second.y}});
+                freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y + rect.second.y}, freeExtent});
+            }
+
+            auto rect = freeRectangles[rectIndex];
+            views[i].offset = rect.first;
+            gpuData.lights[i].mapOffset = glm::vec4{rect.first.x, rect.first.y, rect.second.x, rect.second.y} /
+                                          mapOffsetScale;
+
+            freeRectangles.erase(freeRectangles.begin() + rectIndex);
+        }
     }
 
     void Lighting::AddGelTextures(RenderGraph &graph) {
