@@ -12,18 +12,6 @@
 			}
 		},
 		{
-			"sound": {
-				"file": "dryer.ogg",
-				"type": "ambisonic",
-				"volume": 0.1,
-				"loop": true,
-				"play_on_load": true
-			},
-			"transform": {
-				"translate": [0, 1, -4]
-			}
-		},
-		{
 			"transform": {
 				"translate": [3.8, 1, -2.8],
 				"rotate": [[-45, 0, 1, 0], [-45, 1, 0, 0]]
