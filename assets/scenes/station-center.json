@@ -1154,6 +1154,11 @@
 					0
 				]
 			},
+			"sound": {
+				"file": "dryer.ogg",
+				"type": "ambisonic",
+				"volume": 0.1
+			},
 			"animation": {
 				"interpolation": "cubic",
 				"states": [
@@ -1211,7 +1216,13 @@
 					}
 				]
 			},
-			"signal_output": {}
+			"signal_output": {},
+			"event_input": [
+				"/sound/play"
+			],
+			"script": {
+				"onTick": "elevator"
+			}
 		},
 		{
 			"name": "elevator_platform",

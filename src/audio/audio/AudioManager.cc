@@ -9,6 +9,8 @@
 #include <soundio/soundio.h>
 
 namespace sp {
+    static CVar<float> CVarVolume("s.Volume", 1.0f, "Global volume control");
+
     AudioManager::AudioManager()
         : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), decoderQueue("AudioDecode") {
         StartThread();
@@ -160,7 +162,7 @@ namespace sp {
                 }
 
                 if (resonanceID != -1) {
-                    resonance->SetSourceVolume(resonanceID, source.volume);
+                    resonance->SetSourceVolume(resonanceID, source.volume * std::min(10.0f, CVarVolume.Get()));
 
                     if (ent.Has<ecs::Transform>(lock)) {
                         auto &transform = ent.Get<ecs::Transform>(lock);
