@@ -20,6 +20,7 @@ namespace sp::vulkan::renderer {
         void AddLightingPass(RenderGraph &graph);
 
     private:
+        void AllocateShadowMap();
         GPUScene &scene;
 
         glm::ivec2 shadowAtlasSize = {};
@@ -38,6 +39,7 @@ namespace sp::vulkan::renderer {
         std::array<ecs::View, MAX_LIGHTS> views;
         std::vector<VirtualLight> lights;
         std::vector<VirtualLight> readbackLights;
+        std::vector<std::pair<glm::ivec2, glm::ivec2>> freeRectangles;
 
         struct GPULight {
             glm::vec3 position;
