@@ -13,12 +13,6 @@ namespace sp {
     class Gltf;
 }
 
-namespace physx {
-    class PxRigidActor;
-    class PxScene;
-    class PxControllerManager;
-} // namespace physx
-
 namespace ecs {
     enum class PhysicsGroup : uint16_t {
         NoClip = 0,
@@ -117,26 +111,8 @@ namespace ecs {
         }
     };
 
-    struct PhysicsQuery {
-        // Raycast query inputs
-        float raycastQueryDistance = 0.0f;
-        PhysicsGroupMask raycastQueryFilterGroup = PHYSICS_GROUP_WORLD;
-        // Raycast outputs
-        Entity raycastHitTarget;
-        glm::vec3 raycastHitPosition;
-        float raycastHitDistance = 0.0f;
-
-        // Center of mass query
-        Entity centerOfMassQuery;
-        // The calculated center of mass of the object (relative to its Transform)
-        glm::vec3 centerOfMass;
-    };
-
     static Component<Physics> ComponentPhysics("physics");
-    static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
 
     template<>
     bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);
-    template<>
-    bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &dst, const picojson::value &src);
 } // namespace ecs

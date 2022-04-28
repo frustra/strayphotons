@@ -65,6 +65,8 @@ namespace sp {
         CharacterControllerUserData(ecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
     };
 
+    physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape);
+
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager(bool stepMode);

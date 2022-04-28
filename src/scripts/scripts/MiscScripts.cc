@@ -139,13 +139,12 @@ namespace sp::scripts {
                     glm::vec3 centerOfMass;
                     if (ent.Has<PhysicsQuery>(lock)) {
                         auto &query = ent.Get<PhysicsQuery>(lock);
-                        if (!query.centerOfMassQuery) {
-                            query.centerOfMassQuery = ent;
-                        } else if (query.centerOfMassQuery != ent) {
-                            Abortf("PhysicsQuery is pointing to wrong entity for interactive_object: %s",
-                                ToString(lock, ent));
+                        ecs::PhysicsQuery::Mass massQuery(ent);
+                        auto existingQuery = query.ReadQuery(massQuery);
+                        if (!existingQuery) {
+                            query.queries.emplace_back(massQuery);
                         } else {
-                            centerOfMass = query.centerOfMass;
+                            if (massQuery.result) centerOfMass = massQuery.result->centerOfMass;
                         }
                     }
 
@@ -259,6 +258,17 @@ namespace sp::scripts {
                     ScriptData scriptData;
                     if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
+                    auto grabDistance = state.GetParam<double>("grab_distance");
+
+                    ecs::PhysicsQuery::Raycast::Result raycastResult;
+                    ecs::PhysicsQuery::Raycast raycastQuery(grabDistance, PHYSICS_GROUP_WORLD);
+                    auto existingQuery = query.ReadQuery(raycastQuery);
+                    if (!existingQuery) {
+                        query.queries.emplace_back(raycastQuery);
+                    } else if (raycastQuery.result) {
+                        raycastResult = raycastQuery.result.value();
+                    }
+
                     Event event;
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
@@ -271,13 +281,13 @@ namespace sp::scripts {
                                     Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                 scriptData.grabEntity = {};
                             }
-                            if (grabEvent && query.raycastHitTarget) {
+                            if (grabEvent && raycastResult.target) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
-                                        query.raycastHitTarget,
+                                        raycastResult.target,
                                         INTERACT_EVENT_INTERACT_GRAB,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    scriptData.grabEntity = query.raycastHitTarget;
+                                    scriptData.grabEntity = raycastResult.target;
                                 }
                             }
                         } else {
@@ -295,20 +305,20 @@ namespace sp::scripts {
                         }
                     }
 
-                    if (scriptData.pointEntity && query.raycastHitTarget != scriptData.pointEntity) {
+                    if (scriptData.pointEntity && raycastResult.target != scriptData.pointEntity) {
                         EventBindings::SendEvent(lock,
                             scriptData.pointEntity,
                             INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
-                    } else if (query.raycastHitTarget) {
+                    } else if (raycastResult.target) {
                         ecs::Transform pointTransfrom = transform;
-                        pointTransfrom.SetPosition(query.raycastHitPosition);
+                        pointTransfrom.SetPosition(raycastResult.position);
                         EventBindings::SendEvent(lock,
-                            query.raycastHitTarget,
+                            raycastResult.target,
                             INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransfrom});
                     }
-                    scriptData.pointEntity = query.raycastHitTarget;
+                    scriptData.pointEntity = raycastResult.target;
 
                     state.userData = scriptData;
                 }

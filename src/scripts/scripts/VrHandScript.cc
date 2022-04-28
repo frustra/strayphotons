@@ -6,8 +6,8 @@
 #include "game/Scene.hh"
 
 namespace ecs {
-    InternalScript vrHandScript("vr_hand",
-        [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+    InternalPhysicsScript vrHandScript("vr_hand",
+        [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             auto handStr = state.GetParam<std::string>("hand");
             sp::to_lower(handStr);
             ecs::Name inputScope("input", "");

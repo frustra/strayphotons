@@ -13,6 +13,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     OpticalElement.cc
     Physics.cc
     PhysicsJoints.cc
+    PhysicsQuery.cc
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc

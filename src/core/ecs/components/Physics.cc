@@ -185,12 +185,4 @@ namespace ecs {
         }
         return true;
     }
-
-    template<>
-    bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &query, const picojson::value &src) {
-        for (auto param : src.get<picojson::object>()) {
-            if (param.first == "raycast") { query.raycastQueryDistance = param.second.get<double>(); }
-        }
-        return true;
-    }
 } // namespace ecs

@@ -29,7 +29,10 @@
                     "parameters": { "relative_to": "player:flatview" }
                 },
                 { "onTick": "camera_view" },
-                { "onTick": "interact_handler" }
+                {
+                    "onTick": "interact_handler",
+                    "parameters": { "grab_distance": 2.0 }
+                }
             ],
             "event_input": [
                 "/script/camera_rotate",
@@ -37,9 +40,7 @@
                 "/interact/rotate"
             ],
             "focus": "GAME",
-            "physics_query": {
-                "raycast": 2.0
-            },
+            "physics_query": {},
             "signal_output": {}
         },
         {

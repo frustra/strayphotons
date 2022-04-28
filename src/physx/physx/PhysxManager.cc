@@ -242,7 +242,8 @@ namespace sp {
                     ecs::LaserLine,
                     ecs::LaserSensor,
                     ecs::SignalOutput,
-                    ecs::EventInput>>();
+                    ecs::EventInput,
+                    ecs::Script>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
@@ -279,6 +280,14 @@ namespace sp {
             constraintSystem.BreakConstraints(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
+
+            {
+                ZoneScopedN("Script::OnPhysicsUpdate");
+                for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
+                    auto &script = entity.Get<ecs::Script>(lock);
+                    script.OnPhysicsUpdate(lock, entity, interval);
+                }
+            }
 
             auto debugLines = debugLineEntity.Get(lock);
             if (debugLines.Has<ecs::LaserLine>(lock)) {
