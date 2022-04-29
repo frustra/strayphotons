@@ -73,13 +73,20 @@
                 "rotate": [180, 0, 1, 0],
                 "translate": [0, 0, 0.2]
             },
+            "physics": {
+                "group": "player_hands",
+                "linear_damping": 10,
+                "angular_damping": 10,
+                "_constraint": "input:vr_actions_main_in_lefthand_anim",
+                "kinematic": true
+            },
+            "physics_query": {},
             "script": [
                 {
                     "prefab": "gltf",
                     "parameters": {
                         "model": "vr_glove_left",
-                        "render": true,
-                        "physics": "dynamic"
+                        "render": true
                     }
                 },
                 {
@@ -97,14 +104,20 @@
                 "rotate": [180, 0, 1, 0],
                 "translate": [0, 0, 0.2]
             },
-            "physics": {},
+            "physics": {
+                "group": "player_hands",
+                "linear_damping": 10,
+                "angular_damping": 10,
+                "_constraint": "input:vr_actions_main_in_righthand_anim",
+                "kinematic": true
+            },
+            "physics_query": {},
             "script": [
                 {
                     "prefab": "gltf",
                     "parameters": {
                         "model": "vr_glove_right",
-                        "render": true,
-                        "physics": "dynamic"
+                        "render": true
                     }
                 },
                 {

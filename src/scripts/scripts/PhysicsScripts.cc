@@ -113,7 +113,6 @@ namespace ecs {
                     };
 
                     auto &rootTransform = ent.Get<TransformSnapshot>(lock);
-                    auto invRootTransform = rootTransform.GetInverse();
 
                     auto shapeForBone = [&](const TransformTree &bone, const SegmentProperties &segment) {
                         auto globalTransform = bone.GetGlobalTransform(lock);
@@ -134,7 +133,8 @@ namespace ecs {
                             return shape;
                         }
 
-                        shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
+                        // shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
+                        shape.shape = PhysicsShape::Box(glm::vec3(boneLength, segment.radius, segment.radius));
 
                         glm::vec3 boneVector = parentTransform.GetPosition() - globalTransform.GetPosition();
                         // Place the center of the capsule halfway between this bone and its parent

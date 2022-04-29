@@ -78,6 +78,7 @@ namespace ecs {
     bool Component<Physics>::Load(const EntityScope &scope, Physics &physics, const picojson::value &src) {
         auto scene = scope.scene.lock();
         for (auto param : src.get<picojson::object>()) {
+            if (sp::starts_with(param.first, "_")) continue;
             if (param.first == "shapes") {
                 if (param.second.is<picojson::object>()) {
                     PhysicsShape shape;
