@@ -8,7 +8,7 @@
 namespace ecs {
     std::array physicsScripts = {
         InternalPhysicsScript("voxel_controller",
-        [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<TransformTree, VoxelArea>(lock)) {
                     auto &transform = ent.Get<TransformTree>(lock);
                     auto &voxelArea = ent.Get<VoxelArea>(lock);
@@ -74,69 +74,131 @@ namespace ecs {
                 }
             }),
         InternalPhysicsScript("vr_hand",
-        [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            auto handStr = state.GetParam<std::string>("hand");
-            sp::to_lower(handStr);
-            ecs::Name inputScope("input", "");
-            if (handStr == "left") {
-                handStr = "l";
-                inputScope.entity = "vr_actions_main_in_lefthand_anim";
-            } else if (handStr == "right") {
-                handStr = "r";
-                inputScope.entity = "vr_actions_main_in_righthand_anim";
-            } else {
-                Abortf("Invalid hand specified for VrHand script: %s", handStr);
-            }
-
-            auto scene = state.scope.scene.lock();
-            Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
-
-            std::array<std::string, 5> fingerNames = {"thumb", "index", "middle", "ring", "pinky"};
-            std::array<std::string, 5> fingerSegmentNames = {
-                "meta_" + handStr,
-                "0_" + handStr,
-                "1_" + handStr,
-                "2_" + handStr,
-                handStr + "_end",
-            };
-
-            for (auto &fingerName : fingerNames) {
-                for (auto &segmentName : fingerSegmentNames) {
-                    std::string boneName = "finger_" + fingerName + "_" + segmentName;
-                    ecs::Name inputName(boneName, inputScope);
-
-                    EntityRef inputEntity(inputName);
-                    if (!inputEntity) {
-                        Errorf("VrHand script has invalid input entity: %s", inputName.String());
-                        continue;
+            [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+                if (ent.Has<Name, Physics, PhysicsQuery>(lock)) {
+                    auto handStr = state.GetParam<std::string>("hand");
+                    sp::to_lower(handStr);
+                    ecs::Name inputScope("input", "");
+                    if (handStr == "left") {
+                        handStr = "l";
+                        inputScope.entity = "vr_actions_main_in_lefthand_anim";
+                    } else if (handStr == "right") {
+                        handStr = "r";
+                        inputScope.entity = "vr_actions_main_in_righthand_anim";
+                    } else {
+                        Abortf("Invalid hand specified for VrHand script: %s", handStr);
                     }
 
-                    // Physics physics;
-                    // physics.shapes.emplace_back(PhysicsShape::Capsule(0.5f, 0.01f));
+                    auto scene = state.scope.scene.lock();
+                    Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
 
-                    // physics.constraint = inputEntity;
-                    // physics.group = PhysicsGroup::Player;
-                    // Component<Physics>::Apply(physics, lock, physicsEnt);
+                    auto &prefabName = ent.Get<Name>(lock);
+                    ecs::Name physicsScope(state.scope.prefix.scene, prefabName.entity);
+
+                    auto &ph = ent.Get<Physics>(lock);
+                    // auto &query = ent.Get<PhysicsQuery>(lock);
+
+                    std::array<std::string, 5> fingerNames = {"thumb", "index", "middle", "ring", "pinky"};
+                    struct SegmentProperties {
+                        std::string name;
+                        float radius;
+                        glm::vec3 offset;
+                    };
+                    std::array fingerSegments = {
+                        SegmentProperties{"meta_" + handStr, 0.015f, glm::vec3(0)},
+                        SegmentProperties{"0_" + handStr, 0.015f, glm::vec3(0)},
+                        SegmentProperties{"1_" + handStr, 0.01f, glm::vec3(0)},
+                        SegmentProperties{"2_" + handStr, 0.01f, glm::vec3(0)},
+                        SegmentProperties{handStr + "_end", 0.008f, glm::vec3(0)},
+                    };
+
+                    auto &rootTransform = ent.Get<TransformSnapshot>(lock);
+                    auto invRootTransform = rootTransform.GetInverse();
+
+                    auto shapeForBone = [&](const TransformTree &bone, const SegmentProperties &segment) {
+                        auto globalTransform = bone.GetGlobalTransform(lock);
+                        PhysicsShape shape;
+                        shape.transform = globalTransform;
+                        shape.transform.Translate(-rootTransform.GetPosition());
+
+                        auto parentEntity = bone.parent.Get(lock);
+                        if (!parentEntity.Has<TransformTree>(lock)) {
+                            shape.shape = PhysicsShape::Sphere(segment.radius);
+                            return shape;
+                        }
+                        auto parentTransform = parentEntity.Get<const TransformTree>(lock).GetGlobalTransform(lock);
+
+                        float boneLength = glm::length(bone.pose.GetPosition());
+                        if (boneLength <= 0.000001f) {
+                            shape.shape = PhysicsShape::Sphere(segment.radius);
+                            return shape;
+                        }
+
+                        shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
+
+                        glm::vec3 boneVector = parentTransform.GetPosition() - globalTransform.GetPosition();
+                        // Place the center of the capsule halfway between this bone and its parent
+                        shape.transform.Translate(boneVector * 0.5f);
+                        // Rotate the capsule so it's aligned with the bone vector
+                        shape.transform.SetRotation(
+                            glm::quat(glm::vec3(1, 0, 0), rootTransform.GetRotation() * boneVector));
+                        return shape;
+                    };
+
+                    ph.shapes.clear();
+                    for (auto &fingerName : fingerNames) {
+                        for (auto &segment : fingerSegments) {
+                            std::string boneName = "finger_" + fingerName + "_" + segment.name;
+                            ecs::Name inputName(boneName, inputScope);
+                            ecs::Name physicsName(boneName, physicsScope);
+
+                            EntityRef inputEntity(inputName);
+                            if (!inputEntity) {
+                                Errorf("VrHand script has invalid input entity: %s", inputName.String());
+                                continue;
+                            }
+
+                            EntityRef physicsEntity(physicsName);
+                            if (!physicsEntity) {
+                                Errorf("VrHand script has invalid physics entity: %s", physicsName.String());
+                                continue;
+                            }
+
+                            auto physicsEnt = physicsEntity.Get(lock);
+                            if (physicsEnt.Has<TransformTree>(lock)) {
+                                auto &boneTransform = physicsEnt.Get<const TransformTree>(lock);
+                                ph.shapes.push_back(shapeForBone(boneTransform, segment));
+                            }
+                        }
+                    }
+
+                    {
+                        ecs::Name inputName("wrist_" + handStr, inputScope);
+                        ecs::Name physicsName("wrist_" + handStr, physicsScope);
+
+                        EntityRef inputEntity(inputName);
+                        if (!inputEntity) {
+                            Errorf("VrHand script has invalid input entity: %s", inputName.String());
+                            return;
+                        }
+
+                        EntityRef physicsEntity(physicsName);
+                        if (!physicsEntity) {
+                            Errorf("VrHand script has invalid physics entity: %s", physicsName.String());
+                            return;
+                        }
+
+                        auto physicsEnt = physicsEntity.Get(lock);
+                        if (physicsEnt.Has<TransformSnapshot>(lock)) {
+                            auto &shape = ph.shapes.emplace_back(PhysicsShape::Box(glm::vec3(0.04, 0.07, 0.06)));
+                            auto &phTransform = physicsEnt.Get<TransformSnapshot>(lock);
+                            shape.transform = phTransform;
+                            shape.transform.Translate(-rootTransform.GetPosition());
+                            shape.transform.Translate(
+                                rootTransform * glm::vec4(phTransform.GetRotation() * glm::vec3(0.01, 0.0, 0.01), 0));
+                        }
+                    }
                 }
-            }
-
-            {
-                ecs::Name inputName("wrist_" + handStr, inputScope);
-
-                EntityRef inputEntity(inputName);
-                if (!inputEntity) {
-                    Errorf("VrHand script has invalid input entity: %s", inputName.String());
-                    return;
-                }
-
-                // Physics physics;
-                // auto &boxShape = physics.shapes.emplace_back(PhysicsShape::Box(glm::vec3(0.04, 0.095, 0.11)));
-                // boxShape.transform.Translate(glm::vec3(0.005, 0.01, 0.03));
-
-                // physics.constraint = inputEntity;
-                // physics.group = PhysicsGroup::PlayerHands;
-                // Component<Physics>::Apply(physics, lock, physicsEnt);
-            }
-        }),
+            }),
     };
 } // namespace ecs

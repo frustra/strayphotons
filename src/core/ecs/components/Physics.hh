@@ -56,9 +56,7 @@ namespace ecs {
             bool decomposeHull = false;
 
             ConvexMesh() {}
-            ConvexMesh(sp::AsyncPtr<sp::Gltf> model,
-                size_t meshIndex = 0,
-                bool decomposeHull = false)
+            ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0, bool decomposeHull = false)
                 : model(model), meshIndex(meshIndex), decomposeHull(decomposeHull) {}
         };
 
@@ -66,10 +64,10 @@ namespace ecs {
         Transform transform;
 
         PhysicsShape() : shape(std::monostate()) {}
-        PhysicsShape(Sphere sphere) : shape(sphere) {}
-        PhysicsShape(Capsule capsule) : shape(capsule) {}
-        PhysicsShape(Box box) : shape(box) {}
-        PhysicsShape(Plane plane) : shape(plane) {}
+        PhysicsShape(Sphere sphere, Transform transform = Transform()) : shape(sphere), transform(transform) {}
+        PhysicsShape(Capsule capsule, Transform transform = Transform()) : shape(capsule), transform(transform) {}
+        PhysicsShape(Box box, Transform transform = Transform()) : shape(box), transform(transform) {}
+        PhysicsShape(Plane plane, Transform transform = Transform()) : shape(plane), transform(transform) {}
         PhysicsShape(ConvexMesh mesh) : shape(mesh) {}
         PhysicsShape(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : shape(ConvexMesh(model, meshIndex)) {}
 

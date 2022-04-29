@@ -83,7 +83,7 @@
                     }
                 },
                 {
-                    "onTick": "vr_hand",
+                    "onPhysicsUpdate": "vr_hand",
                     "parameters": {
                         "hand": "left"
                     }
@@ -97,6 +97,7 @@
                 "rotate": [180, 0, 1, 0],
                 "translate": [0, 0, 0.2]
             },
+            "physics": {},
             "script": [
                 {
                     "prefab": "gltf",
@@ -107,7 +108,7 @@
                     }
                 },
                 {
-                    "onTick": "vr_hand",
+                    "onPhysicsUpdate": "vr_hand",
                     "parameters": {
                         "hand": "right"
                     }
