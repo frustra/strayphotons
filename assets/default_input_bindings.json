@@ -52,6 +52,10 @@
             "/keyboard/key/z": {
                 "target": "console:input/action/run_command",
                 "set_value": "togglesignal menu:articulating_arm.arm.Knob 0.5 1"
+            },
+            "/keyboard/key/b": {
+                "target": "console:input/action/run_command",
+                "set_value": "togglesignal menu:articulating_arm_1.arm.Knob 0.5 1"
             }
         }
     },

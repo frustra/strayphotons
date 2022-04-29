@@ -40,8 +40,7 @@
                 "model": {
                     "model": "articulating-arm",
                     "mesh_index": 0
-                },
-                "group": "noclip"
+                }
             },
             "physics_joints": [{
                 "target": "arm.Ball_0",
@@ -121,8 +120,7 @@
                 "model": {
                     "model": "articulating-arm",
                     "mesh_index": 1
-                },
-                "group": "noclip"
+                }
             },
             "physics_joints": [{
                 "target": "arm.Arm_0",
