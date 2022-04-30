@@ -546,10 +546,8 @@ namespace sp {
         std::array<size_t, PxGeometryType::eGEOMETRY_COUNT> shapeCounts = {};
         std::array<std::vector<PxShape *>, PxGeometryType::eGEOMETRY_COUNT> shapeBuckets;
         for (auto *shape : pxShapes) {
-            int typeIndex = (int)shape->getGeometryType();
-            Assertf(typeIndex >= 0 && typeIndex < shapeBuckets.size(),
-                "Invalid physx shape geometry type: %d",
-                typeIndex);
+            size_t typeIndex = (size_t)shape->getGeometryType();
+            Assertf(typeIndex < shapeBuckets.size(), "Invalid physx shape geometry type: %u", typeIndex);
             shapeBuckets[typeIndex].emplace_back(shape);
         }
         for (auto &shape : ph.shapes) {
@@ -566,14 +564,14 @@ namespace sp {
                 continue;
             }
 
-            int typeIndex = (int)GeometryTypeFromShape(shape);
-            Assertf(typeIndex >= 0 && typeIndex < shapeBuckets.size(), "Invalid PhysicsShape typeIndex: %d", typeIndex);
+            size_t typeIndex = GeometryTypeFromShape(shape);
+            Assertf(typeIndex < shapeBuckets.size(), "Invalid PhysicsShape typeIndex: %u", typeIndex);
 
             auto geometry = GeometryFromShape(shape);
 
             if (shapeCounts[typeIndex] >= shapeBuckets[typeIndex].size()) {
                 // New shape
-                // Logf("Creating actor shape: type %d index %u", typeIndex, shapeCounts[typeIndex]);
+                // Logf("Creating actor shape: type %u index %u", typeIndex, shapeCounts[typeIndex]);
                 auto *pxShape = PxRigidActorExt::createExclusiveShape(*actor, geometry.any(), *userData->material);
                 if (pxShape) {
                     PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),

@@ -373,7 +373,7 @@ namespace sp::xr {
                                                 boneTransforms[i].orientation.z));
                                             transform.pose.SetPosition(glm::make_vec3(boneTransforms[i].position.v));
 
-                                            if (action.boneHierarchy[i] < action.boneEntities.size()) {
+                                            if ((size_t)action.boneHierarchy[i] < action.boneEntities.size()) {
                                                 transform.parent = action.boneEntities[action.boneHierarchy[i]];
                                             } else {
                                                 transform.parent = poseEntity;
