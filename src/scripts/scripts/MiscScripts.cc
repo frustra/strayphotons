@@ -183,7 +183,7 @@ namespace sp::scripts {
                             auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
                             scriptData.grabEntity = event.source;
-                            ph.group = PhysicsGroup::PlayerHands;
+                            ph.group = PhysicsGroup::HeldObject;
 
                             if (event.source.Has<Physics>(lock)) {
                                 PhysicsJoint joint;

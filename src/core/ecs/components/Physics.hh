@@ -18,8 +18,10 @@ namespace ecs {
         NoClip = 0,
         World,
         Interactive,
+        HeldObject,
         Player,
-        PlayerHands,
+        PlayerLeftHand,
+        PlayerRightHand,
         Count,
     };
 
@@ -27,28 +29,38 @@ namespace ecs {
         PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
         PHYSICS_GROUP_WORLD = 1 << (size_t)PhysicsGroup::World,
         PHYSICS_GROUP_INTERACTIVE = 1 << (size_t)PhysicsGroup::Interactive,
+        PHYSICS_GROUP_HELD_OBJECT = 1 << (size_t)PhysicsGroup::HeldObject,
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
-        PHYSICS_GROUP_PLAYER_HANDS = 1 << (size_t)PhysicsGroup::PlayerHands,
+        PHYSICS_GROUP_PLAYER_LEFT_HAND = 1 << (size_t)PhysicsGroup::PlayerLeftHand,
+        PHYSICS_GROUP_PLAYER_RIGHT_HAND = 1 << (size_t)PhysicsGroup::PlayerRightHand,
     };
 
     struct PhysicsShape {
         struct Sphere {
             float radius;
             Sphere(float radius = 1.0f) : radius(radius) {}
+
+            bool operator==(const Sphere &) const = default;
         };
 
         struct Capsule {
             float radius;
             float height;
             Capsule(float height = 1.0f, float radius = 0.5f) : radius(radius), height(height) {}
+
+            bool operator==(const Capsule &) const = default;
         };
 
         struct Box {
             glm::vec3 extents;
             Box(glm::vec3 extents = glm::vec3(1)) : extents(extents) {}
+
+            bool operator==(const Box &) const = default;
         };
 
-        struct Plane {};
+        struct Plane {
+            bool operator==(const Plane &) const = default;
+        };
 
         struct ConvexMesh {
             sp::AsyncPtr<sp::Gltf> model;
@@ -58,6 +70,8 @@ namespace ecs {
             ConvexMesh() {}
             ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0, bool decomposeHull = false)
                 : model(model), meshIndex(meshIndex), decomposeHull(decomposeHull) {}
+
+            bool operator==(const ConvexMesh &) const = default;
         };
 
         std::variant<std::monostate, Sphere, Capsule, Box, Plane, ConvexMesh> shape;
@@ -74,6 +88,8 @@ namespace ecs {
         operator bool() const {
             return !std::holds_alternative<std::monostate>(shape);
         }
+
+        bool operator==(const PhysicsShape &) const = default;
     };
 
     struct Physics {
@@ -86,7 +102,6 @@ namespace ecs {
         PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;
         bool kinematic = false; // only dynamic actors can be kinematic
-        bool decomposeHull = false;
         float density = 1.0f;
         float angularDamping = 0.05f;
         float linearDamping = 0.0f;

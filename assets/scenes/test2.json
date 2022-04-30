@@ -19,10 +19,10 @@
 			"physics": {
 				"model": {
 					"model": "level1",
-					"mesh_index": 6
+					"mesh_index": 6,
+					"decompose_hull": true
 				},
-				"dynamic": false,
-				"decomposeHull": true
+				"dynamic": false
 			}
 		},
 		{
@@ -30,10 +30,10 @@
 			"physics": {
 				"model": {
 					"model": "level1",
-					"mesh_index": 4
+					"mesh_index": 4,
+					"decompose_hull": true
 				},
-				"dynamic": false,
-				"decomposeHull": true
+				"dynamic": false
 			}
 		},
 		{
@@ -41,10 +41,10 @@
 			"physics": {
 				"model": {
 					"model": "level1",
-					"mesh_index": 3
+					"mesh_index": 3,
+					"decompose_hull": true
 				},
-				"dynamic": false,
-				"decomposeHull": true
+				"dynamic": false
 			}
 		},
 		{
@@ -52,10 +52,10 @@
 			"physics": {
 				"model": {
 					"model": "level1",
-					"mesh_index": 2
+					"mesh_index": 2,
+					"decompose_hull": true
 				},
-				"dynamic": false,
-				"decomposeHull": true
+				"dynamic": false
 			}
 		},
 		{

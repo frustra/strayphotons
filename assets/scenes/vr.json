@@ -74,11 +74,17 @@
                 "translate": [0, 0, 0.2]
             },
             "physics": {
-                "group": "player_hands",
+                "group": "player_left_hand",
                 "linear_damping": 10,
-                "angular_damping": 10,
-                "_constraint": "input:vr_actions_main_in_lefthand_anim",
-                "kinematic": true
+                "angular_damping": 100,
+                "constraint": {
+                    "target": "input:vr_actions_main_in_lefthand_anim",
+                    "offset": {
+                        "rotate": [180, 0, 1, 0],
+                        "translate": [0, 0, 0.2]
+                    }
+                },
+                "_kinematic": true
             },
             "physics_query": {},
             "script": [
@@ -105,11 +111,17 @@
                 "translate": [0, 0, 0.2]
             },
             "physics": {
-                "group": "player_hands",
+                "group": "player_right_hand",
                 "linear_damping": 10,
-                "angular_damping": 10,
-                "_constraint": "input:vr_actions_main_in_righthand_anim",
-                "kinematic": true
+                "angular_damping": 100,
+                "constraint": {
+                    "target": "input:vr_actions_main_in_righthand_anim",
+                    "offset": {
+                        "rotate": [180, 0, 1, 0],
+                        "translate": [0, 0, 0.2]
+                    }
+                },
+                "_kinematic": true
             },
             "physics_query": {},
             "script": [

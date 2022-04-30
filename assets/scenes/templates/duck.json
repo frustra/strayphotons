@@ -19,8 +19,10 @@
                 "parameters": { "source": "interactive" }
             },
 			"physics": {
-				"model": "duck",
-				"decomposeHull": true
+				"model": {
+					"model": "duck",
+					"decompose_hull": true
+				}
 			}
         }
     ]

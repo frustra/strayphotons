@@ -47,8 +47,9 @@ namespace sp {
         glm::vec3 velocity = glm::vec3(0);
         float angularDamping, linearDamping;
         ecs::PhysicsGroup physicsGroup;
+        std::vector<std::pair<ecs::PhysicsShape, size_t>> shapeIndexes;
         std::shared_ptr<const ConvexHullSet> shapeCache;
-        physx::PxMaterial *material = nullptr;
+        std::shared_ptr<physx::PxMaterial> material;
 
         ActorUserData() {}
         ActorUserData(ecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}

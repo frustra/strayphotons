@@ -115,7 +115,16 @@ namespace ecs {
                     auto &rootTransform = ent.Get<TransformSnapshot>(lock);
                     auto invRootTransform = rootTransform.GetInverse();
 
-                    auto scale = rootTransform.GetScale();
+                    auto prefabScale = rootTransform.GetScale();
+                    // The prefab root scale seems to change slightly with movement. To prevent all the shapes from
+                    // constantly changing size, reuse the old scalar if it's close enough.
+                    auto scale = state.GetParam<glm::vec3>("prefab_scale");
+                    constexpr float feps = std::numeric_limits<float>::epsilon() * 10000.0f;
+                    if (glm::any(glm::greaterThan(glm::abs(scale - prefabScale), glm::vec3(feps)))) {
+                        scale = prefabScale;
+                        state.SetParam<glm::vec3>("prefab_scale", scale);
+                    }
+
                     auto avgScale = (scale.x + scale.y + scale.z) / 3;
 
                     auto shapeForBone = [&](const TransformTree &bone, const SegmentProperties &segment) {

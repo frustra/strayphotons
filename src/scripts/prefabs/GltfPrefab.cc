@@ -63,17 +63,21 @@ namespace ecs {
             PhysicsGroup group = PhysicsGroup::World;
             auto physicsGroupParam = state.GetParam<std::string>("physics_group");
             if (!physicsGroupParam.empty()) {
-                sp::to_lower(physicsGroupParam);
-                if (physicsGroupParam == "noclip") {
+                sp::to_upper(physicsGroupParam);
+                if (physicsGroupParam == "NOCLIP") {
                     group = PhysicsGroup::NoClip;
-                } else if (physicsGroupParam == "world") {
+                } else if (physicsGroupParam == "WORLD") {
                     group = PhysicsGroup::World;
-                } else if (physicsGroupParam == "interactive") {
+                } else if (physicsGroupParam == "INTERACTIVE") {
                     group = PhysicsGroup::Interactive;
-                } else if (physicsGroupParam == "player") {
+                } else if (physicsGroupParam == "HELD_OBJECT") {
+                    group = PhysicsGroup::HeldObject;
+                } else if (physicsGroupParam == "PLAYER") {
                     group = PhysicsGroup::Player;
-                } else if (physicsGroupParam == "player_hands") {
-                    group = PhysicsGroup::PlayerHands;
+                } else if (physicsGroupParam == "PLAYER_LEFT_HAND") {
+                    group = PhysicsGroup::PlayerLeftHand;
+                } else if (physicsGroupParam == "PLAYER_RIGHT_HAND") {
+                    group = PhysicsGroup::PlayerRightHand;
                 } else {
                     Abortf("Unknown gltf physics group param: %s", physicsGroupParam);
                 }
