@@ -172,13 +172,9 @@ namespace sp::scripts {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
                             ph.RemoveConstraint();
-                            joints.joints.erase(std::remove_if(joints.joints.begin(),
-                                                    joints.joints.end(),
-                                                    [&](auto &&joint) {
-                                                        return joint.target == scriptData.grabEntity &&
-                                                               joint.type == PhysicsJointType::Fixed;
-                                                    }),
-                                joints.joints.end());
+                            sp::erase_if(joints.joints, [&](auto &&joint) {
+                                return joint.target == scriptData.grabEntity && joint.type == PhysicsJointType::Fixed;
+                            });
                             ph.group = PhysicsGroup::World;
                             scriptData.grabEntity = {};
                         } else if (std::holds_alternative<Transform>(event.data)) {

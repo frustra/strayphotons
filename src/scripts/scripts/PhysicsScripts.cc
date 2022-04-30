@@ -113,35 +113,40 @@ namespace ecs {
                     };
 
                     auto &rootTransform = ent.Get<TransformSnapshot>(lock);
+                    auto invRootTransform = rootTransform.GetInverse();
+
+                    auto scale = rootTransform.GetScale();
+                    auto avgScale = (scale.x + scale.y + scale.z) / 3;
 
                     auto shapeForBone = [&](const TransformTree &bone, const SegmentProperties &segment) {
                         auto globalTransform = bone.GetGlobalTransform(lock);
                         PhysicsShape shape;
-                        shape.transform = globalTransform;
-                        shape.transform.Translate(-rootTransform.GetPosition());
+                        shape.transform = invRootTransform * globalTransform;
 
                         auto parentEntity = bone.parent.Get(lock);
                         if (!parentEntity.Has<TransformTree>(lock)) {
-                            shape.shape = PhysicsShape::Sphere(segment.radius);
+                            shape.shape = PhysicsShape::Sphere(avgScale * segment.radius);
                             return shape;
                         }
                         auto parentTransform = parentEntity.Get<const TransformTree>(lock).GetGlobalTransform(lock);
 
                         float boneLength = glm::length(bone.pose.GetPosition());
                         if (boneLength <= 0.000001f) {
-                            shape.shape = PhysicsShape::Sphere(segment.radius);
+                            shape.shape = PhysicsShape::Sphere(avgScale * segment.radius);
                             return shape;
                         }
 
-                        // shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
-                        shape.shape = PhysicsShape::Box(glm::vec3(boneLength, segment.radius, segment.radius));
+                        shape.shape = PhysicsShape::Capsule(avgScale * boneLength, avgScale * segment.radius);
+                        // shape.shape = PhysicsShape::Box(
+                        // avgScale * glm::vec3(boneLength, segment.radius, segment.radius));
 
-                        glm::vec3 boneVector = parentTransform.GetPosition() - globalTransform.GetPosition();
+                        auto boneDiff = parentTransform.GetPosition() - globalTransform.GetPosition();
+                        glm::vec3 boneVector = invRootTransform * glm::vec4(boneDiff, 0.0f);
                         // Place the center of the capsule halfway between this bone and its parent
                         shape.transform.Translate(boneVector * 0.5f);
                         // Rotate the capsule so it's aligned with the bone vector
-                        shape.transform.SetRotation(
-                            glm::quat(glm::vec3(1, 0, 0), rootTransform.GetRotation() * boneVector));
+                        shape.transform.SetRotation(glm::quat(glm::vec3(1, 0, 0), boneVector));
+                        shape.transform.SetPosition(shape.transform.GetPosition() * scale);
                         return shape;
                     };
 
@@ -164,10 +169,17 @@ namespace ecs {
                                 continue;
                             }
 
+                            auto inputEnt = inputEntity.Get(lock);
+                            if (inputEnt.Has<TransformTree>(lock)) {
+                                auto &boneTransform = inputEnt.Get<const TransformTree>(lock);
+                                ph.shapes.push_back(shapeForBone(boneTransform, segment));
+                            }
+
                             auto physicsEnt = physicsEntity.Get(lock);
                             if (physicsEnt.Has<TransformTree>(lock)) {
-                                auto &boneTransform = physicsEnt.Get<const TransformTree>(lock);
-                                ph.shapes.push_back(shapeForBone(boneTransform, segment));
+                                auto &boneTransform = physicsEnt.Get<TransformTree>(lock);
+                                boneTransform.pose = {};
+                                boneTransform.parent = inputEntity;
                             }
                         }
                     }
@@ -188,14 +200,21 @@ namespace ecs {
                             return;
                         }
 
+                        auto inputEnt = inputEntity.Get(lock);
+                        if (inputEnt.Has<TransformSnapshot>(lock)) {
+                            auto &phTransform = inputEnt.Get<TransformSnapshot>(lock);
+                            auto &shape = ph.shapes.emplace_back(
+                                PhysicsShape::Box(avgScale * glm::vec3(0.04, 0.07, 0.06)));
+                            shape.transform = invRootTransform * phTransform;
+                            shape.transform.Translate(shape.transform.GetRotation() * glm::vec3(0.01, 0.0, 0.01));
+                            shape.transform.SetPosition(shape.transform.GetPosition() * avgScale);
+                        }
+
                         auto physicsEnt = physicsEntity.Get(lock);
-                        if (physicsEnt.Has<TransformSnapshot>(lock)) {
-                            auto &shape = ph.shapes.emplace_back(PhysicsShape::Box(glm::vec3(0.04, 0.07, 0.06)));
-                            auto &phTransform = physicsEnt.Get<TransformSnapshot>(lock);
-                            shape.transform = phTransform;
-                            shape.transform.Translate(-rootTransform.GetPosition());
-                            shape.transform.Translate(
-                                rootTransform * glm::vec4(phTransform.GetRotation() * glm::vec3(0.01, 0.0, 0.01), 0));
+                        if (physicsEnt.Has<TransformTree>(lock)) {
+                            auto &boneTransform = physicsEnt.Get<TransformTree>(lock);
+                            boneTransform.pose = {};
+                            boneTransform.parent = inputEntity;
                         }
                     }
                 }

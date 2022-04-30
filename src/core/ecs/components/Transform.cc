@@ -181,7 +181,7 @@ namespace ecs {
         }
 
         auto parentTransform = parentEntity.Get<TransformTree>(lock).GetGlobalTransform(lock);
-        return parentTransform * pose; // Transform(parentTransform.matrix * glm::mat4(pose.matrix));
+        return parentTransform * pose;
     }
 
     glm::quat TransformTree::GetGlobalRotation(Lock<Read<TransformTree>> lock) const {

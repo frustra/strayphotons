@@ -48,6 +48,7 @@ namespace sp {
         float angularDamping, linearDamping;
         ecs::PhysicsGroup physicsGroup;
         std::shared_ptr<const ConvexHullSet> shapeCache;
+        physx::PxMaterial *material = nullptr;
 
         ActorUserData() {}
         ActorUserData(ecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
@@ -91,6 +92,7 @@ namespace sp {
         void SaveCollisionCache(const Gltf &model, size_t meshIndex, const ConvexHullSet &set, bool decomposeHull);
 
         physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape);
+        physx::PxGeometryType::Enum GeometryTypeFromShape(const ecs::PhysicsShape &shape) const;
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;

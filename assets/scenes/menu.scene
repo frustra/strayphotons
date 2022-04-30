@@ -176,39 +176,6 @@
 			}
 		},
 		{
-			"name": "hand_skeleton",
-			"transform": {
-				"translate": [1, 1, -1],
-				"scale": 10
-			},
-			"physics": {
-				"dynamic": false
-			},
-			"physics_query": {},
-			"script": [
-				{
-					"onTick": "rotate",
-					"parameters": {
-						"axis_z": 1,
-						"speed": 2
-					}
-				},
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "vr_glove_right_model",
-						"render": true
-					}
-				},
-				{
-					"onPhysicsUpdate": "vr_hand",
-					"parameters": {
-						"hand": "right"
-					}
-				}
-			]
-		},
-		{
 			"name": "table",
 			"transform": {
 				"translate": [2, 0, 2]

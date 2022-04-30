@@ -35,6 +35,7 @@ namespace sp::xr {
             vr::VRActionHandle_t handle;
             ecs::EntityRef poseEntity;
             std::vector<ecs::EntityRef> boneEntities;
+            std::vector<vr::BoneIndex_t> boneHierarchy;
             DataType type;
 
             Action() {}
