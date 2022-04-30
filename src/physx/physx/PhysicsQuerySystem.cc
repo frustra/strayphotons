@@ -115,7 +115,7 @@ namespace sp {
                             if (target) {
                                 if (manager.actors.count(target) > 0) {
                                     const auto &actor = manager.actors[target];
-                                    auto dynamic = actor->is<PxRigidDynamic>();
+                                    auto dynamic = actor->template is<PxRigidDynamic>();
                                     if (dynamic) {
                                         auto &result = arg.result.emplace();
                                         result.weight = dynamic->getMass();

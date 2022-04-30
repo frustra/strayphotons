@@ -143,5 +143,4 @@ namespace sp {
         friend class PhysicsQuerySystem;
         friend class LaserSystem;
     };
-
 } // namespace sp
