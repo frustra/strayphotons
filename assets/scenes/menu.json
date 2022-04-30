@@ -16,22 +16,6 @@
 			}
 		},
 		{
-			"sound": {
-				"file": "dryer.ogg",
-				"type": "ambisonic",
-				"volume": 0.1,
-				"loop": true,
-				"play_on_load": true
-			},
-			"transform": {
-				"translate": [
-					0,
-					1,
-					-4
-				]
-			}
-		},
-		{
 			"transform": {
 				"translate": [
 					3.8,
@@ -1084,7 +1068,7 @@
 			}
 		},
 		{
-			"name": "laser-mount-1",
+			"name": "laser_mount_1",
 			"transform": {
 				"parent": "articulating_arm.arm.Ball_1",
 				"translate": [
@@ -1103,7 +1087,7 @@
 		},
 		{
 			"transform": {
-				"parent": "laser-mount-1"
+				"parent": "laser_mount_1"
 			},
 			"script": {
 				"prefab": "gltf",
@@ -1115,7 +1099,7 @@
 		},
 		{
 			"transform": {
-				"parent": "laser-mount-1",
+				"parent": "laser_mount_1",
 				"translate": [
 					0,
 					0,
@@ -1129,6 +1113,57 @@
 					0,
 					0
 				]
+			}
+		},
+		{
+			"name": "articulating_arm_1",
+			"transform": {
+				"translate": [
+					0.8,
+					0.82,
+					0.8
+				],
+				"scale": [
+					2,
+					2,
+					2
+				],
+				"parent": "table"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "articulating_arm"
+				}
+			}
+		},
+		{
+			"name": "mount_1",
+			"transform": {
+				"parent": "articulating_arm_1.arm.Ball_1",
+				"translate": [
+					0,
+					0.037,
+					0
+				]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "round-mirror-mounted",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "mount_1.round-mirror",
+			"optic": "mirror",
+			"physics": {
+				"model": {
+					"model": "round-mirror-mounted",
+					"mesh_index": 1
+				},
+				"dynamic": false
 			}
 		},
 		{
@@ -1170,7 +1205,7 @@
 					"follow_target": "player:player",
 					"alignment_target": "station-center:elevator",
 					"voxel_stride": 16,
-					"voxel_scale": 0.11,
+					"voxel_scale": 0.25,
 					"voxel_offset_x": -0.5,
 					"voxel_offset_y": -0.2,
 					"voxel_offset_z": -0.5
