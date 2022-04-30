@@ -11,7 +11,7 @@ namespace ecs {
     template<>
     bool Component<Sounds>::Load(const EntityScope &scope, Sounds &dst, const picojson::value &src) {
         auto parseObject = [&](const picojson::value &src, Sound &dst) {
-            for (auto param : src.get<picojson::object>()) {
+            for (auto &param : src.get<picojson::object>()) {
                 if (param.first == "file") {
                     dst.file = sp::GAssets.Load("audio/" + param.second.get<string>());
                 } else if (param.first == "type") {
@@ -35,7 +35,7 @@ namespace ecs {
         };
 
         if (src.is<picojson::array>()) {
-            for (auto value : src.get<picojson::array>()) {
+            for (auto &value : src.get<picojson::array>()) {
                 dst.sounds.emplace_back();
                 parseObject(value, dst.sounds.back());
             }

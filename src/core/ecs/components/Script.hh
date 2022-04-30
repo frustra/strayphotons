@@ -45,10 +45,27 @@ namespace ecs {
         }
 
         template<typename T>
+        bool HasParam(std::string name) const {
+            auto itr = parameters.find(name);
+            if (itr == parameters.end()) {
+                return false;
+            } else {
+                return std::holds_alternative<T>(itr->second);
+            }
+        }
+
+        template<typename T>
+        const T &GetParamRef(std::string name) const {
+            auto itr = parameters.find(name);
+            Assertf(itr != parameters.end(), "script doesn't have parameter %s", name);
+            return std::get<T>(itr->second);
+        }
+
+        template<typename T>
         T GetParam(std::string name) const {
             auto itr = parameters.find(name);
             if (itr == parameters.end()) {
-                return T();
+                return {};
             } else {
                 return std::get<T>(itr->second);
             }
