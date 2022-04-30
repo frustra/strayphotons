@@ -139,13 +139,12 @@ namespace sp::scripts {
                     glm::vec3 centerOfMass;
                     if (ent.Has<PhysicsQuery>(lock)) {
                         auto &query = ent.Get<PhysicsQuery>(lock);
-                        if (!query.centerOfMassQuery) {
-                            query.centerOfMassQuery = ent;
-                        } else if (query.centerOfMassQuery != ent) {
-                            Abortf("PhysicsQuery is pointing to wrong entity for interactive_object: %s",
-                                ToString(lock, ent));
+                        ecs::PhysicsQuery::Mass massQuery(ent);
+                        auto existingQuery = query.ReadQuery(massQuery);
+                        if (!existingQuery) {
+                            query.queries.emplace_back(massQuery);
                         } else {
-                            centerOfMass = query.centerOfMass;
+                            if (massQuery.result) centerOfMass = massQuery.result->centerOfMass;
                         }
                     }
 
@@ -173,13 +172,9 @@ namespace sp::scripts {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
                             ph.RemoveConstraint();
-                            joints.joints.erase(std::remove_if(joints.joints.begin(),
-                                                    joints.joints.end(),
-                                                    [&](auto &&joint) {
-                                                        return joint.target == scriptData.grabEntity &&
-                                                               joint.type == PhysicsJointType::Fixed;
-                                                    }),
-                                joints.joints.end());
+                            sp::erase_if(joints.joints, [&](auto &&joint) {
+                                return joint.target == scriptData.grabEntity && joint.type == PhysicsJointType::Fixed;
+                            });
                             ph.group = PhysicsGroup::World;
                             scriptData.grabEntity = {};
                         } else if (std::holds_alternative<Transform>(event.data)) {
@@ -259,6 +254,17 @@ namespace sp::scripts {
                     ScriptData scriptData;
                     if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
+                    auto grabDistance = state.GetParam<double>("grab_distance");
+
+                    ecs::PhysicsQuery::Raycast::Result raycastResult;
+                    ecs::PhysicsQuery::Raycast raycastQuery(grabDistance, PHYSICS_GROUP_WORLD);
+                    auto existingQuery = query.ReadQuery(raycastQuery);
+                    if (!existingQuery) {
+                        query.queries.emplace_back(raycastQuery);
+                    } else if (raycastQuery.result) {
+                        raycastResult = raycastQuery.result.value();
+                    }
+
                     Event event;
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
@@ -271,13 +277,13 @@ namespace sp::scripts {
                                     Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                 scriptData.grabEntity = {};
                             }
-                            if (grabEvent && query.raycastHitTarget) {
+                            if (grabEvent && raycastResult.target) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
-                                        query.raycastHitTarget,
+                                        raycastResult.target,
                                         INTERACT_EVENT_INTERACT_GRAB,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    scriptData.grabEntity = query.raycastHitTarget;
+                                    scriptData.grabEntity = raycastResult.target;
                                 }
                             }
                         } else {
@@ -295,88 +301,22 @@ namespace sp::scripts {
                         }
                     }
 
-                    if (scriptData.pointEntity && query.raycastHitTarget != scriptData.pointEntity) {
+                    if (scriptData.pointEntity && raycastResult.target != scriptData.pointEntity) {
                         EventBindings::SendEvent(lock,
                             scriptData.pointEntity,
                             INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
-                    } else if (query.raycastHitTarget) {
+                    } else if (raycastResult.target) {
                         ecs::Transform pointTransfrom = transform;
-                        pointTransfrom.SetPosition(query.raycastHitPosition);
+                        pointTransfrom.SetPosition(raycastResult.position);
                         EventBindings::SendEvent(lock,
-                            query.raycastHitTarget,
+                            raycastResult.target,
                             INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransfrom});
                     }
-                    scriptData.pointEntity = query.raycastHitTarget;
+                    scriptData.pointEntity = raycastResult.target;
 
                     state.userData = scriptData;
-                }
-            }),
-        InternalScript("voxel_controller",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<TransformTree, VoxelArea>(lock)) {
-                    auto &transform = ent.Get<TransformTree>(lock);
-                    auto &voxelArea = ent.Get<VoxelArea>(lock);
-                    auto voxelRotation = transform.GetGlobalRotation(lock);
-
-                    auto voxelScale = (float)state.GetParam<double>("voxel_scale");
-                    auto voxelStride = std::max(1.0f, (float)state.GetParam<double>("voxel_stride"));
-                    glm::vec3 voxelOffset;
-                    voxelOffset.x = state.GetParam<double>("voxel_offset_x");
-                    voxelOffset.y = state.GetParam<double>("voxel_offset_y");
-                    voxelOffset.z = state.GetParam<double>("voxel_offset_z");
-                    voxelOffset *= glm::vec3(voxelArea.extents) * voxelScale;
-
-                    ecs::Name alignmentName(state.GetParam<std::string>("alignment_target"), state.scope.prefix);
-                    if (alignmentName) {
-                        auto alignmentEntity = state.GetParam<EntityRef>("alignment_entity");
-                        bool existingAlignment = (bool)alignmentEntity;
-                        if (alignmentEntity.Name() != alignmentName) alignmentEntity = alignmentName;
-
-                        auto previousAlignment = state.GetParam<glm::vec3>("previous_alignment");
-                        glm::vec3 alignmentOffset;
-                        auto target = alignmentEntity.Get(lock);
-                        if (target) {
-                            state.SetParam<EntityRef>("alignment_entity", alignmentEntity);
-
-                            if (target.Has<TransformSnapshot>(lock)) {
-                                if (existingAlignment) {
-                                    alignmentOffset = target.Get<TransformSnapshot>(lock).GetPosition() -
-                                                      previousAlignment;
-                                } else {
-                                    state.SetParam<glm::vec3>("previous_alignment",
-                                        target.Get<TransformSnapshot>(lock).GetPosition());
-                                }
-                            } else {
-                                state.SetParam<EntityRef>("alignment_entity", EntityRef());
-                            }
-                        } else {
-                            state.SetParam<EntityRef>("alignment_entity", EntityRef());
-                        }
-                        voxelOffset += glm::mod(alignmentOffset, voxelStride * voxelScale);
-                    }
-
-                    auto targetPosition = glm::vec3(0);
-                    ecs::Name targetName(state.GetParam<std::string>("follow_target"), state.scope.prefix);
-                    if (targetName) {
-                        auto followEntity = state.GetParam<EntityRef>("follow_entity");
-                        if (followEntity.Name() != targetName) followEntity = targetName;
-
-                        auto target = followEntity.Get(lock);
-                        if (target) {
-                            state.SetParam<EntityRef>("follow_entity", followEntity);
-
-                            if (target.Has<TransformSnapshot>(lock)) {
-                                targetPosition = target.Get<TransformSnapshot>(lock).GetPosition();
-                            }
-                        }
-                    }
-
-                    targetPosition = voxelRotation * targetPosition;
-                    targetPosition = glm::floor(targetPosition / voxelStride / voxelScale) * voxelScale * voxelStride;
-                    transform.pose.SetPosition(glm::inverse(voxelRotation) * (targetPosition + voxelOffset));
-                    transform.pose.SetScale(glm::vec3(voxelScale));
                 }
             }),
     };

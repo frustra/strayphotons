@@ -14,7 +14,11 @@
 namespace ecs {
     class ScriptState;
 
+    using PhysicsUpdateLock =
+        Lock<Read<Name, TransformSnapshot>, Write<TransformTree, Physics, PhysicsQuery, VoxelArea>>;
+
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
+    using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(ScriptState &, Lock<AddRemove>, Entity)>;
 
     class ScriptState {
@@ -32,6 +36,7 @@ namespace ecs {
         ScriptState() : callback(std::monostate()) {}
         ScriptState(const EntityScope &scope) : scope(scope), callback(std::monostate()) {}
         ScriptState(const EntityScope &scope, OnTickFunc callback) : scope(scope), callback(callback) {}
+        ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback) : scope(scope), callback(callback) {}
         ScriptState(const EntityScope &scope, PrefabFunc callback) : scope(scope), callback(callback) {}
 
         template<typename T>
@@ -54,7 +59,7 @@ namespace ecs {
         }
 
         EntityScope scope;
-        std::variant<std::monostate, OnTickFunc, PrefabFunc> callback;
+        std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
         std::vector<std::string> filterEvents;
 
         std::any userData;
@@ -70,11 +75,16 @@ namespace ecs {
             return scripts.emplace_back(scope, callback);
         }
 
+        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
+            return scripts.emplace_back(scope, callback);
+        }
+
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
             return scripts.emplace_back(scope, callback);
         }
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
+        void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
         void Prefab(Lock<AddRemove> lock, const Entity &ent);
 
         std::vector<ScriptState> scripts;
@@ -88,12 +98,20 @@ namespace ecs {
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 
     extern robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
+    extern robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> PhysicsUpdateDefinitions;
     extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
 
     class InternalScript {
     public:
         InternalScript(const std::string &name, OnTickFunc &&func) {
             ScriptDefinitions[name] = std::move(func);
+        }
+    };
+
+    class InternalPhysicsScript {
+    public:
+        InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func) {
+            PhysicsUpdateDefinitions[name] = std::move(func);
         }
     };
 

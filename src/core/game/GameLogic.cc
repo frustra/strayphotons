@@ -72,7 +72,12 @@ namespace sp {
 
         if (flatview.Has<ecs::PhysicsQuery>(lock)) {
             auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
-            if (query.raycastHitTarget) Logf("Looking at: %s", ecs::ToString(lock, query.raycastHitTarget));
+            for (auto &subQuery : query.queries) {
+                auto *raycastQuery = std::get_if<ecs::PhysicsQuery::Raycast>(&subQuery);
+                if (raycastQuery && raycastQuery->result) {
+                    Logf("Looking at: %s", ecs::ToString(lock, raycastQuery->result->target));
+                }
+            }
         }
     }
 

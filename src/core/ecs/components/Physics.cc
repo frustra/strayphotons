@@ -78,6 +78,7 @@ namespace ecs {
     bool Component<Physics>::Load(const EntityScope &scope, Physics &physics, const picojson::value &src) {
         auto scene = scope.scene.lock();
         for (auto param : src.get<picojson::object>()) {
+            if (sp::starts_with(param.first, "_")) continue;
             if (param.first == "shapes") {
                 if (param.second.is<picojson::object>()) {
                     PhysicsShape shape;
@@ -182,14 +183,6 @@ namespace ecs {
                 Errorf("Unknown physics param: %s", param.first);
                 return false;
             }
-        }
-        return true;
-    }
-
-    template<>
-    bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &query, const picojson::value &src) {
-        for (auto param : src.get<picojson::object>()) {
-            if (param.first == "raycast") { query.raycastQueryDistance = param.second.get<double>(); }
         }
         return true;
     }

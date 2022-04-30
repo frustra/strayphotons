@@ -22,6 +22,7 @@ namespace ecs {
 
         void Translate(const glm::vec3 &xyz);
         void Rotate(float radians, const glm::vec3 &axis);
+        void Rotate(const glm::quat &quat);
         void Scale(const glm::vec3 &xyz);
 
         void SetPosition(const glm::vec3 &pos);
@@ -30,9 +31,12 @@ namespace ecs {
 
         const glm::vec3 &GetPosition() const;
         glm::quat GetRotation() const;
-        glm::vec3 GetScale() const;
         glm::vec3 GetForward() const;
+        glm::vec3 GetScale() const;
+        Transform GetInverse() const;
 
+        glm::vec3 operator*(const glm::vec4 &rhs) const;
+        Transform operator*(const Transform &rhs) const;
         bool operator==(const Transform &other) const;
         bool operator!=(const Transform &other) const;
 

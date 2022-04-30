@@ -316,21 +316,29 @@ namespace sp::xr {
                                     }
 
                                     std::vector<vr::VRBoneTransform_t> boneTransforms(boneCount);
-                                    // error = vr::VRInput()->GetSkeletalReferenceTransforms(action.handle,
-                                    //     vr::VRSkeletalTransformSpace_Model,
-                                    //     vr::VRSkeletalReferencePose_OpenHand,
-                                    //     boneTransforms.data(),
-                                    //     boneTransforms.size());
-                                    error = vr::VRInput()->GetSkeletalBoneData(action.handle,
-                                        vr::VRSkeletalTransformSpace_Model,
-                                        vr::VRSkeletalMotionRange_WithoutController,
+                                    error = vr::VRInput()->GetSkeletalReferenceTransforms(action.handle,
+                                        vr::VRSkeletalTransformSpace_Parent,
+                                        vr::VRSkeletalReferencePose_OpenHand,
                                         boneTransforms.data(),
                                         boneTransforms.size());
+                                    // error = vr::VRInput()->GetSkeletalBoneData(action.handle,
+                                    //     vr::VRSkeletalTransformSpace_Parent,
+                                    //     vr::VRSkeletalMotionRange_WithoutController,
+                                    //     boneTransforms.data(),
+                                    //     boneTransforms.size());
                                     Assertf(error == vr::EVRInputError::VRInputError_None,
                                         "Failed to read OpenVR bone transforms for action: %s",
                                         action.name);
 
                                     action.boneEntities.resize(boneCount);
+                                    action.boneHierarchy.resize(boneCount);
+
+                                    error = vr::VRInput()->GetBoneHierarchy(action.handle,
+                                        action.boneHierarchy.data(),
+                                        action.boneHierarchy.size());
+                                    Assertf(error == vr::EVRInputError::VRInputError_None,
+                                        "Failed to read OpenVR bone hierarchy for action: %s",
+                                        action.name);
 
                                     for (size_t i = 0; i < boneCount; i++) {
                                         std::array<char, vr::k_unMaxBoneNameLength> boneNameChars;
@@ -342,6 +350,7 @@ namespace sp::xr {
                                             "Failed to read OpenVR bone name %d for action: %s",
                                             i,
                                             action.name);
+
                                         std::string boneName(boneNameChars.begin(),
                                             std::find(boneNameChars.begin(), boneNameChars.end(), '\0'));
                                         auto entityName = action.poseEntity.Name();
@@ -350,9 +359,10 @@ namespace sp::xr {
                                         if (action.boneEntities[i].Name() != entityName) {
                                             action.boneEntities[i] = entityName;
                                             missingEntities = true;
-                                            continue;
                                         }
+                                    }
 
+                                    for (size_t i = 0; i < boneCount; i++) {
                                         ecs::Entity boneEntity = action.boneEntities[i].Get(lock);
                                         if (boneEntity.Has<ecs::TransformTree>(lock)) {
                                             auto &transform = boneEntity.Get<ecs::TransformTree>(lock);
@@ -362,7 +372,12 @@ namespace sp::xr {
                                                 boneTransforms[i].orientation.y,
                                                 boneTransforms[i].orientation.z));
                                             transform.pose.SetPosition(glm::make_vec3(boneTransforms[i].position.v));
-                                            transform.parent = poseEntity;
+
+                                            if ((size_t)action.boneHierarchy[i] < action.boneEntities.size()) {
+                                                transform.parent = action.boneEntities[action.boneHierarchy[i]];
+                                            } else {
+                                                transform.parent = poseEntity;
+                                            }
                                         }
                                     }
                                 }

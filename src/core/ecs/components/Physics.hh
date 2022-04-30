@@ -13,12 +13,6 @@ namespace sp {
     class Gltf;
 }
 
-namespace physx {
-    class PxRigidActor;
-    class PxScene;
-    class PxControllerManager;
-} // namespace physx
-
 namespace ecs {
     enum class PhysicsGroup : uint16_t {
         NoClip = 0,
@@ -59,19 +53,21 @@ namespace ecs {
         struct ConvexMesh {
             sp::AsyncPtr<sp::Gltf> model;
             size_t meshIndex = 0;
+            bool decomposeHull = false;
 
             ConvexMesh() {}
-            ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : model(model), meshIndex(meshIndex) {}
+            ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0, bool decomposeHull = false)
+                : model(model), meshIndex(meshIndex), decomposeHull(decomposeHull) {}
         };
 
         std::variant<std::monostate, Sphere, Capsule, Box, Plane, ConvexMesh> shape;
         Transform transform;
 
         PhysicsShape() : shape(std::monostate()) {}
-        PhysicsShape(Sphere sphere) : shape(sphere) {}
-        PhysicsShape(Capsule capsule) : shape(capsule) {}
-        PhysicsShape(Box box) : shape(box) {}
-        PhysicsShape(Plane plane) : shape(plane) {}
+        PhysicsShape(Sphere sphere, Transform transform = Transform()) : shape(sphere), transform(transform) {}
+        PhysicsShape(Capsule capsule, Transform transform = Transform()) : shape(capsule), transform(transform) {}
+        PhysicsShape(Box box, Transform transform = Transform()) : shape(box), transform(transform) {}
+        PhysicsShape(Plane plane, Transform transform = Transform()) : shape(plane), transform(transform) {}
         PhysicsShape(ConvexMesh mesh) : shape(mesh) {}
         PhysicsShape(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : shape(ConvexMesh(model, meshIndex)) {}
 
@@ -117,26 +113,8 @@ namespace ecs {
         }
     };
 
-    struct PhysicsQuery {
-        // Raycast query inputs
-        float raycastQueryDistance = 0.0f;
-        PhysicsGroupMask raycastQueryFilterGroup = PHYSICS_GROUP_WORLD;
-        // Raycast outputs
-        Entity raycastHitTarget;
-        glm::vec3 raycastHitPosition;
-        float raycastHitDistance = 0.0f;
-
-        // Center of mass query
-        Entity centerOfMassQuery;
-        // The calculated center of mass of the object (relative to its Transform)
-        glm::vec3 centerOfMass;
-    };
-
     static Component<Physics> ComponentPhysics("physics");
-    static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
 
     template<>
     bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);
-    template<>
-    bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &dst, const picojson::value &src);
 } // namespace ecs

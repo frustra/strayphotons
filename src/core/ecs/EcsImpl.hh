@@ -15,6 +15,7 @@
 #include "ecs/components/OpticalElement.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/PhysicsJoints.hh"
+#include "ecs/components/PhysicsQuery.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/SceneConnection.hh"
 #include "ecs/components/SceneInfo.hh"

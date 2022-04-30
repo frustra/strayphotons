@@ -7,6 +7,7 @@
 
 namespace ecs {
     robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
+    robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> PhysicsUpdateDefinitions;
     robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
 
     bool parseScriptState(ScriptState &state, const picojson::value &src) {
@@ -47,6 +48,24 @@ namespace ecs {
                     }
                 } else {
                     Errorf("Script onEvent has invalid definition: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "onPhysicsUpdate") {
+                if (param.second.is<std::string>()) {
+                    auto scriptName = param.second.get<std::string>();
+                    auto it = PhysicsUpdateDefinitions.find(scriptName);
+                    if (it != PhysicsUpdateDefinitions.end()) {
+                        if (state) {
+                            Errorf("Script has multiple definitions: %s", scriptName);
+                            return false;
+                        }
+                        state.callback = it->second;
+                    } else {
+                        Errorf("Script has unknown onPhysicsUpdate definition: %s", scriptName);
+                        return false;
+                    }
+                } else {
+                    Errorf("Script onPhysicsUpdate has invalid definition: %s", param.second.to_str());
                     return false;
                 }
             } else if (param.first == "prefab") {
@@ -172,6 +191,15 @@ namespace ecs {
                 }
                 (*callback)(state, lock, ent, interval);
             }
+        }
+    }
+
+    void Script::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
+        ZoneScopedN("OnPhysicsUpdate");
+        ZoneStr(ecs::ToString(lock, ent));
+        for (auto &state : scripts) {
+            auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.callback);
+            if (callback) (*callback)(state, lock, ent, interval);
         }
     }
 

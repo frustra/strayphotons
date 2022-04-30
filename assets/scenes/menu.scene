@@ -279,24 +279,24 @@
 				"extents": [141, 51, 80]
 			}
 		},
-        {
-            "transform": {},
-            "script": {
-                "onTick": "voxel_controller",
-                "parameters": {
-                    "follow_target": "player:player",
-                    "alignment_target": "station-center:elevator",
-                    "voxel_stride": 16,
-                    "voxel_scale": 0.25,
-                    "voxel_offset_x": -0.5,
-                    "voxel_offset_y": -0.2,
-                    "voxel_offset_z": -0.5
-                }
-            },
-            "voxel_area": {
-                "extents": [256, 100, 360]
-            }
-        },
+		{
+			"transform": {},
+			"script": {
+				"onPhysicsUpdate": "voxel_controller",
+				"parameters": {
+					"follow_target": "player:player",
+					"alignment_target": "station-center:elevator",
+					"voxel_stride": 16,
+					"voxel_scale": 0.25,
+					"voxel_offset_x": -0.5,
+					"voxel_offset_y": -0.2,
+					"voxel_offset_z": -0.5
+				}
+			},
+			"voxel_area": {
+				"extents": [256, 100, 360]
+			}
+		},
 		{
 			"light": {
 				"tint": [1, 1, 1],

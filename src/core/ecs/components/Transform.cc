@@ -16,7 +16,11 @@ namespace ecs {
     bool Component<Transform>::Load(const EntityScope &scope, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "scale") {
-                transform.Scale(sp::MakeVec3(subTransform.second));
+                if (subTransform.second.is<double>()) {
+                    transform.Scale(glm::vec3(subTransform.second.get<double>()));
+                } else {
+                    transform.Scale(sp::MakeVec3(subTransform.second));
+                }
             } else if (subTransform.first == "rotate") {
                 vector<picojson::value *> rotations;
                 picojson::array &subSecond = subTransform.second.get<picojson::array>();
@@ -96,6 +100,15 @@ namespace ecs {
         matrix[2] = rotation[2] * scale.z;
     }
 
+    void Transform::Rotate(const glm::quat &quat) {
+        glm::vec3 scale = GetScale();
+        glm::mat3 rotation = glm::mat3(matrix[0] / scale.x, matrix[1] / scale.y, matrix[2] / scale.z);
+        rotation *= glm::mat3_cast(quat);
+        matrix[0] = rotation[0] * scale.x;
+        matrix[1] = rotation[1] * scale.y;
+        matrix[2] = rotation[2] * scale.z;
+    }
+
     void Transform::Scale(const glm::vec3 &xyz) {
         matrix[0] *= xyz.x;
         matrix[1] *= xyz.y;
@@ -138,6 +151,18 @@ namespace ecs {
         return glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
     }
 
+    Transform Transform::GetInverse() const {
+        return Transform(glm::inverse(glm::mat4(matrix)));
+    }
+
+    glm::vec3 Transform::operator*(const glm::vec4 &rhs) const {
+        return matrix * rhs;
+    }
+
+    Transform Transform::operator*(const Transform &rhs) const {
+        return Transform(matrix * glm::mat4(rhs.matrix));
+    }
+
     bool Transform::operator==(const Transform &other) const {
         return matrix == other.matrix;
     }
@@ -156,7 +181,7 @@ namespace ecs {
         }
 
         auto parentTransform = parentEntity.Get<TransformTree>(lock).GetGlobalTransform(lock);
-        return Transform(parentTransform.matrix * glm::mat4(pose.matrix));
+        return parentTransform * pose;
     }
 
     glm::quat TransformTree::GetGlobalRotation(Lock<Read<TransformTree>> lock) const {
