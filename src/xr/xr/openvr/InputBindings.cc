@@ -316,16 +316,16 @@ namespace sp::xr {
                                     }
 
                                     std::vector<vr::VRBoneTransform_t> boneTransforms(boneCount);
-                                    // error = vr::VRInput()->GetSkeletalReferenceTransforms(action.handle,
-                                    //     vr::VRSkeletalTransformSpace_Model,
-                                    //     vr::VRSkeletalReferencePose_OpenHand,
-                                    //     boneTransforms.data(),
-                                    //     boneTransforms.size());
-                                    error = vr::VRInput()->GetSkeletalBoneData(action.handle,
+                                    error = vr::VRInput()->GetSkeletalReferenceTransforms(action.handle,
                                         vr::VRSkeletalTransformSpace_Parent,
-                                        vr::VRSkeletalMotionRange_WithoutController,
+                                        vr::VRSkeletalReferencePose_OpenHand,
                                         boneTransforms.data(),
                                         boneTransforms.size());
+                                    // error = vr::VRInput()->GetSkeletalBoneData(action.handle,
+                                    //     vr::VRSkeletalTransformSpace_Parent,
+                                    //     vr::VRSkeletalMotionRange_WithoutController,
+                                    //     boneTransforms.data(),
+                                    //     boneTransforms.size());
                                     Assertf(error == vr::EVRInputError::VRInputError_None,
                                         "Failed to read OpenVR bone transforms for action: %s",
                                         action.name);

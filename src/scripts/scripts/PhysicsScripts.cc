@@ -136,9 +136,9 @@ namespace ecs {
                             return shape;
                         }
 
-                        shape.shape = PhysicsShape::Capsule(avgScale * boneLength, avgScale * segment.radius);
-                        // shape.shape = PhysicsShape::Box(
-                        // avgScale * glm::vec3(boneLength, segment.radius, segment.radius));
+                        // shape.shape = PhysicsShape::Capsule(avgScale * boneLength, avgScale * segment.radius);
+                        shape.shape = PhysicsShape::Box(
+                            avgScale * glm::vec3(boneLength, segment.radius, segment.radius));
 
                         auto boneDiff = parentTransform.GetPosition() - globalTransform.GetPosition();
                         glm::vec3 boneVector = invRootTransform * glm::vec4(boneDiff, 0.0f);

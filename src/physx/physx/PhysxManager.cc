@@ -573,7 +573,7 @@ namespace sp {
 
             if (shapeCounts[typeIndex] >= shapeBuckets[typeIndex].size()) {
                 // New shape
-                Logf("Creating actor shape: type %d index %u", typeIndex, shapeCounts[typeIndex]);
+                // Logf("Creating actor shape: type %d index %u", typeIndex, shapeCounts[typeIndex]);
                 auto *pxShape = PxRigidActorExt::createExclusiveShape(*actor, geometry.any(), *userData->material);
                 if (pxShape) {
                     PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
@@ -591,14 +591,14 @@ namespace sp {
                 PxPlaneGeometry planeGeom;
                 if (pxShape->getSphereGeometry(sphereGeom)) {
                     if (!floatEquals(sphereGeom.radius, geometry.sphere().radius)) {
-                        Logf("Updating actor shape: sphere index %u", shapeCounts[typeIndex]);
+                        // Logf("Updating actor shape: sphere index %u", shapeCounts[typeIndex]);
                         pxShape->setGeometry(geometry.any());
                         shapesChanged = true;
                     }
                 } else if (pxShape->getCapsuleGeometry(capsuleGeom)) {
                     if (!floatEquals(capsuleGeom.radius, geometry.capsule().radius) ||
                         !floatEquals(capsuleGeom.halfHeight, geometry.capsule().halfHeight)) {
-                        Logf("Updating actor shape: capsule index %u", shapeCounts[typeIndex]);
+                        // Logf("Updating actor shape: capsule index %u", shapeCounts[typeIndex]);
                         pxShape->setGeometry(geometry.any());
                         shapesChanged = true;
                     }
@@ -606,7 +606,7 @@ namespace sp {
                     if (!floatEquals(boxGeom.halfExtents.x, geometry.box().halfExtents.x) ||
                         !floatEquals(boxGeom.halfExtents.y, geometry.box().halfExtents.y) ||
                         !floatEquals(boxGeom.halfExtents.z, geometry.box().halfExtents.z)) {
-                        Logf("Updating actor shape: box index %u", shapeCounts[typeIndex]);
+                        // Logf("Updating actor shape: box index %u", shapeCounts[typeIndex]);
                         pxShape->setGeometry(geometry.any());
                         shapesChanged = true;
                     }
@@ -615,23 +615,23 @@ namespace sp {
                 } else {
                     Abortf("Physx geometry type not implemented: %u", pxShape->getGeometryType());
                 }
-                // PxTransform pxTransform = pxShape->getLocalPose();
-                // PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
-                //     GlmQuatToPxQuat(shape.transform.GetRotation()));
-                // if (!floatEquals(pxTransform.p.x, shapeTransform.p.x) ||
-                //     !floatEquals(pxTransform.p.y, shapeTransform.p.y) ||
-                //     !floatEquals(pxTransform.p.z, shapeTransform.p.z) ||
-                //     !floatEquals(pxTransform.q.x, shapeTransform.q.x) ||
-                //     !floatEquals(pxTransform.q.y, shapeTransform.q.y) ||
-                //     !floatEquals(pxTransform.q.z, shapeTransform.q.z) ||
-                //     !floatEquals(pxTransform.q.w, shapeTransform.q.w)) {
-                //     Logf("Updating actor shape pose: index %u, %s, %s",
-                //         shapeCounts[typeIndex],
-                //         glm::to_string(PxVec3ToGlmVec3(pxTransform.p - shapeTransform.p)),
-                //         glm::to_string(PxQuatToGlmQuat(pxTransform.q - shapeTransform.q)));
-                // pxShape->setLocalPose(shapeTransform);
-                //     shapesChanged = true;
-                // }
+                PxTransform pxTransform = pxShape->getLocalPose();
+                PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
+                    GlmQuatToPxQuat(shape.transform.GetRotation()));
+                if (!floatEquals(pxTransform.p.x, shapeTransform.p.x) ||
+                    !floatEquals(pxTransform.p.y, shapeTransform.p.y) ||
+                    !floatEquals(pxTransform.p.z, shapeTransform.p.z) ||
+                    !floatEquals(pxTransform.q.x, shapeTransform.q.x) ||
+                    !floatEquals(pxTransform.q.y, shapeTransform.q.y) ||
+                    !floatEquals(pxTransform.q.z, shapeTransform.q.z) ||
+                    !floatEquals(pxTransform.q.w, shapeTransform.q.w)) {
+                    // Logf("Updating actor shape pose: index %u, %s, %s",
+                    //     shapeCounts[typeIndex],
+                    //     glm::to_string(PxVec3ToGlmVec3(pxTransform.p - shapeTransform.p)),
+                    //     glm::to_string(PxQuatToGlmQuat(pxTransform.q - shapeTransform.q)));
+                    pxShape->setLocalPose(shapeTransform);
+                    shapesChanged = true;
+                }
             }
             shapeCounts[typeIndex]++;
         }
@@ -639,7 +639,7 @@ namespace sp {
             if (i == PxGeometryType::eCONVEXMESH) continue;
             // Removed shapes
             for (size_t j = shapeCounts[i]; j < shapeBuckets[i].size(); j++) {
-                Logf("Removing actor shape: type %u index %u", i, j);
+                // Logf("Removing actor shape: type %u index %u", i, j);
                 actor->detachShape(*shapeBuckets[i][j]);
             }
         }
