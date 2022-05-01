@@ -11,6 +11,9 @@
 
 #define Tracef(...) sp::tracing::TracingPrintf(__VA_ARGS__)
 
+void *operator new(size_t size);
+void operator delete(void *ptr);
+
 namespace sp::tracing {
     inline static void TracingZoneStr(tracy::ScopedZone &zone, const string_view &str) {
         zone.Text(str.data(), str.size());
