@@ -214,18 +214,12 @@
 		},
 		{
 			"transform": {
-				"translate": [0.5, 0.81, 0.5],
-				"scale": [1, 0.02, 1]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
+				"translate": [0, 0.84, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "box",
-					"render": true
+					"source": "breadboard_4x4"
 				}
 			}
 		}
