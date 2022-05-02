@@ -30,6 +30,6 @@ namespace ecs {
     }
 
     bool SceneConnection::HasScene(const std::string &sceneName) const {
-        return std::find(scenes.begin(), scenes.end(), sceneName) != scenes.end();
+        return sp::contains(scenes, sceneName);
     }
 } // namespace ecs

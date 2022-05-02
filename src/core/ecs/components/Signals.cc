@@ -164,7 +164,7 @@ namespace ecs {
                 dstList->second.operation = srcList.operation;
                 auto &vec = dstList->second.sources;
                 for (auto &binding : srcList.sources) {
-                    if (std::find(vec.begin(), vec.end(), binding) == vec.end()) vec.emplace_back(binding);
+                    if (!sp::contains(vec, binding)) vec.emplace_back(binding);
                 }
             } else {
                 destToSource.emplace(name, srcList);
@@ -188,7 +188,7 @@ namespace ecs {
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {
             auto &vec = list->second.sources;
-            if (std::find(vec.begin(), vec.end(), newBinding) == vec.end()) vec.emplace_back(newBinding);
+            if (!sp::contains(vec, newBinding)) vec.emplace_back(newBinding);
         } else {
             destToSource.emplace(name, BindingList{{newBinding}});
         }

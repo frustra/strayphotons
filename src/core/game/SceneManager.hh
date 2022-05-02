@@ -123,6 +123,8 @@ namespace sp {
         std::atomic_flag physicsPreload, graphicsPreload;
         bool skipPreload;
 
+        std::vector<std::string> requiredSceneList; // Buffer for UpdateSceneConnections()
+
         PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;
         EnumArray<SceneList, SceneType> scenes;

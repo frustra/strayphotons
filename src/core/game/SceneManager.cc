@@ -300,7 +300,7 @@ namespace sp {
 
     void SceneManager::UpdateSceneConnections() {
         ZoneScoped;
-        std::vector<std::string> requiredList;
+        requiredSceneList.clear();
         {
             auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name,
                 ecs::SceneConnection,
@@ -314,16 +314,14 @@ namespace sp {
                 if (loadSignal >= 0.5) {
                     auto &connection = ent.Get<ecs::SceneConnection>(lock);
                     for (auto &sceneName : connection.scenes) {
-                        if (std::find(requiredList.begin(), requiredList.end(), sceneName) == requiredList.end()) {
-                            requiredList.emplace_back(sceneName);
-                        }
+                        if (!contains(requiredSceneList, sceneName)) requiredSceneList.emplace_back(sceneName);
                     }
                 }
             }
         }
 
         scenes[SceneType::Async].clear();
-        for (auto &sceneName : requiredList) {
+        for (auto &sceneName : requiredSceneList) {
             auto loadedScene = stagedScenes.Load(sceneName);
             if (loadedScene) {
                 if (loadedScene->type == SceneType::Async) scenes[SceneType::Async].push_back(loadedScene);

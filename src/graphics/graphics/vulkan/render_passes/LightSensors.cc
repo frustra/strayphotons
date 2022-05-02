@@ -41,8 +41,8 @@ namespace sp::vulkan::renderer {
             if (!data) data = make_shared<LightSensorData>();
 
             auto &s = data->gpu.sensors[data->gpu.sensorCount];
-            s.position = transform.matrix * glm::vec4(sensor.position, 1);
-            s.direction = glm::normalize(glm::mat3(transform.matrix) * sensor.direction);
+            s.position = transform * glm::vec4(sensor.position, 1);
+            s.direction = glm::normalize(transform.GetRotation() * sensor.direction);
 
             data->entities[data->gpu.sensorCount] = entity;
             data->gpu.sensorCount++;
