@@ -76,8 +76,7 @@
                 "density": 300,
                 "_linear_damping": 1,
                 "angular_damping": 100,
-                "constraint": "input:vr_actions_main_in_lefthand_anim",
-                "_kinematic": true
+                "constraint": "input:vr_actions_main_in_lefthand_anim"
             },
             "physics_query": {},
             "script": [
@@ -106,8 +105,7 @@
                 "density": 300,
                 "_linear_damping": 1,
                 "angular_damping": 100,
-                "constraint": "input:vr_actions_main_in_righthand_anim",
-                "_kinematic": true
+                "constraint": "input:vr_actions_main_in_righthand_anim"
             },
             "physics_query": {},
             "script": [

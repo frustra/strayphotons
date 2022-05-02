@@ -103,14 +103,13 @@ namespace ecs {
                     struct SegmentProperties {
                         std::string name;
                         float radius;
-                        glm::vec3 offset;
                     };
                     std::array fingerSegments = {
-                        SegmentProperties{"meta_" + handStr, 0.015f, glm::vec3(0)},
-                        SegmentProperties{"0_" + handStr, 0.015f, glm::vec3(0)},
-                        SegmentProperties{"1_" + handStr, 0.01f, glm::vec3(0)},
-                        SegmentProperties{"2_" + handStr, 0.01f, glm::vec3(0)},
-                        SegmentProperties{handStr + "_end", 0.008f, glm::vec3(0)},
+                        SegmentProperties{"meta_" + handStr, 0.015f},
+                        SegmentProperties{"0_" + handStr, 0.015f},
+                        SegmentProperties{"1_" + handStr, 0.01f},
+                        SegmentProperties{"2_" + handStr, 0.01f},
+                        SegmentProperties{handStr + "_end", 0.008f},
                     };
 
                     auto inputRoot = EntityRef(inputScope).Get(lock);
@@ -125,17 +124,6 @@ namespace ecs {
                         return;
                     }
 
-                    // auto &rootTransform = ent.Get<TransformSnapshot>(lock);
-
-                    // auto prefabScale = rootTransform.GetScale();
-                    // The prefab root scale seems to change slightly with movement. To prevent all the shapes from
-                    // constantly changing size, reuse the old scalar if it's close enough.
-                    auto scale = 1.0f; // state.GetParam<glm::vec3>("prefab_scale");
-                    // if (glm::any(glm::notEqual(scale, prefabScale, 1e-6f))) scale = prefabScale;
-                    // state.SetParam<glm::vec3>("prefab_scale", scale);
-
-                    auto avgScale = 1.0f; //(scale.x + scale.y + scale.z) / 3;
-
                     auto shapeForBone = [&](const TransformTree &bone, const SegmentProperties &segment) {
                         auto relativeTransform = bone.GetRelativeTransform(lock, inputRoot);
                         PhysicsShape shape;
@@ -143,21 +131,20 @@ namespace ecs {
 
                         auto parentEntity = bone.parent.Get(lock);
                         if (!parentEntity.Has<TransformTree>(lock)) {
-                            shape.shape = PhysicsShape::Sphere(avgScale * segment.radius);
+                            shape.shape = PhysicsShape::Sphere(segment.radius);
                             return shape;
                         }
                         auto parentTransform = parentEntity.Get<const TransformTree>(lock).GetRelativeTransform(lock,
                             inputRoot);
 
                         float boneLength = glm::length(bone.pose.GetPosition());
-                        if (boneLength <= 1e-6f) {
-                            shape.shape = PhysicsShape::Sphere(avgScale * segment.radius);
+                        if (boneLength <= 1e-5f) {
+                            shape.shape = PhysicsShape::Sphere(segment.radius);
                             return shape;
                         }
 
-                        shape.shape = PhysicsShape::Capsule(avgScale * boneLength, avgScale * segment.radius);
-                        // shape.shape = PhysicsShape::Box(
-                        //     avgScale * glm::vec3(boneLength, segment.radius, segment.radius));
+                        shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
+                        // shape.shape = PhysicsShape::Box(glm::vec3(boneLength, segment.radius, segment.radius));
 
                         auto boneDiff = parentTransform.GetPosition() - relativeTransform.GetPosition();
                         glm::vec3 boneVector = glm::vec4(boneDiff, 0.0f);
@@ -165,7 +152,6 @@ namespace ecs {
                         shape.transform.Translate(boneVector * 0.5f);
                         // Rotate the capsule so it's aligned with the bone vector
                         shape.transform.SetRotation(glm::quat(glm::vec3(1, 0, 0), boneVector));
-                        shape.transform.SetPosition(shape.transform.GetPosition() * scale);
                         return shape;
                     };
 
@@ -225,11 +211,9 @@ namespace ecs {
                         if (inputEnt.Has<TransformSnapshot>(lock) && physicsEnt.Has<TransformTree>(lock)) {
                             auto relTransform = inputEnt.Get<const TransformTree>(lock).GetRelativeTransform(lock,
                                 inputRoot);
-                            auto &shape = ph.shapes.emplace_back(
-                                PhysicsShape::Box(avgScale * glm::vec3(0.04, 0.07, 0.06)));
+                            auto &shape = ph.shapes.emplace_back(PhysicsShape::Box(glm::vec3(0.04, 0.07, 0.06)));
                             shape.transform = relTransform;
                             shape.transform.Translate(shape.transform.GetRotation() * glm::vec3(0.01, 0.0, 0.01));
-                            shape.transform.SetPosition(shape.transform.GetPosition() * avgScale);
 
                             auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
                             physicsTransform.pose = relTransform;

@@ -569,7 +569,7 @@ namespace sp {
         auto actorShapeCount = actor->getNbShapes();
         if (mesh) {
             if (glm::any(glm::notEqual(scale, userData->scale, 1e-5f)) && actorShapeCount > 0) {
-                Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
+                // Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
                 std::vector<PxShape *> pxShapes(actorShapeCount);
                 actor->getShapes(&pxShapes[0], actorShapeCount);
                 PxConvexMeshGeometry meshGeom;
@@ -599,8 +599,8 @@ namespace sp {
             }
 
             if (shapesChanged) {
-                ZoneScopedN("ShapesChanged:true");
-                Logf("Shapes changed: %s", ecs::ToString(lock, e));
+                ZoneScopedN("ShapesChanged");
+                ZoneStr(ecs::ToString(lock, e));
 
                 std::vector<PxShape *> pxShapes(actorShapeCount);
                 if (actorShapeCount > 0) {
@@ -623,6 +623,8 @@ namespace sp {
 
                     userData->shapeIndexes.emplace_back(shape, userData->shapeIndexes.size());
                 }
+
+                SetCollisionGroup(actor, ph.group);
             } else if (actorShapeCount > 0) {
                 ZoneScopedN("ShapesUpdate");
 

@@ -41,7 +41,7 @@ namespace ecs {
             Sphere(float radius = 1.0f) : radius(radius) {}
 
             bool operator==(const Sphere &other) const {
-                return glm::epsilonEqual(radius, other.radius, 1e-6f);
+                return glm::epsilonEqual(radius, other.radius, 1e-5f);
             }
         };
 
@@ -51,7 +51,7 @@ namespace ecs {
             Capsule(float height = 1.0f, float radius = 0.5f) : radius(radius), height(height) {}
 
             bool operator==(const Capsule &other) const {
-                return glm::epsilonEqual(radius, other.radius, 1e-6f) && glm::epsilonEqual(height, other.height, 1e-6f);
+                return glm::epsilonEqual(radius, other.radius, 1e-5f) && glm::epsilonEqual(height, other.height, 1e-5f);
             }
         };
 
@@ -60,7 +60,7 @@ namespace ecs {
             Box(glm::vec3 extents = glm::vec3(1)) : extents(extents) {}
 
             bool operator==(const Box &other) const {
-                return glm::all(glm::equal(extents, other.extents, 1e-6f));
+                return glm::all(glm::epsilonEqual(extents, other.extents, 1e-5f));
             }
         };
 
