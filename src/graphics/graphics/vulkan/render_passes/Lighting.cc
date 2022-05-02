@@ -29,6 +29,7 @@ namespace sp::vulkan::renderer {
 
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
+        ZoneScoped;
         gelTextureCache.clear();
         lights.clear();
 
@@ -250,6 +251,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddShadowPasses(RenderGraph &graph) {
+        ZoneScoped;
         graph.BeginScope("ShadowMap");
 
         ecs::Renderable::VisibilityMask opticMask;
