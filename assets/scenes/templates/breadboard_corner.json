@@ -2,13 +2,12 @@
 	"entities": [
 		{
 			"transform": {
-				"translate": [0, 0, 0],
-				"scale": [1, 1, 1]
+				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "breadboard_surface",
+					"model": "breadboard_corner",
 					"render": true
 				}
 			}
