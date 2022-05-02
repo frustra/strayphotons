@@ -1,5 +1,6 @@
 #include "PhysicsJoints.hh"
 
+#include "core/Common.hh"
 #include "game/Scene.hh"
 
 #include <assets/AssetHelpers.hh>
@@ -72,9 +73,7 @@ namespace ecs {
     void Component<PhysicsJoints>::Apply(const PhysicsJoints &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstJoints = dst.Get<PhysicsJoints>(lock);
         for (auto &joint : src.joints) {
-            if (std::find(dstJoints.joints.begin(), dstJoints.joints.end(), joint) == dstJoints.joints.end()) {
-                dstJoints.joints.emplace_back(joint);
-            }
+            if (!sp::contains(dstJoints.joints, joint)) dstJoints.joints.emplace_back(joint);
         }
     }
 } // namespace ecs

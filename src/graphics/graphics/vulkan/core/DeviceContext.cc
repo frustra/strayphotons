@@ -600,9 +600,7 @@ namespace sp::vulkan {
 
         for (int i = 0; i < count; i++) {
             glm::ivec2 size(modes[i].width, modes[i].height);
-            if (std::find(monitorModes.begin(), monitorModes.end(), size) == monitorModes.end()) {
-                monitorModes.push_back(size);
-            }
+            if (!contains(monitorModes, size)) monitorModes.push_back(size);
         }
 
         std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {

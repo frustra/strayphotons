@@ -48,7 +48,7 @@ namespace sp::vulkan::renderer {
                 builder.CreateUniform("VoxelState", sizeof(GPUVoxelState));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                GPUVoxelState gpuData = {glm::inverse(glm::mat4(voxelToWorld.matrix)), voxelGridSize};
+                GPUVoxelState gpuData = {voxelToWorld.GetInverse().matrix, voxelGridSize};
                 resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
             });
     }
