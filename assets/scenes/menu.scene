@@ -178,7 +178,7 @@
 		{
 			"name": "articulating_arm",
 			"transform": {
-				"translate": [0.2, 0.84, 0.2],
+				"translate": [0.22, 0.84, 0.22],
 				"scale": [2, 2, 2],
 				"parent": "table"
 			},
@@ -228,7 +228,7 @@
 		{
 			"name": "articulating_arm_1",
 			"transform": {
-				"translate": [0.8, 0.84, 0.8],
+				"translate": [0.78, 0.84, 0.78],
 				"scale": [2, 2, 2],
 				"parent": "table"
 			},
