@@ -28,10 +28,10 @@
 			"physics": {
 				"model": {
 					"model": "01-outside",
-					"mesh_index": 6
+					"mesh_index": 6,
+					"decompose_hull": true
 				},
-				"dynamic": false,
-				"decomposeHull": true
+				"dynamic": false
 			}
 		},
 		<%- include('prefab/light_sensor',

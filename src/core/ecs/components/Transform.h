@@ -79,6 +79,9 @@ namespace ecs {
         // Returns a flattened Transform that includes all parent transforms.
         Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
         glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
+
+        // Returns a flatted Transform relative to the specified entity.
+        Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
     };
     #endif
     } // extern "C"

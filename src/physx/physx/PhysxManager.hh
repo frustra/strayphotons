@@ -47,8 +47,9 @@ namespace sp {
         glm::vec3 velocity = glm::vec3(0);
         float angularDamping, linearDamping;
         ecs::PhysicsGroup physicsGroup;
+        std::vector<std::pair<ecs::PhysicsShape, size_t>> shapeIndexes;
         std::shared_ptr<const ConvexHullSet> shapeCache;
-        physx::PxMaterial *material = nullptr;
+        std::shared_ptr<physx::PxMaterial> material;
 
         ActorUserData() {}
         ActorUserData(ecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
@@ -78,7 +79,7 @@ namespace sp {
         void Frame() override;
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:

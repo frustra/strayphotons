@@ -17,6 +17,8 @@ namespace ecs {
         Name(std::string_view scene, std::string_view entity);
         Name(std::string_view relativeName, const Name &scope);
 
+        bool Parse(std::string_view relativeName, const Name &scope);
+
         std::string String() const {
             if (scene.empty()) return entity;
             return scene + ":" + entity;

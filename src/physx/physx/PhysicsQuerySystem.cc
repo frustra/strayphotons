@@ -13,6 +13,7 @@ namespace sp {
     PhysicsQuerySystem::PhysicsQuerySystem(PhysxManager &manager) : manager(manager) {}
 
     void PhysicsQuerySystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::PhysicsQuery>> lock) {
+        ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::PhysicsQuery>()) {
             auto &query = entity.Get<ecs::PhysicsQuery>(lock);
             for (auto &subQuery : query.queries) {

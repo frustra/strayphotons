@@ -120,6 +120,8 @@ namespace ecs {
                             mesh.model = sp::GAssets.LoadGltf(meshParam.second.get<std::string>());
                         } else if (meshParam.first == "mesh_index") {
                             mesh.meshIndex = (size_t)meshParam.second.get<double>();
+                        } else if (meshParam.first == "decompose_hull") {
+                            mesh.decomposeHull = meshParam.second.get<bool>();
                         } else {
                             Errorf("Unknown physics model field: %s", meshParam.first);
                             return false;
@@ -134,8 +136,6 @@ namespace ecs {
                 physics.dynamic = param.second.get<bool>();
             } else if (param.first == "kinematic") {
                 physics.kinematic = param.second.get<bool>();
-            } else if (param.first == "decomposeHull") {
-                physics.decomposeHull = param.second.get<bool>();
             } else if (param.first == "density") {
                 physics.density = param.second.get<double>();
             } else if (param.first == "angular_damping") {
@@ -151,10 +151,14 @@ namespace ecs {
                     physics.group = PhysicsGroup::World;
                 } else if (groupString == "INTERACTIVE") {
                     physics.group = PhysicsGroup::Interactive;
+                } else if (groupString == "HELD_OBJECT") {
+                    physics.group = PhysicsGroup::HeldObject;
                 } else if (groupString == "PLAYER") {
                     physics.group = PhysicsGroup::Player;
-                } else if (groupString == "PLAYER_HANDS") {
-                    physics.group = PhysicsGroup::PlayerHands;
+                } else if (groupString == "PLAYER_LEFT_HAND") {
+                    physics.group = PhysicsGroup::PlayerLeftHand;
+                } else if (groupString == "PLAYER_RIGHT_HAND") {
+                    physics.group = PhysicsGroup::PlayerRightHand;
                 } else {
                     Errorf("Unknown physics group: %s", groupString);
                     return false;

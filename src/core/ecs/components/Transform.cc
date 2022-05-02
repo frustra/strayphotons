@@ -196,6 +196,28 @@ namespace ecs {
         return parentEntity.Get<TransformTree>(lock).GetGlobalRotation(lock) * pose.GetRotation();
     }
 
+    Transform TransformTree::GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const {
+        if (parent == relative) {
+            return pose;
+        } else if (!parent) {
+            if (!relative.Has<TransformTree>(lock)) {
+                Tracef("GetRelativeTransform relative %s does not have a TransformTree", std::to_string(relative));
+                return pose;
+            }
+            auto relativeTransform = relative.Get<TransformTree>(lock).GetGlobalTransform(lock);
+            return relativeTransform.GetInverse() * pose;
+        }
+
+        auto parentEntity = parent.Get(lock);
+        if (!parentEntity.Has<TransformTree>(lock)) {
+            Tracef("TransformTree parent %s does not have a TransformTree", std::to_string(parentEntity));
+            return pose;
+        }
+
+        auto relativeTransform = parentEntity.Get<TransformTree>(lock).GetRelativeTransform(lock, relative);
+        return relativeTransform * pose;
+    }
+
     void transform_identity(Transform *out) {
         *out = Transform();
     }
