@@ -62,8 +62,7 @@ namespace sp::scripts {
                                 state.SetParam<EntityRef>("target_entity", targetEntity);
 
                                 if (target.Has<TransformSnapshot>(lock)) {
-                                    transform.pose.matrix = target.Get<TransformSnapshot>(lock).matrix *
-                                                            glm::mat4(transform.pose.matrix);
+                                    transform.pose = target.Get<TransformSnapshot>(lock) * transform.pose;
                                 }
                             }
                         }

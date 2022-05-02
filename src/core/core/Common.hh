@@ -67,8 +67,13 @@ namespace sp {
     typedef uint64 Hash64;
 
     template<typename T, typename Func>
-    void erase_if(T &vec, Func f) {
+    inline void erase_if(T &vec, Func f) {
         vec.erase(std::remove_if(vec.begin(), vec.end(), f), vec.end());
+    }
+
+    template<typename T, typename V>
+    inline bool contains(const T &vec, const V &val) {
+        return std::find(vec.begin(), vec.end(), val) != vec.end();
     }
 
     namespace boost_replacements {

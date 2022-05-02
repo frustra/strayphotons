@@ -255,7 +255,7 @@ namespace sp {
 
                     auto userData = (ActorUserData *)actor->userData;
                     Assert(userData, "Physics actor is missing UserData");
-                    if (ph.dynamic && !ph.kinematic && transform.matrix == userData->pose.matrix) {
+                    if (ph.dynamic && !ph.kinematic && transform == userData->pose) {
                         auto pose = actor->getGlobalPose();
                         transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                         transform.SetRotation(PxQuatToGlmQuat(pose.q));
@@ -450,6 +450,7 @@ namespace sp {
 
     PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
         ecs::Entity &e) {
+        ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);
         if (ph.shapes.empty()) return nullptr;
 
@@ -520,6 +521,7 @@ namespace sp {
     }
 
     void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e) {
+        ZoneScoped;
         if (actors.count(e) == 0) {
             auto actor = CreateActor(lock, e);
             if (actor) actors[e] = actor;
@@ -642,7 +644,7 @@ namespace sp {
             }
         }
 
-        if (transform.matrix != userData->pose.matrix) {
+        if (transform != userData->pose) {
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
             if (dynamic) {
                 if (shapesChanged) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
