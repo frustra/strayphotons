@@ -3,6 +3,7 @@
 #include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "core/DispatchQueue.hh"
+#include "core/Hashing.hh"
 #include "core/PreservingMap.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -106,7 +107,44 @@ namespace sp::vulkan {
 
     private:
         void FlushMeshes();
-        PreservingMap<string, Mesh> activeMeshes;
+        struct MeshKey {
+            std::string modelName;
+            size_t meshIndex;
+        };
+
+        struct MeshKeyView {
+            std::string_view modelName;
+            size_t meshIndex;
+        };
+
+        struct MeshKeyHash {
+            using is_transparent = void;
+
+            std::size_t operator()(const MeshKey &key) const {
+                auto h = StringHash{}(key.modelName);
+                hash_combine(h, key.meshIndex);
+                return h;
+            }
+            std::size_t operator()(const MeshKeyView &key) const {
+                auto h = StringHash{}(key.modelName);
+                hash_combine(h, key.meshIndex);
+                return h;
+            }
+        };
+
+        struct MeshKeyEqual {
+            using is_transparent = void;
+
+            bool operator()(const MeshKeyView &lhs, const MeshKey &rhs) const {
+                const std::string_view view = rhs.modelName;
+                return lhs.modelName == view && lhs.meshIndex == rhs.meshIndex;
+            }
+            bool operator()(const MeshKey &lhs, const MeshKey &rhs) const {
+                return lhs.modelName == rhs.modelName && lhs.meshIndex == rhs.meshIndex;
+            }
+        };
+
+        PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
         vector<GPURenderableEntity> renderables;
     };

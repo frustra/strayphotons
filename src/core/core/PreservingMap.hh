@@ -17,7 +17,11 @@ namespace sp {
     static_assert(sizeof(chrono_clock::rep) <= sizeof(uint64_t), "Chrono Clock time point is larger than uint64_t");
     static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "std::atomic_int64_t is not lock-free");
 
-    template<typename K, typename V, int64_t PreserveAgeMilliseconds = 10000>
+    template<typename K,
+        typename V,
+        int64_t PreserveAgeMilliseconds = 10000,
+        typename Hash = robin_hood::hash<K>,
+        typename Equal = std::equal_to<K>>
     class PreservingMap : public NonCopyable {
     private:
         static_assert(PreserveAgeMilliseconds > 0, "PreserveAgeMilliseconds must be positive");
@@ -30,9 +34,11 @@ namespace sp {
             std::atomic_uint64_t last_use;
         };
 
+        using Storage = robin_hood::unordered_node_map<K, TimedValue, Hash, Equal>;
+
         LockFreeMutex mutex;
         chrono_clock::time_point last_tick;
-        robin_hood::unordered_node_map<K, TimedValue> storage;
+        Storage storage;
 
     public:
         PreservingMap() : last_tick(chrono_clock::now()) {}
@@ -93,6 +99,19 @@ namespace sp {
             }
         }
 
+        template<typename OtherKey, typename S = Storage>
+        typename std::enable_if<S::is_transparent, std::shared_ptr<V>>::type Load(const OtherKey &key) {
+            std::shared_lock lock(mutex);
+
+            auto it = storage.find(key);
+            if (it != storage.end()) {
+                it->second.last_use = 0;
+                return it->second.value;
+            } else {
+                return nullptr;
+            }
+        }
+
         // Returns true if the key was dropped, or if it does not exist
         // A key can only be dropped if there are no references to it.
         // Values will have their destructors called inline by the current thread.
@@ -129,6 +148,12 @@ namespace sp {
         }
 
         bool Contains(const K &key) {
+            std::shared_lock lock(mutex);
+            return storage.contains(key);
+        }
+
+        template<typename OtherKey, typename S = Storage>
+        typename std::enable_if<S::is_transparent, bool>::type Contains(const OtherKey &key) {
             std::shared_lock lock(mutex);
             return storage.contains(key);
         }

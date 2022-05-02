@@ -43,9 +43,9 @@ namespace sp::vulkan::renderer {
                 builder.RequirePass();
                 builder.Read(readbackID, Access::HostRead);
             })
-            .Execute([readbackID, callback](rg::Resources &resources, DeviceContext &device) {
+            .Execute([readbackID, callback = std::move(callback)](rg::Resources &resources, DeviceContext &device) {
                 auto buffer = resources.GetBuffer(readbackID);
-                device.ExecuteAfterFrameFence([callback, buffer]() {
+                device.ExecuteAfterFrameFence([callback = std::move(callback), buffer]() {
                     callback(buffer);
                 });
             });
@@ -111,9 +111,9 @@ namespace sp::vulkan::renderer {
                 builder.RequirePass();
                 builder.Read(readbackID, Access::HostRead);
             })
-            .Execute([readbackID, callback](rg::Resources &resources, DeviceContext &device) {
+            .Execute([readbackID, callback = std::move(callback)](rg::Resources &resources, DeviceContext &device) {
                 auto buffer = resources.GetBuffer(readbackID);
-                device.ExecuteAfterFrameFence([callback, buffer]() {
+                device.ExecuteAfterFrameFence([callback = std::move(callback), buffer]() {
                     callback(buffer);
                 });
             });
