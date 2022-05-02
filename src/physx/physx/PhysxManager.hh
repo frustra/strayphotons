@@ -79,7 +79,7 @@ namespace sp {
         void Frame() override;
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:

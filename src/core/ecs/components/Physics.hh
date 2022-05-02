@@ -40,7 +40,9 @@ namespace ecs {
             float radius;
             Sphere(float radius = 1.0f) : radius(radius) {}
 
-            bool operator==(const Sphere &) const = default;
+            bool operator==(const Sphere &other) const {
+                return glm::epsilonEqual(radius, other.radius, 1e-6f);
+            }
         };
 
         struct Capsule {
@@ -48,14 +50,18 @@ namespace ecs {
             float height;
             Capsule(float height = 1.0f, float radius = 0.5f) : radius(radius), height(height) {}
 
-            bool operator==(const Capsule &) const = default;
+            bool operator==(const Capsule &other) const {
+                return glm::epsilonEqual(radius, other.radius, 1e-6f) && glm::epsilonEqual(height, other.height, 1e-6f);
+            }
         };
 
         struct Box {
             glm::vec3 extents;
             Box(glm::vec3 extents = glm::vec3(1)) : extents(extents) {}
 
-            bool operator==(const Box &) const = default;
+            bool operator==(const Box &other) const {
+                return glm::all(glm::equal(extents, other.extents, 1e-6f));
+            }
         };
 
         struct Plane {

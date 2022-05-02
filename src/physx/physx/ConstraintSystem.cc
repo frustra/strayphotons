@@ -135,6 +135,7 @@ namespace sp {
     void ConstraintSystem::BreakConstraints(
         ecs::Lock<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::TransformSnapshot, ecs::EventBindings>,
             ecs::Write<ecs::Physics, ecs::EventInput>> lock) {
+        ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
@@ -155,6 +156,7 @@ namespace sp {
 
     void ConstraintSystem::Frame(
         ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints>> lock) {
+        ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
             if (manager.actors.count(entity) == 0) continue;

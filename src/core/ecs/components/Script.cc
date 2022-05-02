@@ -196,7 +196,7 @@ namespace ecs {
 
     void Script::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
         ZoneScopedN("OnPhysicsUpdate");
-        ZoneStr(ecs::ToString(lock, ent));
+        // ZoneStr(ecs::ToString(lock, ent));
         for (auto &state : scripts) {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.callback);
             if (callback) (*callback)(state, lock, ent, interval);

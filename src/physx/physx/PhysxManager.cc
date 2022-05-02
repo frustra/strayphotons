@@ -17,6 +17,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <glm/ext/matrix_relational.hpp>
 #include <murmurhash/MurmurHash3.h>
 
 namespace sp {
@@ -245,36 +246,44 @@ namespace sp {
                     ecs::Script>,
                 ecs::PhysicsUpdateLock>();
 
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
+            {
+                ZoneScopedN("UpdateSnapshots(Physics)");
+                for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                    if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (actors.count(ent) > 0) {
-                    auto const &actor = actors[ent];
-                    auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
+                    auto &ph = ent.Get<ecs::Physics>(lock);
+                    if (actors.count(ent) > 0) {
+                        auto const &actor = actors[ent];
+                        auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
 
-                    auto userData = (ActorUserData *)actor->userData;
-                    Assert(userData, "Physics actor is missing UserData");
-                    if (ph.dynamic && !ph.kinematic && transform == userData->pose) {
-                        auto pose = actor->getGlobalPose();
-                        transform.SetPosition(PxVec3ToGlmVec3(pose.p));
-                        transform.SetRotation(PxQuatToGlmQuat(pose.q));
-                        ent.Set<ecs::TransformTree>(lock, transform);
-                        userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
-                    } else {
-                        transform = ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                        auto userData = (ActorUserData *)actor->userData;
+                        Assert(userData, "Physics actor is missing UserData");
+                        if (ph.dynamic && !ph.kinematic && transform == userData->pose) {
+                            auto pose = actor->getGlobalPose();
+                            transform.SetPosition(PxVec3ToGlmVec3(pose.p));
+                            transform.SetRotation(PxQuatToGlmQuat(pose.q));
+                            ent.Set<ecs::TransformTree>(lock, transform);
+                            userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
+                        } else {
+                            transform = ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                        }
+
+                        userData->pose = transform;
+                    } else if (ent.Has<ecs::TransformTree>(lock)) {
+                        ent.Set<ecs::TransformSnapshot>(lock,
+                            ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
                     }
-
-                    userData->pose = transform;
-                } else if (ent.Has<ecs::TransformTree>(lock)) {
-                    ent.Set<ecs::TransformSnapshot>(lock, ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
                 }
             }
 
-            for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
-                if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock)) continue;
-                auto &transform = ent.Get<ecs::TransformTree>(lock);
-                ent.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
+            {
+                ZoneScopedN("UpdateSnapshots(NonPhysics)");
+                for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                    if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock))
+                        continue;
+                    auto &transform = ent.Get<ecs::TransformTree>(lock);
+                    ent.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
+                }
             }
 
             constraintSystem.BreakConstraints(lock);
@@ -532,8 +541,10 @@ namespace sp {
         return actor;
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e) {
+    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+        ecs::Entity &e) {
         ZoneScoped;
+        // ZoneStr(ecs::ToString(lock, e));
         if (actors.count(e) == 0) {
             auto actor = CreateActor(lock, e);
             if (actor) actors[e] = actor;
@@ -549,7 +560,7 @@ namespace sp {
 
         const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
         for (auto &shape : ph.shapes) {
-            if (mesh) Abortf("Physics actor can't have multiple meshes: %s", std::to_string(e));
+            if (mesh) Abortf("Physics actor can't have multiple meshes: %s", ecs::ToString(lock, e));
             mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
             if (mesh && !mesh->model) return;
         }
@@ -557,8 +568,8 @@ namespace sp {
         bool shapesChanged = false;
         auto actorShapeCount = actor->getNbShapes();
         if (mesh) {
-            if (scale != userData->scale && actorShapeCount > 0) {
-                ZoneScopedN("ScaleMesh");
+            if (glm::any(glm::notEqual(scale, userData->scale, 1e-5f)) && actorShapeCount > 0) {
+                Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
                 std::vector<PxShape *> pxShapes(actorShapeCount);
                 actor->getShapes(&pxShapes[0], actorShapeCount);
                 PxConvexMeshGeometry meshGeom;
@@ -572,6 +583,7 @@ namespace sp {
                 }
                 shapesChanged = true;
             }
+            userData->scale = scale;
         } else {
             // First check if any shapes were added or removed, and if the shape types match
             if (ph.shapes.size() == userData->shapeIndexes.size()) {
@@ -588,7 +600,7 @@ namespace sp {
 
             if (shapesChanged) {
                 ZoneScopedN("ShapesChanged:true");
-                Logf("Shapes changed: %s", std::to_string(e));
+                Logf("Shapes changed: %s", ecs::ToString(lock, e));
 
                 std::vector<PxShape *> pxShapes(actorShapeCount);
                 if (actorShapeCount > 0) {
@@ -626,41 +638,39 @@ namespace sp {
                         pxShapes.size());
 
                     if (shape.shape != shapeIndex.first.shape) {
-                        Logf("Updating actor shape geometry: index %u", shapeIndex.second);
+                        // Logf("Updating actor shape geometry: index %u", shapeIndex.second);
                         auto geometry = GeometryFromShape(shape);
                         pxShapes[shapeIndex.second]->setGeometry(geometry.any());
                         shapesChanged = true;
                     }
-                    // if (shape.transform != shapeIndex.first.transform) {
-                    //     Logf("Updating actor shape pose: index %u", shapeIndex.second);
+                    if (glm::any(glm::notEqual(shape.transform.matrix, shapeIndex.first.transform.matrix, 1e-4f))) {
+                        // Logf("Updating actor shape pose: index %u", shapeIndex.second);
 
-                    //     PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
-                    //         GlmQuatToPxQuat(shape.transform.GetRotation()));
-                    //     pxShapes[shapeIndex.second]->setLocalPose(shapeTransform);
-                    //     shapesChanged = true;
-                    // }
-                    shapeIndex.first = shape;
+                        PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
+                            GlmQuatToPxQuat(shape.transform.GetRotation()));
+                        pxShapes[shapeIndex.second]->setLocalPose(shapeTransform);
+                        shapesChanged = true;
+                    }
+                    userData->shapeIndexes[i] = {shape, shapeIndex.second};
                 }
             }
         }
 
-        if (transform != userData->pose) {
+        if (dynamic && shapesChanged) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+        if (glm::any(glm::notEqual(transform.matrix, userData->pose.matrix, 1e-5f))) {
+            // Logf("Updating actor position: %s", ecs::ToString(lock, e));
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
-            if (dynamic) {
-                if (shapesChanged) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
-                if (ph.kinematic) {
-                    dynamic->setKinematicTarget(pxTransform);
-                } else {
-                    actor->setGlobalPose(pxTransform);
-                }
+            if (dynamic && ph.kinematic) {
+                dynamic->setKinematicTarget(pxTransform);
             } else {
                 actor->setGlobalPose(pxTransform);
             }
 
             userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
-            userData->pose = transform;
-            userData->scale = scale;
+        } else {
+            userData->velocity = glm::vec3(0);
         }
+        userData->pose = transform;
         if (userData->physicsGroup != ph.group) SetCollisionGroup(actor, ph.group);
         if (dynamic) {
             if (userData->angularDamping != ph.angularDamping) {

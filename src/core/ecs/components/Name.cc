@@ -11,6 +11,10 @@ namespace ecs {
     }
 
     Name::Name(std::string_view relativeName, const Name &scope) {
+        Parse(relativeName, scope);
+    }
+
+    bool Name::Parse(std::string_view relativeName, const Name &scope) {
         size_t i = relativeName.find(':');
         if (i != std::string::npos) {
             scene = relativeName.substr(0, i);
@@ -25,18 +29,19 @@ namespace ecs {
         } else {
             entity.clear();
             Errorf("Invalid name has no scene: %s", relativeName);
-            return;
+            return false;
         }
         if (scene.find_first_of(":/ ") != std::string::npos) {
             entity.clear();
             Errorf("Scene name has invalid character: '%s'", scene);
-            return;
+            return false;
         }
         if (entity.find_first_of(":/ ") != std::string::npos) {
             entity.clear();
             Errorf("Entity name has invalid character: '%s'", entity);
-            return;
+            return false;
         }
+        return true;
     }
 
     std::ostream &operator<<(std::ostream &out, const Name &v) {
