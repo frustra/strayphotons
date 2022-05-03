@@ -215,6 +215,7 @@ namespace ecs {
     }
 
     bool EventInput::Poll(Lock<Read<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut) {
+        if (!ent.Has<EventInput>(lock)) return false;
         return ent.Get<const EventInput>(lock).Poll(binding, eventOut);
     }
 
@@ -308,7 +309,7 @@ namespace ecs {
         return list;
     }
 
-    size_t EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings, EventInput>> lock,
+    size_t EventBindings::SendEvent(SendEventsLock lock,
         const EntityRef &target,
         const std::string &bindingName,
         const Event &event,

@@ -37,6 +37,8 @@ namespace ecs {
         std::string toString() const;
     };
 
+    using SendEventsLock = Lock<Read<Name, FocusLayer, FocusLock, EventBindings, EventInput>>;
+
     std::ostream &operator<<(std::ostream &out, const Event::EventData &v);
 
     class EventQueue {
@@ -104,17 +106,14 @@ namespace ecs {
         const BindingList *Lookup(const std::string source) const;
         std::vector<std::string> GetBindingNames() const;
 
-        static size_t SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings, EventInput>> lock,
+        static size_t SendEvent(SendEventsLock lock,
             const EntityRef &target,
             const std::string &bindingName,
             const Event &event,
             size_t depth = 0);
 
         template<typename T>
-        static inline size_t SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings, EventInput>> lock,
-            const std::string &name,
-            const Entity &source,
-            T data) {
+        static inline size_t SendEvent(SendEventsLock lock, const std::string &name, const Entity &source, T data) {
             return SendEvent(lock, source, name, Event{name, source, data});
         }
 

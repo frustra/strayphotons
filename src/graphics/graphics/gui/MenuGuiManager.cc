@@ -106,31 +106,19 @@ namespace sp {
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::FocusLayer>(lock)) gui.Set<ecs::FocusLayer>(lock, focusLayer);
             auto &focusLock = lock.Get<ecs::FocusLock>();
-            auto &readInput = gui.Get<const ecs::EventInput>(lock);
+            auto &eventInput = gui.Get<ecs::EventInput>(lock);
             if (MenuOpen()) {
                 focusLock.AcquireFocus(ecs::FocusLayer::MENU);
 
-                if (!readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
-                    gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_BACK);
-                }
-                if (!readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
-                    gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_ENTER);
-                }
-                if (readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
-                    gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_OPEN);
-                }
+                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_BACK)) eventInput.Register(INPUT_EVENT_MENU_BACK);
+                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) eventInput.Register(INPUT_EVENT_MENU_ENTER);
+                if (eventInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) eventInput.Unregister(INPUT_EVENT_MENU_OPEN);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::MENU);
 
-                if (readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
-                    gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_BACK);
-                }
-                if (readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
-                    gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_ENTER);
-                }
-                if (!readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
-                    gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_OPEN);
-                }
+                if (eventInput.IsRegistered(INPUT_EVENT_MENU_BACK)) eventInput.Unregister(INPUT_EVENT_MENU_BACK);
+                if (eventInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) eventInput.Unregister(INPUT_EVENT_MENU_ENTER);
+                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) eventInput.Register(INPUT_EVENT_MENU_OPEN);
             }
         }
     }

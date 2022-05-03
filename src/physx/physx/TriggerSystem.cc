@@ -19,14 +19,9 @@ namespace sp {
 
     void TriggerSystem::Frame() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                    ecs::TriggerGroup,
-                                                    ecs::TransformSnapshot,
-                                                    ecs::FocusLayer,
-                                                    ecs::FocusLock,
-                                                    ecs::EventBindings,
-                                                    ecs::EventInput>,
-            ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+            ecs::Write<ecs::TriggerArea, ecs::SignalOutput>,
+            ecs::SendEventsLock>();
 
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;
