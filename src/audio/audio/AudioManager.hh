@@ -33,6 +33,7 @@ namespace sp {
 
     private:
         void SyncFromECS();
+        void Shutdown();
 
         SoundIo *soundio = nullptr;
         int deviceIndex;
@@ -71,6 +72,7 @@ namespace sp {
         ecs::ComponentObserver<ecs::Sounds> soundObserver;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
+        static void AudioErrorCallback(SoundIoOutStream *outstream, int error);
 
         PreservingMap<const Asset *, nqr::AudioData> decoderCache;
         DispatchQueue decoderQueue;
