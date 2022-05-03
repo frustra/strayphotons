@@ -1593,7 +1593,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"density": 3
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -2132,7 +2132,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"density": 3
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",
