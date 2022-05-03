@@ -131,7 +131,8 @@
 				"translate": [0, 0, -2]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			}
 		},
 		{

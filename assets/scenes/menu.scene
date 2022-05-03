@@ -27,7 +27,8 @@
 			},
 			"renderable": "cardboard-box",
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",

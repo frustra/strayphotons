@@ -132,7 +132,8 @@
 				]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 3
 			},
 			"script": {
 				"prefab": "template",
@@ -203,7 +204,8 @@
 				]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 3
 			},
 			"script": {
 				"prefab": "template",
@@ -379,7 +381,8 @@
 				]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",

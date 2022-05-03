@@ -1606,7 +1606,8 @@
 				]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 3
 			},
 			"script": {
 				"prefab": "template",
@@ -1718,7 +1719,8 @@
 				]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 3
 			},
 			"script": {
 				"prefab": "template",
@@ -1795,7 +1797,8 @@
 				]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 3
 			},
 			"script": {
 				"prefab": "template",

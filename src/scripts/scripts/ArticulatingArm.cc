@@ -11,26 +11,30 @@ namespace sp::scripts {
 
             float lockedRatio = SignalBindings::GetSignal(lock, ent, "locked_ratio");
 
-            if (state.userData.has_value() && std::any_cast<float>(state.userData) == lockedRatio) return;
+            struct ScriptData {
+                bool locked = false;
+            };
+            ScriptData scriptData = {};
+            if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
-            state.userData = lockedRatio;
+            bool shouldLock = lockedRatio > 0.999;
+            if (shouldLock == scriptData.locked) return;
 
             auto rootName = ent.Get<ecs::Name>(lock);
 
             struct ArmJoint {
-                bool fixed;
                 int angularDampingMultiplier;
                 EntityRef entity;
             };
 
             std::array jointNodes = {
-                ArmJoint{false, 1, ecs::Name{rootName.scene, rootName.entity + ".Arm_0"}},
-                ArmJoint{false, 1, ecs::Name{rootName.scene, rootName.entity + ".Arm_1"}},
-                ArmJoint{false, 1, ecs::Name{rootName.scene, rootName.entity + ".Ball_1"}},
-
-                ArmJoint{true, 1, ecs::Name{rootName.scene, rootName.entity + ".Socket_0"}},
-                ArmJoint{true, 1, ecs::Name{rootName.scene, rootName.entity + ".Shaft"}},
-                ArmJoint{true, 1, ecs::Name{rootName.scene, rootName.entity + ".Socket_1"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Arm_0"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Arm_1"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Ball_1"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Socket_0"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Shaft"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Knob"}},
+                ArmJoint{1, ecs::Name{rootName.scene, rootName.entity + ".Socket_1"}},
             };
 
             for (auto &node : jointNodes) {
@@ -41,38 +45,23 @@ namespace sp::scripts {
                 ph.angularDamping = lockedRatio * 100 * node.angularDampingMultiplier;
                 ph.linearDamping = lockedRatio * 100;
 
-                if (node.fixed) continue;
-
                 auto &joints = child.Get<ecs::PhysicsJoints>(lock).joints;
                 if (lockedRatio > 0.999) {
-                    bool createFixed = true;
-                    for (auto it = joints.begin(); it != joints.end(); it++) {
-                        if (it->type == ecs::PhysicsJointType::Fixed) {
-                            createFixed = false;
-                            break;
-                        }
-                    }
-                    if (createFixed && !joints.empty()) {
-                        ecs::PhysicsJoint joint = joints.front();
-                        auto jointTarget = joint.target.Get(lock);
-                        if (jointTarget.Has<ecs::TransformSnapshot>(lock)) {
-                            auto targetTransform = jointTarget.Get<ecs::TransformSnapshot>(lock);
-                            auto thisTransform = child.Get<ecs::TransformSnapshot>(lock);
-                            joint.localOrient = glm::inverse(thisTransform.GetRotation()) *
-                                                targetTransform.GetRotation();
-                            joint.remoteOrient = {};
-                            joint.type = ecs::PhysicsJointType::Fixed;
-                            joints.push_back(joint);
-                        }
-                    }
-                } else {
-                    for (auto it = joints.begin(); it != joints.end(); it++) {
-                        if (it->type == ecs::PhysicsJointType::Fixed) {
-                            joints.erase(it);
-                            break;
-                        }
-                    }
+                    auto &joint = joints.emplace_back();
+                    joint.target = ent;
+                    joint.type = ecs::PhysicsJointType::Fixed;
+                    auto transform = child.Get<ecs::TransformSnapshot>(lock).GetInverse() *
+                                     ent.Get<ecs::TransformSnapshot>(lock);
+                    joint.localOffset = transform.GetPosition();
+                    joint.localOrient = transform.GetRotation();
+                } else if (scriptData.locked) {
+                    sp::erase_if(joints, [ent](auto &&arg) {
+                        return arg.target == ent && arg.type == ecs::PhysicsJointType::Fixed;
+                    });
                 }
             }
+
+            scriptData.locked = shouldLock;
+            state.userData = scriptData;
         });
 } // namespace sp::scripts
