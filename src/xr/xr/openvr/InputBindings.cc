@@ -18,6 +18,10 @@
 #include <picojson/picojson.h>
 
 namespace sp::xr {
+    static CVar<int> CVarForceHandPose("vr.ForceHandePose",
+        0,
+        "0: none, 1: bind pose, 2: open hand, 3: fist, 4: grip limit");
+
     InputBindings::InputBindings(OpenVrSystem &vrSystem, std::string actionManifestPath) : vrSystem(vrSystem) {
         // TODO: Create .vrmanifest file / register vr manifest with steam:
         // https://github.com/ValveSoftware/openvr/wiki/Action-manifest
@@ -316,16 +320,19 @@ namespace sp::xr {
                                     }
 
                                     std::vector<vr::VRBoneTransform_t> boneTransforms(boneCount);
-                                    // error = vr::VRInput()->GetSkeletalReferenceTransforms(action.handle,
-                                    //     vr::VRSkeletalTransformSpace_Parent,
-                                    //     vr::VRSkeletalReferencePose_OpenHand,
-                                    //     boneTransforms.data(),
-                                    //     boneTransforms.size());
-                                    error = vr::VRInput()->GetSkeletalBoneData(action.handle,
-                                        vr::VRSkeletalTransformSpace_Parent,
-                                        vr::VRSkeletalMotionRange_WithoutController,
-                                        boneTransforms.data(),
-                                        boneTransforms.size());
+                                    if (CVarForceHandPose.Get() >= 1 && CVarForceHandPose.Get() <= 4) {
+                                        error = vr::VRInput()->GetSkeletalReferenceTransforms(action.handle,
+                                            vr::VRSkeletalTransformSpace_Parent,
+                                            (vr::EVRSkeletalReferencePose)(CVarForceHandPose.Get() - 1),
+                                            boneTransforms.data(),
+                                            boneTransforms.size());
+                                    } else {
+                                        error = vr::VRInput()->GetSkeletalBoneData(action.handle,
+                                            vr::VRSkeletalTransformSpace_Parent,
+                                            vr::VRSkeletalMotionRange_WithoutController,
+                                            boneTransforms.data(),
+                                            boneTransforms.size());
+                                    }
                                     Assertf(error == vr::EVRInputError::VRInputError_None,
                                         "Failed to read OpenVR bone transforms for action: %s",
                                         action.name);
