@@ -16,6 +16,13 @@ namespace sp {
         StartThread();
     }
 
+    void AudioManager::AudioErrorCallback(SoundIoOutStream *outstream, int error) {
+        Errorf("Shutting down audio manager: libsoundio error: %s", soundio_strerror(error));
+
+        auto self = static_cast<AudioManager *>(outstream->userdata);
+        self->Shutdown();
+    }
+
     bool AudioManager::ThreadInit() {
         ZoneScoped;
 
@@ -35,6 +42,7 @@ namespace sp {
         outstream = soundio_outstream_create(device);
         outstream->format = SoundIoFormatFloat32NE;
         outstream->write_callback = AudioWriteCallback;
+        outstream->error_callback = AudioErrorCallback;
         outstream->userdata = this;
 
         err = soundio_outstream_open(outstream);
@@ -62,11 +70,15 @@ namespace sp {
         return true;
     }
 
-    AudioManager::~AudioManager() {
+    void AudioManager::Shutdown() {
         StopThread();
         if (outstream) soundio_outstream_destroy(outstream);
         if (device) soundio_device_unref(device);
         if (soundio) soundio_destroy(soundio);
+    }
+
+    AudioManager::~AudioManager() {
+        Shutdown();
     }
 
     void AudioManager::Frame() {
