@@ -3,10 +3,6 @@
         {
             "name": "arm",
             "transform": {},
-            "physics": {
-                "shapes": {"sphere": 0.001},
-                "kinematic": true
-            },
             "script": [
                 {
                     "prefab": "gltf",

@@ -330,13 +330,7 @@ namespace sp {
 
             wakeUp = true;
             pxJoint->setActors(actor, targetActor);
-            if (ecsJoint.type == ecs::PhysicsJointType::Fixed) {
-                auto fixedJoint = pxJoint->is<PxFixedJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
-                    fixedJoint->setBreakForce(ecsJoint.range.x, ecsJoint.range.y);
-                }
-                pxJoint = fixedJoint;
-            } else if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
+            if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
                 auto distanceJoint = pxJoint->is<PxDistanceJoint>();
                 distanceJoint->setMinDistance(ecsJoint.range.x);
                 if (ecsJoint.range.y > ecsJoint.range.x) {
