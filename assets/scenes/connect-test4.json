@@ -742,7 +742,8 @@
 				]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			}
 		},
 		{

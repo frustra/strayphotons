@@ -74,7 +74,8 @@
 				"translate": [0, 1, -4]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",

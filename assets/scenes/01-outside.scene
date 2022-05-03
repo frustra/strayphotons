@@ -55,7 +55,8 @@
 				"rotate": [-30, 0, 1, 0]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -69,7 +70,8 @@
 				"rotate": [-80, 0, 1, 0]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -83,7 +85,8 @@
 				"rotate": [85, 0, 1, 0]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"density": 1
 			},
 			"script": {
 				"prefab": "template",

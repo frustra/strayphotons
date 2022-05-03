@@ -22,7 +22,8 @@
 				"model": {
 					"model": "duck",
 					"decompose_hull": true
-				}
+				},
+				"density": 1
 			}
         }
     ]

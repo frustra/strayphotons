@@ -108,7 +108,7 @@ namespace ecs {
         PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;
         bool kinematic = false; // only dynamic actors can be kinematic
-        float density = 1.0f;
+        float density = 1000.0f; // kg/m^3
         float angularDamping = 0.05f;
         float linearDamping = 0.0f;
 
