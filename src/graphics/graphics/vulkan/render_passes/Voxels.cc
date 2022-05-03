@@ -54,6 +54,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Voxels::AddVoxelization(RenderGraph &graph, const Lighting &lighting) {
+        ZoneScoped;
         auto scope = graph.Scope("Voxels");
 
         if (voxelGridSize == glm::ivec3(0)) {

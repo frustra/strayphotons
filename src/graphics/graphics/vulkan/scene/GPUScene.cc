@@ -37,6 +37,7 @@ namespace sp::vulkan {
 
     void GPUScene::LoadState(rg::RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock) {
+        ZoneScoped;
         renderables.clear();
         opticEntities.clear();
         jointPoses.clear();
@@ -53,13 +54,8 @@ namespace sp::vulkan {
             auto model = renderable.model->Get();
             if (!model) continue;
 
-            auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
-            auto vkMesh = activeMeshes.Load(meshName);
-            if (!vkMesh) {
-                meshesToLoad.emplace_back(model, renderable.meshIndex);
-                continue;
-            }
-            if (!vkMesh->CheckReady()) continue;
+            auto vkMesh = LoadMesh(model, renderable.meshIndex);
+            if (!vkMesh || !vkMesh->CheckReady()) continue;
 
             GPURenderableEntity gpuRenderable;
             gpuRenderable.modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
@@ -108,8 +104,7 @@ namespace sp::vulkan {
     }
 
     shared_ptr<Mesh> GPUScene::LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex) {
-        auto meshName = model->name + "." + std::to_string(meshIndex);
-        auto vkMesh = activeMeshes.Load(meshName);
+        auto vkMesh = activeMeshes.Load(MeshKeyView{model->name, meshIndex});
         if (!vkMesh) { meshesToLoad.emplace_back(model, meshIndex); }
         return vkMesh;
     }
@@ -119,13 +114,12 @@ namespace sp::vulkan {
 
         for (int i = (int)meshesToLoad.size() - 1; i >= 0; i--) {
             auto &[model, meshIndex] = meshesToLoad[i];
-            auto meshName = model->name + "." + std::to_string(meshIndex);
-            if (activeMeshes.Contains(meshName)) {
+            if (activeMeshes.Contains(MeshKeyView{model->name, meshIndex})) {
                 meshesToLoad.pop_back();
                 continue;
             }
 
-            activeMeshes.Register(meshName, make_shared<Mesh>(model, meshIndex, *this, device));
+            activeMeshes.Register(MeshKey{model->name, meshIndex}, make_shared<Mesh>(model, meshIndex, *this, device));
             meshesToLoad.pop_back();
         }
     }

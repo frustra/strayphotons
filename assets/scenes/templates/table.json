@@ -214,12 +214,12 @@
 		},
 		{
 			"transform": {
-				"translate": [0, 0.84, 0]
+				"translate": [0.02, 0.84, 0.02]
 			},
 			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "breadboard_4x4"
+					"source": "breadboard_12x12"
 				}
 			}
 		}

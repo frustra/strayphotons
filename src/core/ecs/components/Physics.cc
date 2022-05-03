@@ -54,6 +54,19 @@ namespace ecs {
                     return false;
                 }
                 shape.shape = sphere;
+            } else if (param.first == "box") {
+                if (shape) {
+                    Errorf("PhysicShape defines multiple shapes: box");
+                    return false;
+                }
+                PhysicsShape::Box box;
+                if (param.second.is<picojson::array>()) {
+                    box.extents = sp::MakeVec3(param.second);
+                    shape.shape = box;
+                } else {
+                    Errorf("Unknown physics box value: %s", param.second.to_str());
+                    return false;
+                }
             } else if (param.first == "transform") {
                 Transform shapeTransform;
                 if (Component<Transform>::Load(scope, shapeTransform, param.second)) {
