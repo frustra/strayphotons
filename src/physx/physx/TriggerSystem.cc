@@ -24,8 +24,9 @@ namespace sp {
                                                     ecs::TransformSnapshot,
                                                     ecs::FocusLayer,
                                                     ecs::FocusLock,
-                                                    ecs::EventBindings>,
-            ecs::Write<ecs::TriggerArea, ecs::SignalOutput, ecs::EventInput>>();
+                                                    ecs::EventBindings,
+                                                    ecs::EventInput>,
+            ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
 
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;

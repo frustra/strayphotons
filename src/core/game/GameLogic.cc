@@ -104,10 +104,10 @@ namespace sp {
 
             auto &input = ent.Get<ecs::EventInput>(lock);
             for (auto &[eventName, queue] : input.events) {
-                if (queue.empty()) {
+                if (queue->Empty()) {
                     Logf("  %s: empty", eventName);
                 } else {
-                    Logf("  %s: %u events", eventName, queue.size());
+                    Logf("  %s: %u events", eventName, queue->Size());
                 }
             }
         }

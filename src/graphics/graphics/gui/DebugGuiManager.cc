@@ -43,26 +43,18 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
-                ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                ecs::SignalBindings,
+                ecs::SignalOutput,
+                ecs::FocusLayer,
+                ecs::FocusLock,
+                ecs::EventInput>>();
 
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
                 while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
                     consoleOpen = !consoleOpen;
-                }
-
-                auto &readInput = gui.Get<const ecs::EventInput>(lock);
-                if (consoleOpen) {
-                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
-                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_TEXT_INPUT);
-                    }
-                } else {
-                    if (readInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
-                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_TEXT_INPUT);
-                    }
                 }
             }
 
@@ -72,13 +64,22 @@ namespace sp {
             }
         }
         if (focusChanged) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock, ecs::EventInput>>();
+            auto gui = guiEntity.Get(lock);
 
             auto &focusLock = lock.Get<ecs::FocusLock>();
+            auto &eventInput = gui.Get<ecs::EventInput>(lock);
+
             if (consoleOpen) {
                 focusLock.AcquireFocus(ecs::FocusLayer::OVERLAY);
+                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
+                    eventInput.Register(INPUT_EVENT_MENU_TEXT_INPUT);
+                }
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::OVERLAY);
+                if (eventInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
+                    eventInput.Unregister(INPUT_EVENT_MENU_TEXT_INPUT);
+                }
             }
         }
     }

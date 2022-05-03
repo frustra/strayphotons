@@ -49,9 +49,12 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
-                ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                ecs::SignalBindings,
+                ecs::SignalOutput,
+                ecs::FocusLayer,
+                ecs::FocusLock,
+                ecs::EventInput>>();
 
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::EventInput>(lock)) {
@@ -69,29 +72,6 @@ namespace sp {
                 }
                 while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_ENTER, event)) {
                     if (selectedScreen == MenuScreen::Splash) selectedScreen = MenuScreen::Main;
-                }
-
-                auto &readInput = gui.Get<const ecs::EventInput>(lock);
-                if (MenuOpen()) {
-                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
-                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_BACK);
-                    }
-                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
-                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_ENTER);
-                    }
-                    if (readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
-                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_OPEN);
-                    }
-                } else {
-                    if (readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
-                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_BACK);
-                    }
-                    if (readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
-                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_ENTER);
-                    }
-                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
-                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_OPEN);
-                    }
                 }
             }
 
@@ -120,16 +100,37 @@ namespace sp {
         io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
 
         if (focusChanged) {
-            auto lock =
-                ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::FocusLayer, ecs::FocusLock>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>,
+                ecs::Write<ecs::FocusLayer, ecs::FocusLock, ecs::EventInput>>();
 
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::FocusLayer>(lock)) gui.Set<ecs::FocusLayer>(lock, focusLayer);
             auto &focusLock = lock.Get<ecs::FocusLock>();
+            auto &readInput = gui.Get<const ecs::EventInput>(lock);
             if (MenuOpen()) {
                 focusLock.AcquireFocus(ecs::FocusLayer::MENU);
+
+                if (!readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
+                    gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_BACK);
+                }
+                if (!readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
+                    gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_ENTER);
+                }
+                if (readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
+                    gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_OPEN);
+                }
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::MENU);
+
+                if (readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
+                    gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_BACK);
+                }
+                if (readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
+                    gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_ENTER);
+                }
+                if (!readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
+                    gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_OPEN);
+                }
             }
         }
     }

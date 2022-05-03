@@ -80,8 +80,7 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sounds, ecs::Transform, ecs::Name>,
-            ecs::Write<ecs::EventInput>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sounds, ecs::Transform, ecs::Name, ecs::EventInput>>();
 
         auto head = headEntity.Get(lock);
         if (!head) head = headEntityFallback.Get(lock);

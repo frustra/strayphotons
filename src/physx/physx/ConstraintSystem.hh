@@ -17,9 +17,13 @@ namespace sp {
         void Frame(
             ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints>> lock);
 
-        void BreakConstraints(
-            ecs::Lock<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::TransformSnapshot, ecs::EventBindings>,
-                ecs::Write<ecs::Physics, ecs::EventInput>> lock);
+        void BreakConstraints(ecs::Lock<ecs::Read<ecs::Name,
+                                            ecs::FocusLayer,
+                                            ecs::FocusLock,
+                                            ecs::TransformSnapshot,
+                                            ecs::EventBindings,
+                                            ecs::EventInput>,
+            ecs::Write<ecs::Physics>> lock);
 
     private:
         void HandleForceLimitConstraint(physx::PxRigidActor *actor,
