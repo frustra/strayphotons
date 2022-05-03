@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/LockFreeMutex.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Focus.hh"
@@ -36,10 +37,24 @@ namespace ecs {
         std::string toString() const;
     };
 
+    using SendEventsLock = Lock<Read<Name, FocusLayer, FocusLock, EventBindings, EventInput>>;
+
     std::ostream &operator<<(std::ostream &out, const Event::EventData &v);
 
+    class EventQueue {
+    public:
+        void Add(const Event &event);
+        bool Empty();
+        size_t Size();
+        bool Poll(Event &eventOut);
+
+    private:
+        std::queue<Event> events;
+        sp::LockFreeMutex mutex;
+    };
+
     struct EventInput {
-        robin_hood::unordered_map<std::string, std::queue<Event>> events;
+        robin_hood::unordered_map<std::string, shared_ptr<EventQueue>> events;
 
         EventInput() {}
 
@@ -53,11 +68,12 @@ namespace ecs {
         void Register(const std::string &binding);
         bool IsRegistered(const std::string &binding) const;
         void Unregister(const std::string &binding);
-        bool Add(const std::string &binding, const Event &event);
-        bool HasEvents(const std::string &binding) const;
-        bool Poll(const std::string &binding, Event &eventOut);
 
-        static bool Poll(Lock<Write<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut);
+        bool Add(const std::string &binding, const Event &event) const;
+        bool HasEvents(const std::string &binding) const;
+        bool Poll(const std::string &binding, Event &eventOut) const;
+
+        static bool Poll(Lock<Read<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut);
     };
 
     class EventBindings {
@@ -90,17 +106,14 @@ namespace ecs {
         const BindingList *Lookup(const std::string source) const;
         std::vector<std::string> GetBindingNames() const;
 
-        static size_t SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings>, Write<EventInput>> lock,
+        static size_t SendEvent(SendEventsLock lock,
             const EntityRef &target,
             const std::string &bindingName,
             const Event &event,
             size_t depth = 0);
 
         template<typename T>
-        static inline size_t SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings>, Write<EventInput>> lock,
-            const std::string &name,
-            const Entity &source,
-            T data) {
+        static inline size_t SendEvent(SendEventsLock lock, const std::string &name, const Entity &source, T data) {
             return SendEvent(lock, source, name, Event{name, source, data});
         }
 

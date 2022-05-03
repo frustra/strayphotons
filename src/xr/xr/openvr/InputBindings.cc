@@ -129,9 +129,9 @@ namespace sp::xr {
         bool missingEntities = false;
         {
             ZoneScopedN("InputBindings Sync to ECS");
-            auto lock =
-                ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings>,
-                    ecs::Write<ecs::EventInput, ecs::SignalOutput, ecs::TransformTree>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings, ecs::EventInput>,
+                ecs::Write<ecs::SignalOutput, ecs::TransformTree>>();
 
             for (auto &actionSet : actionSets) {
                 vr::VRActiveActionSet_t activeActionSet = {};

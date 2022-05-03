@@ -157,8 +157,32 @@ namespace ecs {
         }
     }
 
+    void EventQueue::Add(const Event &event) {
+        std::lock_guard lock(mutex);
+        events.emplace(event);
+    }
+
+    bool EventQueue::Empty() {
+        std::lock_guard lock(mutex);
+        return events.empty();
+    }
+
+    size_t EventQueue::Size() {
+        std::lock_guard lock(mutex);
+        return events.size();
+    }
+
+    bool EventQueue::Poll(Event &eventOut) {
+        std::lock_guard lock(mutex);
+        if (events.empty()) return false;
+
+        eventOut = events.front();
+        events.pop();
+        return true;
+    }
+
     void EventInput::Register(const std::string &binding) {
-        events.emplace(binding, std::queue<Event>());
+        events.emplace(binding, make_shared<EventQueue>());
     }
 
     bool EventInput::IsRegistered(const std::string &binding) const {
@@ -169,10 +193,10 @@ namespace ecs {
         events.erase(binding);
     }
 
-    bool EventInput::Add(const std::string &binding, const Event &event) {
+    bool EventInput::Add(const std::string &binding, const Event &event) const {
         auto queue = events.find(binding);
         if (queue != events.end()) {
-            queue->second.emplace(event);
+            queue->second->Add(event);
             return true;
         }
         return false;
@@ -180,28 +204,19 @@ namespace ecs {
 
     bool EventInput::HasEvents(const std::string &binding) const {
         auto queue = events.find(binding);
-        return queue != events.end() && !queue->second.empty();
+        return queue != events.end() && !queue->second->Empty();
     }
 
-    bool EventInput::Poll(const std::string &binding, Event &eventOut) {
+    bool EventInput::Poll(const std::string &binding, Event &eventOut) const {
         auto queue = events.find(binding);
-        if (queue != events.end() && !queue->second.empty()) {
-            eventOut = queue->second.front();
-            queue->second.pop();
-            return true;
-        }
+        if (queue != events.end() && queue->second->Poll(eventOut)) return true;
         eventOut = Event();
         return false;
     }
 
-    bool EventInput::Poll(Lock<Write<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut) {
-        auto &readInput = ent.Get<const EventInput>(lock);
-        if (readInput.HasEvents(binding)) {
-            auto &writeInput = ent.Get<EventInput>(lock);
-            return writeInput.Poll(binding, eventOut);
-        }
-        eventOut = Event();
-        return false;
+    bool EventInput::Poll(Lock<Read<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut) {
+        if (!ent.Has<EventInput>(lock)) return false;
+        return ent.Get<const EventInput>(lock).Poll(binding, eventOut);
     }
 
     void EventBindings::CopyBindings(const EventBindings &src) {
@@ -294,7 +309,7 @@ namespace ecs {
         return list;
     }
 
-    size_t EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock, EventBindings>, Write<EventInput>> lock,
+    size_t EventBindings::SendEvent(SendEventsLock lock,
         const EntityRef &target,
         const std::string &bindingName,
         const Event &event,

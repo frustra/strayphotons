@@ -80,13 +80,13 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sounds, ecs::Transform, ecs::Name>,
-            ecs::Write<ecs::EventInput>>();
+        auto lock =
+            ecs::World.StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
 
         auto head = headEntity.Get(lock);
         if (!head) head = headEntityFallback.Get(lock);
-        if (head && head.Has<ecs::Transform>(lock)) {
-            auto transform = head.Get<ecs::Transform>(lock);
+        if (head && head.Has<ecs::TransformSnapshot>(lock)) {
+            auto transform = head.Get<ecs::TransformSnapshot>(lock);
             auto pos = transform.GetPosition();
             auto rot = transform.GetRotation();
             resonance->SetHeadPosition(pos.x, pos.y, pos.z);
@@ -164,8 +164,8 @@ namespace sp {
                 if (resonanceID != -1) {
                     resonance->SetSourceVolume(resonanceID, source.volume * std::min(10.0f, CVarVolume.Get()));
 
-                    if (ent.Has<ecs::Transform>(lock)) {
-                        auto &transform = ent.Get<ecs::Transform>(lock);
+                    if (ent.Has<ecs::TransformSnapshot>(lock)) {
+                        auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
                         auto pos = transform.GetPosition();
                         auto rot = transform.GetRotation();
                         resonance->SetSourcePosition(resonanceID, pos.x, pos.y, pos.z);

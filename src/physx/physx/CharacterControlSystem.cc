@@ -32,9 +32,9 @@ namespace sp {
         characterControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::CharacterController>>();
     }
 
-    void CharacterControlSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::TransformTree, ecs::EventInput, ecs::CharacterController>> lock) {
+    void CharacterControlSystem::Frame(ecs::Lock<
+        ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock, ecs::EventInput>,
+        ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
         while (characterControllerObserver.Poll(lock, controllerEvent)) {

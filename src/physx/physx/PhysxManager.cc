@@ -192,8 +192,9 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::Physics,
-                                                        ecs::PhysicsJoints>,
-                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController, ecs::EventInput>>();
+                                                        ecs::PhysicsJoints,
+                                                        ecs::EventInput>,
+                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -233,7 +234,8 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::LaserEmitter,
-                                                        ecs::OpticalElement>,
+                                                        ecs::OpticalElement,
+                                                        ecs::EventInput>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
@@ -242,7 +244,6 @@ namespace sp {
                     ecs::LaserLine,
                     ecs::LaserSensor,
                     ecs::SignalOutput,
-                    ecs::EventInput,
                     ecs::Script>,
                 ecs::PhysicsUpdateLock>();
 
