@@ -24,7 +24,7 @@ namespace sp {
             sensor.illuminance = glm::vec3(0);
         }
         for (auto &entity : lock.EntitiesWith<ecs::LaserEmitter>()) {
-            if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
+            if (!entity.Has<ecs::TransformSnapshot, ecs::LaserLine>(lock)) continue;
 
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
             if (!emitter.on) continue;
