@@ -120,6 +120,19 @@ namespace sp {
                 targetPosition = targetTree.GetGlobalTransform(lock).GetPosition();
                 targetPosition.y = transform.GetPosition().y;
                 targetHeight = std::max(0.1f, targetTree.pose.GetPosition().y - ecs::PLAYER_RADIUS);
+
+                if (target != userData->target) {
+                    // Move the target to the physics actor when the target changes
+                    auto movementProxy = controller.movementProxy.Get(lock);
+                    if (movementProxy.Has<ecs::TransformTree>(lock)) {
+                        auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
+                        auto deltaPos = userData->actorData.pose.GetPosition() - targetPosition;
+                        proxyTransform.pose.Translate(deltaPos);
+                        targetPosition += deltaPos;
+                    }
+
+                    userData->target = target;
+                }
             }
 
             // If the origin moved, teleport the controller
@@ -203,7 +216,16 @@ namespace sp {
             if (noclip) {
                 targetPosition += lateralMovement * dt;
                 targetPosition.y += verticalMovement * dt;
-                controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition + targetDelta));
+                targetPosition += targetDelta;
+                controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
+                transform.SetPosition(targetPosition);
+
+                auto movementProxy = controller.movementProxy.Get(lock);
+                if (movementProxy.Has<ecs::TransformTree>(lock)) {
+                    auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
+                    auto deltaPos = (lateralMovement + glm::vec3(0, verticalMovement, 0)) * dt;
+                    proxyTransform.pose.Translate(deltaPos);
+                }
 
                 userData->onGround = false;
                 userData->actorData.velocity = lateralMovement;
@@ -247,9 +269,12 @@ namespace sp {
                 //     inGround,
                 //     glm::to_string(PxVec3ToGlmVec3(state.deltaXP)),
                 //     glm::to_string(userData->actorData.velocity));
-                displacement += targetDelta;
 
-                auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(displacement), 0, dt, moveQueryFilter);
+                auto moveResult =
+                    controller.pxController->move(GlmVec3ToPxVec3(displacement + targetDelta), 0, dt, moveQueryFilter);
+
+                auto newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
+                auto deltaPos = newPosition - userData->actorData.pose.GetPosition() - targetDelta;
 
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
@@ -268,29 +293,30 @@ namespace sp {
                         //     glm::to_string(PxVec3ToGlmVec3(state.deltaXP)),
                         //     glm::to_string(userData->actorData.velocity));
                     } else {
-                        auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
-                                        userData->actorData.pose.GetPosition() - targetDelta;
                         userData->actorData.velocity = deltaPos / dt;
                         userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
                         // Logf("OffGround, DeltaPos: %s - %s, Vel: %s",
-                        //     glm::to_string(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
-                        //                    userData->actorData.pose.GetPosition()),
+                        //     glm::to_string(newPosition - userData->actorData.pose.GetPosition()),
                         //     glm::to_string(targetDelta),
                         //     glm::to_string(userData->actorData.velocity));
                     }
 
                     userData->onGround = false;
                 }
+
+                auto movementProxy = controller.movementProxy.Get(lock);
+                if (movementProxy.Has<ecs::TransformTree>(lock)) {
+                    auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
+                    // Only move the VR player if the movement is in line with the input displacement
+                    // This allows the headset to detatch from the player capsule so they don't get pushed back by walls
+                    auto absDeltaPos = glm::abs(deltaPos) + 0.00001f;
+                    glm::vec3 clampRatio = glm::min(glm::abs(displacement), absDeltaPos) / absDeltaPos;
+                    proxyTransform.pose.Translate(deltaPos * clampRatio);
+                }
+
+                transform.SetPosition(newPosition);
             }
 
-            auto newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
-            auto movementProxy = controller.movementProxy.Get(lock);
-            if (movementProxy.Has<ecs::TransformTree>(lock)) {
-                auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
-                proxyTransform.pose.Translate(newPosition - userData->actorData.pose.GetPosition() - targetDelta);
-            }
-
-            transform.SetPosition(newPosition);
             userData->actorData.pose = transform;
         }
     }

@@ -68,9 +68,7 @@
         },
         {
             "name": "left_hand_skeleton",
-            "transform": {
-                "parent": "input:vr_actions_main_in_lefthand_anim"
-            },
+            "transform": {},
             "physics": {
                 "group": "player_left_hand",
                 "density": 300,
@@ -90,16 +88,15 @@
                 {
                     "onPhysicsUpdate": "vr_hand",
                     "parameters": {
-                        "hand": "left"
+                        "hand": "left",
+                        "teleport_distance": 2.0
                     }
                 }
             ]
         },
         {
             "name": "right_hand_skeleton",
-            "transform": {
-                "parent": "input:vr_actions_main_in_righthand_anim"
-            },
+            "transform": {},
             "physics": {
                 "group": "player_right_hand",
                 "density": 300,
@@ -119,7 +116,8 @@
                 {
                     "onPhysicsUpdate": "vr_hand",
                     "parameters": {
-                        "hand": "right"
+                        "hand": "right",
+                        "teleport_distance": 2.0
                     }
                 }
             ]

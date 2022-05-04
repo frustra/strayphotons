@@ -220,6 +220,23 @@ namespace ecs {
                             physicsTransform.parent = physicsRoot;
                         }
                     }
+
+                    // Teleport the hands back to the player if they get too far away
+                    if (ph.constraint && ent.Has<TransformTree>(lock)) {
+                        auto teleportDistance = state.GetParam<double>("teleport_distance");
+                        if (teleportDistance > 0) {
+                            // TODO: Release any objects the player is holding
+                            auto parentEnt = ph.constraint.Get(lock);
+                            if (parentEnt.Has<TransformSnapshot>(lock)) {
+                                auto &transform = ent.Get<TransformTree>(lock);
+                                Assertf(!transform.parent, "vr_hand script transform can't have parent");
+                                auto &parentTransform = parentEnt.Get<const TransformSnapshot>(lock);
+
+                                auto dist = glm::length(transform.pose.GetPosition() - parentTransform.GetPosition());
+                                if (dist >= teleportDistance) transform.pose = parentTransform;
+                            }
+                        }
+                    }
                 }
             }),
     };
