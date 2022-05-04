@@ -12,7 +12,20 @@ namespace sp {
     static CVar<float> CVarVolume("s.Volume", 1.0f, "Global volume control");
 
     AudioManager::AudioManager()
-        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), decoderQueue("AudioDecode") {
+        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), sampleRate(48000),
+          decoderQueue("AudioDecode") {
+
+        framesPerBuffer = sampleRate * interval.count() / 1e9;
+        Assertf(framesPerBuffer < vraudio::kMaxSupportedNumFrames, "buffer too big: %d", framesPerBuffer);
+        Assertf(framesPerBuffer >= 32, "buffer too small: %d", framesPerBuffer); // FftManager::kMinFftSize
+
+        resonance.reset(vraudio::CreateResonanceAudioApi(2, framesPerBuffer, sampleRate));
+
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sounds>>();
+        }
+
         StartThread();
     }
 
@@ -20,7 +33,7 @@ namespace sp {
         Errorf("Shutting down audio manager: libsoundio error: %s", soundio_strerror(error));
 
         auto self = static_cast<AudioManager *>(outstream->userdata);
-        self->Shutdown();
+        self->Shutdown(true);
     }
 
     bool AudioManager::ThreadInit() {
@@ -29,56 +42,71 @@ namespace sp {
         soundio = soundio_create();
 
         int err = soundio_connect(soundio);
-        Assertf(!err, "soundio_connect: %s", soundio_strerror(err));
+        if (err) {
+            Errorf("soundio_connect: %s", soundio_strerror(err));
+            return false;
+        }
 
         soundio_flush_events(soundio);
 
         deviceIndex = soundio_default_output_device_index(soundio);
-        Assert(deviceIndex >= 0, "no audio output device found");
+        if (deviceIndex < 0) {
+            Errorf("no audio output device available");
+            Shutdown(false);
+            return false;
+        }
 
         device = soundio_get_output_device(soundio, deviceIndex);
-        Assert(device, "failed to open sound device");
+        if (!device) {
+            Errorf("failed to open audio output device");
+            Shutdown(false);
+            return false;
+        }
 
         outstream = soundio_outstream_create(device);
         outstream->format = SoundIoFormatFloat32NE;
         outstream->write_callback = AudioWriteCallback;
         outstream->error_callback = AudioErrorCallback;
         outstream->userdata = this;
+        outstream->sample_rate = sampleRate;
 
         err = soundio_outstream_open(outstream);
-        Assertf(!err, "soundio_outstream_open: %s", soundio_strerror(err));
-        Assertf(!outstream->layout_error,
-            "unable to set channel layout: %s",
-            soundio_strerror(outstream->layout_error));
+        if (err) {
+            Errorf("soundio_outstream_open: %s", soundio_strerror(err));
+            Shutdown(false);
+            return false;
+        }
+        if (outstream->layout_error) {
+            Errorf("unable to set channel layout: %s", soundio_strerror(outstream->layout_error));
+            Shutdown(false);
+            return false;
+        }
 
         auto channelCount = outstream->layout.channel_count;
-        Assertf(channelCount == 2, "only stereo output is supported, have %d channels", channelCount);
-
-        framesPerBuffer = outstream->sample_rate * interval.count() / 1e9;
-        Assertf(framesPerBuffer < vraudio::kMaxSupportedNumFrames, "buffer too big: %d", framesPerBuffer);
-        Assertf(framesPerBuffer >= 32, "buffer too small: %d", framesPerBuffer); // FftManager::kMinFftSize
-
-        resonance.reset(vraudio::CreateResonanceAudioApi(2, framesPerBuffer, outstream->sample_rate));
+        if (channelCount != 2) {
+            Errorf("only stereo output is supported, have %d channels", channelCount);
+            Shutdown(false);
+            return false;
+        }
 
         err = soundio_outstream_start(outstream);
-        Assertf(!err, "unable to start audio device: %s", soundio_strerror(err));
-
-        {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sounds>>();
+        if (err) {
+            Errorf("unable to start audio device: %s", soundio_strerror(err));
+            Shutdown(false);
+            return false;
         }
         return true;
     }
 
-    void AudioManager::Shutdown() {
-        StopThread();
+    void AudioManager::Shutdown(bool waitForExit) {
+        StopThread(waitForExit);
         if (outstream) soundio_outstream_destroy(outstream);
         if (device) soundio_device_unref(device);
         if (soundio) soundio_destroy(soundio);
     }
 
     AudioManager::~AudioManager() {
-        Shutdown();
+        Shutdown(true);
     }
 
     void AudioManager::Frame() {
