@@ -33,14 +33,16 @@ namespace sp {
 
     private:
         void SyncFromECS();
-        void Shutdown();
+        void Shutdown(bool waitForExit);
+
+        size_t sampleRate;
+        size_t framesPerBuffer = 1024; // updated later depending on sample rate and desired latency
 
         SoundIo *soundio = nullptr;
         int deviceIndex;
         SoundIoDevice *device = nullptr;
         SoundIoOutStream *outstream = nullptr;
         std::unique_ptr<vraudio::ResonanceAudioApi> resonance;
-        size_t framesPerBuffer = 1024; // updated later depending on sample rate and desired latency
 
         nqr::NyquistIO loader;
 

@@ -21,6 +21,7 @@ namespace sp {
 
     void RegisteredThread::StartThread(bool stepMode) {
         Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
+        exiting = false;
         thread = std::thread([this, stepMode] {
             tracy::SetThreadName(threadName.c_str());
             if (!ThreadInit()) return;
