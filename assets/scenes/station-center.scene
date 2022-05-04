@@ -172,8 +172,8 @@
 			"renderable": "box",
 			"transform": {
 				"parent": "elevator",
-				"translate": [0, 0, -1],
-				"scale": [4, 0.1, 4]
+				"translate": [0, -0.2, -1],
+				"scale": [4, 0.4, 4]
 			},
 			"physics": {
 				"model": "box",

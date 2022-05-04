@@ -12,9 +12,9 @@ namespace sp::vulkan::renderer {
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
-        3,
+        7,
         "Change the voxel grid clearing operation used between frames "
-        "(0: no clear, 1: clear radiance, 2: clear counters: 3: clear all)");
+        "(bitfield: 1=radiance, 2=counters, 4=normals)");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
@@ -66,9 +66,11 @@ namespace sp::vulkan::renderer {
                     desc.imageType = vk::ImageType::e3D;
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
                     builder.CreateImage("Radiance", desc, Access::TransferWrite);
+                    builder.CreateImage("Normals", desc, Access::TransferWrite);
                 })
                 .Execute([](rg::Resources &resources, CommandContext &cmd) {
                     auto radianceView = resources.GetImageView("Radiance");
+                    auto normalsView = resources.GetImageView("Normals");
 
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
@@ -76,6 +78,11 @@ namespace sp::vulkan::renderer {
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
                     cmd.Raw().clearColorImage(*radianceView->Image(),
+                        vk::ImageLayout::eTransferDstOptimal,
+                        clear,
+                        {range});
+
+                    cmd.Raw().clearColorImage(*normalsView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
                         {range});
@@ -88,6 +95,8 @@ namespace sp::vulkan::renderer {
             uint16_t _padding0[1];
             uint16_t radiance[3]; // half-float formatted
             uint16_t _padding1[1];
+            uint16_t normal[3]; // half-float formatted
+            uint16_t _padding2[1];
         };
 
         struct GPUVoxelFragmentList {
@@ -124,6 +133,7 @@ namespace sp::vulkan::renderer {
 
         bool clearRadiance = (CVarVoxelClear.Get() & 1) == 1;
         bool clearCounters = (CVarVoxelClear.Get() & 2) == 2;
+        bool clearNormals = (CVarVoxelClear.Get() & 4) == 4;
         auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
 
         auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
@@ -156,6 +166,7 @@ namespace sp::vulkan::renderer {
                 desc.sampler = SamplerType::TrilinearClampBorder;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
+                builder.CreateImage("Normals", desc, clearNormals ? Access::TransferWrite : Access::None);
 
                 builder.CreateBuffer("FragmentListMetadata",
                     {sizeof(GPUVoxelFragmentList), MAX_VOXEL_FRAGMENT_LISTS},
@@ -167,7 +178,7 @@ namespace sp::vulkan::renderer {
                     Residency::GPU_ONLY,
                     Access::None);
             })
-            .Execute([this, clearRadiance, clearCounters](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, clearRadiance, clearCounters, clearNormals](rg::Resources &resources, CommandContext &cmd) {
                 if (clearRadiance) {
                     auto radianceView = resources.GetImageView("Radiance");
                     vk::ClearColorValue clear;
@@ -188,6 +199,18 @@ namespace sp::vulkan::renderer {
                     range.levelCount = counterView->MipLevels();
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
                     cmd.Raw().clearColorImage(*counterView->Image(),
+                        vk::ImageLayout::eTransferDstOptimal,
+                        clear,
+                        {range});
+                }
+                if (clearNormals) {
+                    auto normalsView = resources.GetImageView("Normals");
+                    vk::ClearColorValue clear;
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    cmd.Raw().clearColorImage(*normalsView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
                         {range});
@@ -223,6 +246,7 @@ namespace sp::vulkan::renderer {
             .Build([&](rg::PassBuilder &builder) {
                 builder.Write("FillCounters", Access::FragmentShaderWrite);
                 builder.Write("Radiance", Access::FragmentShaderWrite);
+                builder.Write("Normals", Access::FragmentShaderWrite);
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
@@ -276,8 +300,9 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 3, resources.GetImageView("ShadowMap.Linear"));
                 cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
                 cmd.SetImageView(0, 5, resources.GetImageMipView("Radiance", 0));
-                cmd.SetStorageBuffer(0, 6, resources.GetBuffer("FragmentListMetadata"));
-                cmd.SetStorageBuffer(0, 7, resources.GetBuffer("FragmentLists"));
+                cmd.SetImageView(0, 6, resources.GetImageMipView("Normals", 0));
+                cmd.SetStorageBuffer(0, 7, resources.GetBuffer("FragmentListMetadata"));
+                cmd.SetStorageBuffer(0, 8, resources.GetBuffer("FragmentLists"));
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, fragmentListCount);
 
@@ -293,6 +318,7 @@ namespace sp::vulkan::renderer {
             graph.AddPass("Merge")
                 .Build([&](rg::PassBuilder &builder) {
                     builder.Write("Radiance", Access::ComputeShaderWrite);
+                    builder.Write("Normals", Access::ComputeShaderWrite);
 
                     builder.Read("FragmentListMetadata", Access::IndirectBuffer);
                     builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);
@@ -303,16 +329,17 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
 
                     cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
+                    cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
 
                     auto metadata = resources.GetBuffer("FragmentListMetadata");
                     cmd.SetStorageBuffer(0,
-                        1,
+                        2,
                         metadata,
                         i * sizeof(GPUVoxelFragmentList),
                         sizeof(GPUVoxelFragmentList));
 
                     cmd.SetStorageBuffer(0,
-                        2,
+                        3,
                         resources.GetBuffer("FragmentLists"),
                         fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                         fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
@@ -333,6 +360,10 @@ namespace sp::vulkan::renderer {
                     cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", i - 1));
                     cmd.SetSampler(0, 0, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
                     cmd.SetImageView(0, 1, resources.GetImageMipView("Radiance", i));
+
+                    cmd.SetImageView(0, 2, resources.GetImageMipView("Normals", i - 1));
+                    cmd.SetSampler(0, 2, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
+                    cmd.SetImageView(0, 3, resources.GetImageMipView("Normals", i));
 
                     cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
 
@@ -360,7 +391,8 @@ namespace sp::vulkan::renderer {
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Read("Voxels.FillCounters", Access::FragmentShaderReadStorage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderReadStorage);
+                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("VoxelState");
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
@@ -382,9 +414,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
-                cmd.SetImageView(0, 3, resources.GetImageView("Voxels.FillCounters"));
-                cmd.SetImageView(0, 4, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 5, resources.GetImageView(resources.LastOutputID()));
+                cmd.SetImageView(0, 3, resources.GetImageView(resources.LastOutputID()));
+                cmd.SetImageView(0, 4, resources.GetImageView("Voxels.FillCounters"));
+                cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
+                cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());

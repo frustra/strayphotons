@@ -29,6 +29,7 @@ layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 layout(binding = 4, r32ui) uniform uimage3D fillCounters;
 layout(binding = 5, rgba16f) writeonly uniform image3D radianceOut;
+layout(binding = 6, rgba16f) writeonly uniform image3D normalsOut;
 
 struct FragmentListMetadata {
     uint count;
@@ -37,11 +38,11 @@ struct FragmentListMetadata {
     VkDispatchIndirectCommand cmd;
 };
 
-layout(std430, binding = 6) buffer VoxelFragmentListMetadata {
+layout(std430, binding = 7) buffer VoxelFragmentListMetadata {
     FragmentListMetadata fragmentListMetadata[MAX_VOXEL_FRAGMENT_LISTS];
 };
 
-layout(std430, binding = 7) buffer VoxelFragmentList {
+layout(std430, binding = 8) buffer VoxelFragmentList {
     VoxelFragment fragmentLists[];
 };
 
@@ -63,9 +64,11 @@ void main() {
     uint listOffset = fragmentListMetadata[bucket].offset + index;
     fragmentLists[listOffset].position = u16vec3(uvec3(inVoxelPos));
     fragmentLists[listOffset].radiance = f16vec3(pixelRadiance);
+    fragmentLists[listOffset].normal = f16vec3(inNormal);
 
     if (bucket == 0) {
         // First fragment is written to the voxel grid directly
         imageStore(radianceOut, ivec3(inVoxelPos), vec4(pixelRadiance, 1.0));
+        imageStore(normalsOut, ivec3(inVoxelPos), vec4(inNormal, 1.0));
     }
 }

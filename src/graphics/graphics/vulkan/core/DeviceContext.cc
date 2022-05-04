@@ -860,7 +860,10 @@ namespace sp::vulkan {
         submitInfo.pCommandBuffers = cmdBufs.data();
 
         queueLastSubmit[queue] = frameCounter;
-        queues[queue].submit({submitInfo}, fence);
+        {
+            ZoneScopedN("VkQueueSubmit");
+            queues[queue].submit({submitInfo}, fence);
+        }
 
         for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {
             cmdPtr->reset();

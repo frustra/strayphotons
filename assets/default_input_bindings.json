@@ -47,7 +47,7 @@
             },
             "/keyboard/key/g": {
                 "target": "console:input/action/run_command",
-                "set_value": "toggle r.VoxelDebug"
+                "set_value": "toggle r.VoxelDebug 0 1 2"
             },
             "/keyboard/key/z": {
                 "target": "console:input/action/run_command",
