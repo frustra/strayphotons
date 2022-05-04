@@ -79,48 +79,57 @@ namespace ecs {
                 if (ent.Has<Name, Physics, PhysicsQuery>(lock)) {
                     auto handStr = state.GetParam<std::string>("hand");
                     sp::to_lower(handStr);
+
+                    char handChar = 'l';
                     ecs::Name inputScope("input", "");
                     if (handStr == "left") {
-                        handStr = "l";
+                        handChar = 'l';
                         inputScope.entity = "vr_actions_main_in_lefthand_anim";
                     } else if (handStr == "right") {
-                        handStr = "r";
+                        handChar = 'r';
                         inputScope.entity = "vr_actions_main_in_righthand_anim";
                     } else {
                         Abortf("Invalid hand specified for VrHand script: %s", handStr);
                     }
 
-                    auto scene = state.scope.scene.lock();
-                    Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
-
-                    auto &prefabName = ent.Get<Name>(lock);
-                    ecs::Name physicsScope(state.scope.prefix.scene, prefabName.entity);
-
-                    auto &ph = ent.Get<Physics>(lock);
-                    // auto &query = ent.Get<PhysicsQuery>(lock);
-
-                    std::array<std::string, 5> fingerNames = {"thumb", "index", "middle", "ring", "pinky"};
                     struct SegmentProperties {
                         std::string name;
                         float radius;
                     };
-                    std::array fingerSegments = {
-                        SegmentProperties{"meta_" + handStr, 0.015f},
-                        SegmentProperties{"0_" + handStr, 0.015f},
-                        SegmentProperties{"1_" + handStr, 0.01f},
-                        SegmentProperties{"2_" + handStr, 0.01f},
-                        SegmentProperties{handStr + "_end", 0.008f},
+                    static const std::array fingerSegments = {
+                        SegmentProperties{"finger_thumb_0_#", 0.015f},
+                        SegmentProperties{"finger_thumb_1_#", 0.01f},
+                        SegmentProperties{"finger_thumb_2_#", 0.01f},
+                        SegmentProperties{"finger_thumb_#_end", 0.008f},
+
+                        SegmentProperties{"finger_index_meta_#", 0.015f},
+                        SegmentProperties{"finger_index_0_#", 0.015f},
+                        SegmentProperties{"finger_index_1_#", 0.01f},
+                        SegmentProperties{"finger_index_2_#", 0.01f},
+                        SegmentProperties{"finger_index_#_end", 0.008f},
+
+                        SegmentProperties{"finger_middle_meta_#", 0.015f},
+                        SegmentProperties{"finger_middle_0_#", 0.015f},
+                        SegmentProperties{"finger_middle_1_#", 0.01f},
+                        SegmentProperties{"finger_middle_2_#", 0.01f},
+                        SegmentProperties{"finger_middle_#_end", 0.008f},
+
+                        SegmentProperties{"finger_ring_meta_#", 0.015f},
+                        SegmentProperties{"finger_ring_0_#", 0.015f},
+                        SegmentProperties{"finger_ring_1_#", 0.01f},
+                        SegmentProperties{"finger_ring_2_#", 0.01f},
+                        SegmentProperties{"finger_ring_#_end", 0.008f},
+
+                        SegmentProperties{"finger_pinky_meta_#", 0.015f},
+                        SegmentProperties{"finger_pinky_0_#", 0.015f},
+                        SegmentProperties{"finger_pinky_1_#", 0.01f},
+                        SegmentProperties{"finger_pinky_2_#", 0.01f},
+                        SegmentProperties{"finger_pinky_#_end", 0.008f},
                     };
 
                     auto inputRoot = EntityRef(inputScope).Get(lock);
                     if (!inputRoot) {
                         Errorf("VrHand script has invalid input root: %s", inputScope.String());
-                        return;
-                    }
-
-                    auto physicsRoot = EntityRef(physicsScope).Get(lock);
-                    if (!physicsRoot) {
-                        Errorf("VrHand script has invalid physics root: %s", physicsScope.String());
                         return;
                     }
 
@@ -155,44 +164,65 @@ namespace ecs {
                         return shape;
                     };
 
+                    auto scene = state.scope.scene.lock();
+                    Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
+
+                    auto &prefabName = ent.Get<Name>(lock);
+                    ecs::Name physicsScope(state.scope.prefix.scene, prefabName.entity);
+
+                    auto physicsRoot = EntityRef(physicsScope).Get(lock);
+                    if (!physicsRoot) {
+                        Errorf("VrHand script has invalid physics root: %s", physicsScope.String());
+                        return;
+                    }
+
+                    auto &ph = ent.Get<Physics>(lock);
+                    auto &query = ent.Get<PhysicsQuery>(lock);
+
                     ph.shapes.clear();
+                    query.queries.clear();
                     std::string boneName;
                     ecs::Name inputName;
                     ecs::Name physicsName;
-                    for (auto &fingerName : fingerNames) {
-                        for (auto &segment : fingerSegments) {
-                            boneName = "finger_" + fingerName + "_" + segment.name;
-                            inputName.Parse(boneName, inputScope);
-                            physicsName.Parse(boneName, physicsScope);
+                    for (auto &segment : fingerSegments) {
+                        boneName = segment.name;
+                        std::transform(boneName.begin(), boneName.end(), boneName.begin(), [&](unsigned char c) {
+                            return c == '#' ? handChar : c;
+                        });
+                        inputName.Parse(boneName, inputScope);
+                        physicsName.Parse(boneName, physicsScope);
 
-                            EntityRef inputEntity(inputName);
-                            if (!inputEntity) {
-                                Errorf("VrHand script has invalid input entity: %s", inputName.String());
-                                continue;
-                            }
+                        EntityRef inputEntity(inputName);
+                        if (!inputEntity) {
+                            Errorf("VrHand script has invalid input entity: %s", inputName.String());
+                            continue;
+                        }
 
-                            EntityRef physicsEntity(physicsName);
-                            if (!physicsEntity) {
-                                Errorf("VrHand script has invalid physics entity: %s", physicsName.String());
-                                continue;
-                            }
+                        EntityRef physicsEntity(physicsName);
+                        if (!physicsEntity) {
+                            Errorf("VrHand script has invalid physics entity: %s", physicsName.String());
+                            continue;
+                        }
 
-                            auto inputEnt = inputEntity.Get(lock);
-                            auto physicsEnt = physicsEntity.Get(lock);
-                            if (inputEnt.Has<TransformTree>(lock) && physicsEnt.Has<TransformTree>(lock)) {
-                                auto &boneTransform = inputEnt.Get<const TransformTree>(lock);
-                                ph.shapes.push_back(shapeForBone(boneTransform, segment));
+                        auto inputEnt = inputEntity.Get(lock);
+                        auto physicsEnt = physicsEntity.Get(lock);
+                        if (inputEnt.Has<TransformTree>(lock) && physicsEnt.Has<TransformTree>(lock)) {
+                            auto &boneTransform = inputEnt.Get<const TransformTree>(lock);
+                            ph.shapes.push_back(shapeForBone(boneTransform, segment));
 
-                                auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
-                                physicsTransform.pose = boneTransform.GetRelativeTransform(lock, inputRoot);
-                                physicsTransform.parent = physicsRoot;
-                            }
+                            auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
+                            physicsTransform.pose = boneTransform.GetRelativeTransform(lock, inputRoot);
+                            physicsTransform.parent = physicsRoot;
                         }
                     }
 
                     {
-                        inputName.Parse("wrist_" + handStr, inputScope);
-                        physicsName.Parse("wrist_" + handStr, physicsScope);
+                        boneName = "wrist_#";
+                        std::transform(boneName.begin(), boneName.end(), boneName.begin(), [&](unsigned char c) {
+                            return c == '#' ? handChar : c;
+                        });
+                        inputName.Parse(boneName, inputScope);
+                        physicsName.Parse(boneName, physicsScope);
 
                         EntityRef inputEntity(inputName);
                         if (!inputEntity) {
@@ -221,19 +251,32 @@ namespace ecs {
                         }
                     }
 
+                    bool forceTeleport = false;
+                    auto constraintTarget = EntityRef(inputScope).Get(lock);
+                    if (constraintTarget.Has<TransformTree>(lock)) {
+                        auto &transform = constraintTarget.Get<TransformTree>(lock);
+                        if (transform.parent) {
+                            // Don't set the hand constraint target until the controller is valid
+                            if (ph.constraint != constraintTarget) {
+                                ph.constraint = inputScope;
+                                forceTeleport = true;
+                            }
+                        }
+                    }
+
                     // Teleport the hands back to the player if they get too far away
-                    if (ph.constraint && ent.Has<TransformTree>(lock)) {
+                    if (ent.Has<TransformTree>(lock)) {
                         auto teleportDistance = state.GetParam<double>("teleport_distance");
-                        if (teleportDistance > 0) {
+                        if (teleportDistance > 0 || forceTeleport) {
                             // TODO: Release any objects the player is holding
                             auto parentEnt = ph.constraint.Get(lock);
-                            if (parentEnt.Has<TransformSnapshot>(lock)) {
+                            if (parentEnt.Has<TransformTree>(lock)) {
                                 auto &transform = ent.Get<TransformTree>(lock);
                                 Assertf(!transform.parent, "vr_hand script transform can't have parent");
-                                auto &parentTransform = parentEnt.Get<const TransformSnapshot>(lock);
+                                auto parentTransform = parentEnt.Get<TransformTree>(lock).GetGlobalTransform(lock);
 
                                 auto dist = glm::length(transform.pose.GetPosition() - parentTransform.GetPosition());
-                                if (dist >= teleportDistance) transform.pose = parentTransform;
+                                if (dist >= teleportDistance || forceTeleport) transform.pose = parentTransform;
                             }
                         }
                     }

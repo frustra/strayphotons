@@ -68,13 +68,14 @@
         },
         {
             "name": "left_hand_skeleton",
-            "transform": {},
+            "transform": {
+                "translate": [0, -2, 0]
+            },
             "physics": {
                 "group": "player_left_hand",
                 "density": 300,
                 "_linear_damping": 1,
-                "angular_damping": 100,
-                "constraint": "input:vr_actions_main_in_lefthand_anim"
+                "angular_damping": 100
             },
             "physics_query": {},
             "script": [
@@ -96,13 +97,14 @@
         },
         {
             "name": "right_hand_skeleton",
-            "transform": {},
+            "transform": {
+                "translate": [0, -2, 0]
+            },
             "physics": {
                 "group": "player_right_hand",
                 "density": 300,
                 "_linear_damping": 1,
-                "angular_damping": 100,
-                "constraint": "input:vr_actions_main_in_righthand_anim"
+                "angular_damping": 100
             },
             "physics_query": {},
             "script": [
