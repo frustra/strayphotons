@@ -881,116 +881,32 @@
 			}
 		},
 		{
-			"name": "global:ship_airlock-button-out_root",
+			"name": "global:ship_airlock-button-out",
 			"transform": {
 				"parent": "global:ship_airlock",
 				"translate": [
 					1.95,
-					1.25,
+					1.1,
 					1
 				]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
 			}
 		},
 		{
-			"name": "global:ship_airlock-button-out",
-			"renderable": "box",
-			"transform": {
-				"parent": "global:ship_airlock-button-out_root",
-				"translate": [
-					-0.05,
-					0,
-					0
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.1
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			},
-			"trigger_area": {},
-			"sound": [
-				{
-					"file": "click1.ogg",
-					"volume": 0.3
-				},
-				{
-					"file": "click2.ogg",
-					"volume": 0.4
-				}
-			],
-			"signal_output": {},
-			"event_input": [
-				"/button/press",
-				"/sound/play"
-			],
+			"name": "global:ship_airlock-button-out.button",
 			"event_bindings": {
-				"/trigger/object/enter": [
+				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
 						"set_value": "togglesignal global:ship_airlock-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open"
-					},
-					"global:ship_airlock-button-out/button/press",
-					"global:ship_airlock-button-out/sound/play"
-				],
-				"/trigger/object/leave": [
-					{
-						"target": "global:ship_airlock-button-out/sound/play",
-						"set_value": 1
 					}
 				]
-			},
-			"signal_bindings": {
-				"button_pressed": "global:ship_airlock-button-out/trigger_object_enter"
 			}
-		},
-		{
-			"name": "global:ship_airlock-button-out_actuator",
-			"renderable": "box",
-			"transform": {
-				"parent": "global:ship_airlock-button-out_root",
-				"translate": [
-					-0.125,
-					0,
-					0
-				],
-				"scale": [
-					0.05,
-					0.05,
-					0.05
-				]
-			},
-			"physics": {
-				"model": "box",
-				"group": "interactive",
-				"force": [
-					-0.05,
-					0,
-					0
-				]
-			},
-			"physics_joints": [
-				{
-					"target": "global:ship_airlock-button-out_root",
-					"type": "Slider",
-					"remote_offset": {
-						"translate": [
-							-0.125,
-							0,
-							0
-						]
-					},
-					"range": [
-						-0.04,
-						0
-					]
-				}
-			],
-			"signal_output": {},
-			"trigger_group": "object"
 		},
 		{
 			"name": "global:ship_airlock-floor",
@@ -1289,116 +1205,32 @@
 			}
 		},
 		{
-			"name": "elevator_button_root",
+			"name": "elevator_button",
 			"transform": {
 				"parent": "elevator",
 				"translate": [
 					1.95,
-					1.25,
+					1.1,
 					0
 				]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
 			}
 		},
 		{
-			"name": "elevator_button",
-			"renderable": "box",
-			"transform": {
-				"parent": "elevator_button_root",
-				"translate": [
-					-0.05,
-					0,
-					0
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.1
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			},
-			"trigger_area": {},
-			"sound": [
-				{
-					"file": "click1.ogg",
-					"volume": 0.3
-				},
-				{
-					"file": "click2.ogg",
-					"volume": 0.4
-				}
-			],
-			"signal_output": {},
-			"event_input": [
-				"/button/press",
-				"/sound/play"
-			],
+			"name": "elevator_button.button",
 			"event_bindings": {
-				"/trigger/object/enter": [
+				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
 						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
-					},
-					"elevator_button/button/press",
-					"elevator_button/sound/play"
-				],
-				"/trigger/object/leave": [
-					{
-						"target": "elevator_button/sound/play",
-						"set_value": 1
 					}
 				]
-			},
-			"signal_bindings": {
-				"button_pressed": "elevator_button/trigger_object_enter"
 			}
-		},
-		{
-			"name": "elevator_button_actuator",
-			"renderable": "box",
-			"transform": {
-				"parent": "elevator_button_root",
-				"translate": [
-					-0.125,
-					0,
-					0
-				],
-				"scale": [
-					0.05,
-					0.05,
-					0.05
-				]
-			},
-			"physics": {
-				"model": "box",
-				"group": "interactive",
-				"force": [
-					-0.05,
-					0,
-					0
-				]
-			},
-			"physics_joints": [
-				{
-					"target": "elevator_button_root",
-					"type": "Slider",
-					"remote_offset": {
-						"translate": [
-							-0.125,
-							0,
-							0
-						]
-					},
-					"range": [
-						-0.04,
-						0
-					]
-				}
-			],
-			"signal_output": {},
-			"trigger_group": "object"
 		},
 		{
 			"name": "elevator_door",
