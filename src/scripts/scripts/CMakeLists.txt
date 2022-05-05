@@ -5,4 +5,5 @@ target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     LightScripts.cc
     MiscScripts.cc
     PhysicsScripts.cc
+    VrHandScript.cc
 )
