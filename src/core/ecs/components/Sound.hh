@@ -10,6 +10,7 @@ namespace sp {
 namespace ecs {
     class Sound {
     public:
+        // Set these fields before adding the Sound to the scene
         enum class Type {
             Object,
             Stereo,
@@ -17,12 +18,17 @@ namespace ecs {
         } type = Type::Object;
 
         sp::AsyncPtr<sp::Asset> file; // TODO: should make the asset system unpack the audio file
-        float volume = 1.0f;
         bool loop = false, playOnLoad = false;
+
+        // Update these fields at any point
+        float volume = 1.0f;
     };
 
     struct Sounds {
         vector<Sound> sounds;
+
+        // Update these fields at any point
+        float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
     static Component<Sounds> ComponentSound("sound");
