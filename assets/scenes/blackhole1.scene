@@ -252,11 +252,11 @@
 		{
 			"name": "flashlight_button.button",
 			"event_bindings": {
-                "/button/press": [
+				"/button/press": [
 					{
-                        "target": "console:input/action/run_command",
-                        "set_value": "togglesignal player:flashlight/on 1"
-                    }
+						"target": "console:input/action/run_command",
+						"set_value": "togglesignal player:flashlight/on 1"
+					}
 				]
 			}
 		},
