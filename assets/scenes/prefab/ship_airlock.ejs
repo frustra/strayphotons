@@ -18,7 +18,10 @@
 		"translate": [0, 2, 0],
 		"scale": [4, 4, 4]
 	},
-	<%- include('laser_cube') %>,
+	"script": {
+		"prefab": "template",
+		"parameters": { "source": "laser_cube" }
+	},
 	"signal_output": {},
 	"trigger_area": {},
 	"event_bindings": {
@@ -46,14 +49,30 @@
 	rotate: [90, 0, 1, 0],
 	scale: [1, 1.5, 2.3],
 }) %>,
-<%- include('button', {
-	name: name + '-button-out',
-	transform: {
-		"parent": name,
-		"translate": [1.95, 1.25, 1]
+{
+	"name": <%= name + '-button-out' %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [1.95, 1.1, 1]
 	},
-	command: "togglesignal " + name + "-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open"
-}) %>,
+	"script": {
+		"prefab": "template",
+		"parameters": {
+			"source": "button"
+		}
+	}
+},
+{
+	"name": <%= name + '-button-out.button' %>,
+	"event_bindings": {
+		"/button/press": [
+			{
+				"target": "console:input/action/run_command",
+				"set_value": <%= "togglesignal " + name + "-out/door_open; wait 300 togglesignal station-center:elevator_door/door_open" %>
+			}
+		]
+	}
+},
 {
 	"name": <%= name + "-floor" %>,
 	"renderable": "box",

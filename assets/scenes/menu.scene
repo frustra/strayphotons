@@ -140,13 +140,29 @@
 			scene_connection: 'station-center',
 			load_signal: "global:ship_airlock-zone/trigger_player_count"
 		}) %>,
-		<%- include('prefab/button', {
-			name: 'airlock_in_button',
-			transform: {
-				"translate": [4.95, 1.5, 2.5]
+		{
+			"name": "airlock_in_button",
+			"transform": {
+				"translate": [4.95, 1.1, 2.5]
 			},
-			command: "togglesignal global:ship_airlock-in/door_open"
-		}) %>,
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "airlock_in_button.button",
+			"event_bindings": {
+				"/button/press": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "togglesignal global:ship_airlock-in/door_open"
+					}
+				]
+			}
+		},
 		{
 			"__comment": "button_highlighter",
 			"light": {

@@ -25,18 +25,51 @@
 			scene_connection: "03-dark",
 			trigger_command: "setsignal global:airlock2-3-in/door_open 0; addscene 03-dark"
 		}) %>,
-		<%- include("prefab/floor", {
-			y: 0,
-			corners: [[0, 0], [12, 9]]
-		}) %>,
-		<%- include("prefab/floor", {
-			y: 0,
-			corners: [[-3, 3], [0, 9]]
-		}) %>,
-		<%- include("prefab/ceiling", {
-			y: 4,
-			corners: [[-3, 0], [12, 9]]
-		}) %>,
+		{
+			"__comment": "floor",
+			"transform": {
+				"translate": [-1.5, 0, -1.5]
+			},
+			"script": {
+				"prefab": "tile",
+				"parameters": {
+					"surface": "floor_3x3",
+					"axes": "xz",
+					"count": [4, 3],
+					"stride": [3, 3]
+				}
+			}
+		},
+		{
+			"__comment": "floor2",
+			"transform": {
+				"translate": [-4.5, 0, 4.5]
+			},
+			"script": {
+				"prefab": "tile",
+				"parameters": {
+					"surface": "floor_3x3",
+					"axes": "xz",
+					"count": [1, 1],
+					"stride": [3, 3]
+				}
+			}
+		},
+		{
+			"__comment": "ceiling",
+			"transform": {
+				"translate": [-4.5, 4, -1.5]
+			},
+			"script": {
+				"prefab": "tile",
+				"parameters": {
+					"surface": "ceiling_3x3",
+					"axes": "xz",
+					"count": [5, 3],
+					"stride": [3, 3]
+				}
+			}
+		},
 
 		<%- include("prefab/wall", {
 			y: 0,

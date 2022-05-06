@@ -1,0 +1,73 @@
+{
+    "entities": [
+        {
+            "name": "button",
+            "transform": {},
+            "sound": [{
+                "file": "click1.ogg",
+                "volume": 0.3
+            }, {
+                "file": "click2.ogg",
+                "volume": 0.4
+            }],
+            "event_input": [
+                "/sound/play"
+            ],
+            "signal_bindings": {
+                "button_pressed": "button_body/trigger_object_enter"
+            }
+        },
+        {
+            "name": "button_body",
+            "renderable": "box",
+            "transform": {
+                "parent": "button",
+                "translate": [-0.05, 0, 0],
+                "scale": [0.1, 0.1, 0.1]
+            },
+            "trigger_area": {},
+            "physics": {
+                "model": "box",
+                "dynamic": false
+            },
+            "signal_output": {},
+            "event_bindings": {
+                "/trigger/object/enter": [
+                    "button/button/press",
+                    "button/sound/play"
+                ],
+                "/trigger/object/leave": [
+                    {
+                        "target": "button/sound/play",
+                        "set_value": 1
+                    }
+                ]
+            }
+        },
+        {
+            "name": "button_actuator",
+            "renderable": "box",
+            "transform": {
+                "parent": "button",
+                "translate": [-0.125, 0, 0],
+                "scale": [0.05, 0.05, 0.05]
+            },
+            "physics": {
+                "model": "box",
+                "group": "interactive",
+                "force": [-0.05, 0, 0],
+                "density": 10
+            },
+            "physics_joints": [{
+                "target": "button",
+                "type": "Slider",
+                "remote_offset": {
+                    "translate": [-0.125, 0, 0]
+                },
+                "range": [-0.04, 0]
+            }],
+            "signal_output": {},
+            "trigger_group": "object"
+        }
+    ]
+}
