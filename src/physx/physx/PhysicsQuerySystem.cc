@@ -97,14 +97,17 @@ namespace sp {
                                 PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
                                     GlmQuatToPxQuat(shapeTransform.GetRotation()));
 
+                                PxOverlapHit touch;
                                 PxOverlapBuffer hit;
+                                hit.touches = &touch;
+                                hit.maxNbTouches = 1;
                                 bool status = manager.scene->overlap(manager.GeometryFromShape(arg.shape).any(),
                                     pxTransform,
                                     hit,
                                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
                                 if (status) {
-                                    physx::PxRigidActor *hitActor = hit.block.actor;
+                                    physx::PxRigidActor *hitActor = touch.actor;
                                     if (hitActor) {
                                         auto userData = (ActorUserData *)hitActor->userData;
                                         if (userData) arg.result.emplace(userData->entity);
