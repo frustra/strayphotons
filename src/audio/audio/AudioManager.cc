@@ -148,6 +148,9 @@ namespace sp {
             soundEntityMap.erase(it);
         }
 
+        auto globalVolumeChanged = CVarVolume.Changed();
+        auto globalVolume = std::min(10.0f, CVarVolume.Get(true));
+
         for (auto ent : lock.EntitiesWith<ecs::Sounds>()) {
             vector<size_t> *soundIDs;
 
@@ -165,6 +168,8 @@ namespace sp {
                     state.loop = source.loop;
                     state.play = source.playOnLoad;
                     state.bufferOffset = 0;
+                    state.volume = 0;
+                    state.occlusion = 0;
                     state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
                         [this, file = source.file](shared_ptr<Asset> asset) {
                             if (!asset) {
@@ -202,7 +207,15 @@ namespace sp {
                 }
 
                 if (resonanceID != -1) {
-                    resonance->SetSourceVolume(resonanceID, source.volume * std::min(10.0f, CVarVolume.Get()));
+                    if (source.volume != state.volume || globalVolumeChanged) {
+                        resonance->SetSourceVolume(resonanceID, source.volume * globalVolume);
+                        state.volume = source.volume;
+                    }
+
+                    if (sources.occlusion != state.occlusion) {
+                        resonance->SetSoundObjectOcclusionIntensity(resonanceID, sources.occlusion);
+                        state.occlusion = sources.occlusion;
+                    }
 
                     if (ent.Has<ecs::TransformSnapshot>(lock)) {
                         auto &transform = ent.Get<ecs::TransformSnapshot>(lock);

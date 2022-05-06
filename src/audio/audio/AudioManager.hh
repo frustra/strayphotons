@@ -48,9 +48,10 @@ namespace sp {
 
         struct SoundSource {
             int resonanceID = -1;
-            size_t bufferOffset;
             AsyncPtr<nqr::AudioData> audioBuffer;
+            float volume, occlusion;
             bool loop, play;
+            size_t bufferOffset;
         };
 
         struct SoundEvent {

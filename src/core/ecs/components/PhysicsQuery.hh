@@ -12,23 +12,29 @@ namespace ecs {
         struct Raycast {
             float maxDistance;
             PhysicsGroupMask filterGroup;
-            Transform rayOffset;
+            glm::vec3 direction = {0, 0, -1};
+            bool relativeDirection = true;
+
+            glm::vec3 position = {0, 0, 0};
+            bool relativePosition = true;
+            uint32 maxHits = 1;
 
             bool operator==(const Raycast &other) const {
-                return filterGroup == other.filterGroup && maxDistance == other.maxDistance && rayOffset == rayOffset;
+                return filterGroup == other.filterGroup && maxDistance == other.maxDistance &&
+                       direction == other.direction && position == other.position &&
+                       relativeDirection == other.relativeDirection && relativePosition == other.relativePosition;
             }
 
             struct Result {
                 Entity target;
                 glm::vec3 position;
                 float distance;
+                uint32 hits;
             };
             std::optional<Result> result;
 
-            Raycast(float maxDistance,
-                PhysicsGroupMask filterGroup = PHYSICS_GROUP_WORLD,
-                Transform rayOffset = Transform())
-                : maxDistance(maxDistance), filterGroup(filterGroup), rayOffset(rayOffset) {}
+            Raycast(float maxDistance, PhysicsGroupMask filterGroup = PHYSICS_GROUP_WORLD)
+                : maxDistance(maxDistance), filterGroup(filterGroup) {}
         };
 
         struct Sweep {

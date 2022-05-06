@@ -9,10 +9,14 @@
 			},
 			"transform": {
 				"translate": [
-					0,
+					-4.9,
 					1,
-					-4
+					0
 				]
+			},
+			"physics_query": {},
+			"script": {
+				"onTick": "sound_occlusion"
 			}
 		},
 		{

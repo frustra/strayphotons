@@ -8,7 +8,11 @@
 				"play_on_load": true
 			},
 			"transform": {
-				"translate": [0, 1, -4]
+				"translate": [-4.9, 1, 0]
+			},
+			"physics_query": {},
+			"script": {
+				"onTick": "sound_occlusion"
 			}
 		},
 		{

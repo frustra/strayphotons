@@ -59,7 +59,8 @@ namespace sp {
                     maxDistance,
                     hit,
                     PxHitFlag::eNORMAL,
-                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                    PxQueryFilterData(filterData,
+                        PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::eANY_HIT));
 
                 glm::vec3 hitPos;
                 bool reflect = false;

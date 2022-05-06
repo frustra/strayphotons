@@ -23,32 +23,58 @@ namespace sp {
                         arg.result.reset();
 
                         if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Raycast>) {
-                            if (arg.maxDistance > 0.0f && entity.Has<ecs::TransformSnapshot>(lock)) {
-                                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+                            if (arg.maxDistance > 0.0f && arg.maxHits > 0) {
+                                glm::vec3 rayStart = arg.position;
+                                glm::vec3 rayDir = arg.direction;
+
+                                if ((arg.relativePosition || arg.relativeDirection) &&
+                                    entity.Has<ecs::TransformSnapshot>(lock)) {
+                                    const auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+                                    if (arg.relativePosition) rayStart = transform.matrix * glm::vec4(rayStart, 1);
+                                    if (arg.relativeDirection) rayDir = transform.matrix * glm::vec4(rayDir, 0);
+                                }
+
+                                rayDir = glm::normalize(rayDir);
 
                                 PxFilterData filterData;
                                 filterData.word0 = (uint32_t)arg.filterGroup;
 
-                                glm::vec3 rayStart = transform.GetPosition();
-                                glm::vec3 rayDir = transform.GetForward();
+                                std::array<PxRaycastHit, 16> touches;
+
                                 PxRaycastBuffer hit;
-                                bool status = manager.scene->raycast(GlmVec3ToPxVec3(rayStart),
+                                hit.touches = touches.data();
+
+                                auto queryFlags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC;
+
+                                if (arg.maxHits == 1) {
+                                    hit.maxNbTouches = 0;
+                                    queryFlags |= PxQueryFlag::eANY_HIT;
+                                } else {
+                                    hit.maxNbTouches = std::min((uint32)touches.size(), arg.maxHits);
+                                }
+
+                                manager.scene->raycast(GlmVec3ToPxVec3(rayStart),
                                     GlmVec3ToPxVec3(rayDir),
                                     arg.maxDistance,
                                     hit,
                                     PxHitFlags(),
-                                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                                    PxQueryFilterData(filterData, queryFlags));
 
-                                if (status) {
-                                    physx::PxRigidActor *hitActor = hit.block.actor;
-                                    if (hitActor) {
-                                        auto userData = (ActorUserData *)hitActor->userData;
-                                        if (userData) {
-                                            auto &result = arg.result.emplace();
-                                            result.target = userData->entity;
-                                            result.position = rayDir * hit.block.distance + rayStart;
-                                            result.distance = hit.block.distance;
-                                        }
+                                auto &result = arg.result.emplace();
+                                result.hits = hit.getNbAnyHits();
+
+                                physx::PxRigidActor *hitActor = nullptr;
+                                if (arg.maxHits == 1) {
+                                    hitActor = hit.block.actor;
+                                } else if (result.hits > 0) {
+                                    hitActor = hit.getTouch(0).actor;
+                                }
+                                if (hitActor) {
+                                    auto userData = (ActorUserData *)hitActor->userData;
+                                    if (userData) {
+                                        result.target = userData->entity;
+                                        result.position = rayDir * hit.block.distance + rayStart;
+                                        result.distance = hit.block.distance;
                                     }
                                 }
                             }
