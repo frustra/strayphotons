@@ -192,15 +192,15 @@ namespace ecs {
 
                                 auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
                                 physicsTransform.parent = physicsRoot;
-                                if (!overlapQuery.result) {
-                                    scriptData.prevShapes[i] = scriptData.queryShapes[i];
-                                    scriptData.prevTransforms[i] = scriptData.queryTransforms[i];
-                                    ph.shapes.push_back(scriptData.queryShapes[i]);
-                                    physicsTransform.pose = scriptData.queryTransforms[i];
-                                } else {
-                                    ph.shapes.push_back(scriptData.prevShapes[i]);
-                                    physicsTransform.pose = scriptData.prevTransforms[i];
-                                }
+                                // if (!overlapQuery.result) {
+                                scriptData.prevShapes[i] = scriptData.queryShapes[i];
+                                scriptData.prevTransforms[i] = scriptData.queryTransforms[i];
+                                ph.shapes.push_back(scriptData.queryShapes[i]);
+                                physicsTransform.pose = scriptData.queryTransforms[i];
+                                // } else {
+                                //     ph.shapes.push_back(scriptData.prevShapes[i]);
+                                //     physicsTransform.pose = scriptData.prevTransforms[i];
+                                // }
                             }
                         }
 
