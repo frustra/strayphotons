@@ -33,14 +33,36 @@
 				}
 			}
 		},
-		<%- include("prefab/floor", {
-			y: 0,
-			corners: [[0, 0], [12, 9]]
-		}) %>,
-		<%- include("prefab/ceiling", {
-			y: 4,
-			corners: [[0, 0], [12, 9]]
-		}) %>,
+		{
+			"__comment": "floor",
+			"transform": {
+				"translate": [-1.5, 0, -1.5]
+			},
+			"script": {
+				"prefab": "tile",
+				"parameters": {
+					"surface": "floor_3x3",
+					"axes": "xz",
+					"count": [4, 3],
+					"stride": [3, 3]
+				}
+			}
+		},
+		{
+			"__comment": "ceiling",
+			"transform": {
+				"translate": [-1.5, 4, -1.5]
+			},
+			"script": {
+				"prefab": "tile",
+				"parameters": {
+					"surface": "ceiling_3x3",
+					"axes": "xz",
+					"count": [4, 3],
+					"stride": [3, 3]
+				}
+			}
+		},
 
 		<%- include("prefab/wall", {
 			y: 0,

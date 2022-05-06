@@ -237,13 +237,29 @@
 			rotate: [90, 0, 1, 0],
 			scale: [1, 1.5, 2.3]
 		}) %>,
-		<%- include('prefab/button', {
-			name: 'flashlight_button',
-			transform: {
-				"translate": [4.95, 1.25, 1.5]
+		{
+			"name": "flashlight_button",
+			"transform": {
+				"translate": [4.95, 1.1, 1.5]
 			},
-			command: "setsignal player:flashlight/on 1"
-		}) %>,
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "flashlight_button.button",
+			"event_bindings": {
+				"/button/press": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "togglesignal player:flashlight/on 1"
+					}
+				]
+			}
+		},
 		{
 			"name": "global:transition1-2",
 			"transform": {

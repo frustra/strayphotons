@@ -223,7 +223,7 @@ namespace sp {
                 auto movementProxy = controller.movementProxy.Get(lock);
                 if (movementProxy.Has<ecs::TransformTree>(lock)) {
                     auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
-                    auto deltaPos = (lateralMovement + glm::vec3(0, verticalMovement, 0)) * dt;
+                    auto deltaPos = (lateralMovement + glm::vec3(0, verticalMovement, 0)) * dt + targetDelta;
                     proxyTransform.pose.Translate(deltaPos);
                 }
 

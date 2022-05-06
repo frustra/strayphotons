@@ -3,20 +3,26 @@
 		{
 			"name": "elevator_zone",
 			"signal_output": {},
-			<%- include('prefab/laser_cube') %>,
 			"transform": {
 				"scale": [5, 164, 6],
 				"translate": [0, 82, -0.5]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "laser_cube" }
 			},
 			"trigger_area": {}
 		},
 		{
 			"name": "transition_zone",
 			"signal_output": {},
-			<%- include('prefab/laser_cube') %>,
 			"transform": {
 				"scale": [20, 40, 20],
 				"translate": [0, 20, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "laser_cube" }
 			},
 			"trigger_area": {}
 		},
@@ -179,7 +185,7 @@
 				"model": "box",
 				"kinematic": true
 			},
-            "trigger_group": "object"
+			"trigger_group": "object"
 		},
 		{
 			"_comment": "elevator_wall",
@@ -207,14 +213,30 @@
 				"kinematic": true
 			}
 		},
-		<%- include('prefab/button', {
-			name: 'elevator_button',
-			transform: {
+		{
+			"name": "elevator_button",
+			"transform": {
 				"parent": "elevator",
-				"translate": [1.95, 1.25, 0]
+				"translate": [1.95, 1.1, 0]
 			},
-			command: "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
-		}) %>,
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "elevator_button.button",
+			"event_bindings": {
+				"/button/press": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
+					}
+				]
+			}
+		},
 		<%- include('prefab/slide_door', {
 			scene: 'station-center',
 			name: 'elevator_door',
