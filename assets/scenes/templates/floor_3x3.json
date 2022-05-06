@@ -1,0 +1,23 @@
+{
+	"entities": [
+		{
+			"transform": {},
+			"physics": {
+				"shapes": {
+					"box": [3, 0.5, 3],
+					"transform": {
+						"translate": [1.5, -0.25, 1.5]
+					}
+				},
+				"dynamic": false
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "ground-3x3",
+					"render": true
+				}
+			}
+		}
+	]
+}
