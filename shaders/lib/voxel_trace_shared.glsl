@@ -52,7 +52,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, float of
         normal.xyz /= max(0.001, normal.w);
         value.a *= step(0.001, normal.w);
 
-        value.rgb *= smoothstep(0.1, 0.4, length(normal.xyz));
+        // value.rgb *= smoothstep(0.1, 0.4, length(normal.xyz));
         value.a *= step(-0.2, dot(rayDir, -normal.xyz));
 
         result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
