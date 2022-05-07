@@ -423,6 +423,7 @@ namespace sp::vulkan::renderer {
                 builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
                 builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
 
                 auto desc = builder.DeriveImage(gBuffer0);
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
@@ -456,16 +457,16 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 3, resources.GetImageDepthView("GBufferDepthStencil"));
                 cmd.SetImageView(0, 4, resources.GetImageView(shadowDepth));
                 cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
-
-                cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
+                cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
 
                 cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
 
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
+                cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
 
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
                 cmd.Draw(3);
             });
     }

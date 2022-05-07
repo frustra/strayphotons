@@ -19,12 +19,14 @@ layout(binding = 1) uniform VoxelStateUniform {
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/exposure_state.glsl"
 
-layout(binding = 3, r32ui) readonly uniform uimage3D fillCounters;
-layout(binding = 4) uniform sampler3D voxelRadiance;
-layout(binding = 5) uniform sampler2DArray overlayTex;
+layout(binding = 3) uniform sampler2DArray overlayTex;
+layout(binding = 4, r32ui) readonly uniform uimage3D fillCounters;
+layout(binding = 5) uniform sampler3D voxelRadiance;
+layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(constant_id = 0) const int DEBUG_MODE = 0;
 layout(constant_id = 1) const float BLEND_WEIGHT = 0;
+layout(constant_id = 2) const int VOXEL_MIP = 0;
 
 #include "../lib/voxel_trace_debug.glsl"
 #include "../lib/voxel_trace_shared.glsl"
@@ -38,11 +40,11 @@ void main() {
 
     vec3 sampleRadiance;
     if (DEBUG_MODE == 1) {
-        TraceVoxelGrid(rayPos.xyz, rayDir, 0, sampleRadiance);
+        TraceVoxelGrid(rayPos.xyz, rayDir, VOXEL_MIP, sampleRadiance);
     } else if (DEBUG_MODE == 2) {
         sampleRadiance = ConeTraceGrid(1 / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy).rgb;
     } else if (DEBUG_MODE == 3) {
-        sampleRadiance = ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, 0).rgb;
+        sampleRadiance = ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, InterleavedGradientNoise(gl_FragCoord.xy)).rgb;
     }
 
     vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed

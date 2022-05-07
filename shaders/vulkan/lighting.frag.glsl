@@ -14,6 +14,7 @@ layout(binding = 2) uniform sampler2DArray gBuffer2;
 layout(binding = 3) uniform sampler2DArray gBufferDepth;
 layout(binding = 4) uniform sampler2D shadowMap;
 layout(binding = 5) uniform sampler3D voxelRadiance;
+layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 
@@ -85,7 +86,7 @@ void main() {
         }
     }
 
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0) /*gl_FragCoord.xy*/);
+    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 
     vec3 directDiffuseColor = baseColor - baseColor * metalness;
     vec3 directLight =

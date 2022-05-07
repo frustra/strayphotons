@@ -13,16 +13,18 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
     // TODO: Fix this constant
     for (int i = 0; i < 200; i++) {
         float size = max(1.0, ratio * dist);
-        float planeDist = dot(surfaceNormal, voxelDir * dist) - AxisVoxelWidth(voxelDir);
-        // If the sample intersects the surface, move it over
-        float offset = max(0, size - planeDist);
         vec3 position = voxelPos + voxelDir * dist;
-        position += offset * surfaceNormal;
+        position += size * surfaceNormal;
 
         float level = max(0, log2(size));
         vec4 value = textureLod(voxelRadiance, position / voxelInfo.gridSize, level);
+        vec4 normal = textureLod(voxelNormals, position / voxelInfo.gridSize, level);
+        normal.xyz /= max(0.001, normal.w);
+        value.a *= step(0.001, normal.w);
+
         // Bias the alpha to prevent traces going through objects.
-        value.a = smoothstep(0.0, 0.4, value.a);
+        value *= linstep(0.0, 0.3, value.a) / max(0.001, value.a);
+        value.a *= step(-0.1, dot(rayDir, -normal.xyz));
         result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
         if (result.a > 0.999) break;
@@ -32,23 +34,28 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
     return result;
 }
 
+const float[5] DiffuseSampleSpacing = float[](1.0, 1.8, 3.0, 8.0, 16.0);
+
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, float offset) {
     vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(rayPos, 1.0)).xyz;
     vec3 voxelDir = normalize(mat3(voxelInfo.worldToVoxel) * rayDir);
 
-    float dist = AxisVoxelWidth(rayDir) - saturate(offset);
-    float size = 1.0;
-
+    float dist = saturate(offset);
     vec4 result = vec4(0);
 
-    // TODO: Fix this constant
-    for (int level = 0; level < 8; level++) {
+    for (int level = 0; level < 5; level++) {
+        dist += DiffuseSampleSpacing[level];
+
         vec3 position = voxelPos + voxelDir * dist;
         vec4 value = textureLod(voxelRadiance, position / voxelInfo.gridSize, level);
-        result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
+        vec4 normal = textureLod(voxelNormals, position / voxelInfo.gridSize, level);
+        normal.xyz /= max(0.001, normal.w);
+        value.a *= step(0.001, normal.w);
 
-        size *= 2.0;
-        dist += size;
+        value.rgb *= smoothstep(0.1, 0.4, length(normal.xyz));
+        value.a *= step(-0.2, dot(rayDir, -normal.xyz));
+
+        result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
     }
 
     return result;
@@ -57,8 +64,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, float offset) {
 vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCoord) {
     float rOffset = InterleavedGradientNoise(fragCoord);
 
-    float distOffset = AxisVoxelWidth(worldNormal);
-    vec3 samplePos = worldPosition + worldNormal / voxelInfo.gridSize * distOffset;
+    vec3 samplePos = worldPosition;
     vec3 sampleDir = OrientByNormal(rOffset * M_PI * 2.0, 0.1, worldNormal);
     vec4 indirectDiffuse = ConeTraceGridDiffuse(samplePos, sampleDir, rOffset);
 

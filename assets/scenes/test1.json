@@ -225,7 +225,8 @@
 				"translate": [-1.5, 0.5, -2.5]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 1
 			},
             "script": {
                 "prefab": "template",
@@ -249,7 +250,8 @@
 			"optic": "mirror",
 			"renderable": "mirror",
 			"physics": {
-				"model": "occluder"
+				"model": "occluder",
+				"density": 1
 			},
 			"physics_joints": [{
 				"target": "mova-mirror",
@@ -269,7 +271,8 @@
 			"renderable": "occluder",
 			"transform": {
 				"parent": "mova-mirror",
-				"translate": [0.5, 0, 0],
+				"translate": [0.45, 0, 0],
+				"scale": [0.9, 0.9, 0.9],
 				"rotate": [90, 0, 1, 0]
 			}
 		},

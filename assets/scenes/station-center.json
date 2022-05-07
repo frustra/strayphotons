@@ -263,7 +263,7 @@
 				],
 				"scale": [
 					4,
-					4,
+					4.2,
 					4
 				]
 			},
@@ -295,7 +295,7 @@
 				"translate": [
 					0,
 					0,
-					-2
+					-1.95
 				]
 			},
 			"script": {
@@ -528,12 +528,12 @@
 				"parent": "global:ship_airlock",
 				"translate": [
 					0,
-					0,
+					-0.25,
 					0
 				],
 				"scale": [
 					4,
-					0.1,
+					0.5,
 					4.15
 				]
 			},
@@ -548,12 +548,12 @@
 			"transform": {
 				"parent": "global:ship_airlock",
 				"translate": [
-					1.95,
+					2.2,
 					2,
 					0
 				],
 				"scale": [
-					0.1,
+					0.5,
 					4.1,
 					4
 				]
@@ -569,12 +569,12 @@
 			"transform": {
 				"parent": "global:ship_airlock",
 				"translate": [
-					-1.95,
+					-2.2,
 					2,
 					0
 				],
 				"scale": [
-					0.1,
+					0.5,
 					4.1,
 					4
 				]
@@ -760,12 +760,12 @@
 				"parent": "elevator",
 				"translate": [
 					0,
-					0,
+					-0.25,
 					-1
 				],
 				"scale": [
 					4,
-					0.1,
+					0.5,
 					4
 				]
 			},
@@ -781,12 +781,12 @@
 			"transform": {
 				"parent": "elevator",
 				"translate": [
-					1.95,
+					2,
 					2,
 					-1
 				],
 				"scale": [
-					0.1,
+					0.2,
 					4,
 					4
 				]
@@ -802,12 +802,12 @@
 			"transform": {
 				"parent": "elevator",
 				"translate": [
-					-1.95,
+					-2,
 					2,
 					-1
 				],
 				"scale": [
-					0.1,
+					0.2,
 					4,
 					4
 				]

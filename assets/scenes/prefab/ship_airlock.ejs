@@ -16,7 +16,7 @@
 	"transform": {
 		"parent": <%= name %>,
 		"translate": [0, 2, 0],
-		"scale": [4, 4, 4]
+		"scale": [4, 4.2, 4]
 	},
 	"script": {
 		"prefab": "template",
@@ -37,7 +37,7 @@
 	scene: (locals.scene ? scene : "global"),
 	name: name + '-in',
 	parent: name,
-	translate: [0, 0.0, -2],
+	translate: [0, 0, -1.95],
 	rotate: [90, 0, 1, 0],
 	scale: [1, 1.5, 2.3],
 }) %>,
@@ -45,7 +45,7 @@
 	scene: (locals.scene ? scene : "global"),
 	name: name + '-out',
 	parent: name,
-	translate: [0, 0.0, 2],
+	translate: [0, 0, 2],
 	rotate: [90, 0, 1, 0],
 	scale: [1, 1.5, 2.3],
 }) %>,
@@ -78,8 +78,8 @@
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,
-		"translate": [0, 0, 0],
-		"scale": [4, 0.1, 4.15]
+		"translate": [0, -0.25, 0],
+		"scale": [4, 0.5, 4.15]
 	},
 	"physics": {
 		"model": "box",
@@ -91,8 +91,8 @@
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,
-		"translate": [1.95, 2, 0],
-		"scale": [0.1, 4.1, 4]
+		"translate": [2.2, 2, 0],
+		"scale": [0.5, 4.1, 4]
 	},
 	"physics": {
 		"model": "box",
@@ -104,8 +104,8 @@
 	"renderable": "box",
 	"transform": {
 		"parent": <%= name %>,
-		"translate": [-1.95, 2, 0],
-		"scale": [0.1, 4.1, 4]
+		"translate": [-2.2, 2, 0],
+		"scale": [0.5, 4.1, 4]
 	},
 	"physics": {
 		"model": "box",
