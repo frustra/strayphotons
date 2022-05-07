@@ -36,7 +36,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 
 const float[5] DiffuseSampleSpacing = float[](1.0, 1.8, 3.0, 8.0, 16.0);
 
-vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, float offset) {
+vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, float offset) {
     vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(rayPos, 1.0)).xyz;
     vec3 voxelDir = normalize(mat3(voxelInfo.worldToVoxel) * rayDir);
 
@@ -52,7 +52,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, float of
         normal.xyz /= max(0.001, normal.w);
         value.a *= step(0.001, normal.w);
 
-        // value.rgb *= smoothstep(0.1, 0.4, length(normal.xyz));
+        value.rgb *= smoothstep(0.1, 0.4, length(normal.xyz));
         value.a *= step(-0.2, dot(rayDir, -normal.xyz));
 
         result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
@@ -66,14 +66,14 @@ vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCo
 
     vec3 samplePos = worldPosition;
     vec3 sampleDir = OrientByNormal(rOffset * M_PI * 2.0, 0.1, worldNormal);
-    vec4 indirectDiffuse = ConeTraceGridDiffuse(samplePos, sampleDir, worldNormal, rOffset);
+    vec4 indirectDiffuse = ConeTraceGridDiffuse(samplePos, sampleDir, rOffset);
 
     for (int a = 3; a <= 6; a += 3) {
         float diffuseScale = 1.0 / a;
         for (float r = 0; r < a; r++) {
             vec3 sampleDir = OrientByNormal((r + rOffset) * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
             float offset = InterleavedGradientNoise(vec2(rOffset, fragCoord.y));
-            vec4 sampleColor = ConeTraceGridDiffuse(samplePos, sampleDir, worldNormal, offset);
+            vec4 sampleColor = ConeTraceGridDiffuse(samplePos, sampleDir, offset);
 
             indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale;
         }

@@ -11,6 +11,7 @@ namespace sp::vulkan::renderer {
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
+    static CVar<int> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
         7,
         "Change the voxel grid clearing operation used between frames "
@@ -423,6 +424,7 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 2, CVarVoxelDebugMip.Get());
 
                 cmd.Draw(3);
             });
