@@ -16,9 +16,6 @@ namespace sp::vulkan {
         : modelName(source->name), asset(source) {
         ZoneScoped;
         ZonePrintf("%s.%u", modelName, meshIndex);
-        // TODO: cache the output somewhere. Keeping the conversion code in
-        // the engine will be useful for any dynamic loading in the future,
-        // but we don't want to do it every time a model is loaded.
 
         Assertf(meshIndex < source->meshes.size(), "Mesh index is out of range: %s.%u", modelName, meshIndex);
         auto &mesh = source->meshes[meshIndex];
@@ -30,18 +27,34 @@ namespace sp::vulkan {
         }
 
         indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount);
-        auto indexData = (uint32 *)indexBuffer->Mapped();
+        staging.indexBuffer = device.AllocateBuffer({sizeof(uint32), indexCount},
+            vk::BufferUsageFlagBits::eTransferSrc,
+            VMA_MEMORY_USAGE_CPU_ONLY);
+        Assertf(indexBuffer->ByteSize() == staging.indexBuffer->ByteSize(), "index staging buffer size mismatch");
+
+        auto indexData = (uint32 *)staging.indexBuffer->Mapped();
         auto indexDataStart = indexData;
 
         vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount);
-        auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
+        staging.vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), vertexCount},
+            vk::BufferUsageFlagBits::eTransferSrc,
+            VMA_MEMORY_USAGE_CPU_ONLY);
+        Assertf(vertexBuffer->ByteSize() == staging.vertexBuffer->ByteSize(), "vertex staging buffer size mismatch");
+
+        auto vertexData = (SceneVertex *)staging.vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
         JointVertex *jointsData = nullptr, *jointsDataStart = nullptr;
 
         if (jointsCount > 0) {
             jointsBuffer = scene.jointsBuffer->ArrayAllocate(jointsCount);
-            jointsData = (JointVertex *)jointsBuffer->Mapped();
+            staging.jointsBuffer = device.AllocateBuffer({sizeof(JointVertex), jointsCount},
+                vk::BufferUsageFlagBits::eTransferSrc,
+                VMA_MEMORY_USAGE_CPU_ONLY);
+            Assertf(jointsBuffer->ByteSize() == staging.jointsBuffer->ByteSize(),
+                "joints staging buffer size mismatch");
+
+            jointsData = (JointVertex *)staging.jointsBuffer->Mapped();
             jointsDataStart = jointsData;
         }
 
@@ -92,10 +105,20 @@ namespace sp::vulkan {
         }
 
         primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size());
-        modelEntry = scene.models->ArrayAllocate(1);
+        staging.primitiveList = device.AllocateBuffer({sizeof(GPUMeshPrimitive), primitives.size()},
+            vk::BufferUsageFlagBits::eTransferSrc,
+            VMA_MEMORY_USAGE_CPU_ONLY);
+        Assertf(primitiveList->ByteSize() == staging.primitiveList->ByteSize(),
+            "primitive staging buffer size mismatch");
 
-        auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
-        auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
+        modelEntry = scene.models->ArrayAllocate(1);
+        staging.modelEntry = device.AllocateBuffer({sizeof(GPUMeshModel)},
+            vk::BufferUsageFlagBits::eTransferSrc,
+            VMA_MEMORY_USAGE_CPU_ONLY);
+        Assertf(modelEntry->ByteSize() == staging.modelEntry->ByteSize(), "model staging buffer size mismatch");
+
+        auto meshModel = (GPUMeshModel *)staging.modelEntry->Mapped();
+        auto gpuPrimitives = (GPUMeshPrimitive *)staging.primitiveList->Mapped();
         {
             ZoneScopedN("CopyPrimitives");
             auto gpuPrim = gpuPrimitives;
@@ -116,6 +139,16 @@ namespace sp::vulkan {
             meshModel->indexOffset = indexBuffer->ArrayOffset();
             meshModel->vertexOffset = vertexBuffer->ArrayOffset();
         }
+
+        InlineVector<DeviceContext::BufferTransfer, 5> transfer;
+        transfer.emplace_back(staging.indexBuffer, indexBuffer);
+        transfer.emplace_back(staging.vertexBuffer, vertexBuffer);
+        if (staging.jointsBuffer) transfer.emplace_back(staging.jointsBuffer, jointsBuffer);
+        transfer.emplace_back(staging.primitiveList, primitiveList);
+        transfer.emplace_back(staging.modelEntry, modelEntry);
+
+        // TODO replace with span constructor in vk-hpp v1.2.189
+        staging.transferComplete = device.TransferBuffers({(uint32)transfer.size(), transfer.data()});
     }
 
     Mesh::~Mesh() {

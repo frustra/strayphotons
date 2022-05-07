@@ -904,6 +904,52 @@ namespace sp::vulkan {
         });
     }
 
+    AsyncPtr<void> DeviceContext::TransferBuffers(vk::ArrayProxy<const BufferTransfer> batch) {
+        auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
+
+        for (auto &transfer : batch) {
+            vk::BufferCopy region;
+            region.srcOffset = 0;
+            region.dstOffset = 0;
+
+            vk::Buffer srcBuf, dstBuf;
+
+            if (std::holds_alternative<SubBufferPtr>(transfer.src)) {
+                auto &subBuf = std::get<SubBufferPtr>(transfer.src);
+                region.srcOffset = subBuf->ByteOffset();
+                region.size = subBuf->ByteSize();
+                srcBuf = (vk::Buffer)*subBuf;
+            } else {
+                auto &buf = std::get<BufferPtr>(transfer.src);
+                region.size = buf->ByteSize();
+                srcBuf = (vk::Buffer)*buf;
+            }
+
+            vk::DeviceSize dstSize;
+            if (std::holds_alternative<SubBufferPtr>(transfer.dst)) {
+                auto &subBuf = std::get<SubBufferPtr>(transfer.dst);
+                region.dstOffset = subBuf->ByteOffset();
+                dstSize = subBuf->ByteSize();
+                dstBuf = (vk::Buffer)*subBuf;
+            } else {
+                auto &buf = std::get<BufferPtr>(transfer.dst);
+                dstSize = buf->ByteSize();
+                dstBuf = (vk::Buffer)*buf;
+            }
+            Assertf(dstSize == region.size,
+                "must transfer between buffers of the same size, src: %llu, dst: %llu",
+                region.size,
+                dstSize);
+
+            transferCmd->Raw().copyBuffer(srcBuf, dstBuf, {region});
+        }
+
+        return frameEndQueue.Dispatch<void>([this, transferCmd]() {
+            auto cmd = transferCmd;
+            Submit(cmd);
+        });
+    }
+
     ImagePtr DeviceContext::AllocateImage(vk::ImageCreateInfo info,
         VmaMemoryUsage residency,
         vk::ImageUsageFlags declaredUsage) {
