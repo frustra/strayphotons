@@ -43,7 +43,8 @@ void main() {
     } else if (DEBUG_MODE == 2) {
         sampleRadiance = ConeTraceGrid(1 / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy).rgb;
     } else if (DEBUG_MODE == 3) {
-        sampleRadiance = ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, rayDir.xyz, 0).rgb;
+        sampleRadiance =
+            ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, rayDir.xyz, InterleavedGradientNoise(gl_FragCoord.xy)).rgb;
     }
 
     vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed

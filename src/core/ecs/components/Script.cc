@@ -170,8 +170,6 @@ namespace ecs {
     }
 
     void Script::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
-        ZoneScopedN("OnTick");
-        ZoneStr(ecs::ToString(lock, ent));
         for (auto &state : scripts) {
             auto callback = std::get_if<OnTickFunc>(&state.callback);
             if (callback) {
@@ -189,6 +187,8 @@ namespace ecs {
                     }
                     if (!hasEvents) continue;
                 }
+                ZoneScopedN("OnTick");
+                ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
             }
         }

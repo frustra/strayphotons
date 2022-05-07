@@ -66,6 +66,7 @@ namespace sp::vulkan::renderer {
                     desc.imageType = vk::ImageType::e3D;
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
                     builder.CreateImage("Radiance", desc, Access::TransferWrite);
+                    // desc.format = vk::Format::eR8G8B8A8Snorm;
                     builder.CreateImage("Normals", desc, Access::TransferWrite);
                 })
                 .Execute([](rg::Resources &resources, CommandContext &cmd) {
@@ -166,6 +167,7 @@ namespace sp::vulkan::renderer {
                 desc.sampler = SamplerType::TrilinearClampBorder;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
+                // desc.format = vk::Format::eR8G8B8A8Snorm;
                 builder.CreateImage("Normals", desc, clearNormals ? Access::TransferWrite : Access::None);
 
                 builder.CreateBuffer("FragmentListMetadata",

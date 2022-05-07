@@ -178,8 +178,8 @@
 			"renderable": "box",
 			"transform": {
 				"parent": "elevator",
-				"translate": [0, -0.2, -1],
-				"scale": [4, 0.4, 4]
+				"translate": [0, -0.25, -1],
+				"scale": [4, 0.5, 4]
 			},
 			"physics": {
 				"model": "box",
@@ -192,8 +192,8 @@
 			"renderable": "box",
 			"transform": {
 				"parent": "elevator",
-				"translate": [1.95, 2, -1],
-				"scale": [0.1, 4, 4]
+				"translate": [2, 2, -1],
+				"scale": [0.2, 4, 4]
 			},
 			"physics": {
 				"model": "box",
@@ -205,8 +205,8 @@
 			"renderable": "box",
 			"transform": {
 				"parent": "elevator",
-				"translate": [-1.95, 2, -1],
-				"scale": [0.1, 4, 4]
+				"translate": [-2, 2, -1],
+				"scale": [0.2, 4, 4]
 			},
 			"physics": {
 				"model": "box",
