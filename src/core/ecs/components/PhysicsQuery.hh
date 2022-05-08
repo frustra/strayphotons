@@ -5,7 +5,6 @@
 #include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>
-#include <limits>
 #include <optional>
 
 namespace ecs {

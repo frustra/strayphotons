@@ -79,7 +79,7 @@ namespace ecs {
                 struct ScriptData {
                     std::array<EntityRef, boneDefinitions.size()> inputRefs;
                     std::array<EntityRef, boneDefinitions.size()> physicsRefs;
-                    std::array<PhysicsShape, boneDefinitions.size()> queryShapes;
+                    std::array<PhysicsQuery::Handle<PhysicsQuery::Overlap>, boneDefinitions.size()> queries;
                     std::array<PhysicsShape, boneDefinitions.size()> prevShapes;
                     std::array<Transform, boneDefinitions.size()> queryTransforms;
                     std::array<Transform, boneDefinitions.size()> prevTransforms;
@@ -171,7 +171,7 @@ namespace ecs {
                 auto &query = ent.Get<PhysicsQuery>(lock);
 
                 ph.shapes.clear();
-                for (size_t i = 0; i < scriptData.queryShapes.size(); i++) {
+                for (size_t i = 0; i < scriptData.queries.size(); i++) {
                     if (!scriptData.inputRefs[i] || !scriptData.physicsRefs[i]) continue;
 
                     auto inputEnt = scriptData.inputRefs[i].Get(lock);
@@ -181,30 +181,28 @@ namespace ecs {
                         auto &inputTransform = inputEnt.Get<TransformTree>(lock);
                         auto relativeTransform = inputTransform.GetRelativeTransform(lock, inputRoot);
 
-                        if (scriptData.queryShapes[i]) {
-                            if (i >= query.queries.size()) {
-                                query.queries.emplace_back(
-                                    PhysicsQuery::Overlap{scriptData.queryShapes[i], scriptData.collisionMask});
-                            } else if (std::holds_alternative<PhysicsQuery::Overlap>(query.queries[i])) {
-                                auto &overlapQuery = std::get<PhysicsQuery::Overlap>(query.queries[i]);
-                                overlapQuery.shape = scriptData.queryShapes[i];
-                                overlapQuery.filterGroup = scriptData.collisionMask;
+                        if (!scriptData.queries[i]) {
+                            scriptData.queries[i] = query.NewQuery(
+                                PhysicsQuery::Overlap{boneShape, scriptData.collisionMask});
+                        } else {
+                            auto &overlapQuery = query.Lookup(scriptData.queries[i]);
 
-                                auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
-                                physicsTransform.parent = physicsRoot;
-                                // if (!overlapQuery.result) {
-                                scriptData.prevShapes[i] = scriptData.queryShapes[i];
-                                scriptData.prevTransforms[i] = scriptData.queryTransforms[i];
-                                ph.shapes.push_back(scriptData.queryShapes[i]);
-                                physicsTransform.pose = scriptData.queryTransforms[i];
-                                // } else {
-                                //     ph.shapes.push_back(scriptData.prevShapes[i]);
-                                //     physicsTransform.pose = scriptData.prevTransforms[i];
-                                // }
-                            }
+                            auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
+                            physicsTransform.parent = physicsRoot;
+                            // if (!overlapQuery.result) {
+                            scriptData.prevShapes[i] = overlapQuery.shape;
+                            scriptData.prevTransforms[i] = scriptData.queryTransforms[i];
+                            ph.shapes.push_back(overlapQuery.shape);
+                            physicsTransform.pose = scriptData.queryTransforms[i];
+                            // } else {
+                            //     ph.shapes.push_back(scriptData.prevShapes[i]);
+                            //     physicsTransform.pose = scriptData.prevTransforms[i];
+                            // }
+
+                            overlapQuery.shape = boneShape;
+                            overlapQuery.filterGroup = scriptData.collisionMask;
                         }
 
-                        scriptData.queryShapes[i] = boneShape;
                         scriptData.queryTransforms[i] = relativeTransform;
                     }
                 }
