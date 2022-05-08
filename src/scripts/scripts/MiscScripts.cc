@@ -130,6 +130,7 @@ namespace sp::scripts {
                     struct ScriptData {
                         Entity grabEntity, pointEntity;
                         Transform pointTransform;
+                        PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
                     };
 
                     ScriptData scriptData;
@@ -138,12 +139,11 @@ namespace sp::scripts {
                     glm::vec3 centerOfMass;
                     if (ent.Has<PhysicsQuery>(lock)) {
                         auto &query = ent.Get<PhysicsQuery>(lock);
-                        ecs::PhysicsQuery::Mass massQuery(ent);
-                        auto existingQuery = query.ReadQuery(massQuery);
-                        if (!existingQuery) {
-                            query.queries.emplace_back(massQuery);
+                        if (scriptData.massQuery) {
+                            auto &result = query.Lookup(scriptData.massQuery).result;
+                            if (result) centerOfMass = result->centerOfMass;
                         } else {
-                            if (massQuery.result) centerOfMass = massQuery.result->centerOfMass;
+                            scriptData.massQuery = query.NewQuery(PhysicsQuery::Mass(ent));
                         }
                     }
 
@@ -248,20 +248,20 @@ namespace sp::scripts {
 
                     struct ScriptData {
                         Entity grabEntity, pointEntity;
+                        PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
                     };
 
                     ScriptData scriptData;
                     if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
 
-                    auto grabDistance = state.GetParam<double>("grab_distance");
-
-                    ecs::PhysicsQuery::Raycast::Result raycastResult;
-                    ecs::PhysicsQuery::Raycast raycastQuery(grabDistance, PHYSICS_GROUP_WORLD);
-                    auto existingQuery = query.ReadQuery(raycastQuery);
-                    if (!existingQuery) {
-                        query.queries.emplace_back(raycastQuery);
-                    } else if (raycastQuery.result) {
-                        raycastResult = raycastQuery.result.value();
+                    PhysicsQuery::Raycast::Result raycastResult;
+                    if (scriptData.raycastQuery) {
+                        auto &result = query.Lookup(scriptData.raycastQuery).result;
+                        if (result) raycastResult = result.value();
+                    } else {
+                        auto grabDistance = state.GetParam<double>("grab_distance");
+                        scriptData.raycastQuery = query.NewQuery(
+                            PhysicsQuery::Raycast(grabDistance, PHYSICS_GROUP_WORLD));
                     }
 
                     Event event;
@@ -293,7 +293,7 @@ namespace sp::scripts {
                     bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
                         if (rotating && scriptData.grabEntity) {
-                            ecs::EventBindings::SendEvent(lock,
+                            EventBindings::SendEvent(lock,
                                 scriptData.grabEntity,
                                 INTERACT_EVENT_INTERACT_ROTATE,
                                 Event{INTERACT_EVENT_INTERACT_ROTATE, ent, event.data});
@@ -306,7 +306,7 @@ namespace sp::scripts {
                             INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
                     } else if (raycastResult.target) {
-                        ecs::Transform pointTransfrom = transform;
+                        Transform pointTransfrom = transform;
                         pointTransfrom.SetPosition(raycastResult.position);
                         EventBindings::SendEvent(lock,
                             raycastResult.target,

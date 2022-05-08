@@ -20,7 +20,7 @@ namespace sp {
                 std::visit(
                     [&](auto &&arg) {
                         using T = std::decay_t<decltype(arg)>;
-                        arg.result.reset();
+                        if constexpr (!std::is_same_v<T, std::monostate>) arg.result.reset();
 
                         if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Raycast>) {
                             if (arg.maxDistance > 0.0f && arg.maxHits > 0) {
@@ -91,7 +91,7 @@ namespace sp {
                                 glm::vec3 sweepDir = transform * glm::vec4(arg.sweepDirection, 0.0f);
 
                                 PxSweepBuffer hit;
-                                bool status = manager.scene->sweep(manager.GeometryFromShape(arg.shape).any(),
+                                manager.scene->sweep(manager.GeometryFromShape(arg.shape).any(),
                                     pxTransform,
                                     GlmVec3ToPxVec3(sweepDir),
                                     arg.maxDistance,
@@ -99,16 +99,15 @@ namespace sp {
                                     PxHitFlag::ePOSITION,
                                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
-                                if (status) {
-                                    physx::PxRigidActor *hitActor = hit.block.actor;
-                                    if (hitActor) {
-                                        auto userData = (ActorUserData *)hitActor->userData;
-                                        if (userData) {
-                                            auto &result = arg.result.emplace();
-                                            result.target = userData->entity;
-                                            result.position = PxVec3ToGlmVec3(hit.block.position);
-                                            result.distance = hit.block.distance;
-                                        }
+                                auto &result = arg.result.emplace();
+
+                                physx::PxRigidActor *hitActor = hit.block.actor;
+                                if (hitActor) {
+                                    auto userData = (ActorUserData *)hitActor->userData;
+                                    if (userData) {
+                                        result.target = userData->entity;
+                                        result.position = PxVec3ToGlmVec3(hit.block.position);
+                                        result.distance = hit.block.distance;
                                     }
                                 }
                             }
@@ -127,17 +126,15 @@ namespace sp {
                                 PxOverlapBuffer hit;
                                 hit.touches = &touch;
                                 hit.maxNbTouches = 1;
-                                bool status = manager.scene->overlap(manager.GeometryFromShape(arg.shape).any(),
+                                manager.scene->overlap(manager.GeometryFromShape(arg.shape).any(),
                                     pxTransform,
                                     hit,
                                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
-                                if (status) {
-                                    physx::PxRigidActor *hitActor = touch.actor;
-                                    if (hitActor) {
-                                        auto userData = (ActorUserData *)hitActor->userData;
-                                        if (userData) arg.result.emplace(userData->entity);
-                                    }
+                                physx::PxRigidActor *hitActor = touch.actor;
+                                if (hitActor) {
+                                    auto userData = (ActorUserData *)hitActor->userData;
+                                    if (userData) arg.result.emplace(userData->entity);
                                 }
                             }
                         } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Mass>) {
