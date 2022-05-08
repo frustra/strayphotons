@@ -133,7 +133,7 @@ namespace ecs {
 
     glm::quat Transform::GetRotation() const {
         glm::mat3 rotation = glm::mat3(glm::normalize(matrix[0]), glm::normalize(matrix[1]), glm::normalize(matrix[2]));
-        return glm::quat_cast(rotation);
+        return glm::normalize(glm::quat_cast(rotation));
     }
 
     glm::vec3 Transform::GetForward() const {

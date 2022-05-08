@@ -126,25 +126,29 @@ namespace sp {
                                 PxOverlapBuffer hit;
                                 hit.touches = &touch;
                                 hit.maxNbTouches = 1;
+
                                 manager.scene->overlap(manager.GeometryFromShape(arg.shape).any(),
                                     pxTransform,
                                     hit,
                                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
+                                auto &result = arg.result.emplace();
+
                                 physx::PxRigidActor *hitActor = touch.actor;
                                 if (hitActor) {
                                     auto userData = (ActorUserData *)hitActor->userData;
-                                    if (userData) arg.result.emplace(userData->entity);
+                                    if (userData) { result = userData->entity; }
                                 }
                             }
                         } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Mass>) {
                             auto target = arg.targetActor.Get(lock);
                             if (target) {
                                 if (manager.actors.count(target) > 0) {
+                                    auto &result = arg.result.emplace();
+
                                     const auto &actor = manager.actors[target];
                                     auto dynamic = actor->template is<PxRigidDynamic>();
                                     if (dynamic) {
-                                        auto &result = arg.result.emplace();
                                         result.weight = dynamic->getMass();
                                         result.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
                                     }

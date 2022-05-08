@@ -94,7 +94,6 @@ namespace sp {
         void SaveCollisionCache(const Gltf &model, size_t meshIndex, const ConvexHullSet &set, bool decomposeHull);
 
         physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape);
-        physx::PxGeometryType::Enum GeometryTypeFromShape(const ecs::PhysicsShape &shape) const;
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
