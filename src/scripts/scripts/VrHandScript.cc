@@ -9,9 +9,9 @@
 namespace ecs {
 
     static sp::CVar<int> CVarHandCollisionShapes("p.HandCollisionShapes", 1, "0: boxes, 1: capsules");
-    static sp::CVar<bool> CVarHandOverlapTest("p.HandOverlapTest",
-        true,
-        "Only move each finger if nothing is in the way");
+    static sp::CVar<int> CVarHandOverlapTest("p.HandOverlapTest",
+        0,
+        "0: no overlap test, 1: per-finger overlap, 2: whole-hand overlap");
 
     enum class BoneGroup {
         Wrist = 0,
@@ -206,7 +206,9 @@ namespace ecs {
                             overlapQuery.filterGroup = scriptData.collisionMask;
 
                             if (overlapQuery.result && *overlapQuery.result) {
-                                groupOverlaps[boneDefinitions[i].group] = true;
+                                auto group = CVarHandOverlapTest.Get() == 2 ? BoneGroup::Wrist
+                                                                            : boneDefinitions[i].group;
+                                groupOverlaps[group] = true;
                             }
                         }
 
@@ -221,7 +223,8 @@ namespace ecs {
 
                     auto physicsEnt = scriptData.physicsRefs[i].Get(lock);
                     if (physicsEnt.Has<TransformTree>(lock)) {
-                        if (!groupOverlaps[boneDefinitions[i].group] || !CVarHandOverlapTest.Get()) {
+                        auto group = CVarHandOverlapTest.Get() == 2 ? BoneGroup::Wrist : boneDefinitions[i].group;
+                        if (!groupOverlaps[group] || CVarHandOverlapTest.Get() == 0) {
                             // This group doesn't overlap, so update the current pose and shape
                             auto &overlapQuery = query.Lookup(scriptData.queries[i]);
                             scriptData.currentShapes[i] = overlapQuery.shape;
