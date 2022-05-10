@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Logging.hh"
+#include "core/Logging.hh"
 
 #include <tracy/Tracy.hpp>
 

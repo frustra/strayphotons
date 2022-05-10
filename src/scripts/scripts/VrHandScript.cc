@@ -1,48 +1,66 @@
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "core/Common.hh"
+#include "core/EnumArray.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 
 namespace ecs {
+
+    static sp::CVar<int> CVarHandCollisionShapes("p.HandCollisionShapes", 1, "0: boxes, 1: capsules");
+    static sp::CVar<int> CVarHandOverlapTest("p.HandOverlapTest",
+        0,
+        "0: no overlap test, 1: per-finger overlap, 2: whole-hand overlap");
+
+    enum class BoneGroup {
+        Wrist = 0,
+        Thumb,
+        Index,
+        Middle,
+        Ring,
+        Pinky,
+        Count,
+    };
+
     struct BoneProperties {
         std::string boneName;
+        BoneGroup group;
         float radius;
         glm::vec3 offset;
     };
 
     static const std::array boneDefinitions = {
-        BoneProperties{"wrist_#", -1.0f, glm::vec3(0.01, 0.0, 0.01)},
+        BoneProperties{"wrist_#", BoneGroup::Wrist, -1.0f, glm::vec3(0.01, 0.0, 0.01)},
 
-        BoneProperties{"finger_thumb_0_#", 0.015f},
-        BoneProperties{"finger_thumb_1_#", 0.01f},
-        BoneProperties{"finger_thumb_2_#", 0.01f},
-        BoneProperties{"finger_thumb_#_end", 0.008f},
+        BoneProperties{"finger_thumb_0_#", BoneGroup::Thumb, 0.015f},
+        BoneProperties{"finger_thumb_1_#", BoneGroup::Thumb, 0.01f},
+        BoneProperties{"finger_thumb_2_#", BoneGroup::Thumb, 0.01f},
+        BoneProperties{"finger_thumb_#_end", BoneGroup::Thumb, 0.008f},
 
-        BoneProperties{"finger_index_meta_#", 0.015f},
-        BoneProperties{"finger_index_0_#", 0.015f},
-        BoneProperties{"finger_index_1_#", 0.01f},
-        BoneProperties{"finger_index_2_#", 0.01f},
-        BoneProperties{"finger_index_#_end", 0.008f},
+        BoneProperties{"finger_index_meta_#", BoneGroup::Index, 0.015f},
+        BoneProperties{"finger_index_0_#", BoneGroup::Index, 0.015f},
+        BoneProperties{"finger_index_1_#", BoneGroup::Index, 0.01f},
+        BoneProperties{"finger_index_2_#", BoneGroup::Index, 0.01f},
+        BoneProperties{"finger_index_#_end", BoneGroup::Index, 0.008f},
 
-        BoneProperties{"finger_middle_meta_#", 0.015f},
-        BoneProperties{"finger_middle_0_#", 0.015f},
-        BoneProperties{"finger_middle_1_#", 0.01f},
-        BoneProperties{"finger_middle_2_#", 0.01f},
-        BoneProperties{"finger_middle_#_end", 0.008f},
+        BoneProperties{"finger_middle_meta_#", BoneGroup::Middle, 0.015f},
+        BoneProperties{"finger_middle_0_#", BoneGroup::Middle, 0.015f},
+        BoneProperties{"finger_middle_1_#", BoneGroup::Middle, 0.01f},
+        BoneProperties{"finger_middle_2_#", BoneGroup::Middle, 0.01f},
+        BoneProperties{"finger_middle_#_end", BoneGroup::Middle, 0.008f},
 
-        BoneProperties{"finger_ring_meta_#", 0.015f},
-        BoneProperties{"finger_ring_0_#", 0.015f},
-        BoneProperties{"finger_ring_1_#", 0.01f},
-        BoneProperties{"finger_ring_2_#", 0.01f},
-        BoneProperties{"finger_ring_#_end", 0.008f},
+        BoneProperties{"finger_ring_meta_#", BoneGroup::Ring, 0.015f},
+        BoneProperties{"finger_ring_0_#", BoneGroup::Ring, 0.015f},
+        BoneProperties{"finger_ring_1_#", BoneGroup::Ring, 0.01f},
+        BoneProperties{"finger_ring_2_#", BoneGroup::Ring, 0.01f},
+        BoneProperties{"finger_ring_#_end", BoneGroup::Ring, 0.008f},
 
-        BoneProperties{"finger_pinky_meta_#", 0.015f},
-        BoneProperties{"finger_pinky_0_#", 0.015f},
-        BoneProperties{"finger_pinky_1_#", 0.01f},
-        BoneProperties{"finger_pinky_2_#", 0.01f},
-        BoneProperties{"finger_pinky_#_end", 0.008f},
+        BoneProperties{"finger_pinky_meta_#", BoneGroup::Pinky, 0.015f},
+        BoneProperties{"finger_pinky_0_#", BoneGroup::Pinky, 0.015f},
+        BoneProperties{"finger_pinky_1_#", BoneGroup::Pinky, 0.01f},
+        BoneProperties{"finger_pinky_2_#", BoneGroup::Pinky, 0.01f},
+        BoneProperties{"finger_pinky_#_end", BoneGroup::Pinky, 0.008f},
     };
 
     InternalPhysicsScript vrHandScript("vr_hand",
@@ -79,14 +97,13 @@ namespace ecs {
                 struct ScriptData {
                     std::array<EntityRef, boneDefinitions.size()> inputRefs;
                     std::array<EntityRef, boneDefinitions.size()> physicsRefs;
-                    std::array<PhysicsShape, boneDefinitions.size()> queryShapes;
-                    std::array<PhysicsShape, boneDefinitions.size()> prevShapes;
+                    std::array<PhysicsQuery::Handle<PhysicsQuery::Overlap>, boneDefinitions.size()> queries;
                     std::array<Transform, boneDefinitions.size()> queryTransforms;
-                    std::array<Transform, boneDefinitions.size()> prevTransforms;
+                    std::array<PhysicsShape, boneDefinitions.size()> currentShapes;
                     PhysicsGroupMask collisionMask;
                 };
 
-                ScriptData scriptData;
+                ScriptData scriptData = {};
                 if (state.userData.has_value()) {
                     scriptData = std::any_cast<ScriptData>(state.userData);
                 } else {
@@ -149,8 +166,11 @@ namespace ecs {
                         return shape;
                     }
 
-                    shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
-                    // shape.shape = PhysicsShape::Box(glm::vec3(boneLength, segment.radius, segment.radius));
+                    if (CVarHandCollisionShapes.Get() == 0) {
+                        shape.shape = PhysicsShape::Box(glm::vec3(boneLength, segment.radius, segment.radius));
+                    } else {
+                        shape.shape = PhysicsShape::Capsule(boneLength, segment.radius);
+                    }
 
                     auto boneDiff = parentTransform.GetPosition() - relativeTransform.GetPosition();
                     glm::vec3 boneVector = glm::vec4(boneDiff, 0.0f);
@@ -170,42 +190,50 @@ namespace ecs {
                 auto &ph = ent.Get<Physics>(lock);
                 auto &query = ent.Get<PhysicsQuery>(lock);
 
-                ph.shapes.clear();
-                for (size_t i = 0; i < scriptData.queryShapes.size(); i++) {
+                sp::EnumArray<bool, BoneGroup> groupOverlaps = {};
+                for (size_t i = 0; i < boneDefinitions.size(); i++) {
                     if (!scriptData.inputRefs[i] || !scriptData.physicsRefs[i]) continue;
 
                     auto inputEnt = scriptData.inputRefs[i].Get(lock);
-                    auto physicsEnt = scriptData.physicsRefs[i].Get(lock);
-                    if (inputEnt.Has<TransformTree>(lock) && physicsEnt.Has<TransformTree>(lock)) {
+                    if (inputEnt.Has<TransformTree>(lock)) {
                         auto boneShape = shapeForBone(i);
-                        auto &inputTransform = inputEnt.Get<TransformTree>(lock);
-                        auto relativeTransform = inputTransform.GetRelativeTransform(lock, inputRoot);
+                        if (!scriptData.queries[i]) {
+                            scriptData.queries[i] = query.NewQuery(
+                                PhysicsQuery::Overlap{boneShape, scriptData.collisionMask});
+                        } else {
+                            auto &overlapQuery = query.Lookup(scriptData.queries[i]);
+                            overlapQuery.shape = boneShape;
+                            overlapQuery.filterGroup = scriptData.collisionMask;
 
-                        if (scriptData.queryShapes[i]) {
-                            if (i >= query.queries.size()) {
-                                query.queries.emplace_back(
-                                    PhysicsQuery::Overlap{scriptData.queryShapes[i], scriptData.collisionMask});
-                            } else if (std::holds_alternative<PhysicsQuery::Overlap>(query.queries[i])) {
-                                auto &overlapQuery = std::get<PhysicsQuery::Overlap>(query.queries[i]);
-                                overlapQuery.shape = scriptData.queryShapes[i];
-                                overlapQuery.filterGroup = scriptData.collisionMask;
-
-                                auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
-                                physicsTransform.parent = physicsRoot;
-                                // if (!overlapQuery.result) {
-                                scriptData.prevShapes[i] = scriptData.queryShapes[i];
-                                scriptData.prevTransforms[i] = scriptData.queryTransforms[i];
-                                ph.shapes.push_back(scriptData.queryShapes[i]);
-                                physicsTransform.pose = scriptData.queryTransforms[i];
-                                // } else {
-                                //     ph.shapes.push_back(scriptData.prevShapes[i]);
-                                //     physicsTransform.pose = scriptData.prevTransforms[i];
-                                // }
+                            if (overlapQuery.result && *overlapQuery.result) {
+                                auto group = CVarHandOverlapTest.Get() == 2 ? BoneGroup::Wrist
+                                                                            : boneDefinitions[i].group;
+                                groupOverlaps[group] = true;
                             }
                         }
 
-                        scriptData.queryShapes[i] = boneShape;
-                        scriptData.queryTransforms[i] = relativeTransform;
+                        auto &inputTransform = inputEnt.Get<TransformTree>(lock);
+                        scriptData.queryTransforms[i] = inputTransform.GetRelativeTransform(lock, inputRoot);
+                    }
+                }
+
+                ph.shapes.clear();
+                for (size_t i = 0; i < boneDefinitions.size(); i++) {
+                    if (!scriptData.inputRefs[i] || !scriptData.physicsRefs[i] || !scriptData.queries[i]) continue;
+
+                    auto physicsEnt = scriptData.physicsRefs[i].Get(lock);
+                    if (physicsEnt.Has<TransformTree>(lock)) {
+                        auto group = CVarHandOverlapTest.Get() == 2 ? BoneGroup::Wrist : boneDefinitions[i].group;
+                        if (!groupOverlaps[group] || CVarHandOverlapTest.Get() == 0) {
+                            // This group doesn't overlap, so update the current pose and shape
+                            auto &overlapQuery = query.Lookup(scriptData.queries[i]);
+                            scriptData.currentShapes[i] = overlapQuery.shape;
+
+                            auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
+                            physicsTransform.parent = physicsRoot;
+                            physicsTransform.pose = scriptData.queryTransforms[i];
+                        }
+                        if (scriptData.currentShapes[i]) ph.shapes.push_back(scriptData.currentShapes[i]);
                     }
                 }
 

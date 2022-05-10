@@ -15,7 +15,7 @@ namespace ecs {
                 struct Data {
                     EntityRef listener;
                     EntityRef listenerFallback;
-                    std::optional<PhysicsQuery::Raycast> lastQuery;
+                    PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
                 } data;
 
                 if (state.userData.has_value()) {
@@ -40,21 +40,14 @@ namespace ecs {
 
                     auto &physicsQuery = ent.Get<PhysicsQuery>(lock);
 
-                    if (!data.lastQuery) {
-                        physicsQuery.queries.emplace_back(nextQuery);
-                        data.lastQuery = nextQuery;
+                    if (!data.raycastQuery) {
+                        data.raycastQuery = physicsQuery.NewQuery(nextQuery);
                     } else {
-                        for (size_t i = 0; i < physicsQuery.queries.size(); i++) {
-                            auto query = std::get_if<PhysicsQuery::Raycast>(&physicsQuery.queries[i]);
-                            if (query && data.lastQuery == *query) {
-                                if (query->result) {
-                                    auto &sounds = ent.Get<Sounds>(lock);
-                                    sounds.occlusion = query->result.value().hits;
-                                    physicsQuery.queries[i] = nextQuery;
-                                    data.lastQuery = nextQuery;
-                                }
-                                break;
-                            }
+                        auto &query = physicsQuery.Lookup(data.raycastQuery);
+                        if (query.result) {
+                            auto &sounds = ent.Get<Sounds>(lock);
+                            sounds.occlusion = query.result->hits;
+                            query = nextQuery;
                         }
                     }
                 }

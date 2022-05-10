@@ -9,6 +9,19 @@
 
 namespace ecs {
     struct PhysicsQuery {
+        template<typename T>
+        struct Handle {
+            size_t index = ~0u;
+
+            operator bool() const {
+                return index != ~0u;
+            }
+
+            bool operator!() const {
+                return index == ~0u;
+            }
+        };
+
         struct Raycast {
             float maxDistance;
             PhysicsGroupMask filterGroup;
@@ -92,18 +105,32 @@ namespace ecs {
             Mass(const EntityRef &targetActor) : targetActor(targetActor) {}
         };
 
-        std::vector<std::variant<Raycast, Sweep, Overlap, Mass>> queries;
+        std::vector<std::variant<std::monostate, Raycast, Sweep, Overlap, Mass>> queries;
 
+        // Calling NewQuery() invalidates all references returned by Lookup()
         template<typename T>
-        bool ReadQuery(T &searchQuery) const {
-            for (auto &query : queries) {
-                auto *variant = std::get_if<T>(&query);
-                if (*variant == searchQuery) {
-                    searchQuery.result = variant->result;
-                    return true;
+        Handle<T> NewQuery(const T &query) {
+            for (size_t i = 0; i < queries.size(); i++) {
+                if (std::holds_alternative<std::monostate>(queries[i])) {
+                    queries[i] = query;
+                    return {i};
                 }
             }
-            return false;
+            queries.emplace_back(query);
+            return {queries.size() - 1};
+        }
+
+        // Calling NewQuery() invalidates all references returned by Lookup()
+        template<typename T>
+        T &Lookup(const Handle<T> &handle) {
+            Assertf(handle.index < queries.size(), "Invalid query handle");
+            return std::get<T>(queries[handle.index]);
+        }
+
+        template<typename T>
+        void RemoveQuery(Handle<T> &handle) {
+            if (handle.index < queries.size()) queries[handle.index] = std::monostate();
+            handle = {};
         }
     };
 

@@ -834,26 +834,4 @@ namespace sp {
             },
             shape.shape);
     }
-
-    PxGeometryType::Enum PhysxManager::GeometryTypeFromShape(const ecs::PhysicsShape &shape) const {
-        return std::visit(
-            [](auto &&arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
-                    return PxGeometryType::eSPHERE;
-                } else if constexpr (std::is_same<ecs::PhysicsShape::Capsule, T>()) {
-                    return PxGeometryType::eCAPSULE;
-                } else if constexpr (std::is_same<ecs::PhysicsShape::Box, T>()) {
-                    return PxGeometryType::eBOX;
-                } else if constexpr (std::is_same<ecs::PhysicsShape::Plane, T>()) {
-                    return PxGeometryType::ePLANE;
-                } else if constexpr (std::is_same<ecs::PhysicsShape::ConvexMesh, T>()) {
-                    return PxGeometryType::eCONVEXMESH;
-                } else {
-                    Errorf("Unknown PhysicsShape type: %s", typeid(T).name());
-                    return PxGeometryType::eINVALID;
-                }
-            },
-            shape.shape);
-    }
 } // namespace sp
