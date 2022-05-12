@@ -311,6 +311,7 @@ namespace sp {
                     // This allows the headset to detatch from the player capsule so they don't get pushed back by walls
                     auto absDeltaPos = glm::abs(deltaPos) + 0.00001f;
                     glm::vec3 clampRatio = glm::min(glm::abs(displacement), absDeltaPos) / absDeltaPos;
+                    clampRatio.y = 1.0f;
                     proxyTransform.pose.Translate(deltaPos * clampRatio);
                 }
 
