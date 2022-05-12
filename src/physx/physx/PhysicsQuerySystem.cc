@@ -48,7 +48,6 @@ namespace sp {
 
                                 if (arg.maxHits == 1) {
                                     hit.maxNbTouches = 0;
-                                    queryFlags |= PxQueryFlag::eANY_HIT;
                                 } else {
                                     hit.maxNbTouches = std::min((uint32)touches.size(), arg.maxHits);
                                 }

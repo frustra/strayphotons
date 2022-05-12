@@ -291,7 +291,7 @@ namespace sp {
         int framesPerBuffer = self->framesPerBuffer;
         int framesToWrite = framesPerBuffer * std::max(std::min(1, frameCountMax / framesPerBuffer),
                                                   (frameCountMin + framesPerBuffer - 1) / framesPerBuffer);
-        Assertf(framesToWrite > 0, "wanted %d frames, min %d max %d", framesPerBuffer, frameCountMin, frameCountMax);
+        if (framesToWrite <= 0) return;
         int err = soundio_outstream_begin_write(outstream, &areas, &framesToWrite);
 
         int channelCount = outstream->layout.channel_count;
