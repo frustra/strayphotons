@@ -167,13 +167,12 @@ namespace sp {
             for (auto &bindingName : bindingNames) {
                 auto list = bindings.Lookup(bindingName);
                 std::stringstream ss;
-                ss << bindingName << ": ";
                 if (list->sources.empty()) {
                     ss << "none";
                 } else {
                     ss << list->operation;
                 }
-                Logf("    %s", ss.str());
+                Logf("    %s: %s", bindingName, ss.str());
                 for (auto &source : list->sources) {
                     auto e = source.first.Get(lock);
                     double value = ecs::SignalBindings::GetSignal(lock, e, source.second);
