@@ -47,6 +47,8 @@ namespace sp::vulkan {
                 if (!prim.metallicRoughness.Ready()) return false;
             }
 
+            if (!staging.transferComplete->Ready()) return false;
+
             ready = true;
             return true;
         }
@@ -58,6 +60,11 @@ namespace sp::vulkan {
         vector<Primitive> primitives;
 
         uint32 vertexCount = 0, indexCount = 0, jointsCount = 0;
+        struct {
+            BufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
+            AsyncPtr<void> transferComplete;
+        } staging;
+
         SubBufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
 
         bool ready = false;

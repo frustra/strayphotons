@@ -9,24 +9,24 @@
 namespace sp::vulkan {
     GPUScene::GPUScene(DeviceContext &device) : device(device), workQueue("", 0), textures(device, workQueue) {
         indexBuffer = device.AllocateBuffer({sizeof(uint32), 10 * 1024 * 1024},
-            vk::BufferUsageFlagBits::eIndexBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            VMA_MEMORY_USAGE_GPU_ONLY);
 
         vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), 1024 * 1024},
-            vk::BufferUsageFlagBits::eVertexBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            VMA_MEMORY_USAGE_GPU_ONLY);
 
         jointsBuffer = device.AllocateBuffer({sizeof(JointVertex), 128 * 1024},
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            VMA_MEMORY_USAGE_GPU_ONLY);
 
         primitiveLists = device.AllocateBuffer({sizeof(GPUMeshPrimitive), 10 * 1024},
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            VMA_MEMORY_USAGE_GPU_ONLY);
 
         models = device.AllocateBuffer({sizeof(GPUMeshModel), 1024},
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            VMA_MEMORY_USAGE_GPU_ONLY);
     }
 
     void GPUScene::Flush() {
@@ -194,7 +194,7 @@ namespace sp::vulkan {
             sizeof(uint32),
             drawCommandsBuffer,
             0,
-            drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand));
+            drawCommandsBuffer->ArraySize());
     }
 
     void GPUScene::AddGeometryWarp(rg::RenderGraph &graph) {

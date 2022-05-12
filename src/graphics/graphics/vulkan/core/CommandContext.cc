@@ -311,11 +311,11 @@ namespace sp::vulkan {
     }
 
     static void checkBufferOffsets(const BufferPtr &buffer, vk::DeviceSize offset, vk::DeviceSize range) {
-        Assertf(offset + range <= buffer->Size(),
+        Assertf(offset + range <= buffer->ByteSize(),
             "tried to bind past the end of a buffer, offset: %d, range: %d, size: %d",
             offset,
             range,
-            buffer->Size());
+            buffer->ByteSize());
     }
 
     void CommandContext::SetUniformBuffer(uint32 set,
@@ -331,7 +331,7 @@ namespace sp::vulkan {
         auto &bufferBinding = bindingDesc.buffer;
         bufferBinding.buffer = **buffer;
         bufferBinding.offset = offset;
-        bufferBinding.range = range == 0 ? buffer->Size() - offset : range;
+        bufferBinding.range = range == 0 ? buffer->ByteSize() - offset : range;
         bindingDesc.arrayStride = buffer->ArrayStride();
 
         checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
@@ -351,7 +351,7 @@ namespace sp::vulkan {
         auto &bufferBinding = bindingDesc.buffer;
         bufferBinding.buffer = **buffer;
         bufferBinding.offset = offset;
-        bufferBinding.range = range == 0 ? buffer->Size() - offset : range;
+        bufferBinding.range = range == 0 ? buffer->ByteSize() - offset : range;
         bindingDesc.arrayStride = buffer->ArrayStride();
 
         checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);

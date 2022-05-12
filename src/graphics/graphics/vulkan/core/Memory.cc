@@ -54,6 +54,10 @@ namespace sp::vulkan {
         return static_cast<uint8_t *>(parentBuffer->Mapped()) + offsetBytes;
     }
 
+    SubBuffer::operator vk::Buffer() const {
+        return (vk::Buffer)*parentBuffer;
+    }
+
     Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Buffer::Buffer(vk::BufferCreateInfo bufferInfo,
@@ -127,7 +131,12 @@ namespace sp::vulkan {
         auto offsetBytes = SubAllocateRaw(size, 1);
         DebugAssert(offsetBytes % arrayStride == 0, "suballocation was not aligned to the array");
         offsetBytes += bufferInfo.size - arrayCount * arrayStride; // align to end
-        return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size, offsetBytes / arrayStride);
+        return make_shared<SubBuffer>(this,
+            subAllocationBlock,
+            offsetBytes,
+            size,
+            offsetBytes / arrayStride,
+            elementCount);
     }
 
     SubBufferPtr Buffer::SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment) {

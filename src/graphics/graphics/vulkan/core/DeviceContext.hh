@@ -127,6 +127,17 @@ namespace sp::vulkan {
 
         BufferPtr GetBuffer(const BufferDesc &desc);
 
+        struct BufferTransfer {
+            BufferTransfer() {}
+
+            template<typename Src, typename Dst>
+            BufferTransfer(const Src &src, const Dst &dst) : src(src), dst(dst) {}
+
+            std::variant<BufferPtr, SubBufferPtr> src;
+            std::variant<BufferPtr, SubBufferPtr> dst;
+        };
+        AsyncPtr<void> TransferBuffers(vk::ArrayProxy<const BufferTransfer> batch);
+
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});

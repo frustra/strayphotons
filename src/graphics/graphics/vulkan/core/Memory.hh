@@ -148,19 +148,24 @@ namespace sp::vulkan {
             VmaVirtualBlock subAllocationBlock,
             vk::DeviceSize offsetBytes,
             vk::DeviceSize size,
-            vk::DeviceSize arrayOffset = std::numeric_limits<vk::DeviceSize>::max())
+            size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
+            size_t arrayCount = 0)
             : parentBuffer(buffer), subAllocationBlock(subAllocationBlock), offsetBytes(offsetBytes), size(size),
-              arrayOffset(arrayOffset) {}
+              arrayOffset(arrayOffset), arrayCount(arrayCount) {}
 
         ~SubBuffer();
 
         void *Mapped();
 
-        vk::DeviceSize ArrayOffset() const {
+        size_t ArrayOffset() const {
             return arrayOffset;
         }
 
-        vk::DeviceSize Size() const {
+        size_t ArrayCount() const {
+            return arrayCount;
+        }
+
+        vk::DeviceSize ByteSize() const {
             return size;
         }
 
@@ -168,10 +173,13 @@ namespace sp::vulkan {
             return offsetBytes;
         }
 
+        operator vk::Buffer() const;
+
     private:
         Buffer *parentBuffer;
         VmaVirtualBlock subAllocationBlock;
-        vk::DeviceSize offsetBytes, size, arrayOffset;
+        vk::DeviceSize offsetBytes, size;
+        size_t arrayOffset, arrayCount;
     };
 
     class Buffer : public UniqueMemory {
@@ -192,8 +200,12 @@ namespace sp::vulkan {
             return buffer;
         }
 
-        vk::DeviceSize Size() const {
+        vk::DeviceSize ByteSize() const {
             return bufferInfo.size;
+        }
+
+        size_t ArraySize() const {
+            return arrayCount;
         }
 
         vk::BufferUsageFlags Usage() const {
@@ -201,7 +213,7 @@ namespace sp::vulkan {
         }
 
         /**
-         * Treats the buffer as an array with all elements having `bytesPerElement` size.
+         * Treats the buffer as an array with all elements having `arrayStride` size.
          * Allocates `elementCount` elements from this array.
          * Can be called only if the buffer was created with an arrayStride.
          *

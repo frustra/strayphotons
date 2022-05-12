@@ -58,7 +58,7 @@ namespace sp::vulkan::renderer {
                     stateBuffer->CopyFrom(&state);
                 } else {
                     auto lastStateBuffer = resources.GetBuffer(lastStateID);
-                    vk::BufferCopy region(0, 0, lastStateBuffer->Size());
+                    vk::BufferCopy region(0, 0, lastStateBuffer->ByteSize());
                     cmd.Raw().copyBuffer(*lastStateBuffer, *stateBuffer, {region});
                 }
             });
