@@ -1,0 +1,112 @@
+{
+    "entities": [
+		{
+			"name": "root",
+			"transform": {
+				"translate": [0, 160, 0]
+			},
+			"sound": {
+				"file": "dryer.ogg",
+				"type": "ambisonic",
+				"volume": 0.1
+			},
+			"animation": {
+				"interpolation": "cubic",
+				"states": [
+					{
+						"delay": 10,
+						"translate": [0, 160, 0],
+						"translate_tangent": [0, 0, 0]
+					},
+					{
+						"delay": 10,
+						"translate": [0, 120, 0],
+						"translate_tangent": [0, -7, 0]
+					},
+					{
+						"delay": 10,
+						"translate": [0, 40, 0],
+						"translate_tangent": [0, -7, 0]
+					},
+					{
+						"delay": 10,
+						"translate": [0, 0.1, 0],
+						"translate_tangent": [0, 0, 0]
+					}
+				]
+			},
+			"signal_output": {},
+			"event_input": [
+				"/sound/play"
+			],
+			"script": {
+				"onTick": "elevator"
+			}
+		},
+		{
+			"name": "platform",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [0, -0.25, -1],
+				"scale": [4, 0.5, 4]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			},
+			"trigger_group": "object"
+		},
+		{
+			"_comment": "elevator_wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [2, 2, -1],
+				"scale": [0.2, 4, 4]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"_comment": "elevator_wall2",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [-2, 2, -1],
+				"scale": [0.2, 4, 4]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"name": "control",
+			"transform": {
+				"parent": "root",
+				"translate": [1.95, 1.1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"transform": {
+				"parent": "root"
+			},
+			"laser_line": {
+				"color": [0, 0, 1],
+				"points": [
+					[-1.95, 1.5, -2.9],
+					[1.95, 1.5, -2.9]
+				]
+			}
+		}
+    ]
+}

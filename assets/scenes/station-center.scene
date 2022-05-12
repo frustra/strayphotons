@@ -132,107 +132,18 @@
 		}) %>,
 		{
 			"name": "elevator",
-			"transform": {
-				"translate": [0, 160, 0]
-			},
-			"sound": {
-				"file": "dryer.ogg",
-				"type": "ambisonic",
-				"volume": 0.1
-			},
-			"animation": {
-				"interpolation": "cubic",
-				"states": [
-					{
-						"delay": 10,
-						"translate": [0, 160, 0],
-						"translate_tangent": [0, 0, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 120, 0],
-						"translate_tangent": [0, -7, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 40, 0],
-						"translate_tangent": [0, -7, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 0.1, 0],
-						"translate_tangent": [0, 0, 0]
-					}
-				]
-			},
-			"signal_output": {},
-			"event_input": [
-				"/sound/play"
-			],
-			"script": {
-				"onTick": "elevator"
-			}
-		},
-		{
-			"name": "elevator_platform",
-			"renderable": "box",
-			"transform": {
-				"parent": "elevator",
-				"translate": [0, -0.25, -1],
-				"scale": [4, 0.5, 4]
-			},
-			"physics": {
-				"model": "box",
-				"kinematic": true
-			},
-			"trigger_group": "object"
-		},
-		{
-			"_comment": "elevator_wall",
-			"renderable": "box",
-			"transform": {
-				"parent": "elevator",
-				"translate": [2, 2, -1],
-				"scale": [0.2, 4, 4]
-			},
-			"physics": {
-				"model": "box",
-				"kinematic": true
-			}
-		},
-		{
-			"_comment": "elevator_wall2",
-			"renderable": "box",
-			"transform": {
-				"parent": "elevator",
-				"translate": [-2, 2, -1],
-				"scale": [0.2, 4, 4]
-			},
-			"physics": {
-				"model": "box",
-				"kinematic": true
-			}
-		},
-		{
-			"name": "elevator_button",
-			"transform": {
-				"parent": "elevator",
-				"translate": [1.95, 1.1, 0]
-			},
 			"script": {
 				"prefab": "template",
-				"parameters": {
-					"source": "button"
-				}
+				"parameters": { "source": "elevator" }
 			}
 		},
 		{
-			"name": "elevator_button.button",
+			"name": "elevator.control.button",
 			"event_bindings": {
 				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
+						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator.root/animation_state 0 100"
 					}
 				]
 			}
@@ -240,23 +151,11 @@
 		<%- include('prefab/slide_door', {
 			scene: 'station-center',
 			name: 'elevator_door',
-			parent: 'elevator',
+			parent: 'elevator.root',
 			translate: [0, 0.0, -2.9],
 			rotate: [90, 0, 1, 0],
 			scale: [1, 1.5, 2.3]
 		}) %>,
-		{
-			"transform": {
-				"parent": "elevator"
-			},
-			"laser_line": {
-				"color": [0, 0, 1],
-				"points": [
-					[-1.95, 1.5, -2.9],
-					[1.95, 1.5, -2.9]
-				]
-			}
-		},
 		{
 			"name": "elevator_open_zone",
 			"transform": {
@@ -274,7 +173,7 @@
 		},
 		<%- include('prefab/spotlight', {
 			name: 'elevator_light',
-			parent: 'elevator',
+			parent: 'elevator.root',
 			tint: [1, 0.5, 0.5],
 			intensity: 300,
 			spotAngle: 50,

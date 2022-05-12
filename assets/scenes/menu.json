@@ -911,7 +911,7 @@
 				"onPhysicsUpdate": "voxel_controller",
 				"parameters": {
 					"follow_target": "player:player",
-					"alignment_target": "station-center:elevator",
+					"alignment_target": "station-center:elevator.root",
 					"voxel_stride": 16,
 					"voxel_scale": 0.25,
 					"voxel_offset_x": -0.5,
