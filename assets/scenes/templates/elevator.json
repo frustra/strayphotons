@@ -49,7 +49,7 @@
 			"transform": {
 				"parent": "root",
 				"translate": [0, -0.25, -1],
-				"scale": [4, 0.5, 4]
+				"scale": [4.2, 0.5, 4]
 			},
 			"physics": {
 				"model": "box",
@@ -58,12 +58,26 @@
 			"trigger_group": "object"
 		},
 		{
-			"_comment": "elevator_wall",
+			"_comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"parent": "root",
-				"translate": [2, 2, -1],
-				"scale": [0.2, 4, 4]
+				"translate": [0, 4.15, -1],
+				"scale": [4.2, 0.5, 4]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			},
+			"trigger_group": "object"
+		},
+		{
+			"_comment": "right front wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [2, 2, -2.07],
+				"scale": [0.2, 4, 1.85]
 			},
 			"physics": {
 				"model": "box",
@@ -71,12 +85,64 @@
 			}
 		},
 		{
-			"_comment": "elevator_wall2",
+			"_comment": "right back wall",
 			"renderable": "box",
 			"transform": {
 				"parent": "root",
-				"translate": [-2, 2, -1],
-				"scale": [0.2, 4, 4]
+				"translate": [2, 2, 0.07],
+				"scale": [0.2, 4, 1.85]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"_comment": "left front wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [-2, 2, -2.07],
+				"scale": [0.2, 4, 1.85]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"_comment": "left back wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [-2, 2, 0.07],
+				"scale": [0.2, 4, 1.85]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"_comment": "back left wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [-1.07, 2, 0.9],
+				"scale": [1.85, 4, 0.2]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"_comment": "back right wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [1.07, 2, 0.9],
+				"scale": [1.85, 4, 0.2]
 			},
 			"physics": {
 				"model": "box",
@@ -87,7 +153,7 @@
 			"name": "control",
 			"transform": {
 				"parent": "root",
-				"translate": [1.95, 1.1, 0]
+				"translate": [1.95, 1.1, -2]
 			},
 			"script": {
 				"prefab": "template",

@@ -177,7 +177,7 @@
 			tint: [1, 0.5, 0.5],
 			intensity: 300,
 			spotAngle: 50,
-			translate: [0, 4, -1],
+			translate: [0, 3.9, -1],
 			rotate: [[270, 1, 0, 0]]
 		}) %>,
 		{
