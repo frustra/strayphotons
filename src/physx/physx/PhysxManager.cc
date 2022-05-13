@@ -186,14 +186,8 @@ namespace sp {
 
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                        ecs::SignalOutput,
-                                                        ecs::SignalBindings,
-                                                        ecs::FocusLayer,
-                                                        ecs::FocusLock,
-                                                        ecs::Physics,
-                                                        ecs::PhysicsJoints,
-                                                        ecs::EventInput>,
+            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock,
+                ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput>,
                 ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController>>();
 
             // Delete actors for removed entities
@@ -228,14 +222,8 @@ namespace sp {
 
         { // Sync ECS state from physx
             ZoneScopedN("Sync to ECS");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::SignalOutput,
-                                                        ecs::SignalBindings,
-                                                        ecs::EventBindings,
-                                                        ecs::FocusLayer,
-                                                        ecs::FocusLock,
-                                                        ecs::LaserEmitter,
-                                                        ecs::OpticalElement,
-                                                        ecs::EventInput>,
+            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock,
+                ecs::Read<ecs::LaserEmitter, ecs::OpticalElement, ecs::EventBindings, ecs::EventInput>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,

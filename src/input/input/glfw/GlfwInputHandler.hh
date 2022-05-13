@@ -33,7 +33,6 @@ namespace sp {
 
         glm::vec2 prevMousePos;
 
-        ecs::Lock<ecs::Read<ecs::Name, ecs::SignalBindings>, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock>
-            *frameLock = nullptr;
+        ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock> *frameLock = nullptr;
     };
 } // namespace sp

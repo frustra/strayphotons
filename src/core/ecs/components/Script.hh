@@ -4,6 +4,8 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/components/Events.hh"
+#include "ecs/components/Signals.hh"
 
 #include <any>
 #include <functional>
@@ -14,8 +16,10 @@
 namespace ecs {
     class ScriptState;
 
-    using PhysicsUpdateLock =
-        Lock<SendEventsLock, Read<Name, TransformSnapshot>, Write<TransformTree, Physics, PhysicsQuery, VoxelArea>>;
+    using PhysicsUpdateLock = Lock<SendEventsLock,
+        ReadSignalsLock,
+        Read<TransformSnapshot>,
+        Write<TransformTree, Physics, PhysicsQuery, VoxelArea>>;
 
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;

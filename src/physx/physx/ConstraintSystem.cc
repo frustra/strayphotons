@@ -132,13 +132,8 @@ namespace sp {
         }
     }
 
-    void ConstraintSystem::BreakConstraints(ecs::Lock<ecs::Read<ecs::Name,
-                                                          ecs::FocusLayer,
-                                                          ecs::FocusLock,
-                                                          ecs::TransformSnapshot,
-                                                          ecs::EventBindings,
-                                                          ecs::EventInput>,
-        ecs::Write<ecs::Physics>> lock) {
+    void ConstraintSystem::BreakConstraints(
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>, ecs::SendEventsLock> lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;

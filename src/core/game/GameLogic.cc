@@ -145,8 +145,7 @@ namespace sp {
     }
 
     void GameLogic::PrintSignals() {
-        auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>>();
+        auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
         Logf("Signal outputs:");
         for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
             auto &output = ent.Get<ecs::SignalOutput>(lock);

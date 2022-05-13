@@ -56,9 +56,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Send some test events");
-            auto lock =
-                ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>,
-                    ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
             Assert(sentCount == 1, "Expected to successfully queue 1 event");

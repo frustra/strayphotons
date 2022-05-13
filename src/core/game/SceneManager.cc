@@ -302,12 +302,7 @@ namespace sp {
         ZoneScoped;
         requiredSceneList.clear();
         {
-            auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name,
-                ecs::SceneConnection,
-                ecs::SignalOutput,
-                ecs::SignalBindings,
-                ecs::FocusLayer,
-                ecs::FocusLock>>();
+            auto lock = liveWorld.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::SceneConnection>>();
 
             for (auto &ent : lock.EntitiesWith<ecs::SceneConnection>()) {
                 auto loadSignal = ecs::SignalBindings::GetSignal(lock, ent, "load_scene_connection");

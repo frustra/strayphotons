@@ -70,8 +70,9 @@ namespace ecs {
         std::array<Transform, boneDefinitions.size()> queryTransforms;
         std::array<PhysicsShape, boneDefinitions.size()> currentShapes;
         PhysicsGroupMask collisionMask;
-        EntityRef inputRootRef, physicsRootRef;
+        EntityRef inputRootRef, physicsRootRef, controllerRef;
         Entity grabEntity;
+        std::string actionPrefix;
 
         bool Init(ScriptState &state, Lock<Read<ecs::Name>> lock, Entity ent) {
             auto handStr = state.GetParam<std::string>("hand");
@@ -82,11 +83,15 @@ namespace ecs {
             if (handStr == "left") {
                 handChar = 'l';
                 inputScope.entity = "vr_actions_main_in_lefthand_anim";
+                controllerRef = ecs::Name("vr", "controller_left");
+                actionPrefix = "actions_main_in_lefthand_anim";
                 collisionMask = (PhysicsGroupMask)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_HELD_OBJECT |
                                                    ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
             } else if (handStr == "right") {
                 handChar = 'r';
                 inputScope.entity = "vr_actions_main_in_righthand_anim";
+                controllerRef = ecs::Name("vr", "controller_right");
+                actionPrefix = "actions_main_in_righthand_anim";
                 collisionMask = (PhysicsGroupMask)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_HELD_OBJECT |
                                                    ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND);
             } else {
@@ -190,6 +195,7 @@ namespace ecs {
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
             auto inputRoot = scriptData.inputRootRef.Get(lock);
+            auto controllerEnt = scriptData.controllerRef.Get(lock);
 
             // Read and update overlap queries
             sp::EnumArray<Entity, BoneGroup> groupOverlaps = {};
@@ -246,9 +252,14 @@ namespace ecs {
                 }
             }
 
-            // Send interaction events to items touched by the fingers
-            Entity grabTarget = groupOverlaps[BoneGroup::Index];
-            if (teleported) grabTarget = {};
+            // Handle interaction events
+            auto grabSignal = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_index");
+            auto grabTarget = scriptData.grabEntity;
+            if (teleported || grabSignal < 0.18) {
+                grabTarget = {};
+            } else if (grabSignal > 0.2 && !grabTarget) {
+                grabTarget = groupOverlaps[BoneGroup::Index];
+            }
             if (scriptData.grabEntity && scriptData.grabEntity != grabTarget) {
                 // Drop the currently held entity
                 EventBindings::SendEvent(lock,
@@ -257,7 +268,7 @@ namespace ecs {
                     Event{sp::INTERACT_EVENT_INTERACT_GRAB, ent, false});
                 scriptData.grabEntity = {};
             }
-            if (grabTarget) {
+            if (grabTarget && grabTarget != scriptData.grabEntity) {
                 // Grab the entity being overlapped
                 auto globalTransform = transform.GetGlobalTransform(lock);
                 if (EventBindings::SendEvent(lock,

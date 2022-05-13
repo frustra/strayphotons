@@ -88,8 +88,7 @@ namespace SignalBindingTests {
         }
         {
             Timer t("Try reading some signals");
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>>();
+            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION1);
             AssertEqual(val, 2.0, "Expected signal to match key source");

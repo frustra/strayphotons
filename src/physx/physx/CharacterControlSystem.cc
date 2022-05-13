@@ -32,8 +32,8 @@ namespace sp {
         characterControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::CharacterController>>();
     }
 
-    void CharacterControlSystem::Frame(ecs::Lock<
-        ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock, ecs::EventInput>,
+    void CharacterControlSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
+        ecs::Read<ecs::EventInput>,
         ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
@@ -43,6 +43,12 @@ namespace sp {
                     auto &controller = controllerEvent.entity.Get<ecs::CharacterController>(lock);
                     if (!controller.pxController) {
                         auto characterUserData = new CharacterControllerUserData(controllerEvent.entity);
+
+                        characterUserData->actorData.material = std::shared_ptr<PxMaterial>(
+                            manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f),
+                            [](auto *ptr) {
+                                ptr->release();
+                            });
 
                         PxCapsuleControllerDesc desc;
                         desc.position = PxExtendedVec3(0, 0, 0);
@@ -54,7 +60,7 @@ namespace sp {
                         // Decreasing the contactOffset value causes the player to be able to stand on
                         // very thin (and likely unintentional) ledges.
                         desc.contactOffset = 0.05f;
-                        desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
+                        desc.material = characterUserData->actorData.material.get();
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
                         desc.userData = characterUserData;
 
