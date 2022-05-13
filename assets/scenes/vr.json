@@ -6,6 +6,13 @@
                 "onTick": "player_rotation",
                 "parameters": { "relative_to": "vr:hmd" }
             },
+            "physics": {
+                "group": "noclip",
+                "kinematic": true,
+                "shapes": {
+                    "sphere": 0.1
+                }
+            },
             "event_input": [
                 "/action/snap_rotate"
             ]

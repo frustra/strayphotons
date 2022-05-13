@@ -535,6 +535,13 @@ namespace sp {
         ZoneScoped;
         // ZoneStr(ecs::ToString(lock, e));
         if (actors.count(e) == 0) {
+            if (e.Has<ecs::Name>(lock)) {
+                auto &n = e.Get<ecs::Name>(lock);
+                if (n.entity == "origin") {
+                    Logf("Creating Origin: %s", ToString(lock, e));
+                    // Foo
+                }
+            }
             auto actor = CreateActor(lock, e);
             if (actor) actors[e] = actor;
             return;
@@ -660,6 +667,12 @@ namespace sp {
             userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
         } else {
             userData->velocity = glm::vec3(0);
+        }
+        if (e.Has<ecs::Name>(lock)) {
+            auto &n = e.Get<ecs::Name>(lock);
+            if (n.entity == "origin") {
+                Logf("Origin: %s, Vel: %s", ToString(lock, e), glm::to_string(userData->velocity));
+            }
         }
         userData->pose = transform;
         if (userData->physicsGroup != ph.group) SetCollisionGroup(actor, ph.group);

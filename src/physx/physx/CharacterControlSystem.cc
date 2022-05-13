@@ -319,6 +319,17 @@ namespace sp {
                     glm::vec3 clampRatio = glm::min(glm::abs(displacement), absDeltaPos) / absDeltaPos;
                     clampRatio.y = 1.0f;
                     proxyTransform.pose.Translate(deltaPos * clampRatio);
+
+                    if (movementProxy.Has<ecs::Physics>(lock) && manager.actors.count(movementProxy) != 0) {
+                        auto &proxyActor = manager.actors[movementProxy];
+                        if (proxyActor && proxyActor->userData) {
+                            auto proxyUserData = (ActorUserData *)actor->userData;
+                            proxyUserData->velocity = deltaPos * clampRatio;
+                            Logf("Setting %s velocity: %s",
+                                ToString(lock, proxyUserData->entity),
+                                glm::to_string(proxyUserData->velocity));
+                        }
+                    }
                 }
 
                 transform.SetPosition(newPosition);
