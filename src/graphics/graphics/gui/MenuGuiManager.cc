@@ -49,12 +49,7 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                ecs::SignalBindings,
-                ecs::SignalOutput,
-                ecs::FocusLayer,
-                ecs::FocusLock,
-                ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
 
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::EventInput>(lock)) {

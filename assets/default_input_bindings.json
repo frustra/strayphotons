@@ -66,7 +66,7 @@
         "signal_bindings": {
             "smooth_rotation_unscaled": {
                 "operator": "add",
-                "values": [ "vr:controller_left/actions/main/in/rotation_x", "vr:controller_right/actions/main/in/rotation_x" ]
+                "values": [ "vr:controller_left/actions_main_in_rotation_x", "vr:controller_right/actions_main_in_rotation_x" ]
             },
             "smooth_rotation": {
                 "operator": "multiply",
@@ -76,14 +76,14 @@
     },
     "vr:left_hand": {
         "signal_bindings": {
-            "move_forward": "vr:controller_left/actions/main/in/movement_y",
-            "move_right": "vr:controller_left/actions/main/in/movement_x"
+            "move_forward": "vr:controller_left/actions_main_in_movement_y",
+            "move_right": "vr:controller_left/actions_main_in_movement_x"
         }
     },
     "vr:right_hand": {
         "signal_bindings": {
-            "move_forward": "vr:controller_right/actions/main/in/movement_y",
-            "move_right": "vr:controller_right/actions/main/in/movement_x"
+            "move_forward": "vr:controller_right/actions_main_in_movement_y",
+            "move_right": "vr:controller_right/actions_main_in_movement_x"
         }
     },
     "vr:controller_left": {

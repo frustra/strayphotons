@@ -133,9 +133,8 @@ namespace sp::xr {
         bool missingEntities = false;
         {
             ZoneScopedN("InputBindings Sync to ECS");
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings, ecs::EventInput>,
-                ecs::Write<ecs::SignalOutput, ecs::TransformTree>>();
+            auto lock =
+                ecs::World.StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::SignalOutput, ecs::TransformTree>>();
 
             for (auto &actionSet : actionSets) {
                 vr::VRActiveActionSet_t activeActionSet = {};
@@ -166,7 +165,13 @@ namespace sp::xr {
                         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to read origin info");
 
                         std::string actionSignal = action.name;
-                        if (actionSignal.size() > 0 && actionSignal.at(0) == '/') {
+                        std::transform(actionSignal.begin(),
+                            actionSignal.end(),
+                            actionSignal.begin(),
+                            [](unsigned char c) {
+                                return (c == ':' || c == '/') ? '_' : tolower(c);
+                            });
+                        if (actionSignal.size() > 0 && actionSignal.at(0) == '_') {
                             actionSignal = actionSignal.substr(1);
                         }
 
@@ -176,6 +181,7 @@ namespace sp::xr {
                         vr::InputDigitalActionData_t digitalActionData;
                         vr::InputAnalogActionData_t analogActionData;
                         vr::InputPoseActionData_t poseActionData;
+                        vr::VRSkeletalSummaryData_t skeletalSummaryData;
                         vr::InputSkeletalActionData_t skeletalActionData;
                         switch (action.type) {
                         case Action::DataType::Bool:
@@ -284,12 +290,49 @@ namespace sp::xr {
                             }
                             break;
                         case Action::DataType::Skeleton:
+                            error = vr::VRInput()->GetSkeletalSummaryData(action.handle,
+                                vr::EVRSummaryType::VRSummaryType_FromAnimation,
+                                &skeletalSummaryData);
+                            Assertf(error == vr::EVRInputError::VRInputError_None,
+                                "Failed to read OpenVR skeletal summary for action: %s",
+                                action.name);
+
                             error = vr::VRInput()->GetSkeletalActionData(action.handle,
                                 &skeletalActionData,
                                 sizeof(vr::InputSkeletalActionData_t));
                             Assertf(error == vr::EVRInputError::VRInputError_None,
                                 "Failed to read OpenVR skeleton action: %s",
                                 action.name);
+
+                            if (originEntity.Has<ecs::SignalOutput>(lock)) {
+                                auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
+                                static const std::array curlSuffix = {"_curl_thumb",
+                                    "_curl_index",
+                                    "_curl_middle",
+                                    "_curl_ring",
+                                    "_curl_pinky"};
+                                static const std::array splaySuffix = {"_splay_thumb_index",
+                                    "_splay_index_middle",
+                                    "_splay_middle_ring",
+                                    "_splay_ring_pinky"};
+
+                                for (size_t i = 0; i < vr::VRFinger_Count; i++) {
+                                    if (skeletalActionData.bActive) {
+                                        signalOutput.SetSignal(actionSignal + curlSuffix[i],
+                                            skeletalSummaryData.flFingerCurl[i]);
+                                    } else {
+                                        signalOutput.ClearSignal(actionSignal + curlSuffix[i]);
+                                    }
+                                }
+                                for (size_t i = 0; i < vr::VRFingerSplay_Count; i++) {
+                                    if (skeletalActionData.bActive) {
+                                        signalOutput.SetSignal(actionSignal + splaySuffix[i],
+                                            skeletalSummaryData.flFingerSplay[i]);
+                                    } else {
+                                        signalOutput.ClearSignal(actionSignal + splaySuffix[i]);
+                                    }
+                                }
+                            }
 
                             if (skeletalActionData.bActive) {
                                 error = vr::VRInput()->GetPoseActionDataForNextFrame(action.handle,

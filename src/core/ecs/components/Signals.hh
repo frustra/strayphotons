@@ -12,6 +12,8 @@
 namespace ecs {
     static const size_t MAX_SIGNAL_BINDING_DEPTH = 5;
 
+    using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>>;
+
     class SignalOutput {
     public:
         void SetSignal(const std::string &name, double value);
@@ -51,10 +53,7 @@ namespace ecs {
         void UnbindSource(EntityRef origin, std::string source);
 
         const BindingList *Lookup(const std::string name) const;
-        static double GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
-            Entity ent,
-            const std::string &name,
-            size_t depth = 0);
+        static double GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth = 0);
         std::vector<std::string> GetBindingNames() const;
 
     private:

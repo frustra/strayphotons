@@ -47,6 +47,15 @@ namespace ecs {
         return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
+    bool EntityRef::operator==(const EntityRef &other) const {
+        if (!ptr || !other.ptr) return false;
+        if (ptr == other.ptr) return true;
+        auto live = ptr->liveEntity.load();
+        auto staging = ptr->stagingEntity.load();
+        return (live && live == other.ptr->liveEntity.load()) ||
+               (staging && staging == other.ptr->stagingEntity.load());
+    }
+
     bool EntityRef::operator==(const Entity &other) const {
         if (!ptr || !other) return false;
         return ptr->liveEntity.load() == other || ptr->stagingEntity.load() == other;

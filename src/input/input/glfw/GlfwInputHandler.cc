@@ -53,9 +53,8 @@ namespace sp {
     void GlfwInputHandler::Frame() {
         ZoneScoped;
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings>,
-                ecs::Write<ecs::SignalOutput>,
-                ecs::SendEventsLock>();
+            auto lock =
+                ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock>();
             frameLock = &lock;
             glfwPollEvents();
             frameLock = nullptr;

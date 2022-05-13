@@ -31,14 +31,7 @@ namespace ecs {
             return !ptr;
         }
 
-        bool operator==(const EntityRef &other) const {
-            return ptr == other.ptr;
-        }
-
-        bool operator!=(const EntityRef &other) const {
-            return ptr != other.ptr;
-        }
-
+        bool operator==(const EntityRef &other) const;
         bool operator==(const Entity &other) const;
 
         void Set(const Entity &ent);

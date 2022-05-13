@@ -40,13 +40,7 @@ namespace FocusLockTests {
         }
         {
             Timer t("Try sending events and reading signals with GAME focus");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                        ecs::SignalOutput,
-                                                        ecs::SignalBindings,
-                                                        ecs::EventBindings,
-                                                        ecs::FocusLayer,
-                                                        ecs::FocusLock>,
-                ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
             Assert(sentCount == 1, "Expected to successfully queue 1 event");
@@ -74,13 +68,7 @@ namespace FocusLockTests {
         }
         {
             Timer t("Try sending events and reading signals with MENU focus");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                        ecs::SignalOutput,
-                                                        ecs::SignalBindings,
-                                                        ecs::EventBindings,
-                                                        ecs::FocusLayer,
-                                                        ecs::FocusLock>,
-                ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
             Assert(sentCount == 0, "Expected to not to queue any events");

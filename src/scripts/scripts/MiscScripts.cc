@@ -192,6 +192,15 @@ namespace sp::scripts {
                                                      (transform.GetPosition() - parentTransform.GetPosition());
                                 joint.remoteOrient = invParentRotate * transform.GetRotation();
                                 joints.Add(joint);
+
+                                auto &parentPhysics = event.source.Get<Physics>(lock);
+                                if (parentPhysics.constraint) {
+                                    ph.SetConstraint(parentPhysics.constraint,
+                                        0.0f,
+                                        invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()) +
+                                            parentPhysics.constraintOffset,
+                                        parentPhysics.constraintRotation * invParentRotate * transform.GetRotation());
+                                }
                             } else {
                                 ph.SetConstraint(event.source,
                                     0.0f,

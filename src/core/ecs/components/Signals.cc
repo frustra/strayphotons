@@ -247,10 +247,7 @@ namespace ecs {
         return nullptr;
     }
 
-    double SignalBindings::GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
-        Entity ent,
-        const std::string &name,
-        size_t depth) {
+    double SignalBindings::GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth) {
         if (depth > MAX_SIGNAL_BINDING_DEPTH) {
             Errorf("Max signal binding depth exceeded: %s", name);
             return 0.0f;

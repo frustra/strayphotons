@@ -145,8 +145,7 @@ namespace sp {
     }
 
     void GameLogic::PrintSignals() {
-        auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>>();
+        auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
         Logf("Signal outputs:");
         for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
             auto &output = ent.Get<ecs::SignalOutput>(lock);
@@ -167,13 +166,12 @@ namespace sp {
             for (auto &bindingName : bindingNames) {
                 auto list = bindings.Lookup(bindingName);
                 std::stringstream ss;
-                ss << bindingName << ": ";
                 if (list->sources.empty()) {
                     ss << "none";
                 } else {
                     ss << list->operation;
                 }
-                Logf("    %s", ss.str());
+                Logf("    %s: %s", bindingName, ss.str());
                 for (auto &source : list->sources) {
                     auto e = source.first.Get(lock);
                     double value = ecs::SignalBindings::GetSignal(lock, e, source.second);
