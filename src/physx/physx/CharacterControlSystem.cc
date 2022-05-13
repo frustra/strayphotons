@@ -317,17 +317,16 @@ namespace sp {
                     // This allows the headset to detatch from the player capsule so they don't get pushed back by walls
                     auto absDeltaPos = glm::abs(deltaPos) + 0.00001f;
                     glm::vec3 clampRatio = glm::min(glm::abs(displacement), absDeltaPos) / absDeltaPos;
+                    if (glm::sign(deltaPos.x) != glm::sign(displacement.x)) clampRatio.x = 0.0f;
                     clampRatio.y = 1.0f;
+                    if (glm::sign(deltaPos.z) != glm::sign(displacement.z)) clampRatio.z = 0.0f;
                     proxyTransform.pose.Translate(deltaPos * clampRatio);
 
                     if (movementProxy.Has<ecs::Physics>(lock) && manager.actors.count(movementProxy) != 0) {
                         auto &proxyActor = manager.actors[movementProxy];
                         if (proxyActor && proxyActor->userData) {
-                            auto proxyUserData = (ActorUserData *)actor->userData;
-                            proxyUserData->velocity = deltaPos * clampRatio;
-                            Logf("Setting %s velocity: %s",
-                                ToString(lock, proxyUserData->entity),
-                                glm::to_string(proxyUserData->velocity));
+                            auto proxyUserData = (ActorUserData *)proxyActor->userData;
+                            proxyUserData->velocity = userData->actorData.velocity;
                         }
                     }
                 }
