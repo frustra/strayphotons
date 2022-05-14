@@ -7,8 +7,9 @@
                 "parameters": { "relative_to": "vr:hmd" }
             },
             "physics": {
+                "__comment": "Dummy actor for velocity calculation",
                 "group": "noclip",
-                "kinematic": true,
+                "dynamic": false,
                 "shapes": {
                     "sphere": 0.1
                 }
