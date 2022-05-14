@@ -6,6 +6,14 @@
                 "onTick": "player_rotation",
                 "parameters": { "relative_to": "vr:hmd" }
             },
+            "physics": {
+                "__comment": "Dummy actor for velocity calculation",
+                "group": "noclip",
+                "dynamic": false,
+                "shapes": {
+                    "sphere": 0.1
+                }
+            },
             "event_input": [
                 "/action/snap_rotate"
             ]
