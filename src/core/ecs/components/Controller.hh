@@ -14,7 +14,7 @@ namespace physx {
 namespace ecs {
     // Units in meters
     const float PLAYER_HEIGHT = 1.8f;
-    const float PLAYER_RADIUS = 0.2f;
+    const float PLAYER_RADIUS = 0.1f;
     const float PLAYER_CAPSULE_HEIGHT = PLAYER_HEIGHT - 2 * PLAYER_RADIUS;
     const float PLAYER_STEP_HEIGHT = 0.05f;
 
