@@ -20,10 +20,18 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
 fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
-if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Configure failed\033[0m"
-    exit 1
+if $CI_PACKAGE_RELEASE; then
+    if ! cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -S . -B ./build -GNinja; then
+        echo -e "\n^^^ +++"
+        echo -e "\033[31mCMake Configure failed\033[0m"
+        exit 1
+    fi
+else
+    if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
+        echo -e "\n^^^ +++"
+        echo -e "\033[31mCMake Configure failed\033[0m"
+        exit 1
+    fi
 fi
 
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
@@ -68,7 +76,7 @@ echo -e "--- Running \033[33mtest scripts\033[0m :camera_with_flash:"
 rm -rf screenshots/*.png
 
 function inline_image {
-    if [ -n "$BUILDKITE_ORGANIZATION_SLUG" ]; then
+    if [ -n "$BUILDKITE_BRANCH" ]; then
         printf '\033]1338;url='"$1"';alt='"$2"'\a\n'
     else
         echo "Image: $2"
@@ -97,10 +105,10 @@ for file in ../assets/scripts/tests/*.txt; do
     mkdir -p $output_path
     for file in screenshots/*.png; do
         mv $file $output_path
-        buildkite-agent artifact upload "$output_path/${file##*/}"
+        [ -n "$BUILDKITE_BRANCH" ] && buildkite-agent artifact upload "$output_path/${file##*/}"
         inline_image "artifact://$output_path/${file##*/}" "$output_path/${file##*/}"
     done
-    [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
+    [ -n "$BUILDKITE_BRANCH" ] && [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
 done
 
 if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
@@ -115,6 +123,14 @@ fi
 if [ -n "$BUILDKITE_API_TOKEN" ]; then
     echo -e "+++ Comparing screenshots :camera_with_flash:"
     ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
+fi
+
+if $CI_PACKAGE_RELEASE; then
+    buildkite-agent artifact upload "assets.spdata"
+    buildkite-agent artifact upload "openvr_api.dll"
+    buildkite-agent artifact upload "actions.json"
+    buildkite-agent artifact upload "sp-vk.exe"
+    buildkite-agent artifact upload "scripts/*"
 fi
 
 if [ $success -ne 0 ]; then

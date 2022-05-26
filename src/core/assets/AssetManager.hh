@@ -48,6 +48,7 @@ namespace sp {
         void Frame() override;
 
         void UpdateTarIndex();
+        std::string FindGltfByName(const std::string &name);
 
         DispatchQueue workQueue;
 
@@ -64,7 +65,7 @@ namespace sp {
         std::mutex externalGltfMutex;
         robin_hood::unordered_flat_map<std::string, std::string> externalGltfPaths;
 
-        robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
+        std::unordered_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 
     extern AssetManager GAssets;

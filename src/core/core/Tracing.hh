@@ -4,12 +4,22 @@
 
 #include <tracy/Tracy.hpp>
 
-#define ZoneStr(str) ZoneStrV(___tracy_scoped_zone, str)
-#define ZoneStrV(varname, str) sp::tracing::TracingZoneStr(varname, str)
-#define ZonePrintf(...) ZonePrintfV(___tracy_scoped_zone, __VA_ARGS__)
-#define ZonePrintfV(varname, ...) sp::tracing::TracingZonePrintf(varname, __VA_ARGS__)
+#ifndef TRACY_ENABLE
 
-#define Tracef(...) sp::tracing::TracingPrintf(__VA_ARGS__)
+    #define ZoneStr(str)
+    #define ZoneStrV(varname, str)
+    #define ZonePrintf(...)
+    #define ZonePrintfV(varname, ...)
+    #define Tracef(...)
+
+#else
+
+    #define ZoneStr(str) ZoneStrV(___tracy_scoped_zone, str)
+    #define ZoneStrV(varname, str) sp::tracing::TracingZoneStr(varname, str)
+    #define ZonePrintf(...) ZonePrintfV(___tracy_scoped_zone, __VA_ARGS__)
+    #define ZonePrintfV(varname, ...) sp::tracing::TracingZonePrintf(varname, __VA_ARGS__)
+
+    #define Tracef(...) sp::tracing::TracingPrintf(__VA_ARGS__)
 
 // void *operator new(size_t size);
 // void operator delete(void *ptr);
@@ -48,3 +58,5 @@ namespace sp::tracing {
     }
 
 } // namespace sp::tracing
+
+#endif

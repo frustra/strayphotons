@@ -54,7 +54,9 @@ namespace sp::vulkan::render_graph {
 
         auto timer = device.GetPerfTimer();
 
+#ifdef TRACY_ENABLE
         std::stack<tracy::ScopedZone> traceScopes;
+#endif
         std::stack<RenderPhase> phaseScopes;
 
         auto &frameScopeStack = resources.scopeStack;
@@ -117,7 +119,9 @@ namespace sp::vulkan::render_graph {
                 uint8 resScope = i < (int)frameScopeStack.size() ? frameScopeStack[i] : 255;
                 if (resScope != passScope) {
                     if (resScope != 255) {
+#ifdef TRACY_ENABLE
                         if (!traceScopes.empty()) traceScopes.pop();
+#endif
                         phaseScopes.pop();
                     }
                     if (passScope != 255) {
@@ -129,6 +133,7 @@ namespace sp::vulkan::render_graph {
                         phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
                         if (timer) phaseScopes.top().StartTimer(*timer);
 
+#ifdef TRACY_ENABLE
                         if (!name.empty()) {
                             traceScopes.emplace(__LINE__,
                                 __FILE__,
@@ -139,11 +144,13 @@ namespace sp::vulkan::render_graph {
                                 name.size(),
                                 true);
                         }
+#endif
                     }
                 }
             }
             frameScopeStack = pass.scopes;
 
+#ifdef TRACY_ENABLE
             tracy::ScopedZone traceZone(__LINE__,
                 __FILE__,
                 strlen(__FILE__),
@@ -152,6 +159,7 @@ namespace sp::vulkan::render_graph {
                 pass.name.data(),
                 pass.name.size(),
                 true);
+#endif
 
             if (pass.isRenderPass) {
                 if (!cmd) cmd = device.GetFrameCommandContext();

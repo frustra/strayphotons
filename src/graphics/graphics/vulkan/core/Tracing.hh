@@ -3,6 +3,14 @@
 #include <core/Tracing.hh>
 #include <tracy/TracyVulkan.hpp>
 
+#ifndef TRACY_ENABLE
+
+#define GPUZone(device, commandContext, name)
+#define GPUZoneNamed(device, commandContext, varname, name)
+#define GPUZoneTransient(device, commandContext, varname, name, nameLen)
+
+#else
+
 #define GPUZone(device, commandContext, name) \
     TracyVkZone(device->GetTracyContext((commandContext)->GetType()), (commandContext)->Raw(), name)
 
@@ -17,3 +25,5 @@
 // Used when the name is a runtime const char *
 #define GPUZoneTransient(device, commandContext, varname, name, nameLen) \
     tracy::VkCtxScope varname(GPUZoneInitializer(device, commandContext, name, nameLen))
+
+#endif

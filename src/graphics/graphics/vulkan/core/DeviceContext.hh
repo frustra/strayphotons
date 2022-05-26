@@ -193,7 +193,9 @@ namespace sp::vulkan {
             return SelectSupportedFormat({{}, optimalTilingFeatures, {}}, possibleFormats);
         }
 
+#ifdef TRACY_ENABLE
         tracy::VkCtx *GetTracyContext(CommandContextType type);
+#endif
 
         uint32 QueueFamilyIndex(CommandContextType type) {
             return queueFamilyIndex[QueueType(type)];
@@ -256,11 +258,13 @@ namespace sp::vulkan {
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         unique_ptr<PerfTimer> perfTimer;
 
+#ifdef TRACY_ENABLE
         struct {
             vector<vk::UniqueCommandPool> cmdPools;
             vector<vk::UniqueCommandBuffer> cmdBuffers;
             vector<tracy::VkCtx *> tracyContexts;
         } tracing;
+#endif
 
         unique_ptr<HandlePool<vk::Fence>> fencePool;
         unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;

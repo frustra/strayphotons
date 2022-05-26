@@ -20,15 +20,16 @@ using namespace std;
 
 using cxxopts::value;
 
-#if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
-    #define ARGC_NAME __argc
-    #define ARGV_NAME __argv
-int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
-#else
-    #define ARGC_NAME argc
-    #define ARGV_NAME argv
+// TODO: Commented until package release saves a log file
+// #if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
+//     #define ARGC_NAME __argc
+//     #define ARGV_NAME __argv
+// int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+// #else
+#define ARGC_NAME argc
+#define ARGV_NAME argv
 int main(int argc, char **argv)
-#endif
+// #endif
 {
 #ifdef SP_TEST_MODE
     cxxopts::Options options("STRAYPHOTONS-TEST", "");

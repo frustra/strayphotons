@@ -59,41 +59,41 @@ if(SP_PACKAGE_RELEASE)
     set(_asset_filename assets.spdata)
     file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "models/*.glb")
     file(GLOB_RECURSE _glb_assets_full "models/*.glb")
-    file(GLOB_RECURSE _texture_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "textures/*.tga" "textures/*.jpg")
-    file(GLOB_RECURSE _texture_assets_full "textures/*.tga" "textures/*.jpg")
+    file(GLOB_RECURSE _audio_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "audio/*.ogg")
+    file(GLOB_RECURSE _audio_assets_full "audio/*.ogg")
+    file(GLOB_RECURSE _texture_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "textures/*.tga" "textures/*.jpg" "textures/*.png")
+    file(GLOB_RECURSE _texture_assets_full "textures/*.tga" "textures/*.jpg" "textures/*.png")
     file(GLOB_RECURSE _scene_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "scenes/*.json")
     file(GLOB_RECURSE _scene_assets_full "scenes/*.json")
     file(GLOB_RECURSE _logo_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "logos/*.png")
     file(GLOB_RECURSE _logo_assets_full "logos/*.png")
     file(GLOB_RECURSE _font_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "fonts/*.ttf")
     file(GLOB_RECURSE _font_assets_full "fonts/*.ttf")
-
-    file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "../shaders/*")
+    file(GLOB_RECURSE _shaders_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "shaders/*.spv")
+    file(GLOB_RECURSE _shaders_assets_full "shaders/*.spv")
 
     add_custom_command(
-        COMMAND
-            ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../shaders ${CMAKE_CURRENT_LIST_DIR}/shaders
         COMMAND
             ${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} --
                 default_input_bindings.json
                 cache
+                ${_glb_assets}
                 ${_font_assets}
                 ${_logo_assets}
+                ${_audio_assets}
                 ${_scene_assets}
                 ${_texture_assets}
-                shaders
-                ${_glb_assets}
-        COMMAND
-            ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_LIST_DIR}/shaders
+                ${_shaders_assets}
         OUTPUT
             ${PROJECT_OUTPUT_DIR}/${_asset_filename}
         DEPENDS
             default_input_bindings.json
             ${_glb_assets_full}
-            ${_texture_assets_full}
-            ${_scene_assets_full}
-            ${_logo_assets_full}
             ${_font_assets_full}
+            ${_logo_assets_full}
+            ${_audio_assets_full}
+            ${_scene_assets_full}
+            ${_texture_assets_full}
             ${_shaders_assets_full}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}

@@ -38,8 +38,8 @@ extern "C" {
 namespace sp {
     AssetManager GAssets;
 
-    const std::string ASSETS_DIR = "../assets/";
-    const std::string ASSETS_TAR = "./assets.spdata";
+    const char *ASSETS_DIR = "../assets/";
+    const char *ASSETS_TAR = "./assets.spdata";
 
     AssetManager::AssetManager() : RegisteredThread("AssetCleanup", 10.0), workQueue("AssetWorker", 4) {
 #ifdef SP_PACKAGE_RELEASE
@@ -57,7 +57,7 @@ namespace sp {
 
     void AssetManager::UpdateTarIndex() {
         mtar_t tar;
-        if (mtar_open(&tar, ASSETS_TAR.c_str(), "r") != MTAR_ESUCCESS) {
+        if (mtar_open(&tar, ASSETS_TAR, "r") != MTAR_ESUCCESS) {
             Errorf("Failed to open asset bundle at: %s", ASSETS_TAR);
             return;
         }
@@ -160,7 +160,7 @@ namespace sp {
         return asset;
     }
 
-    std::string findGltfByName(const std::string &name) {
+    std::string AssetManager::FindGltfByName(const std::string &name) {
         std::string path;
 #ifdef SP_PACKAGE_RELEASE
         path = "models/" + name + "/" + name + ".glb";
@@ -205,7 +205,7 @@ namespace sp {
 
                 AsyncPtr<Asset> asset;
                 if (path.empty()) {
-                    path = findGltfByName(name);
+                    path = FindGltfByName(name);
                     if (!path.empty()) asset = Load(path, AssetType::Bundled);
                 } else {
                     asset = Load(path, AssetType::External);
