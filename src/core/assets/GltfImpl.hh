@@ -4,8 +4,19 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <tiny_gltf.h>
 #include <type_traits>
+
+// Hacky defines to prevent tinygltf from including windows.h and polluting the namespace
+#ifdef _WIN32
+    #define UNDEFINE_WIN32
+    #undef _WIN32
+    #define __ANDROID__
+#endif
+#include <tiny_gltf.h>
+#ifdef UNDEFINE_WIN22
+    #define _WIN32
+    #undef __ANDROID__
+#endif
 
 namespace sp::gltf {
     namespace detail {
