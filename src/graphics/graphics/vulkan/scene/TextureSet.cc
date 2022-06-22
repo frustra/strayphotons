@@ -4,11 +4,6 @@
 #include "assets/GltfImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
-#ifdef LoadImage
-    // I hate windows.h
-    #undef LoadImage
-#endif
-
 namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device, DispatchQueue &workQueue) : device(device), workQueue(workQueue) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();

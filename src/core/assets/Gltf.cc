@@ -10,7 +10,6 @@
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
-#include <tiny_gltf.h>
 
 namespace sp {
     namespace gltf {

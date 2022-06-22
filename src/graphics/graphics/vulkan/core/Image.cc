@@ -1,9 +1,9 @@
 #include "Image.hh"
 
+#include "assets/GltfImpl.hh"
 #include "core/Logging.hh"
 
 #include <robin_hood.h>
-#include <tiny_gltf.h>
 
 namespace sp::vulkan {
     Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}

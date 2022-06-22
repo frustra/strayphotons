@@ -11,7 +11,6 @@
 
 #define GLM_FORCE_CXX11
 #include <glm/gtx/hash.hpp>
-#include <tiny_gltf.h>
 #include <unordered_set>
 
 namespace sp {
