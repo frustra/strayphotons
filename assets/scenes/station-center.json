@@ -607,30 +607,13 @@
 		},
 		{
 			"name": "global:ship_airlock-light",
-			"light": {
-				"tint": [
-					0.5,
-					0.5,
-					1
-				],
-				"intensity": 300,
-				"spotAngle": 60,
-				"bulb": "global:ship_airlock-light-bulb",
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "spotlight-01",
-					"render": true
-				}
-			},
 			"transform": {
 				"parent": "global:ship_airlock",
+				"translate": [
+					0,
+					3.95,
+					0
+				],
 				"rotate": [
 					[
 						270,
@@ -638,40 +621,22 @@
 						0,
 						0
 					]
+				]
+			},
+			"light": {
+				"tint": [
+					0.5,
+					0.5,
+					1
 				],
-				"translate": [
-					0,
-					3.9,
-					0
-				]
-			}
-		},
-		{
-			"renderable": "spotlight-01",
-			"transform": {
-				"parent": "global:ship_airlock-light",
-				"translate": [
-					0,
-					0,
-					0.01
-				]
-			}
-		},
-		{
-			"name": "global:ship_airlock-light-bulb",
-			"renderable": "box",
-			"transform": {
-				"parent": "global:ship_airlock-light",
-				"translate": [
-					0,
-					0,
-					-0.06
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.03
-				]
+				"intensity": 300,
+				"spotAngle": 60
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "spotlight"
+				}
 			}
 		},
 		{
@@ -689,7 +654,7 @@
 				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator.root/animation_state 0 100"
+						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
 					}
 				]
 			}
@@ -697,7 +662,7 @@
 		{
 			"name": "elevator_door",
 			"transform": {
-				"parent": "elevator.root",
+				"parent": "elevator",
 				"rotate": [
 					90,
 					0,
@@ -823,75 +788,6 @@
 					"target": "console:input/action/run_command",
 					"set_value": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
 				}
-			}
-		},
-		{
-			"name": "elevator_light",
-			"light": {
-				"tint": [
-					1,
-					0.5,
-					0.5
-				],
-				"intensity": 300,
-				"spotAngle": 50,
-				"bulb": "elevator_light-bulb",
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "spotlight-01",
-					"render": true
-				}
-			},
-			"transform": {
-				"parent": "elevator.root",
-				"rotate": [
-					[
-						270,
-						1,
-						0,
-						0
-					]
-				],
-				"translate": [
-					0,
-					3.9,
-					-1
-				]
-			}
-		},
-		{
-			"renderable": "spotlight-01",
-			"transform": {
-				"parent": "elevator_light",
-				"translate": [
-					0,
-					0,
-					0.01
-				]
-			}
-		},
-		{
-			"name": "elevator_light-bulb",
-			"renderable": "box",
-			"transform": {
-				"parent": "elevator_light",
-				"translate": [
-					0,
-					0,
-					-0.06
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.03
-				]
 			}
 		},
 		{

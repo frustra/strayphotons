@@ -605,30 +605,13 @@
 		},
 		{
 			"name": "global:ship_airlock-light",
-			"light": {
-				"tint": [
-					0.5,
-					0.5,
-					1
-				],
-				"intensity": 300,
-				"spotAngle": 60,
-				"bulb": "global:ship_airlock-light-bulb",
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "spotlight-01",
-					"render": true
-				}
-			},
 			"transform": {
 				"parent": "global:ship_airlock",
+				"translate": [
+					0,
+					3.95,
+					0
+				],
 				"rotate": [
 					[
 						270,
@@ -636,40 +619,22 @@
 						0,
 						0
 					]
+				]
+			},
+			"light": {
+				"tint": [
+					0.5,
+					0.5,
+					1
 				],
-				"translate": [
-					0,
-					3.9,
-					0
-				]
-			}
-		},
-		{
-			"renderable": "spotlight-01",
-			"transform": {
-				"parent": "global:ship_airlock-light",
-				"translate": [
-					0,
-					0,
-					0.01
-				]
-			}
-		},
-		{
-			"name": "global:ship_airlock-light-bulb",
-			"renderable": "box",
-			"transform": {
-				"parent": "global:ship_airlock-light",
-				"translate": [
-					0,
-					0,
-					-0.06
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.03
-				]
+				"intensity": 300,
+				"spotAngle": 60
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "spotlight"
+				}
 			}
 		},
 		{
@@ -911,7 +876,7 @@
 				"onPhysicsUpdate": "voxel_controller",
 				"parameters": {
 					"follow_target": "player:player",
-					"alignment_target": "station-center:elevator.root",
+					"alignment_target": "station-center:elevator",
 					"voxel_stride": 16,
 					"voxel_scale": 0.25,
 					"voxel_offset_x": -0.5,

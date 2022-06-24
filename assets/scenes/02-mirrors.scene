@@ -83,14 +83,22 @@
 			input_signal: "sensor1"
 		}) %>,
 
-		<%- include('prefab/spotlight', {
-			name: 'light1',
-			tint: [1, 0.8, 0.8],
-			intensity: 500,
-			spotAngle: 20,
-			translate: [3, 0.5, 0.2],
-			rotate: [[180, 0, 1, 0]]
-		}) %>,
+		{
+			"name": "light1",
+			"transform": {
+				"translate": [3, 0.5, 0.1],
+				"rotate": [[180, 0, 1, 0]]
+			},
+			"light": {
+				"tint": [1, 0.8, 0.8],
+				"intensity": 500,
+				"spotAngle": 20
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		},
 		<%- include('prefab/light_sensor',
 		{
 			name: "sensor1",
@@ -110,14 +118,22 @@
 			points: [[6, 9], [12, 9], [12, 6], [9, 6], [9, 3], [12, 3], [12, 0, "wall-4x3-door"], [9, 0], [6, 0]]
 		}) %>,
 
-		<%- include('prefab/spotlight', {
-			name: 'light2',
-			tint: [0.8, 0.8, 1],
-			intensity: 600,
-			spotAngle: 25,
-			translate: [11.8, 0.5, 1.5],
-			rotate: [[90, 0, 1, 0]]
-		}) %>,
+		{
+			"name": "light2",
+			"transform": {
+				"translate": [11.9, 0.5, 1.5],
+				"rotate": [[90, 0, 1, 0]]
+			},
+			"light": {
+				"tint": [0.8, 0.8, 1],
+				"intensity": 500,
+				"spotAngle": 20
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		},
 		<%- include('prefab/light_sensor',
 		{
 			name: "sensor2",

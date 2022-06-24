@@ -17,7 +17,7 @@
         {
             "name": "flatview",
             "view": {
-                "clip": [0.1, 350]
+                "clip": [0.05, 350]
             },
             "transform": {
                 "parent": "player",

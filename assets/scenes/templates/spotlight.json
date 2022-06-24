@@ -1,0 +1,46 @@
+{
+	"components": {
+		"light": {
+			"tint": [1, 0.8, 0.8],
+			"intensity": 300,
+			"spotAngle": 50,
+			"bulb": "bulb",
+			"shadowMapSize": 11,
+			"shadowMapClip": [0.18, 70]
+		}
+	},
+    "entities": [
+		{
+			"name": "housing",
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "spotlight-01",
+					"render": true
+				}
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, -0.09]
+			},
+			"physics": {
+				"shapes": {
+					"box": [0.2, 0.2, 0.2],
+					"transform": {
+						"translate": [0.0, 0.0, 0.0]
+					}
+				},
+				"dynamic": false
+			}
+		},
+		{
+			"name": "bulb",
+			"renderable": "box",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, -0.16],
+				"scale": [0.1, 0.1, 0.03]
+			}
+		}
+    ]
+}
