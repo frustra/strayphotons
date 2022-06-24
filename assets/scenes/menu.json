@@ -23,8 +23,13 @@
 			"transform": {
 				"translate": [
 					3.8,
-					1,
+					1.1,
 					-2.8
+				],
+				"scale": [
+					0.8,
+					0.5,
+					1
 				],
 				"rotate": [
 					[
@@ -41,8 +46,11 @@
 					]
 				]
 			},
+			"gui": {
+				"window": "lobby"
+			},
 			"screen": {
-				"target": "menu_gui",
+				"target": "gui",
 				"luminance": [
 					3,
 					1,

@@ -8,8 +8,11 @@ namespace sp {
 
 namespace ecs {
     struct Gui {
-        sp::GuiManager *manager;
+        std::variant<sp::GuiManager *, std::string> target;
     };
 
     static Component<Gui> ComponentGui("gui");
+
+    template<>
+    bool Component<Gui>::Load(const EntityScope &scope, Gui &dst, const picojson::value &src);
 } // namespace ecs

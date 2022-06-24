@@ -7,11 +7,11 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    DebugGuiManager::DebugGuiManager() : GuiManager("debug_gui", ecs::FocusLayer::ALWAYS) {
+    DebugGuiManager::DebugGuiManager() : GuiManager("debug", ecs::FocusLayer::ALWAYS) {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>>();
 
         auto gui = guiEntity.Get(lock);
-        Assert(gui.Has<ecs::EventInput>(lock), "Expected debug_gui to start with an EventInput");
+        Assert(gui.Has<ecs::EventInput>(lock), "Expected debug gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
         eventInput.Register(INPUT_EVENT_TOGGLE_CONSOLE);

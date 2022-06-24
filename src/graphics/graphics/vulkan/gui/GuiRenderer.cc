@@ -2,7 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "graphics/gui/GuiManager.hh"
+#include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -86,10 +86,10 @@ namespace sp::vulkan {
         Fn fn;
     };
 
-    void GuiRenderer::Render(GuiManager &manager, CommandContext &cmd, vk::Rect2D viewport) {
+    void GuiRenderer::Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport) {
         if (!fontView->Ready()) return;
 
-        manager.SetGuiContext();
+        context.SetGuiContext();
         ImGui::GetMainViewport()->PlatformHandleRaw = cmd.Device().Win32WindowHandle();
 
         ImGuiIO &io = ImGui::GetIO();
@@ -105,7 +105,7 @@ namespace sp::vulkan {
         });
 
         ImGui::NewFrame();
-        manager.DefineWindows();
+        context.DefineWindows();
         ImGui::Render();
 
         auto drawData = ImGui::GetDrawData();

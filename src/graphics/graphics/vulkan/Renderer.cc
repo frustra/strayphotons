@@ -421,7 +421,7 @@ namespace sp::vulkan {
     }
 #endif
 
-    void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock) {
+    void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock) {
         ecs::ComponentEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
@@ -435,7 +435,13 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
-                guis.emplace_back(RenderableGui{guiEvent.entity, guiComponent.manager});
+                auto existingManager = std::get_if<GuiManager *>(&guiComponent.target);
+                if (existingManager) {
+                    guis.emplace_back(RenderableGui{guiEvent.entity, *existingManager});
+                } else {
+                    auto context = CreateGuiWindow(std::get<std::string>(guiComponent.target));
+                    if (context) guis.emplace_back(RenderableGui{guiEvent.entity, context.get(), context});
+                }
             }
         }
 
@@ -444,10 +450,14 @@ namespace sp::vulkan {
                 .Build([&](rg::PassBuilder &builder) {
                     rg::ImageDesc desc;
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-
-                    // TODO: figure out a good size based on the transform of the gui
                     desc.extent = vk::Extent3D(1024, 1024, 1);
-                    MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.manager);
+
+                    if (gui.entity.Has<ecs::Screen>(lock) && gui.entity.Has<ecs::TransformSnapshot>(lock)) {
+                        auto tf = gui.entity.Get<ecs::TransformSnapshot>(lock);
+                        desc.extent.height *= tf.GetScale().y / tf.GetScale().x;
+                    }
+
+                    MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.context);
                     if (manager && manager->RenderMode() == MenuRenderMode::Pause) {
                         desc.extent = vk::Extent3D(1920, 1080, 1);
                     }
@@ -455,21 +465,22 @@ namespace sp::vulkan {
                     desc.mipLevels = CalculateMipmapLevels(desc.extent);
                     desc.sampler = SamplerType::TrilinearClampEdge;
 
-                    const auto &name = gui.manager->Name();
+                    auto name = gui.context->Name() + "_gui";
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
                     gui.renderGraphID = target.id;
                 })
                 .Execute([this, gui](rg::Resources &resources, CommandContext &cmd) {
                     auto extent = resources.GetImageView(gui.renderGraphID)->Extent();
                     vk::Rect2D viewport = {{}, {extent.width, extent.height}};
-                    guiRenderer->Render(*gui.manager, cmd, viewport);
+                    guiRenderer->Render(*gui.context, cmd, viewport);
                 });
 
             renderer::AddMipmap(graph, gui.renderGraphID);
         }
     }
 
-    void Renderer::AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock) {
+    void Renderer::AddDeferredPasses(
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock) {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
         emissive.AddPass(graph, lock);
@@ -486,9 +497,9 @@ namespace sp::vulkan {
         auto inputID = graph.LastOutputID();
         rg::ResourceID menuID = rg::InvalidResource;
         for (auto &gui : guis) {
-            if (gui.manager->Name() == "menu_gui") {
+            if (gui.context->Name() == "menu") {
                 menuID = gui.renderGraphID;
-                MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.manager);
+                MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.context);
                 if (!manager || manager->RenderMode() != MenuRenderMode::Pause) return;
                 break;
             }

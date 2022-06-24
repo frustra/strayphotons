@@ -1,7 +1,7 @@
 {
     "input:mouse": {
         "event_bindings": {
-            "/mouse/scroll": [ "gui:menu_gui/action/menu/scroll", "gui:debug_gui/action/menu/scroll" ],
+            "/mouse/scroll": [ "gui:menu/action/menu/scroll", "gui:debug/action/menu/scroll" ],
             "/mouse/move": [
                 {
                     "target": "player:flatview/script/camera_rotate",
@@ -16,10 +16,10 @@
     },
     "input:keyboard": {
         "event_bindings": {
-            "/keyboard/key/backtick": "gui:debug_gui/action/console/toggle",
-            "/keyboard/characters": "gui:debug_gui/action/menu/text_input",
-            "/keyboard/key/escape": [ "gui:menu_gui/action/menu/open", "gui:menu_gui/action/menu/back" ],
-            "/keyboard/key/enter": "gui:menu_gui/action/menu/enter",
+            "/keyboard/key/backtick": "gui:debug/action/console/toggle",
+            "/keyboard/characters": "gui:debug/action/menu/text_input",
+            "/keyboard/key/escape": [ "gui:menu/action/menu/open", "gui:menu/action/menu/back" ],
+            "/keyboard/key/enter": "gui:menu/action/menu/enter",
             "/keyboard/key/space": "player:player/action/jump",
             "/keyboard/key/e": "player:flatview/interact/grab",
             "/keyboard/key/q": "player:debug-spawner/script/spawn",
