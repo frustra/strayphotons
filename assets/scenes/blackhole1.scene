@@ -297,22 +297,38 @@
 				"translate": [0, 0.05, 2]
 			}
 		},
-		<%- include('prefab/spotlight', {
-			name: 'elevator_side_light1',
-			tint: [1, 0.5, 0.5],
-			intensity: 300,
-			spotAngle: 50,
-			translate: [-4.9, 4.5, -0.5],
-			rotate: [[-120, 1, 1, 0]]
-		}) %>,
-		<%- include('prefab/spotlight', {
-			name: 'elevator_side_light2',
-			tint: [1, 0.5, 0.5],
-			intensity: 300,
-			spotAngle: 50,
-			translate: [4.9, 4.5, 3],
-			rotate: [[-50, 1, -1, 0]]
-		}) %>,
+		{
+			"name": "elevator_side_light1",
+			"transform": {
+				"translate": [-4.95, 4.5, -0.5],
+				"rotate": [[-120, 1, 1, 0]]
+			},
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 50
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		},
+		{
+			"name": "elevator_side_light2",
+			"transform": {
+				"translate": [4.9, 4.5, 3],
+				"rotate": [[-50, 1, -1, 0]]
+			},
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 50
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		},
 		{
 			"name": "global:station-center",
 			"renderable": "box",

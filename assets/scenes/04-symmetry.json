@@ -1612,6 +1612,21 @@
 		},
 		{
 			"name": "light1",
+			"transform": {
+				"translate": [
+					0.1,
+					0.8,
+					4.5
+				],
+				"rotate": [
+					[
+						-90,
+						0,
+						1,
+						0
+					]
+				]
+			},
 			"light": {
 				"tint": [
 					1,
@@ -1619,69 +1634,13 @@
 					0.8
 				],
 				"intensity": 300,
-				"spotAngle": 12,
-				"bulb": "light1-bulb",
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
+				"spotAngle": 12
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "spotlight-01",
-					"render": true
+					"source": "spotlight"
 				}
-			},
-			"transform": {
-				"rotate": [
-					[
-						-90,
-						0,
-						1,
-						0
-					],
-					[
-						0,
-						1,
-						0,
-						0
-					]
-				],
-				"translate": [
-					0.1,
-					0.8,
-					4.5
-				]
-			}
-		},
-		{
-			"renderable": "spotlight-01",
-			"transform": {
-				"parent": "light1",
-				"translate": [
-					0,
-					0,
-					0.01
-				]
-			}
-		},
-		{
-			"name": "light1-bulb",
-			"renderable": "box",
-			"transform": {
-				"parent": "light1",
-				"translate": [
-					0,
-					0,
-					-0.06
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.03
-				]
 			}
 		}
 	]

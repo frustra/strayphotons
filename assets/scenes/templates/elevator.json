@@ -1,53 +1,52 @@
 {
-    "entities": [
-		{
-			"name": "root",
-			"transform": {
-				"translate": [0, 160, 0]
-			},
-			"sound": {
-				"file": "dryer.ogg",
-				"type": "ambisonic",
-				"volume": 0.1
-			},
-			"animation": {
-				"interpolation": "cubic",
-				"states": [
-					{
-						"delay": 10,
-						"translate": [0, 160, 0],
-						"translate_tangent": [0, 0, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 120, 0],
-						"translate_tangent": [0, -7, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 40, 0],
-						"translate_tangent": [0, -7, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 0.1, 0],
-						"translate_tangent": [0, 0, 0]
-					}
-				]
-			},
-			"signal_output": {},
-			"event_input": [
-				"/sound/play"
-			],
-			"script": {
-				"onTick": "elevator"
-			}
+	"components": {
+		"sound": {
+			"file": "dryer.ogg",
+			"type": "ambisonic",
+			"volume": 0.1
 		},
+		"animation": {
+			"interpolation": "cubic",
+			"states": [
+				{
+					"delay": 10,
+					"translate": [0, 160, 0],
+					"translate_tangent": [0, 0, 0]
+				},
+				{
+					"delay": 10,
+					"translate": [0, 120, 0],
+					"translate_tangent": [0, -7, 0]
+				},
+				{
+					"delay": 10,
+					"translate": [0, 40, 0],
+					"translate_tangent": [0, -7, 0]
+				},
+				{
+					"delay": 10,
+					"translate": [0, 0.1, 0],
+					"translate_tangent": [0, 0, 0]
+				}
+			]
+		},
+		"signal_output": {},
+		"event_input": [
+			"/sound/play"
+		],
+		"script": {
+			"onTick": "elevator"
+		},
+		"transform": {
+			"translate": [0, 160, 0]
+		}
+	},
+    "entities": [
 		{
 			"name": "platform",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [0, -0.25, -1],
 				"scale": [4.2, 0.5, 4]
 			},
@@ -61,7 +60,7 @@
 			"_comment": "ceiling",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [0, 4.15, -1],
 				"scale": [4.2, 0.5, 4]
 			},
@@ -75,7 +74,7 @@
 			"_comment": "right front wall",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [2, 2, -2.07],
 				"scale": [0.2, 4, 1.85]
 			},
@@ -88,7 +87,7 @@
 			"_comment": "right back wall",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [2, 2, 0.07],
 				"scale": [0.2, 4, 1.85]
 			},
@@ -101,7 +100,7 @@
 			"_comment": "left front wall",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [-2, 2, -2.07],
 				"scale": [0.2, 4, 1.85]
 			},
@@ -114,7 +113,7 @@
 			"_comment": "left back wall",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [-2, 2, 0.07],
 				"scale": [0.2, 4, 1.85]
 			},
@@ -127,7 +126,7 @@
 			"_comment": "back left wall",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [-1.07, 2, 0.9],
 				"scale": [1.85, 4, 0.2]
 			},
@@ -140,7 +139,7 @@
 			"_comment": "back right wall",
 			"renderable": "box",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [1.07, 2, 0.9],
 				"scale": [1.85, 4, 0.2]
 			},
@@ -152,7 +151,7 @@
 		{
 			"name": "control",
 			"transform": {
-				"parent": "root",
+				"parent": "scoperoot",
 				"translate": [1.95, 1.1, -2]
 			},
 			"script": {
@@ -164,7 +163,7 @@
 		},
 		{
 			"transform": {
-				"parent": "root"
+				"parent": "scoperoot"
 			},
 			"laser_line": {
 				"color": [0, 0, 1],
@@ -172,6 +171,23 @@
 					[-1.95, 1.5, -2.9],
 					[1.95, 1.5, -2.9]
 				]
+			}
+		},
+		{
+			"name": "elevator_light",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 3.9, -1],
+				"rotate": [[270, 1, 0, 0]]
+			},
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 50
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
 			}
 		}
     ]

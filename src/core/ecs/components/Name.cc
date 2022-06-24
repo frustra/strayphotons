@@ -21,10 +21,20 @@ namespace ecs {
             entity = relativeName.substr(i + 1);
         } else if (!scope.scene.empty()) {
             scene = scope.scene;
-            if (scope.entity.empty()) {
-                entity = relativeName;
+            if (relativeName == "scoperoot") {
+                if (scope.entity.empty()) {
+                    entity.clear();
+                    Errorf("Invalid scope root name has invalid scope: %s", scope.String());
+                    return false;
+                } else {
+                    entity = scope.entity;
+                }
             } else {
-                entity = scope.entity + "." + std::string(relativeName);
+                if (scope.entity.empty()) {
+                    entity = relativeName;
+                } else {
+                    entity = scope.entity + "." + std::string(relativeName);
+                }
             }
         } else {
             entity.clear();

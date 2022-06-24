@@ -130,13 +130,21 @@
 				"extents": [120, 50, 95]
 			}
 		},
-		<%- include('prefab/spotlight', {
-			name: 'light1',
-			tint: [1, 0.8, 0.8],
-			intensity: 300,
-			spotAngle: 12,
-			translate: [0.1, 0.8, 4.5],
-			rotate: [[-90, 0, 1, 0], [0, 1, 0, 0]]
-		}) %>
+		{
+			"name": "light1",
+			"transform": {
+				"translate": [0.1, 0.8, 4.5],
+				"rotate": [[-90, 0, 1, 0]]
+			},
+			"light": {
+				"tint": [1, 0.8, 0.8],
+				"intensity": 300,
+				"spotAngle": 12
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		}
 	]
 }

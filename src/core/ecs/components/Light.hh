@@ -7,7 +7,9 @@
 
 namespace ecs {
     struct Light {
-        float spotAngle, intensity, illuminance;
+        float intensity = 0;
+        float illuminance = 0;
+        float spotAngle = 0;
         glm::vec3 tint;
         string gelName;
         bool on = true;
@@ -19,4 +21,6 @@ namespace ecs {
 
     template<>
     bool Component<Light>::Load(const EntityScope &scope, Light &dst, const picojson::value &src);
+    template<>
+    void Component<Light>::Apply(const Light &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

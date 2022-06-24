@@ -125,12 +125,20 @@
 		"dynamic": false
 	}
 },
-<%- include('spotlight', {
-	name: name + '-light',
-	parent: name,
-	tint: [0.5, 0.5, 1],
-	intensity: 300,
-	spotAngle: 60,
-	translate: [0, 3.9, 0],
-	rotate: [[270, 1, 0, 0]]
-}) %>
+{
+	"name": <%= name + '-light' %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 3.95, 0],
+		"rotate": [[270, 1, 0, 0]]
+	},
+	"light": {
+		"tint": [0.5, 0.5, 1],
+		"intensity": 300,
+		"spotAngle": 60
+	},
+	"script": {
+		"prefab": "template",
+		"parameters": { "source": "spotlight" }
+	}
+}

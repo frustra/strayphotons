@@ -1113,29 +1113,12 @@
 		},
 		{
 			"name": "light1",
-			"light": {
-				"tint": [
-					1,
-					0.8,
-					0.8
-				],
-				"intensity": 500,
-				"spotAngle": 20,
-				"bulb": "light1-bulb",
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "spotlight-01",
-					"render": true
-				}
-			},
 			"transform": {
+				"translate": [
+					3,
+					0.5,
+					0.1
+				],
 				"rotate": [
 					[
 						180,
@@ -1143,40 +1126,22 @@
 						1,
 						0
 					]
+				]
+			},
+			"light": {
+				"tint": [
+					1,
+					0.8,
+					0.8
 				],
-				"translate": [
-					3,
-					0.5,
-					0.2
-				]
-			}
-		},
-		{
-			"renderable": "spotlight-01",
-			"transform": {
-				"parent": "light1",
-				"translate": [
-					0,
-					0,
-					0.01
-				]
-			}
-		},
-		{
-			"name": "light1-bulb",
-			"renderable": "box",
-			"transform": {
-				"parent": "light1",
-				"translate": [
-					0,
-					0,
-					-0.06
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.03
-				]
+				"intensity": 500,
+				"spotAngle": 20
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "spotlight"
+				}
 			}
 		},
 		{
@@ -1652,29 +1617,12 @@
 		},
 		{
 			"name": "light2",
-			"light": {
-				"tint": [
-					0.8,
-					0.8,
-					1
-				],
-				"intensity": 600,
-				"spotAngle": 25,
-				"bulb": "light2-bulb",
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "spotlight-01",
-					"render": true
-				}
-			},
 			"transform": {
+				"translate": [
+					11.9,
+					0.5,
+					1.5
+				],
 				"rotate": [
 					[
 						90,
@@ -1682,40 +1630,22 @@
 						1,
 						0
 					]
+				]
+			},
+			"light": {
+				"tint": [
+					0.8,
+					0.8,
+					1
 				],
-				"translate": [
-					11.8,
-					0.5,
-					1.5
-				]
-			}
-		},
-		{
-			"renderable": "spotlight-01",
-			"transform": {
-				"parent": "light2",
-				"translate": [
-					0,
-					0,
-					0.01
-				]
-			}
-		},
-		{
-			"name": "light2-bulb",
-			"renderable": "box",
-			"transform": {
-				"parent": "light2",
-				"translate": [
-					0,
-					0,
-					-0.06
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.03
-				]
+				"intensity": 500,
+				"spotAngle": 20
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "spotlight"
+				}
 			}
 		},
 		{
