@@ -234,6 +234,17 @@
             }
 		},
 		{
+			"name": "cubemirror",
+			"transform": {
+				"parent": "mova-mirror",
+				"rotate": [90, 0, 1, 0]
+			},
+            "script": {
+                "prefab": "template",
+                "parameters": { "source": "mirrorface" }
+            }
+		},
+		{
 			"transform": {
 				"parent": "mova-mirror",
 				"translate": [0, -0.5, 0]
@@ -244,36 +255,6 @@
 					"model": "mcube",
 					"render": true
 				}
-			}
-		},
-		{
-			"optic": "mirror",
-			"renderable": "mirror",
-			"physics": {
-				"model": "occluder",
-				"density": 1
-			},
-			"physics_joints": [{
-				"target": "mova-mirror",
-				"type": "Fixed",
-				"remote_offset": {
-					"translate": [0.5, 0, 0],
-					"rotate": [-90, 0, 1, 0]
-				}
-			}],
-			"transform": {
-				"parent": "mova-mirror",
-				"translate": [0.5, 0, 0],
-				"rotate": [-90, 0, 1, 0]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mova-mirror",
-				"translate": [0.45, 0, 0],
-				"scale": [0.9, 0.9, 0.9],
-				"rotate": [90, 0, 1, 0]
 			}
 		},
 		{
