@@ -438,6 +438,9 @@ namespace sp {
         }
 
         auto scene = make_shared<Scene>(sceneName, sceneType, asset);
+        ecs::EntityScope scope;
+        scope.scene = scene;
+        scope.prefix.scene = scene->name;
 
         {
             auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
@@ -489,7 +492,7 @@ namespace sp {
 
                     auto componentType = ecs::LookupComponent(comp.first);
                     if (componentType != nullptr) {
-                        if (!componentType->LoadEntity(lock, entity, comp.second)) {
+                        if (!componentType->LoadEntity(lock, scope, entity, comp.second)) {
                             Errorf("Failed to load component, ignoring: %s", comp.first);
                         }
                     } else {
@@ -528,6 +531,9 @@ namespace sp {
         }
 
         auto scene = make_shared<Scene>("bindings", SceneType::System);
+        ecs::EntityScope scope;
+        scope.scene = scene;
+        scope.prefix.scene = scene->name;
 
         picojson::value root;
         string err = picojson::parse(root, bindingConfig->String());
@@ -551,7 +557,7 @@ namespace sp {
 
                         auto componentType = ecs::LookupComponent(comp.first);
                         if (componentType != nullptr) {
-                            bool result = componentType->LoadEntity(lock, entity, comp.second);
+                            bool result = componentType->LoadEntity(lock, scope, entity, comp.second);
                             Assertf(result, "Failed to load component type: %s", comp.first);
                         } else {
                             Errorf("Unknown component, ignoring: %s", comp.first);

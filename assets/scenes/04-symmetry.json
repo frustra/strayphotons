@@ -854,136 +854,54 @@
 			}
 		},
 		{
-			"name": "sensor1_plate",
-			"renderable": "sensor-plate-light",
+			"name": "sensor1",
 			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
 				"translate": [
 					11.9,
 					0.7,
 					1.5
-				]
-			},
-			"physics": {
-				"model": "sensor-plate-light",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "sensor1",
-			"transform": {
-				"parent": "sensor1_plate",
-				"translate": [
-					0,
-					0,
-					0.015
-				]
-			},
-			"light_sensor": {
-				"translate": [
-					0,
-					0,
-					0.1
 				],
-				"direction": [
-					0,
-					0,
-					1
-				]
-			},
-			"signal_output": {
-				"light_value_r": 0,
-				"light_value_g": 0,
-				"light_value_b": 0,
-				"value": false
-			},
-			"script": [
-				{
-					"onTick": "light_sensor",
-					"parameters": {
-						"trigger_level": 0.1
-					}
-				},
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "sensor",
-						"render": true,
-						"physics": "static"
-					}
-				}
-			]
-		},
-		{
-			"name": "sensor2_plate",
-			"renderable": "sensor-plate-light",
-			"transform": {
 				"rotate": [
 					-90,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					11.9,
-					0.7,
-					7.5
 				]
 			},
-			"physics": {
-				"model": "sensor-plate-light",
-				"dynamic": false
+			"signal_output": {
+				"sensitivity": 5
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "light_sensor"
+				}
 			}
 		},
 		{
 			"name": "sensor2",
 			"transform": {
-				"parent": "sensor2_plate",
 				"translate": [
-					0,
-					0,
-					0.015
-				]
-			},
-			"light_sensor": {
-				"translate": [
-					0,
-					0,
-					0.1
+					11.9,
+					0.7,
+					7.5
 				],
-				"direction": [
+				"rotate": [
+					-90,
 					0,
-					0,
-					1
+					1,
+					0
 				]
 			},
 			"signal_output": {
-				"light_value_r": 0,
-				"light_value_g": 0,
-				"light_value_b": 0,
-				"value": false
+				"sensitivity": 5
 			},
-			"script": [
-				{
-					"onTick": "light_sensor",
-					"parameters": {
-						"trigger_level": 0.1
-					}
-				},
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "sensor",
-						"render": true,
-						"physics": "static"
-					}
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "light_sensor"
 				}
-			]
+			}
 		},
 		{
 			"name": "mirrorcube1",

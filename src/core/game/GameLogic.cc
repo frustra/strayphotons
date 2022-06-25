@@ -9,6 +9,10 @@ namespace sp {
         funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
         funcs.Register(this, "printevents", "Print out the current state of event queues", &GameLogic::PrintEvents);
         funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &GameLogic::PrintSignals);
+        funcs.Register(this,
+            "printsignal",
+            "Print out the value and bindings of a specific signal",
+            &GameLogic::PrintSignal);
 
         if (stepMode) {
             funcs.Register<unsigned int>("steplogic",
@@ -179,6 +183,51 @@ namespace sp {
                         Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), value);
                     } else {
                         Logf("      %s on %s(missing): %.2f", source.second, source.first.Name().String(), value);
+                    }
+                }
+            }
+        }
+    }
+
+    void GameLogic::PrintSignal(std::string signalStr) {
+        auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
+
+        auto [originName, signalName] = ecs::ParseSignalString(signalStr);
+        if (!originName) {
+            Errorf("Invalid signal name: %s", signalStr);
+            return;
+        }
+
+        auto ent = ecs::EntityRef(originName).Get(lock);
+        auto value = ecs::SignalBindings::GetSignal(lock, ent, signalName);
+        Logf("%s/%s = %.2f", originName.String(), signalName, value);
+
+        if (ent.Has<ecs::SignalOutput>(lock)) {
+            auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
+            if (signalOutput.HasSignal(signalName)) Logf("  Signal output: %.2f", signalOutput.GetSignal(signalName));
+        }
+        if (ent.Has<ecs::SignalBindings>(lock)) {
+            auto &bindings = ent.Get<ecs::SignalBindings>(lock);
+            auto bindingList = bindings.Lookup(signalName);
+
+            std::stringstream ss;
+            if (!bindingList || bindingList->sources.empty()) {
+                ss << "none";
+            } else {
+                ss << bindingList->operation;
+            }
+            Logf("  Signal bindings: %s", ss.str());
+            if (bindingList) {
+                for (auto &source : bindingList->sources) {
+                    auto e = source.first.Get(lock);
+                    double bindingValue = ecs::SignalBindings::GetSignal(lock, e, source.second);
+                    if (e) {
+                        Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), bindingValue);
+                    } else {
+                        Logf("      %s on %s(missing): %.2f",
+                            source.second,
+                            source.first.Name().String(),
+                            bindingValue);
                     }
                 }
             }

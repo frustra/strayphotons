@@ -81,21 +81,34 @@
 			]
 		}) %>,
 
-		<%- include('prefab/light_sensor',
 		{
-			name: "sensor1",
-			translate: [11.9, 0.7, 1.5],
-			rotate: [-90, 0, 1, 0],
-			trigger: 0.10
-		}) %>,
-		<%- include('prefab/light_sensor',
+			"name": "sensor1",
+			"transform": {
+				"translate": [11.9, 0.7, 1.5],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"signal_output": {
+				"sensitivity": 5
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "light_sensor" }
+			}
+		},
 		{
-			name: "sensor2",
-			type: "light",
-			translate: [11.9, 0.7, 7.5],
-			rotate: [-90, 0, 1, 0],
-			trigger: 0.10
-		}) %>,
+			"name": "sensor2",
+			"transform": {
+				"translate": [11.9, 0.7, 7.5],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"signal_output": {
+				"sensitivity": 5
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "light_sensor" }
+			}
+		},
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
 			sides: 2,
