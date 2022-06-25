@@ -76,21 +76,6 @@ namespace sp::scripts {
                     outputComp.SetSignal("light_value_r", sensorComp.illuminance.r);
                     outputComp.SetSignal("light_value_g", sensorComp.illuminance.g);
                     outputComp.SetSignal("light_value_b", sensorComp.illuminance.b);
-                    // auto triggerParam = state.GetParam<double>("trigger_level");
-                    // bool enabled = glm::all(
-                    //     glm::greaterThanEqual(sensorComp.illuminance, glm::vec3(std::abs(triggerParam))));
-                    // if (triggerParam < 0) { enabled = !enabled; }
-                    // outputComp.SetSignal("value", enabled ? 1.0 : 0.0);
-
-                    // // add emissiveness to sensor when it is active
-                    // if (ent.Has<Renderable>(lock)) {
-                    //     auto &renderable = ent.Get<Renderable>(lock);
-                    //     if (triggerParam >= 0) {
-                    //         renderable.emissive = enabled ? glm::vec3(0, 1, 0) : glm::vec3(0);
-                    //     } else {
-                    //         renderable.emissive = enabled ? glm::vec3(0) : glm::vec3(1, 0, 0);
-                    //     }
-                    // }
                 }
             }),
     };
