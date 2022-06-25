@@ -19,7 +19,6 @@
 
 namespace sp {
     class GuiContext;
-    class GuiManager;
 
 #ifdef SP_XR_SUPPORT
     namespace xr {
@@ -42,7 +41,7 @@ namespace sp::vulkan {
         void RenderFrame();
         void EndFrame();
 
-        void SetDebugGui(GuiManager &gui);
+        void SetDebugGui(GuiContext &gui);
 
 #ifdef SP_XR_SUPPORT
         void SetXRSystem(shared_ptr<xr::XrSystem> xr) {
@@ -87,7 +86,7 @@ namespace sp::vulkan {
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
         vector<RenderableGui> guis;
-        GuiManager *debugGui = nullptr;
+        GuiContext *debugGui = nullptr;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 

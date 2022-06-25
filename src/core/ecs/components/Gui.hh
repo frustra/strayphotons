@@ -3,12 +3,12 @@
 #include "ecs/Components.hh"
 
 namespace sp {
-    class GuiManager;
+    class GuiContext;
 }
 
 namespace ecs {
     struct Gui {
-        std::variant<sp::GuiManager *, std::string> target;
+        std::variant<sp::GuiContext *, std::string> target;
     };
 
     static Component<Gui> ComponentGui("gui");

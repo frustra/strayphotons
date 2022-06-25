@@ -1,4 +1,4 @@
-#include "GuiManager.hh"
+#include "SystemGuiManager.hh"
 
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -11,7 +11,8 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    GuiManager::GuiManager(const std::string &name, ecs::FocusLayer layer) : focusLayer(layer), GuiContext(name) {
+    SystemGuiManager::SystemGuiManager(const std::string &name, ecs::FocusLayer layer)
+        : GuiContext(name), focusLayer(layer) {
         guiEntity = ecs::Name("gui", name);
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
@@ -32,7 +33,7 @@ namespace sp {
             });
     }
 
-    void GuiManager::BeforeFrame() {
+    void SystemGuiManager::BeforeFrame() {
         ZoneScoped;
         GuiContext::BeforeFrame();
         ImGuiIO &io = ImGui::GetIO();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/gui/GuiManager.hh"
+#include "graphics/gui/SystemGuiManager.hh"
 
 namespace sp {
     class GraphicsManager;
@@ -10,7 +10,7 @@ namespace sp {
 
     enum class MenuRenderMode : int { None = 0, Pause = 1, Gel = 2 };
 
-    class MenuGuiManager : public GuiManager {
+    class MenuGuiManager : public SystemGuiManager {
     public:
         MenuGuiManager(GraphicsManager &graphics);
         virtual ~MenuGuiManager() {}

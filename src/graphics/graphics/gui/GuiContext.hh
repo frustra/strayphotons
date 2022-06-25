@@ -45,5 +45,5 @@ namespace sp {
         std::string name;
     };
 
-    shared_ptr<GuiContext> CreateGuiWindow(const string &name);
+    bool CreateGuiWindow(GuiContext *context, const string &name);
 } // namespace sp

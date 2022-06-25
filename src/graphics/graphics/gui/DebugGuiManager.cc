@@ -7,7 +7,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    DebugGuiManager::DebugGuiManager() : GuiManager("debug", ecs::FocusLayer::ALWAYS) {
+    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::ALWAYS) {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>>();
 
         auto gui = guiEntity.Get(lock);
@@ -27,14 +27,14 @@ namespace sp {
 
         static ConsoleGui console;
         if (consoleOpen) console.Add();
-        GuiManager::DefineWindows();
+        SystemGuiManager::DefineWindows();
 
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(4);
     }
 
     void DebugGuiManager::BeforeFrame() {
-        GuiManager::BeforeFrame();
+        SystemGuiManager::BeforeFrame();
 
         ImGui::StyleColorsClassic();
 

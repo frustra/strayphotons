@@ -4,9 +4,9 @@
 
 namespace sp {
 
-    class GuiManager : public GuiContext {
+    class SystemGuiManager : public GuiContext {
     public:
-        GuiManager(const std::string &name, ecs::FocusLayer layer = ecs::FocusLayer::GAME);
+        SystemGuiManager(const std::string &name, ecs::FocusLayer layer = ecs::FocusLayer::GAME);
 
         virtual void BeforeFrame();
 

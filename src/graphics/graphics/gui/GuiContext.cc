@@ -11,7 +11,9 @@ namespace sp {
     void GuiWindow::Add() {
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-        ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration);
+        ImGui::Begin(name.c_str(),
+            nullptr,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
         DefineContents();
         ImGui::End();
     }
@@ -67,18 +69,17 @@ namespace sp {
         components.emplace_back(component);
     }
 
-    shared_ptr<GuiContext> CreateGuiWindow(const string &name) {
-        auto manager = make_shared<GuiContext>(name);
+    bool CreateGuiWindow(GuiContext *context, const string &windowName) {
         shared_ptr<GuiWindow> window;
-        if (name == "lobby") {
-            window = make_shared<LobbyGui>(name);
-        } else if (name == "inspector") {
-            window = make_shared<InspectorGui>(name);
+        if (windowName == "lobby") {
+            window = make_shared<LobbyGui>(windowName);
+        } else if (windowName == "inspector") {
+            window = make_shared<InspectorGui>(windowName);
         } else {
-            Errorf("unknown gui window: %s", name);
-            return nullptr;
+            Errorf("unknown gui window: %s", windowName);
+            return false;
         }
-        manager->Attach(window);
-        return manager;
+        context->Attach(window);
+        return true;
     }
 } // namespace sp

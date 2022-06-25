@@ -61,11 +61,13 @@ namespace sp::vulkan::renderer {
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
 
                     string textureName;
-                    if (screenComp.textureName == "gui" && ent.Has<ecs::Gui>(lock)) {
+                    if (screenComp.textureName.empty() && ent.Has<ecs::Gui>(lock)) {
                         auto namePtr = std::get_if<std::string>(&ent.Get<ecs::Gui>(lock).target);
                         if (namePtr) textureName = *namePtr + "_gui";
                     }
                     if (textureName.empty()) textureName = screenComp.textureName;
+
+                    if (builder.GetID(textureName, false) == InvalidResource) continue;
 
                     auto id = builder.Read(textureName, Access::FragmentShaderSampleImage);
 

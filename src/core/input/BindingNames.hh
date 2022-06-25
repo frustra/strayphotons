@@ -40,6 +40,7 @@ namespace sp {
 
     // Interaction
     static const std::string INTERACT_EVENT_INTERACT_POINT = "/interact/point"; // ecs::Transform or false
+    static const std::string INTERACT_EVENT_INTERACT_PRESS = "/interact/press"; // ecs::Transform or false
     static const std::string INTERACT_EVENT_INTERACT_GRAB = "/interact/grab"; // ecs::Transform or false
     static const std::string INTERACT_EVENT_INTERACT_ROTATE = "/interact/rotate"; // glm::vec2
 

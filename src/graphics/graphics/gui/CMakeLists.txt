@@ -4,6 +4,7 @@ target_sources(
     PRIVATE
         DebugGuiManager.cc
         GuiContext.cc
-        GuiManager.cc
         MenuGuiManager.cc
+        SystemGuiManager.cc
+        WorldGuiManager.cc
 )

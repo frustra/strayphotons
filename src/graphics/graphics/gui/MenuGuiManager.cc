@@ -22,7 +22,7 @@ namespace sp {
         "Scaling factor for menu cursor position");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
-        : GuiManager("menu", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
+        : SystemGuiManager("menu", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
         {
             auto lock =
                 ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
@@ -41,7 +41,7 @@ namespace sp {
     }
 
     void MenuGuiManager::BeforeFrame() {
-        GuiManager::BeforeFrame();
+        SystemGuiManager::BeforeFrame();
 
         ImGui::StyleColorsClassic();
 

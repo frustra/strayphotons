@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/gui/GuiManager.hh"
+#include "graphics/gui/GuiContext.hh"
 
 #include <imgui/imgui.h>
 

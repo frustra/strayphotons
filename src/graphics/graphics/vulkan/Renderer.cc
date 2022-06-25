@@ -5,6 +5,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
+#include "graphics/gui/WorldGuiManager.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -57,6 +58,10 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame() {
+        for (auto &gui : guis) {
+            if (gui.contextShared) gui.contextShared->BeforeFrame();
+        }
+
         BuildFrameGraph();
 
         CVarWindowViewTarget.UpdateCompletions([&](vector<string> &completions) {
@@ -435,12 +440,15 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
-                auto existingManager = std::get_if<GuiManager *>(&guiComponent.target);
-                if (existingManager) {
-                    guis.emplace_back(RenderableGui{guiEvent.entity, *existingManager});
+                auto existingContext = std::get_if<GuiContext *>(&guiComponent.target);
+                if (existingContext) {
+                    guis.emplace_back(RenderableGui{eventEntity, *existingContext});
                 } else {
-                    auto context = CreateGuiWindow(std::get<std::string>(guiComponent.target));
-                    if (context) guis.emplace_back(RenderableGui{guiEvent.entity, context.get(), context});
+                    auto &windowName = std::get<std::string>(guiComponent.target);
+                    auto context = make_shared<WorldGuiManager>(eventEntity, windowName);
+                    if (CreateGuiWindow(context.get(), windowName)) {
+                        guis.emplace_back(RenderableGui{eventEntity, context.get(), context});
+                    }
                 }
             }
         }
@@ -567,7 +575,7 @@ namespace sp::vulkan {
         scene.Flush();
     }
 
-    void Renderer::SetDebugGui(GuiManager &gui) {
+    void Renderer::SetDebugGui(GuiContext &gui) {
         debugGui = &gui;
     }
 } // namespace sp::vulkan
