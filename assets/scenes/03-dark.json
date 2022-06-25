@@ -55,90 +55,10 @@
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "global:airlock2-3-out-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock2-3-out"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock2-3-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:airlock2-3-out-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock2-3-out",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock2-3-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
@@ -152,90 +72,10 @@
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "global:airlock2-3-in-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock2-3-in"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock2-3-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:airlock2-3-in-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock2-3-in",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock2-3-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
@@ -340,90 +180,10 @@
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "global:airlock3-4-out-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock3-4-out"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock3-4-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:airlock3-4-out-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock3-4-out",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock3-4-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
@@ -436,93 +196,14 @@
 					0
 				]
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
-				}
-			},
-			"signal_output": {},
 			"signal_bindings": {
 				"door_open": "sensor2"
-			}
-		},
-		{
-			"name": "global:airlock3-4-in-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock3-4-in"
 			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock3-4-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:airlock3-4-in-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock3-4-in",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock3-4-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "slide_door"
+				}
 			}
 		},
 		{
@@ -1010,105 +691,20 @@
 		{
 			"name": "door1",
 			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
 				"translate": [
 					6,
 					0,
 					1.5
 				]
 			},
+			"signal_bindings": {
+				"door_open": "sensor1/value"
+			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {
-				"door_open": "sensor1"
-			}
-		},
-		{
-			"name": "door1-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "door1"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "03-dark:door1/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "door1-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "door1",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "03-dark:door1/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
@@ -1145,70 +741,29 @@
 			}
 		},
 		{
-			"name": "sensor1_plate",
-			"renderable": "sensor-plate-light",
+			"name": "sensor1",
 			"transform": {
+				"translate": [
+					-2.9,
+					1,
+					7.5
+				],
 				"rotate": [
 					90,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					-2.9,
-					1,
-					7.5
-				]
-			},
-			"physics": {
-				"model": "sensor-plate-light",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "sensor1",
-			"transform": {
-				"parent": "sensor1_plate",
-				"translate": [
-					0,
-					0,
-					0.015
-				]
-			},
-			"light_sensor": {
-				"translate": [
-					0,
-					0,
-					0.1
-				],
-				"direction": [
-					0,
-					0,
-					1
 				]
 			},
 			"signal_output": {
-				"light_value_r": 0,
-				"light_value_g": 0,
-				"light_value_b": 0,
-				"value": false
+				"sensitivity": 2.5
 			},
-			"script": [
-				{
-					"onTick": "light_sensor",
-					"parameters": {
-						"trigger_level": 0.2
-					}
-				},
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "sensor",
-						"render": true,
-						"physics": "static"
-					}
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "light_sensor"
 				}
-			]
+			}
 		},
 		{
 			"name": "mirrorcube1",
@@ -1638,70 +1193,29 @@
 			}
 		},
 		{
-			"name": "sensor2_plate",
-			"renderable": "sensor-plate-light",
+			"name": "sensor2",
 			"transform": {
+				"translate": [
+					10.5,
+					1,
+					8.9
+				],
 				"rotate": [
 					180,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					10.5,
-					1,
-					8.9
-				]
-			},
-			"physics": {
-				"model": "sensor-plate-light",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "sensor2",
-			"transform": {
-				"parent": "sensor2_plate",
-				"translate": [
-					0,
-					0,
-					0.015
-				]
-			},
-			"light_sensor": {
-				"translate": [
-					0,
-					0,
-					0.1
-				],
-				"direction": [
-					0,
-					0,
-					1
 				]
 			},
 			"signal_output": {
-				"light_value_r": 0,
-				"light_value_g": 0,
-				"light_value_b": 0,
-				"value": false
+				"sensitivity": 5
 			},
-			"script": [
-				{
-					"onTick": "light_sensor",
-					"parameters": {
-						"trigger_level": 0.1
-					}
-				},
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "sensor",
-						"render": true,
-						"physics": "static"
-					}
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "light_sensor"
 				}
-			]
+			}
 		},
 		{
 			"name": "mirrorcube2",

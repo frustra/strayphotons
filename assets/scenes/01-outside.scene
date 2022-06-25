@@ -34,13 +34,19 @@
 				"dynamic": false
 			}
 		},
-		<%- include('prefab/light_sensor',
 		{
-			name: "sensor1",
-			type: "dark",
-			translate: [-3.5, 0.7, -5.8],
-			trigger: -0.01
-		}) %>,
+			"name": "sensor1",
+			"transform": {
+				"translate": [-3.5, 0.7, -5.8]
+			},
+			"signal_output": {
+				"sensitivity": 35
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "light_sensor" }
+			}
+		},
 		<%- include('prefab/airlock', {
 			name: 'airlock1-2',
 			translate: [-8.1, 0.6, -7],
@@ -51,7 +57,7 @@
 		{
 			"renderable": "cardboard-box",
 			"transform": {
-				"translate": [-3, 0.025, -3],
+				"translate": [-3, 0.025, -5],
 				"rotate": [-30, 0, 1, 0]
 			},
 			"physics": {
@@ -66,7 +72,7 @@
 		{
 			"renderable": "cardboard-box",
 			"transform": {
-				"translate": [-3.2, 0.025, -1.7],
+				"translate": [-3.2, 0.025, -3.7],
 				"rotate": [-80, 0, 1, 0]
 			},
 			"physics": {
@@ -81,7 +87,7 @@
 		{
 			"renderable": "cardboard-box",
 			"transform": {
-				"translate": [-3.3, 0.9, -2.3],
+				"translate": [-3.2, 0.9, -4.6],
 				"rotate": [85, 0, 1, 0]
 			},
 			"physics": {

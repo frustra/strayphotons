@@ -230,13 +230,18 @@
 				"dynamic": false
 			}
 		},
-		<%- include('prefab/slide_door', {
-			scene: 'blackhole1',
-			name: 'elevator_door',
-			translate: [0, 0.1, -0.33],
-			rotate: [90, 0, 1, 0],
-			scale: [1, 1.5, 2.3]
-		}) %>,
+		{
+			"name": "elevator_door",
+			"transform": {
+				"translate": [0, 0.1, -0.33],
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 1.5, 2.3]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
 		{
 			"name": "flashlight_button",
 			"transform": {

@@ -13,6 +13,7 @@ namespace sp {
         void PrintDebug();
         void PrintEvents();
         void PrintSignals();
+        void PrintSignal(std::string signalName);
 
     private:
         void Frame() override;

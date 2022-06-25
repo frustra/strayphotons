@@ -281,6 +281,11 @@
 			"name": "global:ship_airlock-in",
 			"transform": {
 				"parent": "global:ship_airlock",
+				"translate": [
+					0,
+					0,
+					-1.95
+				],
 				"rotate": [
 					90,
 					0,
@@ -291,104 +296,24 @@
 					1,
 					1.5,
 					2.3
-				],
-				"translate": [
-					0,
-					0,
-					-1.95
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "global:ship_airlock-in-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:ship_airlock-in"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:ship_airlock-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:ship_airlock-in-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:ship_airlock-in",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:ship_airlock-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
 			"name": "global:ship_airlock-out",
 			"transform": {
 				"parent": "global:ship_airlock",
+				"translate": [
+					0,
+					0,
+					2
+				],
 				"rotate": [
 					90,
 					0,
@@ -399,98 +324,13 @@
 					1,
 					1.5,
 					2.3
-				],
-				"translate": [
-					0,
-					0,
-					2
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "global:ship_airlock-out-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:ship_airlock-out"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:ship_airlock-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:ship_airlock-out-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:ship_airlock-out",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:ship_airlock-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
@@ -657,114 +497,6 @@
 						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
 					}
 				]
-			}
-		},
-		{
-			"name": "elevator_door",
-			"transform": {
-				"parent": "elevator",
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"scale": [
-					1,
-					1.5,
-					2.3
-				],
-				"translate": [
-					0,
-					0,
-					-2.9
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
-				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "elevator_door-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "elevator_door"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "station-center:elevator_door/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "elevator_door-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "elevator_door",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "station-center:elevator_door/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{

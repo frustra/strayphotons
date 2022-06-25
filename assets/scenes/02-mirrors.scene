@@ -75,13 +75,19 @@
 			y: 0,
 			points: [[6, 9], [-3, 9], [-3, 6], [0, 6], [0, 3, "wall-4x3-door"], [0, 0], [6, 0, "wall-4x3-door"], [6, 3], [6, 9]]
 		}) %>,
-		<%- include('prefab/slide_door', {
-			scene: '02-mirrors',
-			name: 'door1',
-			translate: [6, 0.0, 1.5],
-			rotate: [0, 0, 1, 0],
-			input_signal: "sensor1"
-		}) %>,
+		{
+			"name": "door1",
+			"transform": {
+				"translate": [6, 0.0, 1.5]
+			},
+			"signal_bindings": {
+				"door_open": "sensor1/value"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
 
 		{
 			"name": "light1",
@@ -99,13 +105,20 @@
 				"parameters": { "source": "spotlight" }
 			}
 		},
-		<%- include('prefab/light_sensor',
 		{
-			name: "sensor1",
-			translate: [-2.9, 1, 7.5],
-			rotate: [90, 0, 1, 0],
-			trigger: 0.15
-		}) %>,
+			"name": "sensor1",
+			"transform": {
+				"translate": [-2.9, 1, 7.5],
+				"rotate": [90, 0, 1, 0]
+			},
+			"signal_output": {
+				"sensitivity": 3
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "light_sensor" }
+			}
+		},
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
 			sides: 1,
@@ -134,13 +147,20 @@
 				"parameters": { "source": "spotlight" }
 			}
 		},
-		<%- include('prefab/light_sensor',
 		{
-			name: "sensor2",
-			translate: [11.9, 1, 7.5],
-			rotate: [-90, 0, 1, 0],
-			trigger: 0.015
-		}) %>,
+			"name": "sensor2",
+			"transform": {
+				"translate": [11.9, 1, 7.5],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"signal_output": {
+				"sensitivity": 2.5
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "light_sensor" }
+			}
+		},
 		<%- include("prefab/cube", {
 			name: "mirrorcube2",
 			sides: 1,

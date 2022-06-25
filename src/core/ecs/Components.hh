@@ -28,7 +28,10 @@ namespace ecs {
     public:
         ComponentBase(const char *name) : name(name) {}
 
-        virtual bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) = 0;
+        virtual bool LoadEntity(Lock<AddRemove> lock,
+            const EntityScope &scope,
+            Entity &dst,
+            const picojson::value &src) = 0;
         virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) = 0;
         virtual void ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt) = 0;
 
@@ -51,18 +54,10 @@ namespace ecs {
             }
         }
 
-        bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) override {
-            EntityScope scope;
-            if (dst.Has<SceneInfo>(lock)) {
-                auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scope.scene = sceneInfo.scene;
-                if (sceneInfo.prefabStagingId.Has<Name>(lock)) {
-                    scope.prefix = sceneInfo.prefabStagingId.Get<Name>(lock);
-                } else {
-                    auto parentScene = scope.scene.lock();
-                    if (parentScene) scope.prefix.scene = parentScene->name;
-                }
-            }
+        bool LoadEntity(Lock<AddRemove> lock,
+            const EntityScope &scope,
+            Entity &dst,
+            const picojson::value &src) override {
             if (dst.Has<CompType>(lock)) {
                 CompType srcComp;
                 if (!Load(scope, srcComp, src)) return false;

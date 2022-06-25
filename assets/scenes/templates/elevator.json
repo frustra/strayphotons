@@ -189,6 +189,19 @@
 				"prefab": "template",
 				"parameters": { "source": "spotlight" }
 			}
+		},
+		{
+			"name": "elevator_door",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.0, -2.9],
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 1.5, 2.3]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
 		}
     ]
 }

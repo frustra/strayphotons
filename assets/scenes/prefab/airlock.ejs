@@ -40,22 +40,38 @@
 		<% } %>
 	}
 },
-<%- include('slide_door', {
-	scene: (locals.scene ? scene : "global"),
-	name: name + '-out',
-	translate: [0, 0, 0],
-	rotate: 0,
-	input_signal: locals.out_signal,
-	parent: name
-}) %>,
-<%- include('slide_door', {
-	scene: (locals.scene ? scene : "global"),
-	name: name + '-in',
-	translate: [3, 0, 0],
-	rotate: 0,
-	input_signal: locals.in_signal,
-	parent: name
-}) %>,
+{
+	"name": <%= name + '-out' %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 0, 0]
+	},
+	<% if (locals.out_signal) { %>
+	"signal_bindings": {
+		"door_open": <%= locals.out_signal %>
+	},
+	<% } %>
+	"script": {
+		"prefab": "template",
+		"parameters": { "source": "slide_door" }
+	}
+},
+{
+	"name": <%= name + '-in' %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [3, 0, 0]
+	},
+	<% if (locals.in_signal) { %>
+	"signal_bindings": {
+		"door_open": <%= locals.in_signal %>
+	},
+	<% } %>
+	"script": {
+		"prefab": "template",
+		"parameters": { "source": "slide_door" }
+	}
+},
 {
 	"name": <%= name + '-light' %>,
 	"light": {

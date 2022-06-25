@@ -148,14 +148,6 @@
 				]
 			}
 		},
-		<%- include('prefab/slide_door', {
-			scene: 'station-center',
-			name: 'elevator_door',
-			parent: 'elevator',
-			translate: [0, 0.0, -2.9],
-			rotate: [90, 0, 1, 0],
-			scale: [1, 1.5, 2.3]
-		}) %>,
 		{
 			"name": "elevator_open_zone",
 			"transform": {

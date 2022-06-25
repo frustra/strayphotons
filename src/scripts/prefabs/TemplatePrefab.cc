@@ -15,7 +15,7 @@ namespace ecs {
         Entity rootEnt;
         std::string sourceName;
 
-        ecs::Name rootScope;
+        ecs::EntityScope rootScope;
         std::shared_ptr<sp::Asset> asset;
         picojson::value root;
 
@@ -28,10 +28,11 @@ namespace ecs {
         bool Parse(Lock<AddRemove> lock) {
             if (sourceName.empty()) return false;
 
-            rootScope = {scene->name, ""};
-            if (rootEnt.Has<Name>(lock)) rootScope = rootEnt.Get<Name>(lock);
+            rootScope.scene = scene;
+            rootScope.prefix = {scene->name, ""};
+            if (rootEnt.Has<Name>(lock)) rootScope.prefix = rootEnt.Get<Name>(lock);
 
-            Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.String());
+            Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.prefix.String());
 
             asset = sp::GAssets.Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
             if (!asset) {
@@ -73,7 +74,7 @@ namespace ecs {
 
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
-                    if (!componentType->LoadEntity(lock, rootEnt, comp.second)) {
+                    if (!componentType->LoadEntity(lock, rootScope, rootEnt, comp.second)) {
                         Errorf("Failed to load component, ignoring: %s", comp.first);
                     }
                 } else {
@@ -86,11 +87,12 @@ namespace ecs {
         void AddEntities(Lock<AddRemove> lock, std::string_view nestedScope = {}, Transform offset = {}) {
             if (!entityList) return;
 
-            ecs::Name scope;
+            ecs::EntityScope scope;
             if (nestedScope.empty()) {
                 scope = rootScope;
             } else {
-                scope = ecs::Name(nestedScope, rootScope);
+                scope.scene = rootScope.scene;
+                scope.prefix = ecs::Name(nestedScope, rootScope.prefix);
             }
 
             // Find all named entities first so they can be referenced.
@@ -99,7 +101,7 @@ namespace ecs {
 
                 if (obj.count("name")) {
                     auto relativeName = obj["name"].get<string>();
-                    ecs::Name name(relativeName, scope);
+                    ecs::Name name(relativeName, scope.prefix);
                     if (!name) {
                         Errorf("Template %s contains invalid entity name: %s", sourceName, relativeName);
                         continue;
@@ -115,7 +117,7 @@ namespace ecs {
                 ecs::Entity newEntity;
                 if (obj.count("name")) {
                     auto relativeName = obj["name"].get<string>();
-                    ecs::Name entityName(relativeName, scope);
+                    ecs::Name entityName(relativeName, scope.prefix);
                     if (!entityName) {
                         Errorf("Template %s contains invalid entity name: %s", sourceName, relativeName);
                         continue;
@@ -134,7 +136,7 @@ namespace ecs {
 
                     auto componentType = ecs::LookupComponent(comp.first);
                     if (componentType != nullptr) {
-                        if (!componentType->LoadEntity(lock, newEntity, comp.second)) {
+                        if (!componentType->LoadEntity(lock, scope, newEntity, comp.second)) {
                             Errorf("Failed to load component, ignoring: %s", comp.first);
                         }
                     } else {

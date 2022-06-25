@@ -33,22 +33,32 @@
 		<% } %>
 	}
 },
-<%- include('slide_door', {
-	scene: (locals.scene ? scene : "global"),
-	name: name + '-in',
-	parent: name,
-	translate: [0, 0, -1.95],
-	rotate: [90, 0, 1, 0],
-	scale: [1, 1.5, 2.3],
-}) %>,
-<%- include('slide_door', {
-	scene: (locals.scene ? scene : "global"),
-	name: name + '-out',
-	parent: name,
-	translate: [0, 0, 2],
-	rotate: [90, 0, 1, 0],
-	scale: [1, 1.5, 2.3],
-}) %>,
+{
+	"name": <%= name + '-in' %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 0, -1.95],
+		"rotate": [90, 0, 1, 0],
+		"scale": [1, 1.5, 2.3]
+	},
+	"script": {
+		"prefab": "template",
+		"parameters": { "source": "slide_door" }
+	}
+},
+{
+	"name": <%= name + '-out' %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 0, 2],
+		"rotate": [90, 0, 1, 0],
+		"scale": [1, 1.5, 2.3]
+	},
+	"script": {
+		"prefab": "template",
+		"parameters": { "source": "slide_door" }
+	}
+},
 {
 	"name": <%= name + '-button-out' %>,
 	"transform": {
