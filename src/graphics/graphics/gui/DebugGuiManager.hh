@@ -1,11 +1,11 @@
 #pragma once
 
-#include "graphics/gui/GuiManager.hh"
+#include "graphics/gui/SystemGuiManager.hh"
 
 namespace sp {
     class GraphicsContext;
 
-    class DebugGuiManager : public GuiManager {
+    class DebugGuiManager : public SystemGuiManager {
     public:
         DebugGuiManager();
         virtual ~DebugGuiManager() {}

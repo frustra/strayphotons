@@ -22,13 +22,13 @@ namespace sp {
         "Scaling factor for menu cursor position");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
-        : GuiManager("menu_gui", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
+        : SystemGuiManager("menu", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
         {
             auto lock =
                 ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
             auto gui = guiEntity.Get(lock);
-            Assert(gui.Has<ecs::EventInput>(lock), "Expected menu_gui to start with an EventInput");
+            Assert(gui.Has<ecs::EventInput>(lock), "Expected menu gui to start with an EventInput");
 
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             if (MenuOpen()) {
@@ -41,7 +41,7 @@ namespace sp {
     }
 
     void MenuGuiManager::BeforeFrame() {
-        GuiManager::BeforeFrame();
+        SystemGuiManager::BeforeFrame();
 
         ImGui::StyleColorsClassic();
 

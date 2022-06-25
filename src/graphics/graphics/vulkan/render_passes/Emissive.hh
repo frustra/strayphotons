@@ -6,7 +6,7 @@ namespace sp::vulkan::renderer {
     class Emissive {
     public:
         void AddPass(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Screen, ecs::LaserLine, ecs::TransformSnapshot>> lock);
+            ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock);
 
     private:
         struct Screen {

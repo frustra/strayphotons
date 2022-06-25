@@ -141,7 +141,8 @@ namespace sp {
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);
-        ecs::EventBindings::SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, mouse, ctx->ImmediateCursor());
+
+        ecs::EventBindings::SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, mouse, action == GLFW_PRESS);
 
         if (mouse.Has<ecs::SignalOutput>(lock)) {
             std::string signalName;

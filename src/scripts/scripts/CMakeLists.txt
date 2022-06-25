@@ -3,6 +3,7 @@ target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     AudioScripts.cc
     Elevator.cc
     InputScripts.cc
+    InteractionScripts.cc
     LightScripts.cc
     MiscScripts.cc
     PhysicsScripts.cc

@@ -335,8 +335,9 @@ namespace sp {
 
         using Group = ecs::PhysicsGroup;
         // Don't collide interactive elements with the world, or the player's body
-        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::World, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::Player, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::World, false);
         // Don't collide the player with themselves, but allow the hands to collide with eachother
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::HeldObject, false);

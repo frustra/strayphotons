@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/Histogram.hh"
-#include "graphics/gui/GuiManager.hh"
+#include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
 #include <imgui/imgui.h>

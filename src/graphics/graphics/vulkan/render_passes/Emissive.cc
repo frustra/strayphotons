@@ -6,7 +6,7 @@
 
 namespace sp::vulkan::renderer {
     void Emissive::AddPass(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Screen, ecs::LaserLine, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock) {
         screens.clear();
 
         lasers.resize(0);
@@ -59,7 +59,17 @@ namespace sp::vulkan::renderer {
                     if (!ent.Has<ecs::Transform>(lock)) continue;
 
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
-                    auto id = builder.Read(screenComp.textureName, Access::FragmentShaderSampleImage);
+
+                    string textureName;
+                    if (screenComp.textureName.empty() && ent.Has<ecs::Gui>(lock)) {
+                        auto namePtr = std::get_if<std::string>(&ent.Get<ecs::Gui>(lock).target);
+                        if (namePtr) textureName = *namePtr + "_gui";
+                    }
+                    if (textureName.empty()) textureName = screenComp.textureName;
+
+                    if (builder.GetID(textureName, false) == InvalidResource) continue;
+
+                    auto id = builder.Read(textureName, Access::FragmentShaderSampleImage);
 
                     Screen screen;
                     screen.id = id;

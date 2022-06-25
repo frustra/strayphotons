@@ -18,7 +18,7 @@
 #include <robin_hood.h>
 
 namespace sp {
-    class GuiManager;
+    class GuiContext;
 
 #ifdef SP_XR_SUPPORT
     namespace xr {
@@ -41,7 +41,7 @@ namespace sp::vulkan {
         void RenderFrame();
         void EndFrame();
 
-        void SetDebugGui(GuiManager &gui);
+        void SetDebugGui(GuiContext &gui);
 
 #ifdef SP_XR_SUPPORT
         void SetXRSystem(shared_ptr<xr::XrSystem> xr) {
@@ -62,8 +62,9 @@ namespace sp::vulkan {
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
 #endif
 
-        void AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock);
-        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock);
+        void AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock);
+        void AddDeferredPasses(
+            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock);
         void AddMenuOverlay();
 
         CFuncCollection funcs;
@@ -80,11 +81,12 @@ namespace sp::vulkan {
         unique_ptr<GuiRenderer> guiRenderer;
         struct RenderableGui {
             ecs::Entity entity;
-            GuiManager *manager;
+            GuiContext *context;
+            shared_ptr<GuiContext> contextShared;
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
         vector<RenderableGui> guis;
-        GuiManager *debugGui = nullptr;
+        GuiContext *debugGui = nullptr;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 

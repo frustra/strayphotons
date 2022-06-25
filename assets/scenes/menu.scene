@@ -17,12 +17,36 @@
 		},
 		{
 			"transform": {
-				"translate": [3.8, 1, -2.8],
+				"translate": [3.8, 1.1, -2.8],
+				"scale": [0.8, 0.5, 1],
 				"rotate": [[-45, 0, 1, 0], [-45, 1, 0, 0]]
 			},
+			"gui": {
+				"window": "lobby"
+			},
 			"screen": {
-				"target": "menu_gui",
 				"luminance": [3, 1, 3]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "world_gui"
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [0, 1.4, 3.9],
+				"rotate": [180, 0, 1, 0]
+			},
+			"gui": {
+				"window": "inspector"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "world_gui"
+				}
 			}
 		},
 		{

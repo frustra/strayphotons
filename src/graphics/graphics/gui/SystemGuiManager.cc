@@ -1,6 +1,5 @@
-#include "GuiManager.hh"
+#include "SystemGuiManager.hh"
 
-#include "ConsoleGui.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
@@ -12,32 +11,8 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    GuiManager::GuiManager(const std::string &name, ecs::FocusLayer layer) : name(name), focusLayer(layer) {
-        imCtx = ImGui::CreateContext();
-
-        SetGuiContext();
-        ImGuiIO &io = ImGui::GetIO();
-
-        io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
-        io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT_ARROW;
-        io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT_ARROW;
-        io.KeyMap[ImGuiKey_UpArrow] = KEY_UP_ARROW;
-        io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN_ARROW;
-        io.KeyMap[ImGuiKey_PageUp] = KEY_PAGE_UP;
-        io.KeyMap[ImGuiKey_PageDown] = KEY_PAGE_DOWN;
-        io.KeyMap[ImGuiKey_Home] = KEY_HOME;
-        io.KeyMap[ImGuiKey_End] = KEY_END;
-        io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
-        io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
-        io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
-        io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
-        io.KeyMap[ImGuiKey_A] = KEY_A;
-        io.KeyMap[ImGuiKey_C] = KEY_C;
-        io.KeyMap[ImGuiKey_V] = KEY_V;
-        io.KeyMap[ImGuiKey_X] = KEY_X;
-        io.KeyMap[ImGuiKey_Y] = KEY_Y;
-        io.KeyMap[ImGuiKey_Z] = KEY_Z;
-
+    SystemGuiManager::SystemGuiManager(const std::string &name, ecs::FocusLayer layer)
+        : GuiContext(name), focusLayer(layer) {
         guiEntity = ecs::Name("gui", name);
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
@@ -46,7 +21,7 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, layer);
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
-                ent.Set<ecs::Gui>(lock).manager = this;
+                ent.Set<ecs::Gui>(lock).target = this;
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER, playerEntity, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
@@ -58,19 +33,9 @@ namespace sp {
             });
     }
 
-    GuiManager::~GuiManager() {
-        SetGuiContext();
-        ImGui::DestroyContext(imCtx);
-        imCtx = nullptr;
-    }
-
-    void GuiManager::SetGuiContext() {
-        ImGui::SetCurrentContext(imCtx);
-    }
-
-    void GuiManager::BeforeFrame() {
+    void SystemGuiManager::BeforeFrame() {
         ZoneScoped;
-        SetGuiContext();
+        GuiContext::BeforeFrame();
         ImGuiIO &io = ImGui::GetIO();
 
         {
@@ -131,13 +96,4 @@ namespace sp {
         }
     }
 
-    void GuiManager::DefineWindows() {
-        for (auto &component : components) {
-            component->Add();
-        }
-    }
-
-    void GuiManager::Attach(const std::shared_ptr<GuiRenderable> &component) {
-        components.emplace_back(component);
-    }
 } // namespace sp

@@ -10,18 +10,25 @@
 struct ImGuiContext;
 
 namespace sp {
-
-    class GraphicsManager;
-
     class GuiRenderable {
     public:
         virtual void Add() = 0;
     };
 
-    class GuiManager {
+    class GuiWindow : public GuiRenderable {
     public:
-        GuiManager(const std::string &name, ecs::FocusLayer layer = ecs::FocusLayer::GAME);
-        virtual ~GuiManager();
+        const string name;
+
+        GuiWindow(const string &name) : name(name) {}
+        virtual void DefineContents() = 0;
+
+        virtual void Add();
+    };
+
+    class GuiContext {
+    public:
+        GuiContext(const std::string &name);
+        virtual ~GuiContext();
         void Attach(const std::shared_ptr<GuiRenderable> &component);
         void SetGuiContext();
 
@@ -32,16 +39,11 @@ namespace sp {
             return name;
         }
 
-    protected:
-        ecs::EntityRef guiEntity;
-        ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
-        ecs::EntityRef playerEntity = ecs::Name("player", "player");
-
-        std::string name;
-        ecs::FocusLayer focusLayer;
-
     private:
         std::vector<std::shared_ptr<GuiRenderable>> components;
         ImGuiContext *imCtx = nullptr;
+        std::string name;
     };
+
+    bool CreateGuiWindow(GuiContext *context, const string &name);
 } // namespace sp

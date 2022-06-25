@@ -6,7 +6,7 @@
 struct ImFontAtlas;
 
 namespace sp {
-    class GuiManager;
+    class GuiContext;
 } // namespace sp
 
 namespace sp::vulkan {
@@ -15,7 +15,7 @@ namespace sp::vulkan {
     class GuiRenderer : public NonCopyable {
     public:
         GuiRenderer(DeviceContext &device);
-        void Render(GuiManager &manager, CommandContext &cmd, vk::Rect2D viewport);
+        void Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport);
         void Tick();
 
     private:

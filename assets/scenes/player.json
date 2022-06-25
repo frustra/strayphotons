@@ -37,6 +37,7 @@
             "event_input": [
                 "/script/camera_rotate",
                 "/interact/grab",
+                "/interact/press",
                 "/interact/rotate"
             ],
             "focus": "GAME",
