@@ -1250,6 +1250,11 @@
 		{
 			"name": "elevator_door",
 			"transform": {
+				"translate": [
+					0,
+					0.1,
+					-0.33
+				],
 				"rotate": [
 					90,
 					0,
@@ -1260,98 +1265,13 @@
 					1,
 					1.5,
 					2.3
-				],
-				"translate": [
-					0,
-					0.1,
-					-0.33
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "elevator_door-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "elevator_door"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "blackhole1:elevator_door/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "elevator_door-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "elevator_door",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "blackhole1:elevator_door/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{

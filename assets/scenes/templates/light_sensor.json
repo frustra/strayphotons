@@ -1,0 +1,53 @@
+{
+	"components": {
+		"light_sensor": {
+			"translate": [0, 0, 0.1],
+			"direction": [0, 0, 1]
+		},
+		"signal_output": {
+			"sensitivity": 5
+		},
+		"signal_bindings": {
+			"light_value_r_scaled": {
+                "operator": "multiply",
+                "values": [ "scoperoot/light_value_r", "scoperoot/sensitivity" ]
+			},
+			"light_value_g_scaled": {
+                "operator": "multiply",
+                "values": [ "scoperoot/light_value_g", "scoperoot/sensitivity" ]
+			},
+			"light_value_b_scaled": {
+                "operator": "multiply",
+                "values": [ "scoperoot/light_value_b", "scoperoot/sensitivity" ]
+			},
+			"value": {
+				"operator": "binary_and",
+				"values": [ "scoperoot/light_value_r_scaled", "scoperoot/light_value_g_scaled", "scoperoot/light_value_b_scaled"]
+			}
+		},
+		"script": [
+			{
+				"prefab": "gltf",
+				"parameters": {
+					"model": "sensor",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "plate",
+			"renderable": "sensor-plate-light",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, -0.015]
+			},
+			"physics": {
+				"model": "sensor-plate-light",
+				"dynamic": false
+			}
+		}
+	]
+}

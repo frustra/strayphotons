@@ -164,90 +164,10 @@
 				]
 			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "template",
 				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+					"source": "slide_door"
 				}
-			},
-			"signal_output": {},
-			"signal_bindings": {}
-		},
-		{
-			"name": "global:airlock1-2-out-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock1-2-out"
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock1-2-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:airlock1-2-out-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock1-2-out",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock1-2-out/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
 			}
 		},
 		{
@@ -260,93 +180,14 @@
 					0
 				]
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
-				}
-			},
-			"signal_output": {},
 			"signal_bindings": {
 				"door_open": "sensor1"
-			}
-		},
-		{
-			"name": "global:airlock1-2-in-left",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock1-2-in"
 			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							0.7
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock1-2-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
-			}
-		},
-		{
-			"name": "global:airlock1-2-in-right",
-			"renderable": "door-panel",
-			"transform": {
-				"parent": "global:airlock1-2-in",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"animation": {
-				"states": [
-					{
-						"delay": 0.5,
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					},
-					{
-						"delay": 0.5,
-						"translate": [
-							0,
-							0,
-							-0.7
-						],
-						"rotate": [
-							180,
-							0,
-							1,
-							0
-						]
-					}
-				]
-			},
-			"signal_bindings": {
-				"animation_state": "global:airlock1-2-in/door_open"
-			},
-			"physics": {
-				"model": "door-panel",
-				"dynamic": false
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "slide_door"
+				}
 			}
 		},
 		{

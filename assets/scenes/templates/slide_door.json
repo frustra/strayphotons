@@ -1,0 +1,72 @@
+{
+	"components": {
+		"signal_output": {}
+	},
+	"entities": [
+		{
+			"name": "frame",
+			"transform": {
+				"parent": "scoperoot"
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "door-frame",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		},
+		{
+			"name": "left-panel",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "scoperoot"
+			},
+			"animation": {
+				"states": [
+					{"delay": 0.5},
+					{
+						"delay": 0.5,
+						"translate": [0, 0, 0.7]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_state": "scoperoot/door_open"
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		},
+		{
+			"name": "right-panel",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "scoperoot",
+				"rotate": [180, 0, 1, 0]
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [180, 0, 1, 0]
+					},
+					{
+						"delay": 0.5,
+						"translate": [0, 0, -0.7],
+						"rotate": [180, 0, 1, 0]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_state": "scoperoot/door_open"
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		}		
+	]
+}
