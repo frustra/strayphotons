@@ -91,9 +91,7 @@ namespace sp {
 
         PxFilterData filterData;
         filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP;
-        if (CVarPropJumping.Get()) {
-            filterData.word0 |= ecs::PHYSICS_GROUP_HELD_OBJECT;
-        }
+        if (CVarPropJumping.Get()) filterData.word0 |= ecs::PHYSICS_GROUP_HELD_OBJECT;
         PxControllerFilters moveQueryFilter(&filterData);
 
         float dt = (float)(manager.interval.count() / 1e9);

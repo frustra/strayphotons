@@ -506,9 +506,7 @@ namespace sp {
         if (ph.dynamic) {
             actor = pxPhysics->createRigidDynamic(pxTransform);
 
-            if (ph.kinematic) {
-                actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-            }
+            if (ph.kinematic) actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
         } else {
             actor = pxPhysics->createRigidStatic(pxTransform);
         }
