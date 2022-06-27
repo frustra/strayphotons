@@ -90,10 +90,9 @@ namespace sp {
         }
 
         PxFilterData filterData;
+        filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP;
         if (CVarPropJumping.Get()) {
-            filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_HELD_OBJECT;
-        } else {
-            filterData.word0 = ecs::PHYSICS_GROUP_WORLD;
+            filterData.word0 |= ecs::PHYSICS_GROUP_HELD_OBJECT;
         }
         PxControllerFilters moveQueryFilter(&filterData);
 

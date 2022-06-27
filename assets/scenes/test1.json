@@ -224,38 +224,10 @@
 			"transform": {
 				"translate": [-1.5, 0.5, -2.5]
 			},
-			"physics": {
-				"model": "box",
-				"density": 1
-			},
             "script": {
                 "prefab": "template",
-                "parameters": { "source": "interactive" }
+                "parameters": { "source": "mirrorcube" }
             }
-		},
-		{
-			"name": "cubemirror",
-			"transform": {
-				"parent": "mova-mirror",
-				"rotate": [90, 0, 1, 0]
-			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "mirrorface" }
-            }
-		},
-		{
-			"transform": {
-				"parent": "mova-mirror",
-				"translate": [0, -0.5, 0]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "mcube",
-					"render": true
-				}
-			}
 		},
 		{
 			"name": "mcube",

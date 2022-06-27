@@ -1,17 +1,19 @@
 {
 	"entities": [
 		{
+			"name": "optic",
 			"optic": "mirror",
 			"renderable": "mirror",
 			"physics": {
 				"shapes": {
-					"box": [1, 1, 0.05],
+					"box": [0.99, 0.99, 0.02],
 					"transform": {
-						"translate": [0, 0, 0.025]
+						"translate": [0, 0, 0.0095]
 					}
 				},
+				"group": "world_overlap",
 				"density": 1,
-				"kinematic": true
+				"dynamic": false
 			},
 			"transform": {
 				"parent": "scoperoot",
@@ -20,6 +22,7 @@
 			}
 		},
 		{
+			"name": "occluder",
 			"renderable": "occluder",
 			"transform": {
 				"parent": "scoperoot",
