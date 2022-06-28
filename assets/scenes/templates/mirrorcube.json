@@ -32,10 +32,10 @@
 			"transform": {
 				"parent": "mirrorcube"
 			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "mirrorface" }
-            }
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorface" }
+			}
 		}
 	]
 }
