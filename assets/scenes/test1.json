@@ -224,10 +224,10 @@
 			"transform": {
 				"translate": [-1.5, 0.5, -2.5]
 			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "mirrorcube" }
-            }
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
 		},
 		{
 			"name": "mcube",
@@ -237,10 +237,10 @@
 			"physics": {
 				"model": "box"
 			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "interactive" }
-            }
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
 		},
 		{
 			"transform": {
@@ -273,10 +273,10 @@
 			"physics": {
 				"model": "box"
 			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "interactive" }
-            }
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
 		},
 		{
 			"renderable": "box",
@@ -286,10 +286,10 @@
 			"physics": {
 				"model": "box"
 			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "interactive" }
-            }
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
 		},
 		{
 			"renderable": "dodecahedron",
@@ -299,10 +299,10 @@
 			"physics": {
 				"model": "dodecahedron"
 			},
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "interactive" }
-            }
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
 		},
 		{
 			"name": "global:spawn",
