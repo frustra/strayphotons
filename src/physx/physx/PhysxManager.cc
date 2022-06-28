@@ -532,7 +532,7 @@ namespace sp {
             userData->shapeIndexes.reserve(ph.shapes.size());
             for (auto &shape : ph.shapes) {
                 PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                    GeometryFromShape(shape).any(),
+                    GeometryFromShape(shape, scale).any(),
                     *userData->material);
                 Assertf(pxShape, "Failed to create physx shape");
 
@@ -630,7 +630,7 @@ namespace sp {
 
                 userData->shapeIndexes.clear();
                 for (auto &shape : ph.shapes) {
-                    auto geometry = GeometryFromShape(shape);
+                    auto geometry = GeometryFromShape(shape, scale);
 
                     auto *pxShape = PxRigidActorExt::createExclusiveShape(*actor, geometry.any(), *userData->material);
                     Assertf(pxShape, "Failed to create physx shape");
@@ -659,7 +659,7 @@ namespace sp {
 
                     if (shape.shape != shapeIndex.first.shape) {
                         // Logf("Updating actor shape geometry: index %u", shapeIndex.second);
-                        auto geometry = GeometryFromShape(shape);
+                        auto geometry = GeometryFromShape(shape, scale);
                         pxShapes[shapeIndex.second]->setGeometry(geometry.any());
                         shapesChanged = true;
                     }
@@ -826,8 +826,8 @@ namespace sp {
         }
     }
 
-    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape) {
-        auto scale = shape.transform.GetScale();
+    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) {
+        auto scale = shape.transform.GetScale() * parentScale;
         return std::visit(
             [this, &scale](auto &&arg) {
                 using T = std::decay_t<decltype(arg)>;
