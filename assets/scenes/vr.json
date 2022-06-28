@@ -56,6 +56,9 @@
                 "angular_damping": 100
             },
             "physics_query": {},
+            "event_input": [
+                "/interact/press"
+            ],
             "script": [
                 {
                     "prefab": "gltf",
@@ -68,7 +71,8 @@
                     "onPhysicsUpdate": "vr_hand",
                     "parameters": {
                         "hand": "left",
-                        "teleport_distance": 2.0
+                        "teleport_distance": 2.0,
+                        "point_distance": 2.0
                     }
                 }
             ]
@@ -85,6 +89,9 @@
                 "angular_damping": 100
             },
             "physics_query": {},
+            "event_input": [
+                "/interact/press"
+            ],
             "script": [
                 {
                     "prefab": "gltf",
@@ -97,10 +104,25 @@
                     "onPhysicsUpdate": "vr_hand",
                     "parameters": {
                         "hand": "right",
-                        "teleport_distance": 2.0
+                        "teleport_distance": 2.0,
+                        "point_distance": 2.0
                     }
                 }
             ]
+        },
+        {
+            "name": "laser_pointer",
+            "transform": {},
+            "laser_line": {
+                "color": [1, 0, 1],
+                "media_density": 0,
+                "radius": 0.002,
+                "on": false,
+                "points": [
+                    [0, 0, 0],
+                    [0, 0, -1]
+                ]
+            }
         }
     ]
 }

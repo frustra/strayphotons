@@ -7,9 +7,10 @@
 #include "game/Scene.hh"
 #include "input/BindingNames.hh"
 
-namespace ecs {
-    static sp::CVar<int> CVarHandCollisionShapes("p.HandCollisionShapes", 1, "0: boxes, 1: capsules");
-    static sp::CVar<int> CVarHandOverlapTest("p.HandOverlapTest",
+namespace sp::scripts {
+    using namespace ecs;
+    static CVar<int> CVarHandCollisionShapes("p.HandCollisionShapes", 1, "0: boxes, 1: capsules");
+    static CVar<int> CVarHandOverlapTest("p.HandOverlapTest",
         0,
         "0: no overlap test, 1: per-finger overlap, 2: whole-hand overlap");
 
@@ -70,13 +71,17 @@ namespace ecs {
         std::array<Transform, boneDefinitions.size()> queryTransforms;
         std::array<PhysicsShape, boneDefinitions.size()> currentShapes;
         PhysicsGroupMask collisionMask;
-        EntityRef inputRootRef, physicsRootRef, controllerRef;
-        Entity grabEntity;
+        EntityRef inputRootRef, physicsRootRef, controllerRef, laserPointerRef;
+        Entity grabEntity, pointEntity, pressEntity;
         std::string actionPrefix;
+
+        PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQuery;
 
         bool Init(ScriptState &state, Lock<Read<ecs::Name>> lock, Entity ent) {
             auto handStr = state.GetParam<std::string>("hand");
-            sp::to_lower(handStr);
+            to_lower(handStr);
+
+            laserPointerRef = ecs::Name("vr", "laser_pointer");
 
             char handChar = 'l';
             ecs::Name inputScope("input", "");
@@ -180,6 +185,101 @@ namespace ecs {
         };
     };
 
+    static void handlePointing(ScriptData &scriptData,
+        PhysicsUpdateLock lock,
+        Entity ent,
+        bool isPointing,
+        double pointDistance) {
+
+        Entity pointTarget;
+        glm::vec3 pointDir, pointOrigin, pointPos;
+
+        auto &query = ent.Get<PhysicsQuery>(lock);
+        if (isPointing) {
+            if (scriptData.physicsRefs[6] && scriptData.physicsRefs[7]) {
+                auto indexBone0 = scriptData.physicsRefs[6].Get(lock);
+                auto indexBone1 = scriptData.physicsRefs[7].Get(lock);
+
+                if (indexBone0.Has<TransformSnapshot>(lock) && indexBone1.Has<TransformSnapshot>(lock)) {
+                    auto &tr0 = indexBone0.Get<TransformSnapshot>(lock);
+                    auto &tr1 = indexBone1.Get<TransformSnapshot>(lock);
+
+                    pointOrigin = tr1.GetPosition();
+                    pointDir = glm::normalize(pointOrigin - tr0.GetPosition());
+                }
+            }
+
+            PhysicsQuery::Raycast::Result pointResult;
+            if (scriptData.pointQuery) {
+                auto &pointQuery = query.Lookup(scriptData.pointQuery);
+                if (pointQuery.result) pointResult = pointQuery.result.value();
+                if (glm::length(pointDir) > 0) {
+                    pointQuery.direction = pointDir;
+                    pointQuery.relativeDirection = false;
+                    pointQuery.position = pointOrigin;
+                    pointQuery.relativePosition = false;
+                }
+            } else {
+                scriptData.pointQuery = query.NewQuery(
+                    PhysicsQuery::Raycast(pointDistance, PhysicsGroupMask(PHYSICS_GROUP_USER_INTERFACE)));
+            }
+
+            pointTarget = pointResult.target;
+            pointPos = pointResult.position;
+        }
+
+        if (scriptData.pointEntity && scriptData.pointEntity != pointTarget) {
+            EventBindings::SendEvent(lock,
+                scriptData.pointEntity,
+                INTERACT_EVENT_INTERACT_POINT,
+                Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
+        }
+        if (pointTarget) {
+            Transform pointTransform;
+            pointTransform.SetPosition(pointPos);
+            EventBindings::SendEvent(lock,
+                pointTarget,
+                INTERACT_EVENT_INTERACT_POINT,
+                Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransform});
+        }
+        scriptData.pointEntity = pointTarget;
+
+        auto laser = scriptData.laserPointerRef.Get(lock);
+        if (laser && laser.Has<LaserLine>(lock)) {
+            auto &laserLine = laser.Get<LaserLine>(lock);
+            if (pointTarget && std::holds_alternative<LaserLine::Line>(laserLine.line)) {
+                auto &line = std::get<LaserLine::Line>(laserLine.line);
+                line.points[0] = pointOrigin;
+                line.points[1] = pointPos;
+                laserLine.on = true;
+            } else {
+                laserLine.on = false;
+            }
+        }
+
+        Event event;
+        while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_PRESS, event)) {
+            if (std::holds_alternative<bool>(event.data)) {
+                if (scriptData.pressEntity) {
+                    // Unpress the currently pressed entity
+                    EventBindings::SendEvent(lock,
+                        scriptData.pressEntity,
+                        INTERACT_EVENT_INTERACT_PRESS,
+                        Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
+                    scriptData.pressEntity = {};
+                }
+                if (std::get<bool>(event.data) && pointTarget) {
+                    // Press the entity being looked at
+                    EventBindings::SendEvent(lock,
+                        pointTarget,
+                        INTERACT_EVENT_INTERACT_PRESS,
+                        Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
+                    scriptData.pressEntity = pointTarget;
+                }
+            }
+        }
+    }
+
     InternalPhysicsScript vrHandScript("vr_hand",
         [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
@@ -202,7 +302,7 @@ namespace ecs {
             auto controllerEnt = scriptData.controllerRef.Get(lock);
 
             // Read and update overlap queries
-            sp::EnumArray<Entity, BoneGroup> groupOverlaps = {};
+            EnumArray<Entity, BoneGroup> groupOverlaps = {};
             for (size_t i = 0; i < boneDefinitions.size(); i++) {
                 if (!scriptData.inputRefs[i] || !scriptData.physicsRefs[i]) continue;
 
@@ -257,7 +357,8 @@ namespace ecs {
             }
 
             // Handle interaction events
-            auto grabSignal = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_index");
+            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_index");
+            auto grabSignal = indexCurl;
             auto grabTarget = scriptData.grabEntity;
             if (teleported || grabSignal < 0.18) {
                 grabTarget = {};
@@ -268,8 +369,8 @@ namespace ecs {
                 // Drop the currently held entity
                 EventBindings::SendEvent(lock,
                     scriptData.grabEntity,
-                    sp::INTERACT_EVENT_INTERACT_GRAB,
-                    Event{sp::INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                    INTERACT_EVENT_INTERACT_GRAB,
+                    Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                 scriptData.grabEntity = {};
             }
             if (grabTarget && grabTarget != scriptData.grabEntity) {
@@ -277,11 +378,15 @@ namespace ecs {
                 auto globalTransform = transform.GetGlobalTransform(lock);
                 if (EventBindings::SendEvent(lock,
                         grabTarget,
-                        sp::INTERACT_EVENT_INTERACT_GRAB,
-                        Event{sp::INTERACT_EVENT_INTERACT_GRAB, ent, globalTransform}) > 0) {
+                        INTERACT_EVENT_INTERACT_GRAB,
+                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, globalTransform}) > 0) {
                     scriptData.grabEntity = grabTarget;
                 }
             }
+
+            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_middle");
+            bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
+            handlePointing(scriptData, lock, ent, isPointing, state.GetParam<double>("point_distance"));
 
             // Update the hand's physics shape
             ph.shapes.clear();
@@ -308,4 +413,4 @@ namespace ecs {
 
             state.userData = scriptData;
         });
-} // namespace ecs
+} // namespace sp::scripts

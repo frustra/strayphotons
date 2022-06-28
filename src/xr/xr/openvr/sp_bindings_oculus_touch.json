@@ -46,6 +46,24 @@
             {
                "inputs" : {
                   "click" : {
+                     "output" : "/actions/main/in/press"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/a"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/main/in/press"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/a"
+            },
+            {
+               "inputs" : {
+                  "click" : {
                      "output" : "/actions/main/in/teleport"
                   }
                },
