@@ -461,7 +461,7 @@ namespace sp {
                     }
                     Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", relativeName);
                     scene->namedEntities.emplace(name, entity);
-                    scene->references.emplace_back(entity);
+                    scene->references.emplace_back(name, entity);
                 }
             }
 
