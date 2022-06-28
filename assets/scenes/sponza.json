@@ -131,67 +131,11 @@
 					-4.5
 				]
 			},
-			"physics": {
-				"model": "box",
-				"density": 1
-			},
 			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "interactive"
+					"source": "mirrorcube"
 				}
-			}
-		},
-		{
-			"transform": {
-				"parent": "mirrorcube1",
-				"translate": [
-					0,
-					-0.5,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "mcube",
-					"render": true
-				}
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube1",
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.5
-				]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mirrorcube1",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.475
-				]
 			}
 		},
 		{
@@ -203,172 +147,65 @@
 					-4.5
 				]
 			},
-			"physics": {
-				"model": "box",
-				"density": 1
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "mirrorcube"
+				}
+			}
+		},
+		{
+			"name": "mirrorcube2.mirrorface2",
+			"transform": {
+				"parent": "mirrorcube2.mirrorcube",
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				]
 			},
 			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "interactive"
+					"source": "mirrorface"
 				}
 			}
 		},
 		{
+			"name": "mirrorcube2.mirrorface3",
 			"transform": {
-				"parent": "mirrorcube2",
-				"translate": [
-					0,
-					-0.5,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "mcube",
-					"render": true
-				}
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.5
-				]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.475
-				]
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube2",
+				"parent": "mirrorcube2.mirrorcube",
 				"rotate": [
 					90,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					-0.5,
-					0,
-					0
 				]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "mirrorface"
+				}
 			}
 		},
 		{
-			"renderable": "occluder",
+			"name": "mirrorcube2.mirrorface4",
 			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					270,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-0.475,
-					0,
-					0
-				]
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube2",
+				"parent": "mirrorcube2.mirrorcube",
 				"rotate": [
 					180,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					0,
-					0,
-					0.5
 				]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					360,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					0.475
-				]
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					270,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0.5,
-					0,
-					0
-				]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					450,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0.475,
-					0,
-					0
-				]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "mirrorface"
+				}
 			}
 		},
 		{

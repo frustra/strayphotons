@@ -768,79 +768,23 @@
 		{
 			"name": "mirrorcube1",
 			"transform": {
+				"translate": [
+					2,
+					0.5,
+					5
+				],
 				"rotate": [
 					-43,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					2,
-					0.5,
-					5
 				]
-			},
-			"physics": {
-				"model": "box",
-				"density": 1
 			},
 			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "interactive"
+					"source": "mirrorcube"
 				}
-			}
-		},
-		{
-			"transform": {
-				"parent": "mirrorcube1",
-				"translate": [
-					0,
-					-0.5,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "mcube",
-					"render": true
-				}
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube1",
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.5
-				]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mirrorcube1",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.475
-				]
 			}
 		},
 		{
@@ -1231,79 +1175,23 @@
 		{
 			"name": "mirrorcube2",
 			"transform": {
+				"translate": [
+					7.8,
+					0.5,
+					5
+				],
 				"rotate": [
 					43,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					7.8,
-					0.5,
-					5
 				]
-			},
-			"physics": {
-				"model": "box",
-				"density": 1
 			},
 			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "interactive"
+					"source": "mirrorcube"
 				}
-			}
-		},
-		{
-			"transform": {
-				"parent": "mirrorcube2",
-				"translate": [
-					0,
-					-0.5,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "mcube",
-					"render": true
-				}
-			}
-		},
-		{
-			"renderable": "mirror",
-			"optic": "mirror",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.5
-				]
-			}
-		},
-		{
-			"renderable": "occluder",
-			"transform": {
-				"parent": "mirrorcube2",
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					-0.475
-				]
 			}
 		},
 		{
