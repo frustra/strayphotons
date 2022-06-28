@@ -109,24 +109,50 @@
 				"parameters": { "source": "light_sensor" }
 			}
 		},
-		<%- include("prefab/cube", {
-			name: "mirrorcube1",
-			sides: 2,
-			translate: [2, 0.5, 5],
-			rotate: [134, 0, 1, 0]
-		}) %>,
-		<%- include("prefab/cube", {
-			name: "mirrorcube2",
-			sides: 1,
-			translate: [1.5, 0.5, 1.5],
-			rotate: [-160, 0, 1, 0]
-		}) %>,
-		<%- include("prefab/cube", {
-			name: "mirrorcube3",
-			sides: 1,
-			translate: [1.5, 1.5, 1.5],
-			rotate: [-143, 0, 1, 0]
-		}) %>,
+		{
+			"name": "mirrorcube1",
+			"transform": {
+				"translate": [2, 0.5, 5],
+				"rotate": [-46, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
+		{
+			"name": "mirrorcube1.mirrorface2",
+			"transform": {
+				"parent": "mirrorcube1.mirrorcube",
+				"rotate": [-90, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorface" }
+			}
+		},
+		{
+			"name": "mirrorcube2",
+			"transform": {
+				"translate": [1.5, 0.5, 1.5],
+				"rotate": [-70, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
+		{
+			"name": "mirrorcube3",
+			"transform": {
+				"translate": [1.5, 1.5, 1.5],
+				"rotate": [-53, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
 		{
 			"name": "global:spawn",
 			"transform": {

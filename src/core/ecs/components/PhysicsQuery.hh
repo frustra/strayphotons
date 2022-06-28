@@ -46,7 +46,8 @@ namespace ecs {
             };
             std::optional<Result> result;
 
-            Raycast(float maxDistance, PhysicsGroupMask filterGroup = PHYSICS_GROUP_WORLD)
+            Raycast(float maxDistance,
+                PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_WORLD_OVERLAP))
                 : maxDistance(maxDistance), filterGroup(filterGroup) {}
         };
 
@@ -70,7 +71,7 @@ namespace ecs {
 
             Sweep(const PhysicsShape &shape,
                 float maxDistance,
-                PhysicsGroupMask filterGroup = PHYSICS_GROUP_WORLD,
+                PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_WORLD_OVERLAP),
                 glm::vec3 sweepDirection = glm::vec3(0, 0, -1))
                 : shape(shape), filterGroup(filterGroup), sweepDirection(sweepDirection), maxDistance(maxDistance) {}
         };
@@ -85,7 +86,8 @@ namespace ecs {
 
             std::optional<Entity> result;
 
-            Overlap(const PhysicsShape &shape, PhysicsGroupMask filterGroup = PHYSICS_GROUP_WORLD)
+            Overlap(const PhysicsShape &shape,
+                PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_WORLD_OVERLAP))
                 : shape(shape), filterGroup(filterGroup) {}
         };
 

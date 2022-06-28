@@ -119,12 +119,17 @@
 				"parameters": { "source": "light_sensor" }
 			}
 		},
-		<%- include("prefab/cube", {
-			name: "mirrorcube1",
-			sides: 1,
-			translate: [2, 0.5, 5],
-			rotate: [-43, 0, 1, 0]
-		}) %>,
+		{
+			"name": "mirrorcube1",
+			"transform": {
+				"translate": [2, 0.5, 5],
+				"rotate": [-43, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
 
 		<%- include("prefab/wall", {
 			y: 0,
@@ -161,12 +166,17 @@
 				"parameters": { "source": "light_sensor" }
 			}
 		},
-		<%- include("prefab/cube", {
-			name: "mirrorcube2",
-			sides: 1,
-			translate: [7.8, 0.5, 5],
-			rotate: [43, 0, 1, 0]
-		}) %>,
+		{
+			"name": "mirrorcube2",
+			"transform": {
+				"translate": [7.8, 0.5, 5],
+				"rotate": [43, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
 
 		{
 			"name": "global:spawn",

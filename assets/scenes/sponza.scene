@@ -58,16 +58,59 @@
 				}
 			}
 		},
-		<%- include("prefab/cube", {
-			name: "mirrorcube1",
-			sides: 1,
-			translate: [-0.2, 3.5, -4.5]
-		}) %>,
-		<%- include("prefab/cube", {
-			name: "mirrorcube2",
-			sides: 4,
-			translate: [0.5, 5.5, -4.5]
-		}) %>,
+		{
+			"name": "mirrorcube1",
+			"transform": {
+				"translate": [-0.2, 3.5, -4.5]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
+		{
+			"name": "mirrorcube2",
+			"transform": {
+				"translate": [0.5, 5.5, -4.5]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorcube" }
+			}
+		},
+		{
+			"name": "mirrorcube2.mirrorface2",
+			"transform": {
+				"parent": "mirrorcube2.mirrorcube",
+				"rotate": [-90, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorface" }
+			}
+		},
+		{
+			"name": "mirrorcube2.mirrorface3",
+			"transform": {
+				"parent": "mirrorcube2.mirrorcube",
+				"rotate": [90, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorface" }
+			}
+		},
+		{
+			"name": "mirrorcube2.mirrorface4",
+			"transform": {
+				"parent": "mirrorcube2.mirrorcube",
+				"rotate": [180, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorface" }
+			}
+		},
 		{
 			"renderable": "cardboard-box",
 			"transform": {

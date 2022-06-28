@@ -68,6 +68,8 @@ namespace ecs {
                     group = PhysicsGroup::NoClip;
                 } else if (physicsGroupParam == "WORLD") {
                     group = PhysicsGroup::World;
+                } else if (physicsGroupParam == "WORLD_OVERLAP") {
+                    group = PhysicsGroup::WorldOverlap;
                 } else if (physicsGroupParam == "INTERACTIVE") {
                     group = PhysicsGroup::Interactive;
                 } else if (physicsGroupParam == "HELD_OBJECT") {
@@ -78,6 +80,8 @@ namespace ecs {
                     group = PhysicsGroup::PlayerLeftHand;
                 } else if (physicsGroupParam == "PLAYER_RIGHT_HAND") {
                     group = PhysicsGroup::PlayerRightHand;
+                } else if (physicsGroupParam == "USER_INTERFACE") {
+                    group = PhysicsGroup::UserInterface;
                 } else {
                     Abortf("Unknown gltf physics group param: %s", physicsGroupParam);
                 }

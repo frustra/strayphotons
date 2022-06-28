@@ -1,7 +1,7 @@
 {
     "components": {
         "physics": {
-            "group": "interactive",
+            "group": "user_interface",
             "dynamic": false,
             "shapes": {
                 "box": [1, 1, 0.01]

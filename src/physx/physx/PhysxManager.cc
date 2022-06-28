@@ -236,7 +236,7 @@ namespace sp {
                 ecs::PhysicsUpdateLock>();
 
             {
-                ZoneScopedN("UpdateSnapshots(Physics)");
+                ZoneScopedN("UpdateSnapshots(DynamicPhysics)");
                 for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                     if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
@@ -253,14 +253,8 @@ namespace sp {
                             transform.SetRotation(PxQuatToGlmQuat(pose.q));
                             ent.Set<ecs::TransformTree>(lock, transform);
                             userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
-                        } else {
-                            transform = ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                            userData->pose = transform;
                         }
-
-                        userData->pose = transform;
-                    } else if (ent.Has<ecs::TransformTree>(lock)) {
-                        ent.Set<ecs::TransformSnapshot>(lock,
-                            ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
                     }
                 }
             }
@@ -268,10 +262,31 @@ namespace sp {
             {
                 ZoneScopedN("UpdateSnapshots(NonPhysics)");
                 for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
-                    if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock))
-                        continue;
-                    auto &transform = ent.Get<ecs::TransformTree>(lock);
-                    ent.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
+                    if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
+                    auto transform = ent.Get<const ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                    ent.Set<ecs::TransformSnapshot>(lock, transform);
+
+                    if (ent.Has<ecs::Physics>(lock)) {
+                        auto &ph = ent.Get<ecs::Physics>(lock);
+                        if (ph.dynamic && !ph.kinematic) continue;
+
+                        if (actors.count(ent) > 0) {
+                            auto const &actor = actors[ent];
+                            auto userData = (ActorUserData *)actor->userData;
+                            Assert(userData, "Physics actor is missing UserData");
+
+                            if (transform != userData->pose) {
+                                PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()),
+                                    GlmQuatToPxQuat(transform.GetRotation()));
+                                auto dynamic = actor->is<PxRigidDynamic>();
+                                if (dynamic && ph.kinematic) {
+                                    dynamic->setKinematicTarget(pxTransform);
+                                } else {
+                                    actor->setGlobalPose(pxTransform);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -334,10 +349,14 @@ namespace sp {
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
         using Group = ecs::PhysicsGroup;
+        // Don't collide world overlap elements with the world
+        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::World, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::WorldOverlap, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::HeldObject, false);
         // Don't collide interactive elements with the world, or the player's body
-        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::HeldObject, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::World, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::WorldOverlap, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::Player, false);
         // Don't collide the player with themselves, but allow the hands to collide with eachother
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::HeldObject, false);
@@ -345,14 +364,23 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::PlayerRightHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::PlayerLeftHand, (uint16_t)Group::PlayerLeftHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::PlayerRightHand, (uint16_t)Group::PlayerRightHand, false);
+        // Don't collide user interface elements with objects in the world or other interfaces
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::World, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::WorldOverlap, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Interactive, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::HeldObject, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Player, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::UserInterface, false);
         // Don't collide anything with the noclip group.
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::NoClip, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::World, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Interactive, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerLeftHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerRightHand, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::UserInterface, false);
 
         dispatcher = PxDefaultCpuDispatcherCreate(1);
         sceneDesc.cpuDispatcher = dispatcher;
@@ -478,7 +506,7 @@ namespace sp {
         if (ph.dynamic) {
             actor = pxPhysics->createRigidDynamic(pxTransform);
 
-            if (ph.kinematic) { actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true); }
+            if (ph.kinematic) actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
         } else {
             actor = pxPhysics->createRigidStatic(pxTransform);
         }

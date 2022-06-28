@@ -1,0 +1,41 @@
+{
+	"entities": [
+		{
+			"name": "mirrorcube",
+			"transform": {
+				"parent": "scoperoot"
+			},
+			"physics": {
+				"model": "box",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"transform": {
+				"parent": "mirrorcube",
+				"translate": [0, -0.5, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "mcube",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "mirrorface",
+			"transform": {
+				"parent": "mirrorcube"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "mirrorface" }
+			}
+		}
+	]
+}

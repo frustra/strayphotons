@@ -149,6 +149,8 @@ namespace ecs {
                     physics.group = PhysicsGroup::NoClip;
                 } else if (groupString == "WORLD") {
                     physics.group = PhysicsGroup::World;
+                } else if (groupString == "WORLD_OVERLAP") {
+                    physics.group = PhysicsGroup::WorldOverlap;
                 } else if (groupString == "INTERACTIVE") {
                     physics.group = PhysicsGroup::Interactive;
                 } else if (groupString == "HELD_OBJECT") {
@@ -159,6 +161,8 @@ namespace ecs {
                     physics.group = PhysicsGroup::PlayerLeftHand;
                 } else if (groupString == "PLAYER_RIGHT_HAND") {
                     physics.group = PhysicsGroup::PlayerRightHand;
+                } else if (groupString == "USER_INTERFACE") {
+                    physics.group = PhysicsGroup::UserInterface;
                 } else {
                     Errorf("Unknown physics group: %s", groupString);
                     return false;

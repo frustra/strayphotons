@@ -160,7 +160,8 @@ namespace sp::scripts {
                     } else {
                         auto grabDistance = state.GetParam<double>("grab_distance");
                         scriptData.raycastQuery = query.NewQuery(PhysicsQuery::Raycast(grabDistance,
-                            PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE)));
+                            PhysicsGroupMask(
+                                PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
                     }
 
                     Event event;

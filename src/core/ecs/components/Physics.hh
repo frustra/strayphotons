@@ -17,22 +17,26 @@ namespace ecs {
     enum class PhysicsGroup : uint16_t {
         NoClip = 0,
         World,
+        WorldOverlap,
         Interactive,
         HeldObject,
         Player,
         PlayerLeftHand,
         PlayerRightHand,
+        UserInterface,
         Count,
     };
 
     enum PhysicsGroupMask {
         PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
         PHYSICS_GROUP_WORLD = 1 << (size_t)PhysicsGroup::World,
+        PHYSICS_GROUP_WORLD_OVERLAP = 1 << (size_t)PhysicsGroup::WorldOverlap,
         PHYSICS_GROUP_INTERACTIVE = 1 << (size_t)PhysicsGroup::Interactive,
         PHYSICS_GROUP_HELD_OBJECT = 1 << (size_t)PhysicsGroup::HeldObject,
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
         PHYSICS_GROUP_PLAYER_LEFT_HAND = 1 << (size_t)PhysicsGroup::PlayerLeftHand,
         PHYSICS_GROUP_PLAYER_RIGHT_HAND = 1 << (size_t)PhysicsGroup::PlayerRightHand,
+        PHYSICS_GROUP_USER_INTERFACE = 1 << (size_t)PhysicsGroup::UserInterface,
     };
 
     struct PhysicsShape {

@@ -143,7 +143,7 @@
 				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator_door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
+						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
 					}
 				]
 			}
@@ -159,7 +159,7 @@
 			"event_bindings": {
 				"/trigger/object/enter": {
 					"target": "console:input/action/run_command",
-					"set_value": "wait 1000 togglesignal station-center:elevator_door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
+					"set_value": "wait 1000 togglesignal station-center:elevator.door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
 				}
 			}
 		},
