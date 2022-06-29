@@ -98,6 +98,24 @@
             },
             {
                "inputs" : {
+                  "held" : {
+                     "output" : "/actions/main/in/press"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/a"
+            },
+            {
+               "inputs" : {
+                  "held" : {
+                     "output" : "/actions/main/in/press"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/a"
+            },
+            {
+               "inputs" : {
                   "position" : {
                      "output" : "/actions/main/in/rotation"
                   }

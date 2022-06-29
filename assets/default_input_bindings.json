@@ -89,7 +89,7 @@
     },
     "vr:controller_left": {
         "event_bindings": {
-            "/actions/main/in/press": "vr:left_hand/interact/grab",
+            "/actions/main/in/press": "vr:left_hand_skeleton/interact/press",
             "/actions/main/in/grab": "vr:left_hand/interact/grab",
             "/actions/main/in/rotate_left": {
                 "target": "vr:origin/action/snap_rotate",
@@ -103,7 +103,7 @@
     },
     "vr:controller_right": {
         "event_bindings": {
-            "/actions/main/in/press": "vr:right_hand/interact/grab",
+            "/actions/main/in/press": "vr:right_hand_skeleton/interact/press",
             "/actions/main/in/grab": "vr:right_hand/interact/grab",
             "/actions/main/in/rotate_left": {
                 "target": "vr:origin/action/snap_rotate",

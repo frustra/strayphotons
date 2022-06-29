@@ -20,6 +20,11 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/main/in/press",
+      "requirement": "mandatory",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/main/in/teleport",
       "requirement": "mandatory",
       "type": "boolean"
