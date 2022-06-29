@@ -1,0 +1,74 @@
+{
+	"entities": [
+		{
+			"name": "models",
+			"transform": {
+				"parent": "scoperoot"
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "airlock",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		},
+		{
+			"name": "triggerzone",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [1.5, 1.4, 0],
+				"scale": [2.5, 3, 2.5]
+			},
+			"signal_output": {},
+			"trigger_area": {},
+			"event_bindings": {
+				"/trigger/player/enter": "scoperoot/trigger/player/enter"
+			}
+		},
+		{
+			"name": "door-out",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, 0]
+			},
+			"signal_bindings": {
+				"door_open": "scoperoot/out_signal"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "door-in",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [3, 0, 0]
+			},
+			"signal_bindings": {
+				"door_open": "scoperoot/in_signal"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "light",
+			"light": {
+				"tint": [0.5, 0.5, 1],
+				"intensity": 10,
+				"spotAngle": 60,
+				"shadowMapSize": 11,
+				"shadowMapClip": [0.1, 70]
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"rotate": [-90, 1, 0, 0],
+				"translate": [1.5, 3, 0]
+			}
+		}
+	]
+}

@@ -47,13 +47,26 @@
 				"parameters": { "source": "light_sensor" }
 			}
 		},
-		<%- include('prefab/airlock', {
-			name: 'airlock1-2',
-			translate: [-8.1, 0.6, -7],
-			in_signal: "sensor1",
-			scene_connection: "02-mirrors",
-			trigger_command: "setsignal global:airlock1-2-in/door_open 0; addscene 02-mirrors"
-		}) %>,
+		{
+			"name": "global:airlock1-2",
+			"transform": {
+				"translate": [-8.1, 0.6, -7]
+			},
+			"scene_connection": "02-mirrors",
+			"signal_bindings": {
+				"in_signal": "sensor1/value"
+			},
+			"event_bindings": {
+				"/trigger/player/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "setsignal global:airlock1-2.door-in/door_open 0; addscene 02-mirrors"
+				}
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "airlock" }
+			}
+		},
 		{
 			"renderable": "cardboard-box",
 			"transform": {

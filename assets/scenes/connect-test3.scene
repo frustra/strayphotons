@@ -55,13 +55,21 @@
 				"dynamic": false
 			}
 		},
-		<%- include('prefab/airlock', {
-			name: 'airlock23',
-			translate: [5, 0, 0],
-			out_signal: "loaded",
-			load_signal: "loaded/trigger_player_count",
-			scene_connection: "connect-test2"
-		}) %>,
+		{
+			"name": "global:airlock23",
+			"transform": {
+				"translate": [5, 0, 0]
+			},
+			"scene_connection": "connect-test2",
+			"signal_bindings": {
+				"out_signal": "loaded/value",
+				"load_scene_connection": "loaded/trigger_player_count"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "airlock" }
+			}
+		},
 		{
 			"renderable": "box",
 			"transform": {
@@ -95,14 +103,22 @@
 				"dynamic": false
 			}
 		},
-		<%- include('prefab/airlock', {
-			name: 'airlock34',
-			translate: [0, 0, 8],
-			rotate: [90, 0, 1, 0],
-			in_signal: "loaded",
-			load_signal: "loaded/trigger_player_count",
-			scene_connection: "connect-test4"
-		}) %>,
+		{
+			"name": "global:airlock34",
+			"transform": {
+				"translate": [0, 0, 8],
+				"rotate": [90, 0, 1, 0]
+			},
+			"scene_connection": "connect-test4",
+			"signal_bindings": {
+				"in_signal": "loaded/value",
+				"load_scene_connection": "loaded/trigger_player_count"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "airlock" }
+			}
+		},
 		{
 			"renderable": "box",
 			"transform": {
