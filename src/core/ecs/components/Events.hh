@@ -18,7 +18,7 @@
 #include <variant>
 
 namespace ecs {
-    static const size_t MAX_EVENT_BINDING_DEPTH = 5;
+    static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
     struct Event {
         using EventData = std::

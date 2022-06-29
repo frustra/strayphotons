@@ -1,11 +1,17 @@
 {
 	"entities": [
-		<%- include('prefab/airlock', {
-			name: 'airlock3-4',
-			translate: [4.5, 0, 9],
-			rotate: [-90, 0, 1, 0],
-			scene_connection: "03-dark"
-		}) %>,
+		{
+			"name": "global:airlock3-4",
+			"transform": {
+				"translate": [4.5, 0, 9],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"scene_connection": "03-dark",
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "airlock" }
+			}
+		},
 		{
 			"transform": {},
 			"trigger_area": {},
@@ -13,17 +19,30 @@
 			"event_bindings": {
 				"/trigger/object/enter": {
 					"target": "console:input/action/run_command",
-					"set_value": "r.MirrorRecursion 3; setsignal global:airlock3-4-out/door_open 1; wait 2000 removescene 03-dark"
+					"set_value": "r.MirrorRecursion 3; setsignal global:airlock3-4.door-out/door_open 1; wait 2000 removescene 03-dark"
 				}
 			}
 		},
-		<%- include('prefab/airlock', {
-			name: 'airlock4-menu',
-			translate: [4.5, 0, -3],
-			rotate: [-90, 0, 1, 0],
-			in_signal: "combinator",
-			trigger_command: "setsignal global:airlock4-menu-in/door_open 0; wait 1000 loadscene menu"
-		}) %>,
+		{
+			"name": "airlock4-menu",
+			"transform": {
+				"translate": [4.5, 0, -3],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"signal_bindings": {
+				"in_signal": "combinator/value"
+			},
+			"event_bindings": {
+				"/trigger/player/enter": {
+					"target": "console:input/action/run_command",
+					"set_value": "setsignal airlock4-menu.door-in/door_open 0; wait 1000 loadscene menu"
+				}
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "airlock" }
+			}
+		},
 		{
 			"name": "combinator",
 			"signal_bindings": {

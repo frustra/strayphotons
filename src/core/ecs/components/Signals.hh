@@ -10,7 +10,7 @@
 #include <string>
 
 namespace ecs {
-    static const size_t MAX_SIGNAL_BINDING_DEPTH = 5;
+    static const size_t MAX_SIGNAL_BINDING_DEPTH = 10;
 
     using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>>;
 

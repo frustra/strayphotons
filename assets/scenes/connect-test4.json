@@ -106,102 +106,14 @@
 			},
 			"scene_connection": "connect-test3",
 			"signal_bindings": {
+				"out_signal": "loaded/value",
 				"load_scene_connection": "loaded/trigger_player_count"
 			},
 			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "airlock",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"name": "global:airlock34-zone",
-			"transform": {
-				"parent": "global:airlock34",
-				"translate": [
-					1.5,
-					1.4,
-					0
-				],
-				"scale": [
-					2.5,
-					3,
-					2.5
-				]
-			},
-			"signal_output": {},
-			"trigger_area": {},
-			"event_bindings": {}
-		},
-		{
-			"name": "global:airlock34-out",
-			"transform": {
-				"parent": "global:airlock34",
-				"translate": [
-					0,
-					0,
-					0
-				]
-			},
-			"signal_bindings": {
-				"door_open": "loaded"
-			},
-			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "slide_door"
+					"source": "airlock"
 				}
-			}
-		},
-		{
-			"name": "global:airlock34-in",
-			"transform": {
-				"parent": "global:airlock34",
-				"translate": [
-					3,
-					0,
-					0
-				]
-			},
-			"script": {
-				"prefab": "template",
-				"parameters": {
-					"source": "slide_door"
-				}
-			}
-		},
-		{
-			"name": "global:airlock34-light",
-			"light": {
-				"tint": [
-					0.5,
-					0.5,
-					1
-				],
-				"intensity": 10,
-				"spotAngle": 60,
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"transform": {
-				"parent": "global:airlock34",
-				"rotate": [
-					-90,
-					1,
-					0,
-					0
-				],
-				"translate": [
-					1.5,
-					3,
-					0
-				]
 			}
 		},
 		{
@@ -264,116 +176,28 @@
 		{
 			"name": "global:airlock41",
 			"transform": {
+				"translate": [
+					0,
+					0,
+					8
+				],
 				"rotate": [
 					90,
 					0,
 					1,
 					0
-				],
-				"translate": [
-					0,
-					0,
-					8
 				]
 			},
 			"scene_connection": "connect-test1",
 			"signal_bindings": {
+				"in_signal": "loaded/value",
 				"load_scene_connection": "loaded/trigger_player_count"
 			},
 			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "airlock",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"name": "global:airlock41-zone",
-			"transform": {
-				"parent": "global:airlock41",
-				"translate": [
-					1.5,
-					1.4,
-					0
-				],
-				"scale": [
-					2.5,
-					3,
-					2.5
-				]
-			},
-			"signal_output": {},
-			"trigger_area": {},
-			"event_bindings": {}
-		},
-		{
-			"name": "global:airlock41-out",
-			"transform": {
-				"parent": "global:airlock41",
-				"translate": [
-					0,
-					0,
-					0
-				]
-			},
-			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "slide_door"
+					"source": "airlock"
 				}
-			}
-		},
-		{
-			"name": "global:airlock41-in",
-			"transform": {
-				"parent": "global:airlock41",
-				"translate": [
-					3,
-					0,
-					0
-				]
-			},
-			"signal_bindings": {
-				"door_open": "loaded"
-			},
-			"script": {
-				"prefab": "template",
-				"parameters": {
-					"source": "slide_door"
-				}
-			}
-		},
-		{
-			"name": "global:airlock41-light",
-			"light": {
-				"tint": [
-					0.5,
-					0.5,
-					1
-				],
-				"intensity": 10,
-				"spotAngle": 60,
-				"shadowMapSize": 11,
-				"shadowMapClip": [
-					0.1,
-					70
-				]
-			},
-			"transform": {
-				"parent": "global:airlock41",
-				"rotate": [
-					-90,
-					1,
-					0,
-					0
-				],
-				"translate": [
-					1.5,
-					3,
-					0
-				]
 			}
 		},
 		{
