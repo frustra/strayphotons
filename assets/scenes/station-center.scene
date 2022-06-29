@@ -123,13 +123,20 @@
 				"dynamic": false
 			}
 		},
-		<%- include('prefab/ship_airlock', {
-			name: 'ship_airlock',
-			transform: {
+		{
+			"name": "global:ship_airlock",
+			"transform": {
 				"translate": [0, 160, -5.1]
 			},
-			load_signal: "elevator_zone/trigger_player_count"
-		}) %>,
+			"scene_connection": [],
+			"signal_bindings": {
+				"load_scene_connection": "elevator_zone/trigger_player_count"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "ship_airlock" }
+			}
+		},
 		{
 			"name": "elevator",
 			"script": {
@@ -143,7 +150,7 @@
 				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
+						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
 					}
 				]
 			}
