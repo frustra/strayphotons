@@ -43,9 +43,7 @@ namespace ecs {
                 auto deltaRotation = glm::orientedAngle(lastDir, dir);
                 TransformTree transform(glm::vec3(point.x, yOffset, point.y),
                     glm::quat(glm::vec3(0, rotation + deltaRotation / 2, 0)));
-                if (ent.Has<TransformTree>(lock)) {
-                    transform.parent = ent;
-                }
+                if (ent.Has<TransformTree>(lock)) transform.parent = ent;
                 Component<TransformTree>::Apply(transform, lock, newEnt);
 
                 Script scriptComp;
@@ -66,9 +64,8 @@ namespace ecs {
                 auto newEnt = scene->NewPrefabEntity(lock, ent);
 
                 TransformTree transform(glm::vec3(point.x, yOffset, point.y), glm::quat(glm::vec3(0, rotation, 0)));
-                if (ent.Has<TransformTree>(lock)) {
-                    transform.parent = ent;
-                }
+                if (ent.Has<TransformTree>(lock)) transform.parent = ent;
+
                 Component<TransformTree>::Apply(transform, lock, newEnt);
 
                 Script scriptComp;
