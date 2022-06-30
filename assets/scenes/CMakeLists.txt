@@ -14,22 +14,12 @@ endif()
 ## When adding a new .scene file, just add it to this list!
 ##
 set(SCENES_INPUT
-    01-outside
-    02-mirrors
-    03-dark
-    04-symmetry
     blackhole1
     blackhole2
     blackhole3
     blackhole4
     blackhole5
     sponza
-    connect-test1
-    connect-test2
-    connect-test3
-    connect-test4
-    menu
-    station-center
 )
 
 list(TRANSFORM SCENES_INPUT PREPEND "${CMAKE_CURRENT_LIST_DIR}/")
@@ -39,8 +29,6 @@ set(SCENES_OUTPUT ${SCENES_INPUT})
 list(TRANSFORM SCENES_INPUT APPEND ".scene")
 list(TRANSFORM SCENES_OUTPUT APPEND ".json")
 
-file(GLOB_RECURSE PREFAB_FILES *.ejs)
-
 add_custom_command(
     COMMAND
         ${NODE_JS_EXE} ${PROJECT_SOURCE_DIR}/assets/util/render-scenes.js
@@ -48,7 +36,6 @@ add_custom_command(
         ${SCENES_OUTPUT}
     DEPENDS
         ${SCENES_INPUT}
-        ${PREFAB_FILES}
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/assets/util
 )
