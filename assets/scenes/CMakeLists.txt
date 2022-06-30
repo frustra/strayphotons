@@ -14,22 +14,12 @@ endif()
 ## When adding a new .scene file, just add it to this list!
 ##
 set(SCENES_INPUT
-    01-outside
-    02-mirrors
-    03-dark
-    04-symmetry
     blackhole1
     blackhole2
     blackhole3
     blackhole4
     blackhole5
     sponza
-    connect-test1
-    connect-test2
-    connect-test3
-    connect-test4
-    menu
-    station-center
 )
 
 list(TRANSFORM SCENES_INPUT PREPEND "${CMAKE_CURRENT_LIST_DIR}/")

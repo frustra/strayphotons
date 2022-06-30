@@ -86,8 +86,7 @@ namespace ecs {
         std::any userData;
 
     private:
-        // robin_hood::unordered_flat_map
-        std::unordered_map<std::string, ParameterType> parameters;
+        robin_hood::unordered_flat_map<std::string, ParameterType> parameters;
 
         friend struct Script;
     };
