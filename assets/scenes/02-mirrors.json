@@ -142,378 +142,42 @@
 			}
 		},
 		{
-			"transform": {
-				"rotate": [
-					-180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					4.5,
-					0,
-					9
-				]
-			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "wall",
 				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					1.5,
-					0,
-					9
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-1.5,
-					0,
-					9
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					135,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-3,
-					0,
-					9
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-3,
-					0,
-					7.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-3,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-1.5,
-					0,
-					6
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					4.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					1.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3-door",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					0,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					1.5,
-					0,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					4.5,
-					0,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					-45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					0,
-					1.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3-door",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					0,
-					4.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					0,
-					7.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
+					"stride": 3,
+					"segments_x": [
+						6,
+						-3,
+						-3,
+						0,
+						0,
+						0,
+						6,
+						6,
+						6
+					],
+					"segments_y": [
+						9,
+						9,
+						6,
+						6,
+						3,
+						0,
+						0,
+						3,
+						9
+					],
+					"segment_types": [
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3-door",
+						"wall-4x3",
+						"wall-4x3-door",
+						"wall-4x3"
+					]
 				}
 			}
 		},
@@ -617,329 +281,42 @@
 			}
 		},
 		{
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					7.5,
-					0,
-					9
-				]
-			},
 			"script": {
-				"prefab": "gltf",
+				"prefab": "wall",
 				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					10.5,
-					0,
-					9
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					12,
-					0,
-					9
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					12,
-					0,
-					7.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					-225,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					12,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					10.5,
-					0,
-					6
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					135,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					9,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					9,
-					0,
-					4.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					9,
-					0,
-					3
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					10.5,
-					0,
-					3
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					45,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					12,
-					0,
-					3
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					12,
-					0,
-					1.5
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"renderable": "wall-4-corner",
-			"transform": {
-				"rotate": [
-					-225,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					12,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4-corner",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					10.5,
-					0,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3-door",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"transform": {
-				"rotate": [
-					-180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					7.5,
-					0,
-					0
-				]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "wall-4x3",
-					"render": true,
-					"physics": "static"
+					"stride": 3,
+					"segments_x": [
+						6,
+						12,
+						12,
+						9,
+						9,
+						12,
+						12,
+						9,
+						6
+					],
+					"segments_y": [
+						9,
+						9,
+						6,
+						6,
+						3,
+						3,
+						0,
+						0,
+						0
+					],
+					"segment_types": [
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3",
+						"wall-4x3-door",
+						"wall-4x3"
+					]
 				}
 			}
 		},

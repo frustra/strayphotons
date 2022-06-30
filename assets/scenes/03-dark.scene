@@ -90,10 +90,17 @@
 			}
 		},
 
-		<%- include("prefab/wall", {
-			y: 0,
-			points: [[6, 9], [-3, 9], [-3, 6], [0, 6], [0, 3, "wall-4x3-door"], [0, 0], [6, 0, "wall-4x3-door"], [6, 3], [6, 9]]
-		}) %>,
+		{
+			"script": {
+				"prefab": "wall",
+				"parameters": {
+					"stride": 3,
+					"segments_x": [6, -3, -3, 0, 0, 0, 6, 6, 6],
+					"segments_y": [9,  9,  6, 6, 3, 0, 0, 3, 9],
+					"segment_types": ["wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3-door", "wall-4x3", "wall-4x3-door", "wall-4x3"]
+				}
+			}
+		},
 		{
 			"name": "door1",
 			"transform": {
@@ -150,14 +157,28 @@
 			}
 		},
 
-		<%- include("prefab/wall", {
-			y: 0,
-			points: [[6, 3], [9, 3], [9, 6], [6, 6]]
-		}) %>,
-		<%- include("prefab/wall", {
-			y: 0,
-			points: [[6, 9, "wall-4x3-door"], [9, 9], [12, 9], [12, 0], [6, 0]]
-		}) %>,
+		{
+			"script": {
+				"prefab": "wall",
+				"parameters": {
+					"stride": 3,
+					"segments_x": [6, 9, 9, 6],
+					"segments_y": [3, 3, 6, 6],
+					"segment_types": ["wall-4x3", "wall-4x3", "wall-4x3"]
+				}
+			}
+		},
+		{
+			"script": {
+				"prefab": "wall",
+				"parameters": {
+					"stride": 3,
+					"segments_x": [6, 9, 12, 12, 6],
+					"segments_y": [9, 9,  9,  0, 0],
+					"segment_types": ["wall-4x3-door", "wall-4x3", "wall-4x3", "wall-4x3"]
+				}
+			}
+		},
 
 		{
 			"name": "light2",

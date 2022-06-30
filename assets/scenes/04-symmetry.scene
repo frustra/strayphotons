@@ -83,22 +83,17 @@
 			}
 		},
 
-		<%- include("prefab/wall", {
-			y: 0,
-			points: [
-				[0, 9],
-				[0, 6],
-				[0, 0],
-				[3, 0, "wall-4x3-door"], [6, 0],
-				[12, 0],
-				[12, 3],
-				[6, 3],
-				[6, 6],
-				[12, 6],
-				[12, 9], [6, 9, "wall-4x3-door"], [3, 9],
-				[0, 9]
-			]
-		}) %>,
+		{
+			"script": {
+				"prefab": "wall",
+				"parameters": {
+					"stride": 3,
+					"segments_x": [0, 0, 0, 3, 6, 12, 12, 6, 6, 12, 12, 6, 3, 0],
+					"segments_y": [9, 6, 0, 0, 0,  0,  3, 3, 6,  6,  9, 9, 9, 9],
+					"segment_types": ["wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3-door", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3-door", "wall-4x3"]
+				}
+			}
+		},
 
 		{
 			"name": "sensor1",
