@@ -76,22 +76,23 @@
       "usage": "leftright"
     }
   ],
-  "localization" : [
+  "localization": [
    {
       "language_tag": "en_us",
 
-      "/actions/main" : "Primary Actions",
+      "/actions/main": "Primary Actions",
 
-      "/actions/main/in/grab" : "Grab",
-      "/actions/main/in/teleport" : "Teleport",
-      "/actions/main/in/movement" : "Smooth Movement",
-      "/actions/main/in/rotation" : "Smooth Rotation",
-      "/actions/main/in/rotate_left" : "Snap Rotate Left",
-      "/actions/main/in/rotate_right" : "Snap Rotate Right",
-      "/actions/main/in/righthand" : "Right Hand",
-      "/actions/main/in/lefthand" : "Left Hand",
-      "/actions/main/in/righthand_anim" : "Right Hand Skeleton",
-      "/actions/main/in/lefthand_anim" : "Left Hand Skeleton"
+      "/actions/main/in/grab": "Grab",
+      "/actions/main/in/press": "Press",
+      "/actions/main/in/teleport": "Teleport",
+      "/actions/main/in/movement": "Smooth Movement",
+      "/actions/main/in/rotation": "Smooth Rotation",
+      "/actions/main/in/rotate_left": "Snap Rotate Left",
+      "/actions/main/in/rotate_right": "Snap Rotate Right",
+      "/actions/main/in/righthand": "Right Hand",
+      "/actions/main/in/lefthand": "Left Hand",
+      "/actions/main/in/righthand_anim": "Right Hand Skeleton",
+      "/actions/main/in/lefthand_anim": "Left Hand Skeleton"
     }
   ]
 }
