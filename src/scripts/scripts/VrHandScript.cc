@@ -191,8 +191,8 @@ namespace sp::scripts {
         bool isPointing,
         double pointDistance) {
 
+        glm::vec3 pointOrigin, pointDir, pointPos;
         Entity pointTarget;
-        glm::vec3 pointDir, pointOrigin, pointPos;
 
         auto &query = ent.Get<PhysicsQuery>(lock);
         if (isPointing) {
@@ -209,23 +209,25 @@ namespace sp::scripts {
                 }
             }
 
-            PhysicsQuery::Raycast::Result pointResult;
-            if (scriptData.pointQuery) {
-                auto &pointQuery = query.Lookup(scriptData.pointQuery);
-                if (pointQuery.result) pointResult = pointQuery.result.value();
-                if (glm::length(pointDir) > 0) {
-                    pointQuery.direction = pointDir;
-                    pointQuery.relativeDirection = false;
-                    pointQuery.position = pointOrigin;
-                    pointQuery.relativePosition = false;
-                }
-            } else {
+            if (!scriptData.pointQuery) {
                 scriptData.pointQuery = query.NewQuery(
                     PhysicsQuery::Raycast(pointDistance, PhysicsGroupMask(PHYSICS_GROUP_USER_INTERFACE)));
             }
 
-            pointTarget = pointResult.target;
-            pointPos = pointResult.position;
+            auto &pointQuery = query.Lookup(scriptData.pointQuery);
+
+            if (glm::length(pointDir) > 0) {
+                pointQuery.direction = pointDir;
+                pointQuery.relativeDirection = false;
+                pointQuery.position = pointOrigin;
+                pointQuery.relativePosition = false;
+            }
+
+            if (pointQuery.result) {
+                auto pointResult = pointQuery.result.value();
+                pointTarget = pointResult.target;
+                pointPos = pointResult.position;
+            }
         }
 
         if (scriptData.pointEntity && scriptData.pointEntity != pointTarget) {
@@ -249,6 +251,7 @@ namespace sp::scripts {
             auto &laserLine = laser.Get<LaserLine>(lock);
             if (pointTarget && std::holds_alternative<LaserLine::Line>(laserLine.line)) {
                 auto &line = std::get<LaserLine::Line>(laserLine.line);
+                if (line.points.size() != 2) line.points.resize(2);
                 line.points[0] = pointOrigin;
                 line.points[1] = pointPos;
                 laserLine.on = true;
