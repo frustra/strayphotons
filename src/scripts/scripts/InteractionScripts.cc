@@ -18,8 +18,9 @@ namespace sp::scripts {
                         ToString(lock, ent));
 
                     struct ScriptData {
-                        Entity grabEntity, pointEntity;
+                        std::vector<Entity> grabEntities, pointEntities;
                         Transform pointTransform;
+                        bool renderOutline = false;
                         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
                     };
 
@@ -39,19 +40,23 @@ namespace sp::scripts {
 
                     Event event;
                     while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
-                        ph.RemoveConstraint();
-                        ph.group = PhysicsGroup::World;
-                        scriptData.grabEntity = {};
+                        auto breakEvent = std::get_if<EntityRef>(&event.data);
+                        if (!breakEvent) continue;
+
+                        auto brokenConstraint = breakEvent->Get(lock);
+                        if (ph.constraint == brokenConstraint) ph.RemoveConstraint();
+                        sp::erase(scriptData.grabEntities, brokenConstraint);
+                        if (scriptData.grabEntities.empty()) ph.group = PhysicsGroup::World;
                     }
 
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
                         auto pointTransform = std::get_if<Transform>(&event.data);
                         if (pointTransform) {
                             scriptData.pointTransform = *pointTransform;
-                            scriptData.pointEntity = event.source;
+                            scriptData.pointEntities.emplace_back(event.source);
                         } else if (std::holds_alternative<bool>(event.data)) {
                             scriptData.pointTransform = {};
-                            scriptData.pointEntity = {};
+                            sp::erase(scriptData.pointEntities, event.source);
                         } else {
                             Errorf("Unsupported point event type: %s", event.toString());
                         }
@@ -62,16 +67,16 @@ namespace sp::scripts {
                             // Grab(false) = Drop
                             ph.RemoveConstraint();
                             sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == scriptData.grabEntity && joint.type == PhysicsJointType::Fixed;
+                                return joint.target == event.source && joint.type == PhysicsJointType::Fixed;
                             });
-                            ph.group = PhysicsGroup::World;
-                            scriptData.grabEntity = {};
+                            sp::erase(scriptData.grabEntities, event.source);
+                            if (scriptData.grabEntities.empty()) ph.group = PhysicsGroup::World;
                         } else if (std::holds_alternative<Transform>(event.data)) {
                             auto &parentTransform = std::get<Transform>(event.data);
                             auto &transform = ent.Get<TransformSnapshot>(lock);
                             auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
-                            scriptData.grabEntity = event.source;
+                            scriptData.grabEntities.emplace_back(event.source);
                             ph.group = PhysicsGroup::HeldObject;
 
                             if (event.source.Has<Physics>(lock)) {
@@ -104,17 +109,17 @@ namespace sp::scripts {
 
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
                         if (std::holds_alternative<glm::vec2>(event.data)) {
-                            if (!scriptData.grabEntity.Has<TransformSnapshot>(lock)) continue;
+                            if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
                             auto &input = std::get<glm::vec2>(event.data);
-                            auto &transform = scriptData.grabEntity.Get<const TransformSnapshot>(lock);
+                            auto &transform = event.source.Get<const TransformSnapshot>(lock);
 
                             auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
                             auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
                                                glm::angleAxis(input.x, upAxis);
 
                             for (auto &joint : joints.joints) {
-                                if (joint.target == scriptData.grabEntity && joint.type == PhysicsJointType::Fixed) {
+                                if (joint.target == event.source && joint.type == PhysicsJointType::Fixed) {
                                     // Move the objects origin so it rotates around its center of mass
                                     auto center = joint.remoteOrient * centerOfMass;
                                     joint.remoteOffset += center - (deltaRotate * center);
@@ -131,9 +136,23 @@ namespace sp::scripts {
                         }
                     }
 
-                    if (ent.Has<Renderable>(lock)) {
-                        ent.Get<Renderable>(lock).visibility.set(Renderable::Visibility::VISIBLE_OUTLINE_SELECTION,
-                            scriptData.grabEntity || scriptData.pointEntity);
+                    bool renderOutline = !scriptData.grabEntities.empty() || !scriptData.pointEntities.empty();
+                    if (scriptData.renderOutline != renderOutline) {
+                        for (auto &e : lock.EntitiesWith<Renderable>()) {
+                            if (!e.Has<TransformTree, Renderable>(lock)) continue;
+
+                            auto child = e;
+                            while (child.Has<TransformTree>(lock)) {
+                                if (child == ent) {
+                                    e.Get<Renderable>(lock).visibility.set(
+                                        Renderable::Visibility::VISIBLE_OUTLINE_SELECTION,
+                                        renderOutline);
+                                    break;
+                                }
+                                child = child.Get<TransformTree>(lock).parent.Get(lock);
+                            }
+                        }
+                        scriptData.renderOutline = renderOutline;
                     }
 
                     state.userData = scriptData;
