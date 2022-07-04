@@ -35,9 +35,24 @@ namespace sp {
                         auto pointWorld = std::get<ecs::Transform>(event.data).GetPosition();
                         auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
                         pointOnScreen += 0.5f;
-                        io.MousePos.x = pointOnScreen.x * io.DisplaySize.x;
-                        io.MousePos.y = (1.0f - pointOnScreen.y) * io.DisplaySize.y;
+
+                        auto &pointer = pointers[event.source];
+                        pointer.mousePos = {
+                            pointOnScreen.x * io.DisplaySize.x,
+                            (1.0f - pointOnScreen.y) * io.DisplaySize.y,
+                        };
+                    } else {
+                        pointers.erase(event.source);
                     }
+                }
+
+                if (!pointers.empty()) {
+                    auto mousePos = std::max_element(pointers.begin(), pointers.end(), [](auto &a, auto &b) {
+                        return a.second.time < b.second.time;
+                    })->second.mousePos;
+
+                    io.MousePos.x = mousePos.x;
+                    io.MousePos.y = mousePos.y;
                 }
 
                 while (ecs::EventInput::Poll(lock, gui, INTERACT_EVENT_INTERACT_PRESS, event)) {
