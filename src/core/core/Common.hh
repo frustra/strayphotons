@@ -66,6 +66,11 @@ namespace sp {
     typedef std::array<uint64, 2> Hash128;
     typedef uint64 Hash64;
 
+    template<typename T, typename V>
+    inline void erase(T &vec, const V &val) {
+        vec.erase(std::remove(vec.begin(), vec.end(), val), vec.end());
+    }
+
     template<typename T, typename Func>
     inline void erase_if(T &vec, Func f) {
         vec.erase(std::remove_if(vec.begin(), vec.end(), f), vec.end());
