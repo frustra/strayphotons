@@ -20,12 +20,6 @@ namespace sp::vulkan {
         vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));
         vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ImDrawVert, col));
 
-        std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
-            std::make_pair(GAssets.Load("fonts/DroidSans.ttf")->Get(), 16.0f),
-            std::make_pair(GAssets.Load("fonts/3270Medium.ttf")->Get(), 32.0f),
-            std::make_pair(GAssets.Load("fonts/3270Medium.ttf")->Get(), 25.0f),
-        };
-
         fontAtlas = make_shared<ImFontAtlas>();
 
         fontAtlas->AddFontDefault(nullptr);
@@ -38,14 +32,15 @@ namespace sp::vulkan {
             0,
         };
 
-        for (auto &pair : fontAssets) {
-            auto &asset = pair.first;
-            Assert(asset, "Failed to load gui font");
+        for (auto &def : GetFontList()) {
+            auto asset = GAssets.Load(string("fonts/") + def.name)->Get();
+            Assertf(asset, "Failed to load gui font %s", def.name);
+
             ImFontConfig cfg;
             cfg.FontData = (void *)asset->BufferPtr();
             cfg.FontDataSize = asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
-            cfg.SizePixels = pair.second;
+            cfg.SizePixels = def.size;
             cfg.GlyphRanges = &glyphRanges[0];
             memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
             fontAtlas->AddFont(&cfg);

@@ -11,7 +11,11 @@ namespace sp {
         virtual ~LobbyGui() {}
 
         void DefineContents() {
-            ImGui::Text("test test test");
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {30, 20});
+            PushFont(Font::Primary, 32);
+            ImGui::Button("Register");
+            ImGui::PopFont();
+            ImGui::PopStyleVar();
         }
     };
 } // namespace sp

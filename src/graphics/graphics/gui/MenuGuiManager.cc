@@ -166,7 +166,7 @@ namespace sp {
         ImGui::PushStyleColor(ImGuiCol_CheckMark, green);
         ImGui::PushStyleColor(ImGuiCol_FrameBg, black);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
-        ImGui::PushFont(io.Fonts->Fonts[2]);
+        PushFont(Font::Monospace, 25);
 
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse |
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
@@ -223,7 +223,7 @@ namespace sp {
             ImGui::Text("Scene Select");
             ImGui::Text(" ");
 
-            ImGui::PushFont(io.Fonts->Fonts[3]);
+            PushFont(Font::Monospace, 32);
 
 #define LEVEL_BUTTON(name, file)                                     \
     if (ImGui::Button(name)) {                                       \
@@ -265,7 +265,7 @@ namespace sp {
             ImGui::Text(" ");
             ImGui::Columns(2, "optcols", false);
 
-            ImGui::PushFont(io.Fonts->Fonts[3]);
+            PushFont(Font::Monospace, 32);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 15));
 
             ImGui::Text("Resolution");
@@ -385,7 +385,7 @@ namespace sp {
 
             ImGui::Dummy({1, 100});
 
-            ImGui::PushFont(io.Fonts->Fonts[3]);
+            PushFont(Font::Monospace, 32);
             CenteredText("NVIDIA GameWorks™ Technology provided under");
             CenteredText("license from NVIDIA Corporation.");
             CenteredText("Copyright © 2002-2015 NVIDIA Corporation.");
