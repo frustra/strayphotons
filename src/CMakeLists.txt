@@ -29,7 +29,7 @@ add_module_configuration(
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
-        ${PROJECT_AUDIO_LIB}
+        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         ${PROJECT_XR_OPENVR_LIB}
         ${PROJECT_SCRIPTS_LIB}
 )
@@ -46,8 +46,10 @@ add_module_configuration(
         ${PROJECT_SCRIPTS_LIB}
 )
 
+if(WIN32)
+    add_subdirectory(audio)
+endif()
 add_subdirectory(core)
-add_subdirectory(audio)
 add_subdirectory(graphics)
 add_subdirectory(input)
 add_subdirectory(main)
