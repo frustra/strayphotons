@@ -12,5 +12,12 @@ namespace sp {
 
     private:
         ecs::EntityRef guiEntity;
+
+        struct PointingState {
+            ecs::Entity sourceEntity;
+            glm::vec2 mousePos;
+        };
+
+        vector<PointingState> pointingStack;
     };
 } // namespace sp
