@@ -105,3 +105,8 @@ if [ $format_valid -ne 0 ]; then
     echo -e "Run clang-format with ./extra/validate_format.py --fix"
     exit $format_valid
 fi
+
+if [ -n "$BUILDKITE_API_TOKEN" ]; then
+    echo -e "--- Comparing screenshots :camera_with_flash:"
+    ../extra/validate_format.py --token "$BUILDKITE_API_TOKEN"
+fi
