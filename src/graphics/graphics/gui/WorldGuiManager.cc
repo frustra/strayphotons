@@ -36,20 +36,29 @@ namespace sp {
                         auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
                         pointOnScreen += 0.5f;
 
-                        auto &pointer = pointers[event.source];
-                        pointer.mousePos = {
+                        glm::vec2 mousePos = {
                             pointOnScreen.x * io.DisplaySize.x,
                             (1.0f - pointOnScreen.y) * io.DisplaySize.y,
                         };
+
+                        auto existingPos = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
+                            return state.sourceEntity == event.source;
+                        });
+
+                        if (existingPos != pointingStack.end()) {
+                            existingPos->mousePos = mousePos;
+                        } else {
+                            pointingStack.emplace_back(PointingState{event.source, mousePos});
+                        }
                     } else {
-                        pointers.erase(event.source);
+                        erase_if(pointingStack, [&](auto &state) {
+                            return state.sourceEntity == event.source;
+                        });
                     }
                 }
 
-                if (!pointers.empty()) {
-                    auto mousePos = std::max_element(pointers.begin(), pointers.end(), [](auto &a, auto &b) {
-                        return a.second.time < b.second.time;
-                    })->second.mousePos;
+                if (!pointingStack.empty()) {
+                    auto mousePos = pointingStack.back().mousePos;
 
                     io.MousePos.x = mousePos.x;
                     io.MousePos.y = mousePos.y;

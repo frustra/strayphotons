@@ -14,12 +14,10 @@ namespace sp {
         ecs::EntityRef guiEntity;
 
         struct PointingState {
+            ecs::Entity sourceEntity;
             glm::vec2 mousePos;
-            chrono_clock::time_point time;
-
-            PointingState() : time(chrono_clock::now()) {}
         };
 
-        std::map<ecs::Entity, PointingState> pointers;
+        vector<PointingState> pointingStack;
     };
 } // namespace sp
