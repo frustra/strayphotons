@@ -185,7 +185,7 @@ namespace sp::vulkan {
     class Buffer : public UniqueMemory {
     public:
         Buffer();
-        Buffer(vk::BufferCreateInfo bufferInfo,
+        Buffer(const vk::BufferCreateInfo &bufferInfo,
             VmaAllocationCreateInfo allocInfo,
             VmaAllocator allocator,
             size_t arrayStride = 0,

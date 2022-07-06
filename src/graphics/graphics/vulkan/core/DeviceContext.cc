@@ -69,7 +69,9 @@ namespace sp::vulkan {
         ZoneScoped;
         glfwSetErrorCallback(glfwErrorCallback);
 
-        if (!glfwInit()) { throw "glfw failed"; }
+        if (!glfwInit()) {
+            throw "glfw failed";
+        }
 
         Assert(glfwVulkanSupported(), "Vulkan not supported");
 
@@ -479,8 +481,12 @@ namespace sp::vulkan {
     }
 
     DeviceContext::~DeviceContext() {
-        if (device) { device->waitIdle(); }
-        if (window) { glfwDestroyWindow(window); }
+        if (device) {
+            device->waitIdle();
+        }
+        if (window) {
+            glfwDestroyWindow(window);
+        }
 
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
@@ -612,7 +618,9 @@ namespace sp::vulkan {
 
     const glm::ivec2 DeviceContext::CurrentMode() {
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        if (mode != NULL) { return glm::ivec2(mode->width, mode->height); }
+        if (mode != NULL) {
+            return glm::ivec2(mode->width, mode->height);
+        }
         return glm::ivec2(0);
     }
 
@@ -640,7 +648,9 @@ namespace sp::vulkan {
             for (size_t i = 0; i < shaders.size(); i++) {
                 auto &currentShader = shaders[i];
                 auto newShader = CreateShader(currentShader->name, currentShader->hash);
-                if (newShader) { shaders[i] = newShader; }
+                if (newShader) {
+                    shaders[i] = newShader;
+                }
             }
         }
 
@@ -722,7 +732,9 @@ namespace sp::vulkan {
         try {
             auto presentResult = queues[QUEUE_TYPE_GRAPHICS].presentKHR(presentInfo);
             if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
-        } catch (const vk::OutOfDateKHRError &) { RecreateSwapchain(); }
+        } catch (const vk::OutOfDateKHRError &) {
+            RecreateSwapchain();
+        }
     }
 
     void DeviceContext::EndFrame() {
@@ -1400,7 +1412,7 @@ namespace sp::vulkan {
     vk::Sampler DeviceContext::GetSampler(const vk::SamplerCreateInfo &info) {
         Assert(info.pNext == 0, "sampler info pNext can't be set");
 
-        SamplerKey key(info);
+        SamplerKey key((const VkSamplerCreateInfo &)info);
         auto &sampler = adhocSamplers[key];
         if (sampler) return *sampler;
 

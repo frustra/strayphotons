@@ -62,7 +62,7 @@ namespace sp::vulkan {
         ~Image();
 
         // Allocates storage for the image, destructor destroys image
-        Image(vk::ImageCreateInfo imageInfo,
+        Image(const vk::ImageCreateInfo &imageInfo,
             VmaAllocationCreateInfo allocInfo,
             VmaAllocator allocator,
             vk::ImageUsageFlags declaredUsage);

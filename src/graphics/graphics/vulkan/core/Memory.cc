@@ -60,7 +60,7 @@ namespace sp::vulkan {
 
     Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
-    Buffer::Buffer(vk::BufferCreateInfo bufferInfo,
+    Buffer::Buffer(const vk::BufferCreateInfo &bufferInfo,
         VmaAllocationCreateInfo allocInfo,
         VmaAllocator allocator,
         size_t arrayStride,
@@ -71,7 +71,7 @@ namespace sp::vulkan {
 
         if (bufferInfo.size == 0) return; // allow creating empty buffers for convenience
 
-        VkBufferCreateInfo vkBufferInfo = bufferInfo;
+        VkBufferCreateInfo vkBufferInfo = (const VkBufferCreateInfo &)bufferInfo;
         VkBuffer vkBuffer;
 
         auto result = vmaCreateBuffer(allocator, &vkBufferInfo, &allocInfo, &vkBuffer, &allocation, nullptr);
