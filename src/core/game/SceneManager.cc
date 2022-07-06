@@ -506,7 +506,9 @@ namespace sp {
             }
 
             for (auto &e : entities) {
-                if (e.Has<ecs::Script>(lock)) { e.Get<ecs::Script>(lock).Prefab(lock, e); }
+                if (e.Has<ecs::Script>(lock)) {
+                    e.Get<ecs::Script>(lock).Prefab(lock, e);
+                }
             }
         }
         return scene;

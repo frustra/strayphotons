@@ -111,7 +111,9 @@ namespace sp {
     }
 
     void VoxelRenderer::PrepareGuis(DebugGuiManager *debugGui, MenuGuiManager *menuGui) {
-        if (debugGui && !debugGuiRenderer) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, debugGui); }
+        if (debugGui && !debugGuiRenderer) {
+            debugGuiRenderer = make_shared<GuiRenderer>(*this, context, debugGui);
+        }
         if (menuGui && !menuGuiRenderer) {
             this->menuGui = menuGui;
             menuGuiRenderer = make_shared<GuiRenderer>(*this, context, menuGui);
@@ -159,7 +161,9 @@ namespace sp {
         FillLightData(lightContext, lock);
 
         RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), lightContext.renderTargetSize));
-        if (!shadowMap || shadowMap->GetDesc() != shadowDesc) { shadowMap = context.GetRenderTarget(shadowDesc); }
+        if (!shadowMap || shadowMap->GetDesc() != shadowDesc) {
+            shadowMap = context.GetRenderTarget(shadowDesc);
+        }
 
         if (!mirrorVisData) {
             // int count[4];
@@ -263,7 +267,9 @@ namespace sp {
                 basicView.visibilityMask.set(ecs::Renderable::VISIBLE_REFLECTED);
                 basicView.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
 
-                if (bounce > 0) { basicView.clearMode.reset(); }
+                if (bounce > 0) {
+                    basicView.clearMode.reset();
+                }
 
                 ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>();
 
@@ -356,7 +362,9 @@ namespace sp {
         targets.mirrorSceneData = mirrorSceneData;
         targets.lightingGel = menuGuiTarget;
 
-        if (finalOutput) { targets.finalOutput = finalOutput; }
+        if (finalOutput) {
+            targets.finalOutput = finalOutput;
+        }
 
         {
             RenderPhase subPhase("PlayerView", timer);
@@ -518,7 +526,9 @@ namespace sp {
                     }
                 });
 
-                if (bounce == 0 && CVarShowVoxels.Get() > 0) { DrawGridDebug(view, sceneVS); }
+                if (bounce == 0 && CVarShowVoxels.Get() > 0) {
+                    DrawGridDebug(view, sceneVS);
+                }
 
                 glDepthFunc(GL_LESS);
                 glDepthMask(GL_TRUE);
@@ -536,7 +546,9 @@ namespace sp {
 
         PostProcessing::Process(this, lock, view, targets);
 
-        if (!finalOutput) { debugGuiRenderer->Render(view); }
+        if (!finalOutput) {
+            debugGuiRenderer->Render(view);
+        }
 
         // AssertGLOK("Renderer::RenderFrame");
     }
@@ -732,7 +744,9 @@ namespace sp {
 
             static VertexBuffer vbo;
 
-            if (!vbo.Initialized()) { vbo.SetElementsVAO(3, screenCoverElements); }
+            if (!vbo.Initialized()) {
+                vbo.SetElementsVAO(3, screenCoverElements);
+            }
 
             vbo.BindVAO();
             glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
@@ -745,7 +759,9 @@ namespace sp {
 
             static VertexBuffer vbo;
 
-            if (!vbo.Initialized()) { vbo.SetElementsVAO(3, screenCoverElements); }
+            if (!vbo.Initialized()) {
+                vbo.SetElementsVAO(3, screenCoverElements);
+            }
 
             vbo.BindVAO();
             glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());

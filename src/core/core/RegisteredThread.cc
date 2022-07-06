@@ -64,7 +64,9 @@ namespace sp {
 #ifdef CATCH_GLOBAL_EXCEPTIONS
             } catch (const char *err) {
                 Abortf("Exception thrown in %s thread: %s", threadName, err);
-            } catch (const std::exception &ex) { Abortf("Exception thrown in %s thread: %s", threadName, ex.what()); }
+            } catch (const std::exception &ex) {
+                Abortf("Exception thrown in %s thread: %s", threadName, ex.what());
+            }
 #endif
         });
     }

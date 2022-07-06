@@ -94,7 +94,9 @@ namespace sp::vulkan {
         subpass.pColorAttachments = colorAttachmentRefs;
         subpass.pDepthStencilAttachment = nullptr;
 
-        if (state.HasDepthStencil()) { subpass.pDepthStencilAttachment = &depthAttachmentRef; }
+        if (state.HasDepthStencil()) {
+            subpass.pDepthStencilAttachment = &depthAttachmentRef;
+        }
 
         vk::RenderPassCreateInfo renderPassInfo;
         renderPassInfo.attachmentCount = attachmentCount;

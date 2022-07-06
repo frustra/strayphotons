@@ -132,7 +132,9 @@ namespace sp::vulkan {
 
         void EnableMultiviewForAllLayers(const ImageViewPtr &view) {
             uint32 layers = view->ArrayLayers();
-            if (layers < minAttachmentLayers) { minAttachmentLayers = layers; }
+            if (layers < minAttachmentLayers) {
+                minAttachmentLayers = layers;
+            }
 
             state.multiviewMask = 0;
 
