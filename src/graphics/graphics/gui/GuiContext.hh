@@ -10,9 +10,23 @@
 struct ImGuiContext;
 
 namespace sp {
+    enum class Font {
+        Primary,
+        Accent,
+        Monospace,
+    };
+
+    struct FontDef {
+        Font type;
+        const char *name;
+        float size;
+    };
+
     class GuiRenderable {
     public:
         virtual void Add() = 0;
+
+        void PushFont(Font fontType, float fontSize);
     };
 
     class GuiWindow : public GuiRenderable {
@@ -39,6 +53,8 @@ namespace sp {
             return name;
         }
 
+        void PushFont(Font fontType, float fontSize);
+
     private:
         std::vector<std::shared_ptr<GuiRenderable>> components;
         ImGuiContext *imCtx = nullptr;
@@ -46,4 +62,6 @@ namespace sp {
     };
 
     bool CreateGuiWindow(GuiContext *context, const string &name);
+
+    std::span<FontDef> GetFontList();
 } // namespace sp

@@ -8,6 +8,17 @@
 #include <imgui/imgui.h>
 
 namespace sp {
+    static std::array fontList = {
+        FontDef{Font::Primary, "DroidSans.ttf", 16.0f},
+        FontDef{Font::Primary, "DroidSans.ttf", 32.0f},
+        FontDef{Font::Monospace, "3270Medium.ttf", 25.0f},
+        FontDef{Font::Monospace, "3270Medium.ttf", 32.0f},
+    };
+
+    std::span<FontDef> GetFontList() {
+        return fontList;
+    }
+
     void GuiWindow::Add() {
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
@@ -81,5 +92,28 @@ namespace sp {
         }
         context->Attach(window);
         return true;
+    }
+
+    static void pushFont(Font fontType, float fontSize) {
+        auto &io = ImGui::GetIO();
+        Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
+
+        for (size_t i = 0; i < fontList.size(); i++) {
+            auto &f = fontList[i];
+            if (f.type == fontType && f.size == fontSize) {
+                ImGui::PushFont(io.Fonts->Fonts[i + 1]);
+                return;
+            }
+        }
+
+        Abortf("missing font type %d with size %f", (int)fontType, fontSize);
+    }
+
+    void GuiRenderable::PushFont(Font fontType, float fontSize) {
+        pushFont(fontType, fontSize);
+    }
+
+    void GuiContext::PushFont(Font fontType, float fontSize) {
+        pushFont(fontType, fontSize);
     }
 } // namespace sp
