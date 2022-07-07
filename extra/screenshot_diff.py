@@ -70,7 +70,8 @@ def main():
 
         current_build_path = os.environ.get('BUILDKITE_BUILD_URL') + '#' + os.environ.get('BUILDKITE_JOB_ID')
         master_build_path = artifacts[path]['job']['web_url']
-        master_img_path = master_build_path.split('#', 2)[0] + '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
+        master_img_path = 'https://buildkite.com/organizations/frustra/pipelines/strayphotons/builds/' + content[0]['number']
+        master_img_path += '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
 
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
