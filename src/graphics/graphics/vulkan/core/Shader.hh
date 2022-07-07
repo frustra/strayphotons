@@ -59,7 +59,6 @@ namespace sp::vulkan {
             VkBufferView buffer_view;
             VkDescriptorImageInfo image;
         };
-        vk::DeviceSize offset;
         UniqueID uniqueID = 0;
         uint32 arrayStride = 0;
     };
