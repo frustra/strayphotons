@@ -21,9 +21,14 @@ def main():
     
     response = urllib.request.urlopen(req).read()
     content = json.loads(response.decode('utf-8'))
+    if len(content) == 0:
+        print('Could not find valid previous build to compare against')
+        exit(0)
+
+    build_info = content[0]
     artifacts = {}
 
-    for job in content[0]['jobs']:
+    for job in build_info['jobs']:
         if job['state'] != "passed":
             continue
         
@@ -70,7 +75,7 @@ def main():
 
         current_build_path = os.environ.get('BUILDKITE_BUILD_URL') + '#' + os.environ.get('BUILDKITE_JOB_ID')
         master_build_path = artifacts[path]['job']['web_url']
-        master_img_path = 'https://buildkite.com/organizations/frustra/pipelines/strayphotons/builds/' + content[0]['number']
+        master_img_path = 'https://buildkite.com/organizations/frustra/pipelines/strayphotons/builds/' + build_info['number']
         master_img_path += '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
 
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
