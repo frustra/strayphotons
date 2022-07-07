@@ -79,7 +79,9 @@ namespace ecs {
     }
 
     FocusLock::FocusLock(FocusLayer layer) {
-        if (layer != FocusLayer::NEVER && layer != FocusLayer::ALWAYS) { AcquireFocus(layer); }
+        if (layer != FocusLayer::NEVER && layer != FocusLayer::ALWAYS) {
+            AcquireFocus(layer);
+        }
     }
 
     bool FocusLock::AcquireFocus(FocusLayer layer) {

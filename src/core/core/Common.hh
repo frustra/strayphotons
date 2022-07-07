@@ -19,6 +19,8 @@ using std::string_view;
 #include <chrono>
 typedef std::chrono::steady_clock chrono_clock;
 
+#include <algorithm>
+
 typedef unsigned char uint8;
 typedef signed char int8;
 typedef uint16_t uint16;

@@ -120,7 +120,9 @@ namespace sp {
 
     static bool StringVectorGetter(void *data, int idx, const char **out_text) {
         auto vec = (vector<string> *)data;
-        if (out_text) { *out_text = vec->at(idx).c_str(); }
+        if (out_text) {
+            *out_text = vec->at(idx).c_str();
+        }
         return true;
     }
 
@@ -192,16 +194,22 @@ namespace sp {
                 SetRenderMode(MenuRenderMode::None);
             }
 
-            if (ImGui::Button("Scene Select")) { selectedScreen = MenuScreen::SceneSelect; }
+            if (ImGui::Button("Scene Select")) {
+                selectedScreen = MenuScreen::SceneSelect;
+            }
 
-            if (ImGui::Button("Options")) { selectedScreen = MenuScreen::Options; }
+            if (ImGui::Button("Options")) {
+                selectedScreen = MenuScreen::Options;
+            }
 
             if (RenderMode() != MenuRenderMode::Pause && ImGui::Button("Credits")) {
                 selectedScreen = MenuScreen::Credits;
                 creditsScroll = 0.0f;
             }
 
-            if (ImGui::Button("Quit")) { GetConsoleManager().QueueParseAndExecute("exit"); }
+            if (ImGui::Button("Quit")) {
+                GetConsoleManager().QueueParseAndExecute("exit");
+            }
 
             ImGui::End();
         } else if (selectedScreen == MenuScreen::SceneSelect) {
@@ -240,7 +248,9 @@ namespace sp {
             ImGui::PopFont();
             ImGui::Text(" ");
 
-            if (ImGui::Button("Back")) { selectedScreen = MenuScreen::Main; }
+            if (ImGui::Button("Back")) {
+                selectedScreen = MenuScreen::Main;
+            }
 
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Options) {
@@ -303,7 +313,9 @@ namespace sp {
                         prevSize = size;
                         // Resize the window to the current screen resolution.
                         size = graphics.GetContext()->CurrentMode();
-                        if (size != glm::ivec2(0)) { CVarWindowSize.Set(size); }
+                        if (size != glm::ivec2(0)) {
+                            CVarWindowSize.Set(size);
+                        }
                         CVarWindowFullscreen.Set(1);
                     } else {
                         CVarWindowFullscreen.Set(0);
@@ -322,7 +334,9 @@ namespace sp {
             ImGui::Columns(1);
             ImGui::Text(" ");
 
-            if (ImGui::Button("Done")) { selectedScreen = MenuScreen::Main; }
+            if (ImGui::Button("Done")) {
+                selectedScreen = MenuScreen::Main;
+            }
 
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Credits) {
@@ -381,7 +395,9 @@ namespace sp {
             ImGui::Dummy({1, 600});
 
             creditsScroll += io.DeltaTime * 20.0f;
-            if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100) { selectedScreen = MenuScreen::Main; }
+            if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100) {
+                selectedScreen = MenuScreen::Main;
+            }
 
 #undef CenteredText
 

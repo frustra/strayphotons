@@ -24,7 +24,9 @@ namespace ecs {
                     view.offset = sp::MakeVec2(param.second);
                 } else if (param.first == "visibility") {
                     auto &value = param.second.get<string>();
-                    if (value == "camera") { view.visibilityMask.set(Renderable::Visibility::VISIBLE_DIRECT_CAMERA); }
+                    if (value == "camera") {
+                        view.visibilityMask.set(Renderable::Visibility::VISIBLE_DIRECT_CAMERA);
+                    }
                 } else {
                     Errorf("Unknown view component parameter: %s", param.first);
                     return false;

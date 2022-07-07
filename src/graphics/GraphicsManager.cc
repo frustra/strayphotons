@@ -107,7 +107,9 @@ namespace sp {
             glm::ivec2 size;
             ss >> size.x >> size.y;
 
-            if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
+            if (size.x > 0 && size.y > 0) {
+                CVarWindowSize.Set(size);
+            }
         }
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
@@ -116,7 +118,9 @@ namespace sp {
         renderer = make_unique<VoxelRenderer>(*glfwContext, timer);
 
         profilerGui = make_shared<ProfilerGui>(timer);
-        if (game->debugGui) { game->debugGui->Attach(profilerGui); }
+        if (game->debugGui) {
+            game->debugGui->Attach(profilerGui);
+        }
 
         renderer->Prepare();
     #endif

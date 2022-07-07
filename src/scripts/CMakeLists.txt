@@ -1,6 +1,6 @@
 add_library(${PROJECT_SCRIPTS_LIB} OBJECT)
 
-target_include_directories(${PROJECT_AUDIO_LIB} PUBLIC
+target_include_directories(${PROJECT_SCRIPTS_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

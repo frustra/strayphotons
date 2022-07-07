@@ -68,7 +68,9 @@ namespace sp::logging {
         std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);
         std::cerr << buf.get();
 
-        if (lvl != logging::Level::Debug) { GlobalLogOutput(lvl, string(buf.get(), buf.get() + size)); }
+        if (lvl != logging::Level::Debug) {
+            GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
+        }
     }
 
     template<typename T1, typename... Tn>

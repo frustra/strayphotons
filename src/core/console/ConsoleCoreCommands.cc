@@ -17,7 +17,9 @@ namespace sp {
             }
 
             auto desc = cvar->GetDescription();
-            if (desc.size() > 0) { logging::ConsoleWrite(logging::Level::Log, " >   %s", desc); }
+            if (desc.size() > 0) {
+                logging::ConsoleWrite(logging::Level::Log, " >   %s", desc);
+            }
         }
     });
 

@@ -41,7 +41,9 @@ namespace sp::vulkan {
         key.input.shaderHashes = GetShaderHashes(shaders);
 
         auto &mapValue = pipelineLayouts[key];
-        if (!mapValue) { mapValue = make_shared<PipelineLayout>(device, shaders, *this); }
+        if (!mapValue) {
+            mapValue = make_shared<PipelineLayout>(device, shaders, *this);
+        }
         return mapValue;
     }
 
@@ -503,7 +505,9 @@ namespace sp::vulkan {
     shared_ptr<DescriptorPool> PipelineManager::GetDescriptorPool(const DescriptorSetLayoutInfo &layout) {
         DescriptorPoolKey key(layout);
         auto &mapValue = descriptorPools[key];
-        if (!mapValue) { mapValue = make_shared<DescriptorPool>(device, layout); }
+        if (!mapValue) {
+            mapValue = make_shared<DescriptorPool>(device, layout);
+        }
         return mapValue;
     }
 

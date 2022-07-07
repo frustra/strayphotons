@@ -15,7 +15,9 @@ namespace sp::scene {
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if constexpr (!Tecs::is_global_component<T>()) { ecs::Component<T>().ApplyComponent(src, srcEnt, dst, dstEnt); }
+        if constexpr (!Tecs::is_global_component<T>()) {
+            ecs::Component<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
+        }
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
@@ -38,7 +40,9 @@ namespace sp::scene {
         ecs::Entity ent,
         const BitsetType &hasComponents) {
         if constexpr (!Tecs::is_global_component<T>()) {
-            if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) { ent.Unset<T>(lock); }
+            if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) {
+                ent.Unset<T>(lock);
+            }
         }
     }
 

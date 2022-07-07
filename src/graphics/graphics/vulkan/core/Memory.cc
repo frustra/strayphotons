@@ -71,7 +71,7 @@ namespace sp::vulkan {
 
         if (bufferInfo.size == 0) return; // allow creating empty buffers for convenience
 
-        VkBufferCreateInfo vkBufferInfo = bufferInfo;
+        VkBufferCreateInfo vkBufferInfo = (const VkBufferCreateInfo &)bufferInfo;
         VkBuffer vkBuffer;
 
         auto result = vmaCreateBuffer(allocator, &vkBufferInfo, &allocInfo, &vkBuffer, &allocation, nullptr);

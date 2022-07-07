@@ -296,7 +296,9 @@ namespace ecs {
 
     const EventBindings::BindingList *EventBindings::Lookup(const std::string source) const {
         auto list = sourceToDest.find(source);
-        if (list != sourceToDest.end()) { return &list->second; }
+        if (list != sourceToDest.end()) {
+            return &list->second;
+        }
         return nullptr;
     }
 

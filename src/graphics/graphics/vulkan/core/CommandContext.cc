@@ -54,7 +54,9 @@ namespace sp::vulkan {
         uint32 clearValueCount = info.state.colorAttachmentCount;
 
         for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
-            if (info.state.ShouldClear(i)) { clearValues[i].color = info.clearColors[i]; }
+            if (info.state.ShouldClear(i)) {
+                clearValues[i].color = info.clearColors[i];
+            }
             if (info.colorAttachments[i]->IsSwapchain()) writesToSwapchain = true;
         }
 
@@ -408,7 +410,9 @@ namespace sp::vulkan {
     void CommandContext::FlushComputeState() {
         if (ResetDirty(DirtyBits::Pipeline)) {
             auto pipeline = device.GetPipeline(pipelineInput);
-            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline); }
+            if (pipeline != currentPipeline) {
+                cmd->bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
+            }
             currentPipeline = pipeline;
         }
 
@@ -419,7 +423,9 @@ namespace sp::vulkan {
     void CommandContext::FlushGraphicsState() {
         if (ResetDirty(DirtyBits::Pipeline)) {
             auto pipeline = device.GetPipeline(pipelineInput);
-            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline); }
+            if (pipeline != currentPipeline) {
+                cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+            }
             currentPipeline = pipeline;
         }
 

@@ -9,7 +9,9 @@ namespace sp::vulkan {
     CVar<bool> CVarProfileRender("r.Profile", false, "Display frame timing");
 
     RenderPhase::~RenderPhase() {
-        if (timer) { timer->Complete(*this); }
+        if (timer) {
+            timer->Complete(*this);
+        }
     }
 
     void RenderPhase::StartTimer(PerfTimer &timer) {

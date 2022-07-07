@@ -59,12 +59,16 @@ namespace sp {
         LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
         std::shared_ptr<GLRenderTarget> GetTarget(VoxelRenderer *r) {
-            if (!target) { target = r->context.GetRenderTarget({PF_R32UI, glm::ivec2(Bins, 1)}); }
+            if (!target) {
+                target = r->context.GetRenderTarget({PF_R32UI, glm::ivec2(Bins, 1)});
+            }
             return target;
         }
 
         double ComputeScaledLuminance() {
-            if (!readBackBuf) { return 0.0f; }
+            if (!readBackBuf) {
+                return 0.0f;
+            }
 
             uint32 *buf = (uint32 *)readBackBuf.Map(GL_READ_ONLY);
             if (!buf) {
@@ -107,7 +111,9 @@ namespace sp {
         }
 
         void StartReadback() {
-            if (!readBackBuf) { readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ); }
+            if (!readBackBuf) {
+                readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ);
+            }
 
             readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
             glGetTextureImage(target->GetGLTexture().handle,

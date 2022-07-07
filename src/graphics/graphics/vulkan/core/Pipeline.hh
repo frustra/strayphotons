@@ -112,7 +112,9 @@ namespace sp::vulkan {
         }
 
         vk::DescriptorUpdateTemplate GetDescriptorUpdateTemplate(uint32 set) const {
-            if (HasDescriptorSet(set)) { return *descriptorUpdateTemplates[set]; }
+            if (HasDescriptorSet(set)) {
+                return *descriptorUpdateTemplates[set];
+            }
             return VK_NULL_HANDLE;
         }
 

@@ -243,7 +243,9 @@ namespace ecs {
 
     const SignalBindings::BindingList *SignalBindings::Lookup(const std::string name) const {
         auto list = destToSource.find(name);
-        if (list != destToSource.end()) { return &list->second; }
+        if (list != destToSource.end()) {
+            return &list->second;
+        }
         return nullptr;
     }
 

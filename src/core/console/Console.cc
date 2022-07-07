@@ -150,7 +150,9 @@ namespace sp {
             ulock.unlock();
 
             ParseAndExecute(top.text);
-            if (top.handled != nullptr) { top.handled->notify_all(); }
+            if (top.handled != nullptr) {
+                top.handled->notify_all();
+            }
 
             ulock.lock();
         }
@@ -203,7 +205,9 @@ namespace sp {
 
     void ConsoleManager::AddHistory(const string &input) {
         std::lock_guard lock(historyLock);
-        if (history.size() == 0 || history[history.size() - 1] != input) { history.push_back(input); }
+        if (history.size() == 0 || history[history.size() - 1] != input) {
+            history.push_back(input);
+        }
     }
 
     vector<string> ConsoleManager::AllHistory(size_t maxEntries) {

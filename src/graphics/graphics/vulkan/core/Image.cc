@@ -15,7 +15,7 @@ namespace sp::vulkan {
         : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent), mipLevels(imageInfo.mipLevels),
           arrayLayers(imageInfo.arrayLayers), usage(imageInfo.usage), declaredUsage(declaredUsage) {
 
-        VkImageCreateInfo vkImageInfo = imageInfo;
+        VkImageCreateInfo vkImageInfo = (const VkImageCreateInfo &)imageInfo;
         VkImage vkImage;
 
         auto result = vmaCreateImage(allocator, &vkImageInfo, &allocInfo, &vkImage, &allocation, nullptr);

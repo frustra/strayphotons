@@ -157,7 +157,9 @@ namespace sp {
                 VarType v;
                 in >> v;
                 values[i] = v;
-                if (var == values[i]) { target = (i + 1) % count; }
+                if (var == values[i]) {
+                    target = (i + 1) % count;
+                }
             }
             var = values[target];
         }

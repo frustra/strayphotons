@@ -136,7 +136,9 @@ namespace sp {
                                 physx::PxRigidActor *hitActor = touch.actor;
                                 if (hitActor) {
                                     auto userData = (ActorUserData *)hitActor->userData;
-                                    if (userData) { result = userData->entity; }
+                                    if (userData) {
+                                        result = userData->entity;
+                                    }
                                 }
                             }
                         } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Mass>) {

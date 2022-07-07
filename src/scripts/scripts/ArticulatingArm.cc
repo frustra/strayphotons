@@ -39,7 +39,9 @@ namespace sp::scripts {
 
             for (auto &node : jointNodes) {
                 auto child = node.entity.Get(lock);
-                if (!child.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) { continue; }
+                if (!child.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) {
+                    continue;
+                }
 
                 auto &ph = child.Get<ecs::Physics>(lock);
                 ph.angularDamping = lockedRatio * 100 * node.angularDampingMultiplier;
