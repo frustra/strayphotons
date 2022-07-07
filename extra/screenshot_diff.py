@@ -73,7 +73,7 @@ def main():
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
             subprocess.run('buildkite-agent annotate --style "warning"', text=True, shell=True,
-                input=path + ' <a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="diff/' + path + '" height=250></a>')
+                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 10<br/><a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="diff/' + path + '" height=250></a>')
         
 
 if __name__ == '__main__':
