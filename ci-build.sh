@@ -58,7 +58,7 @@ else
     echo -e "\033[32mTest successful\033[0m"
 fi
 
-echo -e "+++ Running \033[33mtest scripts\033[0m :camera_with_flash:"
+echo -e "--- Running \033[33mtest scripts\033[0m :camera_with_flash:"
 rm -rf screenshots/*.png
 
 function inline_image {
@@ -81,6 +81,7 @@ for file in ../assets/scripts/tests/*.txt; do
     ./sp-test "$@" "$testscript"
     result=$?
     if [ $result -ne 0 ]; then
+        echo -e "\n^^^ +++"
         echo -e "\033[31mTest failed with response code: $result\033[0m"
         success=$result
     else
@@ -105,3 +106,10 @@ if [ $format_valid -ne 0 ]; then
     echo -e "Run clang-format with ./extra/validate_format.py --fix"
     exit $format_valid
 fi
+
+if [ -n "$BUILDKITE_API_TOKEN" ]; then
+    echo -e "+++ Comparing screenshots :camera_with_flash:"
+    ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
+fi
+
+echo -e "\033[92mTests succeeded\033[0m"
