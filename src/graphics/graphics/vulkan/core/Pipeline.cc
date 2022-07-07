@@ -300,7 +300,9 @@ namespace sp::vulkan {
             });
 
             Assert(!errors, "error validating descriptor set");
-            device->updateDescriptorSetWithTemplate(descriptorSet, GetDescriptorUpdateTemplate(set), &setBindings);
+            device->updateDescriptorSetWithTemplate(descriptorSet,
+                GetDescriptorUpdateTemplate(set),
+                (const void *)&setBindings);
         }
         return descriptorSet;
     }
