@@ -70,9 +70,9 @@ def main():
             print('Pass', path, ':', float(metrics[0])),
         else:
             print('!! Fail', path, ':', float(metrics[0]))
-            subprocess.call('buildkite-agent artifact upload "diff/' + path + '"')
+            subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
-            subprocess.run('buildkite-agent annotate --style "warning"', text=True,
+            subprocess.run('buildkite-agent annotate --style "warning"', text=True, shell=True,
                 input=path + ' <a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="diff/' + path + '" height=250></a>')
         
 
