@@ -110,3 +110,5 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
     echo -e "--- Comparing screenshots :camera_with_flash:"
     ../extra/validate_format.py --token "$BUILDKITE_API_TOKEN"
 fi
+
+echo -e "\033[92mTests succeeded\033[0m"
