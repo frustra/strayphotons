@@ -69,7 +69,11 @@ def main():
         if float(metrics[0]) < 10.0:
             print('Pass', path, ':', float(metrics[0])),
         else:
-            print('Fail', path, ':', float(metrics[0]))
+            print('!! Fail', path, ':', float(metrics[0]))
+            subprocess.call('buildkite-agent artifact upload "diff/' + path + '"')
+            print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
+            subprocess.run('buildkite-agent annotate --style "warning"', text=True,
+                input=path + ' <a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="diff/' + path + '" height=250></a>')
         
 
 if __name__ == '__main__':
