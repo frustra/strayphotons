@@ -68,8 +68,9 @@ def main():
             print('Screenshot missing from previous build:', path)
             continue
 
+        current_build_path = os.environ.get('BUILDKITE_BUILD_URL') + '#' + os.environ.get('BUILDKITE_JOB_ID')
         master_build_path = artifacts[path]['job']['web_url']
-        master_img_path = artifacts[path]['job']['build_url'] + '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
+        master_img_path = master_build_path.split('#', 2)[0] + '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
 
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
@@ -82,7 +83,7 @@ def main():
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
             subprocess.run('buildkite-agent annotate --style "warning"', text=True, shell=True,
                 input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 10<br/>' +
-                '<a href="artifact://' + path + '">Current Build</a> -- ' +
+                '<a href="' + current_build_path + '">Current Build</a> -- ' +
                 '<a href="' + master_build_path + '">Master Build</a> -- ' +
                 '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
                 '<a href="artifact://' + path + '"><img src="artifact://' + path + '" alt="Current Build" height=200></a>' +
