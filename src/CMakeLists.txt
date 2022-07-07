@@ -46,10 +46,12 @@ add_module_configuration(
         ${PROJECT_SCRIPTS_LIB}
 )
 
+add_subdirectory(core)
+
 if(WIN32)
     add_subdirectory(audio)
 endif()
-add_subdirectory(core)
+
 add_subdirectory(graphics)
 add_subdirectory(input)
 add_subdirectory(main)
