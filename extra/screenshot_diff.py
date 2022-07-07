@@ -45,6 +45,7 @@ def main():
                 for artifact in content:
                     if artifact['path'].startswith('screenshots/tests/'):
                         artifacts[artifact['path']] = artifact
+                        artifacts[artifact['path']]['job'] = job
 
                 page += 1
 
@@ -63,6 +64,13 @@ def main():
         master_path = os.path.join(bin_root, 'comparison/' + path)
         diff_path = os.path.join(bin_root, 'diff/' + path)
 
+        if not path in artifacts:
+            print('Screenshot missing from previous build:', path)
+            continue
+
+        master_build_path = artifacts[path]['job']['web_url']
+        master_img_path = artifacts[path]['job']['build_url'] + '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
+
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
         metrics = difference_str.split(' ')
@@ -73,7 +81,14 @@ def main():
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
             subprocess.run('buildkite-agent annotate --style "warning"', text=True, shell=True,
-                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 10<br/><a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="diff/' + path + '" height=250></a>')
+                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 10<br/>' +
+                '<a href="artifact://' + path + '">Current Build</a> -- ' +
+                '<a href="' + master_build_path + '">Master Build</a> -- ' +
+                '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
+                '<a href="artifact://' + path + '"><img src="artifact://' + path + '" alt="Current Build" height=200></a>' +
+                '<a href="' + master_img_path + '"><img src="' + master_img_path + '" alt="Master Build" height=200></a>' +
+                '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a>'
+            )
         
 
 if __name__ == '__main__':
