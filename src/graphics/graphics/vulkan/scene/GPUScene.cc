@@ -62,6 +62,7 @@ namespace sp::vulkan {
             gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
+            gpuRenderable.emissiveScale = renderable.emissiveScale;
             if (ent.Has<ecs::OpticalElement>(lock)) {
                 opticEntities.emplace_back(ent);
                 gpuRenderable.opticID = opticEntities.size();
@@ -151,7 +152,7 @@ namespace sp::vulkan {
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
-                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 3, maxDraws},
+                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 4, maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;

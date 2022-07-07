@@ -220,7 +220,7 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eR16G16Sfloat;
+                desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eR8Unorm;
@@ -350,7 +350,7 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eR16G16Sfloat;
+                desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eR8Unorm;

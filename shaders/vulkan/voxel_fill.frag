@@ -18,6 +18,7 @@ layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
+layout(location = 6) flat in float emissiveScale;
 
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"
@@ -55,6 +56,7 @@ void main() {
     float metalness = metallicRoughnessSample.b;
 
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
+    pixelRadiance += emissiveScale * baseColor.rgb;
 
     uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);

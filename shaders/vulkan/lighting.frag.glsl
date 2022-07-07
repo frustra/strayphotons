@@ -50,9 +50,11 @@ void main() {
     vec3 baseColor = gb0.rgb;
     float roughness = gb2.r;
     float metalness = gb0.a;
+    float emissiveScale = gb1.b;
     vec3 viewNormal = DecodeNormal(gb1.rg);
     vec3 flatViewNormal = viewNormal; // DecodeNormal(gb1.ba);
-    vec3 emissive = vec3(0); // gb2.a * baseColor;
+
+    vec3 emissive = emissiveScale * baseColor;
 
     // Determine coordinates of fragment.
     vec2 screenPos = vec2(inTexCoord.x, 1 - inTexCoord.y);
