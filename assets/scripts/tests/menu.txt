@@ -1,9 +1,18 @@
 loadscene menu
+rotate player:flatview -90 0 1 0
+translate player:player -1 0 0
 # Step logic and physics so the voxel_controller moves the grid into place
 steplogic
 stepphysics 2
 # TODO: BUG: First menu frame is missing the GUI
 screenshot menu.png
 stepgraphics
+stepphysics 100
 screenshot delayed.png
+stepgraphics 2
+screenshot delayed2.png
+stepgraphics 2
+screenshot delayed3.png
+stepgraphics 2
+screenshot delayed4.png
 stepgraphics
