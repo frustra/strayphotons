@@ -88,14 +88,14 @@ def main():
             print('!! Fail', path, ':', float(metrics[0]))
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
-            subprocess.run('buildkite-agent annotate --style "warning"', text=True, shell=True,
+            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True,
                 input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 10<br/>' +
                 '<a href="' + current_build_path + '">Current Build</a> -- ' +
                 '<a href="' + master_build_path + '">Master Build</a> -- ' +
                 '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
                 '<a href="artifact://' + path + '"><img src="artifact://' + path + '" alt="Current Build" height=200></a>' +
                 '<a href="' + master_img_link + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
-                '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a>'
+                '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a><br/>'
             )
         
 
