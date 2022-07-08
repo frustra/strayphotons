@@ -9,10 +9,4 @@ screenshot menu.png
 stepgraphics
 stepphysics 100
 screenshot delayed.png
-stepgraphics 2
-screenshot delayed2.png
-stepgraphics 2
-screenshot delayed3.png
-stepgraphics 2
-screenshot delayed4.png
 stepgraphics
