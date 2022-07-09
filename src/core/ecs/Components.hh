@@ -76,13 +76,13 @@ namespace ecs {
         }
 
         bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) override {
-            static CompType defaultValue = {};
+            static const CompType defaultValue = {};
             auto &comp = src.Get<CompType>(lock);
 
             for (auto &field : fields) {
                 field.SaveIfChanged(dst, &comp, &defaultValue);
             }
-            return true;
+            return Save(lock, dst, comp);
         }
 
         void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) override {
@@ -98,8 +98,8 @@ namespace ecs {
         }
 
         static bool Save(Lock<Read<Name>> lock, picojson::value &dst, const CompType &src) {
-            std::cerr << "Calling undefined Save on Compoent type: " << typeid(CompType).name() << std::endl;
-            return false;
+            // Custom field serialization is always called, default to no-op.
+            return true;
         }
 
         static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {

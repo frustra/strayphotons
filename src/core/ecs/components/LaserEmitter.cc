@@ -1,10 +1,8 @@
 #include "LaserEmitter.hh"
 
-#include "assets/AssetHelpers.hh"
+#include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
-
-#include <picojson/picojson.h>
 
 namespace ecs {
     template<>
@@ -13,7 +11,10 @@ namespace ecs {
             if (param.first == "intensity") {
                 dst.intensity = param.second.get<double>();
             } else if (param.first == "color") {
-                dst.color = sp::MakeVec3(param.second);
+                if (!sp::json::Load(dst.color, param.second)) {
+                    Errorf("Invalid laser_emitter color: %s", param.second.to_str());
+                    return false;
+                }
             } else if (param.first == "on") {
                 dst.on = param.second.get<bool>();
             }

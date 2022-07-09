@@ -5,7 +5,6 @@ extern "C" {
 }
 
 #include "assets/Asset.hh"
-#include "assets/AssetHelpers.hh"
 #include "assets/ConsoleScript.hh"
 #include "assets/Gltf.hh"
 #include "assets/Image.hh"

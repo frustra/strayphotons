@@ -1,11 +1,9 @@
 #include "Physics.hh"
 
+#include "assets/AssetManager.hh"
+#include "assets/JsonHelpers.hh"
+#include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
-
-#include <assets/AssetHelpers.hh>
-#include <assets/AssetManager.hh>
-#include <ecs/EcsImpl.hh>
-#include <picojson/picojson.h>
 
 namespace ecs {
     bool parsePhysicsShape(const EntityScope &scope, PhysicsShape &shape, const picojson::value &src) {
@@ -61,7 +59,10 @@ namespace ecs {
                 }
                 PhysicsShape::Box box;
                 if (param.second.is<picojson::array>()) {
-                    box.extents = sp::MakeVec3(param.second);
+                    if (!sp::json::Load(box.extents, param.second)) {
+                        Errorf("Invalid physics box extents: %s", param.second.to_str());
+                        return false;
+                    }
                     shape.shape = box;
                 } else {
                     Errorf("Unknown physics box value: %s", param.second.to_str());
@@ -168,7 +169,10 @@ namespace ecs {
                     return false;
                 }
             } else if (param.first == "force") {
-                physics.constantForce = sp::MakeVec3(param.second);
+                if (!sp::json::Load(physics.constantForce, param.second)) {
+                    Errorf("Invalid physics force: %s", param.second.to_str());
+                    return false;
+                }
             } else if (param.first == "constraint") {
                 Assert(scene, "Physics::Load must have valid scene to define constraint");
                 Name constraintTargetName;

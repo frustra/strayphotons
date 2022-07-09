@@ -1,12 +1,10 @@
 #include "PhysicsJoints.hh"
 
+#include "assets/AssetManager.hh"
+#include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
+#include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
-
-#include <assets/AssetHelpers.hh>
-#include <assets/AssetManager.hh>
-#include <ecs/EcsImpl.hh>
-#include <picojson/picojson.h>
 
 namespace ecs {
     template<>
@@ -41,7 +39,10 @@ namespace ecs {
                         return false;
                     }
                 } else if (jointParam.first == "range") {
-                    joint.range = sp::MakeVec2(jointParam.second);
+                    if (!sp::json::Load(joint.range, jointParam.second)) {
+                        Errorf("Invalid physics_joint range: %s", jointParam.second.to_str());
+                        return false;
+                    }
                 } else if (jointParam.first == "local_offset") {
                     if (!Component<Transform>::Load(scope, localTransform, jointParam.second)) {
                         Errorf("Couldn't parse physics joint local_offset as Transform");

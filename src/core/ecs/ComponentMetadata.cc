@@ -1,6 +1,6 @@
 #include "ComponentMetadata.hh"
 
-#include <picojson/picojson.h>
+#include "assets/JsonHelpers.hh"
 
 namespace ecs {
     bool ComponentField::SaveIfChanged(picojson::value &dst,
@@ -8,6 +8,7 @@ namespace ecs {
         const void *defaultComponent) const {
         auto *field = static_cast<const char *>(component) + offset;
         auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
+
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
@@ -47,19 +48,12 @@ namespace ecs {
             auto &value = *reinterpret_cast<const glm::vec2 *>(field);
             auto &defaultValue = *reinterpret_cast<const glm::vec2 *>(defaultField);
 
-            if (value != defaultValue) {
-                obj[name] = picojson::value(picojson::array({picojson::value(value.x), picojson::value(value.y)}));
-                return true;
-            }
+            return sp::json::SaveIfChanged(obj, name, value, defaultValue);
         } else if (type == FieldType::Vec3) {
             auto &value = *reinterpret_cast<const glm::vec3 *>(field);
             auto &defaultValue = *reinterpret_cast<const glm::vec3 *>(defaultField);
 
-            if (value != defaultValue) {
-                obj[name] = picojson::value(
-                    picojson::array({picojson::value(value.x), picojson::value(value.y), picojson::value(value.z)}));
-                return true;
-            }
+            return sp::json::SaveIfChanged(obj, name, value, defaultValue);
         } else if (type == FieldType::String) {
             auto &value = *reinterpret_cast<const std::string *>(field);
             auto &defaultValue = *reinterpret_cast<const std::string *>(defaultField);

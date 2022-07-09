@@ -1,17 +1,18 @@
 #include "LaserSensor.hh"
 
-#include "assets/AssetHelpers.hh"
+#include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
-
-#include <picojson/picojson.h>
 
 namespace ecs {
     template<>
     bool Component<LaserSensor>::Load(const EntityScope &scope, LaserSensor &dst, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "threshold") {
-                dst.threshold = sp::MakeVec3(param.second);
+                if (!sp::json::Load(dst.threshold, param.second)) {
+                    Errorf("Invalid laser_sensor threshold: %s", param.second.to_str());
+                    return false;
+                }
             }
         }
         return true;

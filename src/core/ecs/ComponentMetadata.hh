@@ -50,7 +50,7 @@ namespace ecs {
             } else if constexpr (std::is_same<BaseType, std::string>::value) {
                 return ComponentField(name, FieldType::String, offset);
             } else {
-                Abortf("Unknown component field type: %s", typeid(BaseType).name());
+                Abortf("Component field %s type must be custom: %s", name, typeid(BaseType).name());
             }
         }
 

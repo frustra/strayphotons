@@ -1,6 +1,5 @@
 #include "Triggers.hh"
 
-#include "assets/AssetHelpers.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <picojson/picojson.h>

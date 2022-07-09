@@ -1,10 +1,8 @@
 #include "Light.hh"
 
-#include "assets/AssetHelpers.hh"
+#include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
-
-#include <picojson/picojson.h>
 
 namespace ecs {
     template<>
@@ -17,7 +15,10 @@ namespace ecs {
             } else if (param.first == "spotAngle") {
                 light.spotAngle = glm::radians(param.second.get<double>());
             } else if (param.first == "tint") {
-                light.tint = sp::MakeVec3(param.second);
+                if (!sp::json::Load(light.tint, param.second)) {
+                    Errorf("Invalid light tint: %s", param.second.to_str());
+                    return false;
+                }
             } else if (param.first == "gel") {
                 light.gelName = param.second.get<string>();
             } else if (param.first == "on") {
@@ -25,7 +26,10 @@ namespace ecs {
             } else if (param.first == "shadowMapSize") {
                 light.shadowMapSize = (uint32)param.second.get<double>();
             } else if (param.first == "shadowMapClip") {
-                light.shadowMapClip = sp::MakeVec2(param.second);
+                if (!sp::json::Load(light.shadowMapClip, param.second)) {
+                    Errorf("Invalid light shadowMapClip: %s", param.second.to_str());
+                    return false;
+                }
             }
         }
         return true;
@@ -33,7 +37,7 @@ namespace ecs {
 
     template<>
     void Component<Light>::Apply(const Light &src, Lock<AddRemove> lock, Entity dst) {
-        static Light defaultValues = {};
+        static const Light defaultValues = {};
         auto &dstLight = dst.Get<Light>(lock);
         if (dstLight.intensity == defaultValues.intensity) dstLight.intensity = src.intensity;
         if (dstLight.illuminance == defaultValues.illuminance) dstLight.illuminance = src.illuminance;

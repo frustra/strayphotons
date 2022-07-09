@@ -35,4 +35,6 @@ namespace ecs {
 
     template<>
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src);
+    template<>
+    bool Component<LaserLine>::Save(Lock<Read<Name>> lock, picojson::value &dst, const LaserLine &src);
 } // namespace ecs

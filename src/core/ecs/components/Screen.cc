@@ -1,6 +1,6 @@
 #include "Screen.hh"
 
-#include "assets/AssetHelpers.hh"
+#include "assets/JsonHelpers.hh"
 
 namespace ecs {
     template<>
@@ -12,7 +12,10 @@ namespace ecs {
                 if (param.first == "target") {
                     dst.textureName = param.second.get<string>();
                 } else if (param.first == "luminance") {
-                    dst.luminanceScale = sp::MakeVec3(param.second);
+                    if (!sp::json::Load(dst.luminanceScale, param.second)) {
+                        Errorf("Invalid screen luminance: %s", param.second.to_str());
+                        return false;
+                    }
                 }
             }
         }

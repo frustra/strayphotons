@@ -44,14 +44,14 @@ namespace sp {
             for (auto &entity : lock.EntitiesWith<ecs::LaserLine>()) {
                 picojson::value value;
                 ecs::LookupComponent("laser_line")->SaveEntity(lock, value, entity);
-                Logf("Saving laser_line on %s: %s", ecs::ToString(lock, entity), value.serialize(true));
+                Logf("Saving laser_line on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
             }
 
-            for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
-                picojson::value value;
-                ecs::LookupComponent("light")->SaveEntity(lock, value, entity);
-                Logf("Saving light on %s: %s", ecs::ToString(lock, entity), value.serialize(true));
-            }
+            // for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
+            //     picojson::value value;
+            //     ecs::LookupComponent("light")->SaveEntity(lock, value, entity);
+            //     Logf("Saving light on %s: %s", ecs::ToString(lock, entity), value.serialize());
+            // }
         }
     }
 
