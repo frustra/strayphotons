@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecs/ComponentMetadata.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
@@ -54,6 +55,16 @@ namespace ecs {
             }
         }
 
+        template<typename... Fields>
+        Component(const char *name, Fields &&...fields) : Component(name) {
+            (this->fields.emplace_back(fields), ...);
+
+            // Logf("Component %s has %u fields:", name, this->fields.size());
+            // for (auto &f : this->fields) {
+            //     Logf("  Field %s type %u offset %u", f.name, f.type, f.offset);
+            // }
+        }
+
         bool LoadEntity(Lock<AddRemove> lock,
             const EntityScope &scope,
             Entity &dst,
@@ -102,5 +113,8 @@ namespace ecs {
         bool operator!=(const Component<CompType> &other) const {
             return !(*this == other);
         }
+
+    private:
+        std::vector<ComponentField> fields;
     };
 }; // namespace ecs
