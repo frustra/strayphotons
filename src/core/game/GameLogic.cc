@@ -4,6 +4,8 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
+#include <picojson/picojson.h>
+
 namespace sp {
     GameLogic::GameLogic(bool stepMode) : RegisteredThread("GameLogic", 120.0), stepMode(stepMode) {
         funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
@@ -33,6 +35,23 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
             auto &script = entity.Get<ecs::Script>(lock);
             script.OnTick(lock, entity, interval);
+        }
+
+        static bool onlyOnce = false;
+        if (!onlyOnce) {
+            onlyOnce = true;
+
+            for (auto &entity : lock.EntitiesWith<ecs::LaserLine>()) {
+                picojson::value value;
+                ecs::LookupComponent("laser_line")->SaveEntity(lock, value, entity);
+                Logf("Saving laser_line on %s: %s", ecs::ToString(lock, entity), value.serialize(true));
+            }
+
+            for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
+                picojson::value value;
+                ecs::LookupComponent("light")->SaveEntity(lock, value, entity);
+                Logf("Saving light on %s: %s", ecs::ToString(lock, entity), value.serialize(true));
+            }
         }
     }
 

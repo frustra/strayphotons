@@ -1,5 +1,6 @@
 
 target_sources(${PROJECT_CORE_LIB} PRIVATE
+    ComponentMetadata.cc
     Components.cc
     Ecs.cc
     EntityRef.cc
@@ -7,6 +8,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
 )
 
 target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
+    ComponentMetadata.hh
     Components.hh
     Ecs.hh
     EcsImpl.hh

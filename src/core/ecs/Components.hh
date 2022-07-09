@@ -58,11 +58,6 @@ namespace ecs {
         template<typename... Fields>
         Component(const char *name, Fields &&...fields) : Component(name) {
             (this->fields.emplace_back(fields), ...);
-
-            // Logf("Component %s has %u fields:", name, this->fields.size());
-            // for (auto &f : this->fields) {
-            //     Logf("  Field %s type %u offset %u", f.name, f.type, f.offset);
-            // }
         }
 
         bool LoadEntity(Lock<AddRemove> lock,
@@ -81,8 +76,13 @@ namespace ecs {
         }
 
         bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) override {
+            static CompType defaultValue = {};
             auto &comp = src.Get<CompType>(lock);
-            return Save(lock, dst, comp);
+
+            for (auto &field : fields) {
+                field.SaveIfChanged(dst, &comp, &defaultValue);
+            }
+            return true;
         }
 
         void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) override {
