@@ -8,28 +8,8 @@ namespace ecs {
     template<>
     bool Component<Light>::Load(const EntityScope &scope, Light &light, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "intensity") {
-                light.intensity = param.second.get<double>();
-            } else if (param.first == "illuminance") {
-                light.illuminance = param.second.get<double>();
-            } else if (param.first == "spotAngle") {
+            if (param.first == "spotAngle") {
                 light.spotAngle = glm::radians(param.second.get<double>());
-            } else if (param.first == "tint") {
-                if (!sp::json::Load(light.tint, param.second)) {
-                    Errorf("Invalid light tint: %s", param.second.to_str());
-                    return false;
-                }
-            } else if (param.first == "gel") {
-                light.gelName = param.second.get<string>();
-            } else if (param.first == "on") {
-                light.on = param.second.get<bool>();
-            } else if (param.first == "shadowMapSize") {
-                light.shadowMapSize = (uint32)param.second.get<double>();
-            } else if (param.first == "shadowMapClip") {
-                if (!sp::json::Load(light.shadowMapClip, param.second)) {
-                    Errorf("Invalid light shadowMapClip: %s", param.second.to_str());
-                    return false;
-                }
             }
         }
         return true;

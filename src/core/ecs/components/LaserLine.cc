@@ -9,20 +9,17 @@ namespace ecs {
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src) {
         ecs::LaserLine::Line line;
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "intensity") {
-                dst.intensity = param.second.get<double>();
-            } else if (param.first == "radius") {
-                dst.radius = param.second.get<double>();
-            } else if (param.first == "media_density") {
-                dst.mediaDensityFactor = param.second.get<double>();
-            } else if (param.first == "color") {
+            if (param.first == "color") {
                 if (!sp::json::Load(line.color, param.second)) {
                     Errorf("Invalid line color: %s", param.second.to_str());
                     return false;
                 }
-            } else if (param.first == "on") {
-                dst.on = param.second.get<bool>();
             } else if (param.first == "points") {
+                if (!param.second.is<picojson::array>()) {
+                    Errorf("Invalid line points: %s", param.second.to_str());
+                    return false;
+                }
+
                 for (auto &p : param.second.get<picojson::array>()) {
                     auto &point = line.points.emplace_back();
                     if (!sp::json::Load(point, p)) {
@@ -44,21 +41,22 @@ namespace ecs {
         static const LaserLine::Line defaultLine = {};
         static const LaserLine::Segment defaultSegment = {};
 
-        std::visit(
+        return std::visit(
             [&](auto &&arg) {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, LaserLine::Line>) {
                     sp::json::SaveIfChanged(obj, "color", arg.color, defaultLine.color);
 
-                    if (arg.points.empty()) return;
+                    if (arg.points.empty()) return true;
                     picojson::array points;
                     points.reserve(arg.points.size());
                     for (auto &point : arg.points) {
                         sp::json::Save(points.emplace_back(), point);
                     }
                     obj["points"] = picojson::value(points);
+                    return true;
                 } else if constexpr (std::is_same_v<T, LaserLine::Segments>) {
-                    if (arg.empty()) return;
+                    if (arg.empty()) return true;
                     picojson::array segments;
                     segments.reserve(arg.size());
                     for (auto &segment : arg) {
@@ -69,11 +67,12 @@ namespace ecs {
                         segments.emplace_back(segmentObj);
                     }
                     obj["segments"] = picojson::value(segments);
+                    return true;
                 } else {
-                    Abortf("Unsupported laser line type: %s", typeid(arg).name());
+                    Errorf("Unsupported laser line type: %s", typeid(arg).name());
+                    return false;
                 }
             },
             src.line);
-        return true;
     }
 } // namespace ecs

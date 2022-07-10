@@ -60,17 +60,29 @@ namespace ecs {
             (this->fields.emplace_back(fields), ...);
         }
 
+        bool LoadFields(const EntityScope &scope, CompType &dst, const picojson::value &src) {
+            for (auto &field : fields) {
+                if (!field.Load(scope, &dst, src)) {
+                    Errorf("Component %s has invalid field: %s", name, field.name);
+                    return false;
+                }
+            }
+            return true;
+        }
+
         bool LoadEntity(Lock<AddRemove> lock,
             const EntityScope &scope,
             Entity &dst,
             const picojson::value &src) override {
             if (dst.Has<CompType>(lock)) {
                 CompType srcComp;
+                if (!LoadFields(scope, srcComp, src)) return false;
                 if (!Load(scope, srcComp, src)) return false;
                 Apply(srcComp, lock, dst);
                 return true;
             } else {
                 auto &comp = dst.Set<CompType>(lock);
+                if (!LoadFields(scope, comp, src)) return false;
                 return Load(scope, comp, src);
             }
         }

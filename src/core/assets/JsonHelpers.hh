@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Common.hh"
 #include "core/Logging.hh"
 
 #include <glm/glm.hpp>
@@ -8,13 +9,30 @@
 #include <vector>
 
 namespace sp::json {
+    template<typename T>
+    inline bool Load(T &dst, const picojson::value &src) {
+        if (!src.is<double>()) return false;
+        dst = (T)src.get<double>();
+        return true;
+    }
+
+    template<>
+    inline bool Load(bool &dst, const picojson::value &src) {
+        if (!src.is<bool>()) return false;
+        dst = src.get<bool>();
+        return true;
+    }
+
+    template<>
+    inline bool Load(std::string &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        dst = src.get<std::string>();
+        return true;
+    }
+
     template<size_t N, typename T, glm::precision P>
-    bool Load(glm::vec<N, T, P> &dst, const picojson::value &src) {
-        if (!src.is<picojson::array>()) {
-            Errorf("Invalid json, expected array for %s", typeid(dst).name());
-            dst = {};
-            return false;
-        }
+    inline bool Load(glm::vec<N, T, P> &dst, const picojson::value &src) {
+        if (!src.is<picojson::array>()) return false;
         auto &values = src.get<picojson::array>();
         if (values.size() != N) {
             Errorf("Incorrect array size: %u, expected %u", values.size(), N);
@@ -33,8 +51,23 @@ namespace sp::json {
         return true;
     }
 
+    template<typename T>
+    inline void Save(picojson::value &dst, const T &src) {
+        dst = picojson::value((double)src);
+    }
+
+    template<>
+    inline void Save(picojson::value &dst, const bool &src) {
+        dst = picojson::value(src);
+    }
+
+    template<>
+    inline void Save(picojson::value &dst, const std::string &src) {
+        dst = picojson::value(src);
+    }
+
     template<size_t N, typename T, glm::precision P>
-    void Save(picojson::value &dst, const glm::vec<N, T, P> &src) {
+    inline void Save(picojson::value &dst, const glm::vec<N, T, P> &src) {
         picojson::array vec(src.length());
 
         for (size_t i = 0; i < src.length(); i++) {
@@ -44,7 +77,7 @@ namespace sp::json {
     }
 
     template<typename T>
-    bool SaveIfChanged(picojson::object &dst, const char *field, const T &src, const T &def) {
+    inline bool SaveIfChanged(picojson::object &dst, const char *field, const T &src, const T &def) {
         if (src != def) {
             Save(dst[field], src);
             return true;

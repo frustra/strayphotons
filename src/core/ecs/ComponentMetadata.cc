@@ -3,6 +3,55 @@
 #include "assets/JsonHelpers.hh"
 
 namespace ecs {
+    template<typename T>
+    bool LoadField(void *dst, const picojson::value &src) {
+        auto &field = *reinterpret_cast<T *>(dst);
+        if (!sp::json::Load(field, src)) {
+            Errorf("Invalid %s field value: %s", typeid(T).name(), src.to_str());
+            return false;
+        }
+        return true;
+    }
+
+    bool ComponentField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
+        if (!src.is<picojson::object>()) {
+            Errorf("ComponentField::Load invalid component object: %s", src.to_str());
+            return false;
+        }
+        auto &obj = src.get<picojson::object>();
+        if (!src.contains(name)) {
+            // Silently leave missing fields as default
+            return true;
+        }
+
+        auto *fieldDst = static_cast<char *>(component) + offset;
+        auto &fieldSrc = obj.at(name);
+
+        if (type == FieldType::Bool) {
+            return LoadField<bool>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Int32) {
+            return LoadField<int32_t>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Uint32) {
+            return LoadField<uint32_t>(fieldDst, fieldSrc);
+        } else if (type == FieldType::SizeT) {
+            return LoadField<size_t>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Float) {
+            return LoadField<float>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Double) {
+            return LoadField<double>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Vec2) {
+            return LoadField<glm::vec2>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Vec3) {
+            return LoadField<glm::vec3>(fieldDst, fieldSrc);
+        } else if (type == FieldType::Vec4) {
+            return LoadField<glm::vec4>(fieldDst, fieldSrc);
+        } else if (type == FieldType::String) {
+            return LoadField<std::string>(fieldDst, fieldSrc);
+        } else {
+            Abortf("ComponentField::Load unknown component field type: %u", type);
+        }
+    }
+
     bool ComponentField::SaveIfChanged(picojson::value &dst,
         const void *component,
         const void *defaultComponent) const {
@@ -20,17 +69,17 @@ namespace ecs {
                 obj[name] = picojson::value(value);
                 return true;
             }
-        } else if (type == FieldType::Int) {
-            auto &value = *reinterpret_cast<const int *>(field);
-            auto &defaultValue = *reinterpret_cast<const int *>(defaultField);
+        } else if (type == FieldType::Int32) {
+            auto &value = *reinterpret_cast<const int32_t *>(field);
+            auto &defaultValue = *reinterpret_cast<const int32_t *>(defaultField);
 
             if (value != defaultValue) {
                 obj[name] = picojson::value((double)value);
                 return true;
             }
-        } else if (type == FieldType::Uint) {
-            auto &value = *reinterpret_cast<const unsigned int *>(field);
-            auto &defaultValue = *reinterpret_cast<const unsigned int *>(defaultField);
+        } else if (type == FieldType::Uint32) {
+            auto &value = *reinterpret_cast<const uint32_t *>(field);
+            auto &defaultValue = *reinterpret_cast<const uint32_t *>(defaultField);
 
             if (value != defaultValue) {
                 obj[name] = picojson::value((double)value);
@@ -44,6 +93,14 @@ namespace ecs {
                 obj[name] = picojson::value((double)value);
                 return true;
             }
+        } else if (type == FieldType::Double) {
+            auto &value = *reinterpret_cast<const double *>(field);
+            auto &defaultValue = *reinterpret_cast<const double *>(defaultField);
+
+            if (value != defaultValue) {
+                obj[name] = picojson::value(value);
+                return true;
+            }
         } else if (type == FieldType::Vec2) {
             auto &value = *reinterpret_cast<const glm::vec2 *>(field);
             auto &defaultValue = *reinterpret_cast<const glm::vec2 *>(defaultField);
@@ -52,6 +109,11 @@ namespace ecs {
         } else if (type == FieldType::Vec3) {
             auto &value = *reinterpret_cast<const glm::vec3 *>(field);
             auto &defaultValue = *reinterpret_cast<const glm::vec3 *>(defaultField);
+
+            return sp::json::SaveIfChanged(obj, name, value, defaultValue);
+        } else if (type == FieldType::Vec4) {
+            auto &value = *reinterpret_cast<const glm::vec4 *>(field);
+            auto &defaultValue = *reinterpret_cast<const glm::vec4 *>(defaultField);
 
             return sp::json::SaveIfChanged(obj, name, value, defaultValue);
         } else if (type == FieldType::String) {
@@ -63,7 +125,7 @@ namespace ecs {
                 return true;
             }
         } else {
-            Abortf("Unknown component field type: %u", type);
+            Abortf("ComponentField::SaveIfChanged unknown component field type: %u", type);
         }
         return false;
     }
