@@ -20,7 +20,7 @@ namespace ecs {
     static Component<Light> ComponentLight("light",
         ComponentField::New("intensity", &Light::intensity),
         ComponentField::New("illuminance", &Light::illuminance),
-        ComponentField::New("spotAngle", &Light::spotAngle),
+        // ComponentField::New("spotAngle", &Light::spotAngle), handled by Load()
         ComponentField::New("tint", &Light::tint),
         ComponentField::New("gel", &Light::gelName),
         ComponentField::New("on", &Light::on),
