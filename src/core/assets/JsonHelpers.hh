@@ -23,20 +23,12 @@ namespace sp::json {
         return true;
     }
 
-    template<>
-    inline bool Load(std::string &dst, const picojson::value &src) {
-        if (!src.is<std::string>()) return false;
-        dst = src.get<std::string>();
-        return true;
-    }
-
     template<size_t N, typename T, glm::precision P>
-    inline bool Load(glm::vec<N, T, P> &dst, const picojson::value &src) {
+    inline bool LoadVec(glm::vec<N, T, P> &dst, const picojson::value &src) {
         if (!src.is<picojson::array>()) return false;
         auto &values = src.get<picojson::array>();
         if (values.size() != N) {
             Errorf("Incorrect array size: %u, expected %u", values.size(), N);
-            dst = {};
             return false;
         }
 
@@ -46,8 +38,40 @@ namespace sp::json {
                 dst = {};
                 return false;
             }
-            dst[i] = (float)values[i].get<double>();
+            dst[i] = (T)values[i].get<double>();
         }
+        return true;
+    }
+
+    template<>
+    inline bool Load(glm::vec2 &dst, const picojson::value &src) {
+        return LoadVec<2>(dst, src);
+    }
+
+    template<>
+    inline bool Load(glm::ivec2 &dst, const picojson::value &src) {
+        return LoadVec<2>(dst, src);
+    }
+
+    template<>
+    inline bool Load(glm::vec3 &dst, const picojson::value &src) {
+        return LoadVec<3>(dst, src);
+    }
+
+    template<>
+    inline bool Load(glm::ivec3 &dst, const picojson::value &src) {
+        return LoadVec<3>(dst, src);
+    }
+
+    template<>
+    inline bool Load(glm::vec4 &dst, const picojson::value &src) {
+        return LoadVec<4>(dst, src);
+    }
+
+    template<>
+    inline bool Load(std::string &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        dst = src.get<std::string>();
         return true;
     }
 
@@ -62,18 +86,38 @@ namespace sp::json {
     }
 
     template<>
-    inline void Save(picojson::value &dst, const std::string &src) {
-        dst = picojson::value(src);
-    }
+    inline void Save(picojson::value &dst, const glm::vec2 &src) {
+        picojson::array vec(2);
 
-    template<size_t N, typename T, glm::precision P>
-    inline void Save(picojson::value &dst, const glm::vec<N, T, P> &src) {
-        picojson::array vec(src.length());
-
-        for (size_t i = 0; i < src.length(); i++) {
+        for (size_t i = 0; i < vec.size(); i++) {
             vec[i] = picojson::value((double)src[i]);
         }
         dst = picojson::value(vec);
+    }
+
+    template<>
+    inline void Save(picojson::value &dst, const glm::vec3 &src) {
+        picojson::array vec(3);
+
+        for (size_t i = 0; i < vec.size(); i++) {
+            vec[i] = picojson::value((double)src[i]);
+        }
+        dst = picojson::value(vec);
+    }
+
+    template<>
+    inline void Save(picojson::value &dst, const glm::vec4 &src) {
+        picojson::array vec(4);
+
+        for (size_t i = 0; i < vec.size(); i++) {
+            vec[i] = picojson::value((double)src[i]);
+        }
+        dst = picojson::value(vec);
+    }
+
+    template<>
+    inline void Save(picojson::value &dst, const std::string &src) {
+        dst = picojson::value(src);
     }
 
     template<typename T>
