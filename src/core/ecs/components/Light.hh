@@ -9,7 +9,7 @@ namespace ecs {
     struct Light {
         float intensity = 0;
         float illuminance = 0;
-        float spotAngle = 0;
+        sp::angle_t spotAngle = 0.0f;
         glm::vec3 tint = glm::vec3(1);
         string gelName;
         bool on = true;
@@ -20,15 +20,10 @@ namespace ecs {
     static Component<Light> ComponentLight("light",
         ComponentField::New("intensity", &Light::intensity),
         ComponentField::New("illuminance", &Light::illuminance),
-        // ComponentField::New("spotAngle", &Light::spotAngle), handled by Load()
+        ComponentField::New("spotAngle", &Light::spotAngle),
         ComponentField::New("tint", &Light::tint),
         ComponentField::New("gel", &Light::gelName),
         ComponentField::New("on", &Light::on),
         ComponentField::New("shadowMapSize", &Light::shadowMapSize),
         ComponentField::New("shadowMapClip", &Light::shadowMapClip));
-
-    template<>
-    bool Component<Light>::Load(const EntityScope &scope, Light &dst, const picojson::value &src);
-    template<>
-    void Component<Light>::Apply(const Light &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

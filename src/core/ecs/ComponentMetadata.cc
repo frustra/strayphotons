@@ -2,6 +2,8 @@
 
 #include "assets/JsonHelpers.hh"
 
+#include <cstring>
+
 namespace ecs {
     template<typename T>
     bool LoadField(void *dst, const picojson::value &src) {
@@ -34,27 +36,30 @@ namespace ecs {
         auto *fieldDst = static_cast<char *>(component) + offset;
         auto &fieldSrc = obj.at(name);
 
-        if (type == FieldType::Bool) {
+        switch (type) {
+        case FieldType::Bool:
             return LoadField<bool>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Int32) {
+        case FieldType::Int32:
             return LoadField<int32_t>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Uint32) {
+        case FieldType::Uint32:
             return LoadField<uint32_t>(fieldDst, fieldSrc);
-        } else if (type == FieldType::SizeT) {
+        case FieldType::SizeT:
             return LoadField<size_t>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Float) {
+        case FieldType::AngleT:
+            return LoadField<sp::angle_t>(fieldDst, fieldSrc);
+        case FieldType::Float:
             return LoadField<float>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Double) {
+        case FieldType::Double:
             return LoadField<double>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Vec2) {
+        case FieldType::Vec2:
             return LoadField<glm::vec2>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Vec3) {
+        case FieldType::Vec3:
             return LoadField<glm::vec3>(fieldDst, fieldSrc);
-        } else if (type == FieldType::Vec4) {
+        case FieldType::Vec4:
             return LoadField<glm::vec4>(fieldDst, fieldSrc);
-        } else if (type == FieldType::String) {
+        case FieldType::String:
             return LoadField<std::string>(fieldDst, fieldSrc);
-        } else {
+        default:
             Abortf("ComponentField::Load unknown component field type: %u", type);
         }
     }
@@ -68,26 +73,41 @@ namespace ecs {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
-        if (type == FieldType::Bool) {
+        switch (type) {
+        case FieldType::Bool:
             return SaveField<bool>(obj, name, field, defaultField);
-        } else if (type == FieldType::Int32) {
+        case FieldType::Int32:
             return SaveField<int32_t>(obj, name, field, defaultField);
-        } else if (type == FieldType::Uint32) {
+        case FieldType::Uint32:
             return SaveField<uint32_t>(obj, name, field, defaultField);
-        } else if (type == FieldType::Float) {
+        case FieldType::SizeT:
+            return SaveField<size_t>(obj, name, field, defaultField);
+        case FieldType::AngleT:
+            return SaveField<sp::angle_t>(obj, name, field, defaultField);
+        case FieldType::Float:
             return SaveField<float>(obj, name, field, defaultField);
-        } else if (type == FieldType::Double) {
+        case FieldType::Double:
             return SaveField<double>(obj, name, field, defaultField);
-        } else if (type == FieldType::Vec2) {
+        case FieldType::Vec2:
             return SaveField<glm::vec2>(obj, name, field, defaultField);
-        } else if (type == FieldType::Vec3) {
+        case FieldType::Vec3:
             return SaveField<glm::vec3>(obj, name, field, defaultField);
-        } else if (type == FieldType::Vec4) {
+        case FieldType::Vec4:
             return SaveField<glm::vec4>(obj, name, field, defaultField);
-        } else if (type == FieldType::String) {
+        case FieldType::String:
             return SaveField<std::string>(obj, name, field, defaultField);
-        } else {
+        default:
             Abortf("ComponentField::SaveIfChanged unknown component field type: %u", type);
+        }
+    }
+
+    void ComponentField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
+        auto *dstField = static_cast<char *>(dstComponent) + offset;
+        auto *srcField = static_cast<const char *>(srcComponent) + offset;
+        auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
+
+        if (std::memcmp(dstField, defaultField, size) == 0) {
+            std::memcpy(dstField, srcField, size);
         }
     }
 } // namespace ecs

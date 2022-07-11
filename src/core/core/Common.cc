@@ -50,6 +50,10 @@ namespace sp {
         return r;
     }
 
+    float angle_t::degrees() const {
+        return glm::degrees(radians);
+    }
+
     namespace boost_replacements {
         bool starts_with(const string &str, const string &prefix) {
             return str.rfind(prefix, 0) == 0;

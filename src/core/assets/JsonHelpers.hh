@@ -56,6 +56,12 @@ namespace sp::json {
         return true;
     }
     template<>
+    inline bool Load(angle_t &dst, const picojson::value &src) {
+        if (!src.is<double>()) return false;
+        dst = glm::radians(src.get<double>());
+        return true;
+    }
+    template<>
     inline bool Load(glm::vec2 &dst, const picojson::value &src) {
         return detail::LoadVec<2>(dst, src);
     }
@@ -102,6 +108,10 @@ namespace sp::json {
     template<>
     inline void Save(picojson::value &dst, const bool &src) {
         dst = picojson::value(src);
+    }
+    template<>
+    inline void Save(picojson::value &dst, const angle_t &src) {
+        dst = picojson::value((double)src.degrees());
     }
     template<>
     inline void Save(picojson::value &dst, const glm::vec2 &src) {

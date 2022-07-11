@@ -89,7 +89,7 @@ namespace ecs {
 
             if (node.meshIndex) {
                 if (state.GetParam<bool>("render")) {
-                    Renderable renderable(asyncGltf, *node.meshIndex);
+                    auto &renderable = newEntity.Set<Renderable>(lock, asyncGltf, *node.meshIndex);
 
                     if (node.skinIndex) {
                         auto &skin = model->skins[*node.skinIndex];
@@ -102,14 +102,13 @@ namespace ecs {
                             }
                         }
                     }
-                    Component<Renderable>::Apply(renderable, lock, newEntity);
                 }
 
                 auto physicsParam = state.GetParam<std::string>("physics");
                 if (!physicsParam.empty()) {
                     sp::to_lower(physicsParam);
                     PhysicsShape::ConvexMesh mesh(asyncGltf, *node.meshIndex);
-                    Physics physics(mesh);
+                    auto &physics = newEntity.Set<Physics>(lock, mesh);
                     if (physicsParam == "dynamic") {
                         physics.dynamic = true;
                     } else if (physicsParam == "kinematic") {
@@ -121,7 +120,6 @@ namespace ecs {
                         Abortf("Unknown gltf physics param: %s", physicsParam);
                     }
                     physics.group = group;
-                    Component<Physics>::Apply(physics, lock, newEntity);
                 }
             }
 

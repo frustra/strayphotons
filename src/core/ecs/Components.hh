@@ -99,14 +99,43 @@ namespace ecs {
 
         void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) override {
             if (src.Has<CompType>(srcLock)) {
-                auto &comp = src.Get<CompType>(srcLock);
-                Apply(comp, dstLock, dst);
+                static const CompType defaultValues = {};
+                auto &srcComp = src.Get<CompType>(srcLock);
+
+                if (!dst.Has<CompType>(dstLock)) {
+                    dst.Set<CompType>(dstLock, srcComp);
+                } else if constexpr (std::is_same<CompType, Name>::value) {
+                    auto &dstName = dst.Get<Name>(dstLock);
+                    Assertf(dstName == srcComp, "ApplyComponent called with mismatched ecs::Name!");
+                } else if constexpr (std::is_same<CompType, SceneInfo>::value) {
+                    auto &dstInfo = dst.Get<SceneInfo>(dstLock);
+                    Assertf(dstInfo.liveId == srcComp.liveId,
+                        "ApplyComponent called with mismatched SceneInfo::liveId!");
+                    Assertf(dstInfo.stagingId == srcComp.stagingId,
+                        "ApplyComponent called with mismatched SceneInfo::stagingId!");
+                    Assertf(dstInfo.nextStagingId == srcComp.nextStagingId,
+                        "ApplyComponent called with mismatched SceneInfo::nextStagingId!");
+                    Assertf(dstInfo.prefabStagingId == srcComp.prefabStagingId,
+                        "ApplyComponent called with mismatched SceneInfo::prefabStagingId!");
+                    Assertf(dstInfo.priority == srcComp.priority,
+                        "ApplyComponent called with mismatched SceneInfo::priority!");
+                } else {
+                    // Merge existing component with a new one
+                    auto &dstComp = dst.Get<CompType>(dstLock);
+                    if (fields.empty()) Warnf("Component has no fields defined: %s", typeid(CompType).name());
+
+                    for (auto &field : fields) {
+                        field.Apply(&dstComp, &srcComp, &defaultValues);
+                    }
+
+                    Apply(srcComp, dstLock, dst);
+                }
             }
         }
 
         static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
-            std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
-            return false;
+            // Custom field serialization is always called, default to no-op.
+            return true;
         }
 
         static bool Save(Lock<Read<Name>> lock, picojson::value &dst, const CompType &src) {
@@ -114,9 +143,7 @@ namespace ecs {
             return true;
         }
 
-        static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {
-            if (!dst.Has<CompType>(lock)) dst.Set<CompType>(lock, src);
-        }
+        static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {}
 
         bool operator==(const Component<CompType> &other) const {
             return strcmp(name, other.name) == 0;

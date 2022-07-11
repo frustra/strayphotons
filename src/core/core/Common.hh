@@ -68,6 +68,18 @@ namespace sp {
     typedef std::array<uint64, 2> Hash128;
     typedef uint64 Hash64;
 
+    struct angle_t {
+        float radians;
+
+        angle_t(const float &angle) : radians(angle) {}
+
+        operator float() const {
+            return radians;
+        }
+
+        float degrees() const;
+    };
+
     template<typename T, typename V>
     inline void erase(T &vec, const V &val) {
         vec.erase(std::remove(vec.begin(), vec.end(), val), vec.end());

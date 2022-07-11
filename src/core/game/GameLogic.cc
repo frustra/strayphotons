@@ -47,11 +47,11 @@ namespace sp {
                 Logf("Saving laser_line on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
             }
 
-            // for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
-            //     picojson::value value;
-            //     ecs::LookupComponent("light")->SaveEntity(lock, value, entity);
-            //     Logf("Saving light on %s: %s", ecs::ToString(lock, entity), value.serialize());
-            // }
+            for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
+                picojson::value value;
+                ecs::LookupComponent("light")->SaveEntity(lock, value, entity);
+                Logf("Saving light on %s: %s", ecs::ToString(lock, entity), value.serialize());
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 #include "Components.hh"
 
+#include <glm/glm.hpp>
 #include <map>
 #include <stdexcept>
 
