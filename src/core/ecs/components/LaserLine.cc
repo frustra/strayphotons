@@ -15,17 +15,9 @@ namespace ecs {
                     return false;
                 }
             } else if (param.first == "points") {
-                if (!param.second.is<picojson::array>()) {
+                if (!sp::json::Load(line.points, param.second)) {
                     Errorf("Invalid line points: %s", param.second.to_str());
                     return false;
-                }
-
-                for (auto &p : param.second.get<picojson::array>()) {
-                    auto &point = line.points.emplace_back();
-                    if (!sp::json::Load(point, p)) {
-                        Errorf("Invalid line point: %s", p.to_str());
-                        return false;
-                    }
                 }
             }
         }
@@ -48,12 +40,7 @@ namespace ecs {
                     sp::json::SaveIfChanged(obj, "color", arg.color, defaultLine.color);
 
                     if (arg.points.empty()) return true;
-                    picojson::array points;
-                    points.reserve(arg.points.size());
-                    for (auto &point : arg.points) {
-                        sp::json::Save(points.emplace_back(), point);
-                    }
-                    obj["points"] = picojson::value(points);
+                    sp::json::Save(obj["points"], arg.points);
                     return true;
                 } else if constexpr (std::is_same_v<T, LaserLine::Segments>) {
                     if (arg.empty()) return true;

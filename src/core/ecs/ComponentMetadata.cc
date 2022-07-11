@@ -13,6 +13,13 @@ namespace ecs {
         return true;
     }
 
+    template<typename T>
+    bool SaveField(picojson::object &dst, const char *fieldName, const void *field, const void *defaultField) {
+        auto &value = *reinterpret_cast<const T *>(field);
+        auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
+        return sp::json::SaveIfChanged(dst, fieldName, value, defaultValue);
+    }
+
     bool ComponentField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
         if (!src.is<picojson::object>()) {
             Errorf("ComponentField::Load invalid component object: %s", src.to_str());
@@ -62,71 +69,25 @@ namespace ecs {
         auto &obj = dst.get<picojson::object>();
 
         if (type == FieldType::Bool) {
-            auto &value = *reinterpret_cast<const bool *>(field);
-            auto &defaultValue = *reinterpret_cast<const bool *>(defaultField);
-
-            if (value != defaultValue) {
-                obj[name] = picojson::value(value);
-                return true;
-            }
+            return SaveField<bool>(obj, name, field, defaultField);
         } else if (type == FieldType::Int32) {
-            auto &value = *reinterpret_cast<const int32_t *>(field);
-            auto &defaultValue = *reinterpret_cast<const int32_t *>(defaultField);
-
-            if (value != defaultValue) {
-                obj[name] = picojson::value((double)value);
-                return true;
-            }
+            return SaveField<int32_t>(obj, name, field, defaultField);
         } else if (type == FieldType::Uint32) {
-            auto &value = *reinterpret_cast<const uint32_t *>(field);
-            auto &defaultValue = *reinterpret_cast<const uint32_t *>(defaultField);
-
-            if (value != defaultValue) {
-                obj[name] = picojson::value((double)value);
-                return true;
-            }
+            return SaveField<uint32_t>(obj, name, field, defaultField);
         } else if (type == FieldType::Float) {
-            auto &value = *reinterpret_cast<const float *>(field);
-            auto &defaultValue = *reinterpret_cast<const float *>(defaultField);
-
-            if (value != defaultValue) {
-                obj[name] = picojson::value((double)value);
-                return true;
-            }
+            return SaveField<float>(obj, name, field, defaultField);
         } else if (type == FieldType::Double) {
-            auto &value = *reinterpret_cast<const double *>(field);
-            auto &defaultValue = *reinterpret_cast<const double *>(defaultField);
-
-            if (value != defaultValue) {
-                obj[name] = picojson::value(value);
-                return true;
-            }
+            return SaveField<double>(obj, name, field, defaultField);
         } else if (type == FieldType::Vec2) {
-            auto &value = *reinterpret_cast<const glm::vec2 *>(field);
-            auto &defaultValue = *reinterpret_cast<const glm::vec2 *>(defaultField);
-
-            return sp::json::SaveIfChanged(obj, name, value, defaultValue);
+            return SaveField<glm::vec2>(obj, name, field, defaultField);
         } else if (type == FieldType::Vec3) {
-            auto &value = *reinterpret_cast<const glm::vec3 *>(field);
-            auto &defaultValue = *reinterpret_cast<const glm::vec3 *>(defaultField);
-
-            return sp::json::SaveIfChanged(obj, name, value, defaultValue);
+            return SaveField<glm::vec3>(obj, name, field, defaultField);
         } else if (type == FieldType::Vec4) {
-            auto &value = *reinterpret_cast<const glm::vec4 *>(field);
-            auto &defaultValue = *reinterpret_cast<const glm::vec4 *>(defaultField);
-
-            return sp::json::SaveIfChanged(obj, name, value, defaultValue);
+            return SaveField<glm::vec4>(obj, name, field, defaultField);
         } else if (type == FieldType::String) {
-            auto &value = *reinterpret_cast<const std::string *>(field);
-            auto &defaultValue = *reinterpret_cast<const std::string *>(defaultField);
-
-            if (value != defaultValue) {
-                obj[name] = picojson::value(value);
-                return true;
-            }
+            return SaveField<std::string>(obj, name, field, defaultField);
         } else {
             Abortf("ComponentField::SaveIfChanged unknown component field type: %u", type);
         }
-        return false;
     }
 } // namespace ecs
