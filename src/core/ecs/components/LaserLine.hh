@@ -40,4 +40,6 @@ namespace ecs {
         const EntityScope &scope,
         picojson::value &dst,
         const LaserLine &src);
+    template<>
+    void Component<LaserLine>::Apply(const LaserLine &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

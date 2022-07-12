@@ -36,33 +36,43 @@ namespace ecs {
         static const LaserLine::Line defaultLine = {};
         static const LaserLine::Segment defaultSegment = {};
 
-        return std::visit(
-            [&](auto &&arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same<T, LaserLine::Line>()) {
-                    sp::json::SaveIfChanged(scope, obj, "color", arg.color, defaultLine.color);
+        if (std::holds_alternative<LaserLine::Line>(src.line)) {
+            auto &line = std::get<LaserLine::Line>(src.line);
+            sp::json::SaveIfChanged(scope, obj, "color", line.color, defaultLine.color);
 
-                    if (arg.points.empty()) return true;
-                    sp::json::Save(scope, obj["points"], arg.points);
-                    return true;
-                } else if constexpr (std::is_same<T, LaserLine::Segments>()) {
-                    if (arg.empty()) return true;
-                    picojson::array segments;
-                    segments.reserve(arg.size());
-                    for (auto &segment : arg) {
-                        picojson::object segmentObj;
-                        sp::json::SaveIfChanged(scope, segmentObj, "color", segment.color, defaultSegment.color);
-                        sp::json::Save(scope, segmentObj["start"], segment.start);
-                        sp::json::Save(scope, segmentObj["end"], segment.end);
-                        segments.emplace_back(segmentObj);
-                    }
-                    obj["segments"] = picojson::value(segments);
-                    return true;
-                } else {
-                    Errorf("Unsupported laser line type: %s", typeid(arg).name());
-                    return false;
-                }
-            },
-            src.line);
+            if (line.points.empty()) return true;
+            sp::json::Save(scope, obj["points"], line.points);
+            return true;
+        } else if (std::holds_alternative<LaserLine::Segments>(src.line)) {
+            auto &seg = std::get<LaserLine::Segments>(src.line);
+            if (seg.empty()) return true;
+            picojson::array segments;
+            segments.reserve(seg.size());
+            for (auto &segment : seg) {
+                picojson::object segmentObj;
+                sp::json::SaveIfChanged(scope, segmentObj, "color", segment.color, defaultSegment.color);
+                sp::json::Save(scope, segmentObj["start"], segment.start);
+                sp::json::Save(scope, segmentObj["end"], segment.end);
+                segments.emplace_back(segmentObj);
+            }
+            obj["segments"] = picojson::value(segments);
+            return true;
+        } else {
+            Errorf("Unsupported laser line variant type: %u", src.line.index());
+            return false;
+        }
+    }
+
+    template<>
+    void Component<LaserLine>::Apply(const LaserLine &src, Lock<AddRemove> lock, Entity dst) {
+        static const LaserLine::Line defaultLine = {};
+
+        auto &dstLine = dst.Get<LaserLine>(lock);
+        auto *line = std::get_if<LaserLine::Line>(&dstLine.line);
+        auto *srcLine = std::get_if<LaserLine::Line>(&src.line);
+        if (line && srcLine) {
+            if (line->color == defaultLine.color) line->color = srcLine->color;
+            if (line->points.empty()) line->points = srcLine->points;
+        }
     }
 } // namespace ecs
