@@ -12,7 +12,7 @@ namespace ecs {
                 if (param.first == "target") {
                     dst.textureName = param.second.get<string>();
                 } else if (param.first == "luminance") {
-                    if (!sp::json::Load(dst.luminanceScale, param.second)) {
+                    if (!sp::json::Load(scope, dst.luminanceScale, param.second)) {
                         Errorf("Invalid screen luminance: %s", param.second.to_str());
                         return false;
                     }

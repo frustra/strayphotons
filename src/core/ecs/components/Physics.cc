@@ -59,7 +59,7 @@ namespace ecs {
                 }
                 PhysicsShape::Box box;
                 if (param.second.is<picojson::array>()) {
-                    if (!sp::json::Load(box.extents, param.second)) {
+                    if (!sp::json::Load(scope, box.extents, param.second)) {
                         Errorf("Invalid physics box extents: %s", param.second.to_str());
                         return false;
                     }
@@ -169,7 +169,7 @@ namespace ecs {
                     return false;
                 }
             } else if (param.first == "force") {
-                if (!sp::json::Load(physics.constantForce, param.second)) {
+                if (!sp::json::Load(scope, physics.constantForce, param.second)) {
                     Errorf("Invalid physics force: %s", param.second.to_str());
                     return false;
                 }

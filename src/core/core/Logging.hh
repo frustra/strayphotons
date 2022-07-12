@@ -46,9 +46,9 @@ namespace sp::logging {
     auto convert(T &&t) {
         using BaseType = std::remove_cv_t<std::remove_reference_t<T>>;
 
-        if constexpr (std::is_same<BaseType, std::string>::value) {
+        if constexpr (std::is_same<BaseType, std::string>()) {
             return std::forward<T>(t).c_str();
-        } else if constexpr (std::is_same<BaseType, std::string_view>::value) {
+        } else if constexpr (std::is_same<BaseType, std::string_view>()) {
             Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
             return std::forward<T>(t).data();
         } else if constexpr (stringify<BaseType>::value) {

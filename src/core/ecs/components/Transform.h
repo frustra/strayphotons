@@ -94,7 +94,10 @@ namespace ecs {
     template<>
     bool Component<TransformTree>::Load(const EntityScope &scope, TransformTree &dst, const picojson::value &src);
     template<>
-    void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt);
+    void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src,
+        Entity srcEnt,
+        Lock<AddRemove> dst,
+        Entity dstEnt) const;
     template<>
     void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst);
     #endif

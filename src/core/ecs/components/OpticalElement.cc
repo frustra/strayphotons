@@ -19,14 +19,14 @@ namespace ecs {
             }
         } else if (src.is<picojson::array>()) {
             optic.type = OpticType::Gel;
-            if (!sp::json::Load(optic.tint, src)) {
+            if (!sp::json::Load(scope, optic.tint, src)) {
                 Errorf("Invalid optic tint: %s", src.to_str());
                 return false;
             }
         } else if (src.is<picojson::object>()) {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "tint") {
-                    if (!sp::json::Load(optic.tint, param.second)) {
+                    if (!sp::json::Load(scope, optic.tint, param.second)) {
                         Errorf("Invalid optic tint: %s", param.second.to_str());
                         return false;
                     }

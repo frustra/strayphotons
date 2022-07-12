@@ -39,7 +39,7 @@ namespace ecs {
                         return false;
                     }
                 } else if (jointParam.first == "range") {
-                    if (!sp::json::Load(joint.range, jointParam.second)) {
+                    if (!sp::json::Load(scope, joint.range, jointParam.second)) {
                         Errorf("Invalid physics_joint range: %s", jointParam.second.to_str());
                         return false;
                     }

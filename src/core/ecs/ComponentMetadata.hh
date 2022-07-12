@@ -2,6 +2,7 @@
 
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 #include <type_traits>
@@ -25,6 +26,7 @@ namespace ecs {
         Vec3,
         Vec4,
         String,
+        EntityRef,
         Count,
     };
 
@@ -43,33 +45,38 @@ namespace ecs {
 
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
 
-            if constexpr (std::is_same<BaseType, bool>::value) {
+            if constexpr (std::is_same<BaseType, bool>()) {
                 return ComponentField(name, FieldType::Bool, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, int32_t>::value) {
+            } else if constexpr (std::is_same<BaseType, int32_t>()) {
                 return ComponentField(name, FieldType::Int32, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, uint32_t>::value) {
+            } else if constexpr (std::is_same<BaseType, uint32_t>()) {
                 return ComponentField(name, FieldType::Uint32, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, size_t>::value) {
+            } else if constexpr (std::is_same<BaseType, size_t>()) {
                 return ComponentField(name, FieldType::SizeT, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, sp::angle_t>::value) {
+            } else if constexpr (std::is_same<BaseType, sp::angle_t>()) {
                 return ComponentField(name, FieldType::AngleT, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, float>::value) {
+            } else if constexpr (std::is_same<BaseType, float>()) {
                 return ComponentField(name, FieldType::Float, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, glm::vec2>::value) {
+            } else if constexpr (std::is_same<BaseType, glm::vec2>()) {
                 return ComponentField(name, FieldType::Vec2, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, glm::vec3>::value) {
+            } else if constexpr (std::is_same<BaseType, glm::vec3>()) {
                 return ComponentField(name, FieldType::Vec3, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, glm::vec4>::value) {
+            } else if constexpr (std::is_same<BaseType, glm::vec4>()) {
                 return ComponentField(name, FieldType::Vec4, offset, sizeof(F));
-            } else if constexpr (std::is_same<BaseType, std::string>::value) {
+            } else if constexpr (std::is_same<BaseType, std::string>()) {
                 return ComponentField(name, FieldType::String, offset, sizeof(F));
+            } else if constexpr (std::is_same<BaseType, EntityRef>()) {
+                return ComponentField(name, FieldType::EntityRef, offset, sizeof(F));
             } else {
                 Abortf("Component field %s type must be custom: %s", name, typeid(BaseType).name());
             }
         }
 
         bool Load(const EntityScope &scope, void *component, const picojson::value &src) const;
-        bool SaveIfChanged(picojson::value &dst, const void *component, const void *defaultComponent) const;
+        bool SaveIfChanged(const EntityScope &scope,
+            picojson::value &dst,
+            const void *component,
+            const void *defaultComponent) const;
         void Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const;
     };
 

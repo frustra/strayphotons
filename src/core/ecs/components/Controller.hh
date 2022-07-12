@@ -28,10 +28,8 @@ namespace ecs {
         physx::PxCapsuleController *pxController = nullptr;
     };
 
-    static Component<CharacterController> ComponenCharacterController("character_controller");
-
-    template<>
-    bool Component<CharacterController>::Load(const EntityScope &scope,
-        CharacterController &dst,
-        const picojson::value &src);
+    static Component<CharacterController> ComponenCharacterController("character_controller",
+        ComponentField::New("target", &CharacterController::target),
+        ComponentField::New("fallback_target", &CharacterController::fallbackTarget),
+        ComponentField::New("movement_proxy", &CharacterController::movementProxy));
 } // namespace ecs

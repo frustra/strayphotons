@@ -16,17 +16,17 @@ namespace ecs {
                 view.fov = glm::radians(param.second.get<double>());
             } else {
                 if (param.first == "extents") {
-                    if (!sp::json::Load(view.extents, param.second)) {
+                    if (!sp::json::Load(scope, view.extents, param.second)) {
                         Errorf("Invalid view extents: %s", param.second.to_str());
                         return false;
                     }
                 } else if (param.first == "clip") {
-                    if (!sp::json::Load(view.clip, param.second)) {
+                    if (!sp::json::Load(scope, view.clip, param.second)) {
                         Errorf("Invalid view clip: %s", param.second.to_str());
                         return false;
                     }
                 } else if (param.first == "offset") {
-                    if (!sp::json::Load(view.offset, param.second)) {
+                    if (!sp::json::Load(scope, view.offset, param.second)) {
                         Errorf("Invalid view offset: %s", param.second.to_str());
                         return false;
                     }

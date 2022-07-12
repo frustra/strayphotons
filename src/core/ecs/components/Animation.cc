@@ -20,13 +20,13 @@ namespace ecs {
                         if (stateParam.first == "delay") {
                             delay = stateParam.second.get<double>();
                         } else if (stateParam.first == "translate_tangent") {
-                            if (!sp::json::Load(tangents.pos, stateParam.second)) {
+                            if (!sp::json::Load(scope, tangents.pos, stateParam.second)) {
                                 Errorf("Invalid animation tangent position: %s", stateParam.second.to_str());
                                 return false;
                             }
                             hasTangent = true;
                         } else if (stateParam.first == "scale_tangent") {
-                            if (!sp::json::Load(tangents.scale, stateParam.second)) {
+                            if (!sp::json::Load(scope, tangents.scale, stateParam.second)) {
                                 Errorf("Invalid animation tangent scale: %s", stateParam.second.to_str());
                                 return false;
                             }

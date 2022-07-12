@@ -19,7 +19,7 @@ namespace ecs {
                     transform.Scale(glm::vec3(subTransform.second.get<double>()));
                 } else {
                     glm::vec3 scale(1);
-                    if (!sp::json::Load(scale, subTransform.second)) {
+                    if (!sp::json::Load(scope, scale, subTransform.second)) {
                         Errorf("Invalid transform scale: %s", subTransform.second.to_str());
                         return false;
                     }
@@ -32,7 +32,7 @@ namespace ecs {
                     // multiple rotations were given
                     for (picojson::value &r : subSecond) {
                         auto &rotation = rotations.emplace_back();
-                        if (!sp::json::Load(rotation, r)) {
+                        if (!sp::json::Load(scope, rotation, r)) {
                             Errorf("Invalid transform rotation: %s", subTransform.second.to_str());
                             return false;
                         }
@@ -40,7 +40,7 @@ namespace ecs {
                 } else {
                     // a single rotation was given
                     auto &rotation = rotations.emplace_back();
-                    if (!sp::json::Load(rotation, subTransform.second)) {
+                    if (!sp::json::Load(scope, rotation, subTransform.second)) {
                         Errorf("Invalid transform rotation: %s", subTransform.second.to_str());
                         return false;
                     }
@@ -51,7 +51,7 @@ namespace ecs {
                 }
             } else if (subTransform.first == "translate") {
                 glm::vec3 translate(0);
-                if (!sp::json::Load(translate, subTransform.second)) {
+                if (!sp::json::Load(scope, translate, subTransform.second)) {
                     Errorf("Invalid transform translation: %s", subTransform.second.to_str());
                     return false;
                 }
@@ -80,7 +80,7 @@ namespace ecs {
     void Component<TransformTree>::ApplyComponent(Lock<ReadAll> srcLock,
         Entity src,
         Lock<AddRemove> dstLock,
-        Entity dst) {
+        Entity dst) const {
         if (src.Has<TransformTree>(srcLock) && !dst.Has<TransformSnapshot, TransformTree>(dstLock)) {
             auto &srcTree = src.Get<TransformTree>(srcLock);
             auto &dstTree = dst.Get<TransformTree>(dstLock);

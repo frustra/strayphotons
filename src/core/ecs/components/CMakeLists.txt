@@ -5,10 +5,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Events.cc
     Focus.cc
     Gui.cc
-    LaserEmitter.cc
     LaserLine.cc
-    LaserSensor.cc
-    Light.cc
     LightSensor.cc
     Name.cc
     OpticalElement.cc
