@@ -111,14 +111,6 @@ namespace ecs {
                     auto &dstInfo = dst.Get<SceneInfo>(dstLock);
                     Assertf(dstInfo.liveId == srcComp.liveId,
                         "ApplyComponent called with mismatched SceneInfo::liveId!");
-                    Assertf(dstInfo.stagingId == srcComp.stagingId,
-                        "ApplyComponent called with mismatched SceneInfo::stagingId!");
-                    Assertf(dstInfo.nextStagingId == srcComp.nextStagingId,
-                        "ApplyComponent called with mismatched SceneInfo::nextStagingId!");
-                    Assertf(dstInfo.prefabStagingId == srcComp.prefabStagingId,
-                        "ApplyComponent called with mismatched SceneInfo::prefabStagingId!");
-                    Assertf(dstInfo.priority == srcComp.priority,
-                        "ApplyComponent called with mismatched SceneInfo::priority!");
                 } else {
                     // Merge existing component with a new one
                     auto &dstComp = dst.Get<CompType>(dstLock);
