@@ -146,9 +146,7 @@ namespace sp::json {
         for (; prefixLen < refName.length() && prefixLen < prefix.length(); prefixLen++) {
             if (refName[prefixLen] != prefix[prefixLen]) break;
         }
-        auto relativeName = refName.substr(prefixLen);
-        Logf("Entity %s in scope %s = %s", refName, prefix, relativeName);
-        dst = picojson::value(refName);
+        dst = picojson::value(refName.substr(prefixLen));
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {

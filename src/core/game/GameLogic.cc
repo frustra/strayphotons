@@ -9,6 +9,7 @@
 namespace sp {
     GameLogic::GameLogic(bool stepMode) : RegisteredThread("GameLogic", 120.0), stepMode(stepMode) {
         funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
+        funcs.Register(this, "jsondump", "Print out a json listing of an entity", &GameLogic::JsonDump);
         funcs.Register(this, "printevents", "Print out the current state of event queues", &GameLogic::PrintEvents);
         funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &GameLogic::PrintSignals);
         funcs.Register(this,
@@ -35,29 +36,6 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
             auto &script = entity.Get<ecs::Script>(lock);
             script.OnTick(lock, entity, interval);
-        }
-
-        static bool onlyOnce = false;
-        if (!onlyOnce) {
-            onlyOnce = true;
-
-            for (auto &entity : lock.EntitiesWith<ecs::LaserLine>()) {
-                picojson::value value;
-                ecs::LookupComponent("laser_line")->SaveEntity(lock, ecs::EntityScope(), value, entity);
-                Logf("Saving laser_line on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
-            }
-
-            for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
-                picojson::value value;
-                ecs::LookupComponent("light")->SaveEntity(lock, ecs::EntityScope(), value, entity);
-                Logf("Saving light on %s: %s", ecs::ToString(lock, entity), value.serialize());
-            }
-
-            for (auto &entity : lock.EntitiesWith<ecs::LaserEmitter>()) {
-                picojson::value value;
-                ecs::LookupComponent("laser_emitter")->SaveEntity(lock, ecs::EntityScope(), value, entity);
-                Logf("Saving laser_emitter on %s: %s", ecs::ToString(lock, entity), value.serialize());
-            }
         }
     }
 
@@ -107,6 +85,53 @@ namespace sp {
                     Logf("Looking at: %s", ecs::ToString(lock, raycastQuery->result->target));
                 }
             }
+        }
+    }
+
+    void GameLogic::JsonDump(std::string entityName) {
+        auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+        ecs::EntityRef ref = ecs::Name(entityName, ecs::Name());
+        ecs::Entity entity = ref.Get(lock);
+        if (!entity) {
+            Errorf("Entity not found: %s", entityName);
+            return;
+        }
+
+        ecs::EntityScope scope;
+        if (entity.Has<ecs::SceneInfo>(lock)) {
+            auto &sceneInfo = entity.Get<ecs::SceneInfo>(lock);
+            scope.scene = sceneInfo.scene;
+            auto scene = sceneInfo.scene.lock();
+            if (scene) scope.prefix.scene = scene->name;
+        }
+        if (entity.Has<ecs::Name>(lock)) {
+            scope.prefix = entity.Get<ecs::Name>(lock);
+        }
+
+        if (entity.Has<ecs::LaserEmitter>(lock)) {
+            picojson::value value;
+            ecs::LookupComponent<ecs::LaserEmitter>().SaveEntity(lock, scope, value, entity);
+            Logf("Saving laser_emitter on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
+        }
+        if (entity.Has<ecs::LaserLine>(lock)) {
+            picojson::value value;
+            ecs::LookupComponent<ecs::LaserLine>().SaveEntity(lock, scope, value, entity);
+            Logf("Saving laser_line on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
+        }
+        if (entity.Has<ecs::LaserSensor>(lock)) {
+            picojson::value value;
+            ecs::LookupComponent<ecs::LaserSensor>().SaveEntity(lock, scope, value, entity);
+            Logf("Saving laser_sensor on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
+        }
+        if (entity.Has<ecs::Light>(lock)) {
+            picojson::value value;
+            ecs::LookupComponent<ecs::Light>().SaveEntity(lock, scope, value, entity);
+            Logf("Saving light on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
+        }
+        if (entity.Has<ecs::CharacterController>(lock)) {
+            picojson::value value;
+            ecs::LookupComponent<ecs::CharacterController>().SaveEntity(lock, scope, value, entity);
+            Logf("Saving character_controller on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
         }
     }
 

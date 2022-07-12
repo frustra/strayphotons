@@ -90,7 +90,7 @@ namespace ecs {
                 CompType srcComp;
                 if (!LoadFields(scope, srcComp, src)) return false;
                 if (!Load(scope, srcComp, src)) return false;
-                auto &comp = dst.Set<CompType>(lock);
+                auto &comp = dst.Get<CompType>(lock);
                 for (auto &field : fields) {
                     field.Apply(&comp, &srcComp, &defaultComp);
                 }
