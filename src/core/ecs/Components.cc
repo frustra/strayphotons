@@ -35,4 +35,11 @@ namespace ecs {
         if (it != GComponentTypeMap->end()) return it->second;
         return nullptr;
     }
+
+    void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback) {
+        Assertf(GComponentTypeMap != nullptr, "ForEachComponent called before components registered.");
+        for (auto &[name, comp] : *GComponentNameMap) {
+            callback(name, *comp);
+        }
+    }
 } // namespace ecs

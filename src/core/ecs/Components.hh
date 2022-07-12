@@ -7,6 +7,7 @@
 #include "game/Scene.hh"
 
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -39,8 +40,10 @@ namespace ecs {
             picojson::value &dst,
             const Entity &src) const = 0;
         virtual void ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt) const = 0;
+        virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
 
         const char *name;
+        std::vector<ComponentField> fields;
     };
 
     void RegisterComponent(const char *name, const std::type_index &idx, ComponentBase *comp);
@@ -52,6 +55,7 @@ namespace ecs {
         Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
         return *ptr;
     }
+    void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
 
     template<typename CompType>
     class Component : public ComponentBase {
@@ -72,7 +76,7 @@ namespace ecs {
         }
 
         bool LoadFields(const EntityScope &scope, CompType &dst, const picojson::value &src) const {
-            for (auto &field : fields) {
+            for (auto &field : this->fields) {
                 if (!field.Load(scope, &dst, src)) {
                     Errorf("Component %s has invalid field: %s", name, field.name);
                     return false;
@@ -91,7 +95,7 @@ namespace ecs {
                 if (!LoadFields(scope, srcComp, src)) return false;
                 if (!Load(scope, srcComp, src)) return false;
                 auto &comp = dst.Get<CompType>(lock);
-                for (auto &field : fields) {
+                for (auto &field : this->fields) {
                     field.Apply(&comp, &srcComp, &defaultComp);
                 }
                 Apply(srcComp, lock, dst);
@@ -110,7 +114,7 @@ namespace ecs {
             static const CompType defaultValue = {};
             auto &comp = src.Get<CompType>(lock);
 
-            for (auto &field : fields) {
+            for (auto &field : this->fields) {
                 field.SaveIfChanged(scope, dst, &comp, &defaultValue);
             }
             return Save(lock, scope, dst, comp);
@@ -126,12 +130,16 @@ namespace ecs {
                 } else {
                     // Merge existing component with a new one
                     auto &dstComp = dst.Get<CompType>(dstLock);
-                    for (auto &field : fields) {
+                    for (auto &field : this->fields) {
                         field.Apply(&dstComp, &srcComp, &defaultValues);
                     }
                 }
                 Apply(srcComp, dstLock, dst);
             }
+        }
+
+        bool HasComponent(Lock<> lock, Entity ent) const override {
+            return ent.Has<CompType>(lock);
         }
 
         static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
@@ -153,8 +161,5 @@ namespace ecs {
         bool operator!=(const Component<CompType> &other) const {
             return !(*this == other);
         }
-
-    private:
-        std::vector<ComponentField> fields;
     };
 }; // namespace ecs

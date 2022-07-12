@@ -104,35 +104,20 @@ namespace sp {
             auto scene = sceneInfo.scene.lock();
             if (scene) scope.prefix.scene = scene->name;
         }
-        if (entity.Has<ecs::Name>(lock)) {
-            scope.prefix = entity.Get<ecs::Name>(lock);
-        }
 
-        if (entity.Has<ecs::LaserEmitter>(lock)) {
-            picojson::value value;
-            ecs::LookupComponent<ecs::LaserEmitter>().SaveEntity(lock, scope, value, entity);
-            Logf("Saving laser_emitter on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
+        picojson::object components;
+        if (entity.Has<ecs::Name>(lock)) {
+            auto &name = entity.Get<ecs::Name>(lock);
+            scope.prefix = name;
+            components["name"] = picojson::value(name.String());
         }
-        if (entity.Has<ecs::LaserLine>(lock)) {
-            picojson::value value;
-            ecs::LookupComponent<ecs::LaserLine>().SaveEntity(lock, scope, value, entity);
-            Logf("Saving laser_line on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
-        }
-        if (entity.Has<ecs::LaserSensor>(lock)) {
-            picojson::value value;
-            ecs::LookupComponent<ecs::LaserSensor>().SaveEntity(lock, scope, value, entity);
-            Logf("Saving laser_sensor on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
-        }
-        if (entity.Has<ecs::Light>(lock)) {
-            picojson::value value;
-            ecs::LookupComponent<ecs::Light>().SaveEntity(lock, scope, value, entity);
-            Logf("Saving light on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
-        }
-        if (entity.Has<ecs::CharacterController>(lock)) {
-            picojson::value value;
-            ecs::LookupComponent<ecs::CharacterController>().SaveEntity(lock, scope, value, entity);
-            Logf("Saving character_controller on %s:\n%s", ecs::ToString(lock, entity), value.serialize());
-        }
+        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+            if (comp.HasComponent(lock, entity)) {
+                comp.SaveEntity(lock, scope, components[comp.name], entity);
+            }
+        });
+        auto val = picojson::value(components);
+        Logf("Entity %s:\n%s", ecs::ToString(lock, entity), val.serialize(true));
     }
 
     void GameLogic::PrintEvents() {
