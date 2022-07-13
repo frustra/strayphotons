@@ -3,12 +3,24 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
+#include <atomic>
 #include <picojson/picojson.h>
 
 namespace ecs {
     robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
     robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> PhysicsUpdateDefinitions;
     robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
+
+    static std::atomic_size_t nextInstanceId;
+
+    ScriptState::ScriptState(const EntityScope &scope)
+        : scope(scope), callback(std::monostate()), instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
+        : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback)
+        : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
+        : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
 
     bool parseScriptState(ScriptState &state, const picojson::value &src) {
         bool isOnEvent = false;
@@ -166,7 +178,9 @@ namespace ecs {
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstScript = dst.Get<Script>(lock);
-        dstScript.scripts.insert(dstScript.scripts.end(), src.scripts.begin(), src.scripts.end());
+        for (auto &script : src.scripts) {
+            if (!sp::contains(dstScript.scripts, script)) dstScript.scripts.emplace_back(script);
+        }
     }
 
     void Script::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
