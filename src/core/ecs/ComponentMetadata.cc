@@ -1,38 +1,88 @@
 #include "ComponentMetadata.hh"
 
 #include "assets/JsonHelpers.hh"
+#include "core/Common.hh"
 
 #include <cstring>
 
 namespace ecs {
-    template<typename T>
-    bool LoadField(const EntityScope &scope, void *dst, const picojson::value &src) {
-        auto &field = *reinterpret_cast<T *>(dst);
-        if (!sp::json::Load(scope, field, src)) {
-            Errorf("Invalid %s field value: %s", typeid(T).name(), src.to_str());
-            return false;
+    struct FieldCastBase {
+        virtual bool LoadField(const EntityScope &scope, void *dst, const picojson::value &src) const {
+            Abortf("Uninitialized FieldCastBase::LoadField!");
         }
-        return true;
-    }
+        virtual bool SaveField(const EntityScope &scope,
+            picojson::object &dst,
+            const char *fieldName,
+            const void *field,
+            const void *defaultField) const {
+            Abortf("Uninitialized FieldCastBase::SaveField!");
+        }
+        virtual void ApplyField(void *dstField, const void *srcField, const void *defaultField) const {
+            Abortf("Uninitialized FieldCastBase::ApplyField!");
+        }
+    };
 
     template<typename T>
-    bool SaveField(const EntityScope &scope,
-        picojson::object &dst,
-        const char *fieldName,
-        const void *field,
-        const void *defaultField) {
-        auto &value = *reinterpret_cast<const T *>(field);
-        auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-        return sp::json::SaveIfChanged(scope, dst, fieldName, value, defaultValue);
-    }
+    struct FieldCast : public FieldCastBase {
+        bool LoadField(const EntityScope &scope, void *dst, const picojson::value &src) const override {
+            auto &field = *reinterpret_cast<T *>(dst);
+            if (!sp::json::Load(scope, field, src)) {
+                Errorf("Invalid %s field value: %s", typeid(T).name(), src.to_str());
+                return false;
+            }
+            return true;
+        }
 
-    template<typename T>
-    void ApplyField(void *dstField, const void *srcField, const void *defaultField) {
-        auto &dstValue = *reinterpret_cast<T *>(dstField);
-        auto &srcValue = *reinterpret_cast<const T *>(srcField);
-        auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
+        bool SaveField(const EntityScope &scope,
+            picojson::object &dst,
+            const char *fieldName,
+            const void *field,
+            const void *defaultField) const override {
+            auto &value = *reinterpret_cast<const T *>(field);
+            auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
+            return sp::json::SaveIfChanged(scope, dst, fieldName, value, defaultValue);
+        }
 
-        if (dstValue == defaultValue) dstValue = srcValue;
+        void ApplyField(void *dstField, const void *srcField, const void *defaultField) const override {
+            auto &dstValue = *reinterpret_cast<T *>(dstField);
+            auto &srcValue = *reinterpret_cast<const T *>(srcField);
+            auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
+
+            if (dstValue == defaultValue) dstValue = srcValue;
+        }
+    };
+
+    static_assert(sizeof(FieldCast<bool>) == sizeof(FieldCastBase), "Expected FieldCast<T> to fit in Base class");
+
+    const FieldCastBase *CastField(FieldCastBase &cast, ecs::FieldType type) {
+        switch (type) {
+        case FieldType::Bool:
+            return new (&cast) FieldCast<bool>();
+        case FieldType::Int32:
+            return new (&cast) FieldCast<int32_t>();
+        case FieldType::Uint32:
+            return new (&cast) FieldCast<uint32_t>();
+        case FieldType::SizeT:
+            return new (&cast) FieldCast<size_t>();
+        case FieldType::AngleT:
+            return new (&cast) FieldCast<sp::angle_t>();
+        case FieldType::Float:
+            return new (&cast) FieldCast<float>();
+        case FieldType::Double:
+            return new (&cast) FieldCast<double>();
+        case FieldType::Vec2:
+            return new (&cast) FieldCast<glm::vec2>();
+        case FieldType::Vec3:
+            return new (&cast) FieldCast<glm::vec3>();
+        case FieldType::Vec4:
+            return new (&cast) FieldCast<glm::vec4>();
+        case FieldType::String:
+            return new (&cast) FieldCast<std::string>();
+        case FieldType::EntityRef:
+            return new (&cast) FieldCast<EntityRef>();
+        default:
+            Abortf("CastField unknown component field type: %u", type);
+        }
     }
 
     bool ComponentField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
@@ -49,34 +99,8 @@ namespace ecs {
         auto *fieldDst = static_cast<char *>(component) + offset;
         auto &fieldSrc = obj.at(name);
 
-        switch (type) {
-        case FieldType::Bool:
-            return LoadField<bool>(scope, fieldDst, fieldSrc);
-        case FieldType::Int32:
-            return LoadField<int32_t>(scope, fieldDst, fieldSrc);
-        case FieldType::Uint32:
-            return LoadField<uint32_t>(scope, fieldDst, fieldSrc);
-        case FieldType::SizeT:
-            return LoadField<size_t>(scope, fieldDst, fieldSrc);
-        case FieldType::AngleT:
-            return LoadField<sp::angle_t>(scope, fieldDst, fieldSrc);
-        case FieldType::Float:
-            return LoadField<float>(scope, fieldDst, fieldSrc);
-        case FieldType::Double:
-            return LoadField<double>(scope, fieldDst, fieldSrc);
-        case FieldType::Vec2:
-            return LoadField<glm::vec2>(scope, fieldDst, fieldSrc);
-        case FieldType::Vec3:
-            return LoadField<glm::vec3>(scope, fieldDst, fieldSrc);
-        case FieldType::Vec4:
-            return LoadField<glm::vec4>(scope, fieldDst, fieldSrc);
-        case FieldType::String:
-            return LoadField<std::string>(scope, fieldDst, fieldSrc);
-        case FieldType::EntityRef:
-            return LoadField<EntityRef>(scope, fieldDst, fieldSrc);
-        default:
-            Abortf("ComponentField::Load unknown component field type: %u", type);
-        }
+        FieldCastBase cast;
+        return CastField(cast, type)->LoadField(scope, fieldDst, fieldSrc);
     }
 
     bool ComponentField::SaveIfChanged(const EntityScope &scope,
@@ -89,34 +113,8 @@ namespace ecs {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
-        switch (type) {
-        case FieldType::Bool:
-            return SaveField<bool>(scope, obj, name, field, defaultField);
-        case FieldType::Int32:
-            return SaveField<int32_t>(scope, obj, name, field, defaultField);
-        case FieldType::Uint32:
-            return SaveField<uint32_t>(scope, obj, name, field, defaultField);
-        case FieldType::SizeT:
-            return SaveField<size_t>(scope, obj, name, field, defaultField);
-        case FieldType::AngleT:
-            return SaveField<sp::angle_t>(scope, obj, name, field, defaultField);
-        case FieldType::Float:
-            return SaveField<float>(scope, obj, name, field, defaultField);
-        case FieldType::Double:
-            return SaveField<double>(scope, obj, name, field, defaultField);
-        case FieldType::Vec2:
-            return SaveField<glm::vec2>(scope, obj, name, field, defaultField);
-        case FieldType::Vec3:
-            return SaveField<glm::vec3>(scope, obj, name, field, defaultField);
-        case FieldType::Vec4:
-            return SaveField<glm::vec4>(scope, obj, name, field, defaultField);
-        case FieldType::String:
-            return SaveField<std::string>(scope, obj, name, field, defaultField);
-        case FieldType::EntityRef:
-            return SaveField<EntityRef>(scope, obj, name, field, defaultField);
-        default:
-            Abortf("ComponentField::SaveIfChanged unknown component field type: %u", type);
-        }
+        FieldCastBase cast;
+        return CastField(cast, type)->SaveField(scope, obj, name, field, defaultField);
     }
 
     void ComponentField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
@@ -124,33 +122,7 @@ namespace ecs {
         auto *srcField = static_cast<const char *>(srcComponent) + offset;
         auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
 
-        switch (type) {
-        case FieldType::Bool:
-            return ApplyField<bool>(dstField, srcField, defaultField);
-        case FieldType::Int32:
-            return ApplyField<int32_t>(dstField, srcField, defaultField);
-        case FieldType::Uint32:
-            return ApplyField<uint32_t>(dstField, srcField, defaultField);
-        case FieldType::SizeT:
-            return ApplyField<size_t>(dstField, srcField, defaultField);
-        case FieldType::AngleT:
-            return ApplyField<sp::angle_t>(dstField, srcField, defaultField);
-        case FieldType::Float:
-            return ApplyField<float>(dstField, srcField, defaultField);
-        case FieldType::Double:
-            return ApplyField<double>(dstField, srcField, defaultField);
-        case FieldType::Vec2:
-            return ApplyField<glm::vec2>(dstField, srcField, defaultField);
-        case FieldType::Vec3:
-            return ApplyField<glm::vec3>(dstField, srcField, defaultField);
-        case FieldType::Vec4:
-            return ApplyField<glm::vec4>(dstField, srcField, defaultField);
-        case FieldType::String:
-            return ApplyField<std::string>(dstField, srcField, defaultField);
-        case FieldType::EntityRef:
-            return ApplyField<EntityRef>(dstField, srcField, defaultField);
-        default:
-            Abortf("ComponentField::Apply unknown component field type: %u", type);
-        }
+        FieldCastBase cast;
+        CastField(cast, type)->ApplyField(dstField, srcField, defaultField);
     }
 } // namespace ecs

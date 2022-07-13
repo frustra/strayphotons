@@ -133,8 +133,8 @@ namespace ecs {
                     for (auto &field : this->fields) {
                         field.Apply(&dstComp, &srcComp, &defaultValues);
                     }
+                    Apply(srcComp, dstLock, dst);
                 }
-                Apply(srcComp, dstLock, dst);
             }
         }
 
