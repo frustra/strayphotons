@@ -26,8 +26,20 @@ namespace ecs {
         float radius = 0.003; // in world units
     };
 
-    static Component<LaserLine> ComponentLaserLine("laser_line");
+    static Component<LaserLine> ComponentLaserLine("laser_line",
+        ComponentField::New("intensity", &LaserLine::intensity),
+        ComponentField::New("media_density", &LaserLine::mediaDensityFactor),
+        ComponentField::New("on", &LaserLine::on),
+        ComponentField::New("relative", &LaserLine::relative),
+        ComponentField::New("radius", &LaserLine::radius));
 
     template<>
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src);
+    template<>
+    bool Component<LaserLine>::Save(Lock<Read<Name>> lock,
+        const EntityScope &scope,
+        picojson::value &dst,
+        const LaserLine &src);
+    template<>
+    void Component<LaserLine>::Apply(const LaserLine &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

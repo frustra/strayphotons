@@ -15,8 +15,11 @@ namespace sp::scene {
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if constexpr (!Tecs::is_global_component<T>()) {
-            ecs::Component<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
+        if constexpr (std::is_same<T, ecs::Name>() || std::is_same<T, ecs::SceneInfo>() ||
+                      std::is_same<T, ecs::TransformSnapshot>()) {
+            if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
+        } else if constexpr (!Tecs::is_global_component<T>()) {
+            ecs::LookupComponent<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
         }
     }
 

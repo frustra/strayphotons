@@ -18,8 +18,7 @@ namespace ecs {
         LightSensor(glm::vec3 p, glm::vec3 n) : position(p), direction(n) {}
     };
 
-    static Component<LightSensor> ComponentLightSensor("light_sensor");
-
-    template<>
-    bool Component<LightSensor>::Load(const EntityScope &scope, LightSensor &dst, const picojson::value &src);
+    static Component<LightSensor> ComponentLightSensor("light_sensor",
+        ComponentField::New("position", &LightSensor::position),
+        ComponentField::New("direction", &LightSensor::direction));
 } // namespace ecs

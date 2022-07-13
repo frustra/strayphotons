@@ -149,7 +149,7 @@ if(SP_PACKAGE_RELEASE)
     endif()
 endif()
 
-if(NOT SP_DEBUG)
+if(NOT SP_DEBUG AND NOT UNIX)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
     if(ipo_supported)

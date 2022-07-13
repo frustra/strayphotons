@@ -1,15 +1,14 @@
 #include "View.hh"
 
-#include <assets/AssetHelpers.hh>
-#include <ecs/Ecs.hh>
-#include <ecs/EcsImpl.hh>
+#include "assets/JsonHelpers.hh"
+#include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <picojson/picojson.h>
 
 namespace ecs {
-
     template<>
     bool Component<View>::Load(const EntityScope &scope, View &view, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
@@ -17,11 +16,20 @@ namespace ecs {
                 view.fov = glm::radians(param.second.get<double>());
             } else {
                 if (param.first == "extents") {
-                    view.extents = sp::MakeVec2(param.second);
+                    if (!sp::json::Load(scope, view.extents, param.second)) {
+                        Errorf("Invalid view extents: %s", param.second.to_str());
+                        return false;
+                    }
                 } else if (param.first == "clip") {
-                    view.clip = sp::MakeVec2(param.second);
+                    if (!sp::json::Load(scope, view.clip, param.second)) {
+                        Errorf("Invalid view clip: %s", param.second.to_str());
+                        return false;
+                    }
                 } else if (param.first == "offset") {
-                    view.offset = sp::MakeVec2(param.second);
+                    if (!sp::json::Load(scope, view.offset, param.second)) {
+                        Errorf("Invalid view offset: %s", param.second.to_str());
+                        return false;
+                    }
                 } else if (param.first == "visibility") {
                     auto &value = param.second.get<string>();
                     if (value == "camera") {

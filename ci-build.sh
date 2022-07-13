@@ -97,6 +97,11 @@ for file in ../assets/scripts/tests/*.txt; do
     [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
 done
 
+if [ -n "$BUILDKITE_API_TOKEN" ]; then
+    echo -e "+++ Comparing screenshots :camera_with_flash:"
+    ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
+fi
+
 if [ $success -ne 0 ]; then
     echo -e "\033[31mTest failures detected\033[0m"
     exit $success
@@ -105,11 +110,6 @@ if [ $format_valid -ne 0 ]; then
     echo -e "\033[31mclang-format errors detected\033[0m"
     echo -e "Run clang-format with ./extra/validate_format.py --fix"
     exit $format_valid
-fi
-
-if [ -n "$BUILDKITE_API_TOKEN" ]; then
-    echo -e "+++ Comparing screenshots :camera_with_flash:"
-    ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
 fi
 
 echo -e "\033[92mTests succeeded\033[0m"

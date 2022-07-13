@@ -4,9 +4,12 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
+#include <picojson/picojson.h>
+
 namespace sp {
     GameLogic::GameLogic(bool stepMode) : RegisteredThread("GameLogic", 120.0), stepMode(stepMode) {
         funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
+        funcs.Register(this, "jsondump", "Print out a json listing of an entity", &GameLogic::JsonDump);
         funcs.Register(this, "printevents", "Print out the current state of event queues", &GameLogic::PrintEvents);
         funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &GameLogic::PrintSignals);
         funcs.Register(this,
@@ -83,6 +86,38 @@ namespace sp {
                 }
             }
         }
+    }
+
+    void GameLogic::JsonDump(std::string entityName) {
+        auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+        ecs::EntityRef ref = ecs::Name(entityName, ecs::Name());
+        ecs::Entity entity = ref.Get(lock);
+        if (!entity) {
+            Errorf("Entity not found: %s", entityName);
+            return;
+        }
+
+        ecs::EntityScope scope;
+        if (entity.Has<ecs::SceneInfo>(lock)) {
+            auto &sceneInfo = entity.Get<ecs::SceneInfo>(lock);
+            scope.scene = sceneInfo.scene;
+            auto scene = sceneInfo.scene.lock();
+            if (scene) scope.prefix.scene = scene->name;
+        }
+
+        picojson::object components;
+        if (entity.Has<ecs::Name>(lock)) {
+            auto &name = entity.Get<ecs::Name>(lock);
+            scope.prefix = name;
+            components["name"] = picojson::value(name.String());
+        }
+        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+            if (comp.HasComponent(lock, entity)) {
+                comp.SaveEntity(lock, scope, components[comp.name], entity);
+            }
+        });
+        auto val = picojson::value(components);
+        Logf("Entity %s:\n%s", ecs::ToString(lock, entity), val.serialize(true));
     }
 
     void GameLogic::PrintEvents() {

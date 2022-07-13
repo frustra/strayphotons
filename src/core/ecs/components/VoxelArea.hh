@@ -9,8 +9,5 @@ namespace ecs {
         glm::ivec3 extents = glm::ivec3(128);
     };
 
-    static Component<VoxelArea> ComponentVoxelArea("voxel_area");
-
-    template<>
-    bool Component<VoxelArea>::Load(const EntityScope &scope, VoxelArea &dst, const picojson::value &src);
+    static Component<VoxelArea> ComponentVoxelArea("voxel_area", ComponentField::New("extents", &VoxelArea::extents));
 } // namespace ecs

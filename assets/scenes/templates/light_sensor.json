@@ -1,7 +1,7 @@
 {
 	"components": {
 		"light_sensor": {
-			"translate": [0, 0, 0.1],
+			"position": [0, 0, 0.1],
 			"direction": [0, 0, 1]
 		},
 		"signal_output": {

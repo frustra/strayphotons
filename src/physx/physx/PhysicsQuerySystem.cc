@@ -20,9 +20,9 @@ namespace sp {
                 std::visit(
                     [&](auto &&arg) {
                         using T = std::decay_t<decltype(arg)>;
-                        if constexpr (!std::is_same_v<T, std::monostate>) arg.result.reset();
+                        if constexpr (!std::is_same<T, std::monostate>()) arg.result.reset();
 
-                        if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Raycast>) {
+                        if constexpr (std::is_same<T, ecs::PhysicsQuery::Raycast>()) {
                             if (arg.maxDistance > 0.0f && arg.maxHits > 0) {
                                 glm::vec3 rayStart = arg.position;
                                 glm::vec3 rayDir = arg.direction;
@@ -77,7 +77,7 @@ namespace sp {
                                     }
                                 }
                             }
-                        } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Sweep>) {
+                        } else if constexpr (std::is_same<T, ecs::PhysicsQuery::Sweep>()) {
                             if (arg.maxDistance > 0.0f && entity.Has<ecs::TransformSnapshot>(lock)) {
                                 auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
@@ -110,7 +110,7 @@ namespace sp {
                                     }
                                 }
                             }
-                        } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Overlap>) {
+                        } else if constexpr (std::is_same<T, ecs::PhysicsQuery::Overlap>()) {
                             if (entity.Has<ecs::TransformSnapshot>(lock)) {
                                 auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
@@ -141,7 +141,7 @@ namespace sp {
                                     }
                                 }
                             }
-                        } else if constexpr (std::is_same_v<T, ecs::PhysicsQuery::Mass>) {
+                        } else if constexpr (std::is_same<T, ecs::PhysicsQuery::Mass>()) {
                             auto target = arg.targetActor.Get(lock);
                             if (target) {
                                 if (manager.actors.count(target) > 0) {

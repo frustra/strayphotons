@@ -1,8 +1,7 @@
 #include "OpticalElement.hh"
 
-#include <assets/AssetHelpers.hh>
-#include <ecs/EcsImpl.hh>
-#include <picojson/picojson.h>
+#include "assets/JsonHelpers.hh"
+#include "ecs/EcsImpl.hh"
 
 namespace ecs {
     template<>
@@ -20,11 +19,17 @@ namespace ecs {
             }
         } else if (src.is<picojson::array>()) {
             optic.type = OpticType::Gel;
-            optic.tint = sp::MakeVec3(src);
+            if (!sp::json::Load(scope, optic.tint, src)) {
+                Errorf("Invalid optic tint: %s", src.to_str());
+                return false;
+            }
         } else if (src.is<picojson::object>()) {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "tint") {
-                    optic.tint = sp::MakeVec3(param.second);
+                    if (!sp::json::Load(scope, optic.tint, param.second)) {
+                        Errorf("Invalid optic tint: %s", param.second.to_str());
+                        return false;
+                    }
                 } else if (param.first == "type") {
                     auto typeStr = param.second.get<std::string>();
                     sp::to_lower(typeStr);

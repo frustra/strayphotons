@@ -38,10 +38,10 @@ namespace ecs {
             std::vector<std::string>>;
 
         ScriptState() : callback(std::monostate()) {}
-        ScriptState(const EntityScope &scope) : scope(scope), callback(std::monostate()) {}
-        ScriptState(const EntityScope &scope, OnTickFunc callback) : scope(scope), callback(callback) {}
-        ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback) : scope(scope), callback(callback) {}
-        ScriptState(const EntityScope &scope, PrefabFunc callback) : scope(scope), callback(callback) {}
+        ScriptState(const EntityScope &scope);
+        ScriptState(const EntityScope &scope, OnTickFunc callback);
+        ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback);
+        ScriptState(const EntityScope &scope, PrefabFunc callback);
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
@@ -79,6 +79,14 @@ namespace ecs {
             return !std::holds_alternative<std::monostate>(callback);
         }
 
+        bool operator==(const ScriptState &other) const {
+            return instanceId == other.instanceId;
+        }
+
+        bool operator!=(const ScriptState &other) const {
+            return instanceId != other.instanceId;
+        }
+
         EntityScope scope;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
         std::vector<std::string> filterEvents;
@@ -87,6 +95,7 @@ namespace ecs {
 
     private:
         robin_hood::unordered_flat_map<std::string, ParameterType> parameters;
+        size_t instanceId = 0;
 
         friend struct Script;
     };

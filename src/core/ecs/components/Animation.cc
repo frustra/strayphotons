@@ -1,10 +1,9 @@
 #include "Animation.hh"
 
-#include "assets/AssetHelpers.hh"
+#include "assets/JsonHelpers.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
-#include <picojson/picojson.h>
 #include <sstream>
 
 namespace ecs {
@@ -21,10 +20,16 @@ namespace ecs {
                         if (stateParam.first == "delay") {
                             delay = stateParam.second.get<double>();
                         } else if (stateParam.first == "translate_tangent") {
-                            tangents.pos = sp::MakeVec3(stateParam.second);
+                            if (!sp::json::Load(scope, tangents.pos, stateParam.second)) {
+                                Errorf("Invalid animation tangent position: %s", stateParam.second.to_str());
+                                return false;
+                            }
                             hasTangent = true;
                         } else if (stateParam.first == "scale_tangent") {
-                            tangents.scale = sp::MakeVec3(stateParam.second);
+                            if (!sp::json::Load(scope, tangents.scale, stateParam.second)) {
+                                Errorf("Invalid animation tangent scale: %s", stateParam.second.to_str());
+                                return false;
+                            }
                             hasTangent = true;
                         }
                     }

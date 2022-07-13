@@ -121,11 +121,11 @@ namespace sp {
             if (!sceneInfo.liveId) {
                 // No entity exists in the live scene
                 sceneInfo.liveId = live.NewEntity();
-                scene::ApplyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
-                scene::ApplyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
-                if (sceneInfo.liveId.Has<ecs::Name>(live)) {
-                    auto &liveName = sceneInfo.liveId.Get<ecs::Name>(live);
-                    ecs::GEntityRefs.Set(liveName, sceneInfo.liveId);
+                sceneInfo.liveId.Set<ecs::SceneInfo>(live, sceneInfo);
+                if (e.Has<ecs::Name>(staging)) {
+                    auto &entityName = e.Get<ecs::Name>(staging);
+                    sceneInfo.liveId.Set<ecs::Name>(live, entityName);
+                    ecs::GEntityRefs.Set(entityName, sceneInfo.liveId);
                 }
                 ecs::GEntityRefs.Set(e, sceneInfo.liveId);
             }

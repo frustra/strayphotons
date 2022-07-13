@@ -9,18 +9,21 @@ namespace ecs {
     struct Light {
         float intensity = 0;
         float illuminance = 0;
-        float spotAngle = 0;
-        glm::vec3 tint;
+        sp::angle_t spotAngle = 0.0f;
+        glm::vec3 tint = glm::vec3(1);
         string gelName;
         bool on = true;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
     };
 
-    static Component<Light> ComponentLight("light");
-
-    template<>
-    bool Component<Light>::Load(const EntityScope &scope, Light &dst, const picojson::value &src);
-    template<>
-    void Component<Light>::Apply(const Light &src, Lock<AddRemove> lock, Entity dst);
+    static Component<Light> ComponentLight("light",
+        ComponentField::New("intensity", &Light::intensity),
+        ComponentField::New("illuminance", &Light::illuminance),
+        ComponentField::New("spotAngle", &Light::spotAngle),
+        ComponentField::New("tint", &Light::tint),
+        ComponentField::New("gel", &Light::gelName),
+        ComponentField::New("on", &Light::on),
+        ComponentField::New("shadowMapSize", &Light::shadowMapSize),
+        ComponentField::New("shadowMapClip", &Light::shadowMapClip));
 } // namespace ecs
