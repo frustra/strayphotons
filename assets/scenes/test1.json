@@ -108,22 +108,17 @@
 				"dynamic": false
 			},
 			"light_sensor": {
-				"translate": [0, 0, -1],
-				"direction": [0, 0, -1],
-				"trigger": 1
+				"position": [0, 0, -1],
+				"direction": [0, 0, -1]
 			},
-			"signal_output": {
-				"light_value_r": 0.0,
-				"light_value_g": 0.0,
-				"light_value_b": 0.0,
-				"value": false
-			},
-			"script": {
-				"onTick": "light_sensor",
-				"parameters": {
-					"trigger_level": 1
+			"signal_output": {},
+			"signal_bindings": {
+				"value": {
+					"operator": "min",
+					"values": [ "sensor1/light_value_r", "sensor1/light_value_g", "sensor1/light_value_b"]
 				}
-			}
+			},
+			"script": { "onTick": "light_sensor" }
 		},
 		{
 			"name": "door1",

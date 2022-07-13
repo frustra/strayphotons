@@ -5,7 +5,6 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Focus.cc
     Gui.cc
     LaserLine.cc
-    LightSensor.cc
     Name.cc
     OpticalElement.cc
     Physics.cc
