@@ -241,13 +241,13 @@ namespace sp {
                 // This edge-case is possible when jumping in an elevator; the floor can catch up to the player
                 // while their velocity is still in the up direction.
                 PxOverlapHit touch;
-                PxOverlapBuffer hit;
-                hit.touches = &touch;
-                hit.maxNbTouches = 1;
+                PxOverlapBuffer overlapHit;
+                overlapHit.touches = &touch;
+                overlapHit.maxNbTouches = 1;
                 PxCapsuleGeometry capsuleGeometry(ecs::PLAYER_RADIUS, currentHeight * 0.5f);
                 bool inGround = manager.scene->overlap(capsuleGeometry,
                     actor->getGlobalPose(),
-                    hit,
+                    overlapHit,
                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
                 glm::vec3 displacement;
@@ -276,8 +276,33 @@ namespace sp {
                 auto moveResult =
                     controller.pxController->move(GlmVec3ToPxVec3(displacement + targetDelta), 0, dt, moveQueryFilter);
 
+                controller.pxController->getState(state);
+
                 auto newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
                 auto deltaPos = newPosition - userData->actorData.pose.GetPosition() - targetDelta;
+
+                PxSweepBuffer sweepHit;
+                auto sweepStart = actor->getGlobalPose();
+                // sweepStart.p = physx::toVec3(controller.pxController->getPosition());
+                bool onGround = manager.scene->sweep(capsuleGeometry,
+                    sweepStart,
+                    -controller.pxController->getUpDirection(),
+                    controller.pxController->getContactOffset(),
+                    sweepHit,
+                    PxHitFlag::ePOSITION,
+                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+
+                if ((moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) != onGround) {
+                    Logf("eCOLLISION_DOWN != onGround: %u != %u",
+                        (bool)(moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN),
+                        onGround);
+                    if (state.touchedActor) {
+                        auto touchedUserData = (ActorUserData *)state.touchedActor->userData;
+                        if (touchedUserData) {
+                            Logf("Touched actor: %s", ecs::ToString(lock, touchedUserData->entity));
+                        }
+                    }
+                }
 
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
