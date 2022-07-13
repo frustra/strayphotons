@@ -48,7 +48,7 @@
 	url = https://github.com/KhronosGroup/SPIRV-Reflect
 [submodule "ext/tracy"]
 	path = ext/tracy
-	url = https://github.com/wolfpld/tracy
+	url = https://github.com/frustra/tracy.git
 [submodule "ext/libsoundio"]
 	path = ext/libsoundio
 	url = https://github.com/andrewrk/libsoundio
