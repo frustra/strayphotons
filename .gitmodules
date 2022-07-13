@@ -30,7 +30,7 @@
 	url = https://github.com/frustra/physx-bins.git
 [submodule "ext/picojson"]
 	path = ext/picojson
-	url = https://github.com/kazuho/picojson.git
+	url = https://github.com/frustra/picojson.git
 [submodule "ext/robin-hood-hashing"]
 	path = ext/robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing
