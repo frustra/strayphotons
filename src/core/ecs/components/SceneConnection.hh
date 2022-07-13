@@ -11,8 +11,6 @@ namespace ecs {
 
         SceneConnection() {}
         SceneConnection(std::string scene) : scenes({scene}) {}
-
-        bool HasScene(const std::string &sceneName) const;
     };
 
     static Component<SceneConnection> ComponentSceneConnection("scene_connection");

@@ -67,20 +67,20 @@ namespace sp::json {
         return detail::LoadVec<2>(dst, src);
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, glm::ivec2 &dst, const picojson::value &src) {
-        return detail::LoadVec<2>(dst, src);
-    }
-    template<>
     inline bool Load(const ecs::EntityScope &s, glm::vec3 &dst, const picojson::value &src) {
-        return detail::LoadVec<3>(dst, src);
-    }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, glm::ivec3 &dst, const picojson::value &src) {
         return detail::LoadVec<3>(dst, src);
     }
     template<>
     inline bool Load(const ecs::EntityScope &s, glm::vec4 &dst, const picojson::value &src) {
         return detail::LoadVec<4>(dst, src);
+    }
+    template<>
+    inline bool Load(const ecs::EntityScope &s, glm::ivec2 &dst, const picojson::value &src) {
+        return detail::LoadVec<2>(dst, src);
+    }
+    template<>
+    inline bool Load(const ecs::EntityScope &s, glm::ivec3 &dst, const picojson::value &src) {
+        return detail::LoadVec<3>(dst, src);
     }
     template<>
     inline bool Load(const ecs::EntityScope &s, std::string &dst, const picojson::value &src) {
@@ -97,13 +97,23 @@ namespace sp::json {
     }
     template<typename T>
     inline bool Load(const ecs::EntityScope &s, std::vector<T> &dst, const picojson::value &src) {
-        if (!src.is<picojson::array>()) return false;
-
-        for (auto &p : src.get<picojson::array>()) {
-            auto &point = dst.emplace_back();
-            if (!sp::json::Load(s, point, p)) return false;
+        if (src.is<picojson::array>()) {
+            for (auto &p : src.get<picojson::array>()) {
+                auto &point = dst.emplace_back();
+                if (!sp::json::Load(s, point, p)) {
+                    dst.clear();
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            T point;
+            if (!sp::json::Load(s, point, src)) {
+                return false;
+            }
+            dst.emplace_back(point);
+            return true;
         }
-        return true;
     }
 
     // Default Save handler for all integer and float types
@@ -134,6 +144,14 @@ namespace sp::json {
         return detail::SaveVec<4>(dst, src);
     }
     template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec2 &src) {
+        return detail::SaveVec<2>(dst, src);
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec3 &src) {
+        return detail::SaveVec<3>(dst, src);
+    }
+    template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::string &src) {
         dst = picojson::value(src);
     }
@@ -150,11 +168,15 @@ namespace sp::json {
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {
-        picojson::array vec(src.size());
-        for (size_t i = 0; i < src.size(); i++) {
-            Save(s, vec[i], src[i]);
+        if (src.size() == 1) {
+            Save(s, dst, src[0]);
+        } else {
+            picojson::array vec(src.size());
+            for (size_t i = 0; i < src.size(); i++) {
+                Save(s, vec[i], src[i]);
+            }
+            dst = picojson::value(vec);
         }
-        dst = picojson::value(vec);
     }
 
     template<typename T>

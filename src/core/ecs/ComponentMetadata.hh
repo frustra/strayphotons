@@ -25,6 +25,8 @@ namespace ecs {
         Vec2,
         Vec3,
         Vec4,
+        IVec2,
+        IVec3,
         String,
         EntityRef,
         Count,
@@ -63,6 +65,10 @@ namespace ecs {
                 return ComponentField(name, FieldType::Vec3, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, glm::vec4>()) {
                 return ComponentField(name, FieldType::Vec4, offset, sizeof(F));
+            } else if constexpr (std::is_same<BaseType, glm::ivec2>()) {
+                return ComponentField(name, FieldType::IVec2, offset, sizeof(F));
+            } else if constexpr (std::is_same<BaseType, glm::ivec3>()) {
+                return ComponentField(name, FieldType::IVec3, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, std::string>()) {
                 return ComponentField(name, FieldType::String, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, EntityRef>()) {

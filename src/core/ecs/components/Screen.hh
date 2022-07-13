@@ -5,11 +5,10 @@
 namespace ecs {
     struct Screen {
         string textureName;
-        glm::vec3 luminanceScale = {1.0f, 1.0f, 1.0f};
+        glm::vec3 luminanceScale = glm::vec3(1);
     };
 
-    static Component<Screen> ComponentScreen("screen");
-
-    template<>
-    bool Component<Screen>::Load(const EntityScope &scope, Screen &dst, const picojson::value &src);
+    static Component<Screen> ComponentScreen("screen",
+        ComponentField::New("target", &Screen::textureName),
+        ComponentField::New("luminance", &Screen::luminanceScale));
 } // namespace ecs

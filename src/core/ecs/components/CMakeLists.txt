@@ -13,12 +13,10 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc
-    Screen.cc
     Script.cc
     Sound.cc
     Signals.cc
     Transform.cc
     Triggers.cc
     View.cc
-    VoxelArea.cc
 )
