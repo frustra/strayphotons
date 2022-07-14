@@ -82,14 +82,14 @@ def main():
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
         metrics = difference_str.split(' ')
-        if float(metrics[0]) < 10.0:
+        if float(metrics[0]) < 5.0:
             print('Pass', path, ':', float(metrics[0])),
         else:
             print('!! Fail', path, ':', float(metrics[0]))
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
             subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True,
-                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 10<br/>' +
+                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 5<br/>' +
                 '<a href="' + current_build_path + '">Current Build</a> -- ' +
                 '<a href="' + master_build_path + '">Master Build</a> -- ' +
                 '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
