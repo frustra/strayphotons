@@ -23,6 +23,7 @@
 					"model": "duck",
 					"decompose_hull": true
 				},
+				"group": "interactive",
 				"density": 1
 			}
 		}
