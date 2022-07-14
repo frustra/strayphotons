@@ -56,7 +56,6 @@
 			"renderable": "cardboard-box",
 			"physics": {
 				"model": "cardboard-box",
-				"group": "interactive",
 				"density": 1
 			},
 			"script": {

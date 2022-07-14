@@ -219,7 +219,6 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
-				"group": "interactive",
 				"density": 1
 			},
 			"script": {
@@ -245,8 +244,7 @@
 				]
 			},
 			"physics": {
-				"model": "dodecahedron",
-				"group": "interactive"
+				"model": "dodecahedron"
 			},
 			"script": {
 				"prefab": "template",

@@ -230,8 +230,7 @@
 				"translate": [-2.2, 2.5, 3]
 			},
 			"physics": {
-				"model": "box",
-				"group": "interactive"
+				"model": "box"
 			},
 			"script": {
 				"prefab": "template",
@@ -267,8 +266,7 @@
 				"translate": [-1.5, 3.5, 2.5]
 			},
 			"physics": {
-				"model": "box",
-				"group": "interactive"
+				"model": "box"
 			},
 			"script": {
 				"prefab": "template",
@@ -281,8 +279,7 @@
 				"translate": [-1, 2.5, 2]
 			},
 			"physics": {
-				"model": "box",
-				"group": "interactive"
+				"model": "box"
 			},
 			"script": {
 				"prefab": "template",
@@ -295,8 +292,7 @@
 				"translate": [3, 1, -0.5]
 			},
 			"physics": {
-				"model": "dodecahedron",
-				"group": "interactive"
+				"model": "dodecahedron"
 			},
 			"script": {
 				"prefab": "template",
