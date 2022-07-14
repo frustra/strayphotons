@@ -38,7 +38,7 @@ namespace sp::vulkan {
         Renderer(DeviceContext &context);
         ~Renderer();
 
-        void RenderFrame();
+        void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
         void SetDebugGui(GuiContext &gui);
@@ -53,7 +53,7 @@ namespace sp::vulkan {
         DeviceContext &device;
         rg::RenderGraph graph;
 
-        void BuildFrameGraph();
+        void BuildFrameGraph(chrono_clock::duration elapsedTime);
         void AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
         void AddWindowOutput();
 
@@ -63,8 +63,8 @@ namespace sp::vulkan {
 #endif
 
         void AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock);
-        void AddDeferredPasses(
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock);
+        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
+            chrono_clock::duration elapsedTime);
         void AddMenuOverlay();
 
         CFuncCollection funcs;

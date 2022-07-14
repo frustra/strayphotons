@@ -60,7 +60,7 @@ namespace sp {
         unique_ptr<GraphicsContext> context;
         ecs::EntityRef flatviewEntity;
 
-        chrono_clock::time_point previousFrameEnd;
+        chrono_clock::time_point previousFrameEnd, renderStart;
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;

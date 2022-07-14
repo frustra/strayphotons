@@ -57,12 +57,12 @@ namespace sp::vulkan {
         device->waitIdle();
     }
 
-    void Renderer::RenderFrame() {
+    void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
         for (auto &gui : guis) {
             if (gui.contextShared) gui.contextShared->BeforeFrame();
         }
 
-        BuildFrameGraph();
+        BuildFrameGraph(elapsedTime);
 
         CVarWindowViewTarget.UpdateCompletions([&](vector<string> &completions) {
             auto list = graph.AllImages();
@@ -96,7 +96,7 @@ namespace sp::vulkan {
         graph.Execute();
     }
 
-    void Renderer::BuildFrameGraph() {
+    void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
             ecs::TransformSnapshot,
@@ -127,7 +127,7 @@ namespace sp::vulkan {
         {
             auto scope = graph.Scope("XRView");
             AddXRView(lock);
-            if (graph.HasResource("GBuffer0")) AddDeferredPasses(lock);
+            if (graph.HasResource("GBuffer0")) AddDeferredPasses(lock, elapsedTime);
         }
         AddXRSubmit(lock);
 #endif
@@ -136,7 +136,7 @@ namespace sp::vulkan {
             auto scope = graph.Scope("FlatView");
             AddFlatView(lock);
             if (graph.HasResource("GBuffer0")) {
-                AddDeferredPasses(lock);
+                AddDeferredPasses(lock, elapsedTime);
                 renderer::AddCrosshair(graph);
                 if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
             }
@@ -488,10 +488,11 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddDeferredPasses(
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock) {
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
+        chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
-        emissive.AddPass(graph, lock);
+        emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddOutlines(graph, scene);
