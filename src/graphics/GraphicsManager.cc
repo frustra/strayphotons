@@ -134,7 +134,8 @@ namespace sp {
         renderer->SetDebugGui(*game->debugGui.get());
     #endif
 
-        previousFrameEnd = chrono_clock::now();
+        renderStart = chrono_clock::now();
+        previousFrameEnd = renderStart;
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -192,17 +193,16 @@ namespace sp {
 
         chrono_clock::duration frameInterval = std::chrono::microseconds(0);
         auto maxFPS = CVarMaxFPS.Get();
-        if (maxFPS > 0) frameInterval = std::chrono::microseconds(1000000 / CVarMaxFPS.Get());
+        if (maxFPS > 0) frameInterval = std::chrono::microseconds(1000000 / maxFPS);
 
         #ifdef SP_TEST_MODE
         if (stepCount < maxStepCount) {
-            renderer->RenderFrame();
+            renderer->RenderFrame(frameInterval * stepCount.load());
             stepCount++;
             stepCount.notify_all();
-            if (stepCount < maxStepCount) frameInterval = std::chrono::microseconds(0);
         }
         #else
-        renderer->RenderFrame();
+        renderer->RenderFrame(chrono_clock::now() - renderStart);
         #endif
 
         #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
@@ -211,8 +211,8 @@ namespace sp {
         renderer->EndFrame();
         context->EndFrame();
 
-        auto frameEnd = previousFrameEnd + frameInterval;
         auto realFrameEnd = chrono_clock::now();
+        auto frameEnd = previousFrameEnd + frameInterval;
 
         if (frameEnd > realFrameEnd) {
             ZoneScopedN("SleepUntilFrameEnd");

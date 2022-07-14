@@ -6,7 +6,8 @@
 
 namespace sp::vulkan::renderer {
     void Emissive::AddPass(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock,
+        chrono_clock::duration elapsedTime) {
         screens.clear();
 
         lasers.resize(0);
@@ -78,7 +79,7 @@ namespace sp::vulkan::renderer {
                     screens.push_back(std::move(screen));
                 }
             })
-            .Execute([this](Resources &resources, CommandContext &cmd) {
+            .Execute([this, elapsedTime](Resources &resources, CommandContext &cmd) {
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
@@ -107,10 +108,8 @@ namespace sp::vulkan::renderer {
                         float time;
                     } constants;
 
-                    static chrono_clock::time_point epoch = chrono_clock::now();
-                    constants.time =
-                        std::chrono::duration_cast<std::chrono::milliseconds>(chrono_clock::now() - epoch).count() /
-                        1000.0f;
+                    constants.time = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count() /
+                                     1000.0f;
 
                     for (auto &line : lasers) {
                         constants.radiance = line.color;
