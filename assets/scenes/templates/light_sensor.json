@@ -9,16 +9,16 @@
 		},
 		"signal_bindings": {
 			"light_value_r_scaled": {
-                "operator": "multiply",
-                "values": [ "scoperoot/light_value_r", "scoperoot/sensitivity" ]
+				"operator": "multiply",
+				"values": [ "scoperoot/light_value_r", "scoperoot/sensitivity" ]
 			},
 			"light_value_g_scaled": {
-                "operator": "multiply",
-                "values": [ "scoperoot/light_value_g", "scoperoot/sensitivity" ]
+				"operator": "multiply",
+				"values": [ "scoperoot/light_value_g", "scoperoot/sensitivity" ]
 			},
 			"light_value_b_scaled": {
-                "operator": "multiply",
-                "values": [ "scoperoot/light_value_b", "scoperoot/sensitivity" ]
+				"operator": "multiply",
+				"values": [ "scoperoot/light_value_b", "scoperoot/sensitivity" ]
 			},
 			"value": {
 				"operator": "binary_and",

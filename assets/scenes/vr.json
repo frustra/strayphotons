@@ -1,128 +1,128 @@
 {
-    "entities": [
-        {
-            "name": "origin",
-            "script": {
-                "onTick": "player_rotation",
-                "parameters": { "relative_to": "vr:hmd" }
-            },
-            "physics": {
-                "__comment": "Dummy actor for velocity calculation",
-                "group": "noclip",
-                "dynamic": false,
-                "shapes": {
-                    "sphere": 0.1
-                }
-            },
-            "event_input": [
-                "/action/snap_rotate"
-            ]
-        },
-        {
-            "name": "left_hand",
-            "transform": {
-                "parent": "input:vr_actions_main_in_lefthand"
-            },
-            "script": [
-                {
-                    "onTick": "relative_movement",
-                    "parameters": { "relative_to": "vr:hmd" }
-                }
-            ],
-            "signal_output": {}
-        },
-        {
-            "name": "right_hand",
-            "transform": {
-                "parent": "input:vr_actions_main_in_righthand"
-            },
-            "script": [
-                {
-                    "onTick": "relative_movement",
-                    "parameters": { "relative_to": "vr:hmd" }
-                }
-            ],
-            "signal_output": {}
-        },
-        {
-            "name": "left_hand_skeleton",
-            "transform": {
-                "translate": [0, -2, 0]
-            },
-            "physics": {
-                "group": "player_left_hand",
-                "density": 300,
-                "_linear_damping": 1,
-                "angular_damping": 100
-            },
-            "physics_query": {},
-            "event_input": [
-                "/interact/press"
-            ],
-            "script": [
-                {
-                    "prefab": "gltf",
-                    "parameters": {
-                        "model": "vr_glove_left",
-                        "render": true
-                    }
-                },
-                {
-                    "onPhysicsUpdate": "vr_hand",
-                    "parameters": {
-                        "hand": "left",
-                        "teleport_distance": 2.0,
-                        "point_distance": 2.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "right_hand_skeleton",
-            "transform": {
-                "translate": [0, -2, 0]
-            },
-            "physics": {
-                "group": "player_right_hand",
-                "density": 300,
-                "_linear_damping": 1,
-                "angular_damping": 100
-            },
-            "physics_query": {},
-            "event_input": [
-                "/interact/press"
-            ],
-            "script": [
-                {
-                    "prefab": "gltf",
-                    "parameters": {
-                        "model": "vr_glove_right",
-                        "render": true
-                    }
-                },
-                {
-                    "onPhysicsUpdate": "vr_hand",
-                    "parameters": {
-                        "hand": "right",
-                        "teleport_distance": 2.0,
-                        "point_distance": 2.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "laser_pointer",
-            "transform": {},
-            "laser_line": {
-                "color": [1, 0, 1],
-                "media_density": 0,
-                "radius": 0.002,
-                "on": false,
-                "points": [
-                    [0, 0, 0],
-                    [0, 0, -1]
-                ]
-            }
-        }
-    ]
+	"entities": [
+		{
+			"name": "origin",
+			"script": {
+				"onTick": "player_rotation",
+				"parameters": { "relative_to": "vr:hmd" }
+			},
+			"physics": {
+				"__comment": "Dummy actor for velocity calculation",
+				"group": "noclip",
+				"dynamic": false,
+				"shapes": {
+					"sphere": 0.1
+				}
+			},
+			"event_input": [
+				"/action/snap_rotate"
+			]
+		},
+		{
+			"name": "left_hand",
+			"transform": {
+				"parent": "input:vr_actions_main_in_lefthand"
+			},
+			"script": [
+				{
+					"onTick": "relative_movement",
+					"parameters": { "relative_to": "vr:hmd" }
+				}
+			],
+			"signal_output": {}
+		},
+		{
+			"name": "right_hand",
+			"transform": {
+				"parent": "input:vr_actions_main_in_righthand"
+			},
+			"script": [
+				{
+					"onTick": "relative_movement",
+					"parameters": { "relative_to": "vr:hmd" }
+				}
+			],
+			"signal_output": {}
+		},
+		{
+			"name": "left_hand_skeleton",
+			"transform": {
+				"translate": [0, -2, 0]
+			},
+			"physics": {
+				"group": "player_left_hand",
+				"density": 300,
+				"_linear_damping": 1,
+				"angular_damping": 100
+			},
+			"physics_query": {},
+			"event_input": [
+				"/interact/press"
+			],
+			"script": [
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "vr_glove_left",
+						"render": true
+					}
+				},
+				{
+					"onPhysicsUpdate": "vr_hand",
+					"parameters": {
+						"hand": "left",
+						"teleport_distance": 2.0,
+						"point_distance": 2.0
+					}
+				}
+			]
+		},
+		{
+			"name": "right_hand_skeleton",
+			"transform": {
+				"translate": [0, -2, 0]
+			},
+			"physics": {
+				"group": "player_right_hand",
+				"density": 300,
+				"_linear_damping": 1,
+				"angular_damping": 100
+			},
+			"physics_query": {},
+			"event_input": [
+				"/interact/press"
+			],
+			"script": [
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "vr_glove_right",
+						"render": true
+					}
+				},
+				{
+					"onPhysicsUpdate": "vr_hand",
+					"parameters": {
+						"hand": "right",
+						"teleport_distance": 2.0,
+						"point_distance": 2.0
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_pointer",
+			"transform": {},
+			"laser_line": {
+				"color": [1, 0, 1],
+				"media_density": 0,
+				"radius": 0.002,
+				"on": false,
+				"points": [
+					[0, 0, 0],
+					[0, 0, -1]
+				]
+			}
+		}
+	]
 }

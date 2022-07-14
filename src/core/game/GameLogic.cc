@@ -4,6 +4,10 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #include "physx/PhysxManager.hh"
+#endif
+
 #include <picojson/picojson.h>
 
 namespace sp {
@@ -64,6 +68,7 @@ namespace sp {
                         userData->actorData.velocity.y,
                         userData->actorData.velocity.z);
                     Logf("Player on ground: %s", userData->onGround ? "true" : "false");
+                    if (userData->standingOn) Logf("Standing on: %s", ecs::ToString(lock, userData->standingOn));
                 } else {
                     Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
                 }
@@ -82,7 +87,12 @@ namespace sp {
             for (auto &subQuery : query.queries) {
                 auto *raycastQuery = std::get_if<ecs::PhysicsQuery::Raycast>(&subQuery);
                 if (raycastQuery && raycastQuery->result) {
-                    Logf("Looking at: %s", ecs::ToString(lock, raycastQuery->result->target));
+                    auto lookingAt = raycastQuery->result->target;
+                    if (lookingAt) {
+                        Logf("Looking at: %s", ecs::ToString(lock, lookingAt));
+                    } else {
+                        Logf("Looking at: nothing");
+                    }
                 }
             }
         }

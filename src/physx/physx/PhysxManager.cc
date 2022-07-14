@@ -356,10 +356,7 @@ namespace sp {
         // Don't collide world overlap elements with the world
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::WorldOverlap, false);
-        // Don't collide interactive elements with the world, or the player's body
-        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::World, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::WorldOverlap, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::Player, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::Interactive, false);
         // Don't collide the player with themselves, but allow the hands to collide with eachother
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::PlayerLeftHand, false);

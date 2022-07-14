@@ -1,5 +1,5 @@
 {
-    "entities": [
+	"entities": [
 		{
 			"transform": {},
 			"physics": {
@@ -23,5 +23,5 @@
 				}
 			}
 		}
-    ]
+	]
 }

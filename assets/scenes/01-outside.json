@@ -75,6 +75,7 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
+				"group": "interactive",
 				"density": 1
 			},
 			"script": {
@@ -90,6 +91,7 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
+				"group": "interactive",
 				"density": 1
 			},
 			"script": {
@@ -105,6 +107,7 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
+				"group": "interactive",
 				"density": 1
 			},
 			"script": {

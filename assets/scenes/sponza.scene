@@ -118,6 +118,7 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
+				"group": "interactive",
 				"density": 1
 			},
 			"script": {
@@ -132,7 +133,8 @@
 				"rotate": [-30, 0, 0, 1]
 			},
 			"physics": {
-				"model": "dodecahedron"
+				"model": "dodecahedron",
+				"group": "interactive"
 			},
 			"script": {
 				"prefab": "template",

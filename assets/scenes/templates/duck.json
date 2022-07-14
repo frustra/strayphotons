@@ -1,5 +1,5 @@
 {
-    "entities": [
+	"entities": [
 		{
 			"name": "duck",
 			"transform": {},
@@ -12,19 +12,20 @@
 				}
 			}
 		},
-        {
-            "name": "duck.gltf2",
-            "script": {
-                "prefab": "template",
-                "parameters": { "source": "interactive" }
-            },
+		{
+			"name": "duck.gltf2",
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			},
 			"physics": {
 				"model": {
 					"model": "duck",
 					"decompose_hull": true
 				},
+				"group": "interactive",
 				"density": 1
 			}
-        }
-    ]
+		}
+	]
 }

@@ -55,20 +55,20 @@
 				"dynamic": false
 			}
 		},
-        {
-            "name": "testlight",
-            "transform": {
-                "translate": [-1.15, 0.5, 1]
-            },
-            "light": {
-                "tint": [1, 1, 1],
-                "shadowMapSize": 7,
-                "shadowMapClip": [0.1, 64],
-                "spotAngle": 5,
-                "intensity": 100,
-                "_illuminance": 1
-            }
-        },
+		{
+			"name": "testlight",
+			"transform": {
+				"translate": [-1.15, 0.5, 1]
+			},
+			"light": {
+				"tint": [1, 1, 1],
+				"shadowMapSize": 7,
+				"shadowMapClip": [0.1, 64],
+				"spotAngle": 5,
+				"intensity": 100,
+				"_illuminance": 1
+			}
+		},
 		{
 			"name": "mirrorbox",
 			"renderable": "box",
@@ -105,7 +105,7 @@
 		{
 			"optic": {
 				"type": "mirror",
-                "_tint": [1, 0.5, 0.5]
+				"_tint": [1, 0.5, 0.5]
 			},
 			"renderable": "mirror",
 			"transform": {
@@ -117,7 +117,7 @@
 		{
 			"optic": {
 				"type": "mirror",
-                "_tint": [0.5, 1, 0.5]
+				"_tint": [0.5, 1, 0.5]
 			},
 			"renderable": "mirror",
 			"transform": {
@@ -129,7 +129,7 @@
 		{
 			"optic": {
 				"type": "mirror",
-                "_tint": [0.5, 0.5, 1]
+				"_tint": [0.5, 0.5, 1]
 			},
 			"renderable": "mirror",
 			"transform": {
