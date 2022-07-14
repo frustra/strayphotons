@@ -41,7 +41,7 @@
 			"translate": [0, 160, 0]
 		}
 	},
-    "entities": [
+	"entities": [
 		{
 			"name": "platform",
 			"renderable": "box",
@@ -203,5 +203,5 @@
 				"parameters": { "source": "slide_door" }
 			}
 		}
-    ]
+	]
 }

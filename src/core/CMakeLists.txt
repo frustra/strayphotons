@@ -50,3 +50,7 @@ add_subdirectory(core)
 add_subdirectory(ecs)
 add_subdirectory(game)
 add_subdirectory(input)
+
+add_module_sources(
+    DebugCFuncs.cc
+)

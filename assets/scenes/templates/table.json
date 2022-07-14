@@ -1,5 +1,5 @@
 {
-    "entities": [
+	"entities": [
 		{
 			"transform": {
 				"translate": [0.02, 0, 0.02],
@@ -223,5 +223,5 @@
 				}
 			}
 		}
-    ]
+	]
 }

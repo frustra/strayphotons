@@ -154,8 +154,6 @@ namespace ecs {
                     physics.group = PhysicsGroup::WorldOverlap;
                 } else if (groupString == "INTERACTIVE") {
                     physics.group = PhysicsGroup::Interactive;
-                } else if (groupString == "HELD_OBJECT") {
-                    physics.group = PhysicsGroup::HeldObject;
                 } else if (groupString == "PLAYER") {
                     physics.group = PhysicsGroup::Player;
                 } else if (groupString == "PLAYER_LEFT_HAND") {

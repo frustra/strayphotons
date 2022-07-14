@@ -63,6 +63,7 @@ namespace sp {
 
         ecs::Entity target;
         bool onGround = false;
+        ecs::Entity standingOn;
         bool noclipping = false;
 
         CharacterControllerUserData() {}

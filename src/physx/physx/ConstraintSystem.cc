@@ -132,14 +132,28 @@ namespace sp {
         }
     }
 
-    void ConstraintSystem::BreakConstraints(
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>, ecs::SendEventsLock> lock) {
+    void ConstraintSystem::BreakConstraints(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::CharacterController>,
+        ecs::Write<ecs::Physics>,
+        ecs::SendEventsLock> lock) {
         ZoneScoped;
+
+        InlineVector<ecs::Entity, 32> breakList;
+        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
+            auto &controller = entity.Get<ecs::CharacterController>(lock);
+            if (controller.pxController) {
+                auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+                if (userData && userData->standingOn) breakList.push_back(userData->standingOn);
+            }
+        }
+
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
             auto constraintEntity = physics.constraint.Get(lock);
-            if (physics.constraintMaxDistance > 0.0f && constraintEntity.Has<ecs::TransformSnapshot>(lock)) {
+            if (sp::contains(breakList, entity)) {
+                ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
+                physics.RemoveConstraint();
+            } else if (physics.constraintMaxDistance > 0.0f && constraintEntity.Has<ecs::TransformSnapshot>(lock)) {
                 auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
                 auto &targetTransform = constraintEntity.Get<ecs::TransformSnapshot>(lock);
 

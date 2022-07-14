@@ -9,7 +9,7 @@
 			"shadowMapClip": [0.18, 70]
 		}
 	},
-    "entities": [
+	"entities": [
 		{
 			"name": "housing",
 			"script": {
@@ -42,5 +42,5 @@
 				"scale": [0.1, 0.1, 0.03]
 			}
 		}
-    ]
+	]
 }
