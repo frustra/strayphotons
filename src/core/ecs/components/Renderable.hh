@@ -1,6 +1,7 @@
 #pragma once
 
 #include "assets/Async.hh"
+#include "core/EnumTypes.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 
@@ -12,18 +13,18 @@ namespace sp {
 
 namespace ecs {
     struct Renderable {
-        enum Visibility {
-            VISIBLE_DIRECT_CAMERA = 0,
-            VISIBLE_DIRECT_EYE,
-            VISIBLE_REFLECTED,
-            VISIBLE_LIGHTING_SHADOW,
-            VISIBLE_LIGHTING_VOXEL,
-            VISIBLE_OPTICS,
-            VISIBLE_OUTLINE_SELECTION,
-            VISIBILITY_COUNT,
+        enum class Visibility {
+            DirectCamera = 0,
+            DirectEye,
+            Reflected,
+            LightingShadow,
+            LightingVoxel,
+            Optics,
+            OutlineSelection,
+            Count,
         };
 
-        using VisibilityMask = std::bitset<VISIBILITY_COUNT>;
+        using VisibilityMask = sp::EnumFlags<Visibility>;
 
         Renderable() : meshIndex(0) {}
         Renderable(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : model(model), meshIndex(meshIndex) {}
@@ -37,7 +38,7 @@ namespace ecs {
         };
         vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
-        VisibilityMask visibility = VisibilityMask().set().reset(Visibility::VISIBLE_OUTLINE_SELECTION);
+        VisibilityMask visibility = VisibilityMask().set().reset(Visibility::OutlineSelection);
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };
 

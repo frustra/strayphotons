@@ -1,6 +1,7 @@
 # Downgrade external packages to C++17
 set(CMAKE_CXX_STANDARD 17)
 
+add_subdirectory(magic_enum)
 add_subdirectory(robin-hood-hashing)
 add_subdirectory(physx)
 

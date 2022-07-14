@@ -2,7 +2,7 @@
 
 #include "assets/Async.hh"
 #include "core/DispatchQueue.hh"
-#include "core/EnumArray.hh"
+#include "core/EnumTypes.hh"
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"

@@ -2,7 +2,7 @@
 
 #include "console/CFunc.hh"
 #include "core/DispatchQueue.hh"
-#include "core/EnumArray.hh"
+#include "core/EnumTypes.hh"
 #include "core/LockFreeMutex.hh"
 #include "core/Logging.hh"
 #include "core/PreservingMap.hh"

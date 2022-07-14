@@ -109,7 +109,7 @@ namespace sp::vulkan::renderer {
         };
 
         ecs::View ortho;
-        ortho.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_VOXEL);
+        ortho.visibilityMask.set(ecs::Renderable::Visibility::LightingVoxel);
 
         auto voxelCenter = voxelToWorld;
         voxelCenter.Translate(glm::mat3(voxelCenter.matrix) * (0.5f * glm::vec3(voxelGridSize)));

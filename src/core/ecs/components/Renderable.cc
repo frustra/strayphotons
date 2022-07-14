@@ -22,7 +22,7 @@ namespace ecs {
                 }
             }
         }
-        r.visibility.reset(Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
+        r.visibility.reset(Renderable::Visibility::OutlineSelection);
         if (!r.model && r.visibility.any()) {
             Errorf("Visible renderables must have a model");
             return false;

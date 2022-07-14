@@ -6,6 +6,7 @@ target_include_directories(${PROJECT_CORE_LIB} PUBLIC
 
 target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     glm
+    magic_enum
     microtar
     murmurhash
     picojson

@@ -6,9 +6,23 @@
     #include "physx/PhysxManager.hh"
 #endif
 
+#include <magic_enum.hpp>
 #include <picojson/picojson.h>
 
 namespace sp {
+    CFunc<void> CFuncTestMagicEnum("magicenum", "", []() {
+        magic_enum::enum_for_each<ecs::Renderable::Visibility>([](auto val) {
+            constexpr ecs::Renderable::Visibility visibility = val;
+            Logf("Renderable::Visibility: %s", magic_enum::enum_name(visibility));
+        });
+        auto vis = magic_enum::enum_cast<ecs::Renderable::Visibility>("Foo");
+        Logf("'Foo' = %s", magic_enum::enum_name(vis.value_or(ecs::Renderable::Visibility::Count)));
+        vis = magic_enum::enum_cast<ecs::Renderable::Visibility>("OutlineSelection");
+        Logf("'OutlineSelection' = %s", magic_enum::enum_name(vis.value_or(ecs::Renderable::Visibility::Count)));
+        vis = magic_enum::enum_cast<ecs::Renderable::Visibility>("OUTLINESELECTION");
+        Logf("'OUTLINESELECTION' = %s", magic_enum::enum_name(vis.value_or(ecs::Renderable::Visibility::Count)));
+    });
+
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();

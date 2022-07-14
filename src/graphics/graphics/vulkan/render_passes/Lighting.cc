@@ -254,10 +254,9 @@ namespace sp::vulkan::renderer {
         ZoneScoped;
         graph.BeginScope("ShadowMap");
 
-        ecs::Renderable::VisibilityMask opticMask;
-        opticMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
+        ecs::Renderable::VisibilityMask opticMask(ecs::Renderable::Visibility::LightingShadow);
         auto drawAllIDs = scene.GenerateDrawsForView(graph, opticMask);
-        opticMask.set(ecs::Renderable::VISIBLE_OPTICS);
+        opticMask = ecs::Renderable::VisibilityMask(ecs::Renderable::Visibility::Optics);
         auto drawOpticIDs = scene.GenerateDrawsForView(graph, opticMask);
 
         graph.AddPass("InitOptics")

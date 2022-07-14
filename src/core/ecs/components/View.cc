@@ -33,7 +33,7 @@ namespace ecs {
                 } else if (param.first == "visibility") {
                     auto &value = param.second.get<string>();
                     if (value == "camera") {
-                        view.visibilityMask.set(Renderable::Visibility::VISIBLE_DIRECT_CAMERA);
+                        view.visibilityMask.set(Renderable::Visibility::DirectCamera);
                     }
                 } else {
                     Errorf("Unknown view component parameter: %s", param.first);
