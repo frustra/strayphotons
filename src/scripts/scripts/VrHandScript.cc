@@ -91,7 +91,6 @@ namespace sp::scripts {
                 controllerRef = ecs::Name("vr", "controller_left");
                 actionPrefix = "actions_main_in_lefthand_anim";
                 collisionMask = (PhysicsGroupMask)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP |
-                                                   ecs::PHYSICS_GROUP_HELD_OBJECT |
                                                    ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND |
                                                    ecs::PHYSICS_GROUP_USER_INTERFACE);
             } else if (handStr == "right") {
@@ -100,7 +99,6 @@ namespace sp::scripts {
                 controllerRef = ecs::Name("vr", "controller_right");
                 actionPrefix = "actions_main_in_righthand_anim";
                 collisionMask = (PhysicsGroupMask)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP |
-                                                   ecs::PHYSICS_GROUP_HELD_OBJECT |
                                                    ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND |
                                                    ecs::PHYSICS_GROUP_USER_INTERFACE);
             } else {

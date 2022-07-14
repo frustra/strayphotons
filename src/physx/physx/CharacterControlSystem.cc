@@ -25,7 +25,6 @@ namespace sp {
     static CVar<float> CVarCharacterSprintSpeed("p.CharacterSprintSpeed",
         5.0,
         "Character controller sprint speed (m/s)");
-    static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -91,7 +90,6 @@ namespace sp {
 
         PxFilterData filterData;
         filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP;
-        if (CVarPropJumping.Get()) filterData.word0 |= ecs::PHYSICS_GROUP_HELD_OBJECT;
         PxControllerFilters moveQueryFilter(&filterData);
 
         float dt = (float)(manager.interval.count() / 1e9);
@@ -283,7 +281,7 @@ namespace sp {
 
                 PxSweepBuffer sweepHit;
                 auto sweepStart = actor->getGlobalPose();
-                // sweepStart.p = physx::toVec3(controller.pxController->getPosition());
+                sweepStart.p = physx::toVec3(controller.pxController->getPosition());
                 bool onGround = manager.scene->sweep(capsuleGeometry,
                     sweepStart,
                     -controller.pxController->getUpDirection(),
@@ -292,19 +290,12 @@ namespace sp {
                     PxHitFlag::ePOSITION,
                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
-                if ((moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) != onGround) {
-                    Logf("eCOLLISION_DOWN != onGround: %u != %u",
-                        (bool)(moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN),
-                        onGround);
-                    if (state.touchedActor) {
-                        auto touchedUserData = (ActorUserData *)state.touchedActor->userData;
-                        if (touchedUserData) {
-                            Logf("Touched actor: %s", ecs::ToString(lock, touchedUserData->entity));
-                        }
-                    }
+                if (state.touchedActor) {
+                    auto touchedUserData = (ActorUserData *)state.touchedActor->userData;
+                    if (touchedUserData) userData->standingOn = touchedUserData->entity;
                 }
 
-                if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
+                if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN || onGround) {
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                     userData->onGround = true;
                     // Logf("OnGround, Vel: %s", glm::to_string(userData->actorData.velocity));

@@ -17,8 +17,9 @@ namespace sp {
         void Frame(
             ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints>> lock);
 
-        void BreakConstraints(
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>, ecs::SendEventsLock> lock);
+        void BreakConstraints(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::CharacterController>,
+            ecs::Write<ecs::Physics>,
+            ecs::SendEventsLock> lock);
 
     private:
         void HandleForceLimitConstraint(physx::PxRigidActor *actor,

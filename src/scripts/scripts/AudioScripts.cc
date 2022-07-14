@@ -35,8 +35,7 @@ namespace ecs {
 
                     PhysicsQuery::Raycast nextQuery(glm::length(rayToListener),
                         PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_WORLD_OVERLAP | PHYSICS_GROUP_INTERACTIVE |
-                                         PHYSICS_GROUP_HELD_OBJECT | PHYSICS_GROUP_PLAYER_LEFT_HAND |
-                                         PHYSICS_GROUP_PLAYER_RIGHT_HAND));
+                                         PHYSICS_GROUP_PLAYER_LEFT_HAND | PHYSICS_GROUP_PLAYER_RIGHT_HAND));
                     nextQuery.direction = glm::normalize(rayToListener);
                     nextQuery.relativeDirection = false;
                     nextQuery.maxHits = 16;

@@ -46,7 +46,6 @@ namespace sp::scripts {
                         auto brokenConstraint = breakEvent->Get(lock);
                         if (ph.constraint == brokenConstraint) ph.RemoveConstraint();
                         sp::erase(scriptData.grabEntities, brokenConstraint);
-                        if (scriptData.grabEntities.empty()) ph.group = PhysicsGroup::World;
                     }
 
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
@@ -70,14 +69,12 @@ namespace sp::scripts {
                                 return joint.target == event.source && joint.type == PhysicsJointType::Fixed;
                             });
                             sp::erase(scriptData.grabEntities, event.source);
-                            if (scriptData.grabEntities.empty()) ph.group = PhysicsGroup::World;
                         } else if (std::holds_alternative<Transform>(event.data)) {
                             auto &parentTransform = std::get<Transform>(event.data);
                             auto &transform = ent.Get<TransformSnapshot>(lock);
                             auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
                             scriptData.grabEntities.emplace_back(event.source);
-                            ph.group = PhysicsGroup::HeldObject;
 
                             if (event.source.Has<Physics>(lock)) {
                                 PhysicsJoint joint;
@@ -187,6 +184,7 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
                             auto &grabEvent = std::get<bool>(event.data);
+                            auto justDropped = scriptData.grabEntity;
                             if (scriptData.grabEntity) {
                                 // Drop the currently held entity
                                 EventBindings::SendEvent(lock,
@@ -195,7 +193,7 @@ namespace sp::scripts {
                                     Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                 scriptData.grabEntity = {};
                             }
-                            if (grabEvent && raycastResult.target) {
+                            if (grabEvent && raycastResult.target != justDropped) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
                                         raycastResult.target,

@@ -72,8 +72,6 @@ namespace ecs {
                     group = PhysicsGroup::WorldOverlap;
                 } else if (physicsGroupParam == "INTERACTIVE") {
                     group = PhysicsGroup::Interactive;
-                } else if (physicsGroupParam == "HELD_OBJECT") {
-                    group = PhysicsGroup::HeldObject;
                 } else if (physicsGroupParam == "PLAYER") {
                     group = PhysicsGroup::Player;
                 } else if (physicsGroupParam == "PLAYER_LEFT_HAND") {

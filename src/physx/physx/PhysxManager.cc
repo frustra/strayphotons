@@ -223,7 +223,11 @@ namespace sp {
         { // Sync ECS state from physx
             ZoneScopedN("Sync to ECS");
             auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::LaserEmitter, ecs::OpticalElement, ecs::EventBindings, ecs::EventInput>,
+                ecs::Read<ecs::LaserEmitter,
+                    ecs::OpticalElement,
+                    ecs::EventBindings,
+                    ecs::EventInput,
+                    ecs::CharacterController>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
@@ -352,14 +356,12 @@ namespace sp {
         // Don't collide world overlap elements with the world
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::WorldOverlap, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::HeldObject, false);
         // Don't collide interactive elements with the world, or the player's body
         PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Interactive, (uint16_t)Group::Player, false);
         // Don't collide the player with themselves, but allow the hands to collide with eachother
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::Player, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::PlayerLeftHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::PlayerRightHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::PlayerLeftHand, (uint16_t)Group::PlayerLeftHand, false);
@@ -368,7 +370,6 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Interactive, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::UserInterface, false);
         // Don't collide anything with the noclip group.
@@ -376,7 +377,6 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Interactive, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerLeftHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerRightHand, false);

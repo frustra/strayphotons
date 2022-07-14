@@ -47,8 +47,8 @@ namespace sp {
             PxRaycastBuffer hit;
             PxFilterData filterData;
             filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP |
-                                          ecs::PHYSICS_GROUP_INTERACTIVE | ecs::PHYSICS_GROUP_HELD_OBJECT |
-                                          ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND | ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
+                                          ecs::PHYSICS_GROUP_INTERACTIVE | ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND |
+                                          ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
 
             const float maxDistance = 1000.0f;
             int maxReflections = CVarLaserRecursion.Get();
