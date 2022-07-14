@@ -10,12 +10,6 @@ namespace sp {
 
         void StartThread();
 
-        void PrintDebug();
-        void JsonDump(std::string entityName);
-        void PrintEvents();
-        void PrintSignals();
-        void PrintSignal(std::string signalName);
-
     private:
         void Frame() override;
 
