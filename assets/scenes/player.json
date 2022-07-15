@@ -17,7 +17,8 @@
 		{
 			"name": "flatview",
 			"view": {
-				"clip": [0.05, 350]
+				"clip": [0.05, 350],
+				"visibilityMask": "DirectCamera"
 			},
 			"transform": {
 				"parent": "player",

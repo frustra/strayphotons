@@ -84,6 +84,10 @@ namespace ecs {
             return new (&cast) FieldCast<std::string>();
         case FieldType::EntityRef:
             return new (&cast) FieldCast<EntityRef>();
+        case FieldType::GltfPtr:
+            return new (&cast) FieldCast<sp::AsyncPtr<sp::Gltf>>();
+        case FieldType::VisibilityMask:
+            return new (&cast) FieldCast<VisibilityMask>();
         default:
             Abortf("CastField unknown component field type: %u", type);
         }

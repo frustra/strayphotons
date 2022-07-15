@@ -1,4 +1,5 @@
 #include "console/Console.hh"
+#include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 

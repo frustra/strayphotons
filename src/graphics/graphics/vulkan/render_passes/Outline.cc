@@ -5,9 +5,7 @@
 
 namespace sp::vulkan::renderer {
     void AddOutlines(RenderGraph &graph, GPUScene &scene) {
-        ecs::Renderable::VisibilityMask visible;
-        visible.set(ecs::Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-        auto drawIDs = scene.GenerateDrawsForView(graph, visible);
+        auto drawIDs = scene.GenerateDrawsForView(graph, ecs::VisibilityMask::OutlineSelection);
 
         graph.AddPass("OutlinesStencil")
             .Build([&](PassBuilder &builder) {

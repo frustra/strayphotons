@@ -173,7 +173,6 @@ namespace sp {
             auto flatview = flatviewEntity.Get(lock);
             if (flatview.Has<ecs::View>(lock)) {
                 auto &view = flatview.Get<ecs::View>(lock);
-                view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
                 context->PrepareWindowView(view);
             }
             context->AttachView(flatview);

@@ -12,7 +12,7 @@ namespace ecs {
         View(glm::ivec2 extents,
             float fov = 0.0f,
             glm::vec2 clip = {0.1, 256},
-            Renderable::VisibilityMask mask = Renderable::VisibilityMask())
+            VisibilityMask mask = VisibilityMask::None)
             : extents(extents), fov(fov), clip(clip), visibilityMask(mask) {
             UpdateProjectionMatrix();
         }
@@ -22,9 +22,9 @@ namespace ecs {
 
         // Required parameters.
         glm::ivec2 extents = {0, 0};
-        float fov = 0.0f;
+        sp::angle_t fov = 0.0f;
         glm::vec2 clip = {0.1, 256}; // {near, far}
-        Renderable::VisibilityMask visibilityMask;
+        VisibilityMask visibilityMask = VisibilityMask::None;
 
         void UpdateProjectionMatrix();
         void UpdateViewMatrix(Lock<Read<TransformSnapshot>> lock, Entity e);
@@ -44,8 +44,15 @@ namespace ecs {
         glm::mat4 viewMat, invViewMat;
     };
 
-    static Component<View> ComponentView("view");
+    static Component<View> ComponentView("view",
+        ComponentField::New("offset", &View::offset),
+        ComponentField::New("extents", &View::extents),
+        ComponentField::New("fov", &View::fov),
+        ComponentField::New("clip", &View::clip),
+        ComponentField::New("visibilityMask", &View::visibilityMask));
 
     template<>
     bool Component<View>::Load(const EntityScope &scope, View &dst, const picojson::value &src);
+    template<>
+    void Component<View>::Apply(const View &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

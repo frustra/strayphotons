@@ -141,9 +141,12 @@ namespace sp::scripts {
                             auto child = e;
                             while (child.Has<TransformTree>(lock)) {
                                 if (child == ent) {
-                                    e.Get<Renderable>(lock).visibility.set(
-                                        Renderable::Visibility::VISIBLE_OUTLINE_SELECTION,
-                                        renderOutline);
+                                    auto &visibility = e.Get<Renderable>(lock).visibility;
+                                    if (renderOutline) {
+                                        visibility |= VisibilityMask::OutlineSelection;
+                                    } else {
+                                        visibility &= ~VisibilityMask::OutlineSelection;
+                                    }
                                     break;
                                 }
                                 child = child.Get<TransformTree>(lock).parent.Get(lock);

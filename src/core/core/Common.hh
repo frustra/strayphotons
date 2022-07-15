@@ -68,16 +68,22 @@ namespace sp {
     typedef std::array<uint64, 2> Hash128;
     typedef uint64 Hash64;
 
-    struct angle_t {
-        float radians;
-
-        angle_t(const float &angle) : radians(angle) {}
+    class angle_t {
+    public:
+        angle_t(const float &angle) : radians_(angle) {}
 
         operator float() const {
-            return radians;
+            return radians_;
+        }
+
+        const float &radians() const {
+            return radians_;
         }
 
         float degrees() const;
+
+    private:
+        float radians_;
     };
 
     template<typename T, typename V>

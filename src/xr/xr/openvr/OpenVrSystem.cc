@@ -119,7 +119,7 @@ namespace sp::xr {
                     view.clip = {0.1, 256};
                     auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr(eye), view.clip.x, view.clip.y);
                     view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
-                    view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
+                    view.visibilityMask = ecs::VisibilityMask::DirectEye;
                 }
             });
 

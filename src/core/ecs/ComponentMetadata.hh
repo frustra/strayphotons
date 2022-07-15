@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
@@ -11,8 +12,13 @@ namespace picojson {
     class value;
 }
 
+namespace sp {
+    class Gltf;
+}
+
 namespace ecs {
     struct EntityScope;
+    enum class VisibilityMask;
 
     enum class FieldType {
         Bool = 0,
@@ -29,6 +35,8 @@ namespace ecs {
         IVec3,
         String,
         EntityRef,
+        GltfPtr,
+        VisibilityMask,
         Count,
     };
 
@@ -73,6 +81,10 @@ namespace ecs {
                 return ComponentField(name, FieldType::String, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, EntityRef>()) {
                 return ComponentField(name, FieldType::EntityRef, offset, sizeof(F));
+            } else if constexpr (std::is_same<BaseType, sp::AsyncPtr<sp::Gltf>>()) {
+                return ComponentField(name, FieldType::GltfPtr, offset, sizeof(F));
+            } else if constexpr (std::is_same<BaseType, VisibilityMask>()) {
+                return ComponentField(name, FieldType::VisibilityMask, offset, sizeof(F));
             } else {
                 Abortf("Component field %s type must be custom: %s", name, typeid(BaseType).name());
             }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/EnumArray.hh"
+#include "core/EnumTypes.hh"
 #include "ecs/Components.hh"
 
 #include <glm/glm.hpp>

@@ -79,7 +79,7 @@ namespace sp::vulkan {
         };
 
         DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
-            ecs::Renderable::VisibilityMask viewMask,
+            ecs::VisibilityMask viewMask,
             uint32 instanceCount = 1);
 
         void DrawSceneIndirect(CommandContext &cmd,

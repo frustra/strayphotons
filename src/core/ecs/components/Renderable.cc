@@ -14,7 +14,7 @@ namespace ecs {
         } else {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "hidden") {
-                    if (param.second.get<bool>()) r.visibility.reset();
+                    if (param.second.get<bool>()) r.visibility = VisibilityMask::None;
                 } else if (param.first == "model") {
                     r.model = sp::GAssets.LoadGltf(param.second.get<string>());
                 } else if (param.first == "mesh_index") {
@@ -22,8 +22,8 @@ namespace ecs {
                 }
             }
         }
-        r.visibility.reset(Renderable::Visibility::VISIBLE_OUTLINE_SELECTION);
-        if (!r.model && r.visibility.any()) {
+        r.visibility &= ~VisibilityMask::OutlineSelection;
+        if (!r.model && r.visibility != VisibilityMask::None) {
             Errorf("Visible renderables must have a model");
             return false;
         }

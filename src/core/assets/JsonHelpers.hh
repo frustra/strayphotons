@@ -1,5 +1,7 @@
 #pragma once
 
+#include "assets/AssetManager.hh"
+#include "assets/Gltf.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityRef.hh"
@@ -41,12 +43,25 @@ namespace sp::json {
         }
     } // namespace detail
 
-    // Default Load handler for all integer and float types
+    // Default Load handler for enums, and all integer and float types
     template<typename T>
     inline bool Load(const ecs::EntityScope &s, T &dst, const picojson::value &src) {
-        if (!src.is<double>()) return false;
-        dst = (T)src.get<double>();
-        return true;
+        if constexpr (std::is_enum<T>()) {
+            if (!src.is<std::string>()) return false;
+            auto name = src.get<std::string>();
+            if (name.empty()) return true;
+            auto opt = magic_enum::enum_cast<T>(name);
+            if (!opt) {
+                Errorf("Unknown enum value specified for %s: %s", typeid(T).name(), name);
+                return false;
+            }
+            dst = *opt;
+            return true;
+        } else {
+            if (!src.is<double>()) return false;
+            dst = (T)src.get<double>();
+            return true;
+        }
     }
 
     // Load() specializations for native and complex types
@@ -95,6 +110,13 @@ namespace sp::json {
         dst = ecs::Name(name, s.prefix);
         return name.empty() == !dst;
     }
+    template<>
+    inline bool Load(const ecs::EntityScope &s, sp::AsyncPtr<sp::Gltf> &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        auto name = src.get<std::string>();
+        dst = sp::GAssets.LoadGltf(name);
+        return name.empty() == !dst;
+    }
     template<typename T>
     inline bool Load(const ecs::EntityScope &s, std::vector<T> &dst, const picojson::value &src) {
         if (src.is<picojson::array>()) {
@@ -116,10 +138,14 @@ namespace sp::json {
         }
     }
 
-    // Default Save handler for all integer and float types
+    // Default Save handler for enums, and all integer and float types
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const T &src) {
-        dst = picojson::value((double)src);
+        if constexpr (std::is_enum<T>()) {
+            dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
+        } else {
+            dst = picojson::value((double)src);
+        }
     }
 
     // Save() specializations for native and complex types
@@ -165,6 +191,13 @@ namespace sp::json {
             if (refName[prefixLen] != prefix[prefixLen]) break;
         }
         dst = picojson::value(refName.substr(prefixLen));
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const sp::AsyncPtr<sp::Gltf> &src) {
+        if (!src) return;
+        Assertf(src->Ready(), "Tried saving invalid GltfPtr");
+        auto gltf = src->Get();
+        if (gltf) dst = picojson::value(gltf->name);
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {

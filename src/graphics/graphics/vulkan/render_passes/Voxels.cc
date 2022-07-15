@@ -1,5 +1,6 @@
 #include "Voxels.hh"
 
+#include "core/Common.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
@@ -109,7 +110,7 @@ namespace sp::vulkan::renderer {
         };
 
         ecs::View ortho;
-        ortho.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_VOXEL);
+        ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
 
         auto voxelCenter = voxelToWorld;
         voxelCenter.Translate(glm::mat3(voxelCenter.matrix) * (0.5f * glm::vec3(voxelGridSize)));
