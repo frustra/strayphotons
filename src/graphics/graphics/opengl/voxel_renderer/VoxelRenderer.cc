@@ -643,7 +643,7 @@ namespace sp {
         if (!comp.model || !comp.model->Ready()) return;
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
-        ecs::Renderable::VisibilityMask mask = comp.visibility;
+        ecs::VisibilityMask mask = comp.visibility;
         mask &= view.visibilityMask;
         if (mask != view.visibilityMask) return;
 

@@ -2,6 +2,8 @@
 
 #include <array>
 #include <bitset>
+#include <magic_enum.hpp>
+#include <type_traits>
 
 namespace sp {
     template<typename T, class EnumType, typename ArrayT = std::array<T, static_cast<size_t>(EnumType::Count)>>
@@ -16,45 +18,50 @@ namespace sp {
         }
     };
 
-    template<class EnumType, typename BitsetT = std::bitset<static_cast<size_t>(EnumType::Count)>>
-    class EnumFlags : public BitsetT {
-    public:
-        template<class... Args>
-        EnumFlags(Args... args) {
-            (BitsetT::set(static_cast<size_t>(args)), ...);
+    namespace enum_flag_operators {
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E operator~(E rhs) noexcept {
+            magic_enum::underlying_type_t<E> mask = 0;
+            for (auto &val : magic_enum::enum_values<E>()) {
+                mask |= static_cast<magic_enum::underlying_type_t<E>>(val);
+            }
+            auto flipped = ~static_cast<magic_enum::underlying_type_t<E>>(rhs);
+            return static_cast<E>(flipped & mask);
         }
 
-        EnumFlags &set() {
-            BitsetT::set();
-            return *this;
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E operator|(E lhs, E rhs) noexcept {
+            return static_cast<E>(static_cast<magic_enum::underlying_type_t<E>>(lhs) |
+                                  static_cast<magic_enum::underlying_type_t<E>>(rhs));
         }
 
-        EnumFlags &set(const EnumType &flag, bool value = true) {
-            BitsetT::set(static_cast<size_t>(flag), value);
-            return *this;
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E operator&(E lhs, E rhs) noexcept {
+            return static_cast<E>(static_cast<magic_enum::underlying_type_t<E>>(lhs) &
+                                  static_cast<magic_enum::underlying_type_t<E>>(rhs));
         }
 
-        EnumFlags &reset() {
-            BitsetT::reset();
-            return *this;
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E operator^(E lhs, E rhs) noexcept {
+            return static_cast<E>(static_cast<magic_enum::underlying_type_t<E>>(lhs) ^
+                                  static_cast<magic_enum::underlying_type_t<E>>(rhs));
         }
 
-        EnumFlags &reset(const EnumType &flag) {
-            BitsetT::reset(static_cast<size_t>(flag));
-            return *this;
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E &operator|=(E &lhs, E rhs) noexcept {
+            return lhs = (lhs | rhs);
         }
 
-        EnumFlags &flip(const EnumType &flag) {
-            BitsetT::flip(static_cast<size_t>(flag));
-            return *this;
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E &operator&=(E &lhs, E rhs) noexcept {
+            return lhs = (lhs & rhs);
         }
 
-        constexpr BitsetT::reference operator[](const EnumType &flag) {
-            return (*this)[static_cast<size_t>(flag)];
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr E &operator^=(E &lhs, E rhs) noexcept {
+            return lhs = (lhs ^ rhs);
         }
-
-        constexpr bool operator[](const EnumType &flag) const {
-            return (*this)[static_cast<size_t>(flag)];
-        }
-    };
+    } // namespace enum_flag_operators
 } // namespace sp
+
+using namespace sp::enum_flag_operators;

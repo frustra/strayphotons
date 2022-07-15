@@ -59,7 +59,7 @@ namespace sp::vulkan {
 
             GPURenderableEntity gpuRenderable;
             gpuRenderable.modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
-            gpuRenderable.visibilityMask = renderable.visibility.to_ulong();
+            gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
             if (ent.Has<ecs::OpticalElement>(lock)) {
@@ -127,7 +127,7 @@ namespace sp::vulkan {
     }
 
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
-        ecs::Renderable::VisibilityMask viewMask,
+        ecs::VisibilityMask viewMask,
         uint32 instanceCount) {
         DrawBufferIDs bufferIDs;
 
@@ -171,7 +171,7 @@ namespace sp::vulkan {
                 } constants;
                 constants.renderableCount = renderableCount;
                 constants.instanceCount = instanceCount;
-                constants.visibilityMask = viewMask.to_ulong();
+                constants.visibilityMask = (uint32_t)viewMask;
                 cmd.PushConstants(constants);
 
                 cmd.Dispatch((renderableCount + 127) / 128, 1, 1);

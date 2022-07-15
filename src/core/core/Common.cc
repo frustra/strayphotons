@@ -51,7 +51,7 @@ namespace sp {
     }
 
     float angle_t::degrees() const {
-        return glm::degrees(radians);
+        return glm::degrees(radians_);
     }
 
     namespace boost_replacements {
