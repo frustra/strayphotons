@@ -12,6 +12,11 @@ namespace sp {
     class Gltf;
 }
 
+template<>
+struct magic_enum::customize::enum_range<ecs::VisibilityMask> {
+    static constexpr bool is_flags = true;
+};
+
 namespace ecs {
     enum class VisibilityMask {
         None = 0,
@@ -46,8 +51,3 @@ namespace ecs {
     template<>
     bool Component<Renderable>::Load(const EntityScope &scope, Renderable &dst, const picojson::value &src);
 } // namespace ecs
-
-template<>
-struct magic_enum::customize::enum_range<ecs::VisibilityMask> {
-    static constexpr bool is_flags = true;
-};

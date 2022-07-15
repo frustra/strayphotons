@@ -81,6 +81,7 @@ namespace sp {
         }
 
         float degrees() const;
+
     private:
         float radians_;
     };
