@@ -10,27 +10,6 @@
 #include <picojson/picojson.h>
 
 namespace sp {
-    CFunc<void> CFuncTestMagicEnum("magicenum", "", []() {
-        magic_enum::enum_for_each<ecs::VisibilityMask>([](auto val) {
-            constexpr ecs::VisibilityMask visibility = val;
-            Logf("VisibilityMask: %s", magic_enum::enum_name(visibility));
-        });
-        auto vis = magic_enum::enum_cast<ecs::VisibilityMask>("OutlineSelection");
-        Logf("'OutlineSelection' = %s", magic_enum::enum_flags_name(vis.value_or(ecs::VisibilityMask::None)));
-        vis = magic_enum::enum_cast<ecs::VisibilityMask>("Optics|OutlineSelection");
-        Logf("'Optics|OutlineSelection' = %s", magic_enum::enum_flags_name(vis.value_or(ecs::VisibilityMask::None)));
-
-        ecs::VisibilityMask mask = ecs::VisibilityMask::None;
-        Logf("None = %u '%s'", mask, magic_enum::enum_name(mask));
-        mask = ~ecs::VisibilityMask::OutlineSelection;
-        Logf("~Outline = %u '%s'", mask, magic_enum::enum_flags_name(mask));
-        mask &= ~ecs::VisibilityMask::Optics;
-        Logf("~Outline ~Optics = %u '%s'", mask, magic_enum::enum_flags_name(mask));
-        mask = ecs::VisibilityMask::Optics;
-        mask |= ecs::VisibilityMask::OutlineSelection;
-        Logf("Optics | Outline = %u '%s'", mask, magic_enum::enum_flags_name(mask));
-    });
-
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();
