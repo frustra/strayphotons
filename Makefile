@@ -80,6 +80,3 @@ assets:
 dependencies:
 	git submodule sync
 	git submodule update --init --recursive
-
-watch-scenes:
-	cd assets; nodemon --watch scenes -e ejs,scene --exec bash sp-scenes.sh
