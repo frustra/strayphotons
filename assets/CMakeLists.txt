@@ -53,7 +53,6 @@ foreach(asset_line ${asset_list})
 endforeach(asset_line)
 
 add_subdirectory(models)
-add_subdirectory(scenes)
 
 if(SP_PACKAGE_RELEASE)
     # When adding new asset files, CMake will need to be re-run due to GLOB
