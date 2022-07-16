@@ -14,11 +14,6 @@ endif()
 ## When adding a new .scene file, just add it to this list!
 ##
 set(SCENES_INPUT
-    blackhole1
-    blackhole2
-    blackhole3
-    blackhole4
-    blackhole5
     sponza
 )
 

@@ -1,0 +1,65 @@
+{
+	"entities": [
+		{
+			"name": "middle-floor",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 0.1, 10],
+				"translate": [0, 0, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"name": "upper-floor",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 0.1, 4],
+				"translate": [0, 2.5, 3]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"name": "ceiling",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 0.1, 5],
+				"translate": [0, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"name": "back-wall-middle",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 2.5, 0.1],
+				"translate": [0, 1.25, 5]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"name": "back-wall-top",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 3.536, 0.1],
+				"translate": [0, 3.75, 3.75],
+				"rotate": [-45, 1, 0, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		}
+	]
+}
