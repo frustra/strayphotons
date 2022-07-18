@@ -96,8 +96,10 @@ namespace ecs {
             return new (&cast) FieldCast<EntityRef>();
         case FieldType::Transform:
             return new (&cast) FieldCast<Transform>();
-        case FieldType::GltfPtr:
-            return new (&cast) FieldCast<sp::AsyncPtr<sp::Gltf>>();
+        case FieldType::AnimationStates:
+            return new (&cast) FieldCast<std::vector<AnimationState>>();
+        case FieldType::InterpolationMode:
+            return new (&cast) FieldCast<InterpolationMode>();
         case FieldType::VisibilityMask:
             return new (&cast) FieldCast<VisibilityMask>();
         default:

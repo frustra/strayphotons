@@ -7,6 +7,11 @@
 namespace ecs {
     template<>
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src) {
+        if (!src.is<picojson::object>()) {
+            Errorf("Invalid laser line: %s", src.to_str());
+            return false;
+        }
+
         ecs::LaserLine::Line line;
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "color") {

@@ -6,67 +6,66 @@
 
 #include <sstream>
 
+namespace sp::json {
+    template<>
+    bool Load(const ecs::EntityScope &scope, ecs::AnimationState &state, const picojson::value &src) {
+        if (!src.is<picojson::object>()) {
+            Errorf("Invalid animation state: %s", src.to_str());
+            return false;
+        }
+
+        for (auto &param : src.get<picojson::object>()) {
+            if (param.first == "delay") {
+                if (!sp::json::Load(scope, state.delay, param.second)) {
+                    Errorf("Invalid animation delay: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "scale") {
+                if (!sp::json::Load(scope, state.scale, param.second)) {
+                    Errorf("Invalid animation scale: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "translate") {
+                if (!sp::json::Load(scope, state.pos, param.second)) {
+                    Errorf("Invalid animation translation: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "scale_tangent") {
+                if (!sp::json::Load(scope, state.tangentScale, param.second)) {
+                    Errorf("Invalid animation scale_tangent: %s", param.second.to_str());
+                    return false;
+                }
+            } else if (param.first == "translate_tangent") {
+                if (!sp::json::Load(scope, state.tangentPos, param.second)) {
+                    Errorf("Invalid animation translate_tangent: %s", param.second.to_str());
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    template<>
+    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::AnimationState &src) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &obj = dst.get<picojson::object>();
+
+        static const ecs::AnimationState defaultState = {};
+
+        SaveIfChanged(scope, obj, "delay", src.delay, defaultState.delay);
+        SaveIfChanged(scope, obj, "translate", src.pos, defaultState.pos);
+        SaveIfChanged(scope, obj, "scale", src.scale, defaultState.scale);
+        SaveIfChanged(scope, obj, "translate_tangent", src.tangentPos, defaultState.tangentPos);
+        SaveIfChanged(scope, obj, "scale_tangent", src.tangentScale, defaultState.tangentScale);
+    }
+} // namespace sp::json
+
 namespace ecs {
     template<>
     bool Component<Animation>::Load(const EntityScope &scope, Animation &animation, const picojson::value &src) {
-        for (auto param : src.get<picojson::object>()) {
-            if (param.first == "states") {
-                for (auto state : param.second.get<picojson::array>()) {
-                    double delay = 1.0;
-                    Animation::State tangents;
-                    bool hasTangent = false;
-
-                    for (auto stateParam : state.get<picojson::object>()) {
-                        if (stateParam.first == "delay") {
-                            delay = stateParam.second.get<double>();
-                        } else if (stateParam.first == "translate_tangent") {
-                            if (!sp::json::Load(scope, tangents.pos, stateParam.second)) {
-                                Errorf("Invalid animation tangent position: %s", stateParam.second.to_str());
-                                return false;
-                            }
-                            hasTangent = true;
-                        } else if (stateParam.first == "scale_tangent") {
-                            if (!sp::json::Load(scope, tangents.scale, stateParam.second)) {
-                                Errorf("Invalid animation tangent scale: %s", stateParam.second.to_str());
-                                return false;
-                            }
-                            hasTangent = true;
-                        }
-                    }
-
-                    Transform animationState;
-                    if (!sp::json::Load(scope, animationState, state)) {
-                        sp::Abort("Couldn't parse animation state as Transform");
-                    }
-                    animation.states.emplace_back(animationState.GetPosition(), animationState.GetScale());
-                    animation.animationTimes.emplace_back(delay);
-                    if (hasTangent) {
-                        animation.tangents.resize(animation.states.size());
-                        animation.tangents.back() = tangents;
-                    }
-                }
-            } else if (param.first == "defaultState") {
-                animation.targetState = param.second.get<double>();
-            } else if (param.first == "interpolation") {
-                auto mode = param.second.get<string>();
-                if (mode == "step") {
-                    animation.interpolation = InterpolationMode::Step;
-                } else if (mode == "linear") {
-                    animation.interpolation = InterpolationMode::Linear;
-                } else if (mode == "cubic") {
-                    animation.interpolation = InterpolationMode::Cubic;
-                }
-            } else if (param.first == "tension") {
-                animation.tension = param.second.get<double>();
-            }
-        }
         if (animation.targetState >= animation.states.size()) animation.targetState = animation.states.size() - 1;
         if (animation.targetState < 0) animation.targetState = 0;
         animation.currentState = animation.targetState;
-
-        if (animation.interpolation == InterpolationMode::Cubic) {
-            Assert(animation.tangents.size() == animation.states.size(), "must have one tangent per state");
-        }
         return true;
     }
 } // namespace ecs

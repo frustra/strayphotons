@@ -35,9 +35,9 @@ namespace sp {
 
                 auto newNextState = animation.currentState + animation.PlayDirection();
                 auto oldCompletion = 1.0 - animation.timeUntilNextState /
-                                               RoundToFrameInterval(animation.animationTimes[oldNextState]);
+                                               RoundToFrameInterval(animation.states[oldNextState].delay);
                 animation.timeUntilNextState = oldCompletion *
-                                               RoundToFrameInterval(animation.animationTimes[newNextState]);
+                                               RoundToFrameInterval(animation.states[newNextState].delay);
             }
 
             if (animation.targetState == animation.currentState) continue;
@@ -50,7 +50,7 @@ namespace sp {
             auto &currentState = animation.states[animation.currentState];
             auto &nextState = animation.states[nextStateIndex];
 
-            double duration = RoundToFrameInterval(animation.animationTimes[nextStateIndex]);
+            double duration = RoundToFrameInterval(nextState.delay);
             if (animation.timeUntilNextState <= 0) animation.timeUntilNextState = duration;
             animation.timeUntilNextState -= frameInterval;
             animation.timeUntilNextState = std::max(animation.timeUntilNextState, 0.0);
@@ -62,9 +62,6 @@ namespace sp {
                 transform.pose.SetPosition(currentState.pos + completion * dPos);
                 transform.pose.SetScale(currentState.scale + completion * dScale);
             } else if (animation.interpolation == ecs::InterpolationMode::Cubic) {
-                Assert(animation.tangents.size() == animation.states.size(), "invalid tangents");
-                auto &prevTangent = animation.tangents[animation.currentState];
-                auto &nextTangent = animation.tangents[nextStateIndex];
                 float tangentScale = playDirection * duration;
 
                 auto t = completion;
@@ -75,11 +72,12 @@ namespace sp {
                 auto av2 = -2 * t3 + 3 * t2;
                 auto at2 = tangentScale * (t3 - t2);
 
-                auto pos = av1 * currentState.pos + at1 * prevTangent.pos + av2 * nextState.pos + at2 * nextTangent.pos;
+                auto pos = av1 * currentState.pos + at1 * currentState.tangentPos + av2 * nextState.pos +
+                           at2 * nextState.tangentPos;
                 transform.pose.SetPosition(pos);
 
-                auto scale = av1 * currentState.scale + at1 * prevTangent.scale + av2 * nextState.scale +
-                             at2 * nextTangent.scale;
+                auto scale = av1 * currentState.scale + at1 * currentState.tangentScale + av2 * nextState.scale +
+                             at2 * nextState.tangentScale;
                 transform.pose.SetScale(scale);
             }
 
