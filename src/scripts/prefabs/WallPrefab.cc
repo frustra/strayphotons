@@ -44,14 +44,14 @@ namespace ecs {
                 TransformTree transform(glm::vec3(point.x, yOffset, point.y),
                     glm::quat(glm::vec3(0, rotation + deltaRotation / 2, 0)));
                 if (ent.Has<TransformTree>(lock)) transform.parent = ent;
-                Component<TransformTree>::Apply(transform, lock, newEnt);
+                LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEnt);
 
                 Script scriptComp;
                 auto &gltfState = scriptComp.AddPrefab(state.scope, PrefabDefinitions["gltf"]);
                 gltfState.SetParam<std::string>("model", "wall-4-corner");
                 gltfState.SetParam<std::string>("physics", "static");
                 gltfState.SetParam<bool>("render", true);
-                Component<Script>::Apply(scriptComp, lock, newEnt);
+                LookupComponent<Script>().ApplyComponent(scriptComp, lock, newEnt);
                 newEnt.Get<Script>(lock).Prefab(lock, newEnt);
             }
             lastDir = dir;
@@ -66,14 +66,14 @@ namespace ecs {
                 TransformTree transform(glm::vec3(point.x, yOffset, point.y), glm::quat(glm::vec3(0, rotation, 0)));
                 if (ent.Has<TransformTree>(lock)) transform.parent = ent;
 
-                Component<TransformTree>::Apply(transform, lock, newEnt);
+                LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEnt);
 
                 Script scriptComp;
                 auto &gltfState = scriptComp.AddPrefab(state.scope, PrefabDefinitions["gltf"]);
                 gltfState.SetParam<std::string>("model", model);
                 gltfState.SetParam<std::string>("physics", "static");
                 gltfState.SetParam<bool>("render", true);
-                Component<Script>::Apply(scriptComp, lock, newEnt);
+                LookupComponent<Script>().ApplyComponent(scriptComp, lock, newEnt);
                 newEnt.Get<Script>(lock).Prefab(lock, newEnt);
 
                 point += dir * stride;

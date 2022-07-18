@@ -98,6 +98,13 @@ namespace sp::json {
         return detail::LoadVec<3>(dst, src);
     }
     template<>
+    inline bool Load(const ecs::EntityScope &s, glm::quat &dst, const picojson::value &src) {
+        glm::vec4 r;
+        if (!detail::LoadVec<4>(r, src)) return false;
+        dst = glm::angleAxis(glm::radians(r[0]), glm::normalize(glm::vec3(r[1], r[2], r[3])));
+        return true;
+    }
+    template<>
     inline bool Load(const ecs::EntityScope &s, std::string &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         dst = src.get<std::string>();
@@ -159,23 +166,28 @@ namespace sp::json {
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec2 &src) {
-        return detail::SaveVec<2>(dst, src);
+        detail::SaveVec<2>(dst, src);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec3 &src) {
-        return detail::SaveVec<3>(dst, src);
+        detail::SaveVec<3>(dst, src);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec4 &src) {
-        return detail::SaveVec<4>(dst, src);
+        detail::SaveVec<4>(dst, src);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec2 &src) {
-        return detail::SaveVec<2>(dst, src);
+        detail::SaveVec<2>(dst, src);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec3 &src) {
-        return detail::SaveVec<3>(dst, src);
+        detail::SaveVec<3>(dst, src);
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::quat &src) {
+        glm::vec4 r(glm::degrees(glm::angle(src)), glm::axis(src));
+        detail::SaveVec<4>(dst, r);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::string &src) {
@@ -184,13 +196,18 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
         auto refName = src.Name().String();
-        Assertf(refName.empty() == !src, "Can't serialize unnamed EntityRef: %s / %s", src.GetLive(), src.GetStaging());
+        if (refName.empty() == !src) {
+            Errorf("Can't serialize unnamed EntityRef: %s / %s",
+                std::to_string(src.GetLive()),
+                std::to_string(src.GetStaging()));
+            return;
+        }
         auto prefix = s.prefix.String();
         size_t prefixLen = 0;
         for (; prefixLen < refName.length() && prefixLen < prefix.length(); prefixLen++) {
             if (refName[prefixLen] != prefix[prefixLen]) break;
         }
-        dst = picojson::value(refName.substr(prefixLen));
+        dst = picojson::value(prefixLen >= refName.length() ? refName : refName.substr(prefixLen));
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const sp::AsyncPtr<sp::Gltf> &src) {
@@ -224,4 +241,12 @@ namespace sp::json {
         }
         return false;
     }
+} // namespace sp::json
+
+// Defined in Transform.cc
+namespace sp::json {
+    template<>
+    bool Load(const ecs::EntityScope &scope, ecs::Transform &dst, const picojson::value &src);
+    template<>
+    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::Transform &src);
 } // namespace sp::json

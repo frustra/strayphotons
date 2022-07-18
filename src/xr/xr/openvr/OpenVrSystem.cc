@@ -239,7 +239,6 @@ namespace sp::xr {
                     for (auto entityRef : trackedDevices) {
                         if (entityRef != nullptr && !entityRef->Get(lock).Exists(lock)) {
                             auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
-                            ent.Set<ecs::TransformSnapshot>(lock);
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);
                             ent.Set<ecs::SignalOutput>(lock);

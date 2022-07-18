@@ -58,7 +58,7 @@ namespace ecs {
             } else {
                 parentEnt = Entity();
             }
-            Component<TransformTree>::Apply(transform, lock, newEntity);
+            LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEntity);
 
             PhysicsGroup group = PhysicsGroup::World;
             auto physicsGroupParam = state.GetParam<std::string>("physics_group");

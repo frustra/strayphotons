@@ -10,49 +10,56 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-namespace ecs {
+namespace sp::json {
     template<>
-    bool Component<Transform>::Load(const EntityScope &scope, Transform &transform, const picojson::value &src) {
-        for (auto subTransform : src.get<picojson::object>()) {
-            if (subTransform.first == "scale") {
-                if (subTransform.second.is<double>()) {
-                    transform.Scale(glm::vec3(subTransform.second.get<double>()));
+    bool Load(const ecs::EntityScope &scope, ecs::Transform &transform, const picojson::value &src) {
+        if (!src.is<picojson::object>()) {
+            Errorf("Invalid transform: %s", src.to_str());
+            return false;
+        }
+
+        auto &obj = src.get<picojson::object>();
+        for (auto &param : obj) {
+            if (param.first == "scale") {
+                if (param.second.is<double>()) {
+                    transform.Scale(glm::vec3(param.second.get<double>()));
                 } else {
                     glm::vec3 scale(1);
-                    if (!sp::json::Load(scope, scale, subTransform.second)) {
-                        Errorf("Invalid transform scale: %s", subTransform.second.to_str());
+                    if (!sp::json::Load(scope, scale, param.second)) {
+                        Errorf("Invalid transform scale: %s", param.second.to_str());
                         return false;
                     }
                     transform.Scale(scale);
                 }
-            } else if (subTransform.first == "rotate") {
-                vector<glm::vec4> rotations;
-                picojson::array &subSecond = subTransform.second.get<picojson::array>();
-                if (subSecond.at(0).is<picojson::array>()) {
-                    // multiple rotations were given
-                    for (picojson::value &r : subSecond) {
-                        auto &rotation = rotations.emplace_back();
+            } else if (param.first == "rotate") {
+                if (!param.second.is<picojson::array>()) {
+                    Errorf("Invalid transform rotation: %s", param.second.to_str());
+                    return false;
+                }
+                auto &paramSecond = param.second.get<picojson::array>();
+                if (paramSecond.at(0).is<picojson::array>()) {
+                    // Multiple rotations were given
+                    for (auto &r : paramSecond) {
+                        glm::quat rotation;
                         if (!sp::json::Load(scope, rotation, r)) {
-                            Errorf("Invalid transform rotation: %s", subTransform.second.to_str());
+                            Errorf("Invalid transform rotation: %s", param.second.to_str());
                             return false;
                         }
+                        transform.Rotate(rotation);
                     }
                 } else {
-                    // a single rotation was given
-                    auto &rotation = rotations.emplace_back();
-                    if (!sp::json::Load(scope, rotation, subTransform.second)) {
-                        Errorf("Invalid transform rotation: %s", subTransform.second.to_str());
+                    // A single rotation was given
+                    glm::quat rotation;
+                    if (!sp::json::Load(scope, rotation, param.second)) {
+                        Errorf("Invalid transform rotation: %s", param.second.to_str());
                         return false;
                     }
+                    transform.Rotate(rotation);
                 }
-
-                for (auto &r : rotations) {
-                    transform.Rotate(glm::radians(r[0]), {r[1], r[2], r[3]});
-                }
-            } else if (subTransform.first == "translate") {
+            } else if (param.first == "translate") {
                 glm::vec3 translate(0);
-                if (!sp::json::Load(scope, translate, subTransform.second)) {
-                    Errorf("Invalid transform translation: %s", subTransform.second.to_str());
+                if (!sp::json::Load(scope, translate, param.second)) {
+                    Errorf("Invalid transform translation: %s", param.second.to_str());
                     return false;
                 }
                 transform.Translate(translate);
@@ -62,44 +69,21 @@ namespace ecs {
     }
 
     template<>
-    bool Component<TransformTree>::Load(const EntityScope &scope,
-        TransformTree &transform,
-        const picojson::value &src) {
-        auto scene = scope.scene.lock();
-        for (auto subTransform : src.get<picojson::object>()) {
-            if (subTransform.first == "parent") {
-                Assert(scene, "Transform::Load must have valid scene to define parent");
-                transform.parent = ecs::Name(subTransform.second.get<string>(), scope.prefix);
-                if (!transform.parent) return false;
-            }
-        }
-        return Component<Transform>::Load(scope, transform.pose, src);
+    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::Transform &src) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &obj = dst.get<picojson::object>();
+
+        static const ecs::Transform defaultTransform = {};
+        static const auto defaultRotation = defaultTransform.GetRotation();
+        static const auto defaultScale = defaultTransform.GetScale();
+
+        SaveIfChanged(scope, obj, "translate", src.GetPosition(), defaultTransform.GetPosition());
+        SaveIfChanged(scope, obj, "rotate", src.GetRotation(), defaultRotation);
+        SaveIfChanged(scope, obj, "scale", src.GetScale(), defaultScale);
     }
+} // namespace sp::json
 
-    template<>
-    void Component<TransformTree>::ApplyComponent(Lock<ReadAll> srcLock,
-        Entity src,
-        Lock<AddRemove> dstLock,
-        Entity dst) const {
-        if (src.Has<TransformTree>(srcLock) && !dst.Has<TransformSnapshot, TransformTree>(dstLock)) {
-            auto &srcTree = src.Get<TransformTree>(srcLock);
-            auto &dstTree = dst.Get<TransformTree>(dstLock);
-
-            if (!dstTree.parent) dstTree.parent = srcTree.parent;
-            dstTree.pose = srcTree.pose;
-            dst.Set<TransformSnapshot>(dstLock, srcTree.GetGlobalTransform(srcLock));
-        }
-    }
-
-    template<>
-    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstTree = dst.Get<TransformTree>(lock);
-
-        if (!dstTree.parent) dstTree.parent = src.parent;
-        dstTree.pose = src.pose;
-        dst.Get<TransformSnapshot>(lock);
-    }
-
+namespace ecs {
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
         : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
 

@@ -10,12 +10,15 @@ namespace ecs {
         virtual bool LoadField(const EntityScope &scope, void *dst, const picojson::value &src) const {
             Abortf("Uninitialized FieldCastBase::LoadField!");
         }
-        virtual bool SaveField(const EntityScope &scope,
+        virtual void SaveField(const EntityScope &scope,
             picojson::object &dst,
             const char *fieldName,
             const void *field,
             const void *defaultField) const {
             Abortf("Uninitialized FieldCastBase::SaveField!");
+        }
+        virtual void SaveBaseField(const EntityScope &scope, picojson::value &dst, const void *field) const {
+            Abortf("Uninitialized FieldCastBase::SaveBaseField!");
         }
         virtual void ApplyField(void *dstField, const void *srcField, const void *defaultField) const {
             Abortf("Uninitialized FieldCastBase::ApplyField!");
@@ -33,14 +36,19 @@ namespace ecs {
             return true;
         }
 
-        bool SaveField(const EntityScope &scope,
+        void SaveField(const EntityScope &scope,
             picojson::object &dst,
             const char *fieldName,
             const void *field,
             const void *defaultField) const override {
             auto &value = *reinterpret_cast<const T *>(field);
             auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-            return sp::json::SaveIfChanged(scope, dst, fieldName, value, defaultValue);
+            sp::json::SaveIfChanged(scope, dst, fieldName, value, defaultValue);
+        }
+
+        void SaveBaseField(const EntityScope &scope, picojson::value &dst, const void *field) const override {
+            auto &value = *reinterpret_cast<const T *>(field);
+            sp::json::Save(scope, dst, value);
         }
 
         void ApplyField(void *dstField, const void *srcField, const void *defaultField) const override {
@@ -80,10 +88,14 @@ namespace ecs {
             return new (&cast) FieldCast<glm::ivec2>();
         case FieldType::IVec3:
             return new (&cast) FieldCast<glm::ivec3>();
+        case FieldType::Quat:
+            return new (&cast) FieldCast<glm::quat>();
         case FieldType::String:
             return new (&cast) FieldCast<std::string>();
         case FieldType::EntityRef:
             return new (&cast) FieldCast<EntityRef>();
+        case FieldType::Transform:
+            return new (&cast) FieldCast<Transform>();
         case FieldType::GltfPtr:
             return new (&cast) FieldCast<sp::AsyncPtr<sp::Gltf>>();
         case FieldType::VisibilityMask:
@@ -99,19 +111,19 @@ namespace ecs {
             return false;
         }
         auto &obj = src.get<picojson::object>();
-        if (!src.contains(name)) {
+        if (name != nullptr && !src.contains(name)) {
             // Silently leave missing fields as default
             return true;
         }
 
         auto *fieldDst = static_cast<char *>(component) + offset;
-        auto &fieldSrc = obj.at(name);
+        auto &fieldSrc = name == nullptr ? src : obj.at(name);
 
-        FieldCastBase cast;
-        return CastField(cast, type)->LoadField(scope, fieldDst, fieldSrc);
+        FieldCastBase base;
+        return CastField(base, type)->LoadField(scope, fieldDst, fieldSrc);
     }
 
-    bool ComponentField::SaveIfChanged(const EntityScope &scope,
+    void ComponentField::Save(const EntityScope &scope,
         picojson::value &dst,
         const void *component,
         const void *defaultComponent) const {
@@ -121,8 +133,13 @@ namespace ecs {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
-        FieldCastBase cast;
-        return CastField(cast, type)->SaveField(scope, obj, name, field, defaultField);
+        FieldCastBase base;
+        auto cast = CastField(base, type);
+        if (name == nullptr) {
+            cast->SaveBaseField(scope, dst, field);
+        } else {
+            cast->SaveField(scope, obj, name, field, defaultField);
+        }
     }
 
     void ComponentField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
@@ -130,7 +147,7 @@ namespace ecs {
         auto *srcField = static_cast<const char *>(srcComponent) + offset;
         auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
 
-        FieldCastBase cast;
-        CastField(cast, type)->ApplyField(dstField, srcField, defaultField);
+        FieldCastBase base;
+        CastField(base, type)->ApplyField(dstField, srcField, defaultField);
     }
 } // namespace ecs

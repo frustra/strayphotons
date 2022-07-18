@@ -70,7 +70,7 @@ namespace ecs {
                 }
             } else if (param.first == "transform") {
                 Transform shapeTransform;
-                if (Component<Transform>::Load(scope, shapeTransform, param.second)) {
+                if (sp::json::Load(scope, shapeTransform, param.second)) {
                     shape.transform = shapeTransform;
                 } else {
                     Errorf("Couldn't parse PhysicsShape transform");
@@ -185,7 +185,7 @@ namespace ecs {
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {
-                            if (!Component<Transform>::Load(scope, constraintTransform, constraintParam.second)) {
+                            if (!sp::json::Load(scope, constraintTransform, constraintParam.second)) {
                                 Errorf("Couldn't parse physics constraint offset as Transform");
                                 return false;
                             }

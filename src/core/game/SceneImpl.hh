@@ -5,6 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
+#include "ecs/components/Transform.h"
 #include "game/SceneType.hh"
 
 #include <bitset>
@@ -15,11 +16,18 @@ namespace sp::scene {
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if constexpr (std::is_same<T, ecs::Name>() || std::is_same<T, ecs::SceneInfo>() ||
-                      std::is_same<T, ecs::TransformSnapshot>()) {
+        if constexpr (std::is_same<T, ecs::Name>() || std::is_same<T, ecs::SceneInfo>()) {
             if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
+        } else if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
+            // Ignore, this is handled by TransformTree
         } else if constexpr (!Tecs::is_global_component<T>()) {
             ecs::LookupComponent<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
+        }
+
+        if constexpr (std::is_same<T, ecs::TransformTree>()) {
+            if (srcEnt.Has<ecs::TransformTree>(src)) {
+                dstEnt.Set<ecs::TransformSnapshot>(dst, srcEnt.Get<ecs::TransformTree>(src).GetGlobalTransform(src));
+            }
         }
     }
 
@@ -42,7 +50,12 @@ namespace sp::scene {
     inline void RemoveDanglingComponent(ecs::Lock<ecs::AddRemove> lock,
         ecs::Entity ent,
         const BitsetType &hasComponents) {
-        if constexpr (!Tecs::is_global_component<T>()) {
+        if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
+            if (ent.Has<ecs::TransformSnapshot>(lock) &&
+                !hasComponents[ecs::ECS::GetComponentIndex<ecs::TransformTree>()]) {
+                ent.Unset<ecs::TransformSnapshot>(lock);
+            }
+        } else if constexpr (!Tecs::is_global_component<T>()) {
             if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) {
                 ent.Unset<T>(lock);
             }

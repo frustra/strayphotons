@@ -44,12 +44,12 @@ namespace ecs {
                         return false;
                     }
                 } else if (jointParam.first == "local_offset") {
-                    if (!Component<Transform>::Load(scope, localTransform, jointParam.second)) {
+                    if (!sp::json::Load(scope, localTransform, jointParam.second)) {
                         Errorf("Couldn't parse physics joint local_offset as Transform");
                         return false;
                     }
                 } else if (jointParam.first == "remote_offset") {
-                    if (!Component<Transform>::Load(scope, remoteTransform, jointParam.second)) {
+                    if (!sp::json::Load(scope, remoteTransform, jointParam.second)) {
                         Errorf("Couldn't parse physics joint remote_offset as Transform");
                         return false;
                     }

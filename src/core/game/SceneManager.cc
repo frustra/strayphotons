@@ -121,9 +121,6 @@ namespace sp {
                         for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
                             auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
                             if (sceneInfo.scene.lock() != scene) continue;
-
-                            // Special case so TransformSnapshot doesn't get removed as a dangling component
-                            if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
                         }
                     }
                     {
@@ -499,8 +496,6 @@ namespace sp {
                         Errorf("Unknown component, ignoring: %s", comp.first);
                     }
                 }
-                // Special case so TransformSnapshot doesn't get removed as a dangling component
-                if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
 
                 entities.emplace_back(entity);
             }
@@ -565,8 +560,6 @@ namespace sp {
                             Errorf("Unknown component, ignoring: %s", comp.first);
                         }
                     }
-                    // Special case so TransformSnapshot doesn't get removed as a dangling component
-                    if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
                 } else {
                     Errorf("Invalid binding entity name: %s", param.first);
                 }
