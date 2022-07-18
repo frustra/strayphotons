@@ -78,7 +78,7 @@ namespace sp::scripts {
                                 auto newEntity = lock.NewEntity();
                                 newEntity.Set<SceneInfo>(lock, newEntity, sceneInfo);
 
-                                Component<TransformTree>::Apply(transform, lock, newEntity);
+                                LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEntity);
 
                                 newEntity.Set<Renderable>(lock, model);
                                 newEntity.Set<Physics>(lock, model, PhysicsGroup::World, true, 1.0f);

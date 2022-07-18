@@ -101,27 +101,9 @@ namespace ecs {
     }
 
     template<>
-    void Component<TransformTree>::ApplyComponent(Lock<ReadAll> srcLock,
-        Entity src,
-        Lock<AddRemove> dstLock,
-        Entity dst) const {
-        if (src.Has<TransformTree>(srcLock) && !dst.Has<TransformSnapshot, TransformTree>(dstLock)) {
-            auto &srcTree = src.Get<TransformTree>(srcLock);
-            auto &dstTree = dst.Get<TransformTree>(dstLock);
-
-            if (!dstTree.parent) dstTree.parent = srcTree.parent;
-            dstTree.pose = srcTree.pose;
-            dst.Set<TransformSnapshot>(dstLock, srcTree.GetGlobalTransform(srcLock));
-        }
-    }
-
-    template<>
     void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstTree = dst.Get<TransformTree>(lock);
-
-        if (!dstTree.parent) dstTree.parent = src.parent;
-        dstTree.pose = src.pose;
-        dst.Get<TransformSnapshot>(lock);
+        if (dstTree.pose.matrix == glm::identity<glm::mat4x3>()) dstTree.pose = src.pose;
     }
 
     Transform::Transform(glm::vec3 pos, glm::quat orientation)

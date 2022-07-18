@@ -149,7 +149,6 @@ namespace ecs {
                         if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
                         transform.pose = offset * transform.pose;
                     }
-                    newEntity.Set<ecs::TransformSnapshot>(lock);
                 }
 
                 entities.emplace_back(newEntity);

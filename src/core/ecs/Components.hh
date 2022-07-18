@@ -49,12 +49,6 @@ namespace ecs {
     void RegisterComponent(const char *name, const std::type_index &idx, ComponentBase *comp);
     const ComponentBase *LookupComponent(const std::string &name);
     const ComponentBase *LookupComponent(const std::type_index &idx);
-    template<typename T>
-    const ComponentBase &LookupComponent() {
-        auto ptr = LookupComponent(std::type_index(typeid(T)));
-        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
-        return *ptr;
-    }
     void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
 
     template<typename CompType>
@@ -120,21 +114,24 @@ namespace ecs {
             return Save(lock, scope, dst, comp);
         }
 
+        void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
+            static const CompType defaultValues = {};
+            if (!dst.Has<CompType>(dstLock)) {
+                dst.Set<CompType>(dstLock, src);
+            } else {
+                // Merge existing component with a new one
+                auto &dstComp = dst.Get<CompType>(dstLock);
+                for (auto &field : this->fields) {
+                    field.Apply(&dstComp, &src, &defaultValues);
+                }
+                Apply(src, dstLock, dst);
+            }
+        }
+
         void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) const override {
             if (src.Has<CompType>(srcLock)) {
-                static const CompType defaultValues = {};
                 auto &srcComp = src.Get<CompType>(srcLock);
-
-                if (!dst.Has<CompType>(dstLock)) {
-                    dst.Set<CompType>(dstLock, srcComp);
-                } else {
-                    // Merge existing component with a new one
-                    auto &dstComp = dst.Get<CompType>(dstLock);
-                    for (auto &field : this->fields) {
-                        field.Apply(&dstComp, &srcComp, &defaultValues);
-                    }
-                    Apply(srcComp, dstLock, dst);
-                }
+                ApplyComponent(srcComp, dstLock, dst);
             }
         }
 
@@ -142,6 +139,15 @@ namespace ecs {
             return ent.Has<CompType>(lock);
         }
 
+        bool operator==(const Component<CompType> &other) const {
+            return strcmp(name, other.name) == 0;
+        }
+
+        bool operator!=(const Component<CompType> &other) const {
+            return !(*this == other);
+        }
+
+    protected:
         static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
             // Custom field serialization is always called, default to no-op.
             return true;
@@ -153,13 +159,12 @@ namespace ecs {
         }
 
         static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {}
-
-        bool operator==(const Component<CompType> &other) const {
-            return strcmp(name, other.name) == 0;
-        }
-
-        bool operator!=(const Component<CompType> &other) const {
-            return !(*this == other);
-        }
     };
+
+    template<typename T>
+    const Component<T> &LookupComponent() {
+        auto ptr = LookupComponent(std::type_index(typeid(T)));
+        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
+        return *dynamic_cast<const Component<T> *>(ptr);
+    }
 }; // namespace ecs
