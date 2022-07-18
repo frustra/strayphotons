@@ -1,0 +1,28 @@
+loadscene test1-override
+addscene test1
+respawn
+steplogic
+stepphysics
+screenshot load-override-first1.png
+stepgraphics
+steplogic 2700
+stepphysics
+screenshot load-override-first2.png
+stepgraphics
+stepphysics 200
+screenshot load-override-first3.png
+stepgraphics
+loadscene test1
+addscene test1-override
+respawn
+steplogic
+stepphysics
+screenshot load-override-after1.png
+stepgraphics
+steplogic 2700
+stepphysics
+screenshot load-override-after2.png
+stepgraphics
+stepphysics 200
+screenshot load-override-after3.png
+stepgraphics

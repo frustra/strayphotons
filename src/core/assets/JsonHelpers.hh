@@ -196,7 +196,10 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
         auto refName = src.Name().String();
-        Assertf(refName.empty() == !src, "Can't serialize unnamed EntityRef: %s / %s", src.GetLive(), src.GetStaging());
+        Assertf(refName.empty() == !src,
+            "Can't serialize unnamed EntityRef: %s / %s",
+            std::to_string(src.GetLive()),
+            std::to_string(src.GetStaging()));
         auto prefix = s.prefix.String();
         size_t prefixLen = 0;
         for (; prefixLen < refName.length() && prefixLen < prefix.length(); prefixLen++) {
