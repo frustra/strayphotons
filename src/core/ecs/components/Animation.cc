@@ -35,7 +35,7 @@ namespace ecs {
                     }
 
                     Transform animationState;
-                    if (!Component<Transform>::Load(scope, animationState, state)) {
+                    if (!sp::json::Load(scope, animationState, state)) {
                         sp::Abort("Couldn't parse animation state as Transform");
                     }
                     animation.states.emplace_back(animationState.GetPosition(), animationState.GetScale());

@@ -48,7 +48,7 @@ namespace ecs {
     }
 
     bool EntityRef::operator==(const EntityRef &other) const {
-        if (!ptr || !other.ptr) return false;
+        if (!ptr || !other.ptr) return ptr == other.ptr;
         if (ptr == other.ptr) return true;
         auto live = ptr->liveEntity.load();
         auto staging = ptr->stagingEntity.load();

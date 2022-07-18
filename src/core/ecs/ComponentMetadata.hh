@@ -33,6 +33,7 @@ namespace ecs {
         Vec4,
         IVec2,
         IVec3,
+        Quat,
         String,
         EntityRef,
         GltfPtr,
@@ -77,6 +78,8 @@ namespace ecs {
                 return ComponentField(name, FieldType::IVec2, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, glm::ivec3>()) {
                 return ComponentField(name, FieldType::IVec3, offset, sizeof(F));
+            } else if constexpr (std::is_same<BaseType, glm::quat>()) {
+                return ComponentField(name, FieldType::Quat, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, std::string>()) {
                 return ComponentField(name, FieldType::String, offset, sizeof(F));
             } else if constexpr (std::is_same<BaseType, EntityRef>()) {

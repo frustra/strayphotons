@@ -87,12 +87,16 @@ namespace ecs {
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
-    static Component<TransformTree> ComponentTransformTree("transform");
+    static Component<TransformTree> ComponentTransformTree("transform",
+        ComponentField::New("parent", &TransformTree::parent));
 
     template<>
-    bool Component<Transform>::Load(const EntityScope &scope, Transform &dst, const picojson::value &src);
-    template<>
     bool Component<TransformTree>::Load(const EntityScope &scope, TransformTree &dst, const picojson::value &src);
+    template<>
+    bool Component<TransformTree>::Save(Lock<Read<Name>> lock,
+        const EntityScope &scope,
+        picojson::value &dst,
+        const TransformTree &src);
     template<>
     void Component<TransformTree>::ApplyComponent(Lock<ReadAll> src,
         Entity srcEnt,

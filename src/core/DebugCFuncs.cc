@@ -85,7 +85,6 @@ namespace sp {
         picojson::object components;
         if (entity.Has<ecs::Name>(lock)) {
             auto &name = entity.Get<ecs::Name>(lock);
-            scope.prefix = name;
             components["name"] = picojson::value(name.String());
         }
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {

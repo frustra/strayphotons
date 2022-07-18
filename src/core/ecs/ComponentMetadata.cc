@@ -80,6 +80,8 @@ namespace ecs {
             return new (&cast) FieldCast<glm::ivec2>();
         case FieldType::IVec3:
             return new (&cast) FieldCast<glm::ivec3>();
+        case FieldType::Quat:
+            return new (&cast) FieldCast<glm::quat>();
         case FieldType::String:
             return new (&cast) FieldCast<std::string>();
         case FieldType::EntityRef:
