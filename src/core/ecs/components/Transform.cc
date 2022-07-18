@@ -84,28 +84,6 @@ namespace sp::json {
 } // namespace sp::json
 
 namespace ecs {
-    // template<>
-    // bool Component<TransformTree>::Load(const EntityScope &scope,
-    //     TransformTree &transform,
-    //     const picojson::value &src) {
-    //     return sp::json::Load(scope, transform.pose, src);
-    // }
-
-    // template<>
-    // bool Component<TransformTree>::Save(Lock<Read<Name>> lock,
-    //     const EntityScope &scope,
-    //     picojson::value &dst,
-    //     const TransformTree &src) {
-    //     sp::json::Save(scope, dst, src.pose);
-    //     return true;
-    // }
-
-    // template<>
-    // void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
-    //     auto &dstTree = dst.Get<TransformTree>(lock);
-    //     if (dstTree.pose.matrix == glm::identity<glm::mat4x3>()) dstTree.pose = src.pose;
-    // }
-
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
         : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
 
