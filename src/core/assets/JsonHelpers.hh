@@ -101,7 +101,7 @@ namespace sp::json {
     inline bool Load(const ecs::EntityScope &s, glm::quat &dst, const picojson::value &src) {
         glm::vec4 r;
         if (!detail::LoadVec<4>(r, src)) return false;
-        dst = glm::angleAxis(glm::radians(r[0]), glm::vec3(r[1], r[2], r[3]));
+        dst = glm::angleAxis(glm::radians(r[0]), glm::normalize(glm::vec3(r[1], r[2], r[3])));
         return true;
     }
     template<>
@@ -196,10 +196,12 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
         auto refName = src.Name().String();
-        Assertf(refName.empty() == !src,
-            "Can't serialize unnamed EntityRef: %s / %s",
-            std::to_string(src.GetLive()),
-            std::to_string(src.GetStaging()));
+        if (refName.empty() == !src) {
+            Errorf("Can't serialize unnamed EntityRef: %s / %s",
+                std::to_string(src.GetLive()),
+                std::to_string(src.GetStaging()));
+            return;
+        }
         auto prefix = s.prefix.String();
         size_t prefixLen = 0;
         for (; prefixLen < refName.length() && prefixLen < prefix.length(); prefixLen++) {

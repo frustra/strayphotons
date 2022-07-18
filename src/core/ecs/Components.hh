@@ -109,7 +109,7 @@ namespace ecs {
             auto &comp = src.Get<CompType>(lock);
 
             for (auto &field : this->fields) {
-                field.SaveIfChanged(scope, dst, &comp, &defaultValue);
+                field.Save(scope, dst, &comp, &defaultValue);
             }
             return Save(lock, scope, dst, comp);
         }
