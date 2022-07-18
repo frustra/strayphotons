@@ -18,7 +18,9 @@ namespace sp {
 
 namespace ecs {
     struct EntityScope;
+    struct AnimationState;
     enum class VisibilityMask;
+    enum class InterpolationMode;
 
     enum class FieldType {
         Bool = 0,
@@ -35,9 +37,14 @@ namespace ecs {
         IVec3,
         Quat,
         String,
+
+        // Custom Types
         EntityRef,
         Transform,
-        GltfPtr,
+        AnimationStates,
+
+        // Enums
+        InterpolationMode,
         VisibilityMask,
         Count,
     };
@@ -85,8 +92,10 @@ namespace ecs {
                 return ComponentField(name, FieldType::EntityRef, offset);
             } else if constexpr (std::is_same<BaseType, Transform>()) {
                 return ComponentField(name, FieldType::Transform, offset);
-            } else if constexpr (std::is_same<BaseType, sp::AsyncPtr<sp::Gltf>>()) {
-                return ComponentField(name, FieldType::GltfPtr, offset);
+            } else if constexpr (std::is_same<BaseType, std::vector<AnimationState>>()) {
+                return ComponentField(name, FieldType::AnimationStates, offset);
+            } else if constexpr (std::is_same<BaseType, InterpolationMode>()) {
+                return ComponentField(name, FieldType::InterpolationMode, offset);
             } else if constexpr (std::is_same<BaseType, VisibilityMask>()) {
                 return ComponentField(name, FieldType::VisibilityMask, offset);
             } else {

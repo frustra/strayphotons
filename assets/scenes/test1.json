@@ -21,7 +21,7 @@
 				"translate": [0, 2, -4.875]
 			},
 			"animation": {
-				"interpolation": "cubic",
+				"interpolation": "Cubic",
 				"tension": 0.1,
 				"states": [
 					{

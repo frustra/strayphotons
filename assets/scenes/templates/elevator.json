@@ -6,7 +6,7 @@
 			"volume": 0.1
 		},
 		"animation": {
-			"interpolation": "cubic",
+			"interpolation": "Cubic",
 			"states": [
 				{
 					"delay": 10,

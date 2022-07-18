@@ -18,8 +18,7 @@ namespace sp::json {
             return false;
         }
 
-        auto &obj = src.get<picojson::object>();
-        for (auto &param : obj) {
+        for (auto &param : src.get<picojson::object>()) {
             if (param.first == "scale") {
                 if (param.second.is<double>()) {
                     transform.Scale(glm::vec3(param.second.get<double>()));

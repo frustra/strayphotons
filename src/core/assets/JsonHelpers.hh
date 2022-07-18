@@ -243,7 +243,15 @@ namespace sp::json {
     }
 } // namespace sp::json
 
-// Defined in Transform.cc
+// Defined in components/Animation.cc
+namespace sp::json {
+    template<>
+    bool Load(const ecs::EntityScope &scope, ecs::AnimationState &dst, const picojson::value &src);
+    template<>
+    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::AnimationState &src);
+} // namespace sp::json
+
+// Defined in components/Transform.cc
 namespace sp::json {
     template<>
     bool Load(const ecs::EntityScope &scope, ecs::Transform &dst, const picojson::value &src);
