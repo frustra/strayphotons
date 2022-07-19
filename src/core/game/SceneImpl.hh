@@ -23,12 +23,6 @@ namespace sp::scene {
         } else if constexpr (!Tecs::is_global_component<T>()) {
             ecs::LookupComponent<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
         }
-
-        if constexpr (std::is_same<T, ecs::TransformTree>()) {
-            if (srcEnt.Has<ecs::TransformTree>(src)) {
-                dstEnt.Set<ecs::TransformSnapshot>(dst, srcEnt.Get<ecs::TransformTree>(src).GetGlobalTransform(src));
-            }
-        }
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
