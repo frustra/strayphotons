@@ -2,7 +2,9 @@
 	"entities": [
 		{
 			"name": "middle-floor",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 0.1, 10],
 				"translate": [0, 0, 0]
@@ -14,7 +16,9 @@
 		},
 		{
 			"name": "upper-floor",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 0.1, 4],
 				"translate": [0, 2.5, 3]
@@ -26,7 +30,9 @@
 		},
 		{
 			"name": "ceiling",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 0.1, 5],
 				"translate": [0, 5, 0]
@@ -38,7 +44,9 @@
 		},
 		{
 			"name": "back-wall-middle",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 2.5, 0.1],
 				"translate": [0, 1.25, 5]
@@ -50,7 +58,9 @@
 		},
 		{
 			"name": "back-wall-top",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 3.536, 0.1],
 				"translate": [0, 3.75, 3.75],

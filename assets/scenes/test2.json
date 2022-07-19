@@ -60,7 +60,9 @@
 		},
 		{
 			"optic": "mirror",
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"transform": {
 				"translate": [0, 0.01, 2],
 				"rotate": [45, 1, 0, 0],
@@ -69,7 +71,9 @@
 		},
 		{
 			"optic": "mirror",
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"transform": {
 				"translate": [0, 2.49, 2],
 				"rotate": [-90, 1, 0, 0],

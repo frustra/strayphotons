@@ -1,7 +1,6 @@
 #pragma once
 
 #include "assets/AssetManager.hh"
-#include "assets/Gltf.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityRef.hh"
@@ -117,13 +116,6 @@ namespace sp::json {
         dst = ecs::Name(name, s.prefix);
         return name.empty() == !dst;
     }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, sp::AsyncPtr<sp::Gltf> &dst, const picojson::value &src) {
-        if (!src.is<std::string>()) return false;
-        auto name = src.get<std::string>();
-        dst = sp::GAssets.LoadGltf(name);
-        return name.empty() == !dst;
-    }
     template<typename T>
     inline bool Load(const ecs::EntityScope &s, std::vector<T> &dst, const picojson::value &src) {
         if (src.is<picojson::array>()) {
@@ -196,7 +188,7 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
         auto refName = src.Name().String();
-        if (refName.empty() == !src) {
+        if (!refName.empty() && !src) {
             Errorf("Can't serialize unnamed EntityRef: %s / %s",
                 std::to_string(src.GetLive()),
                 std::to_string(src.GetStaging()));
@@ -208,13 +200,6 @@ namespace sp::json {
             if (refName[prefixLen] != prefix[prefixLen]) break;
         }
         dst = picojson::value(prefixLen >= refName.length() ? refName : refName.substr(prefixLen));
-    }
-    template<>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const sp::AsyncPtr<sp::Gltf> &src) {
-        if (!src) return;
-        Assertf(src->Ready(), "Tried saving invalid GltfPtr");
-        auto gltf = src->Get();
-        if (gltf) dst = picojson::value(gltf->name);
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {

@@ -35,7 +35,9 @@
 		},
 		{
 			"__comment": "spoke1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [320, 1, 1],
 				"translate": [0, 160, 2]
@@ -47,7 +49,9 @@
 		},
 		{
 			"__comment": "spoke2",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [320, 1, 1],
 				"translate": [0, 160, 2],
@@ -60,7 +64,9 @@
 		},
 		{
 			"__comment": "spoke3",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [320, 6, 1],
 				"translate": [0, 160, 2],
@@ -73,7 +79,9 @@
 		},
 		{
 			"__comment": "spoke3-1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [155, 6, 1],
 				"translate": [0, 82.5, -4],
@@ -86,7 +94,9 @@
 		},
 		{
 			"__comment": "spoke3-2",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [160, 1, 5],
 				"translate": [3, 86, -1],
@@ -99,7 +109,9 @@
 		},
 		{
 			"__comment": "spoke3-3",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [160, 1, 5],
 				"translate": [-3, 86, -1],
@@ -112,7 +124,9 @@
 		},
 		{
 			"__comment": "spoke4",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [320, 1, 1],
 				"translate": [0, 160, 2],

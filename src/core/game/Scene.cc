@@ -42,10 +42,9 @@ namespace sp {
         if (liveSceneInfo.stagingId == e) {
             // Entity is the linked-list root, which can be applied directly.
             scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, sceneInfo.liveId);
-            return;
+        } else {
+            RebuildComponentsByPriority(staging, live, e);
         }
-
-        RebuildComponentsByPriority(staging, live, e);
     }
 
     Scene::~Scene() {
@@ -135,6 +134,15 @@ namespace sp {
             if (sceneInfo.scene.lock().get() != this) continue;
 
             ApplyComponentsByPriority(staging, live, e);
+        }
+        for (auto e : staging.EntitiesWith<ecs::TransformTree>()) {
+            if (!e.Has<ecs::TransformTree, ecs::SceneInfo>(staging)) continue;
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
+            if (sceneInfo.scene.lock().get() != this) continue;
+            if (!sceneInfo.liveId.Has<ecs::TransformTree>(live)) continue;
+
+            auto transform = sceneInfo.liveId.Get<ecs::TransformTree>(live).GetGlobalTransform(live);
+            sceneInfo.liveId.Set<ecs::TransformSnapshot>(live, transform);
         }
         active = true;
     }

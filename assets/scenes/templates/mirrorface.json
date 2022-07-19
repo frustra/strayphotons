@@ -3,7 +3,9 @@
 		{
 			"name": "optic",
 			"optic": "mirror",
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"physics": {
 				"shapes": {
 					"box": [0.99, 0.99, 0.02],
@@ -23,7 +25,9 @@
 		},
 		{
 			"name": "occluder",
-			"renderable": "occluder",
+			"renderable": {
+				"model": "occluder"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0.45, 0, 0],

@@ -52,11 +52,15 @@
 			"transform": {
 				"translate": [-0.2, 0.9, -5]
 			},
-			"renderable": "sensor-plate-light"
+			"renderable": {
+				"model": "sensor-plate-light"
+			}
 		},
 		{
 			"name": "test1:sensor1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [0.3, 0.1, 0.1],
 				"translate": [0, 1.55, 0]
@@ -66,16 +70,18 @@
 			"name": "test1:duck",
 			"transform": {
 				"parent": "test1:mcube"
-			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "duck" }
+			}
+		},
+		{
+			"name": "test1:duck.duck.gltf2",
+			"renderable": {
+				"visibility": "DirectCamera|DirectEye"
 			}
 		},
 		{
 			"name": "test1:mcube",
 			"transform": {
-				"translate": [-2.2, 2.5, 3]
+				"translate": [-3.2, 2.5, 3]
 			}
 		},
 		{

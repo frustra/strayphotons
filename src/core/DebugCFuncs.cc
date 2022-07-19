@@ -67,8 +67,23 @@ namespace sp {
 
     CFunc<std::string> CFuncJsonDump("jsondump", "Print out a json listing of an entity", [](std::string entityName) {
         auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
-        ecs::EntityRef ref = ecs::Name(entityName, ecs::Name());
-        ecs::Entity entity = ref.Get(lock);
+        ecs::Entity entity;
+        if (entityName.empty()) {
+            auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
+            if (flatview.Has<ecs::PhysicsQuery>(lock)) {
+                auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
+                for (auto &subQuery : query.queries) {
+                    auto *raycastQuery = std::get_if<ecs::PhysicsQuery::Raycast>(&subQuery);
+                    if (raycastQuery && raycastQuery->result) {
+                        entity = raycastQuery->result->target;
+                        if (entity) break;
+                    }
+                }
+            }
+        } else {
+            ecs::EntityRef ref = ecs::Name(entityName, ecs::Name());
+            entity = ref.Get(lock);
+        }
         if (!entity) {
             Errorf("Entity not found: %s", entityName);
             return;

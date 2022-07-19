@@ -13,7 +13,9 @@
 			}
 		},
 		{
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"optic": "mirror",
 			"transform": {
 				"translate": [-0.67, 2.40, -0.58],
@@ -25,7 +27,9 @@
 			}
 		},
 		{
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"optic": "mirror",
 			"transform": {
 				"translate": [-0.8527, 1.20, -1.1594],
@@ -36,7 +40,9 @@
 			}
 		},
 		{
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"optic": "mirror",
 			"transform": {
 				"translate": [-0.0978, 1.20, -0.7604],
@@ -47,7 +53,9 @@
 			}
 		},
 		{
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"optic": "mirror",
 			"transform": {
 				"translate": [-1.2422, 1.20, -0.3996],
@@ -58,7 +66,9 @@
 			}
 		},
 		{
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"optic": "mirror",
 			"transform": {
 				"translate": [-0.4873, 1.20, -0.0006],
@@ -93,7 +103,9 @@
 		},
 		{
 			"name": "spawn_platform",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [-0.01, -0.3, 9.6]
 			},

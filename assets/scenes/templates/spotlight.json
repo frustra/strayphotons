@@ -35,7 +35,9 @@
 		},
 		{
 			"name": "bulb",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, 0, -0.16],

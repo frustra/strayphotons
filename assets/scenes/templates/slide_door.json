@@ -19,7 +19,9 @@
 		},
 		{
 			"name": "left-panel",
-			"renderable": "door-panel",
+			"renderable": {
+				"model": "door-panel"
+			},
 			"transform": {
 				"parent": "scoperoot"
 			},
@@ -42,7 +44,9 @@
 		},
 		{
 			"name": "right-panel",
-			"renderable": "door-panel",
+			"renderable": {
+				"model": "door-panel"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"rotate": [180, 0, 1, 0]

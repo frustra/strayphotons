@@ -30,9 +30,12 @@ namespace ecs {
     };
 
     struct Renderable {
-        Renderable() : meshIndex(0) {}
-        Renderable(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : model(model), meshIndex(meshIndex) {}
+        Renderable() {}
+        Renderable(const std::string &modelName, size_t meshIndex = 0);
+        Renderable(const std::string &modelName, sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0)
+            : modelName(modelName), model(model), meshIndex(meshIndex) {}
 
+        std::string modelName;
         sp::AsyncPtr<sp::Gltf> model;
         size_t meshIndex = 0;
 
@@ -46,8 +49,14 @@ namespace ecs {
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };
 
-    static Component<Renderable> ComponentRenderable("renderable");
+    static Component<Renderable> ComponentRenderable("renderable",
+        ComponentField::New("model", &Renderable::modelName),
+        ComponentField::New("mesh_index", &Renderable::meshIndex),
+        ComponentField::New("visibility", &Renderable::visibility),
+        ComponentField::New("emissive", &Renderable::emissive));
 
     template<>
     bool Component<Renderable>::Load(const EntityScope &scope, Renderable &dst, const picojson::value &src);
+    template<>
+    void Component<Renderable>::Apply(const Renderable &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

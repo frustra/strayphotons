@@ -1,7 +1,9 @@
 {
 	"entities": [
 		{
-			"renderable": "ground-3x3",
+			"renderable": {
+				"model": "ground-3x3"
+			},
 			"transform": {
 				"translate": [-500, 0, -500],
 				"scale": [1000, 1, 1000]
@@ -12,7 +14,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [0, 2, -20],
 				"scale": [15, 1, 15],
