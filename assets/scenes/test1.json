@@ -62,7 +62,9 @@
 				"scale": [0.25, 0.25, 0.25],
 				"translate": [0, 0.125, 0]
 			},
-			"renderable": "box"
+			"renderable": {
+				"model": "box"
+			}
 		},
 		{
 			"name": "lasersensor",
@@ -73,7 +75,9 @@
 				"threshold": [1, 0, 0]
 			},
 			"signal_output": {},
-			"renderable": "sensor-plate-dark",
+			"renderable": {
+				"model": "sensor-plate-dark"
+			},
 			"physics": {
 				"model": "sensor-plate-dark",
 				"dynamic": false
@@ -98,7 +102,9 @@
 		},
 		{
 			"name": "sensor1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [0.1, 0.1, 0.1],
 				"translate": [0, 1.05, 0]
@@ -122,7 +128,9 @@
 		},
 		{
 			"name": "door1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [0.1, 1, 0.1],
 				"translate": [0, -1, 0]
@@ -149,7 +157,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, -5, 0]
@@ -160,7 +170,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [10, 5, 0]
@@ -171,7 +183,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, 5, 10]
@@ -182,7 +196,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, 5, -10]
@@ -193,7 +209,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [-10, 5, 0]
@@ -251,7 +269,9 @@
 			}
 		},
 		{
-			"renderable": "pbr-cube",
+			"renderable": {
+				"model": "pbr-cube"
+			},
 			"transform": {
 				"translate": [-2, 1, 2.5],
 				"rotate": [40, 0, 1, 0]
@@ -261,7 +281,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [-1.5, 3.5, 2.5]
 			},
@@ -274,7 +296,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [-1, 2.5, 2]
 			},
@@ -287,7 +311,9 @@
 			}
 		},
 		{
-			"renderable": "dodecahedron",
+			"renderable": {
+				"model": "dodecahedron"
+			},
 			"transform": {
 				"translate": [3, 1, -0.5]
 			},

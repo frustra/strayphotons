@@ -37,7 +37,9 @@
 		},
 		{
 			"name": "spawn_platform",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [-0.01, -0.3, 9.6]
 			},

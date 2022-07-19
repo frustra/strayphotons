@@ -65,7 +65,9 @@
 		},
 		{
 			"name": "global:station-center",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [0, 150, 0],
 				"rotate": [45, 0, 0, 1]
@@ -80,7 +82,9 @@
 		},
 		{
 			"name": "global:blackhole",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "global:station-center",
 				"translate": [30, -50, -100],

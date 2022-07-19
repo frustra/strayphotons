@@ -44,7 +44,9 @@
 	"entities": [
 		{
 			"name": "platform",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, -0.25, -1],
@@ -58,7 +60,9 @@
 		},
 		{
 			"_comment": "ceiling",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, 4.15, -1],
@@ -72,7 +76,9 @@
 		},
 		{
 			"_comment": "right front wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [2, 2, -2.07],
@@ -85,7 +91,9 @@
 		},
 		{
 			"_comment": "right back wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [2, 2, 0.07],
@@ -98,7 +106,9 @@
 		},
 		{
 			"_comment": "left front wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [-2, 2, -2.07],
@@ -111,7 +121,9 @@
 		},
 		{
 			"_comment": "left back wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [-2, 2, 0.07],
@@ -124,7 +136,9 @@
 		},
 		{
 			"_comment": "back left wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [-1.07, 2, 0.9],
@@ -137,7 +151,9 @@
 		},
 		{
 			"_comment": "back right wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [1.07, 2, 0.9],

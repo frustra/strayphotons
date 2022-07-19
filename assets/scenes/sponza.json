@@ -16,7 +16,9 @@
 			}
 		},
 		{
-			"renderable": "occluder",
+			"renderable": {
+				"model": "occluder"
+			},
 			"transform": {
 				"translate": [-11, 5, -1],
 				"rotate": [90, 0, 1, 0],
@@ -24,7 +26,9 @@
 			}
 		},
 		{
-			"renderable": "occluder",
+			"renderable": {
+				"model": "occluder"
+			},
 			"transform": {
 				"translate": [12, 5, -1],
 				"rotate": [-90, 0, 1, 0],
@@ -32,7 +36,9 @@
 			}
 		},
 		{
-			"renderable": "occluder",
+			"renderable": {
+				"model": "occluder"
+			},
 			"transform": {
 				"translate": [0.5, 5, 18],
 				"rotate": [180, 0, 1, 0],
@@ -40,7 +46,9 @@
 			}
 		},
 		{
-			"renderable": "occluder",
+			"renderable": {
+				"model": "occluder"
+			},
 			"transform": {
 				"translate": [0.5, 5, -20],
 				"scale": [23, 15, 1]
@@ -112,7 +120,9 @@
 			}
 		},
 		{
-			"renderable": "cardboard-box",
+			"renderable": {
+				"model": "cardboard-box"
+			},
 			"transform": {
 				"translate": [0, 1, -4]
 			},
@@ -126,7 +136,9 @@
 			}
 		},
 		{
-			"renderable": "dodecahedron",
+			"renderable": {
+				"model": "dodecahedron"
+			},
 			"transform": {
 				"translate": [1, 5, 3.5],
 				"rotate": [-30, 0, 0, 1]

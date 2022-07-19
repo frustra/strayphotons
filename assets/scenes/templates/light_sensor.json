@@ -30,7 +30,9 @@
 	"entities": [
 		{
 			"name": "plate",
-			"renderable": "sensor-plate-light",
+			"renderable": {
+				"model": "sensor-plate-light"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, 0, -0.005]

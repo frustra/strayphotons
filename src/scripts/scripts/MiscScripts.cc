@@ -68,9 +68,10 @@ namespace sp::scripts {
                         }
 
                         auto modelName = state.GetParam<std::string>("model");
-                        auto model = sp::GAssets.LoadGltf(modelName);
 
-                        std::thread([ent, transform, model, scope = state.scope]() {
+                        std::thread([ent, transform, modelName, scope = state.scope]() {
+                            auto model = sp::GAssets.LoadGltf(modelName);
+
                             auto lock = World.StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
                                 auto &sceneInfo = ent.Get<SceneInfo>(lock);
@@ -80,7 +81,7 @@ namespace sp::scripts {
 
                                 LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEntity);
 
-                                newEntity.Set<Renderable>(lock, model);
+                                newEntity.Set<Renderable>(lock, modelName, model);
                                 newEntity.Set<Physics>(lock, model, PhysicsGroup::World, true, 1.0f);
                                 newEntity.Set<PhysicsJoints>(lock);
                                 newEntity.Set<PhysicsQuery>(lock);

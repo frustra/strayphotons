@@ -7,27 +7,25 @@
 
 namespace ecs {
     template<>
-    bool Component<Renderable>::Load(const EntityScope &scope, Renderable &r, const picojson::value &src) {
-        if (src.is<string>()) {
-            r.model = sp::GAssets.LoadGltf(src.get<string>());
-            r.meshIndex = 0;
-        } else {
-            for (auto param : src.get<picojson::object>()) {
-                if (param.first == "hidden") {
-                    if (param.second.get<bool>()) r.visibility = VisibilityMask::None;
-                } else if (param.first == "model") {
-                    r.model = sp::GAssets.LoadGltf(param.second.get<string>());
-                } else if (param.first == "mesh_index") {
-                    r.meshIndex = (size_t)param.second.get<double>();
-                }
-            }
+    bool Component<Renderable>::Load(const EntityScope &scope, Renderable &renderable, const picojson::value &src) {
+        if (!renderable.modelName.empty()) {
+            renderable.model = sp::GAssets.LoadGltf(renderable.modelName);
         }
-        r.visibility &= ~VisibilityMask::OutlineSelection;
-        if (!r.model && r.visibility != VisibilityMask::None) {
-            Errorf("Visible renderables must have a model");
-            return false;
-        }
-
         return true;
+    }
+
+    template<>
+    void Component<Renderable>::Apply(const Renderable &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstRenderable = dst.Get<Renderable>(lock);
+        if (!dstRenderable.model && src.model) dstRenderable.model = src.model;
+    }
+
+    Renderable::Renderable(const std::string &modelName, size_t meshIndex)
+        : modelName(modelName), meshIndex(meshIndex) {
+        if (modelName.empty()) {
+            visibility = VisibilityMask::None;
+        } else {
+            model = sp::GAssets.LoadGltf(modelName);
+        }
     }
 } // namespace ecs

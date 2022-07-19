@@ -11,7 +11,9 @@
 		},
 		{
 			"name": "middle-floor",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 0.1, 10],
 				"translate": [0, 0, 0]
@@ -23,7 +25,9 @@
 		},
 		{
 			"name": "ceiling-left",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [2, 0.1, 5],
 				"translate": [-4, 5, 0]
@@ -35,7 +39,9 @@
 		},
 		{
 			"name": "ceiling-right",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [2, 0.1, 5],
 				"translate": [4, 5, 0]
@@ -47,7 +53,9 @@
 		},
 		{
 			"name": "ceiling-middle",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [7, 0.1, 3],
 				"translate": [0, 5, 1]
@@ -59,7 +67,9 @@
 		},
 		{
 			"name": "back-wall-middle",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 2.5, 0.1],
 				"translate": [0, 1.25, 5]
@@ -71,7 +81,9 @@
 		},
 		{
 			"name": "back-wall-top",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 3.536, 0.1],
 				"translate": [0, 3.75, 3.75],
@@ -112,7 +124,9 @@
 		},
 		{
 			"name": "elevator-frame1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [1, 5, 0.4],
 				"translate": [-2.35, 2.5, -0.3]
@@ -124,7 +138,9 @@
 		},
 		{
 			"name": "elevator-frame2",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [1, 5, 0.4],
 				"translate": [2.35, 2.5, -0.3]
@@ -136,7 +152,9 @@
 		},
 		{
 			"name": "elevator-frame3",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [4, 1.1, 0.2],
 				"translate": [0, 4.5, -0.4]
@@ -148,7 +166,9 @@
 		},
 		{
 			"name": "elevator-frame4",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [4, 0.1, 0.4],
 				"translate": [0, 0.1, -0.3]
@@ -160,7 +180,9 @@
 		},
 		{
 			"name": "elevator-frame5",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [4, 0.1, 0.6],
 				"translate": [0, 0.04, 0.15],
@@ -173,7 +195,9 @@
 		},
 		{
 			"name": "elevator-side1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [2, 6, 0.1],
 				"translate": [-4, 3, -2]
@@ -185,7 +209,9 @@
 		},
 		{
 			"name": "elevator-side2",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [2, 6, 0.1],
 				"translate": [4, 3, -2]
@@ -197,7 +223,9 @@
 		},
 		{
 			"name": "elevator-spoke-extension1",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [6, 1, 5],
 				"translate": [3, 3, -2.5],
@@ -210,7 +238,9 @@
 		},
 		{
 			"name": "elevator-spoke-extension2",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [6, 1, 5],
 				"translate": [-3, 3, -2.5],
@@ -307,7 +337,9 @@
 		},
 		{
 			"name": "global:station-center",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [0, 150, 0],
 				"rotate": [45, 0, 0, 1]
@@ -322,7 +354,9 @@
 		},
 		{
 			"name": "global:blackhole",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "global:station-center",
 				"translate": [30, -50, -100],

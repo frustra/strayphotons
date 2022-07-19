@@ -12,7 +12,9 @@
 			"trigger_area": {}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, -5, 0]
@@ -23,7 +25,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [0.1, 10, 4.2],
 				"translate": [4.95, 5, 2.9]
@@ -34,7 +38,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [0.1, 10, 4.2],
 				"translate": [4.95, 5, -2.9]
@@ -45,7 +51,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [0.1, 7.5, 2],
 				"translate": [4.95, 6.25, 0]
@@ -71,7 +79,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [4.2, 10, 0.1],
 				"translate": [2.9, 5, 4.95]
@@ -82,7 +92,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [4.2, 10, 0.1],
 				"translate": [-2.9, 5, 4.95]
@@ -93,7 +105,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [2, 7.5, 0.1],
 				"translate": [0, 6.25, 4.95]
@@ -120,7 +134,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, 5, -10]
@@ -131,7 +147,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [-10, 5, 0]
@@ -160,7 +178,9 @@
 				"translate": [-2, 0, 0],
 				"scale": [0.1, 0.1, 0.1]
 			},
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
 				"model": "box",
 				"dynamic": false

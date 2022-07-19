@@ -66,7 +66,9 @@
 		},
 		{
 			"name": "floor",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, -0.25, 0],
@@ -79,7 +81,9 @@
 		},
 		{
 			"name": "left-wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [2.2, 2, 0],
@@ -92,7 +96,9 @@
 		},
 		{
 			"name": "right-wall",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [-2.2, 2, 0],
@@ -105,7 +111,9 @@
 		},
 		{
 			"name": "ceiling",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, 4, 0],

@@ -68,7 +68,9 @@
 			}
 		},
 		{
-			"renderable": "cardboard-box",
+			"renderable": {
+				"model": "cardboard-box"
+			},
 			"transform": {
 				"translate": [-3, 0.025, -5],
 				"rotate": [-30, 0, 1, 0]
@@ -83,7 +85,9 @@
 			}
 		},
 		{
-			"renderable": "cardboard-box",
+			"renderable": {
+				"model": "cardboard-box"
+			},
 			"transform": {
 				"translate": [-3.2, 0.025, -3.7],
 				"rotate": [-80, 0, 1, 0]
@@ -98,7 +102,9 @@
 			}
 		},
 		{
-			"renderable": "cardboard-box",
+			"renderable": {
+				"model": "cardboard-box"
+			},
 			"transform": {
 				"translate": [-3.2, 0.9, -4.6],
 				"rotate": [85, 0, 1, 0]
@@ -113,7 +119,9 @@
 			}
 		},
 		{
-			"renderable": "parking-block",
+			"renderable": {
+				"model": "parking-block"
+			},
 			"transform": {
 				"scale": [0.8, 1, 1],
 				"translate": [-4, 0, 1.6],
@@ -125,7 +133,9 @@
 			}
 		},
 		{
-			"renderable": "parking-block",
+			"renderable": {
+				"model": "parking-block"
+			},
 			"transform": {
 				"scale": [0.8, 1, 1],
 				"translate": [-4, 0, -0.8],
@@ -137,7 +147,9 @@
 			}
 		},
 		{
-			"renderable": "parking-block",
+			"renderable": {
+				"model": "parking-block"
+			},
 			"transform": {
 				"scale": [0.8, 1, 1],
 				"translate": [-4, 0, -3.5],

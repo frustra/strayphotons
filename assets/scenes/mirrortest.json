@@ -1,7 +1,9 @@
 {
 	"entities": [
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, -5, 0]
@@ -12,7 +14,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [10, 5, 0]
@@ -23,7 +27,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, 5, 10]
@@ -34,7 +40,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [0, 5, -10]
@@ -45,7 +53,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"scale": [10, 10, 10],
 				"translate": [-10, 5, 0]
@@ -71,7 +81,9 @@
 		},
 		{
 			"name": "mirrorbox",
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"translate": [4, 0.5, -2.5],
 				"rotate": [-90, 0, 1, 0]
@@ -81,7 +93,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"name": "mirrorbox2",
 			"transform": {
 				"translate": [-1.5, 0.5, -3],
@@ -92,7 +106,9 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": {
+				"model": "box"
+			},
 			"name": "mirrorbox3",
 			"transform": {
 				"translate": [-1, 0.5, 3],
@@ -107,7 +123,9 @@
 				"type": "mirror",
 				"_tint": [1, 0.5, 0.5]
 			},
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"transform": {
 				"parent": "mirrorbox",
 				"translate": [0, 0, 0.501],
@@ -119,7 +137,9 @@
 				"type": "mirror",
 				"_tint": [0.5, 1, 0.5]
 			},
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"transform": {
 				"parent": "mirrorbox2",
 				"translate": [0, 0, 0.501],
@@ -131,7 +151,9 @@
 				"type": "mirror",
 				"_tint": [0.5, 0.5, 1]
 			},
-			"renderable": "mirror",
+			"renderable": {
+				"model": "mirror"
+			},
 			"transform": {
 				"parent": "mirrorbox3",
 				"translate": [0, 0, 0.501],
