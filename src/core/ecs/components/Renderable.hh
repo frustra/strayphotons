@@ -32,7 +32,8 @@ namespace ecs {
     struct Renderable {
         Renderable() {}
         Renderable(const std::string &modelName, size_t meshIndex = 0);
-        Renderable(const std::string &modelName, sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : modelName(modelName), model(model), meshIndex(meshIndex) {}
+        Renderable(const std::string &modelName, sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0)
+            : modelName(modelName), model(model), meshIndex(meshIndex) {}
 
         std::string modelName;
         sp::AsyncPtr<sp::Gltf> model;
