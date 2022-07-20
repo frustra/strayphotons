@@ -196,7 +196,7 @@ namespace sp::scripts {
                                     Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                 scriptData.grabEntity = {};
                             }
-                            if (grabEvent && raycastResult.target != justDropped) {
+                            if (grabEvent && raycastResult.target && raycastResult.target != justDropped) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
                                         raycastResult.target,

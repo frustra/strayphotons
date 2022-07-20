@@ -65,7 +65,7 @@ namespace ecs {
         void ApplyComponents(Lock<AddRemove> lock) {
             if (!componentsObj) return;
 
-            for (auto comp : *componentsObj) {
+            for (auto &comp : *componentsObj) {
                 if (comp.first.empty() || comp.first[0] == '_') continue;
                 Assertf(comp.first != "name",
                     "Template components can't override entity name: %s",
@@ -94,41 +94,13 @@ namespace ecs {
                 scope.prefix = ecs::Name(nestedScope, rootScope.prefix);
             }
 
-            // Find all named entities first so they can be referenced.
-            for (auto value : *entityList) {
-                auto obj = value.get<picojson::object>();
-
-                if (obj.count("name")) {
-                    auto relativeName = obj["name"].get<string>();
-                    ecs::Name name(relativeName, scope.prefix);
-                    if (!name) {
-                        Errorf("Template %s contains invalid entity name: %s", sourceName, relativeName);
-                        continue;
-                    }
-                    scene->NewPrefabEntity(lock, rootEnt, name);
-                }
-            }
-
             std::vector<ecs::Entity> entities;
-            for (auto value : *entityList) {
-                auto obj = value.get<picojson::object>();
+            for (auto &value : *entityList) {
+                auto &obj = value.get<picojson::object>();
 
-                ecs::Entity newEntity;
-                if (obj.count("name")) {
-                    auto relativeName = obj["name"].get<string>();
-                    ecs::Name entityName(relativeName, scope.prefix);
-                    if (!entityName) {
-                        Errorf("Template %s contains invalid entity name: %s", sourceName, relativeName);
-                        continue;
-                    }
-                    newEntity = scene->GetStagingEntity(entityName);
-                    if (!newEntity) {
-                        Errorf("Skipping entity with invalid name: %s", entityName.String());
-                        continue;
-                    }
-                } else {
-                    newEntity = scene->NewPrefabEntity(lock, rootEnt);
-                }
+                bool hasName = obj.count("name") && obj["name"].is<string>();
+                auto relativeName = hasName ? obj["name"].get<string>() : "";
+                ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, relativeName, scope.prefix);
 
                 for (auto comp : obj) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;

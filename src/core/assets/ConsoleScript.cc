@@ -11,6 +11,7 @@ namespace sp {
         std::stringstream ss(asset->String());
         string line;
         while (std::getline(ss, line, '\n')) {
+            trim(line);
             if (!line.empty() && line[0] != '#') lines.emplace_back(std::move(line));
         }
     }

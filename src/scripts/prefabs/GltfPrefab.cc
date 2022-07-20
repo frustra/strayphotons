@@ -17,18 +17,14 @@ namespace ecs {
 
         auto scene = state.scope.scene.lock();
         Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
+        Assertf(ent.Has<Name>(lock), "Gltf prefab root has no name: %s", ToString(lock, ent));
+        auto &prefixName = ent.Get<Name>(lock);
 
         auto getNodeName = [&](size_t nodeId) {
             auto &node = *model->nodes[nodeId];
-            if (!ent.Has<Name>(lock)) return ecs::Name();
 
-            auto name = ent.Get<Name>(lock);
-            if (node.name.empty()) {
-                name.entity += ".gltf" + std::to_string(nodeId);
-            } else {
-                name.entity += "." + node.name;
-            }
-            return name;
+            if (node.name.empty()) return "gltf" + std::to_string(nodeId);
+            return node.name;
         };
 
         robin_hood::unordered_set<size_t> jointNodes;
@@ -50,7 +46,7 @@ namespace ecs {
             Assertf(model->nodes[nodeId], "Gltf node %u is not defined", nodeId);
             auto &node = *model->nodes[nodeId];
 
-            Entity newEntity = scene->NewPrefabEntity(lock, ent, getNodeName(nodeId));
+            Entity newEntity = scene->NewPrefabEntity(lock, ent, getNodeName(nodeId), prefixName);
 
             TransformTree transform(node.transform);
             if (parentEnt.Has<TransformTree>(lock)) {
@@ -96,7 +92,8 @@ namespace ecs {
                         } else {
                             for (auto &j : skin->joints) {
                                 renderable.joints.emplace_back(
-                                    Renderable::Joint{getNodeName(j.jointNodeIndex), j.inverseBindPose});
+                                    Renderable::Joint{ecs::Name(getNodeName(j.jointNodeIndex), prefixName),
+                                        j.inverseBindPose});
                             }
                         }
                     }

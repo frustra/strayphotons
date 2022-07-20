@@ -81,7 +81,8 @@
 		{
 			"name": "test1:mcube",
 			"transform": {
-				"translate": [-3.2, 2.5, 3]
+				"translate": [-2.0, 2.5, 3],
+				"rotate": [25, 0, 1, 0]
 			}
 		},
 		{

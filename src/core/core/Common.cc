@@ -102,8 +102,8 @@ namespace sp {
         }
 
         void trim(string &str) {
-            trim_left(str);
             trim_right(str);
+            trim_left(str);
         }
 
         void trim_left(string &str) {

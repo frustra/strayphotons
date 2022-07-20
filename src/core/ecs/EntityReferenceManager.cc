@@ -21,29 +21,44 @@ namespace ecs {
         return ref;
     }
 
-    EntityRef EntityReferenceManager::Get(const Entity &stagingEntity) {
-        EntityRef ref = stagingRefs.Load(stagingEntity);
-        if (!ref) {
-            std::lock_guard lock(mutex);
-            ref = stagingRefs.Load(stagingEntity);
-            if (ref) return ref;
+    EntityRef EntityReferenceManager::Get(const Entity &entity) {
+        if (!entity) return EntityRef();
 
-            ref = make_shared<EntityRef::Ref>(stagingEntity);
-            stagingRefs.Register(stagingEntity, ref.ptr);
+        std::shared_lock lock(mutex);
+        if (Tecs::IdentifierFromGeneration(entity.generation) == ecs::World.GetInstanceId()) {
+            if (liveRefs.count(entity) == 0) return EntityRef();
+            return EntityRef(liveRefs[entity].lock());
+        } else {
+            if (stagingRefs.count(entity) == 0) return EntityRef();
+            return EntityRef(stagingRefs[entity].lock());
+        }
+    }
+
+    EntityRef EntityReferenceManager::Set(const Name &name, const Entity &entity) {
+        Assertf(entity, "Trying to set EntityRef with null Entity");
+
+        auto ref = Get(name);
+        std::lock_guard lock(mutex);
+        if (Tecs::IdentifierFromGeneration(entity.generation) == ecs::World.GetInstanceId()) {
+            ref.ptr->liveEntity = entity;
+            liveRefs[entity] = ref.ptr;
+        } else {
+            ref.ptr->stagingEntity = entity;
+            stagingRefs[entity] = ref.ptr;
         }
         return ref;
     }
 
-    void EntityReferenceManager::Set(const Name &name, const Entity &entity) {
-        return Get(name).Set(entity);
-    }
-
-    void EntityReferenceManager::Set(const Entity &stagingEntity, const Entity &liveEntity) {
-        return Get(stagingEntity).Set(liveEntity);
-    }
-
     void EntityReferenceManager::Tick(chrono_clock::duration maxTickInterval) {
-        nameRefs.Tick(maxTickInterval);
-        stagingRefs.Tick(maxTickInterval);
+        nameRefs.Tick(maxTickInterval, [this](std::shared_ptr<EntityRef::Ref> &refPtr) {
+            EntityRef ref(refPtr);
+            auto staging = ref.GetStaging();
+            auto live = ref.GetLive();
+            if (staging || live) {
+                std::lock_guard lock(mutex);
+                if (staging) stagingRefs.erase(staging);
+                if (live) liveRefs.erase(live);
+            }
+        });
     }
 } // namespace ecs
