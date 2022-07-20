@@ -19,10 +19,12 @@ namespace EventBindingTests {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
+            ecs::EntityRef playerRef(ecs::Name("", "player"), player);
             player.Set<ecs::Name>(lock, "", "player");
             player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION2);
 
             hand = lock.NewEntity();
+            ecs::EntityRef handRef(ecs::Name("", "hand"), hand);
             hand.Set<ecs::Name>(lock, "", "hand");
             auto &eventInput = hand.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION1, TEST_EVENT_ACTION2);
             AssertEqual(eventInput.events.size(), 2u, "EventInput did not save correctly");
