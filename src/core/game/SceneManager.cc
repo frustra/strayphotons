@@ -442,46 +442,14 @@ namespace sp {
         {
             auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
-            auto entityList = root.get<picojson::object>()["entities"];
-            // Find all named entities first so they can be referenced.
-            for (auto value : entityList.get<picojson::array>()) {
-                auto ent = value.get<picojson::object>();
-
-                if (ent.count("name")) {
-                    auto relativeName = ent["name"].get<string>();
-
-                    ecs::Entity entity = lock.NewEntity();
-                    auto &name = entity.Set<ecs::Name>(lock, relativeName, ecs::Name(sceneName, ""));
-                    if (!name) {
-                        Errorf("Scene %s contains invalid entity name: %s", sceneName, relativeName);
-                        continue;
-                    }
-                    Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", relativeName);
-                    scene->namedEntities.emplace(name, entity);
-                    scene->references.emplace_back(name, entity);
-                }
-            }
-
+            auto &entityList = root.get<picojson::object>()["entities"];
             std::vector<ecs::Entity> entities;
-            for (auto value : entityList.get<picojson::array>()) {
+            for (auto &value : entityList.get<picojson::array>()) {
                 auto ent = value.get<picojson::object>();
 
-                ecs::Entity entity;
-                if (ent.count("name")) {
-                    auto relativeName = ent["name"].get<string>();
-                    ecs::Name entityName(relativeName, ecs::Name(scene->name, ""));
-                    if (!entityName) {
-                        Errorf("Scene %s contains invalid entity name: %s", sceneName, relativeName);
-                        continue;
-                    }
-                    entity = scene->GetStagingEntity(entityName);
-                    if (!entity) {
-                        Errorf("Skipping entity with invalid name: %s", entityName.String());
-                        continue;
-                    }
-                } else {
-                    entity = lock.NewEntity();
-                }
+                bool hasName = ent.count("name") && ent["name"].is<string>();
+                auto relativeName = hasName ? ent["name"].get<string>() : "";
+                ecs::Entity entity = scene->NewRootEntity(lock, scene, priority, relativeName);
 
                 entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
                 for (auto comp : ent) {
@@ -539,17 +507,14 @@ namespace sp {
         {
             auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
-            for (auto param : root.get<picojson::object>()) {
+            for (auto &param : root.get<picojson::object>()) {
                 Tracef("Loading input for: %s", param.first);
                 if (param.first.find(':') == std::string::npos) {
                     Abortf("Binding entity does not have scene name: %s", param.first);
                 }
-                ecs::Name name(param.first, ecs::Name());
-                if (name) {
-                    auto entity = lock.NewEntity();
-                    entity.Set<ecs::Name>(lock, name);
-                    entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
-                    for (auto comp : param.second.get<picojson::object>()) {
+                auto entity = scene->NewRootEntity(lock, scene, ecs::SceneInfo::Priority::Bindings, param.first);
+                if (entity) {
+                    for (auto &comp : param.second.get<picojson::object>()) {
                         if (comp.first[0] == '_') continue;
 
                         auto componentType = ecs::LookupComponent(comp.first);

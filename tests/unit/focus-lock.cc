@@ -23,6 +23,9 @@ namespace FocusLockTests {
             player = lock.NewEntity();
             keyboard = lock.NewEntity();
             mouse = lock.NewEntity();
+            ecs::EntityRef playerRef(ecs::Name("", "player"), player);
+            ecs::EntityRef keyboardRef(ecs::Name("", "keyboard"), keyboard);
+            ecs::EntityRef mouseRef(ecs::Name("", "mouse"), mouse);
 
             player.Set<ecs::Name>(lock, "", "player");
             player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);

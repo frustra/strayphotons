@@ -1,8 +1,8 @@
 loadscene test1-override
 addscene test1
+respawn
 steplogic
 stepphysics
-respawn
 screenshot load-override-first1.png
 stepgraphics
 steplogic 2700
@@ -15,9 +15,9 @@ stepgraphics
 
 loadscene test1
 addscene test1-override
+respawn
 steplogic
 stepphysics
-respawn
 screenshot load-override-after1.png
 stepgraphics
 steplogic 2700

@@ -87,6 +87,7 @@ namespace ecs {
     template<>
     bool Component<EventBindings>::Load(const EntityScope &scope, EventBindings &bindings, const picojson::value &src) {
         auto scene = scope.scene.lock();
+        Assert(scene, "EventBindings::Load must have valid scene");
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<picojson::array>()) {
                 for (auto bind : param.second.get<picojson::array>()) {

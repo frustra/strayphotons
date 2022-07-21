@@ -55,24 +55,84 @@ namespace sp {
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
         if (entityName) {
+            if (!ValidateEntityName(entityName)) {
+                Errorf("Invalid system entity name: %s", entityName.String());
+                return ecs::Entity();
+            }
+
             auto existing = GetStagingEntity(entityName);
             if (existing) return existing;
+        } else {
+            entityName = GenerateEntityName(entityName);
+        }
+
+        if (!entityName) {
+            Errorf("Invalid system entity name: %s", entityName.String());
+            return ecs::Entity();
+        } else if (namedEntities.count(entityName) > 0) {
+            Errorf("Duplicate system entity name: %s", entityName.String());
+            return ecs::Entity();
         }
 
         auto entity = stagingLock.NewEntity();
         entity.Set<ecs::SceneInfo>(stagingLock, entity, ecs::SceneInfo::Priority::System, scene);
-        if (entityName) {
-            entity.Set<ecs::Name>(stagingLock, entityName);
-            namedEntities.emplace(entityName, entity);
-            references.emplace_back(entityName, entity);
+        entity.Set<ecs::Name>(stagingLock, entityName);
+        namedEntities.emplace(entityName, entity);
+        references.emplace_back(entityName, entity);
+        return entity;
+    }
+
+    ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+        const std::shared_ptr<Scene> &scene,
+        ecs::SceneInfo::Priority priority,
+        std::string relativeName) {
+        if (!scene) {
+            Errorf("Invalid root entity scene: %s", relativeName);
+            return ecs::Entity();
         }
+
+        ecs::Name entityName(relativeName, ecs::Name(scene->name, ""));
+        if (entityName) {
+            if (!ValidateEntityName(entityName)) {
+                Errorf("Invalid root entity name: %s", entityName.String());
+                return ecs::Entity();
+            }
+
+            auto existing = GetStagingEntity(entityName);
+            if (existing) return existing;
+        } else {
+            entityName = GenerateEntityName(entityName);
+        }
+
+        if (!entityName) {
+            Errorf("Invalid root entity name in scene %s: %s", scene->name, relativeName);
+            return ecs::Entity();
+        } else if (namedEntities.count(entityName) > 0) {
+            Errorf("Duplicate root entity name: %s", entityName.String());
+            return ecs::Entity();
+        }
+
+        auto entity = stagingLock.NewEntity();
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, priority, scene);
+        entity.Set<ecs::Name>(stagingLock, entityName);
+        namedEntities.emplace(entityName, entity);
+        references.emplace_back(entityName, entity);
         return entity;
     }
 
     ecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         ecs::Entity prefabRoot,
-        ecs::Name entityName) {
-        if (entityName) {
+        std::string relativeName,
+        ecs::Name scope) {
+
+        ecs::Name entityName;
+        if (!relativeName.empty()) {
+            entityName = ecs::Name(relativeName, scope);
+            if (!ValidateEntityName(entityName)) {
+                Errorf("Invalid prefab entity name: %s (scope: %s)", relativeName, scope.String());
+                return ecs::Entity();
+            }
+
             auto existing = GetStagingEntity(entityName);
             if (existing) return existing;
         }
@@ -82,13 +142,20 @@ namespace sp {
             ecs::ToString(stagingLock, prefabRoot));
         auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
 
+        if (!entityName) entityName = GenerateEntityName(scope);
+        if (!entityName) {
+            Errorf("Invalid root entity name: %s", entityName.String());
+            return ecs::Entity();
+        } else if (namedEntities.count(entityName) > 0) {
+            Errorf("Duplicate prefab entity name: %s", entityName.String());
+            return ecs::Entity();
+        }
+
         auto entity = stagingLock.NewEntity();
         entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, rootSceneInfo);
-        if (entityName) {
-            entity.Set<ecs::Name>(stagingLock, entityName);
-            namedEntities.emplace(entityName, entity);
-            references.emplace_back(entityName, entity);
-        }
+        entity.Set<ecs::Name>(stagingLock, entityName);
+        namedEntities.emplace(entityName, entity);
+        references.emplace_back(entityName, entity);
         return entity;
     }
 
@@ -96,7 +163,7 @@ namespace sp {
         ecs::Lock<ecs::AddRemove> live) {
         ZoneScoped;
         ZoneStr(name);
-        for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
+        for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
             if (sceneInfo.scene.lock().get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
@@ -104,29 +171,28 @@ namespace sp {
             // Skip entities that have already been added
             if (sceneInfo.liveId) continue;
 
-            // Find matching named entity in live scene
-            if (e.Has<ecs::Name>(staging)) {
-                auto &entityName = e.Get<const ecs::Name>(staging);
-                sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, entityName);
-                if (sceneInfo.liveId) {
-                    // Entity overlaps with another scene
-                    ZoneScopedN("MergeEntity");
-                    ZoneStr(entityName.String());
-                    Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
-                    auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
-                    liveSceneInfo.InsertWithPriority(staging, sceneInfo);
-                }
+            if (!e.Has<ecs::Name>(staging)) {
+                Errorf("Scene contains unnamed entity: %s %s", name, ecs::ToString(staging, e));
+                continue;
             }
-            if (!sceneInfo.liveId) {
+            auto &entityName = e.Get<const ecs::Name>(staging);
+
+            // Find matching named entity in live scene
+            sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, entityName);
+            if (sceneInfo.liveId) {
+                // Entity overlaps with another scene
+                ZoneScopedN("MergeEntity");
+                ZoneStr(entityName.String());
+                Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
+                auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
+                liveSceneInfo.InsertWithPriority(staging, sceneInfo);
+            } else {
                 // No entity exists in the live scene
                 sceneInfo.liveId = live.NewEntity();
                 sceneInfo.liveId.Set<ecs::SceneInfo>(live, sceneInfo);
-                if (e.Has<ecs::Name>(staging)) {
-                    auto &entityName = e.Get<ecs::Name>(staging);
-                    sceneInfo.liveId.Set<ecs::Name>(live, entityName);
-                    ecs::GEntityRefs.Set(entityName, sceneInfo.liveId);
-                }
-                ecs::GEntityRefs.Set(e, sceneInfo.liveId);
+                sceneInfo.liveId.Set<ecs::Name>(live, entityName);
+                ecs::GEntityRefs.Set(entityName, e);
+                ecs::GEntityRefs.Set(entityName, sceneInfo.liveId);
             }
         }
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
@@ -179,5 +245,24 @@ namespace sp {
             if (!sceneInfo.stagingId) e.Destroy(live);
         }
         active = false;
+    }
+
+    ecs::Name Scene::GenerateEntityName(const ecs::Name &prefix) {
+        unnamedEntityCount++;
+        if (!prefix.entity.empty()) {
+            return ecs::Name(prefix.scene, prefix.entity + ".entity" + std::to_string(unnamedEntityCount));
+        } else {
+            return ecs::Name(prefix.scene, "entity" + std::to_string(unnamedEntityCount));
+        }
+    }
+
+    bool Scene::ValidateEntityName(const ecs::Name &name) const {
+        if (!name) return false;
+        if (starts_with(name.entity, "entity")) {
+            return std::find_if(name.entity.begin() + 7, name.entity.end(), [](char ch) {
+                return !std::isdigit(ch);
+            }) != name.entity.end();
+        }
+        return true;
     }
 } // namespace sp

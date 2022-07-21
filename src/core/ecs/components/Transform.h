@@ -88,8 +88,11 @@ namespace ecs {
 
     #ifndef SP_WASM_BUILD
     static Component<TransformTree> ComponentTransformTree("transform",
-        ComponentField::New(&TransformTree::pose),
-        ComponentField::New("parent", &TransformTree::parent));
+        ComponentField::New(&TransformTree::pose, ~FieldAction::AutoApply),
+        ComponentField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
+
+    template<>
+    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst);
     #endif
 } // namespace ecs
 #endif

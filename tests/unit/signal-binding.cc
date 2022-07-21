@@ -21,12 +21,14 @@ namespace SignalBindingTests {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
+            ecs::EntityRef playerRef(ecs::Name("", "player"), player);
             player.Set<ecs::Name>(lock, "", "player");
             auto &signalOutput = player.Set<ecs::SignalOutput>(lock);
             signalOutput.SetSignal(TEST_SOURCE_BUTTON, 1.0);
             signalOutput.SetSignal(TEST_SOURCE_KEY, 2.0);
 
             hand = lock.NewEntity();
+            ecs::EntityRef handRef(ecs::Name("", "hand"), hand);
             hand.Set<ecs::Name>(lock, "", "hand");
             hand.Set<ecs::SignalOutput>(lock);
 
@@ -109,8 +111,8 @@ namespace SignalBindingTests {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             unknown = lock.NewEntity();
+            ecs::EntityRef unknownRef(ecs::Name("", "unknown"), unknown);
             unknown.Set<ecs::Name>(lock, "", "unknown");
-            ecs::GEntityRefs.Set(ecs::Name("", "unknown"), unknown);
 
             double val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 0.0, "Expected binding to invalid entity to read as 0");

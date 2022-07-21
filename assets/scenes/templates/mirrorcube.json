@@ -16,6 +16,7 @@
 			}
 		},
 		{
+			"name": "model",
 			"transform": {
 				"parent": "mirrorcube",
 				"translate": [0, -0.5, 0]

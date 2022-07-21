@@ -61,6 +61,11 @@ namespace sp {
         constexpr E &operator^=(E &lhs, E rhs) noexcept {
             return lhs = (lhs ^ rhs);
         }
+
+        template<typename E, magic_enum::detail::enable_if_t<E, int> = 0>
+        constexpr bool operator!(E rhs) noexcept {
+            return !static_cast<magic_enum::underlying_type_t<E>>(rhs);
+        }
     } // namespace enum_flag_operators
 } // namespace sp
 

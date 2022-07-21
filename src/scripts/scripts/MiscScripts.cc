@@ -74,10 +74,9 @@ namespace sp::scripts {
 
                             auto lock = World.StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
-                                auto &sceneInfo = ent.Get<SceneInfo>(lock);
-
-                                auto newEntity = lock.NewEntity();
-                                newEntity.Set<SceneInfo>(lock, newEntity, sceneInfo);
+                                auto scene = scope.scene.lock();
+                                Assert(scene, "Model spawner script must have valid scene");
+                                auto newEntity = scene->NewRootEntity(lock, scene, ecs::SceneInfo::Priority::Scene);
 
                                 LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEntity);
 

@@ -103,6 +103,9 @@ namespace sp {
         if (outstream) soundio_outstream_destroy(outstream);
         if (device) soundio_device_unref(device);
         if (soundio) soundio_destroy(soundio);
+        outstream = nullptr;
+        device = nullptr;
+        soundio = nullptr;
     }
 
     AudioManager::~AudioManager() {

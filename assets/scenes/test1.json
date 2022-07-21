@@ -224,8 +224,8 @@
 		{
 			"name": "duck",
 			"transform": {
-				"translate": [2.5, 0, -2.5],
-				"rotate": [180, 0, 1, 0]
+				"translate": [-0.9, 0, 0.75],
+				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
 				"prefab": "template",

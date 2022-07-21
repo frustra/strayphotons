@@ -16,9 +16,11 @@ namespace EcsTransformTests {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             root = lock.NewEntity();
+            ecs::EntityRef rootRef(ecs::Name("", "root"), root);
             root.Set<ecs::TransformTree>(lock, glm::vec3(1, 2, 3));
 
             a = lock.NewEntity();
+            ecs::EntityRef aRef(ecs::Name("", "a"), a);
             auto &transformA = a.Set<ecs::TransformTree>(lock, glm::vec3(4, 0, 0));
             transformA.parent = root;
 

@@ -19,12 +19,17 @@ namespace ecs {
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
         ptr = GEntityRefs.Get(ent).ptr;
+        Assertf(ptr, "EntityRef(%s) is invalid", std::to_string(ent));
     }
 
     EntityRef::EntityRef(const ecs::Name &name, const Entity &ent) {
         if (!name) return;
-        ptr = GEntityRefs.Get(name).ptr;
-        if (ent) Set(ent);
+        if (ent) {
+            ptr = GEntityRefs.Set(name, ent).ptr;
+        } else {
+            ptr = GEntityRefs.Get(name).ptr;
+        }
+        Assertf(ptr, "EntityRef(%s, %s) is invalid", name.String(), std::to_string(ent));
     }
 
     ecs::Name EntityRef::Name() const {
@@ -59,16 +64,5 @@ namespace ecs {
     bool EntityRef::operator==(const Entity &other) const {
         if (!ptr || !other) return false;
         return ptr->liveEntity.load() == other || ptr->stagingEntity.load() == other;
-    }
-
-    void EntityRef::Set(const Entity &ent) {
-        Assertf(ptr, "Trying to set null EntityRef");
-        Assertf(ent, "Trying to set EntityRef with null Entity");
-
-        if (Tecs::IdentifierFromGeneration(ent.generation) == ecs::World.GetInstanceId()) {
-            ptr->liveEntity = ent;
-        } else {
-            ptr->stagingEntity = ent;
-        }
     }
 } // namespace ecs

@@ -34,8 +34,6 @@ namespace ecs {
         bool operator==(const EntityRef &other) const;
         bool operator==(const Entity &other) const;
 
-        void Set(const Entity &ent);
-
     private:
         std::shared_ptr<Ref> ptr;
 
