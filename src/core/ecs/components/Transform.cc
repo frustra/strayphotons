@@ -83,6 +83,17 @@ namespace sp::json {
 } // namespace sp::json
 
 namespace ecs {
+    template<>
+    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
+        static const ecs::TransformTree defaultTree = {};
+
+        auto &dstTree = dst.Get<TransformTree>(lock);
+        if (dstTree.pose == defaultTree.pose && dstTree.parent == defaultTree.parent) {
+            dstTree.pose = src.pose;
+            dstTree.parent = src.parent;
+        }
+    }
+
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
         : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
 

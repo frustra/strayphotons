@@ -108,6 +108,8 @@ namespace ecs {
     }
 
     bool ComponentField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
+        if (!(actions & FieldAction::AutoLoad)) return true;
+
         if (!src.is<picojson::object>()) {
             Errorf("ComponentField::Load invalid component object: %s", src.to_str());
             return false;
@@ -129,6 +131,8 @@ namespace ecs {
         picojson::value &dst,
         const void *component,
         const void *defaultComponent) const {
+        if (!(actions & FieldAction::AutoSave)) return;
+
         auto *field = static_cast<const char *>(component) + offset;
         auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
 
@@ -145,6 +149,8 @@ namespace ecs {
     }
 
     void ComponentField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
+        if (!(actions & FieldAction::AutoApply)) return;
+
         auto *dstField = static_cast<char *>(dstComponent) + offset;
         auto *srcField = static_cast<const char *>(srcComponent) + offset;
         auto *defaultField = static_cast<const char *>(defaultComponent) + offset;

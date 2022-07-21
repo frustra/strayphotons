@@ -30,12 +30,12 @@
 						"translate_tangent": [0, 0, 0]
 					},
 					{
-						"delay": 1,
+						"delay": 2,
 						"translate": [-1, 3.5, -4.875],
 						"translate_tangent": [0, 3, 0]
 					},
 					{
-						"delay": 1,
+						"delay": 2,
 						"translate": [1, 7, -4.875],
 						"translate_tangent": [0, 3, 0]
 					},
@@ -69,7 +69,8 @@
 		{
 			"name": "test1:duck",
 			"transform": {
-				"parent": "test1:mcube"
+				"parent": "test1:mcube",
+				"translate": [1.5, 0, -2.5]
 			}
 		},
 		{

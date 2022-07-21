@@ -35,7 +35,7 @@ namespace ecs {
             const EntityScope &scope,
             Entity &dst,
             const picojson::value &src) const = 0;
-        virtual bool SaveEntity(Lock<ReadAll> lock,
+        virtual void SaveEntity(Lock<ReadAll> lock,
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const = 0;
@@ -101,7 +101,7 @@ namespace ecs {
             }
         }
 
-        bool SaveEntity(Lock<ReadAll> lock,
+        void SaveEntity(Lock<ReadAll> lock,
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const override {
@@ -111,7 +111,7 @@ namespace ecs {
             for (auto &field : this->fields) {
                 field.Save(scope, dst, &comp, &defaultValue);
             }
-            return Save(lock, scope, dst, comp);
+            Save(lock, scope, dst, comp);
         }
 
         void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
@@ -153,12 +153,13 @@ namespace ecs {
             return true;
         }
 
-        static bool Save(Lock<Read<Name>> lock, const EntityScope &scope, picojson::value &dst, const CompType &src) {
+        static void Save(Lock<Read<Name>> lock, const EntityScope &scope, picojson::value &dst, const CompType &src) {
             // Custom field serialization is always called, default to no-op.
-            return true;
         }
 
-        static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {}
+        static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {
+            // Custom field apply is always called, default to no-op.
+        }
     };
 
     template<typename T>

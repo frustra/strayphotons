@@ -31,7 +31,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<LaserLine>::Save(Lock<Read<Name>> lock,
+    void Component<LaserLine>::Save(Lock<Read<Name>> lock,
         const EntityScope &scope,
         picojson::value &dst,
         const LaserLine &src) {
@@ -45,12 +45,11 @@ namespace ecs {
             auto &line = std::get<LaserLine::Line>(src.line);
             sp::json::SaveIfChanged(scope, obj, "color", line.color, defaultLine.color);
 
-            if (line.points.empty()) return true;
+            if (line.points.empty()) return;
             sp::json::Save(scope, obj["points"], line.points);
-            return true;
         } else if (std::holds_alternative<LaserLine::Segments>(src.line)) {
             auto &seg = std::get<LaserLine::Segments>(src.line);
-            if (seg.empty()) return true;
+            if (seg.empty()) return;
             picojson::array segments;
             segments.reserve(seg.size());
             for (auto &segment : seg) {
@@ -61,10 +60,8 @@ namespace ecs {
                 segments.emplace_back(segmentObj);
             }
             obj["segments"] = picojson::value(segments);
-            return true;
         } else {
             Errorf("Unsupported laser line variant type: %u", src.line.index());
-            return false;
         }
     }
 

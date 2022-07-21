@@ -2,6 +2,7 @@
 
 #include "assets/Async.hh"
 #include "core/Common.hh"
+#include "core/EnumTypes.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 
@@ -49,63 +50,72 @@ namespace ecs {
         Count,
     };
 
+    enum class FieldAction {
+        None = 0,
+        AutoLoad = 1 << 0,
+        AutoSave = 2 << 1,
+        AutoApply = 3 << 2,
+    };
+
     struct ComponentField {
         const char *name = nullptr;
         FieldType type = FieldType::Count;
         size_t offset = 0;
+        FieldAction actions = ~FieldAction::None;
 
-        ComponentField(const char *name, FieldType type, size_t offset) : name(name), type(type), offset(offset) {}
+        ComponentField(const char *name, FieldType type, size_t offset, FieldAction actions)
+            : name(name), type(type), offset(offset), actions(actions) {}
 
         template<typename T, typename F>
-        static constexpr ComponentField New(const char *name, const F T::*M) {
+        static constexpr ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             using BaseType = std::remove_cv_t<F>;
 
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
 
             if constexpr (std::is_same<BaseType, bool>()) {
-                return ComponentField(name, FieldType::Bool, offset);
+                return ComponentField(name, FieldType::Bool, offset, actions);
             } else if constexpr (std::is_same<BaseType, int32_t>()) {
-                return ComponentField(name, FieldType::Int32, offset);
+                return ComponentField(name, FieldType::Int32, offset, actions);
             } else if constexpr (std::is_same<BaseType, uint32_t>()) {
-                return ComponentField(name, FieldType::Uint32, offset);
+                return ComponentField(name, FieldType::Uint32, offset, actions);
             } else if constexpr (std::is_same<BaseType, size_t>()) {
-                return ComponentField(name, FieldType::SizeT, offset);
+                return ComponentField(name, FieldType::SizeT, offset, actions);
             } else if constexpr (std::is_same<BaseType, sp::angle_t>()) {
-                return ComponentField(name, FieldType::AngleT, offset);
+                return ComponentField(name, FieldType::AngleT, offset, actions);
             } else if constexpr (std::is_same<BaseType, float>()) {
-                return ComponentField(name, FieldType::Float, offset);
+                return ComponentField(name, FieldType::Float, offset, actions);
             } else if constexpr (std::is_same<BaseType, glm::vec2>()) {
-                return ComponentField(name, FieldType::Vec2, offset);
+                return ComponentField(name, FieldType::Vec2, offset, actions);
             } else if constexpr (std::is_same<BaseType, glm::vec3>()) {
-                return ComponentField(name, FieldType::Vec3, offset);
+                return ComponentField(name, FieldType::Vec3, offset, actions);
             } else if constexpr (std::is_same<BaseType, glm::vec4>()) {
-                return ComponentField(name, FieldType::Vec4, offset);
+                return ComponentField(name, FieldType::Vec4, offset, actions);
             } else if constexpr (std::is_same<BaseType, glm::ivec2>()) {
-                return ComponentField(name, FieldType::IVec2, offset);
+                return ComponentField(name, FieldType::IVec2, offset, actions);
             } else if constexpr (std::is_same<BaseType, glm::ivec3>()) {
-                return ComponentField(name, FieldType::IVec3, offset);
+                return ComponentField(name, FieldType::IVec3, offset, actions);
             } else if constexpr (std::is_same<BaseType, glm::quat>()) {
-                return ComponentField(name, FieldType::Quat, offset);
+                return ComponentField(name, FieldType::Quat, offset, actions);
             } else if constexpr (std::is_same<BaseType, std::string>()) {
-                return ComponentField(name, FieldType::String, offset);
+                return ComponentField(name, FieldType::String, offset, actions);
             } else if constexpr (std::is_same<BaseType, EntityRef>()) {
-                return ComponentField(name, FieldType::EntityRef, offset);
+                return ComponentField(name, FieldType::EntityRef, offset, actions);
             } else if constexpr (std::is_same<BaseType, Transform>()) {
-                return ComponentField(name, FieldType::Transform, offset);
+                return ComponentField(name, FieldType::Transform, offset, actions);
             } else if constexpr (std::is_same<BaseType, std::vector<AnimationState>>()) {
-                return ComponentField(name, FieldType::AnimationStates, offset);
+                return ComponentField(name, FieldType::AnimationStates, offset, actions);
             } else if constexpr (std::is_same<BaseType, InterpolationMode>()) {
-                return ComponentField(name, FieldType::InterpolationMode, offset);
+                return ComponentField(name, FieldType::InterpolationMode, offset, actions);
             } else if constexpr (std::is_same<BaseType, VisibilityMask>()) {
-                return ComponentField(name, FieldType::VisibilityMask, offset);
+                return ComponentField(name, FieldType::VisibilityMask, offset, actions);
             } else {
                 Abortf("Component field %s type must be custom: %s", name, typeid(BaseType).name());
             }
         }
 
         template<typename T, typename F>
-        static constexpr ComponentField New(const F T::*M) {
-            return ComponentField::New(nullptr, M);
+        static constexpr ComponentField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
+            return ComponentField::New(nullptr, M, actions);
         }
 
         bool Load(const EntityScope &scope, void *component, const picojson::value &src) const;
