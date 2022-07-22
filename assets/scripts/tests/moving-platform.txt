@@ -1,0 +1,21 @@
+loadscene moving-platform
+steplogic
+stepphysics
+screenshot moving-platform-frame0.png
+stepgraphics
+setsignal moving-platform:platform_root/animation_state 3
+steplogic
+stepphysics 100
+screenshot moving-platform-frame1.png
+stepgraphics
+stepphysics 500
+screenshot moving-platform-frame2.png
+stepgraphics
+x.DebugColliders 1
+stepphysics
+screenshot moving-platform-frame2b.png
+stepgraphics
+x.DebugColliders 0
+stepphysics 500
+screenshot moving-platform-frame3.png
+stepgraphics

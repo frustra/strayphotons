@@ -4,6 +4,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
+#include "assets/JsonHelpers.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"

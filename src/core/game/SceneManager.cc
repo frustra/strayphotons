@@ -609,7 +609,8 @@ namespace sp {
         ecs::Entity player) {
         auto spawn = ecs::EntityWith<ecs::Name>(lock, ecs::Name("global", "spawn"));
         if (spawn.Has<ecs::TransformSnapshot>(lock)) {
-            auto &spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
+            auto spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
+            spawnTransform.SetScale(glm::vec3(1));
             if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
                 auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock);
                 auto &playerTree = player.Get<ecs::TransformTree>(lock);

@@ -53,8 +53,8 @@ namespace ecs {
     enum class FieldAction {
         None = 0,
         AutoLoad = 1 << 0,
-        AutoSave = 2 << 1,
-        AutoApply = 3 << 2,
+        AutoSave = 1 << 1,
+        AutoApply = 1 << 2,
     };
 
     struct ComponentField {

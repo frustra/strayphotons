@@ -73,5 +73,21 @@ namespace ecs {
                     transform.pose.SetScale(glm::vec3(voxelScale));
                 }
             }),
+        InternalPhysicsScript("rotate",
+            [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+                if (ent.Has<TransformTree>(lock)) {
+                    glm::vec3 rotationAxis;
+                    rotationAxis.x = state.GetParam<double>("axis_x");
+                    rotationAxis.y = state.GetParam<double>("axis_y");
+                    rotationAxis.z = state.GetParam<double>("axis_z");
+                    auto rotationSpeedRpm = state.GetParam<double>("speed");
+
+                    auto &transform = ent.Get<TransformTree>(lock);
+                    auto currentRotation = transform.pose.GetRotation();
+                    transform.pose.SetRotation(glm::rotate(currentRotation,
+                        (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
+                        rotationAxis));
+                }
+            }),
     };
 } // namespace ecs

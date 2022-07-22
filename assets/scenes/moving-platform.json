@@ -1,0 +1,119 @@
+{
+	"entities": [
+		{
+			"name": "side_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"translate": [100, 1, -2.5],
+				"scale": [204, 2, 0.1]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"name": "platform_root",
+			"transform": {
+				"translate": [0, 0, 0]
+			},
+			"trigger_group": "object",
+			"animation": {
+				"interpolation": "Cubic",
+				"states": [
+					{
+						"delay": 10,
+						"translate": [0.1, 0, 0],
+						"translate_tangent": [0, 0, 0]
+					},
+					{
+						"delay": 10,
+						"translate": [50, 0, 0],
+						"translate_tangent": [7, 0, 0]
+					},
+					{
+						"delay": 10,
+						"translate": [150, 0, 0],
+						"translate_tangent": [7, 0, 0]
+					},
+					{
+						"delay": 10,
+						"translate": [200, 0.0, 0],
+						"translate_tangent": [0, 0, 0]
+					}
+				]
+			},
+			"signal_output": {
+				"animation_state": 0
+			}
+		},
+		{
+			"name": "platform",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "platform_root",
+				"scale": [4, 0.5, 4]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"name": "button_holder",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "platform_root",
+				"translate": [0, 0.75, -2],
+				"scale": [0.5, 1.5, 0.1]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			}
+		},
+		{
+			"name": "button",
+			"transform": {
+				"parent": "platform_root",
+				"translate": [0, 1.4, -1.95],
+				"rotate": [90, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "global:spawn",
+			"transform": {
+				"parent": "platform_root"
+			}
+		},
+		{
+			"name": "light",
+			"transform": {
+				"parent": "platform_root",
+				"translate": [0, 4, 0],
+				"rotate": [[270, 1, 0, 0]]
+			},
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 100,
+				"spotAngle": 50
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		}
+	]
+}

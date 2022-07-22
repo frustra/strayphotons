@@ -25,7 +25,7 @@ namespace ecs {
         if (!entity) return EntityRef();
 
         std::shared_lock lock(mutex);
-        if (Tecs::IdentifierFromGeneration(entity.generation) == ecs::World.GetInstanceId()) {
+        if (IsLive(entity)) {
             if (liveRefs.count(entity) == 0) return EntityRef();
             return EntityRef(liveRefs[entity].lock());
         } else {
@@ -39,7 +39,7 @@ namespace ecs {
 
         auto ref = Get(name);
         std::lock_guard lock(mutex);
-        if (Tecs::IdentifierFromGeneration(entity.generation) == ecs::World.GetInstanceId()) {
+        if (IsLive(entity)) {
             ref.ptr->liveEntity = entity;
             liveRefs[entity] = ref.ptr;
         } else {
