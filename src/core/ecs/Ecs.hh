@@ -118,9 +118,16 @@ namespace ecs {
 
     extern ECS World;
 
+    static inline bool IsLive(const Entity &e) {
+        return Tecs::IdentifierFromGeneration(e.generation) == World.GetInstanceId();
+    }
+
+    static inline bool IsLive(Lock<> lock) {
+        return lock.GetInstance().GetInstanceId() == World.GetInstanceId();
+    }
+
     template<typename T>
     Entity EntityWith(Lock<Read<T>> lock, const T &value);
-
 }; // namespace ecs
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");

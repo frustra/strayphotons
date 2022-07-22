@@ -9,7 +9,7 @@ namespace ecs {
     EntityRef::Ref::Ref(const Entity &ent) {
         if (!ent) return;
 
-        if (Tecs::IdentifierFromGeneration(ent.generation) == ecs::World.GetInstanceId()) {
+        if (IsLive(ent)) {
             liveEntity = ent;
         } else {
             stagingEntity = ent;
@@ -37,7 +37,7 @@ namespace ecs {
     }
 
     Entity EntityRef::Get(const ecs::Lock<> &lock) const {
-        if (lock.GetInstance().GetInstanceId() == ecs::World.GetInstanceId()) {
+        if (IsLive(lock)) {
             return GetLive();
         } else {
             return GetStaging();

@@ -62,6 +62,12 @@ namespace sp {
                 } else {
                     eventName = &ecs::TriggerGroupEventNames[triggerGroup].second;
                     containedEntities.erase(triggerEnt);
+                    Debugf("%s leaving TriggerArea %s at: %f %f %f",
+                        ecs::ToString(lock, triggerEnt),
+                        ecs::ToString(lock, entity),
+                        entityPos.x,
+                        entityPos.y,
+                        entityPos.z);
                 }
 
                 ecs::EventBindings::SendEvent(lock, *eventName, entity, triggerEnt);

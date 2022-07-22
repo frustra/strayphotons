@@ -54,6 +54,7 @@ namespace sp {
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
+        Assertf(!ecs::IsLive(stagingLock), "Scene::NewSystemEntity must be called with a staging lock");
         if (entityName) {
             if (!ValidateEntityName(entityName)) {
                 Errorf("Invalid system entity name: %s", entityName.String());
@@ -82,7 +83,7 @@ namespace sp {
         return entity;
     }
 
-    ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+    ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
         ecs::SceneInfo::Priority priority,
         std::string relativeName) {
@@ -112,9 +113,9 @@ namespace sp {
             return ecs::Entity();
         }
 
-        auto entity = stagingLock.NewEntity();
-        entity.Set<ecs::SceneInfo>(stagingLock, entity, priority, scene);
-        entity.Set<ecs::Name>(stagingLock, entityName);
+        auto entity = lock.NewEntity();
+        entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
+        entity.Set<ecs::Name>(lock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
         return entity;
@@ -124,6 +125,7 @@ namespace sp {
         ecs::Entity prefabRoot,
         std::string relativeName,
         ecs::Name scope) {
+        Assertf(!ecs::IsLive(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
 
         ecs::Name entityName;
         if (!relativeName.empty()) {

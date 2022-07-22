@@ -49,7 +49,7 @@ namespace sp::scripts {
                         position.x = state.GetParam<double>("position_x");
                         position.y = state.GetParam<double>("position_y");
                         position.z = state.GetParam<double>("position_z");
-                        TransformTree transform(position);
+                        Transform transform(position);
 
                         auto fullTargetName = state.GetParam<std::string>("relative_to");
                         ecs::Name targetName(fullTargetName, state.scope.prefix);
@@ -62,7 +62,7 @@ namespace sp::scripts {
                                 state.SetParam<EntityRef>("target_entity", targetEntity);
 
                                 if (target.Has<TransformSnapshot>(lock)) {
-                                    transform.pose = target.Get<TransformSnapshot>(lock) * transform.pose;
+                                    transform = target.Get<TransformSnapshot>(lock) * transform;
                                 }
                             }
                         }
@@ -78,8 +78,8 @@ namespace sp::scripts {
                                 Assert(scene, "Model spawner script must have valid scene");
                                 auto newEntity = scene->NewRootEntity(lock, scene, ecs::SceneInfo::Priority::Scene);
 
-                                LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEntity);
-
+                                newEntity.Set<TransformTree>(lock, transform);
+                                newEntity.Set<TransformSnapshot>(lock, transform);
                                 newEntity.Set<Renderable>(lock, modelName, model);
                                 newEntity.Set<Physics>(lock, model, PhysicsGroup::World, true, 1.0f);
                                 newEntity.Set<PhysicsJoints>(lock);

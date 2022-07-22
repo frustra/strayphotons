@@ -20,13 +20,29 @@ namespace ecs {
         };
 
         SceneInfo() {}
-        SceneInfo(Entity stagingId, Priority priority, const std::shared_ptr<sp::Scene> &scene)
-            : stagingId(stagingId), priority(priority), scene(scene) {}
+
+        SceneInfo(Entity ent, Priority priority, const std::shared_ptr<sp::Scene> &scene)
+            : priority(priority), scene(scene) {
+            if (IsLive(ent)) {
+                liveId = ent;
+            } else {
+                stagingId = ent;
+            }
+        }
+
         SceneInfo(Entity liveId, const SceneInfo &sceneInfo)
-            : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene) {}
+            : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene) {
+            Assertf(IsLive(liveId), "Invalid liveId in SceneInfo: %s", std::to_string(liveId));
+        }
+
         SceneInfo(Entity stagingId, Entity prefabStagingId, const SceneInfo &rootSceneInfo)
             : stagingId(stagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
-              scene(rootSceneInfo.scene) {}
+              scene(rootSceneInfo.scene) {
+            Assertf(!IsLive(stagingId), "Invalid stagingId in SceneInfo: %s", std::to_string(stagingId));
+            Assertf(!IsLive(prefabStagingId),
+                "Invalid prefabStagingId in SceneInfo: %s",
+                std::to_string(prefabStagingId));
+        }
 
         // Should be called on the live SceneInfo
         void InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &stagingInfo);
