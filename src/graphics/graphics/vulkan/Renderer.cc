@@ -277,12 +277,20 @@ namespace sp::vulkan {
         if (!hiddenAreaMesh[0]) {
             for (size_t i = 0; i < hiddenAreaMesh.size(); i++) {
                 auto mesh = xrSystem->GetHiddenAreaMesh(ecs::XrEye(i));
-                if (mesh.triangleCount == 0) continue;
-                hiddenAreaMesh[i] = device.CreateBuffer(mesh.vertices,
-                    mesh.triangleCount * 3,
-                    vk::BufferUsageFlagBits::eVertexBuffer,
-                    VMA_MEMORY_USAGE_CPU_TO_GPU);
-                hiddenAreaTriangleCount[i] = mesh.triangleCount;
+                if (mesh.triangleCount == 0) {
+                    static const std::array triangle = {glm::vec2(0), glm::vec2(0), glm::vec2(0)};
+                    hiddenAreaMesh[i] = device.CreateBuffer(triangle.data(),
+                        triangle.size(),
+                        vk::BufferUsageFlagBits::eVertexBuffer,
+                        VMA_MEMORY_USAGE_CPU_TO_GPU);
+                    hiddenAreaTriangleCount[i] = 1;
+                } else {
+                    hiddenAreaMesh[i] = device.CreateBuffer(mesh.vertices,
+                        mesh.triangleCount * 3,
+                        vk::BufferUsageFlagBits::eVertexBuffer,
+                        VMA_MEMORY_USAGE_CPU_TO_GPU);
+                    hiddenAreaTriangleCount[i] = mesh.triangleCount;
+                }
             }
         }
 
