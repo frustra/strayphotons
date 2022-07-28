@@ -6,19 +6,6 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Common.hh"
 
-#ifdef __clang__
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wunused-variable"
-    #pragma clang diagnostic ignored "-Wreorder"
-    #pragma clang diagnostic ignored "-Wnullability-completeness"
-#endif
-
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wunused-variable"
-    #pragma GCC diagnostic ignored "-Wreorder"
-#endif
-
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable : 4127 4189 4324)
@@ -27,14 +14,6 @@
 #define VMA_DEBUG_LOG(...) Tracef(__VA_ARGS__)
 
 #include <vk_mem_alloc.h>
-
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
-
-#ifdef __clang__
-    #pragma clang diagnostic pop
-#endif
 
 #ifdef _MSC_VER
     #pragma warning(pop)

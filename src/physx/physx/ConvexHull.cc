@@ -6,19 +6,8 @@
 
 #include <unordered_set>
 
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wunknown-pragmas"
-    #pragma GCC diagnostic ignored "-Wsign-compare"
-    #pragma GCC diagnostic ignored "-Wswitch"
-#endif
-
 #define ENABLE_VHACD_IMPLEMENTATION 1
 #include <VHACD.h>
-
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
 
 #define GLM_FORCE_CXX11
 #include <glm/gtx/hash.hpp>

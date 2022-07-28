@@ -1,7 +1,3 @@
 add_library(VulkanMemoryAllocator INTERFACE)
 
-target_include_directories(
-    VulkanMemoryAllocator
-    INTERFACE
-        ./VulkanMemoryAllocator/include
-)
+target_include_directories(VulkanMemoryAllocator SYSTEM INTERFACE VulkanMemoryAllocator/include)
