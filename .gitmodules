@@ -67,3 +67,6 @@
 [submodule "ext/magic_enum"]
 	path = ext/magic_enum
 	url = https://github.com/Neargye/magic_enum.git
+[submodule "ext/v-hacd"]
+	path = ext/v-hacd
+	url = https://github.com/kmammou/v-hacd.git

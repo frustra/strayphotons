@@ -466,6 +466,8 @@ namespace sp {
                         auto &mesh = model->meshes[meshIndex];
                         Assertf(mesh, "Physics mesh is undefined: %s", name);
                         ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
+                        if (set->hulls.empty()) return set;
+
                         for (auto &hull : set->hulls) {
                             auto pxMesh = CreateConvexMeshFromHull(name, hull);
                             if (pxMesh) hull.pxMesh = pxMesh;

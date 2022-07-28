@@ -5,9 +5,4 @@ add_library(tinygltf INTERFACE)
 
 target_compile_definitions(tinygltf INTERFACE TINYGLTF_NO_FS=1)
 
-target_include_directories(
-    tinygltf SYSTEM
-    INTERFACE
-        ./
-        ./tinygltf
-)
+target_include_directories(tinygltf SYSTEM INTERFACE ./tinygltf)
