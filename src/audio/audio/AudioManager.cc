@@ -176,7 +176,7 @@ namespace sp {
                     state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
                         [this, file = source.file](shared_ptr<Asset> asset) {
                             if (!asset) {
-                                Logf("Audio file missing: %s", file->Get()->path);
+                                Logf("Audio file missing: %s", file->Get()->path.string());
                                 return shared_ptr<nqr::AudioData>();
                             }
                             auto audioBuffer = decoderCache.Load(asset.get());

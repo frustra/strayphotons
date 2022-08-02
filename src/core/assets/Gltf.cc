@@ -101,10 +101,9 @@ namespace sp {
         Assertf(asset, "Gltf not found: %s", name);
 
         ZoneScopedN("LoadGltf");
-        ZonePrintf("%s from %s", name, asset->path);
+        ZonePrintf("%s from %s", name, asset->path.string());
 
-        std::filesystem::path fsPath(asset->path);
-        std::string baseDir = fsPath.remove_filename().string();
+        std::string baseDir = asset->path.parent_path().string();
 
         auto model = std::make_shared<tinygltf::Model>();
         std::string err;
@@ -112,21 +111,22 @@ namespace sp {
         bool ret = false;
         tinygltf::TinyGLTF gltfLoader;
         Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
-        if (ends_with(asset->path, ".gltf")) {
+        if (asset->extension == "gltf") {
             ret = gltfLoader.LoadASCIIFromString(model.get(),
                 &err,
                 &warn,
                 (char *)asset->BufferPtr(),
                 (uint32_t)asset->BufferSize(),
                 baseDir);
-        } else {
-            // Assume GLB model
+        } else if (asset->extension == "glb") {
             ret = gltfLoader.LoadBinaryFromMemory(model.get(),
                 &err,
                 &warn,
                 asset->BufferPtr(),
                 (uint32_t)asset->BufferSize(),
                 baseDir);
+        } else {
+            Abortf("Unknown Gltf file extension: %s", asset->extension);
         }
 
         Assertf(ret && err.empty(), "Failed to parse glTF (%s): %s", name, err);

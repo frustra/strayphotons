@@ -5,9 +5,9 @@ extern "C" {
 }
 
 #include "assets/Asset.hh"
-#include "assets/ConsoleScript.hh"
 #include "assets/Gltf.hh"
 #include "assets/Image.hh"
+#include "assets/PhysicsInfo.hh"
 #include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
@@ -225,6 +225,56 @@ namespace sp {
         return gltf;
     }
 
+    std::string findPhysicsByName(const std::string &name) {
+        std::string path;
+#ifdef SP_PACKAGE_RELEASE
+        path = "models/" + name + "/" + name + ".physics.json";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + "/physics.json";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + ".physics.json";
+        if (tarIndex.count(path) > 0) return path;
+#else
+        std::error_code ec;
+        path = "models/" + name + "/" + name + ".physics.json";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+        path = "models/" + name + "/physics.json";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+        path = "models/" + name + ".physics.json";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+#endif
+        return "";
+    }
+
+    AsyncPtr<PhysicsInfo> AssetManager::LoadPhysicsInfo(const std::string &name) {
+        Assert(!name.empty(), "AssetManager::LoadPhysicsInfo called with empty name");
+
+        auto physicsInfo = loadedPhysics.Load(name);
+        if (!physicsInfo) {
+            {
+                std::lock_guard lock(physicsInfoMutex);
+                // Check again in case an inflight model just completed on another thread
+                physicsInfo = loadedPhysics.Load(name);
+                if (physicsInfo) return physicsInfo;
+
+                AsyncPtr<Asset> asset;
+                auto path = findPhysicsByName(name);
+                if (!path.empty()) asset = Load(path, AssetType::Bundled);
+
+                physicsInfo = workQueue.Dispatch<PhysicsInfo>(asset, [name](std::shared_ptr<const Asset> asset) {
+                    if (!asset) {
+                        Logf("PhysicsInfo not found: %s", name);
+                        return std::shared_ptr<PhysicsInfo>();
+                    }
+                    return std::make_shared<PhysicsInfo>(name, asset);
+                });
+                loadedPhysics.Register(name, physicsInfo);
+            }
+        }
+
+        return physicsInfo;
+    }
+
     AsyncPtr<Image> AssetManager::LoadImage(const std::string &path) {
         Assert(!path.empty(), "AssetManager::LoadImage called with empty path");
 
@@ -250,20 +300,6 @@ namespace sp {
         }
 
         return image;
-    }
-
-    AsyncPtr<ConsoleScript> AssetManager::LoadScript(const std::string &path) {
-        Logf("Loading script: %s", path);
-
-        auto asset = Load("scripts/" + path);
-        return workQueue.Dispatch<ConsoleScript>(asset, [path](std::shared_ptr<const Asset> asset) {
-            if (!asset) {
-                Logf("Script not found: %s", path);
-                return std::shared_ptr<ConsoleScript>();
-            }
-
-            return std::make_shared<ConsoleScript>(path, asset);
-        });
     }
 
     void AssetManager::RegisterExternalGltf(const std::string &name, const std::string &path) {

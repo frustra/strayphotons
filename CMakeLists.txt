@@ -139,6 +139,7 @@ endif()
 cmake_policy(SET CMP0076 NEW)
 
 add_subdirectory(assets)
+add_subdirectory(hull_compiler)
 add_subdirectory(shaders)
 add_subdirectory(src)
 

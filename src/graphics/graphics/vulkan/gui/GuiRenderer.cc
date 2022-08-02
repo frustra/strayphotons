@@ -42,7 +42,8 @@ namespace sp::vulkan {
             cfg.FontDataOwnedByAtlas = false;
             cfg.SizePixels = def.size;
             cfg.GlyphRanges = &glyphRanges[0];
-            memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
+            auto filename = asset->path.filename().string();
+            memcpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name), filename.length()));
             fontAtlas->AddFont(&cfg);
         }
 

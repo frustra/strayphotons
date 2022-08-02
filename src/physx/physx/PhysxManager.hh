@@ -92,8 +92,6 @@ namespace sp {
 
         std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(std::string name, const ConvexHull &hull);
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, size_t meshIndex, bool decomposeHull);
-        bool LoadCollisionCache(ConvexHullSet &set, const Gltf &model, size_t meshIndex, bool decomposeHull);
-        void SaveCollisionCache(const Gltf &model, size_t meshIndex, const ConvexHullSet &set, bool decomposeHull);
 
         physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale = glm::vec3(1));
 

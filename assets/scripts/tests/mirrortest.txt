@@ -13,3 +13,15 @@ screenshot mirrortest-frame004.png
 stepgraphics 95
 screenshot mirrortest-frame100.png
 stepgraphics
+
+setsignal player:player/move_noclip 1
+rotate player:flatview -60 0 1 0
+translate player:player -1 -1 -4
+stepphysics
+screenshot mirrortest-edge-occlusion.png
+stepgraphics
+rotate player:flatview 70 0 1 0
+translate player:player -3 0 -2
+stepphysics
+screenshot mirrortest-bounces.png
+stepgraphics

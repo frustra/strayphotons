@@ -18,6 +18,7 @@ namespace sp::gltf {
 
 namespace sp {
     class Asset;
+    struct HullSettings;
 
     struct ConvexHull {
         std::vector<glm::vec3> points;
@@ -29,11 +30,14 @@ namespace sp {
     struct ConvexHullSet {
         vector<ConvexHull> hulls;
         std::shared_ptr<const Asset> source;
-        bool decomposed;
+        std::shared_ptr<const Asset> config;
     };
 
-    namespace ConvexHullBuilding {
+    namespace hullgen {
         // Builds convex hull set for a model without caching
-        void BuildConvexHulls(ConvexHullSet *set, const Gltf &model, const gltf::Mesh &mesh, bool decompHull);
-    } // namespace ConvexHullBuilding
+        std::shared_ptr<ConvexHullSet> BuildConvexHulls(const Gltf &model, const HullSettings &hullSettings);
+
+        std::shared_ptr<ConvexHullSet> LoadCollisionCache(const Gltf &model, const HullSettings &hullSettings);
+        void SaveCollisionCache(const Gltf &model, const HullSettings &hullSettings, const ConvexHullSet &set);
+    } // namespace hullgen
 } // namespace sp

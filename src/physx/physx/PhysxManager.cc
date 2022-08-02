@@ -415,16 +415,12 @@ namespace sp {
         convexDesc.points.data = reinterpret_cast<const float *>(hull.points.data());
         convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
-        PxDefaultMemoryOutputStream buf;
-        PxConvexMeshCookingResult::Enum result;
-
-        if (!pxCooking->cookConvexMesh(convexDesc, buf, &result)) {
+        PxConvexMesh *pxhull = pxCooking->createConvexMesh(convexDesc, pxPhysics->getPhysicsInsertionCallback());
+        if (!pxhull) {
             Errorf("Failed to cook PhysX hull for %s", name);
             return nullptr;
         }
 
-        PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-        PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
         pxhull->acquireReference();
         return std::shared_ptr<PxConvexMesh>(pxhull, [](PxConvexMesh *ptr) {
             ptr->release();
@@ -465,7 +461,7 @@ namespace sp {
                         Assertf(meshIndex < model->meshes.size(), "Physics mesh index is out of range: %s", name);
                         auto &mesh = model->meshes[meshIndex];
                         Assertf(mesh, "Physics mesh is undefined: %s", name);
-                        ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
+                        // ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
                         if (set->hulls.empty()) return set;
 
                         for (auto &hull : set->hulls) {
@@ -731,99 +727,6 @@ namespace sp {
 
         auto userData = (ActorUserData *)actor->userData;
         if (userData) userData->physicsGroup = group;
-    }
-
-    // Increment if the Collision Cache format ever changes
-    const uint32 hullCacheMagic = 0xc043;
-
-    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Gltf &model, size_t meshIndex, bool decomposeHull) {
-        ZoneScoped;
-        ZonePrintf("%s.%u", model.name, meshIndex);
-        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
-        std::ifstream in;
-
-        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) path += "-decompose";
-
-        if (GAssets.InputStream(path, AssetType::Bundled, in)) {
-            uint32 magic;
-            in.read((char *)&magic, 4);
-            if (magic != hullCacheMagic) {
-                Logf("Ignoring outdated collision cache format for %s", path);
-                in.close();
-                return false;
-            }
-
-            Hash128 hash;
-            in.read((char *)hash.data(), sizeof(hash));
-
-            if (!model.asset || model.asset->Hash() != hash) {
-                Logf("Ignoring outdated collision cache for %s", path);
-                in.close();
-                return false;
-            }
-
-            int32 hullCount;
-            in.read((char *)&hullCount, 4);
-            Assert(hullCount > 0, "hull cache count");
-
-            set.hulls.reserve(hullCount);
-
-            for (int i = 0; i < hullCount; i++) {
-                auto &hull = set.hulls.emplace_back();
-
-                uint32_t pointCount, triangleCount;
-                in.read((char *)&pointCount, sizeof(uint32_t));
-                in.read((char *)&triangleCount, sizeof(uint32_t));
-
-                hull.points.resize(pointCount);
-                hull.triangles.resize(triangleCount);
-
-                in.read((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
-                in.read((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
-            }
-
-            in.close();
-            return true;
-        }
-
-        return false;
-    }
-
-    void PhysxManager::SaveCollisionCache(const Gltf &model,
-        size_t meshIndex,
-        const ConvexHullSet &set,
-        bool decomposeHull) {
-        ZoneScoped;
-        ZonePrintf("%s.%u", model.name, meshIndex);
-        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
-        std::ofstream out;
-
-        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) path += "-decompose";
-
-        if (GAssets.OutputStream(path, out)) {
-            out.write((char *)&hullCacheMagic, 4);
-
-            Hash128 hash = model.asset->Hash();
-            out.write((char *)hash.data(), sizeof(hash));
-
-            int32 hullCount = set.hulls.size();
-            out.write((char *)&hullCount, 4);
-
-            for (auto hull : set.hulls) {
-                Assert(hull.points.size() < UINT32_MAX, "hull point count overflows uint32");
-                Assert(hull.triangles.size() < UINT32_MAX, "hull triangle count overflows uint32");
-                uint32_t pointCount = hull.points.size();
-                uint32_t triangleCount = hull.triangles.size();
-                out.write((char *)&pointCount, sizeof(uint32_t));
-                out.write((char *)&triangleCount, sizeof(uint32_t));
-                out.write((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
-                out.write((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
-            }
-
-            out.close();
-        }
     }
 
     PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) {

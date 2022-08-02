@@ -18,8 +18,8 @@
 namespace sp {
     class Asset;
     class Gltf;
-    class ConsoleScript;
     class Image;
+    class PhysicsInfo;
 
     enum class AssetType {
         Bundled = 0,
@@ -33,9 +33,8 @@ namespace sp {
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
+        AsyncPtr<PhysicsInfo> LoadPhysicsInfo(const std::string &name);
         AsyncPtr<Image> LoadImage(const std::string &path);
-
-        AsyncPtr<ConsoleScript> LoadScript(const std::string &path);
 
         void RegisterExternalGltf(const std::string &name, const std::string &path);
         bool IsGltfRegistered(const std::string &name);
@@ -55,10 +54,12 @@ namespace sp {
 
         std::mutex assetMutex;
         std::mutex gltfMutex;
+        std::mutex physicsInfoMutex;
         std::mutex imageMutex;
 
         EnumArray<PreservingMap<std::string, Async<Asset>>, AssetType> loadedAssets;
         PreservingMap<std::string, Async<Gltf>> loadedGltfs;
+        PreservingMap<std::string, Async<PhysicsInfo>> loadedPhysics;
         PreservingMap<std::string, Async<Image>> loadedImages;
 
         std::mutex externalGltfMutex;

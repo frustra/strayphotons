@@ -128,7 +128,8 @@
         "alignedvector3": "cpp",
         "*.rh": "cpp",
         "orderingmethods": "cpp",
-        "fft": "cpp"
+        "fft": "cpp",
+        "openglsupport": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
