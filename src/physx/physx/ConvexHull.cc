@@ -127,10 +127,21 @@ namespace sp {
         Logf("Adding simple hull, %d points, %d triangles", hull.points.size(), hull.triangles.size());
     }
 
-    std::shared_ptr<ConvexHullSet> hullgen::BuildConvexHulls(const Gltf &model,
-        const gltf::Mesh &mesh,
-        const HullSettings &hullSettings) {
+    std::shared_ptr<ConvexHullSet> hullgen::BuildConvexHulls(const Gltf &model, const HullSettings &hullSettings) {
         ZoneScoped;
+        ZoneStr(hullSettings.name);
+
+        if (hullSettings.meshIndex >= model.meshes.size()) {
+            Errorf("Physics mesh index %u is out of range: %s", hullSettings.meshIndex, hullSettings.name);
+            return nullptr;
+        }
+        auto &meshOption = model.meshes[hullSettings.meshIndex];
+        if (!meshOption) {
+            Errorf("Physics mesh index %u is missing: %s", hullSettings.meshIndex, hullSettings.name);
+            return nullptr;
+        }
+        auto &mesh = *meshOption;
+
         auto set = make_shared<ConvexHullSet>();
         for (auto &prim : mesh.primitives) {
             if (hullSettings.decompose) {
@@ -154,11 +165,12 @@ namespace sp {
         Hash128 settingsHash;
         uint32_t hullCount;
     };
+
 #pragma pack(pop)
 
     static_assert(sizeof(hullCacheHeader) == 40, "Hull cache header size changed unexpectedly");
 
-    std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(const Gltf &model, const HullSettings &hullSettings) {
+    /*std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(const Gltf &model, const HullSettings &hullSettings) {
         ZoneScoped;
         ZoneStr(hullSettings.name);
 
@@ -249,5 +261,5 @@ namespace sp {
 
             out.close();
         }
-    }
+    }*/
 } // namespace sp

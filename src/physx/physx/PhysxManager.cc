@@ -450,8 +450,8 @@ namespace sp {
                         ZoneScopedN("LoadConvexHullSet::Dispatch");
                         ZoneStr(name);
 
-                        auto set = std::make_shared<ConvexHullSet>();
-                        if (LoadCollisionCache(*set, *model, meshIndex, decomposeHull)) {
+                        /*auto set = hullgen::LoadCollisionCache(*model, hullSettings);
+                        if (set) {
                             for (auto &hull : set->hulls) {
                                 hull.pxMesh = CreateConvexMeshFromHull(name, hull);
                             }
@@ -468,8 +468,9 @@ namespace sp {
                             auto pxMesh = CreateConvexMeshFromHull(name, hull);
                             if (pxMesh) hull.pxMesh = pxMesh;
                         }
-                        SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
-                        return set;
+                        hullgen::SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
+                        return set;*/
+                        return nullptr;
                     });
                 cache.Register(name, set);
             }
