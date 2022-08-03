@@ -91,7 +91,7 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(std::string name, const ConvexHull &hull);
+        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const std::string &name, const ConvexHull &hull);
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(std::shared_ptr<Gltf> model,
             std::shared_ptr<HullSettings> hullSettings);
 

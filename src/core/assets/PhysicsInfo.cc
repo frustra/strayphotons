@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 
+#include <cstdlib>
 #include <iostream>
 #include <picojson/picojson.h>
 #include <sstream>
@@ -116,14 +117,22 @@ namespace sp {
         }
     }
 
-    const HullSettings &PhysicsInfo::GetHull(const std::string &meshName) const {
-        static const HullSettings defaultHull = {};
-
+    HullSettings PhysicsInfo::GetHull(const std::string &meshName) const {
         auto it = hulls.find(meshName);
         if (it != hulls.end()) return it->second;
-        if (meshName != "convex") {
-            Warnf("Missing physics hull: %s.%s", modelName, meshName);
+        if (starts_with(meshName, "convex")) {
+            auto end = std::find_if(meshName.begin() + 6, meshName.end(), [](char ch) {
+                return !std::isdigit(ch);
+            });
+            if (end == meshName.end()) {
+                size_t meshIndex = strtoull(meshName.c_str() + 6, nullptr, 10); // Defaults to 0 on failure
+                return HullSettings(modelName + "." + meshName, meshIndex);
+            } else {
+                Warnf("Missing physics hull, defaulting to convex: %s.%s", modelName, meshName);
+            }
+        } else {
+            Warnf("Missing physics hull, defaulting to convex: %s.%s", modelName, meshName);
         }
-        return defaultHull;
+        return {};
     }
 } // namespace sp

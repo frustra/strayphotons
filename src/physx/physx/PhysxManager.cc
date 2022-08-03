@@ -409,7 +409,8 @@ namespace sp {
         }
     }
 
-    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(std::string name, const ConvexHull &hull) {
+    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(const std::string &name,
+        const ConvexHull &hull) {
         PxConvexMeshDesc convexDesc;
         convexDesc.points.count = hull.points.size();
         convexDesc.points.stride = sizeof(*hull.points.data());
@@ -446,22 +447,22 @@ namespace sp {
                     ZoneScopedN("LoadConvexHullSet::Dispatch");
                     ZoneStr(hullSettings->name);
 
-                    /*auto set = hullgen::LoadCollisionCache(*model, hullSettings);
+                    auto set = hullgen::LoadCollisionCache(*model, *hullSettings);
                     if (set) {
                         for (auto &hull : set->hulls) {
-                            hull.pxMesh = CreateConvexMeshFromHull(name, hull);
+                            hull.pxMesh = CreateConvexMeshFromHull(hullSettings->name, hull);
                         }
                         return set;
-                    }*/
+                    }
 
-                    auto set = hullgen::BuildConvexHulls(*model, *hullSettings);
+                    set = hullgen::BuildConvexHulls(*model, *hullSettings);
                     if (set->hulls.empty()) return set;
 
                     for (auto &hull : set->hulls) {
                         auto pxMesh = CreateConvexMeshFromHull(hullSettings->name, hull);
                         if (pxMesh) hull.pxMesh = pxMesh;
                     }
-                    // hullgen::SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
+                    hullgen::SaveCollisionCache(*model, *hullSettings, *set);
                     return set;
                 });
                 cache.Register(hullSettings->name, set);

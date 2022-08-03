@@ -171,7 +171,7 @@ namespace sp {
 
     static_assert(sizeof(hullCacheHeader) == 40, "Hull cache header size changed unexpectedly");
 
-    /*std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(const Gltf &model, const HullSettings &hullSettings) {
+    std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(const Gltf &model, const HullSettings &hullSettings) {
         ZoneScoped;
         ZoneStr(hullSettings.name);
 
@@ -207,8 +207,10 @@ namespace sp {
         }
 
         // TODO: Hash the hull settings and compare them
+        // TODO: Load PhysX convex mesh serialization
+        return nullptr;
 
-        auto hullSet = make_shared<ConvexHullSet>();
+        /*auto hullSet = make_shared<ConvexHullSet>();
         hullSet->hulls.reserve(header->hullCount);
 
         for (uint32_t i = 0; i < header->hullCount; i++) {
@@ -225,16 +227,14 @@ namespace sp {
             in.read((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
         }
 
-        return hullSet;
+        return hullSet;*/
     }
 
-    void hullgen::SaveCollisionCache(const Gltf &model,
-        size_t meshIndex,
-        const ConvexHullSet &set,
-        bool decomposeHull) {
+    void hullgen::SaveCollisionCache(const Gltf &model, const HullSettings &hullSettings, const ConvexHullSet &set) {
         ZoneScoped;
-        ZonePrintf("%s.%u", model.name, meshIndex);
-        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
+        ZoneStr(hullSettings.name);
+
+        /*Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
         std::ofstream out;
 
         std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
@@ -261,6 +261,6 @@ namespace sp {
             }
 
             out.close();
-        }
-    }*/
+        }*/
+    }
 } // namespace sp

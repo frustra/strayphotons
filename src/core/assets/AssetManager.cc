@@ -284,8 +284,7 @@ namespace sp {
                     Logf("PhysicsInfo not found: %s", modelName);
                     return std::shared_ptr<HullSettings>();
                 }
-                auto &hullSettings = physicsInfo->GetHull(meshName);
-                return std::make_shared<HullSettings>(hullSettings);
+                return std::make_shared<HullSettings>(physicsInfo->GetHull(meshName));
             });
     }
 
