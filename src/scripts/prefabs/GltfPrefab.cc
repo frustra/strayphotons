@@ -102,8 +102,8 @@ namespace ecs {
                 auto physicsParam = state.GetParam<std::string>("physics");
                 if (!physicsParam.empty()) {
                     sp::to_lower(physicsParam);
-                    PhysicsShape::ConvexMesh mesh(asyncGltf, *node.meshIndex);
-                    auto &physics = newEntity.Set<Physics>(lock, mesh);
+                    PhysicsShape::ConvexMesh mesh(modelName, *node.meshIndex);
+                    Physics physics(mesh);
                     if (physicsParam == "dynamic") {
                         physics.dynamic = true;
                     } else if (physicsParam == "kinematic") {
@@ -115,6 +115,8 @@ namespace ecs {
                         Abortf("Unknown gltf physics param: %s", physicsParam);
                     }
                     physics.group = group;
+
+                    LookupComponent<Physics>().ApplyComponent(physics, lock, newEntity);
                 }
             }
 

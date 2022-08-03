@@ -5,6 +5,7 @@
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "assets/JsonHelpers.hh"
+#include "assets/PhysicsInfo.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
@@ -138,9 +139,9 @@ namespace sp {
                 auto &ph = ent.template Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
-                    if (!mesh || !mesh->model) continue;
-                    if (mesh->model->Ready()) {
-                        auto set = LoadConvexHullSet(mesh->model, mesh->meshIndex, mesh->decomposeHull);
+                    if (!mesh || !mesh->model || !mesh->hullSettings) continue;
+                    if (mesh->model->Ready() && mesh->hullSettings->Ready()) {
+                        auto set = LoadConvexHullSet(mesh->model->Get(), mesh->hullSettings->Get());
                         if (!set || !set->Ready()) complete = false;
                     } else {
                         complete = false;
@@ -427,52 +428,43 @@ namespace sp {
         });
     }
 
-    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(const AsyncPtr<Gltf> &asyncModel,
-        size_t meshIndex,
-        bool decomposeHull) {
-        auto modelPtr = asyncModel->Get();
-        Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model");
-        auto &model = *modelPtr;
-        Assertf(!model.name.empty(), "PhysxManager::LoadConvexHullSet called with invalid model");
-        std::string name = model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) name += "-decompose";
+    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(std::shared_ptr<Gltf> model,
+        std::shared_ptr<HullSettings> hullSettings) {
+        Assertf(model, "PhysxManager::LoadConvexHullSet called with null model");
+        Assertf(hullSettings, "PhysxManager::LoadConvexHullSet called with null hull settings");
 
-        auto set = cache.Load(name);
+        Assertf(!hullSettings->name.empty(), "PhysxManager::LoadConvexHullSet called with invalid hull settings");
+        auto set = cache.Load(hullSettings->name);
         if (!set) {
             {
                 std::lock_guard lock(cacheMutex);
                 // Check again in case an inflight set just completed on another thread
-                set = cache.Load(name);
+                set = cache.Load(hullSettings->name);
                 if (set) return set;
 
-                set = workQueue.Dispatch<ConvexHullSet>(asyncModel,
-                    [this, name, meshIndex, decomposeHull](std::shared_ptr<const Gltf> model) {
-                        ZoneScopedN("LoadConvexHullSet::Dispatch");
-                        ZoneStr(name);
+                set = workQueue.Dispatch<ConvexHullSet>([this, model, hullSettings]() {
+                    ZoneScopedN("LoadConvexHullSet::Dispatch");
+                    ZoneStr(hullSettings->name);
 
-                        /*auto set = hullgen::LoadCollisionCache(*model, hullSettings);
-                        if (set) {
-                            for (auto &hull : set->hulls) {
-                                hull.pxMesh = CreateConvexMeshFromHull(name, hull);
-                            }
-                            return set;
-                        }
-
-                        Assertf(meshIndex < model->meshes.size(), "Physics mesh index is out of range: %s", name);
-                        auto &mesh = model->meshes[meshIndex];
-                        Assertf(mesh, "Physics mesh is undefined: %s", name);
-                        // ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
-                        if (set->hulls.empty()) return set;
-
+                    /*auto set = hullgen::LoadCollisionCache(*model, hullSettings);
+                    if (set) {
                         for (auto &hull : set->hulls) {
-                            auto pxMesh = CreateConvexMeshFromHull(name, hull);
-                            if (pxMesh) hull.pxMesh = pxMesh;
+                            hull.pxMesh = CreateConvexMeshFromHull(name, hull);
                         }
-                        hullgen::SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
-                        return set;*/
-                        return nullptr;
-                    });
-                cache.Register(name, set);
+                        return set;
+                    }*/
+
+                    auto set = hullgen::BuildConvexHulls(*model, *hullSettings);
+                    if (set->hulls.empty()) return set;
+
+                    for (auto &hull : set->hulls) {
+                        auto pxMesh = CreateConvexMeshFromHull(hullSettings->name, hull);
+                        if (pxMesh) hull.pxMesh = pxMesh;
+                    }
+                    // hullgen::SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
+                    return set;
+                });
+                cache.Register(hullSettings->name, set);
             }
         }
 
@@ -489,7 +481,7 @@ namespace sp {
         for (auto &shape : ph.shapes) {
             if (mesh) Abortf("Physics actor can't have multiple meshes: %s", std::to_string(e));
             mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
-            if (mesh && !mesh->model) return nullptr;
+            if (mesh && (!mesh->model || !mesh->hullSettings)) return nullptr;
         }
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
@@ -518,12 +510,16 @@ namespace sp {
 
         userData->shapeIndexes.clear();
         if (mesh) {
-            userData->shapeCache = LoadConvexHullSet(mesh->model, mesh->meshIndex, mesh->decomposeHull)->Get();
+            userData->shapeCache = LoadConvexHullSet(mesh->model->Get(), mesh->hullSettings->Get())->Get();
 
-            for (auto &hull : userData->shapeCache->hulls) {
-                PxRigidActorExt::createExclusiveShape(*actor,
-                    PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
-                    *userData->material);
+            if (userData->shapeCache) {
+                for (auto &hull : userData->shapeCache->hulls) {
+                    PxRigidActorExt::createExclusiveShape(*actor,
+                        PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
+                        *userData->material);
+                }
+            } else {
+                Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
             }
         } else {
             userData->shapeIndexes.reserve(ph.shapes.size());

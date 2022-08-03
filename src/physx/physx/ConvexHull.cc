@@ -58,6 +58,7 @@ namespace sp {
         params.m_resolution = hullSettings.voxelResolution;
         params.m_minimumVolumePercentErrorAllowed = hullSettings.volumePercentError;
         params.m_maxNumVerticesPerCH = hullSettings.maxVertices;
+        params.m_maxConvexHulls = hullSettings.maxHulls;
 
         bool res = interfaceVHACD->Compute(reinterpret_cast<const float *>(points.data()),
             points.size(),

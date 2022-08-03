@@ -262,10 +262,7 @@ namespace sp {
                 if (!path.empty()) asset = Load(path, AssetType::Bundled);
 
                 physicsInfo = workQueue.Dispatch<PhysicsInfo>(asset, [name](std::shared_ptr<const Asset> asset) {
-                    if (!asset) {
-                        Logf("PhysicsInfo not found: %s", name);
-                        return std::shared_ptr<PhysicsInfo>();
-                    }
+                    // PhysicsInfo handles missing asset internally
                     return std::make_shared<PhysicsInfo>(name, asset);
                 });
                 loadedPhysics.Register(name, physicsInfo);
@@ -273,6 +270,23 @@ namespace sp {
         }
 
         return physicsInfo;
+    }
+
+    AsyncPtr<HullSettings> AssetManager::LoadHullSettings(const std::string &modelName, const std::string &meshName) {
+        Assert(!modelName.empty(), "AssetManager::LoadHullSettings called with empty model name");
+        Assert(!meshName.empty(), "AssetManager::LoadHullSettings called with empty mesh name");
+
+        auto physicsInfo = LoadPhysicsInfo(modelName);
+
+        return workQueue.Dispatch<HullSettings>(physicsInfo,
+            [modelName, meshName](std::shared_ptr<const PhysicsInfo> physicsInfo) {
+                if (!physicsInfo) {
+                    Logf("PhysicsInfo not found: %s", modelName);
+                    return std::shared_ptr<HullSettings>();
+                }
+                auto &hullSettings = physicsInfo->GetHull(meshName);
+                return std::make_shared<HullSettings>(hullSettings);
+            });
     }
 
     AsyncPtr<Image> AssetManager::LoadImage(const std::string &path) {

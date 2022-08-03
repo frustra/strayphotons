@@ -20,6 +20,7 @@ namespace sp {
     class Gltf;
     class Image;
     class PhysicsInfo;
+    struct HullSettings;
 
     enum class AssetType {
         Bundled = 0,
@@ -34,6 +35,7 @@ namespace sp {
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
         AsyncPtr<PhysicsInfo> LoadPhysicsInfo(const std::string &name);
+        AsyncPtr<HullSettings> LoadHullSettings(const std::string &modelName, const std::string &meshName);
         AsyncPtr<Image> LoadImage(const std::string &path);
 
         void RegisterExternalGltf(const std::string &name, const std::string &path);

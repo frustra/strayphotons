@@ -23,15 +23,15 @@ int main(int argc, char **argv) {
     std::string modelName = optionsResult["model-name"].as<std::string>();
 
     auto physicsInfo = sp::GAssets.LoadPhysicsInfo(modelName)->Get();
-    Logf("Physics name: %s", physicsInfo->name);
+    Logf("Physics name: %s", physicsInfo->modelName);
 
     auto model = sp::GAssets.LoadGltf(modelName)->Get();
     Logf("Model name: %s", model->name);
 
     for (auto &[hullName, hull] : physicsInfo->GetHulls()) {
-        Logf("%s: %s = %u", modelName, hullName, hull.decompose);
+        Logf("%s: %s = %s %u", modelName, hullName, hull.name, hull.decompose);
         auto hullSet = hullgen::BuildConvexHulls(*model, hull);
-        Logf("%x", &hullSet);
+        (void)hullSet;
     }
     return 0;
 }

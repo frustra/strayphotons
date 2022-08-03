@@ -81,7 +81,7 @@ namespace sp::scripts {
                                 newEntity.Set<TransformTree>(lock, transform);
                                 newEntity.Set<TransformSnapshot>(lock, transform);
                                 newEntity.Set<Renderable>(lock, modelName, model);
-                                newEntity.Set<Physics>(lock, model, PhysicsGroup::World, true, 1.0f);
+                                newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, true, 1.0f);
                                 newEntity.Set<PhysicsJoints>(lock);
                                 newEntity.Set<PhysicsQuery>(lock);
                                 newEntity.Set<EventInput>(lock,

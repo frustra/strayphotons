@@ -28,7 +28,7 @@ namespace sp {
     };
 
     struct ConvexHullSet {
-        vector<ConvexHull> hulls;
+        std::vector<ConvexHull> hulls;
         std::shared_ptr<const Asset> source;
         std::shared_ptr<const Asset> config;
     };

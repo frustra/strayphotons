@@ -36,6 +36,7 @@ namespace ecs {
 
 namespace sp {
     class Gltf;
+    struct HullSettings;
     class SceneManager;
 
     extern CVar<float> CVarGravity;
@@ -91,7 +92,8 @@ namespace sp {
         void CacheDebugLines();
 
         std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(std::string name, const ConvexHull &hull);
-        AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, size_t meshIndex, bool decomposeHull);
+        AsyncPtr<ConvexHullSet> LoadConvexHullSet(std::shared_ptr<Gltf> model,
+            std::shared_ptr<HullSettings> hullSettings);
 
         physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale = glm::vec3(1));
 
