@@ -57,6 +57,8 @@ namespace sp {
         pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, PxCookingParams(scale));
         Assert(pxCooking, "PxCreateCooking");
 
+        pxSerialization = PxSerialization::createSerializationRegistry(*pxPhysics);
+
         scratchBlock.resize(0x1000000); // 16MiB
 
         CreatePhysxScene();
@@ -104,6 +106,10 @@ namespace sp {
             dispatcher = nullptr;
         }
 
+        if (pxSerialization) {
+            pxSerialization->release();
+            pxSerialization = nullptr;
+        }
         if (pxCooking) {
             pxCooking->release();
             pxCooking = nullptr;
@@ -409,26 +415,6 @@ namespace sp {
         }
     }
 
-    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(const std::string &name,
-        const ConvexHull &hull) {
-        PxConvexMeshDesc convexDesc;
-        convexDesc.points.count = hull.points.size();
-        convexDesc.points.stride = sizeof(*hull.points.data());
-        convexDesc.points.data = reinterpret_cast<const float *>(hull.points.data());
-        convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-
-        PxConvexMesh *pxhull = pxCooking->createConvexMesh(convexDesc, pxPhysics->getPhysicsInsertionCallback());
-        if (!pxhull) {
-            Errorf("Failed to cook PhysX hull for %s", name);
-            return nullptr;
-        }
-
-        pxhull->acquireReference();
-        return std::shared_ptr<PxConvexMesh>(pxhull, [](PxConvexMesh *ptr) {
-            ptr->release();
-        });
-    }
-
     AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(std::shared_ptr<Gltf> model,
         std::shared_ptr<HullSettings> hullSettings) {
         Assertf(model, "PhysxManager::LoadConvexHullSet called with null model");
@@ -447,22 +433,12 @@ namespace sp {
                     ZoneScopedN("LoadConvexHullSet::Dispatch");
                     ZoneStr(hullSettings->name);
 
-                    auto set = hullgen::LoadCollisionCache(*model, *hullSettings);
-                    if (set) {
-                        for (auto &hull : set->hulls) {
-                            hull.pxMesh = CreateConvexMeshFromHull(hullSettings->name, hull);
-                        }
-                        return set;
-                    }
+                    auto set = hullgen::LoadCollisionCache(*pxSerialization, *model, *hullSettings);
+                    if (set) return set;
 
-                    set = hullgen::BuildConvexHulls(*model, *hullSettings);
-                    if (set->hulls.empty()) return set;
+                    set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, *model, *hullSettings);
+                    hullgen::SaveCollisionCache(*pxSerialization, *model, *hullSettings, *set);
 
-                    for (auto &hull : set->hulls) {
-                        auto pxMesh = CreateConvexMeshFromHull(hullSettings->name, hull);
-                        if (pxMesh) hull.pxMesh = pxMesh;
-                    }
-                    hullgen::SaveCollisionCache(*model, *hullSettings, *set);
                     return set;
                 });
                 cache.Register(hullSettings->name, set);
@@ -516,7 +492,7 @@ namespace sp {
             if (userData->shapeCache) {
                 for (auto &hull : userData->shapeCache->hulls) {
                     PxRigidActorExt::createExclusiveShape(*actor,
-                        PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
+                        PxConvexMeshGeometry(hull.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
                         *userData->material);
                 }
             } else {
@@ -700,13 +676,12 @@ namespace sp {
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
         if (actor) {
-            if (actor->userData) {
-                delete (ActorUserData *)actor->userData;
-                actor->userData = nullptr;
-            }
+            auto userData = (ActorUserData *)actor->userData;
 
             if (actor->getScene()) actor->getScene()->removeActor(*actor);
             actor->release();
+
+            if (userData) delete userData;
         }
     }
 

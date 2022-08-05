@@ -91,7 +91,6 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const std::string &name, const ConvexHull &hull);
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(std::shared_ptr<Gltf> model,
             std::shared_ptr<HullSettings> hullSettings);
 
@@ -113,6 +112,7 @@ namespace sp {
         physx::PxDefaultErrorCallback defaultErrorCallback;
         physx::PxDefaultAllocator defaultAllocatorCallback;
         physx::PxCooking *pxCooking = nullptr;
+        physx::PxSerializationRegistry *pxSerialization = nullptr;
 
         physx::PxPvd *pxPvd = nullptr;
 #ifndef SP_PACKAGE_RELEASE

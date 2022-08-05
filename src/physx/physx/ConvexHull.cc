@@ -7,6 +7,9 @@
 #include "assets/PhysicsInfo.hh"
 #include "core/Logging.hh"
 
+#include <PxPhysicsAPI.h>
+#include <cstdlib>
+#include <fstream>
 #include <unordered_set>
 
 #define ENABLE_VHACD_IMPLEMENTATION 1
@@ -31,7 +34,36 @@ namespace sp {
 
     static_assert(sizeof(VHACD::Triangle) == sizeof(glm::ivec3), "Unexpected vhacd triangle type");
 
-    void decomposeConvexHullsForPrimitive(ConvexHullSet *set,
+    std::shared_ptr<physx::PxConvexMesh> createPhysxMesh(physx::PxCooking &cooking,
+        physx::PxPhysics &physics,
+        const std::vector<VHACD::Vertex> &inputPoints) {
+
+        std::vector<glm::vec3> points;
+        points.reserve(inputPoints.size());
+        for (auto &point : inputPoints) {
+            points.emplace_back(point.mX, point.mY, point.mZ);
+        }
+
+        physx::PxConvexMeshDesc convexDesc;
+        convexDesc.points.count = points.size();
+        convexDesc.points.stride = sizeof(*points.data());
+        convexDesc.points.data = reinterpret_cast<const float *>(points.data());
+        convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
+        auto *pxMesh = cooking.createConvexMesh(convexDesc, physics.getPhysicsInsertionCallback());
+        if (!pxMesh) {
+            Errorf("Failed to cook PhysX hull for %u points", inputPoints.size());
+            return nullptr;
+        }
+
+        return std::shared_ptr<physx::PxConvexMesh>(pxMesh, [](physx::PxConvexMesh *ptr) {
+            ptr->release();
+        });
+    }
+
+    void decomposeConvexHullsForPrimitive(physx::PxCooking &cooking,
+        physx::PxPhysics &physics,
+        ConvexHullSet *set,
         const Gltf &model,
         const gltf::Mesh &mesh,
         const gltf::Mesh::Primitive &prim,
@@ -70,27 +102,22 @@ namespace sp {
         for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
             VHACD::IVHACD::ConvexHull ihull;
             interfaceVHACD->GetConvexHull(i, ihull);
-            if (ihull.m_points.size() < 3 || ihull.m_triangles.empty()) continue;
+            if (ihull.m_points.size() < 3) continue;
 
-            ConvexHull hull;
-            hull.points.reserve(ihull.m_points.size());
-            for (auto &point : ihull.m_points) {
-                hull.points.emplace_back(point.mX, point.mY, point.mZ);
+            auto pxMesh = createPhysxMesh(cooking, physics, ihull.m_points);
+            if (pxMesh) {
+                Logf("Adding VHACD hull, %d points, %d triangles", ihull.m_points.size(), ihull.m_triangles.size());
+                set->hulls.emplace_back(pxMesh);
             }
-
-            hull.triangles.reserve(ihull.m_triangles.size());
-            auto src = reinterpret_cast<glm::ivec3 *>(ihull.m_triangles.data());
-            hull.triangles.assign(src, src + ihull.m_triangles.size());
-
-            set->hulls.push_back(hull);
-            Logf("Adding VHACD hull, %d points, %d triangles", hull.points.size(), hull.triangles.size());
         }
 
         interfaceVHACD->Clean();
         interfaceVHACD->Release();
     }
 
-    void buildConvexHullForPrimitive(ConvexHullSet *set,
+    void buildConvexHullForPrimitive(physx::PxCooking &cooking,
+        physx::PxPhysics &physics,
+        ConvexHullSet *set,
         const Gltf &model,
         const gltf::Mesh &mesh,
         const gltf::Mesh::Primitive &prim,
@@ -112,23 +139,19 @@ namespace sp {
         VHACD::QuickHullImpl hullImpl;
         hullImpl.computeConvexHull(points, hullSettings.maxVertices);
         auto &vertices = hullImpl.getVertices();
-        auto &indices = hullImpl.getIndices();
-        if (vertices.size() < 3 || indices.empty()) return;
+        if (vertices.size() < 3) return;
 
-        auto &hull = set->hulls.emplace_back();
-        hull.points.reserve(vertices.size());
-        for (auto &point : vertices) {
-            hull.points.emplace_back(point.mX, point.mY, point.mZ);
+        auto pxMesh = createPhysxMesh(cooking, physics, vertices);
+        if (pxMesh) {
+            Logf("Adding simple hull, %d points, %d triangles", vertices.size(), hullImpl.getIndices().size());
+            set->hulls.emplace_back(pxMesh);
         }
-
-        hull.triangles.reserve(indices.size());
-        auto src = reinterpret_cast<const glm::ivec3 *>(indices.data());
-        hull.triangles.assign(src, src + indices.size());
-
-        Logf("Adding simple hull, %d points, %d triangles", hull.points.size(), hull.triangles.size());
     }
 
-    std::shared_ptr<ConvexHullSet> hullgen::BuildConvexHulls(const Gltf &model, const HullSettings &hullSettings) {
+    std::shared_ptr<ConvexHullSet> hullgen::BuildConvexHulls(physx::PxCooking &cooking,
+        physx::PxPhysics &physics,
+        const Gltf &model,
+        const HullSettings &hullSettings) {
         ZoneScoped;
         ZoneStr(hullSettings.name);
 
@@ -147,10 +170,10 @@ namespace sp {
         for (auto &prim : mesh.primitives) {
             if (hullSettings.decompose) {
                 // Break primitive into one or more convex hulls.
-                decomposeConvexHullsForPrimitive(set.get(), model, mesh, prim, hullSettings);
+                decomposeConvexHullsForPrimitive(cooking, physics, set.get(), model, mesh, prim, hullSettings);
             } else {
                 // Use points for a single hull without decomposing.
-                buildConvexHullForPrimitive(set.get(), model, mesh, prim, hullSettings);
+                buildConvexHullForPrimitive(cooking, physics, set.get(), model, mesh, prim, hullSettings);
             }
         }
         return set;
@@ -161,17 +184,19 @@ namespace sp {
 
 #pragma pack(push, 1)
     struct hullCacheHeader {
-        uint32_t magicNumber;
+        uint32_t magicNumber = hullCacheMagic;
         Hash128 modelHash;
         Hash128 settingsHash;
-        uint32_t hullCount;
+        uint32_t bufferSize = 0;
     };
 
 #pragma pack(pop)
 
     static_assert(sizeof(hullCacheHeader) == 40, "Hull cache header size changed unexpectedly");
 
-    std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(const Gltf &model, const HullSettings &hullSettings) {
+    std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(physx::PxSerializationRegistry &registry,
+        const Gltf &model,
+        const HullSettings &hullSettings) {
         ZoneScoped;
         ZoneStr(hullSettings.name);
 
@@ -181,9 +206,7 @@ namespace sp {
         auto &mesh = model.meshes[hullSettings.meshIndex];
         Assertf(mesh, "Physics mesh is undefined: %s index %u", hullSettings.name, hullSettings.meshIndex);
 
-        std::string path = "cache/collision/" + hullSettings.name;
-
-        auto asset = GAssets.Load(path)->Get();
+        auto asset = GAssets.Load("cache/collision/" + hullSettings.name)->Get();
         if (!asset) {
             Errorf("Physics collision cache missing for hull: %s", hullSettings.name);
             return nullptr;
@@ -191,7 +214,7 @@ namespace sp {
 
         auto buf = asset->Buffer();
         if (buf.size() < sizeof(hullCacheHeader)) {
-            Errorf("Physics collision cache is too short: %s", hullSettings.name);
+            Errorf("Physics collision cache is corrupt: %s", hullSettings.name);
             return nullptr;
         }
 
@@ -202,65 +225,88 @@ namespace sp {
         }
 
         if (!model.asset || header->modelHash != model.asset->Hash()) {
-            Logf("Ignoring outdated collision cache for %s", path);
+            Logf("Ignoring outdated collision cache for %s", hullSettings.name);
             return nullptr;
         }
 
         // TODO: Hash the hull settings and compare them
-        // TODO: Load PhysX convex mesh serialization
-        return nullptr;
 
-        /*auto hullSet = make_shared<ConvexHullSet>();
-        hullSet->hulls.reserve(header->hullCount);
-
-        for (uint32_t i = 0; i < header->hullCount; i++) {
-            auto &hull = hullSet->hulls.emplace_back();
-
-            uint32_t pointCount, triangleCount;
-            in.read((char *)&pointCount, sizeof(uint32_t));
-            in.read((char *)&triangleCount, sizeof(uint32_t));
-
-            hull.points.resize(pointCount);
-            hull.triangles.resize(triangleCount);
-
-            in.read((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
-            in.read((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
+        if (buf.size() - sizeof(hullCacheHeader) < header->bufferSize) {
+            Errorf("Physics collision cache is corrupt: %s", hullSettings.name);
+            return nullptr;
         }
 
-        return hullSet;*/
+        auto hullSet = make_shared<ConvexHullSet>();
+        hullSet->collectionBuffer.resize(header->bufferSize + 128);
+
+        // Copy the serialization data into 128-byte aligned memory for PhysX
+        size_t remaining = hullSet->collectionBuffer.size();
+        void *alignedMemory = hullSet->collectionBuffer.data();
+        std::align(128, header->bufferSize, alignedMemory, remaining);
+        std::memcpy(alignedMemory, buf.data() + sizeof(hullCacheHeader), header->bufferSize);
+
+        auto *collection = physx::PxSerialization::createCollectionFromBinary(alignedMemory, registry);
+        if (!collection) {
+            Errorf("Failed to load physx serialization: %s", hullSettings.name);
+            return nullptr;
+        }
+        hullSet->collection = std::shared_ptr<physx::PxCollection>(collection, [](physx::PxCollection *ptr) {
+            ptr->release();
+        });
+
+        hullSet->hulls.reserve(collection->getNbObjects());
+        for (uint32_t i = 0; i < collection->getNbObjects(); i++) {
+            physx::PxBase &object = collection->getObject(i);
+            auto pxMesh = object.is<physx::PxConvexMesh>();
+            if (!pxMesh) {
+                object.release();
+                continue;
+            }
+
+            hullSet->hulls.emplace_back(pxMesh, [i, name = hullSettings.name](physx::PxConvexMesh *ptr) {
+                ptr->release();
+            });
+        }
+        return hullSet;
     }
 
-    void hullgen::SaveCollisionCache(const Gltf &model, const HullSettings &hullSettings, const ConvexHullSet &set) {
+    void hullgen::SaveCollisionCache(physx::PxSerializationRegistry &registry,
+        const Gltf &model,
+        const HullSettings &hullSettings,
+        const ConvexHullSet &set) {
         ZoneScoped;
         ZoneStr(hullSettings.name);
 
-        /*Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
+        Assertf(hullSettings.meshIndex < model.meshes.size(),
+            "SaveCollisionCache mesh index is out of range: %s",
+            hullSettings.name);
+        auto &mesh = model.meshes[hullSettings.meshIndex];
+        Assertf(mesh, "SaveCollisionCache mesh is undefined: %s index %u", hullSettings.name, hullSettings.meshIndex);
+
+        auto *collection = PxCreateCollection();
+        for (auto hull : set.hulls) {
+            if (!hull) continue;
+            collection->add(*hull);
+        }
+        physx::PxSerialization::complete(*collection, registry);
+
+        physx::PxDefaultMemoryOutputStream buf;
+        if (!physx::PxSerialization::serializeCollectionToBinary(buf, *collection, registry)) {
+            Errorf("Failed to serialize convex hull set: %s", hullSettings.name);
+            return;
+        }
+
         std::ofstream out;
+        if (GAssets.OutputStream("cache/collision/" + hullSettings.name, out)) {
+            hullCacheHeader header = {};
+            header.modelHash = model.asset->Hash();
+            header.settingsHash = Hash128(); // TODO: Fill this in
+            header.bufferSize = buf.getSize();
 
-        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) path += "-decompose";
-
-        if (GAssets.OutputStream(path, out)) {
-            out.write((char *)&hullCacheMagic, 4);
-
-            Hash128 hash = model.asset->Hash();
-            out.write((char *)hash.data(), sizeof(hash));
-
-            int32 hullCount = set.hulls.size();
-            out.write((char *)&hullCount, 4);
-
-            for (auto hull : set.hulls) {
-                Assert(hull.points.size() < UINT32_MAX, "hull point count overflows uint32");
-                Assert(hull.triangles.size() < UINT32_MAX, "hull triangle count overflows uint32");
-                uint32_t pointCount = hull.points.size();
-                uint32_t triangleCount = hull.triangles.size();
-                out.write((char *)&pointCount, sizeof(uint32_t));
-                out.write((char *)&triangleCount, sizeof(uint32_t));
-                out.write((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
-                out.write((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
-            }
+            out.write(reinterpret_cast<const char *>(&header), sizeof(header));
+            out.write(reinterpret_cast<const char *>(buf.getData()), buf.getSize());
 
             out.close();
-        }*/
+        }
     }
 } // namespace sp
