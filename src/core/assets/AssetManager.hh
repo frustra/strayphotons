@@ -40,7 +40,7 @@ namespace sp {
 
         void RegisterExternalGltf(const std::string &name, const std::string &path);
         bool IsGltfRegistered(const std::string &name);
-        
+
         bool OutputStream(const std::string &path, std::ofstream &stream);
 
     private:

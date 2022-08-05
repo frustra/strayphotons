@@ -13,10 +13,7 @@ target_link_libraries(${PROJECT_PHYSICS_PHYSX_LIB}
     PUBLIC
         PhysX
         PhysXCharacterKinematic
-        PhysXCommon
         PhysXCooking
-        PhysXExtensions
-        PhysXFoundation
         PhysXPvdSDK
 )
 
