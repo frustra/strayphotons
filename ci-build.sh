@@ -20,7 +20,7 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
 fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
-if $CI_PACKAGE_RELEASE; then
+if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     if ! cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -S . -B ./build -GNinja; then
         echo -e "\n^^^ +++"
         echo -e "\033[31mCMake Configure failed\033[0m"
@@ -125,7 +125,7 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
     ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
 fi
 
-if $CI_PACKAGE_RELEASE; then
+if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     buildkite-agent artifact upload "assets.spdata"
     buildkite-agent artifact upload "openvr_api.dll"
     buildkite-agent artifact upload "actions.json"
