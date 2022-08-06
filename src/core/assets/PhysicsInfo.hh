@@ -7,16 +7,25 @@ namespace sp {
 
     struct HullSettings {
         std::string name; // modelName.meshName
-        size_t meshIndex = 0;
-        bool decompose = false;
-        bool shrinkWrap = true;
-        uint32_t voxelResolution = 400000;
-        double volumePercentError = 1.0;
-        uint32_t maxVertices = 64;
-        uint32_t maxHulls = 64;
+
+#pragma pack(push, 1)
+        // Separate these fields to make them hashable
+        // They must be tightly packed because the padding memory is random
+        struct Fields {
+            size_t meshIndex = 0;
+            bool decompose = false;
+            bool shrinkWrap = true;
+            uint32_t voxelResolution = 400000;
+            double volumePercentError = 1.0;
+            uint32_t maxVertices = 64;
+            uint32_t maxHulls = 64;
+        } hull;
+#pragma pack(pop)
 
         HullSettings() {}
-        HullSettings(const std::string &name, size_t meshIndex = 0) : name(name), meshIndex(meshIndex) {}
+        HullSettings(const std::string &name, size_t meshIndex = 0) : name(name) {
+            hull.meshIndex = meshIndex;
+        }
     };
 
     class PhysicsInfo : public NonCopyable {

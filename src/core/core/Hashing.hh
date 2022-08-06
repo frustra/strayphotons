@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common.hh"
+#include "core/Common.hh"
 
 #include <cstring>
 #include <robin_hood.h>
@@ -35,6 +35,15 @@ namespace sp {
             for (size_t i = 0; i < std::size(words); i++) {
                 // TODO: benchmark vs murmur3 for varying sized inputs
                 hash_combine(hash, words[i]);
+            }
+            return hash;
+        }
+
+        Hash128 Hash_128() const {
+            Hash128 hash = {0, 0};
+            for (size_t i = 0; i < std::size(words); i++) {
+                // TODO: benchmark vs murmur3 for varying sized inputs
+                hash_combine(hash[i % 2], words[i]);
             }
             return hash;
         }

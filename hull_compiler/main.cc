@@ -1,4 +1,5 @@
 #include "assets/AssetManager.hh"
+#include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
 #include "physx/ConvexHull.hh"
@@ -28,7 +29,8 @@ int main(int argc, char **argv) {
     auto physicsInfo = sp::GAssets.LoadPhysicsInfo(modelName)->Get();
     Logf("Physics name: %s", physicsInfo->modelName);
 
-    auto model = sp::GAssets.LoadGltf(modelName)->Get();
+    auto modelPtr = sp::GAssets.LoadGltf(modelName);
+    auto model = modelPtr->Get();
     Logf("Model name: %s", model->name);
 
     physx::PxDefaultErrorCallback defaultErrorCallback;
@@ -45,16 +47,18 @@ int main(int argc, char **argv) {
     auto pxSerialization = physx::PxSerialization::createSerializationRegistry(*pxPhysics);
     Assert(pxSerialization, "PxSerialization::createSerializationRegistry");
 
-    for (auto &[hullName, hull] : physicsInfo->GetHulls()) {
-        Logf("%s: %s = %s %u", modelName, hullName, hull.name, hull.decompose);
+    for (auto &[meshName, settings] : physicsInfo->GetHulls()) {
+        Logf("%s.%s = %s %s", modelName, meshName, settings.name, settings.hull.decompose ? "<cook>" : "<convex>");
 
-        auto set = hullgen::LoadCollisionCache(*pxSerialization, *model, hull);
+        auto settingsPtr = sp::GAssets.LoadHullSettings(modelName, meshName);
+
+        auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
         if (set) continue;
 
-        set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, *model, hull);
+        set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
         if (set->hulls.empty()) continue;
 
-        hullgen::SaveCollisionCache(*pxSerialization, *model, hull, *set);
+        hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
     }
     return 0;
 }

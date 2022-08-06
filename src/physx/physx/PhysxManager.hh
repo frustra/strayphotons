@@ -91,8 +91,7 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        AsyncPtr<ConvexHullSet> LoadConvexHullSet(std::shared_ptr<Gltf> model,
-            std::shared_ptr<HullSettings> hullSettings);
+        AsyncPtr<ConvexHullSet> LoadConvexHullSet(AsyncPtr<Gltf> model, AsyncPtr<HullSettings> settings);
 
         physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale = glm::vec3(1));
 

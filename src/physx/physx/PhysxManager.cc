@@ -147,7 +147,7 @@ namespace sp {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
                     if (!mesh || !mesh->model || !mesh->hullSettings) continue;
                     if (mesh->model->Ready() && mesh->hullSettings->Ready()) {
-                        auto set = LoadConvexHullSet(mesh->model->Get(), mesh->hullSettings->Get());
+                        auto set = LoadConvexHullSet(mesh->model, mesh->hullSettings);
                         if (!set || !set->Ready()) complete = false;
                     } else {
                         complete = false;
@@ -415,33 +415,37 @@ namespace sp {
         }
     }
 
-    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(std::shared_ptr<Gltf> model,
-        std::shared_ptr<HullSettings> hullSettings) {
+    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(AsyncPtr<Gltf> modelPtr,
+        AsyncPtr<HullSettings> settingsPtr) {
+        Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model ptr");
+        Assertf(settingsPtr, "PhysxManager::LoadConvexHullSet called with null hull settings ptr");
+        auto model = modelPtr->Get();
+        auto settings = settingsPtr->Get();
         Assertf(model, "PhysxManager::LoadConvexHullSet called with null model");
-        Assertf(hullSettings, "PhysxManager::LoadConvexHullSet called with null hull settings");
+        Assertf(settings, "PhysxManager::LoadConvexHullSet called with null hull settings");
 
-        Assertf(!hullSettings->name.empty(), "PhysxManager::LoadConvexHullSet called with invalid hull settings");
-        auto set = cache.Load(hullSettings->name);
+        Assertf(!settings->name.empty(), "PhysxManager::LoadConvexHullSet called with invalid hull settings");
+        auto set = cache.Load(settings->name);
         if (!set) {
             {
                 std::lock_guard lock(cacheMutex);
                 // Check again in case an inflight set just completed on another thread
-                set = cache.Load(hullSettings->name);
+                set = cache.Load(settings->name);
                 if (set) return set;
 
-                set = workQueue.Dispatch<ConvexHullSet>([this, model, hullSettings]() {
+                set = workQueue.Dispatch<ConvexHullSet>([this, modelPtr, settingsPtr, name = settings->name]() {
                     ZoneScopedN("LoadConvexHullSet::Dispatch");
-                    ZoneStr(hullSettings->name);
+                    ZoneStr(name);
 
-                    auto set = hullgen::LoadCollisionCache(*pxSerialization, *model, *hullSettings);
+                    auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
                     if (set) return set;
 
-                    set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, *model, *hullSettings);
-                    hullgen::SaveCollisionCache(*pxSerialization, *model, *hullSettings, *set);
+                    set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
+                    hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
 
                     return set;
                 });
-                cache.Register(hullSettings->name, set);
+                cache.Register(settings->name, set);
             }
         }
 
@@ -487,7 +491,7 @@ namespace sp {
 
         userData->shapeIndexes.clear();
         if (mesh) {
-            userData->shapeCache = LoadConvexHullSet(mesh->model->Get(), mesh->hullSettings->Get())->Get();
+            userData->shapeCache = LoadConvexHullSet(mesh->model, mesh->hullSettings)->Get();
 
             if (userData->shapeCache) {
                 for (auto &hull : userData->shapeCache->hulls) {

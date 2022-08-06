@@ -5,6 +5,7 @@
 #include "assets/Gltf.hh"
 #include "assets/GltfImpl.hh"
 #include "assets/PhysicsInfo.hh"
+#include "core/Hashing.hh"
 #include "core/Logging.hh"
 
 #include <PxPhysicsAPI.h>
@@ -64,10 +65,8 @@ namespace sp {
     void decomposeConvexHullsForPrimitive(physx::PxCooking &cooking,
         physx::PxPhysics &physics,
         ConvexHullSet *set,
-        const Gltf &model,
-        const gltf::Mesh &mesh,
         const gltf::Mesh::Primitive &prim,
-        const HullSettings &hullSettings) {
+        const HullSettings &settings) {
         ZoneScoped;
         Assert(prim.drawMode == gltf::Mesh::DrawMode::Triangles, "primitive draw mode must be triangles");
         std::vector<glm::vec3> points(prim.positionBuffer.Count());
@@ -86,11 +85,11 @@ namespace sp {
 
         VHACD::IVHACD::Parameters params;
         params.m_callback = &vhacdCallback;
-        params.m_shrinkWrap = hullSettings.shrinkWrap;
-        params.m_resolution = hullSettings.voxelResolution;
-        params.m_minimumVolumePercentErrorAllowed = hullSettings.volumePercentError;
-        params.m_maxNumVerticesPerCH = hullSettings.maxVertices;
-        params.m_maxConvexHulls = hullSettings.maxHulls;
+        params.m_shrinkWrap = settings.hull.shrinkWrap;
+        params.m_resolution = settings.hull.voxelResolution;
+        params.m_minimumVolumePercentErrorAllowed = settings.hull.volumePercentError;
+        params.m_maxNumVerticesPerCH = settings.hull.maxVertices;
+        params.m_maxConvexHulls = settings.hull.maxHulls;
 
         bool res = interfaceVHACD->Compute(reinterpret_cast<const float *>(points.data()),
             points.size(),
@@ -118,10 +117,8 @@ namespace sp {
     void buildConvexHullForPrimitive(physx::PxCooking &cooking,
         physx::PxPhysics &physics,
         ConvexHullSet *set,
-        const Gltf &model,
-        const gltf::Mesh &mesh,
         const gltf::Mesh::Primitive &prim,
-        const HullSettings &hullSettings) {
+        const HullSettings &settings) {
         ZoneScoped;
         std::unordered_set<uint32_t> visitedIndexes;
         std::vector<VHACD::Vertex> points;
@@ -137,7 +134,7 @@ namespace sp {
         }
 
         VHACD::QuickHullImpl hullImpl;
-        hullImpl.computeConvexHull(points, hullSettings.maxVertices);
+        hullImpl.computeConvexHull(points, settings.hull.maxVertices);
         auto &vertices = hullImpl.getVertices();
         if (vertices.size() < 3) return;
 
@@ -150,32 +147,40 @@ namespace sp {
 
     std::shared_ptr<ConvexHullSet> hullgen::BuildConvexHulls(physx::PxCooking &cooking,
         physx::PxPhysics &physics,
-        const Gltf &model,
-        const HullSettings &hullSettings) {
+        const AsyncPtr<Gltf> &modelPtr,
+        const AsyncPtr<HullSettings> &settingsPtr) {
         ZoneScoped;
-        ZoneStr(hullSettings.name);
+        Assertf(modelPtr, "BuildConvexHulls called with null model ptr");
+        Assertf(settingsPtr, "BuildConvexHulls called with null hull settings ptr");
+        auto model = modelPtr->Get();
+        auto settings = settingsPtr->Get();
+        Assertf(model, "BuildConvexHulls called with null model");
+        Assertf(settings, "BuildConvexHulls called with null hull settings");
+        ZoneStr(settings->name);
 
-        if (hullSettings.meshIndex >= model.meshes.size()) {
-            Errorf("Physics mesh index %u is out of range: %s", hullSettings.meshIndex, hullSettings.name);
+        if (settings->hull.meshIndex >= model->meshes.size()) {
+            Errorf("Physics mesh index %u is out of range: %s", settings->hull.meshIndex, settings->name);
             return nullptr;
         }
-        auto &meshOption = model.meshes[hullSettings.meshIndex];
+        auto &meshOption = model->meshes[settings->hull.meshIndex];
         if (!meshOption) {
-            Errorf("Physics mesh index %u is missing: %s", hullSettings.meshIndex, hullSettings.name);
+            Errorf("Physics mesh index %u is missing: %s", settings->hull.meshIndex, settings->name);
             return nullptr;
         }
         auto &mesh = *meshOption;
 
         auto set = make_shared<ConvexHullSet>();
         for (auto &prim : mesh.primitives) {
-            if (hullSettings.decompose) {
+            if (settings->hull.decompose) {
                 // Break primitive into one or more convex hulls.
-                decomposeConvexHullsForPrimitive(cooking, physics, set.get(), model, mesh, prim, hullSettings);
+                decomposeConvexHullsForPrimitive(cooking, physics, set.get(), prim, *settings);
             } else {
                 // Use points for a single hull without decomposing.
-                buildConvexHullForPrimitive(cooking, physics, set.get(), model, mesh, prim, hullSettings);
+                buildConvexHullForPrimitive(cooking, physics, set.get(), prim, *settings);
             }
         }
+        set->sourceModel = modelPtr;
+        set->sourceSettings = settingsPtr;
         return set;
     }
 
@@ -195,44 +200,55 @@ namespace sp {
     static_assert(sizeof(hullCacheHeader) == 40, "Hull cache header size changed unexpectedly");
 
     std::shared_ptr<ConvexHullSet> hullgen::LoadCollisionCache(physx::PxSerializationRegistry &registry,
-        const Gltf &model,
-        const HullSettings &hullSettings) {
+        const AsyncPtr<Gltf> &modelPtr,
+        const AsyncPtr<HullSettings> &settingsPtr) {
         ZoneScoped;
-        ZoneStr(hullSettings.name);
+        Assertf(modelPtr, "LoadCollisionCache called with null model ptr");
+        Assertf(settingsPtr, "LoadCollisionCache called with null hull settings ptr");
+        auto model = modelPtr->Get();
+        auto settings = settingsPtr->Get();
+        Assertf(model, "LoadCollisionCache called with null model");
+        Assertf(settings, "LoadCollisionCache called with null hull settings");
+        ZoneStr(settings->name);
 
-        Assertf(hullSettings.meshIndex < model.meshes.size(),
+        Assertf(settings->hull.meshIndex < model->meshes.size(),
             "Physics mesh index is out of range: %s",
-            hullSettings.name);
-        auto &mesh = model.meshes[hullSettings.meshIndex];
-        Assertf(mesh, "Physics mesh is undefined: %s index %u", hullSettings.name, hullSettings.meshIndex);
+            settings->name);
+        auto &mesh = model->meshes[settings->hull.meshIndex];
+        Assertf(mesh, "Physics mesh is undefined: %s index %u", settings->name, settings->hull.meshIndex);
 
-        auto asset = GAssets.Load("cache/collision/" + hullSettings.name)->Get();
+        auto asset = GAssets.Load("cache/collision/" + settings->name)->Get();
         if (!asset) {
-            Errorf("Physics collision cache missing for hull: %s", hullSettings.name);
+            Errorf("Physics collision cache missing for hull: %s", settings->name);
             return nullptr;
         }
 
         auto buf = asset->Buffer();
         if (buf.size() < sizeof(hullCacheHeader)) {
-            Errorf("Physics collision cache is corrupt: %s", hullSettings.name);
+            Errorf("Physics collision cache is corrupt: %s", settings->name);
             return nullptr;
         }
 
         auto *header = reinterpret_cast<const hullCacheHeader *>(buf.data());
         if (header->magicNumber != hullCacheMagic) {
-            Logf("Ignoring outdated collision cache format for %s", hullSettings.name);
+            Logf("Ignoring outdated collision cache format for %s", settings->name);
             return nullptr;
         }
 
-        if (!model.asset || header->modelHash != model.asset->Hash()) {
-            Logf("Ignoring outdated collision cache for %s", hullSettings.name);
+        if (!model->asset || header->modelHash != model->asset->Hash()) {
+            Logf("Ignoring outdated collision cache for %s", settings->name);
             return nullptr;
         }
 
-        // TODO: Hash the hull settings and compare them
+        HashKey<HullSettings::Fields> settingsHash;
+        settingsHash.input = settings->hull;
+        if (header->settingsHash != settingsHash.Hash_128()) {
+            Logf("Ignoring outdated collision cache for %s", settings->name);
+            return nullptr;
+        }
 
         if (buf.size() - sizeof(hullCacheHeader) < header->bufferSize) {
-            Errorf("Physics collision cache is corrupt: %s", hullSettings.name);
+            Errorf("Physics collision cache is corrupt: %s", settings->name);
             return nullptr;
         }
 
@@ -247,7 +263,7 @@ namespace sp {
 
         auto *collection = physx::PxSerialization::createCollectionFromBinary(alignedMemory, registry);
         if (!collection) {
-            Errorf("Failed to load physx serialization: %s", hullSettings.name);
+            Errorf("Failed to load physx serialization: %s", settings->name);
             return nullptr;
         }
         hullSet->collection = std::shared_ptr<physx::PxCollection>(collection, [](physx::PxCollection *ptr) {
@@ -263,25 +279,34 @@ namespace sp {
                 continue;
             }
 
-            hullSet->hulls.emplace_back(pxMesh, [i, name = hullSettings.name](physx::PxConvexMesh *ptr) {
+            hullSet->hulls.emplace_back(pxMesh, [i, name = settings->name](physx::PxConvexMesh *ptr) {
                 ptr->release();
             });
         }
+
+        hullSet->sourceModel = modelPtr;
+        hullSet->sourceSettings = settingsPtr;
         return hullSet;
     }
 
     void hullgen::SaveCollisionCache(physx::PxSerializationRegistry &registry,
-        const Gltf &model,
-        const HullSettings &hullSettings,
+        const AsyncPtr<Gltf> &modelPtr,
+        const AsyncPtr<HullSettings> &settingsPtr,
         const ConvexHullSet &set) {
         ZoneScoped;
-        ZoneStr(hullSettings.name);
+        Assertf(modelPtr, "SaveCollisionCache called with null model ptr");
+        Assertf(settingsPtr, "SaveCollisionCache called with null hull settings ptr");
+        auto model = modelPtr->Get();
+        auto settings = settingsPtr->Get();
+        Assertf(model, "SaveCollisionCache called with null model");
+        Assertf(settings, "SaveCollisionCache called with null hull settings");
+        ZoneStr(settings->name);
 
-        Assertf(hullSettings.meshIndex < model.meshes.size(),
+        Assertf(settings->hull.meshIndex < model->meshes.size(),
             "SaveCollisionCache mesh index is out of range: %s",
-            hullSettings.name);
-        auto &mesh = model.meshes[hullSettings.meshIndex];
-        Assertf(mesh, "SaveCollisionCache mesh is undefined: %s index %u", hullSettings.name, hullSettings.meshIndex);
+            settings->name);
+        auto &mesh = model->meshes[settings->hull.meshIndex];
+        Assertf(mesh, "SaveCollisionCache mesh is undefined: %s index %u", settings->name, settings->hull.meshIndex);
 
         auto *collection = PxCreateCollection();
         for (auto hull : set.hulls) {
@@ -292,15 +317,17 @@ namespace sp {
 
         physx::PxDefaultMemoryOutputStream buf;
         if (!physx::PxSerialization::serializeCollectionToBinary(buf, *collection, registry)) {
-            Errorf("Failed to serialize convex hull set: %s", hullSettings.name);
+            Errorf("Failed to serialize convex hull set: %s", settings->name);
             return;
         }
 
         std::ofstream out;
-        if (GAssets.OutputStream("cache/collision/" + hullSettings.name, out)) {
+        if (GAssets.OutputStream("cache/collision/" + settings->name, out)) {
             hullCacheHeader header = {};
-            header.modelHash = model.asset->Hash();
-            header.settingsHash = Hash128(); // TODO: Fill this in
+            header.modelHash = model->asset->Hash();
+            HashKey<HullSettings::Fields> settingsHash = {};
+            settingsHash.input = settings->hull;
+            header.settingsHash = settingsHash.Hash_128();
             header.bufferSize = buf.getSize();
 
             out.write(reinterpret_cast<const char *>(&header), sizeof(header));

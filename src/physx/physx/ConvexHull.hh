@@ -33,23 +33,23 @@ namespace sp {
 
         std::vector<ConvexHull> hulls;
 
-        std::shared_ptr<const Asset> source;
-        std::shared_ptr<const Asset> config;
+        AsyncPtr<Gltf> sourceModel;
+        AsyncPtr<HullSettings> sourceSettings;
     };
 
     namespace hullgen {
         // Builds convex hull set for a model without caching
         std::shared_ptr<ConvexHullSet> BuildConvexHulls(physx::PxCooking &cooking,
             physx::PxPhysics &physics,
-            const Gltf &model,
-            const HullSettings &hullSettings);
+            const AsyncPtr<Gltf> &model,
+            const AsyncPtr<HullSettings> &settings);
 
         std::shared_ptr<ConvexHullSet> LoadCollisionCache(physx::PxSerializationRegistry &registry,
-            const Gltf &model,
-            const HullSettings &hullSettings);
+            const AsyncPtr<Gltf> &model,
+            const AsyncPtr<HullSettings> &settings);
         void SaveCollisionCache(physx::PxSerializationRegistry &registry,
-            const Gltf &model,
-            const HullSettings &hullSettings,
+            const AsyncPtr<Gltf> &model,
+            const AsyncPtr<HullSettings> &settings,
             const ConvexHullSet &set);
     } // namespace hullgen
 } // namespace sp
