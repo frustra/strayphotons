@@ -78,7 +78,8 @@ namespace ecs {
 
             ConvexMesh() {}
             ConvexMesh(const std::string &modelName, const std::string &meshName);
-            ConvexMesh(const std::string &modelName, size_t meshIndex);
+            ConvexMesh(const std::string &modelName, size_t meshIndex)
+                : ConvexMesh(modelName, "convex" + std::to_string(meshIndex)) {}
 
             bool operator==(const ConvexMesh &) const = default;
         };

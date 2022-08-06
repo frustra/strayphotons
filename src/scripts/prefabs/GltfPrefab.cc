@@ -83,7 +83,7 @@ namespace ecs {
 
             if (node.meshIndex) {
                 if (state.GetParam<bool>("render")) {
-                    auto &renderable = newEntity.Set<Renderable>(lock, modelName, asyncGltf, *node.meshIndex);
+                    Renderable renderable(modelName, asyncGltf, *node.meshIndex);
 
                     if (node.skinIndex) {
                         auto &skin = model->skins[*node.skinIndex];
@@ -97,6 +97,8 @@ namespace ecs {
                             }
                         }
                     }
+
+                    LookupComponent<Renderable>().ApplyComponent(renderable, lock, newEntity);
                 }
 
                 auto physicsParam = state.GetParam<std::string>("physics");

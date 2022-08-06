@@ -41,14 +41,13 @@ namespace sp {
         void RegisterExternalGltf(const std::string &name, const std::string &path);
         bool IsGltfRegistered(const std::string &name);
 
+        bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
         bool OutputStream(const std::string &path, std::ofstream &stream);
 
     private:
         void Frame() override;
 
         void UpdateTarIndex();
-
-        bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
 
         DispatchQueue workQueue;
 

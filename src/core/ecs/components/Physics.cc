@@ -205,14 +205,6 @@ namespace ecs {
         hullSettings = sp::GAssets.LoadHullSettings(modelName, meshName);
     }
 
-    PhysicsShape::ConvexMesh::ConvexMesh(const std::string &modelName, size_t meshIndex)
-        : modelName(modelName), meshName("convex" + std::to_string(meshIndex)) {
-        Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
-        model = sp::GAssets.LoadGltf(modelName);
-        auto settings = std::make_shared<sp::HullSettings>(modelName + "." + meshName, meshIndex);
-        hullSettings = std::make_shared<sp::Async<sp::HullSettings>>(settings);
-    }
-
     PhysicsShape::PhysicsShape(const std::string &fullMeshName) {
         auto sep = fullMeshName.find('.');
         std::string modelName, meshName;

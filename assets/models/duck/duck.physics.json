@@ -1,7 +1,4 @@
 {
-    "convex": {
-        "max_vertices": 255
-    },
     "cooked": {
         "decompose": true,
         "shrink_wrap": true,
