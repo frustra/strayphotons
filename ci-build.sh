@@ -11,6 +11,7 @@ mkdir -p build
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "--- Restoring assets cache"
     ./assets/cache-assets.py --restore
+    cp -r "$CI_CACHE_DIRECTORY/sp-collision-cache" ./assets/cache/collision
 fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
@@ -23,6 +24,10 @@ fi
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "--- Saving assets cache"
     ./assets/cache-assets.py --save
+    
+    # Delete cache files older than 30 days so any removed models don't stick around forever
+    find "$CI_CACHE_DIRECTORY/sp-collision-cache" -type f -mtime 30 -delete
+    cp -r ./assets/cache/collision "$CI_CACHE_DIRECTORY/sp-collision-cache"
 fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
