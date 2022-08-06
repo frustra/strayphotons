@@ -108,7 +108,7 @@ if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
 
     # Delete cache files older than 30 days so any removed models don't stick around forever
     find "$CI_CACHE_DIRECTORY/sp-collision-cache" -type f -mtime 30 -delete
-    cp -r ./assets/cache/collision "$CI_CACHE_DIRECTORY/sp-collision-cache"
+    cp -r ../assets/cache/collision "$CI_CACHE_DIRECTORY/sp-collision-cache"
 fi
 
 if [ -n "$BUILDKITE_API_TOKEN" ]; then
