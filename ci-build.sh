@@ -14,8 +14,8 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
     
     if [ -d "$CI_CACHE_DIRECTORY/sp-collision-cache" ]; then
         echo -e "--- Restoring physics collision cache"
-        mkdir -p ./assets/cache
-        cp -r "$CI_CACHE_DIRECTORY/sp-collision-cache" ./assets/cache/collision
+        mkdir -p ./assets/cache/collision
+        cp -r "$CI_CACHE_DIRECTORY/sp-collision-cache/*" ./assets/cache/collision/
     fi
 fi
 
@@ -109,7 +109,7 @@ if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
 
     # Delete cache files older than 30 days so any removed models don't stick around forever
     find "$CI_CACHE_DIRECTORY/sp-collision-cache" -type f -mtime 30 -delete
-    cp -r ../assets/cache/collision "$CI_CACHE_DIRECTORY/sp-collision-cache"
+    cp -r ../assets/cache/collision "$CI_CACHE_DIRECTORY/sp-collision-cache/"
 fi
 
 if [ -n "$BUILDKITE_API_TOKEN" ]; then
