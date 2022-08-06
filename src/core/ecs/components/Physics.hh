@@ -11,7 +11,8 @@
 
 namespace sp {
     class Gltf;
-}
+    struct HullSettings;
+} // namespace sp
 
 namespace ecs {
     enum class PhysicsGroup : uint16_t {
@@ -71,13 +72,14 @@ namespace ecs {
         };
 
         struct ConvexMesh {
+            std::string modelName, meshName;
             sp::AsyncPtr<sp::Gltf> model;
-            size_t meshIndex = 0;
-            bool decomposeHull = false;
+            sp::AsyncPtr<sp::HullSettings> hullSettings;
 
             ConvexMesh() {}
-            ConvexMesh(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0, bool decomposeHull = false)
-                : model(model), meshIndex(meshIndex), decomposeHull(decomposeHull) {}
+            ConvexMesh(const std::string &modelName, const std::string &meshName);
+            ConvexMesh(const std::string &modelName, size_t meshIndex)
+                : ConvexMesh(modelName, "convex" + std::to_string(meshIndex)) {}
 
             bool operator==(const ConvexMesh &) const = default;
         };
@@ -91,7 +93,7 @@ namespace ecs {
         PhysicsShape(Box box, Transform transform = Transform()) : shape(box), transform(transform) {}
         PhysicsShape(Plane plane, Transform transform = Transform()) : shape(plane), transform(transform) {}
         PhysicsShape(ConvexMesh mesh) : shape(mesh) {}
-        PhysicsShape(sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0) : shape(ConvexMesh(model, meshIndex)) {}
+        PhysicsShape(const std::string &fullMeshName);
 
         operator bool() const {
             return !std::holds_alternative<std::monostate>(shape);

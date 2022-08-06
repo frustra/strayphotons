@@ -1,6 +1,6 @@
 #include "ConsoleScript.hh"
 
-#include "Asset.hh"
+#include "assets/Asset.hh"
 #include "console/Console.hh"
 
 #include <iostream>

@@ -447,6 +447,8 @@ namespace sp::vulkan {
                     }
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
+                if (!eventEntity.Has<ecs::Gui>(lock)) continue;
+
                 const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
                 auto existingContext = std::get_if<GuiContext *>(&guiComponent.target);
                 if (existingContext) {

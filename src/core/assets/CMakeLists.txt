@@ -7,4 +7,5 @@ target_sources(
         ConsoleScript.cc
         Gltf.cc
         Image.cc
+        PhysicsInfo.cc
 )

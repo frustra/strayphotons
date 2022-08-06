@@ -41,6 +41,7 @@ namespace sp {
                     lock.unlock();
                     std::this_thread::sleep_for(flushSleepInterval);
                     lock.lock();
+                    if (exit && (dropPendingWork || workQueue.empty())) break;
                 }
             }
         }

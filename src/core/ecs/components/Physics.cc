@@ -2,6 +2,7 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/JsonHelpers.hh"
+#include "assets/PhysicsInfo.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 
@@ -113,27 +114,12 @@ namespace ecs {
                     Errorf("PhysicShape defines multiple shapes: model");
                     return false;
                 }
-                PhysicsShape::ConvexMesh mesh;
                 if (param.second.is<std::string>()) {
-                    mesh = PhysicsShape::ConvexMesh(sp::GAssets.LoadGltf(param.second.get<std::string>()));
-                } else if (param.second.is<picojson::object>()) {
-                    for (auto meshParam : param.second.get<picojson::object>()) {
-                        if (meshParam.first == "model") {
-                            mesh.model = sp::GAssets.LoadGltf(meshParam.second.get<std::string>());
-                        } else if (meshParam.first == "mesh_index") {
-                            mesh.meshIndex = (size_t)meshParam.second.get<double>();
-                        } else if (meshParam.first == "decompose_hull") {
-                            mesh.decomposeHull = meshParam.second.get<bool>();
-                        } else {
-                            Errorf("Unknown physics model field: %s", meshParam.first);
-                            return false;
-                        }
-                    }
+                    physics.shapes.emplace_back(param.second.get<std::string>());
                 } else {
                     Errorf("Unknown physics model value: %s", param.second.to_str());
                     return false;
                 }
-                physics.shapes.emplace_back(mesh);
             } else if (param.first == "dynamic") {
                 physics.dynamic = param.second.get<bool>();
             } else if (param.first == "kinematic") {
@@ -209,5 +195,26 @@ namespace ecs {
             }
         }
         return true;
+    }
+
+    PhysicsShape::ConvexMesh::ConvexMesh(const std::string &modelName, const std::string &meshName)
+        : modelName(modelName), meshName(meshName) {
+        Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
+        Assertf(!meshName.empty(), "ConvexMesh created with empty mesh name");
+        model = sp::GAssets.LoadGltf(modelName);
+        hullSettings = sp::GAssets.LoadHullSettings(modelName, meshName);
+    }
+
+    PhysicsShape::PhysicsShape(const std::string &fullMeshName) {
+        auto sep = fullMeshName.find('.');
+        std::string modelName, meshName;
+        if (sep != std::string::npos) {
+            modelName = fullMeshName.substr(0, sep);
+            meshName = fullMeshName.substr(sep + 1);
+        } else {
+            modelName = fullMeshName;
+            meshName = "convex";
+        }
+        shape = ConvexMesh(modelName, meshName);
     }
 } // namespace ecs

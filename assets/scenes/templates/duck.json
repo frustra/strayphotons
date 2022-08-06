@@ -19,10 +19,7 @@
 				"parameters": { "source": "interactive" }
 			},
 			"physics": {
-				"model": {
-					"model": "duck",
-					"decompose_hull": true
-				},
+				"model": "duck.cooked",
 				"group": "interactive",
 				"density": 1
 			}

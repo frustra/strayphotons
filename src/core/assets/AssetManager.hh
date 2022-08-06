@@ -18,8 +18,9 @@
 namespace sp {
     class Asset;
     class Gltf;
-    class ConsoleScript;
     class Image;
+    class PhysicsInfo;
+    struct HullSettings;
 
     enum class AssetType {
         Bundled = 0,
@@ -33,32 +34,31 @@ namespace sp {
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
+        AsyncPtr<PhysicsInfo> LoadPhysicsInfo(const std::string &name);
+        AsyncPtr<HullSettings> LoadHullSettings(const std::string &modelName, const std::string &meshName);
         AsyncPtr<Image> LoadImage(const std::string &path);
-
-        AsyncPtr<ConsoleScript> LoadScript(const std::string &path);
 
         void RegisterExternalGltf(const std::string &name, const std::string &path);
         bool IsGltfRegistered(const std::string &name);
+
+        bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
+        bool OutputStream(const std::string &path, std::ofstream &stream);
 
     private:
         void Frame() override;
 
         void UpdateTarIndex();
 
-        bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
-        bool OutputStream(const std::string &path, std::ofstream &stream);
-
-        // TODO: Update PhysxManager to use Asset object for collision model cache
-        friend class PhysxManager;
-
         DispatchQueue workQueue;
 
         std::mutex assetMutex;
         std::mutex gltfMutex;
+        std::mutex physicsInfoMutex;
         std::mutex imageMutex;
 
         EnumArray<PreservingMap<std::string, Async<Asset>>, AssetType> loadedAssets;
         PreservingMap<std::string, Async<Gltf>> loadedGltfs;
+        PreservingMap<std::string, Async<PhysicsInfo>> loadedPhysics;
         PreservingMap<std::string, Async<Image>> loadedImages;
 
         std::mutex externalGltfMutex;

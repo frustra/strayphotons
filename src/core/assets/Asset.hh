@@ -3,18 +3,17 @@
 #include "core/Common.hh"
 
 #include <atomic>
+#include <filesystem>
 #include <optional>
 #include <vector>
 
 namespace sp {
     static std::string parseFileExtension(const std::string &path) {
-        auto dotPos = path.rfind('.');
-        if (dotPos == path.npos) return "";
-
-        auto slashPos = path.rfind('/');
-        if (slashPos != path.npos && dotPos < slashPos) return "";
-
-        return path.substr(dotPos + 1);
+        auto extension = std::filesystem::path(path).extension().string();
+        if (extension.length() > 0 && extension[0] == '.') {
+            extension = extension.substr(1);
+        }
+        return to_lower(extension);
     }
 
     class Asset : public NonCopyable {
@@ -39,7 +38,7 @@ namespace sp {
 
         Hash128 Hash() const;
 
-        const std::string path;
+        const std::filesystem::path path;
         const std::string extension;
 
     private:

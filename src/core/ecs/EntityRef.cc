@@ -19,7 +19,6 @@ namespace ecs {
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
         ptr = GEntityRefs.Get(ent).ptr;
-        Assertf(ptr, "EntityRef(%s) is invalid", std::to_string(ent));
     }
 
     EntityRef::EntityRef(const ecs::Name &name, const Entity &ent) {

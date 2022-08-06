@@ -5,6 +5,7 @@
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "assets/JsonHelpers.hh"
+#include "assets/PhysicsInfo.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
@@ -56,6 +57,8 @@ namespace sp {
         pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, PxCookingParams(scale));
         Assert(pxCooking, "PxCreateCooking");
 
+        pxSerialization = PxSerialization::createSerializationRegistry(*pxPhysics);
+
         scratchBlock.resize(0x1000000); // 16MiB
 
         CreatePhysxScene();
@@ -103,6 +106,10 @@ namespace sp {
             dispatcher = nullptr;
         }
 
+        if (pxSerialization) {
+            pxSerialization->release();
+            pxSerialization = nullptr;
+        }
         if (pxCooking) {
             pxCooking->release();
             pxCooking = nullptr;
@@ -138,9 +145,9 @@ namespace sp {
                 auto &ph = ent.template Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
-                    if (!mesh || !mesh->model) continue;
-                    if (mesh->model->Ready()) {
-                        auto set = LoadConvexHullSet(mesh->model, mesh->meshIndex, mesh->decomposeHull);
+                    if (!mesh || !mesh->model || !mesh->hullSettings) continue;
+                    if (mesh->model->Ready() && mesh->hullSettings->Ready()) {
+                        auto set = LoadConvexHullSet(mesh->model, mesh->hullSettings);
                         if (!set || !set->Ready()) complete = false;
                     } else {
                         complete = false;
@@ -408,74 +415,37 @@ namespace sp {
         }
     }
 
-    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(std::string name, const ConvexHull &hull) {
-        PxConvexMeshDesc convexDesc;
-        convexDesc.points.count = hull.points.size();
-        convexDesc.points.stride = sizeof(*hull.points.data());
-        convexDesc.points.data = reinterpret_cast<const float *>(hull.points.data());
-        convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(AsyncPtr<Gltf> modelPtr,
+        AsyncPtr<HullSettings> settingsPtr) {
+        Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model ptr");
+        Assertf(settingsPtr, "PhysxManager::LoadConvexHullSet called with null hull settings ptr");
+        auto model = modelPtr->Get();
+        auto settings = settingsPtr->Get();
+        Assertf(model, "PhysxManager::LoadConvexHullSet called with null model");
+        Assertf(settings, "PhysxManager::LoadConvexHullSet called with null hull settings");
 
-        PxDefaultMemoryOutputStream buf;
-        PxConvexMeshCookingResult::Enum result;
-
-        if (!pxCooking->cookConvexMesh(convexDesc, buf, &result)) {
-            Errorf("Failed to cook PhysX hull for %s", name);
-            return nullptr;
-        }
-
-        PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-        PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
-        pxhull->acquireReference();
-        return std::shared_ptr<PxConvexMesh>(pxhull, [](PxConvexMesh *ptr) {
-            ptr->release();
-        });
-    }
-
-    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(const AsyncPtr<Gltf> &asyncModel,
-        size_t meshIndex,
-        bool decomposeHull) {
-        auto modelPtr = asyncModel->Get();
-        Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model");
-        auto &model = *modelPtr;
-        Assertf(!model.name.empty(), "PhysxManager::LoadConvexHullSet called with invalid model");
-        std::string name = model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) name += "-decompose";
-
-        auto set = cache.Load(name);
+        Assertf(!settings->name.empty(), "PhysxManager::LoadConvexHullSet called with invalid hull settings");
+        auto set = cache.Load(settings->name);
         if (!set) {
             {
                 std::lock_guard lock(cacheMutex);
                 // Check again in case an inflight set just completed on another thread
-                set = cache.Load(name);
+                set = cache.Load(settings->name);
                 if (set) return set;
 
-                set = workQueue.Dispatch<ConvexHullSet>(asyncModel,
-                    [this, name, meshIndex, decomposeHull](std::shared_ptr<const Gltf> model) {
-                        ZoneScopedN("LoadConvexHullSet::Dispatch");
-                        ZoneStr(name);
+                set = workQueue.Dispatch<ConvexHullSet>([this, modelPtr, settingsPtr, name = settings->name]() {
+                    ZoneScopedN("LoadConvexHullSet::Dispatch");
+                    ZoneStr(name);
 
-                        auto set = std::make_shared<ConvexHullSet>();
-                        if (LoadCollisionCache(*set, *model, meshIndex, decomposeHull)) {
-                            for (auto &hull : set->hulls) {
-                                hull.pxMesh = CreateConvexMeshFromHull(name, hull);
-                            }
-                            return set;
-                        }
+                    auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
+                    if (set) return set;
 
-                        Assertf(meshIndex < model->meshes.size(), "Physics mesh index is out of range: %s", name);
-                        auto &mesh = model->meshes[meshIndex];
-                        Assertf(mesh, "Physics mesh is undefined: %s", name);
-                        ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
-                        if (set->hulls.empty()) return set;
+                    set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
+                    hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
 
-                        for (auto &hull : set->hulls) {
-                            auto pxMesh = CreateConvexMeshFromHull(name, hull);
-                            if (pxMesh) hull.pxMesh = pxMesh;
-                        }
-                        SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
-                        return set;
-                    });
-                cache.Register(name, set);
+                    return set;
+                });
+                cache.Register(settings->name, set);
             }
         }
 
@@ -492,7 +462,7 @@ namespace sp {
         for (auto &shape : ph.shapes) {
             if (mesh) Abortf("Physics actor can't have multiple meshes: %s", std::to_string(e));
             mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
-            if (mesh && !mesh->model) return nullptr;
+            if (mesh && (!mesh->model || !mesh->hullSettings)) return nullptr;
         }
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
@@ -521,12 +491,16 @@ namespace sp {
 
         userData->shapeIndexes.clear();
         if (mesh) {
-            userData->shapeCache = LoadConvexHullSet(mesh->model, mesh->meshIndex, mesh->decomposeHull)->Get();
+            userData->shapeCache = LoadConvexHullSet(mesh->model, mesh->hullSettings)->Get();
 
-            for (auto &hull : userData->shapeCache->hulls) {
-                PxRigidActorExt::createExclusiveShape(*actor,
-                    PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
-                    *userData->material);
+            if (userData->shapeCache) {
+                for (auto &hull : userData->shapeCache->hulls) {
+                    PxRigidActorExt::createExclusiveShape(*actor,
+                        PxConvexMeshGeometry(hull.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
+                        *userData->material);
+                }
+            } else {
+                Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
             }
         } else {
             userData->shapeIndexes.reserve(ph.shapes.size());
@@ -706,13 +680,12 @@ namespace sp {
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
         if (actor) {
-            if (actor->userData) {
-                delete (ActorUserData *)actor->userData;
-                actor->userData = nullptr;
-            }
+            auto userData = (ActorUserData *)actor->userData;
 
             if (actor->getScene()) actor->getScene()->removeActor(*actor);
             actor->release();
+
+            if (userData) delete userData;
         }
     }
 
@@ -731,99 +704,6 @@ namespace sp {
 
         auto userData = (ActorUserData *)actor->userData;
         if (userData) userData->physicsGroup = group;
-    }
-
-    // Increment if the Collision Cache format ever changes
-    const uint32 hullCacheMagic = 0xc043;
-
-    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Gltf &model, size_t meshIndex, bool decomposeHull) {
-        ZoneScoped;
-        ZonePrintf("%s.%u", model.name, meshIndex);
-        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
-        std::ifstream in;
-
-        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) path += "-decompose";
-
-        if (GAssets.InputStream(path, AssetType::Bundled, in)) {
-            uint32 magic;
-            in.read((char *)&magic, 4);
-            if (magic != hullCacheMagic) {
-                Logf("Ignoring outdated collision cache format for %s", path);
-                in.close();
-                return false;
-            }
-
-            Hash128 hash;
-            in.read((char *)hash.data(), sizeof(hash));
-
-            if (!model.asset || model.asset->Hash() != hash) {
-                Logf("Ignoring outdated collision cache for %s", path);
-                in.close();
-                return false;
-            }
-
-            int32 hullCount;
-            in.read((char *)&hullCount, 4);
-            Assert(hullCount > 0, "hull cache count");
-
-            set.hulls.reserve(hullCount);
-
-            for (int i = 0; i < hullCount; i++) {
-                auto &hull = set.hulls.emplace_back();
-
-                uint32_t pointCount, triangleCount;
-                in.read((char *)&pointCount, sizeof(uint32_t));
-                in.read((char *)&triangleCount, sizeof(uint32_t));
-
-                hull.points.resize(pointCount);
-                hull.triangles.resize(triangleCount);
-
-                in.read((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
-                in.read((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
-            }
-
-            in.close();
-            return true;
-        }
-
-        return false;
-    }
-
-    void PhysxManager::SaveCollisionCache(const Gltf &model,
-        size_t meshIndex,
-        const ConvexHullSet &set,
-        bool decomposeHull) {
-        ZoneScoped;
-        ZonePrintf("%s.%u", model.name, meshIndex);
-        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
-        std::ofstream out;
-
-        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
-        if (decomposeHull) path += "-decompose";
-
-        if (GAssets.OutputStream(path, out)) {
-            out.write((char *)&hullCacheMagic, 4);
-
-            Hash128 hash = model.asset->Hash();
-            out.write((char *)hash.data(), sizeof(hash));
-
-            int32 hullCount = set.hulls.size();
-            out.write((char *)&hullCount, 4);
-
-            for (auto hull : set.hulls) {
-                Assert(hull.points.size() < UINT32_MAX, "hull point count overflows uint32");
-                Assert(hull.triangles.size() < UINT32_MAX, "hull triangle count overflows uint32");
-                uint32_t pointCount = hull.points.size();
-                uint32_t triangleCount = hull.triangles.size();
-                out.write((char *)&pointCount, sizeof(uint32_t));
-                out.write((char *)&triangleCount, sizeof(uint32_t));
-                out.write((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
-                out.write((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
-            }
-
-            out.close();
-        }
     }
 
     PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) {

@@ -1,0 +1,9 @@
+{
+    "cooked": {
+        "decompose": true,
+        "shrink_wrap": true,
+        "voxel_resolution": 100000,
+        "volume_percent_error": 10,
+        "max_vertices": 255
+    }
+}

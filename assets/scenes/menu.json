@@ -367,10 +367,7 @@
 			"name": "mount_1.round-mirror",
 			"optic": "mirror",
 			"physics": {
-				"model": {
-					"model": "round-mirror-mounted",
-					"mesh_index": 1
-				},
+				"model": "round-mirror-mounted.convex1",
 				"dynamic": false
 			}
 		},

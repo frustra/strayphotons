@@ -1,0 +1,7 @@
+{
+    "walls1": {
+        "decompose": true,
+        "mesh_index": 6,
+        "max_hulls": 3
+    }
+}

@@ -10,7 +10,7 @@ namespace sp {
         Assert(asset, "Loading Image from null asset");
 
         ZoneScopedN("LoadImage");
-        ZoneStr(asset->path);
+        ZoneStr(asset->path.string());
 
         Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");
         uint8_t *data = stbi_load_from_memory(asset->BufferPtr(),

@@ -92,13 +92,16 @@ int main(int argc, char **argv)
 
 #ifdef SP_TEST_MODE
         string scriptPath = optionsResult["script-file"].as<string>();
-        auto script = sp::GAssets.LoadScript(scriptPath)->Get();
-        if (!script) {
-            Errorf("Script file not found: %s", scriptPath);
+
+        Logf("Loading test script: %s", scriptPath);
+        auto asset = sp::GAssets.Load("scripts/" + scriptPath)->Get();
+        if (!asset) {
+            Errorf("Test script not found: %s", scriptPath);
             return 0;
         }
 
-        sp::Game game(optionsResult, script.get());
+        sp::ConsoleScript script(scriptPath, asset);
+        sp::Game game(optionsResult, &script);
         return game.Start();
 #else
         sp::Game game(optionsResult);

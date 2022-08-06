@@ -9,8 +9,12 @@
 #include <vector>
 
 namespace physx {
+    class PxCollection;
     class PxConvexMesh;
-}
+    class PxCooking;
+    class PxPhysics;
+    class PxSerializationRegistry;
+} // namespace physx
 
 namespace sp::gltf {
     struct Mesh;
@@ -18,22 +22,34 @@ namespace sp::gltf {
 
 namespace sp {
     class Asset;
+    struct HullSettings;
 
-    struct ConvexHull {
-        std::vector<glm::vec3> points;
-        std::vector<glm::ivec3> triangles;
-
-        std::shared_ptr<physx::PxConvexMesh> pxMesh;
-    };
+    typedef std::shared_ptr<physx::PxConvexMesh> ConvexHull;
 
     struct ConvexHullSet {
-        vector<ConvexHull> hulls;
-        std::shared_ptr<const Asset> source;
-        bool decomposed;
+        // Collection must be destroyed after hulls
+        std::vector<uint8_t> collectionBuffer;
+        std::shared_ptr<physx::PxCollection> collection;
+
+        std::vector<ConvexHull> hulls;
+
+        AsyncPtr<Gltf> sourceModel;
+        AsyncPtr<HullSettings> sourceSettings;
     };
 
-    namespace ConvexHullBuilding {
+    namespace hullgen {
         // Builds convex hull set for a model without caching
-        void BuildConvexHulls(ConvexHullSet *set, const Gltf &model, const gltf::Mesh &mesh, bool decompHull);
-    } // namespace ConvexHullBuilding
+        std::shared_ptr<ConvexHullSet> BuildConvexHulls(physx::PxCooking &cooking,
+            physx::PxPhysics &physics,
+            const AsyncPtr<Gltf> &model,
+            const AsyncPtr<HullSettings> &settings);
+
+        std::shared_ptr<ConvexHullSet> LoadCollisionCache(physx::PxSerializationRegistry &registry,
+            const AsyncPtr<Gltf> &model,
+            const AsyncPtr<HullSettings> &settings);
+        void SaveCollisionCache(physx::PxSerializationRegistry &registry,
+            const AsyncPtr<Gltf> &model,
+            const AsyncPtr<HullSettings> &settings,
+            const ConvexHullSet &set);
+    } // namespace hullgen
 } // namespace sp
