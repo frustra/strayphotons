@@ -14,6 +14,7 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
     
     if [ -d "$CI_CACHE_DIRECTORY/sp-collision-cache" ]; then
         echo -e "--- Restoring physics collision cache"
+        mkdir -p ./assets/cache
         cp -r "$CI_CACHE_DIRECTORY/sp-collision-cache" ./assets/cache/collision
     fi
 fi
