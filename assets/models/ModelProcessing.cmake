@@ -76,25 +76,26 @@ function(update_physics_cache)
         set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}/physics.json")
         if(NOT EXISTS "${physics_path}")
             set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}.physics.json")
+            if(NOT EXISTS "${physics_path}")
+                set(physics_path "")
+            endif()
         endif()
     endif()
     
-    if(EXISTS "${physics_path}")
-        add_custom_command(
-            COMMAND
-                hull_compiler ${PARAM_MODEL}
-            WORKING_DIRECTORY
-                ${PROJECT_SOURCE_DIR}/bin
-            OUTPUT
-                ${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL}
-            DEPENDS
-                hull_compiler
-                ${physics_path}
-        )
+    add_custom_command(
+        COMMAND
+            hull_compiler ${PARAM_MODEL}
+        WORKING_DIRECTORY
+            ${PROJECT_SOURCE_DIR}/bin
+        OUTPUT
+            "${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL}"
+        DEPENDS
+            hull_compiler
+            ${physics_path}
+    )
 
-        add_custom_target(${PARAM_MODEL}-physics DEPENDS ${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL})
-        add_dependencies(${PARAM_TARGET} ${PARAM_MODEL}-physics)
-    endif()
+    add_custom_target(${PARAM_MODEL}-physics DEPENDS "${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL}")
+    add_dependencies(${PARAM_TARGET} ${PARAM_MODEL}-physics)
 endfunction()
 
 # Top level function that wraps a lot of the functionality required to fully process a model.

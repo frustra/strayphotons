@@ -7,7 +7,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     RegisteredThread.cc
 )
 
-if(NOT SP_PACKAGE_RELASE)
+if(TRACY_ENABLE)
     target_sources(${PROJECT_CORE_LIB} PRIVATE
         Tracing.cc
     )

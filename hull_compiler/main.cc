@@ -29,18 +29,14 @@ int main(int argc, char **argv) {
 
     std::string modelName = optionsResult["model-name"].as<std::string>();
 
-    auto physicsInfo = sp::GAssets.LoadPhysicsInfo(modelName)->Get();
-    if (!physicsInfo) {
-        Errorf("hull_compiler could not find physics.json for model: %s", modelName);
-        return 1;
-    }
-
     auto modelPtr = sp::GAssets.LoadGltf(modelName);
     auto model = modelPtr->Get();
     if (!model) {
         Errorf("hull_compiler could not load Gltf model: %s", modelName);
         return 1;
     }
+
+    auto physicsInfo = sp::GAssets.LoadPhysicsInfo(modelName)->Get();
 
     physx::PxDefaultErrorCallback defaultErrorCallback;
     physx::PxDefaultAllocator defaultAllocatorCallback;
@@ -57,7 +53,24 @@ int main(int argc, char **argv) {
     Assert(pxSerialization, "PxSerialization::createSerializationRegistry");
 
     bool updated = false;
-    for (auto &[meshName, settings] : physicsInfo->GetHulls()) {
+    if (physicsInfo) {
+        for (auto &[meshName, settings] : physicsInfo->GetHulls()) {
+            auto settingsPtr = sp::GAssets.LoadHullSettings(modelName, meshName);
+
+            auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
+            if (set) continue;
+
+            Logf("Updating physics collision cache: %s.%s", modelName, meshName);
+
+            set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
+            hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
+
+            updated = true;
+        }
+    }
+
+    for (size_t i = 0; i < model->meshes.size(); i++) {
+        std::string meshName("convex" + std::to_string(i));
         auto settingsPtr = sp::GAssets.LoadHullSettings(modelName, meshName);
 
         auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);

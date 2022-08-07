@@ -12,13 +12,7 @@ namespace sp {
         : modelName(modelName), asset(asset) {
         Assertf(!modelName.empty(), "PhysicsInfo is missing model name");
 
-        if (!asset) {
-            // Default to a single convex hull
-            HullSettings hull = {};
-            hull.name = modelName + ".convex";
-            hulls.emplace("convex", hull);
-            return;
-        }
+        if (!asset) return;
 
         ZoneScopedN("LoadPhysicsInfo");
         ZonePrintf("%s from %s", modelName, asset->path.string());
