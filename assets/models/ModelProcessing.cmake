@@ -6,7 +6,7 @@ function(process_obj_to_gltf)
     cmake_parse_arguments(
         PARAM
         "" # Options
-        "TARGET;OBJ;MTL;GLTF;NODE_EXE" # Single value args
+        "TARGET;MODEL;OBJ;MTL;GLTF;NODE_EXE" # Single value args
         "TEXTURES;DEPENDS" # Multi-value args
         ${ARGN}
     )
@@ -26,7 +26,8 @@ function(process_obj_to_gltf)
             ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
     )
 
-    add_custom_target(${PARAM_TARGET} DEPENDS ${PARAM_GLTF})
+    add_custom_target(${PARAM_MODEL}-gltf DEPENDS ${PARAM_GLTF})
+    add_dependencies(${PARAM_TARGET} ${PARAM_MODEL}-gltf)
 endfunction()
 
 # Function that produces a CMake target to process a GLTF file into a GLB.
@@ -35,7 +36,7 @@ function(process_gltf_to_glb)
     cmake_parse_arguments(
         PARAM
         "" # Options
-        "TARGET;GLTF;GLB;NODE_EXE" # Single value args
+        "TARGET;MODEL;GLTF;GLB;NODE_EXE" # Single value args
         "DEPENDS" # Multi-value args
         ${ARGN}
     )
@@ -55,7 +56,45 @@ function(process_gltf_to_glb)
             ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
     )
 
-    add_custom_target(${PARAM_TARGET} DEPENDS ${PARAM_GLB})
+    add_custom_target(${PARAM_MODEL}-glb DEPENDS ${PARAM_GLB})
+    add_dependencies(${PARAM_TARGET} ${PARAM_MODEL}-glb)
+endfunction()
+
+
+# This function will update the physics collision cache for the specified model if a physics.json is present.
+function(update_physics_cache)
+    cmake_parse_arguments(
+        PARAM
+        "" # Options
+        "TARGET;MODEL" # Single value args
+        "DEPENDS" # Multi-value args
+        ${ARGN}
+    )
+
+    set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}/${PARAM_MODEL}.physics.json")
+    if(NOT EXISTS "${physics_path}")
+        set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}/physics.json")
+        if(NOT EXISTS "${physics_path}")
+            set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}.physics.json")
+        endif()
+    endif()
+    
+    if(EXISTS "${physics_path}")
+        add_custom_command(
+            COMMAND
+                hull_compiler ${PARAM_MODEL}
+            WORKING_DIRECTORY
+                ${PROJECT_SOURCE_DIR}/bin
+            OUTPUT
+                ${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL}
+            DEPENDS
+                hull_compiler
+                ${physics_path}
+        )
+
+        add_custom_target(${PARAM_MODEL}-physics DEPENDS ${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL})
+        add_dependencies(${PARAM_TARGET} ${PARAM_MODEL}-physics)
+    endif()
 endfunction()
 
 # Top level function that wraps a lot of the functionality required to fully process a model.
@@ -82,10 +121,12 @@ function(process_model_folder)
 
     file(GLOB _png_files "${CMAKE_CURRENT_LIST_DIR}/${PARAM_MODEL}/*.png")
     file(GLOB _tga_files "${CMAKE_CURRENT_LIST_DIR}/${PARAM_MODEL}/*.tga")
-
+    
     process_obj_to_gltf(
         TARGET
-            ${PARAM_TARGET}-gltf
+            ${PARAM_TARGET}
+        MODEL
+            ${PARAM_MODEL}
         OBJ
             ${_obj_file}
         MTL
@@ -101,7 +142,9 @@ function(process_model_folder)
 
     process_gltf_to_glb(
         TARGET
-            ${PARAM_TARGET}-glb
+            ${PARAM_TARGET}
+        MODEL
+            ${PARAM_MODEL}
         GLTF
             ${_gltf_file}
         GLB
@@ -110,6 +153,10 @@ function(process_model_folder)
             ${PARAM_NODE_EXE}
     )
 
-    add_custom_target(${PARAM_TARGET})
-    add_dependencies(${PARAM_TARGET} ${PARAM_TARGET}-gltf ${PARAM_TARGET}-glb)
+    update_physics_cache(
+        TARGET
+            ${PARAM_TARGET}
+        MODEL
+            ${PARAM_MODEL}
+    )
 endfunction()

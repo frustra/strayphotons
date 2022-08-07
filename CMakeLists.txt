@@ -139,10 +139,10 @@ endif()
 # Tell CMake to convert all relative paths in subdirectories to absolute paths
 cmake_policy(SET CMP0076 NEW)
 
-add_subdirectory(assets)
 add_subdirectory(shaders)
 add_subdirectory(src)
 add_subdirectory(hull_compiler)
+add_subdirectory(assets)
 
 if(SP_PACKAGE_RELEASE)
     if(UNIX)

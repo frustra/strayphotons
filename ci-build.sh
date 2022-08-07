@@ -21,13 +21,13 @@ fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
-    if ! cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -S . -B ./build -GNinja; then
+    if ! cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSP_PACKAGE_RELEASE=1 -S . -B ./build -GNinja; then
         echo -e "\n^^^ +++"
         echo -e "\033[31mCMake Configure failed\033[0m"
         exit 1
     fi
 else
-    if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
+    if ! cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -S . -B ./build -GNinja; then
         echo -e "\n^^^ +++"
         echo -e "\033[31mCMake Configure failed\033[0m"
         exit 1
@@ -40,7 +40,7 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
 fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
-cmake --build ./build --config Release --target all 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
+cmake --build ./build --config RelWithDebInfo --target all 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     echo -e "\n^^^ +++"
     echo -e "\033[31mCMake Build failed\033[0m"
@@ -130,6 +130,7 @@ if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     buildkite-agent artifact upload "openvr_api.dll"
     buildkite-agent artifact upload "actions.json"
     buildkite-agent artifact upload "sp-vk.exe"
+    buildkite-agent artifact upload "sp-vk.pdb"
     buildkite-agent artifact upload "scripts/*"
 fi
 

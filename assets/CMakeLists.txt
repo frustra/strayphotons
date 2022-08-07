@@ -104,9 +104,6 @@ if(SP_PACKAGE_RELEASE)
     # Make the TAR generation depend on having up-to-date models
     add_dependencies(assets_tar models)
 
-    # Make the TAR generation depend on having up-to-date models
-    add_dependencies(assets_tar compiled-scenes)
-
     # Make the exe depend on having the asset tar bundle
     add_dependencies(${PROJECT_COMMON_EXE} assets_tar)
 endif()

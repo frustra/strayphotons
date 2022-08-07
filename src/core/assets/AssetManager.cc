@@ -75,6 +75,20 @@ namespace sp {
     bool AssetManager::InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size) {
         switch (type) {
         case AssetType::Bundled: {
+            std::string filename = ASSETS_DIR + path;
+            if (std::filesystem::is_regular_file(filename)) {
+                stream.open(filename, std::ios::in | std::ios::binary);
+
+                if (stream) {
+                    if (size) {
+                        stream.seekg(0, std::ios::end);
+                        *size = stream.tellg();
+                        stream.seekg(0, std::ios::beg);
+                    }
+                    return true;
+                }
+            }
+
 #ifdef SP_PACKAGE_RELEASE
             stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
 
@@ -84,20 +98,9 @@ namespace sp {
                 stream.seekg(indexData.first, std::ios::beg);
                 return true;
             }
+#endif
 
             return false;
-#else
-            std::string filename = ASSETS_DIR + path;
-            stream.open(filename, std::ios::in | std::ios::binary);
-
-            if (size && stream) {
-                stream.seekg(0, std::ios::end);
-                *size = stream.tellg();
-                stream.seekg(0, std::ios::beg);
-            }
-
-            return !!stream;
-#endif
         }
         case AssetType::External: {
             stream.open(path, std::ios::in | std::ios::binary);
@@ -162,16 +165,6 @@ namespace sp {
 
     std::string AssetManager::FindGltfByName(const std::string &name) {
         std::string path;
-#ifdef SP_PACKAGE_RELEASE
-        path = "models/" + name + "/" + name + ".glb";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + ".glb";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + "/" + name + ".gltf";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + ".gltf";
-        if (tarIndex.count(path) > 0) return path;
-#else
         std::error_code ec;
         path = "models/" + name + "/" + name + ".glb";
         if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
@@ -181,6 +174,15 @@ namespace sp {
         if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
         path = "models/" + name + ".gltf";
         if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+#ifdef SP_PACKAGE_RELEASE
+        path = "models/" + name + "/" + name + ".glb";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + ".glb";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + "/" + name + ".gltf";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + ".gltf";
+        if (tarIndex.count(path) > 0) return path;
 #endif
         return "";
     }
@@ -225,16 +227,8 @@ namespace sp {
         return gltf;
     }
 
-    std::string findPhysicsByName(const std::string &name) {
+    std::string AssetManager::FindPhysicsByName(const std::string &name) {
         std::string path;
-#ifdef SP_PACKAGE_RELEASE
-        path = "models/" + name + "/" + name + ".physics.json";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + "/physics.json";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + ".physics.json";
-        if (tarIndex.count(path) > 0) return path;
-#else
         std::error_code ec;
         path = "models/" + name + "/" + name + ".physics.json";
         if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
@@ -242,6 +236,13 @@ namespace sp {
         if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
         path = "models/" + name + ".physics.json";
         if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+#ifdef SP_PACKAGE_RELEASE
+        path = "models/" + name + "/" + name + ".physics.json";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + "/physics.json";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + ".physics.json";
+        if (tarIndex.count(path) > 0) return path;
 #endif
         return "";
     }
@@ -258,7 +259,7 @@ namespace sp {
                 if (physicsInfo) return physicsInfo;
 
                 AsyncPtr<Asset> asset;
-                auto path = findPhysicsByName(name);
+                auto path = FindPhysicsByName(name);
                 if (!path.empty()) asset = Load(path, AssetType::Bundled);
 
                 physicsInfo = workQueue.Dispatch<PhysicsInfo>(asset, [name](std::shared_ptr<const Asset> asset) {
