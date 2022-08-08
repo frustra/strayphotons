@@ -34,4 +34,6 @@ foreach(SHADER IN LISTS SHADERS)
     list(APPEND SPV_SHADERS ${OUTPUT_DIR}/${OUTPUT_NAME}.spv)
 endForeach()
 
+set(SHADER_FILES ${SHADERS} PARENT_SCOPE)
+
 add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})

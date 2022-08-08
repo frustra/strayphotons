@@ -58,7 +58,7 @@ namespace sp {
     void AssetManager::UpdateTarIndex() {
         mtar_t tar;
         if (mtar_open(&tar, ASSETS_TAR, "r") != MTAR_ESUCCESS) {
-            Errorf("Failed to open asset bundle at: %s", ASSETS_TAR);
+            Warnf("Failed to open asset bundle at: %s", ASSETS_TAR);
             return;
         }
 
@@ -153,7 +153,7 @@ namespace sp {
 
                     return asset;
                 } else {
-                    Errorf("Asset does not exist: %s", path);
+                    Warnf("Asset does not exist: %s", path);
                     return std::shared_ptr<Asset>();
                 }
             });
