@@ -213,7 +213,7 @@ namespace ecs {
             meshName = fullMeshName.substr(sep + 1);
         } else {
             modelName = fullMeshName;
-            meshName = "convex";
+            meshName = "convex0";
         }
         shape = ConvexMesh(modelName, meshName);
     }

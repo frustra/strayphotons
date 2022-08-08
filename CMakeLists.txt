@@ -51,8 +51,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # warning C4267: 'argument': conversion from '*' to '*', possible loss of data
     # warning C4305: 'argument': truncation from '*' to '*'
     # warning C4389: '!=': signed/unsigned mismatch
+    # warning C4390: ';': empty controlled statement found
     # warning C4458: declaration of '*' hides class member
-    set(CMAKE_CXX_FLAGS                 "/MP /EHsc /W4 /WX /wd4100 /wd4201 /wd4244 /wd4267 /wd4305 /wd4389 /wd4458")
+    set(CMAKE_CXX_FLAGS                 "/MP /EHsc /W4 /WX /wd4100 /wd4201 /wd4244 /wd4267 /wd4305 /wd4389 /wd4390 /wd4458")
     set(CMAKE_CXX_FLAGS_RELEASE         "/MT /O2")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "/MT /DEBUG /Zi /O2")
     set(CMAKE_CXX_FLAGS_DEBUG           "/MTd /DEBUG /Zi /FC")
@@ -138,10 +139,10 @@ endif()
 # Tell CMake to convert all relative paths in subdirectories to absolute paths
 cmake_policy(SET CMP0076 NEW)
 
-add_subdirectory(assets)
 add_subdirectory(shaders)
 add_subdirectory(src)
 add_subdirectory(hull_compiler)
+add_subdirectory(assets)
 
 if(SP_PACKAGE_RELEASE)
     if(UNIX)

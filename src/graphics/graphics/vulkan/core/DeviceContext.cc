@@ -335,7 +335,9 @@ namespace sp::vulkan {
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
+#ifdef TRACY_ENABLE
         tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
+#endif
 
         for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
             auto familyIndex = queueFamilyIndex[queueType];
@@ -343,6 +345,7 @@ namespace sp::vulkan {
             queues[queueType] = queue;
             queueLastSubmit[queueType] = 0;
 
+#ifdef TRACY_ENABLE
             if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
 
             vk::CommandPoolCreateInfo cmdPoolInfo;
@@ -365,6 +368,7 @@ namespace sp::vulkan {
                 *tracing.cmdBuffers.back(),
                 VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
                 VULKAN_HPP_DEFAULT_DISPATCHER.vkGetCalibratedTimestampsEXT);
+#endif
         }
 
         vk::SemaphoreCreateInfo semaphoreInfo;
@@ -491,8 +495,10 @@ namespace sp::vulkan {
             glfwDestroyWindow(window);
         }
 
+#ifdef TRACY_ENABLE
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
+#endif
 
         glfwTerminate();
     }
@@ -685,6 +691,7 @@ namespace sp::vulkan {
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
         PrepareResourcesForFrame();
 
+#ifdef TRACY_ENABLE
         for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
             auto prevQueueSubmitFrame = queueLastSubmit[i];
             if (prevQueueSubmitFrame < frameCounter - 1) continue;
@@ -698,6 +705,7 @@ namespace sp::vulkan {
 
             queueLastSubmit[i] = prevQueueSubmitFrame;
         }
+#endif
 
         frameBeginQueue.Flush();
     }
@@ -1548,9 +1556,11 @@ namespace sp::vulkan {
         Abortf("%s", err.str());
     }
 
+#ifdef TRACY_ENABLE
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {
         return tracing.tracyContexts[(size_t)type];
     }
+#endif
 
     void *DeviceContext::Win32WindowHandle() {
 #ifdef _WIN32

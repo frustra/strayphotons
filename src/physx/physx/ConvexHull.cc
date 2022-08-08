@@ -49,7 +49,7 @@ namespace sp {
         convexDesc.points.count = points.size();
         convexDesc.points.stride = sizeof(*points.data());
         convexDesc.points.data = reinterpret_cast<const float *>(points.data());
-        convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+        convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX | physx::PxConvexFlag::eDISABLE_MESH_VALIDATION;
 
         auto *pxMesh = cooking.createConvexMesh(convexDesc, physics.getPhysicsInsertionCallback());
         if (!pxMesh) {

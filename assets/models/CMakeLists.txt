@@ -75,14 +75,12 @@ set(MODEL_FOLDERS
 foreach(_model ${MODEL_FOLDERS})
     process_model_folder(
         TARGET
-            ${_model}
+            models
         MODEL
             ${_model}
         NODE_EXE
             ${NODE_JS_EXE}
     )
-
-    add_dependencies(models ${_model})
 endforeach()
 
 set(RAW_MODELS
@@ -98,7 +96,9 @@ set(RAW_MODELS
 foreach(_model ${RAW_MODELS})
     process_gltf_to_glb(
         TARGET
-            ${_model}-gltf
+            models
+        MODEL
+            ${_model}
         GLTF
             ${CMAKE_CURRENT_LIST_DIR}/${_model}.gltf
         GLB
@@ -106,14 +106,21 @@ foreach(_model ${RAW_MODELS})
         NODE_EXE
             ${NODE_JS_EXE}
     )
-
-    add_dependencies(models ${_model}-gltf)
+    
+    update_physics_cache(
+        TARGET
+            models
+        MODEL
+            ${_model}
+    )
 endforeach()
 
 # Process duck and sponza specially
 process_gltf_to_glb(
     TARGET
-        sponza-gltf
+        models
+    MODEL
+        sponza
     GLTF
         ${CMAKE_CURRENT_LIST_DIR}/sponza/sponza.gltf
     GLB
@@ -121,11 +128,18 @@ process_gltf_to_glb(
     NODE_EXE
         ${NODE_JS_EXE}
 )
-add_dependencies(models sponza-gltf)
+update_physics_cache(
+    TARGET
+        models
+    MODEL
+        sponza
+)
 
 process_gltf_to_glb(
     TARGET
-        duck-gltf
+        models
+    MODEL
+        duck
     GLTF
         ${CMAKE_CURRENT_LIST_DIR}/duck/duck.gltf
     GLB
@@ -133,7 +147,12 @@ process_gltf_to_glb(
     NODE_EXE
         ${NODE_JS_EXE}
 )
-add_dependencies(models duck-gltf)
+update_physics_cache(
+    TARGET
+        models
+    MODEL
+        duck
+)
 
 # Make the project exe depend on having up to date models
 add_dependencies(${PROJECT_COMMON_EXE} models)

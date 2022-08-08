@@ -29,8 +29,11 @@ namespace sp {
         std::unique_lock<std::mutex> lock(mutex);
 
         while (true) {
-            if (workQueue.empty()) workReady.wait(lock);
-            if (exit && (dropPendingWork || workQueue.empty())) break;
+            if (workQueue.empty()) {
+                if (exit) break;
+                workReady.wait(lock);
+            }
+            if (exit && dropPendingWork) break;
             if (workQueue.empty()) continue;
 
             {
@@ -41,7 +44,6 @@ namespace sp {
                     lock.unlock();
                     std::this_thread::sleep_for(flushSleepInterval);
                     lock.lock();
-                    if (exit && (dropPendingWork || workQueue.empty())) break;
                 }
             }
         }

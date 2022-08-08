@@ -48,6 +48,8 @@ namespace sp {
         void Frame() override;
 
         void UpdateTarIndex();
+        std::string FindGltfByName(const std::string &name);
+        std::string FindPhysicsByName(const std::string &name);
 
         DispatchQueue workQueue;
 
