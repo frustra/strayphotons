@@ -48,10 +48,11 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     exit 1
 fi
 
+cd bin
+
 success=0
 if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Running \033[33munit tests\033[0m :clipboard:"
-    cd bin
     ./sp-unit-tests
     result=$?
     if [ $result -ne 0 ]; then
