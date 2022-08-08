@@ -49,50 +49,10 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
 fi
 
 success=0
-echo -e "--- Running \033[33munit tests\033[0m :clipboard:"
-cd bin
-./sp-unit-tests
-result=$?
-if [ $result -ne 0 ]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mTest failed with response code: $result\033[0m"
-    success=$result
-else
-    echo -e "\033[32mTest successful\033[0m"
-fi
-
-echo -e "--- Running \033[33mintegration tests\033[0m :clipboard:"
-./sp-integration-tests
-result=$?
-if [ $result -ne 0 ]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mTest failed with response code: $result\033[0m"
-    success=$result
-else
-    echo -e "\033[32mTest successful\033[0m"
-fi
-
-echo -e "--- Running \033[33mtest scripts\033[0m :camera_with_flash:"
-rm -rf screenshots/*.png
-
-function inline_image {
-    if [ -n "$BUILDKITE_BRANCH" ]; then
-        printf '\033]1338;url='"$1"';alt='"$2"'\a\n'
-    else
-        echo "Image: $2"
-    fi
-}
-
-rm -rf traces
-mkdir -p traces/tests/
-
-for file in ../assets/scripts/tests/*.txt; do
-    testscript=`realpath --relative-to=../assets/scripts $file`
-    trace_path=traces/${testscript%.txt}.tracy
-    ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" 1>/dev/null &
-
-    echo "Running test: $testscript"
-    ./sp-test "$@" "$testscript"
+if ![ "$CI_PACKAGE_RELEASE" = "1" ]; then
+    echo -e "--- Running \033[33munit tests\033[0m :clipboard:"
+    cd bin
+    ./sp-unit-tests
     result=$?
     if [ $result -ne 0 ]; then
         echo -e "\n^^^ +++"
@@ -101,15 +61,57 @@ for file in ../assets/scripts/tests/*.txt; do
     else
         echo -e "\033[32mTest successful\033[0m"
     fi
-    output_path=screenshots/${testscript%.txt}
-    mkdir -p $output_path
-    for file in screenshots/*.png; do
-        mv $file $output_path
-        [ -n "$BUILDKITE_BRANCH" ] && buildkite-agent artifact upload "$output_path/${file##*/}"
-        inline_image "artifact://$output_path/${file##*/}" "$output_path/${file##*/}"
+
+    echo -e "--- Running \033[33mintegration tests\033[0m :clipboard:"
+    ./sp-integration-tests
+    result=$?
+    if [ $result -ne 0 ]; then
+        echo -e "\n^^^ +++"
+        echo -e "\033[31mTest failed with response code: $result\033[0m"
+        success=$result
+    else
+        echo -e "\033[32mTest successful\033[0m"
+    fi
+
+    echo -e "--- Running \033[33mtest scripts\033[0m :camera_with_flash:"
+    rm -rf screenshots/*.png
+
+    function inline_image {
+        if [ -n "$BUILDKITE_BRANCH" ]; then
+            printf '\033]1338;url='"$1"';alt='"$2"'\a\n'
+        else
+            echo "Image: $2"
+        fi
+    }
+
+    rm -rf traces
+    mkdir -p traces/tests/
+
+    for file in ../assets/scripts/tests/*.txt; do
+        testscript=`realpath --relative-to=../assets/scripts $file`
+        trace_path=traces/${testscript%.txt}.tracy
+        ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" 1>/dev/null &
+
+        echo "Running test: $testscript"
+        ./sp-test "$@" "$testscript"
+        result=$?
+        if [ $result -ne 0 ]; then
+            echo -e "\n^^^ +++"
+            echo -e "\033[31mTest failed with response code: $result\033[0m"
+            success=$result
+        else
+            echo -e "\033[32mTest successful\033[0m"
+        fi
+        output_path=screenshots/${testscript%.txt}
+        mkdir -p $output_path
+        for file in screenshots/*.png; do
+            mv $file $output_path
+            [ -n "$BUILDKITE_BRANCH" ] && buildkite-agent artifact upload "$output_path/${file##*/}"
+            inline_image "artifact://$output_path/${file##*/}" "$output_path/${file##*/}"
+        done
+        [ -n "$BUILDKITE_BRANCH" ] && [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
     done
-    [ -n "$BUILDKITE_BRANCH" ] && [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
-done
+fi
 
 if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "--- Saving physics collision cache"
@@ -120,18 +122,17 @@ if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
     cp -r ../assets/cache/collision "$CI_CACHE_DIRECTORY/sp-physics-cache/"
 fi
 
-if [ -n "$BUILDKITE_API_TOKEN" ]; then
-    echo -e "+++ Comparing screenshots :camera_with_flash:"
-    ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
-fi
-
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
+    echo -e "+++ Uploading package release :arrow_up:"
     buildkite-agent artifact upload "assets.spdata"
     buildkite-agent artifact upload "openvr_api.dll"
     buildkite-agent artifact upload "actions.json"
     buildkite-agent artifact upload "sp-vk.exe"
     buildkite-agent artifact upload "sp-vk.pdb"
     buildkite-agent artifact upload "scripts/*"
+elif [ -n "$BUILDKITE_API_TOKEN" ]; then
+    echo -e "+++ Comparing screenshots :camera_with_flash:"
+    ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
 fi
 
 if [ $success -ne 0 ]; then

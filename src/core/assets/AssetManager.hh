@@ -66,7 +66,7 @@ namespace sp {
         std::mutex externalGltfMutex;
         robin_hood::unordered_flat_map<std::string, std::string> externalGltfPaths;
 
-        std::unordered_map<std::string, std::pair<size_t, size_t>> tarIndex;
+        robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 
     extern AssetManager GAssets;

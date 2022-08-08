@@ -57,6 +57,8 @@ add_subdirectory(models)
 if(SP_PACKAGE_RELEASE)
     # When adding new asset files, CMake will need to be re-run due to GLOB
     set(_asset_filename assets.spdata)
+    file(GLOB_RECURSE _cache_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "cache/collision/*")
+    file(GLOB_RECURSE _cache_assets_full "cache/collision/*")
     file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "models/*.glb")
     file(GLOB_RECURSE _glb_assets_full "models/*.glb")
     file(GLOB_RECURSE _audio_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "audio/*.ogg")
@@ -76,7 +78,7 @@ if(SP_PACKAGE_RELEASE)
         COMMAND
             ${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} --
                 default_input_bindings.json
-                cache
+                ${_cache_assets}
                 ${_glb_assets}
                 ${_font_assets}
                 ${_logo_assets}
@@ -88,6 +90,7 @@ if(SP_PACKAGE_RELEASE)
             ${PROJECT_OUTPUT_DIR}/${_asset_filename}
         DEPENDS
             default_input_bindings.json
+            ${_cache_assets_full}
             ${_glb_assets_full}
             ${_font_assets_full}
             ${_logo_assets_full}
