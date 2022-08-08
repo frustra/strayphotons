@@ -71,8 +71,13 @@ if(SP_PACKAGE_RELEASE)
     file(GLOB_RECURSE _logo_assets_full "logos/*.png")
     file(GLOB_RECURSE _font_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "fonts/*.ttf")
     file(GLOB_RECURSE _font_assets_full "fonts/*.ttf")
-    file(GLOB_RECURSE _shaders_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "shaders/*.spv")
-    file(GLOB_RECURSE _shaders_assets_full "shaders/*.spv")
+    
+    foreach(SHADER IN LISTS SHADER_FILES)
+        string(REPLACE ${PROJECT_ROOT_DIR}/shaders/ "" SHADER_FILE ${SHADER})
+        string(REPLACE "vulkan/" "" OUTPUT_NAME ${SHADER_FILE})
+        list(APPEND _shaders_assets shaders/${OUTPUT_NAME}.spv)
+        list(APPEND _shaders_assets_full ${PROJECT_ROOT_DIR}/assets/shaders/${OUTPUT_NAME}.spv)
+    endForeach()
 
     add_custom_command(
         COMMAND
