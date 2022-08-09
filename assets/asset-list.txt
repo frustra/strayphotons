@@ -162,6 +162,7 @@ bc1eaf5e563e66c3a7a9df2f22a4dc04    models/pbr-cube/pbr-cube.bin
 fa544ade3faa1c7e1ce70b9f29f940bb    models/pbr-cube/pbr-cube.gltf
 5628c2163c9228fa80c40e11d89cd2e3    models/pbr-cube/pbr-cube.mtl
 657c7285cc510099db1f2f26cbf34c0e    models/pbr-cube/pbr-cube.obj
+68fe1dc740c960f2b7e6277ec1825644    models/red_led.glb
 570ee7268a95d80b2ad861d882deb28b    models/round-mirror-mounted.glb
 51a1772db7aa8cdd713d81fd8951e463    models/sensor/sensor.gltf
 9470767dbd586095e6a0bb1a36e6ebe7    models/sensor/sensor.mtl

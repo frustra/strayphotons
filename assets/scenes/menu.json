@@ -241,6 +241,26 @@
 			}
 		},
 		{
+			"name": "airlock_in_button_led",
+			"transform": {
+				"translate": [4.948, 1.3, 2.43],
+				"rotate": [90, 0, 0, 1]
+			},
+			"renderable": {
+				"model": "red_led",
+				"emissive": 0
+			},
+			"signal_bindings": {
+				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
+			},
+			"script": {
+				"onTick": "emissive_from_signal",
+				"parameters": {
+					"signal_name": "sensor_value"
+				}
+			}
+		},
+		{
 			"__comment": "button_highlighter",
 			"light": {
 				"tint": [0.5, 1, 0.5],

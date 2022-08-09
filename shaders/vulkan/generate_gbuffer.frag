@@ -15,9 +15,10 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
+layout(location = 5) flat in float emissiveScale;
 
 layout(location = 0) out vec4 gBuffer0; // rgba8srgb
-layout(location = 1) out vec4 gBuffer1; // rg16f
+layout(location = 1) out vec4 gBuffer1; // rgba16f
 layout(location = 2) out vec4 gBuffer2; // r8unorm
 
 void main() {
@@ -31,5 +32,6 @@ void main() {
     gBuffer0.rgb = baseColor.rgb;
     gBuffer0.a = metallic;
     gBuffer1.rg = EncodeNormal(inNormal);
+    gBuffer1.b = emissiveScale;
     gBuffer2.r = roughness;
 }

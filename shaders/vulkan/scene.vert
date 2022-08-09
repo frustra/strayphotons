@@ -1,6 +1,7 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
 
@@ -17,6 +18,7 @@ layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
 layout(location = 3) flat out int baseColorTexID;
 layout(location = 4) flat out int metallicRoughnessTexID;
+layout(location = 5) flat out float emissiveScale;
 
 #include "lib/draw_params.glsl"
 layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
@@ -36,7 +38,7 @@ void main() {
     outNormal = rotation * inNormal;
     outTexCoord = inTexCoord;
 
-    DrawParams params = drawParams[gl_BaseInstance];
-    baseColorTexID = int(params.baseColorTexID);
-    metallicRoughnessTexID = int(params.metallicRoughnessTexID);
+    baseColorTexID = int(drawParams[gl_BaseInstance].baseColorTexID);
+    metallicRoughnessTexID = int(drawParams[gl_BaseInstance].metallicRoughnessTexID);
+    emissiveScale = float(drawParams[gl_BaseInstance].emissiveScale);
 }

@@ -54,13 +54,11 @@ void main() {
 
         uint drawIndex = atomicAdd(drawCount, 1);
         draw.firstInstance = drawIndex;
-
-        DrawParams drawParam;
-        drawParam.baseColorTexID = uint16_t(prim.baseColorTexID);
-        drawParam.metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
-        drawParam.opticID = uint16_t(renderable.opticID);
-
         drawCommands[drawIndex] = draw;
-        drawParams[drawIndex] = drawParam;
+
+        drawParams[drawIndex].baseColorTexID = uint16_t(prim.baseColorTexID);
+        drawParams[drawIndex].metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
+        drawParams[drawIndex].opticID = uint16_t(renderable.opticID);
+        drawParams[drawIndex].emissiveScale = float16_t(renderable.emissiveScale);
     }
 }

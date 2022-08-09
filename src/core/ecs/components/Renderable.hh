@@ -46,14 +46,14 @@ namespace ecs {
         vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
         VisibilityMask visibility = ~VisibilityMask::OutlineSelection;
-        glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
+        float emissiveScale = 0;
     };
 
     static Component<Renderable> ComponentRenderable("renderable",
         ComponentField::New("model", &Renderable::modelName),
         ComponentField::New("mesh_index", &Renderable::meshIndex),
         ComponentField::New("visibility", &Renderable::visibility),
-        ComponentField::New("emissive", &Renderable::emissive));
+        ComponentField::New("emissive", &Renderable::emissiveScale));
 
     template<>
     bool Component<Renderable>::Load(const EntityScope &scope, Renderable &dst, const picojson::value &src);

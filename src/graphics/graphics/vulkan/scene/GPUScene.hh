@@ -57,7 +57,8 @@ namespace sp::vulkan {
         uint32 vertexOffset;
         uint32 jointPosesOffset = 0xffffffff;
         uint32 opticID = 0;
-        float _padding[3];
+        float emissiveScale = 0;
+        float _padding[2];
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 

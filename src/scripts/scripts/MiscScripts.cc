@@ -118,5 +118,13 @@ namespace sp::scripts {
                         rotationAxis));
                 }
             }),
+        InternalScript("emissive_from_signal",
+            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                if (!ent.Has<Renderable>(lock)) return;
+
+                auto signalName = state.GetParam<std::string>("signal_name");
+                auto signalValue = SignalBindings::GetSignal(lock, ent, signalName);
+                ent.Get<Renderable>(lock).emissiveScale = signalValue;
+            }),
     };
 } // namespace sp::scripts
