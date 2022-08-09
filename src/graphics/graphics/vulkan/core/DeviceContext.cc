@@ -42,14 +42,21 @@ namespace sp::vulkan {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         string_view message(pCallbackData->pMessage);
 
-        if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-            if (message.find("CoreValidation-DrawState-QueryNotReset") == string_view::npos) {
-                Errorf("VK %s %s", typeStr, message);
-            }
-        } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            if (!(messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
-                Warnf("VK %s %s", typeStr, message);
-            }
+        switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+            if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
+                             "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
+                string_view::npos)
+                break;
+            Errorf("VK %s %s", typeStr, message);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) break;
+            Warnf("VK %s %s", typeStr, message);
+            break;
+        default:
+            break;
         }
         Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
