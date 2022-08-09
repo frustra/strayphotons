@@ -71,6 +71,8 @@ if(SP_PACKAGE_RELEASE)
     file(GLOB_RECURSE _logo_assets_full "logos/*.png")
     file(GLOB_RECURSE _font_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "fonts/*.ttf")
     file(GLOB_RECURSE _font_assets_full "fonts/*.ttf")
+    file(GLOB_RECURSE _physics_json_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "models/*physics.json")
+    file(GLOB_RECURSE _physics_json_assets_full "models/*physics.json")
     
     foreach(SHADER IN LISTS SHADER_FILES)
         string(REPLACE ${PROJECT_ROOT_DIR}/shaders/ "" SHADER_FILE ${SHADER})
@@ -91,6 +93,7 @@ if(SP_PACKAGE_RELEASE)
                 ${_scene_assets}
                 ${_texture_assets}
                 ${_shaders_assets}
+                ${_physics_json_assets}
         OUTPUT
             ${PROJECT_OUTPUT_DIR}/${_asset_filename}
         DEPENDS
@@ -103,6 +106,7 @@ if(SP_PACKAGE_RELEASE)
             ${_scene_assets_full}
             ${_texture_assets_full}
             ${_shaders_assets_full}
+            ${_physics_json_assets}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
     )
