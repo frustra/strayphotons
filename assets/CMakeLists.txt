@@ -106,7 +106,7 @@ if(SP_PACKAGE_RELEASE)
             ${_scene_assets_full}
             ${_texture_assets_full}
             ${_shaders_assets_full}
-            ${_physics_json_assets}
+            ${_physics_json_assets_full}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
     )
