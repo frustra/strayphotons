@@ -308,7 +308,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("OpticsVisibility")
             .Build([&](rg::PassBuilder &builder) {
-                builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::Store});
+                builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::ReadOnly});
 
                 builder.Write("OpticVisibility", Access::FragmentShaderWrite);
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
