@@ -1,7 +1,5 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage : require
-#extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
-#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 #extension GL_ARB_shader_viewport_layer_array : enable
 
 #include "../lib/types_common.glsl"
@@ -43,10 +41,9 @@ void main() {
     outNormal = normalize(inNormal);
     outTexCoord = inTexCoord;
 
-    DrawParams params = drawParams[gl_BaseInstance];
-    baseColorTexID = int(params.baseColorTexID);
-    metallicRoughnessTexID = int(params.metallicRoughnessTexID);
-    emissiveScale = int(params.emissiveScale);
+    baseColorTexID = int(drawParams[gl_BaseInstance].baseColorTexID);
+    metallicRoughnessTexID = int(drawParams[gl_BaseInstance].metallicRoughnessTexID);
+    emissiveScale = float(drawParams[gl_BaseInstance].emissiveScale);
 
     gl_ViewportIndex = int(gl_InstanceIndex - gl_BaseInstance);
 }

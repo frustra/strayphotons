@@ -38,8 +38,7 @@ void main() {
     outNormal = rotation * inNormal;
     outTexCoord = inTexCoord;
 
-    DrawParams params = drawParams[gl_BaseInstance];
-    baseColorTexID = int(params.baseColorTexID);
-    metallicRoughnessTexID = int(params.metallicRoughnessTexID);
-    emissiveScale = float(params.emissiveScale);
+    baseColorTexID = int(drawParams[gl_BaseInstance].baseColorTexID);
+    metallicRoughnessTexID = int(drawParams[gl_BaseInstance].metallicRoughnessTexID);
+    emissiveScale = float(drawParams[gl_BaseInstance].emissiveScale);
 }

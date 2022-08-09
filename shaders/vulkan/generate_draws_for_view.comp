@@ -1,7 +1,6 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
-#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
 layout(binding = 0, rgba8) uniform image2D texture;
 
@@ -55,14 +54,11 @@ void main() {
 
         uint drawIndex = atomicAdd(drawCount, 1);
         draw.firstInstance = drawIndex;
-
-        DrawParams drawParam;
-        drawParam.baseColorTexID = uint16_t(prim.baseColorTexID);
-        drawParam.metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
-        drawParam.opticID = uint16_t(renderable.opticID);
-        drawParam.emissiveScale = float16_t(renderable.emissiveScale);
-
         drawCommands[drawIndex] = draw;
-        drawParams[drawIndex] = drawParam;
+
+        drawParams[drawIndex].baseColorTexID = uint16_t(prim.baseColorTexID);
+        drawParams[drawIndex].metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
+        drawParams[drawIndex].opticID = uint16_t(renderable.opticID);
+        drawParams[drawIndex].emissiveScale = float16_t(renderable.emissiveScale);
     }
 }
