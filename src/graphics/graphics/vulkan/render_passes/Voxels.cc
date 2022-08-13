@@ -17,6 +17,7 @@ namespace sp::vulkan::renderer {
         7,
         "Change the voxel grid clearing operation used between frames "
         "(bitfield: 1=radiance, 2=counters, 4=normals)");
+    static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
@@ -251,6 +252,8 @@ namespace sp::vulkan::renderer {
                 builder.Write("FillCounters", Access::FragmentShaderWrite);
                 builder.Write("Radiance", Access::FragmentShaderWrite);
                 builder.Write("Normals", Access::FragmentShaderWrite);
+                builder.ReadPreviousFrame("Radiance", Access::FragmentShaderSampleImage);
+                builder.ReadPreviousFrame("Normals", Access::FragmentShaderSampleImage);
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
@@ -308,7 +311,21 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer(0, 7, resources.GetBuffer("FragmentListMetadata"));
                 cmd.SetStorageBuffer(0, 8, resources.GetBuffer("FragmentLists"));
 
+                auto lastRadianceID = resources.GetID("Radiance", false, 1);
+                if (lastRadianceID != InvalidResource) {
+                    cmd.SetImageView(0, 9, resources.GetImageMipView(lastRadianceID, 0));
+                } else {
+                    cmd.SetImageView(0, 9, resources.GetImageMipView("Radiance", 0));
+                }
+                auto lastNormalsID = resources.GetID("Normals", false, 1);
+                if (lastNormalsID != InvalidResource) {
+                    cmd.SetImageView(0, 10, resources.GetImageMipView(lastNormalsID, 0));
+                } else {
+                    cmd.SetImageView(0, 10, resources.GetImageMipView("Normals", 0));
+                }
+
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, fragmentListCount);
+                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarLightAttenuation.Get());
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),

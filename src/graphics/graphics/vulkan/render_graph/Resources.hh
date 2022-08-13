@@ -138,6 +138,7 @@ namespace sp::vulkan::render_graph {
 
             ResourceID GetID(string_view name, uint32 frameIndex) const;
             void SetID(string_view name, ResourceID id, uint32 frameIndex);
+            void ClearID(ResourceID id);
         };
 
         vector<Scope> nameScopes;

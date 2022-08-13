@@ -23,6 +23,10 @@ namespace sp::vulkan::render_graph {
                 Assert(!images[id], "dangling render target");
                 Assert(!buffers[id], "dangling buffer");
 
+                for (auto &scope : nameScopes) {
+                    scope.ClearID(id);
+                }
+
                 freeIDs.push_back(id);
                 resources[id].type = Resource::Type::Undefined;
                 resourceNames[id] = {};
@@ -277,6 +281,19 @@ namespace sp::vulkan::render_graph {
         auto &nameID = resourceNames[name.data()];
         Assert(!nameID, "resource already registered");
         nameID = id;
+    }
+
+    void Resources::Scope::ClearID(ResourceID id) {
+        for (auto &frame : frames) {
+            auto it = frame.resourceNames.begin();
+            while (it != frame.resourceNames.end()) {
+                if (it->second == id) {
+                    frame.resourceNames.erase(it++);
+                } else {
+                    it++;
+                }
+            }
+        }
     }
 
     PooledImagePtr Resources::GetImageFromPool(const ImageDesc &desc) {

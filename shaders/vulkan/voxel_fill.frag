@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
+layout(constant_id = 1) const float LIGHT_ATTENUATION = 0.5;
 
 #define DIFFUSE_ONLY_SHADING
 #define SHADOWS_ENABLED
@@ -19,6 +20,10 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 layout(location = 6) flat in float emissiveScale;
+
+layout(binding = 1) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
 
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"
@@ -47,6 +52,11 @@ layout(std430, binding = 8) buffer VoxelFragmentList {
     VoxelFragment fragmentLists[];
 };
 
+layout(binding = 9) uniform sampler3D voxelRadiance; // From previous frame
+layout(binding = 10) uniform sampler3D voxelNormals; // From previous frame
+
+#include "../lib/voxel_trace_shared.glsl"
+
 void main() {
     vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
     if (baseColor.a < 0.5) discard;
@@ -57,6 +67,17 @@ void main() {
 
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
     pixelRadiance += emissiveScale * baseColor.rgb;
+
+    if (LIGHT_ATTENUATION > 0) {
+        vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
+        vec3 indirectDiffuse = HemisphereIndirectDiffuse(inWorldPos, inNormal, vec2(0));
+        // Hacky bug fix: For some reason this will occasionally return NaN and poison the whole voxel grid.
+        if (any(isnan(indirectDiffuse))) {
+            indirectDiffuse = vec3(0.0);
+        }
+        pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
+                         smoothstep(0.0, 0.1, length(indirectDiffuse));
+    }
 
     uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
