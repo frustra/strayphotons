@@ -39,6 +39,7 @@ namespace sp::vulkan {
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock) {
         ZoneScoped;
         renderables.clear();
+        transparentRenderables.clear();
         opticEntities.clear();
         jointPoses.clear();
         renderableCount = 0;
@@ -57,8 +58,10 @@ namespace sp::vulkan {
             auto vkMesh = LoadMesh(model, renderable.meshIndex);
             if (!vkMesh || !vkMesh->CheckReady()) continue;
 
+            auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
+
             GPURenderableEntity gpuRenderable;
-            gpuRenderable.modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
+            gpuRenderable.modelToWorld = transform.matrix;
             gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
@@ -84,6 +87,13 @@ namespace sp::vulkan {
             }
 
             renderables.push_back(gpuRenderable);
+            if (renderable.IsVisible(ecs::VisibilityMask::Transparency)) {
+                TransparentRenderable transparent = {};
+                transparent.transform = transform;
+                transparent.vkMesh = vkMesh;
+                transparent.vertexOffset = gpuRenderable.vertexOffset;
+                transparentRenderables.push_back(transparent);
+            }
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
             vertexCount += vkMesh->VertexCount();
@@ -155,7 +165,7 @@ namespace sp::vulkan {
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
-                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 4, maxDraws},
+                auto drawParams = builder.CreateBuffer({sizeof(GPUDrawParams), maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
@@ -179,6 +189,64 @@ namespace sp::vulkan {
                 cmd.PushConstants(constants);
 
                 cmd.Dispatch((renderableCount + 127) / 128, 1, 1);
+            });
+        return bufferIDs;
+    }
+
+    GPUScene::DrawBufferIDs GPUScene::GenerateTransparentDrawsForView(rg::RenderGraph &graph, uint32 instanceCount) {
+        DrawBufferIDs bufferIDs;
+
+        graph.AddPass("GenerateTransparentDrawsForView")
+            .Build([&](rg::PassBuilder &builder) {
+                const auto maxDraws = primitiveCountPowerOfTwo;
+
+                auto drawCmds = builder.CreateBuffer({sizeof(uint32), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                bufferIDs.drawCommandsBuffer = drawCmds.id;
+
+                auto drawParams = builder.CreateBuffer({sizeof(GPUDrawParams), maxDraws},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                bufferIDs.drawParamsBuffer = drawParams.id;
+            })
+            .Execute([this, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
+                InlineVector<VkDrawIndexedIndirectCommand, 10 * 1024> drawCommands;
+                InlineVector<GPUDrawParams, 10 * 1024> drawParams;
+
+                for (auto &transparent : transparentRenderables) {
+                    if (!transparent.vkMesh || !transparent.vkMesh->CheckReady()) continue;
+                    auto &mesh = *transparent.vkMesh;
+
+                    for (auto &primitive : mesh.primitives) {
+                        auto &drawCmd = drawCommands.emplace_back();
+                        auto &drawParam = drawParams.emplace_back();
+
+                        drawCmd.indexCount = primitive.vertexCount;
+                        drawCmd.instanceCount = instanceCount;
+                        drawCmd.firstIndex = mesh.indexBuffer->ArrayOffset() + primitive.indexOffset;
+                        drawCmd.vertexOffset = mesh.vertexBuffer->ArrayOffset() + primitive.vertexOffset;
+                        drawCmd.firstInstance = drawCommands.size();
+
+                        drawParam.baseColorTexID = primitive.baseColor.index;
+                        drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
+                        drawParam.opticID = 0;
+                        drawParam.emissiveScale = 0;
+                    }
+                }
+
+                auto commandsBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
+                uint32_t *cmdBufferPtr = nullptr;
+                commandsBuffer->Map((void **)&cmdBufferPtr);
+                cmdBufferPtr[0] = drawCommands.size();
+                std::copy_n(drawCommands.data(),
+                    drawCommands.size(),
+                    reinterpret_cast<VkDrawIndexedIndirectCommand *>(cmdBufferPtr[1]));
+                commandsBuffer->Unmap();
+                commandsBuffer->Flush();
+
+                auto paramsBuffer = resources.GetBuffer(bufferIDs.drawParamsBuffer);
+                paramsBuffer->CopyFrom(drawParams.data(), drawParams.size());
             });
         return bufferIDs;
     }

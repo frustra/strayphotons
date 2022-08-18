@@ -62,6 +62,14 @@ namespace sp::vulkan {
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
+    struct GPUDrawParams {
+        uint16_t baseColorTexID;
+        uint16_t metallicRoughnessTexID;
+        uint16_t opticID;
+        uint16_t emissiveScale; // half-float formatted
+    };
+    static_assert(sizeof(GPUDrawParams) % sizeof(uint16_t) == 0, "std430 alignment");
+
     class GPUScene {
     private:
         DeviceContext &device;
@@ -82,6 +90,8 @@ namespace sp::vulkan {
         DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
             ecs::VisibilityMask viewMask,
             uint32 instanceCount = 1);
+
+        DrawBufferIDs GenerateTransparentDrawsForView(rg::RenderGraph &graph, uint32 instanceCount = 1);
 
         void DrawSceneIndirect(CommandContext &cmd,
             BufferPtr vertexBuffer,
@@ -148,5 +158,13 @@ namespace sp::vulkan {
         PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
         vector<GPURenderableEntity> renderables;
+
+        struct TransparentRenderable {
+            ecs::Transform transform;
+            std::shared_ptr<Mesh> vkMesh;
+            uint32 vertexOffset;
+        };
+
+        vector<TransparentRenderable> transparentRenderables;
     };
 } // namespace sp::vulkan

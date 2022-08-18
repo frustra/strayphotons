@@ -68,5 +68,7 @@ namespace sp::vulkan {
         SubBufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
 
         bool ready = false;
+
+        friend class GPUScene;
     };
 } // namespace sp::vulkan
