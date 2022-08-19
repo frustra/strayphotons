@@ -209,7 +209,8 @@ namespace sp::vulkan {
         }
         view.UpdateViewMatrix(lock, windowEntity);
 
-        auto drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
+        // auto drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
+        auto drawIDs = scene.GenerateTransparentDrawsForView(graph);
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {

@@ -65,8 +65,8 @@ namespace sp::vulkan {
     struct GPUDrawParams {
         uint16_t baseColorTexID;
         uint16_t metallicRoughnessTexID;
-        uint16_t opticID;
-        uint16_t emissiveScale; // half-float formatted
+        uint16_t opticID = 0;
+        uint16_t emissiveScale = 0; // half-float formatted
     };
     static_assert(sizeof(GPUDrawParams) % sizeof(uint16_t) == 0, "std430 alignment");
 

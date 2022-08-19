@@ -35,6 +35,9 @@ namespace sp::vulkan {
         uint32 PrimitiveCount() const {
             return primitives.size();
         }
+        uint32 IndexCount() const {
+            return indexCount;
+        }
         uint32 VertexCount() const {
             return vertexCount;
         }

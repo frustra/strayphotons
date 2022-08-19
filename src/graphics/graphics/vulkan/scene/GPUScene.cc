@@ -87,13 +87,14 @@ namespace sp::vulkan {
             }
 
             renderables.push_back(gpuRenderable);
-            if (renderable.IsVisible(ecs::VisibilityMask::Transparency)) {
+            if (renderable.IsVisible(ecs::VisibilityMask::DirectCamera)) {
                 TransparentRenderable transparent = {};
                 transparent.transform = transform;
                 transparent.vkMesh = vkMesh;
                 transparent.vertexOffset = gpuRenderable.vertexOffset;
                 transparentRenderables.push_back(transparent);
             }
+
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
             vertexCount += vkMesh->VertexCount();
@@ -220,18 +221,17 @@ namespace sp::vulkan {
 
                     for (auto &primitive : mesh.primitives) {
                         auto &drawCmd = drawCommands.emplace_back();
-                        auto &drawParam = drawParams.emplace_back();
 
-                        drawCmd.indexCount = primitive.vertexCount;
+                        drawCmd.indexCount = primitive.indexCount;
                         drawCmd.instanceCount = instanceCount;
                         drawCmd.firstIndex = mesh.indexBuffer->ArrayOffset() + primitive.indexOffset;
-                        drawCmd.vertexOffset = mesh.vertexBuffer->ArrayOffset() + primitive.vertexOffset;
-                        drawCmd.firstInstance = drawCommands.size();
+                        drawCmd.vertexOffset = transparent.vertexOffset + primitive.vertexOffset;
+
+                        drawCmd.firstInstance = drawParams.size();
+                        auto &drawParam = drawParams.emplace_back();
 
                         drawParam.baseColorTexID = primitive.baseColor.index;
                         drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
-                        drawParam.opticID = 0;
-                        drawParam.emissiveScale = 0;
                     }
                 }
 
@@ -241,7 +241,7 @@ namespace sp::vulkan {
                 cmdBufferPtr[0] = drawCommands.size();
                 std::copy_n(drawCommands.data(),
                     drawCommands.size(),
-                    reinterpret_cast<VkDrawIndexedIndirectCommand *>(cmdBufferPtr[1]));
+                    reinterpret_cast<VkDrawIndexedIndirectCommand *>(cmdBufferPtr + 1));
                 commandsBuffer->Unmap();
                 commandsBuffer->Flush();
 
