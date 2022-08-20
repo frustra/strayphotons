@@ -142,7 +142,14 @@ namespace sp::vulkan::renderer {
             view.viewMat = glm::inverse(view.invViewMat);
             glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
 
-            int extent = (int)std::pow(2, light.shadowMapSize);
+            auto calcFovX = glm::atan(view.clip.x, lightViewMirrorPos.x - 0.5f) -
+                            glm::atan(view.clip.x, lightViewMirrorPos.x + 0.5f);
+            auto calcFovY = glm::atan(view.clip.x, lightViewMirrorPos.y - 0.5f) -
+                            glm::atan(view.clip.x, lightViewMirrorPos.y + 0.5f);
+            float fovMultiplier = std::max(calcFovX, calcFovY) / light.spotAngle;
+
+            int extent = CeilToPowerOfTwo((uint32_t)(std::pow(2, light.shadowMapSize) * fovMultiplier));
+            if (extent < 32) extent = 32; // Shadowmaps below this point are useless
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
@@ -189,7 +196,7 @@ namespace sp::vulkan::renderer {
             totalPixels += extents.x * extents.y;
         }
 
-        uint32 width = CeilToPowerOfTwo((uint32)sqrt((double)totalPixels));
+        uint32 width = CeilToPowerOfTwo((uint32)ceil(sqrt((double)totalPixels)));
         shadowAtlasSize = glm::ivec2(width, width);
 
         freeRectangles.clear();
@@ -221,7 +228,10 @@ namespace sp::vulkan::renderer {
             }
 
             auto rect = freeRectangles[rectIndex];
+            rect.first += SHADOW_MAP_ATLAS_PADDING;
+            rect.second -= 2 * SHADOW_MAP_ATLAS_PADDING;
             views[i].offset = rect.first;
+            views[i].extents = rect.second;
             gpuData.lights[i].mapOffset = glm::vec4{rect.first.x, rect.first.y, rect.second.x, rect.second.y} /
                                           mapOffsetScale;
 
