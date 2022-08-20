@@ -91,7 +91,11 @@ namespace sp::vulkan {
             ecs::VisibilityMask viewMask,
             uint32 instanceCount = 1);
 
-        DrawBufferIDs GenerateTransparentDrawsForView(rg::RenderGraph &graph, uint32 instanceCount = 1);
+    // Sort primitives nearest first by default.
+        DrawBufferIDs GenerateSortedDrawsForView(rg::RenderGraph &graph,
+            const ecs::View &view,
+            bool reverseSort = false,
+            uint32 instanceCount = 1);
 
         void DrawSceneIndirect(CommandContext &cmd,
             BufferPtr vertexBuffer,
@@ -158,13 +162,6 @@ namespace sp::vulkan {
         PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
         vector<GPURenderableEntity> renderables;
-
-        struct TransparentRenderable {
-            ecs::Transform transform;
-            std::shared_ptr<Mesh> vkMesh;
-            uint32 vertexOffset;
-        };
-
-        vector<TransparentRenderable> transparentRenderables;
+        vector<std::weak_ptr<Mesh>> meshes;
     };
 } // namespace sp::vulkan

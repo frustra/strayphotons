@@ -39,6 +39,9 @@ namespace sp::vulkan {
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
+    static CVar<bool> CVarSortedDraw("r.SortedDraw", true, "Draw geometry in sorted depth-order");
+    static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
+
     Renderer::Renderer(DeviceContext &device)
         : device(device), graph(device), scene(device), lighting(scene), voxels(scene),
           guiRenderer(new GuiRenderer(device)) {
@@ -209,8 +212,12 @@ namespace sp::vulkan {
         }
         view.UpdateViewMatrix(lock, windowEntity);
 
-        // auto drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
-        auto drawIDs = scene.GenerateTransparentDrawsForView(graph);
+        GPUScene::DrawBufferIDs drawIDs;
+        if (CVarSortedDraw.Get()) {
+            drawIDs = scene.GenerateSortedDrawsForView(graph, view, CVarDrawReverseOrder.Get());
+        } else {
+            drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
+        }
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
@@ -339,7 +346,7 @@ namespace sp::vulkan {
             })
             .Execute(executeHiddenAreaStencil(1));
 
-        auto drawIDs = scene.GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
+        auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewsByEye[0]);
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {

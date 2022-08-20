@@ -26,6 +26,7 @@ namespace sp::vulkan {
             size_t vertexOffset, vertexCount;
             size_t jointsVertexOffset, jointsVertexCount;
             TextureHandle baseColor, metallicRoughness;
+            glm::vec3 center;
         };
 
         Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);

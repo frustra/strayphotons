@@ -39,7 +39,7 @@ namespace sp::vulkan {
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock) {
         ZoneScoped;
         renderables.clear();
-        transparentRenderables.clear();
+        meshes.clear();
         opticEntities.clear();
         jointPoses.clear();
         renderableCount = 0;
@@ -87,18 +87,17 @@ namespace sp::vulkan {
             }
 
             renderables.push_back(gpuRenderable);
-            if (renderable.IsVisible(ecs::VisibilityMask::DirectCamera)) {
-                TransparentRenderable transparent = {};
-                transparent.transform = transform;
-                transparent.vkMesh = vkMesh;
-                transparent.vertexOffset = gpuRenderable.vertexOffset;
-                transparentRenderables.push_back(transparent);
-            }
+            meshes.emplace_back(vkMesh);
 
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
             vertexCount += vkMesh->VertexCount();
         }
+
+        Assertf(renderables.size() == meshes.size(),
+            "Mismatched renderable and mesh counts: %u != %u",
+            renderables.size(),
+            meshes.size());
 
         primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(primitiveCount));
 
@@ -194,10 +193,13 @@ namespace sp::vulkan {
         return bufferIDs;
     }
 
-    GPUScene::DrawBufferIDs GPUScene::GenerateTransparentDrawsForView(rg::RenderGraph &graph, uint32 instanceCount) {
+    GPUScene::DrawBufferIDs GPUScene::GenerateSortedDrawsForView(rg::RenderGraph &graph,
+        const ecs::View &view,
+        bool reverseSort,
+        uint32 instanceCount) {
         DrawBufferIDs bufferIDs;
 
-        graph.AddPass("GenerateTransparentDrawsForView")
+        graph.AddPass("GenerateSortedDrawsForView")
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
 
@@ -211,28 +213,54 @@ namespace sp::vulkan {
                     Access::HostWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
-            .Execute([this, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this,
+                         viewMask = view.visibilityMask,
+                         projMat = view.projMat,
+                         viewMat = view.viewMat,
+                         bufferIDs,
+                         instanceCount,
+                         reverseSort](rg::Resources &resources, CommandContext &cmd) {
                 InlineVector<VkDrawIndexedIndirectCommand, 10 * 1024> drawCommands;
                 InlineVector<GPUDrawParams, 10 * 1024> drawParams;
+                InlineVector<float, 10 * 1024> primitiveDepth;
 
-                for (auto &transparent : transparentRenderables) {
-                    if (!transparent.vkMesh || !transparent.vkMesh->CheckReady()) continue;
-                    auto &mesh = *transparent.vkMesh;
+                for (size_t i = 0; i < renderables.size(); i++) {
+                    auto &renderable = renderables[i];
+                    if (((ecs::VisibilityMask)renderable.visibilityMask & viewMask) != viewMask) continue;
 
-                    for (auto &primitive : mesh.primitives) {
+                    auto mesh = meshes[i].lock();
+                    if (!mesh || !mesh->CheckReady()) continue;
+
+                    for (auto &primitive : mesh->primitives) {
                         auto &drawCmd = drawCommands.emplace_back();
 
                         drawCmd.indexCount = primitive.indexCount;
                         drawCmd.instanceCount = instanceCount;
-                        drawCmd.firstIndex = mesh.indexBuffer->ArrayOffset() + primitive.indexOffset;
-                        drawCmd.vertexOffset = transparent.vertexOffset + primitive.vertexOffset;
+                        drawCmd.firstIndex = mesh->indexBuffer->ArrayOffset() + primitive.indexOffset;
+                        drawCmd.vertexOffset = renderable.vertexOffset + primitive.vertexOffset;
 
                         drawCmd.firstInstance = drawParams.size();
                         auto &drawParam = drawParams.emplace_back();
 
                         drawParam.baseColorTexID = primitive.baseColor.index;
                         drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
+
+                        glm::vec4 worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
+                        glm::vec4 viewPos = viewMat * worldPos;
+                        primitiveDepth.push_back(glm::length(glm::vec3(viewPos)) / viewPos.w);
                     }
+                }
+
+                if (reverseSort) {
+                    // Sort primitives farthest first
+                    std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
+                        return primitiveDepth[a.firstInstance] > primitiveDepth[b.firstInstance];
+                    });
+                } else {
+                    // Sort primitives nearest first
+                    std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
+                        return primitiveDepth[a.firstInstance] < primitiveDepth[b.firstInstance];
+                    });
                 }
 
                 auto commandsBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
