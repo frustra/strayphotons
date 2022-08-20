@@ -196,7 +196,7 @@ namespace sp::vulkan::renderer {
             totalPixels += extents.x * extents.y;
         }
 
-        uint32 width = CeilToPowerOfTwo((uint32)sqrt((double)totalPixels));
+        uint32 width = CeilToPowerOfTwo((uint32)ceil(sqrt((double)totalPixels)));
         shadowAtlasSize = glm::ivec2(width, width);
 
         freeRectangles.clear();
