@@ -198,6 +198,7 @@ namespace sp::vulkan {
         bool reverseSort,
         uint32 instanceCount) {
         DrawBufferIDs bufferIDs;
+        glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
 
         graph.AddPass("GenerateSortedDrawsForView")
             .Build([&](rg::PassBuilder &builder) {
@@ -213,13 +214,9 @@ namespace sp::vulkan {
                     Access::HostWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
-            .Execute([this,
-                         viewMask = view.visibilityMask,
-                         projMat = view.projMat,
-                         viewMat = view.viewMat,
-                         bufferIDs,
-                         instanceCount,
-                         reverseSort](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, viewMask = view.visibilityMask, viewPos, bufferIDs, instanceCount, reverseSort](
+                         rg::Resources &resources,
+                         CommandContext &cmd) {
                 InlineVector<VkDrawIndexedIndirectCommand, 10 * 1024> drawCommands;
                 InlineVector<GPUDrawParams, 10 * 1024> drawParams;
                 InlineVector<float, 10 * 1024> primitiveDepth;
@@ -245,9 +242,9 @@ namespace sp::vulkan {
                         drawParam.baseColorTexID = primitive.baseColor.index;
                         drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
 
-                        glm::vec4 worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
-                        glm::vec4 viewPos = viewMat * worldPos;
-                        primitiveDepth.push_back(glm::length(glm::vec3(viewPos)) / viewPos.w);
+                        auto worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
+                        auto relPos = (glm::vec3(worldPos) / worldPos.w) - viewPos;
+                        primitiveDepth.push_back(glm::length(relPos));
                     }
                 }
 
