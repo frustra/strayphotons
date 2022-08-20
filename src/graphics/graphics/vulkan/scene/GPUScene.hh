@@ -91,7 +91,7 @@ namespace sp::vulkan {
             ecs::VisibilityMask viewMask,
             uint32 instanceCount = 1);
 
-    // Sort primitives nearest first by default.
+        // Sort primitives nearest first by default.
         DrawBufferIDs GenerateSortedDrawsForView(rg::RenderGraph &graph,
             const ecs::View &view,
             bool reverseSort = false,
