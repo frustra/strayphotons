@@ -17,5 +17,5 @@ layout(push_constant) uniform PushConstants {
 };
 
 void main() {
-    if (inOpticID > 0) visibility[lightIndex][inOpticID - 1] = 1;
+    atomicOr(visibility[lightIndex][inOpticID - 1], 1);
 }

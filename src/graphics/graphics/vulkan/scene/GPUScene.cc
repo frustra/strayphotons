@@ -66,6 +66,9 @@ namespace sp::vulkan {
             if (ent.Has<ecs::OpticalElement>(lock)) {
                 opticEntities.emplace_back(ent);
                 gpuRenderable.opticID = opticEntities.size();
+                gpuRenderable.visibilityMask |= (uint32_t)ecs::VisibilityMask::Optics;
+            } else {
+                gpuRenderable.visibilityMask &= (uint32_t)~ecs::VisibilityMask::Optics;
             }
 
             if (!renderable.joints.empty()) gpuRenderable.jointPosesOffset = jointPoses.size();

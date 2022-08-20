@@ -45,7 +45,7 @@ namespace ecs {
         };
         vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
-        VisibilityMask visibility = ~VisibilityMask::OutlineSelection;
+        VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye | VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
     };
 
