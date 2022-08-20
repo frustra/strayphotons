@@ -9,6 +9,9 @@ namespace sp::vulkan::renderer {
     static const int MAX_LIGHTS = 64;
     static const int MAX_OPTICS = 16;
 
+    // Add padding between shadow maps so the sample radius doesn't overlap neighbors
+    static const int SHADOW_MAP_ATLAS_PADDING = 2;
+
     class Lighting {
     public:
         Lighting(GPUScene &scene) : scene(scene) {}

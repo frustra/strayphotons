@@ -228,7 +228,10 @@ namespace sp::vulkan::renderer {
             }
 
             auto rect = freeRectangles[rectIndex];
+            rect.first += SHADOW_MAP_ATLAS_PADDING;
+            rect.second -= 2 * SHADOW_MAP_ATLAS_PADDING;
             views[i].offset = rect.first;
+            views[i].extents = rect.second;
             gpuData.lights[i].mapOffset = glm::vec4{rect.first.x, rect.first.y, rect.second.x, rect.second.y} /
                                           mapOffsetScale;
 
