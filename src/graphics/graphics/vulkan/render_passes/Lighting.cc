@@ -142,7 +142,14 @@ namespace sp::vulkan::renderer {
             view.viewMat = glm::inverse(view.invViewMat);
             glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
 
-            int extent = (int)std::pow(2, light.shadowMapSize);
+            auto calcFovX = glm::atan(view.clip.x, lightViewMirrorPos.x - 0.5f) -
+                            glm::atan(view.clip.x, lightViewMirrorPos.x + 0.5f);
+            auto calcFovY = glm::atan(view.clip.x, lightViewMirrorPos.y - 0.5f) -
+                            glm::atan(view.clip.x, lightViewMirrorPos.y + 0.5f);
+            float fovMultiplier = std::max(calcFovX, calcFovY) / light.spotAngle;
+
+            int extent = CeilToPowerOfTwo((uint32_t)(std::pow(2, light.shadowMapSize) * fovMultiplier));
+            if (extent < 32) extent = 32; // Shadowmaps below this point are useless
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
             view.clip = glm::vec2(-lightViewMirrorPos.z + 0.0001, -lightViewMirrorPos.z + 64);
