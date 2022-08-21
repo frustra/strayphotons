@@ -72,7 +72,7 @@
 			},
 			"light": {
 				"tint": [1, 1, 1],
-				"shadowMapSize": 7,
+				"shadowMapSize": 8,
 				"shadowMapClip": [0.1, 64],
 				"spotAngle": 5,
 				"intensity": 100,
