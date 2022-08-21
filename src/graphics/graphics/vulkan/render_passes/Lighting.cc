@@ -211,7 +211,7 @@ namespace sp::vulkan::renderer {
             auto allocExtents = glm::ivec2(CeilToPowerOfTwo((uint32)extents.x), CeilToPowerOfTwo((uint32)extents.y));
             int rectIndex = -1;
             for (int r = freeRectangles.size() - 1; r >= 0; r--) {
-                if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, allocExtents))) {
+                if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, extents))) {
                     if (rectIndex == -1 ||
                         glm::all(glm::lessThanEqual(freeRectangles[r].second, freeRectangles[rectIndex].second))) {
                         rectIndex = r;
@@ -221,8 +221,9 @@ namespace sp::vulkan::renderer {
             Assert(rectIndex >= 0, "ran out of shadow map space");
 
             while (glm::all(glm::greaterThan(freeRectangles[rectIndex].second, allocExtents))) {
-                auto &rect = freeRectangles[rectIndex];
+                auto rect = freeRectangles[rectIndex];
                 rect.second /= 2;
+                freeRectangles[rectIndex].second = rect.second;
 
                 freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y}, rect.second});
                 freeRectangles.push_back({{rect.first.x, rect.first.y + rect.second.y}, rect.second});
