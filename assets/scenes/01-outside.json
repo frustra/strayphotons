@@ -173,7 +173,7 @@
 			}
 		},
 		{
-			"_comment": "above door",
+			"name": "doorlight",
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 30,
@@ -187,7 +187,7 @@
 			}
 		},
 		{
-			"_comment": "street light",
+			"name": "streetlight",
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 20,
@@ -204,7 +204,7 @@
 			}
 		},
 		{
-			"_comment": "moonlight",
+			"name": "moonlight",
 			"light": {
 				"tint": [0.5, 0.5, 1],
 				"intensity": 10,

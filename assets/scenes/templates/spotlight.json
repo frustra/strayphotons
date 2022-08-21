@@ -5,7 +5,7 @@
 			"intensity": 300,
 			"spotAngle": 50,
 			"bulb": "bulb",
-			"shadowMapSize": 11,
+			"shadowMapSize": 10,
 			"shadowMapClip": [0.18, 70]
 		}
 	},

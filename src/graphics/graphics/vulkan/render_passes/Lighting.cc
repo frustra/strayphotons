@@ -146,7 +146,7 @@ namespace sp::vulkan::renderer {
                             glm::atan(view.clip.x, lightViewMirrorPos.x + 0.5f);
             auto calcFovY = glm::atan(view.clip.x, lightViewMirrorPos.y - 0.5f) -
                             glm::atan(view.clip.x, lightViewMirrorPos.y + 0.5f);
-            float fovMultiplier = std::max(calcFovX, calcFovY) / light.spotAngle;
+            float fovMultiplier = std::min(2.0f, std::max(calcFovX, calcFovY) / light.spotAngle);
 
             int extent = CeilToPowerOfTwo((uint32_t)(std::pow(2, light.shadowMapSize) * fovMultiplier));
             if (extent < 32) extent = 32; // Shadowmaps below this point are useless
@@ -209,7 +209,7 @@ namespace sp::vulkan::renderer {
             for (int r = freeRectangles.size() - 1; r >= 0; r--) {
                 if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, extents))) {
                     if (rectIndex == -1 ||
-                        glm::all(glm::lessThan(freeRectangles[r].second, freeRectangles[rectIndex].second))) {
+                        glm::all(glm::lessThanEqual(freeRectangles[r].second, freeRectangles[rectIndex].second))) {
                         rectIndex = r;
                     }
                 }
@@ -222,8 +222,8 @@ namespace sp::vulkan::renderer {
                 rect.second /= 2;
                 freeRectangles[rectIndex].second = rect.second;
 
-                freeRectangles.push_back({{rect.first.x, rect.first.y + rect.second.y}, {rect.second.x, freeExtent.y}});
                 freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y}, {freeExtent.x, rect.second.y}});
+                freeRectangles.push_back({{rect.first.x, rect.first.y + rect.second.y}, {rect.second.x, freeExtent.y}});
                 freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y + rect.second.y}, freeExtent});
             }
 
