@@ -306,16 +306,6 @@ namespace sp::vulkan::renderer {
                     GPUViewState lightViews[] = {{views[i]}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
 
-                    if (views[i].extents.x < 0 || views[i].extents.y < 0 || views[i].offset.x < 0 ||
-                        views[i].offset.y < 0) {
-                        Logf("Light %u: %dx%d offset %d,%d",
-                            i,
-                            views[i].extents.x,
-                            views[i].extents.y,
-                            views[i].offset.x,
-                            views[i].offset.y);
-                    }
-
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
                     viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
@@ -352,16 +342,6 @@ namespace sp::vulkan::renderer {
                     GPUViewState lightViews[] = {{views[i]}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
                     cmd.SetStorageBuffer(0, 1, visBuffer);
-
-                    if (views[i].extents.x < 0 || views[i].extents.y < 0 || views[i].offset.x < 0 ||
-                        views[i].offset.y < 0) {
-                        Logf("Optic %u: %dx%d offset %d,%d",
-                            i,
-                            views[i].extents.x,
-                            views[i].extents.y,
-                            views[i].offset.x,
-                            views[i].offset.y);
-                    }
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
