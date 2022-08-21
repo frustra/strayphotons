@@ -108,7 +108,8 @@
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 100,
-				"spotAngle": 50
+				"spotAngle": 50,
+				"shadowMapSize": 11
 			},
 			"script": {
 				"prefab": "template",

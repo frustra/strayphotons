@@ -146,9 +146,11 @@ namespace sp::vulkan::renderer {
                             glm::atan(view.clip.x, lightViewMirrorPos.x + 0.5f);
             auto calcFovY = glm::atan(view.clip.x, lightViewMirrorPos.y - 0.5f) -
                             glm::atan(view.clip.x, lightViewMirrorPos.y + 0.5f);
-            float fovMultiplier = std::min(2.0f, std::max(calcFovX, calcFovY) / light.spotAngle);
+            float fovMultiplier = std::max(calcFovX, calcFovY) / light.spotAngle;
+            // Clamp the multiplier, which may go negative due to float inaccuracies in atan
+            fovMultiplier = std::clamp(fovMultiplier, 0.0f, 2.0f);
 
-            int extent = CeilToPowerOfTwo((uint32_t)(std::pow(2, light.shadowMapSize) * fovMultiplier));
+            int extent = std::pow(2, light.shadowMapSize) * fovMultiplier;
             if (extent < 32) extent = 32; // Shadowmaps below this point are useless
             view.extents = {extent, extent};
             view.fov = light.spotAngle * 2.0f;
@@ -193,7 +195,8 @@ namespace sp::vulkan::renderer {
         uint64 totalPixels = 0;
         for (uint32 i = 0; i < lights.size(); i++) {
             auto extents = views[i].extents;
-            totalPixels += extents.x * extents.y;
+            auto allocExtents = std::max(CeilToPowerOfTwo((uint32)extents.x), CeilToPowerOfTwo((uint32)extents.y));
+            totalPixels += allocExtents * allocExtents;
         }
 
         uint32 width = CeilToPowerOfTwo((uint32)ceil(sqrt((double)totalPixels)));
@@ -205,9 +208,10 @@ namespace sp::vulkan::renderer {
         glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
         for (uint32 i = 0; i < lights.size(); i++) {
             auto extents = views[i].extents;
+            auto allocExtents = glm::ivec2(CeilToPowerOfTwo((uint32)extents.x), CeilToPowerOfTwo((uint32)extents.y));
             int rectIndex = -1;
             for (int r = freeRectangles.size() - 1; r >= 0; r--) {
-                if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, extents))) {
+                if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, allocExtents))) {
                     if (rectIndex == -1 ||
                         glm::all(glm::lessThanEqual(freeRectangles[r].second, freeRectangles[rectIndex].second))) {
                         rectIndex = r;
@@ -216,20 +220,18 @@ namespace sp::vulkan::renderer {
             }
             Assert(rectIndex >= 0, "ran out of shadow map space");
 
-            while (glm::all(glm::greaterThan(freeRectangles[rectIndex].second, extents))) {
-                auto rect = freeRectangles[rectIndex];
-                auto freeExtent = rect.second - rect.second / 2;
+            while (glm::all(glm::greaterThan(freeRectangles[rectIndex].second, allocExtents))) {
+                auto &rect = freeRectangles[rectIndex];
                 rect.second /= 2;
-                freeRectangles[rectIndex].second = rect.second;
 
-                freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y}, {freeExtent.x, rect.second.y}});
-                freeRectangles.push_back({{rect.first.x, rect.first.y + rect.second.y}, {rect.second.x, freeExtent.y}});
-                freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y + rect.second.y}, freeExtent});
+                freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y}, rect.second});
+                freeRectangles.push_back({{rect.first.x, rect.first.y + rect.second.y}, rect.second});
+                freeRectangles.push_back({{rect.first.x + rect.second.x, rect.first.y + rect.second.y}, rect.second});
             }
 
             auto rect = freeRectangles[rectIndex];
             rect.first += SHADOW_MAP_ATLAS_PADDING;
-            rect.second -= 2 * SHADOW_MAP_ATLAS_PADDING;
+            rect.second = extents - 2 * SHADOW_MAP_ATLAS_PADDING;
             views[i].offset = rect.first;
             views[i].extents = rect.second;
             gpuData.lights[i].mapOffset = glm::vec4{rect.first.x, rect.first.y, rect.second.x, rect.second.y} /
@@ -303,6 +305,16 @@ namespace sp::vulkan::renderer {
                     GPUViewState lightViews[] = {{views[i]}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
 
+                    if (views[i].extents.x < 0 || views[i].extents.y < 0 || views[i].offset.x < 0 ||
+                        views[i].offset.y < 0) {
+                        Logf("Light %u: %dx%d offset %d,%d",
+                            i,
+                            views[i].extents.x,
+                            views[i].extents.y,
+                            views[i].offset.x,
+                            views[i].offset.y);
+                    }
+
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
                     viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
@@ -339,6 +351,16 @@ namespace sp::vulkan::renderer {
                     GPUViewState lightViews[] = {{views[i]}, {}};
                     cmd.UploadUniformData(0, 0, lightViews, 2);
                     cmd.SetStorageBuffer(0, 1, visBuffer);
+
+                    if (views[i].extents.x < 0 || views[i].extents.y < 0 || views[i].offset.x < 0 ||
+                        views[i].offset.y < 0) {
+                        Logf("Optic %u: %dx%d offset %d,%d",
+                            i,
+                            views[i].extents.x,
+                            views[i].extents.y,
+                            views[i].offset.x,
+                            views[i].offset.y);
+                    }
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
