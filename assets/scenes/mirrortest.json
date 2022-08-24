@@ -192,6 +192,78 @@
 		},
 		{
 			"optic": {
+				"type": "gel",
+				"tint": [0, 1, 1]
+			},
+			"renderable": {
+				"model": "cyanfilter",
+				"visibility": "Transparent|LightingShadow"
+			},
+			"name": "cyanfilter",
+			"transform": {
+				"translate": [2.5, 0.5, 0]
+			},
+			"physics": {
+				"shapes": {
+					"box": [1, 1, 0.02]
+				},
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"optic": {
+				"type": "gel",
+				"tint": [1, 0, 1]
+			},
+			"renderable": {
+				"model": "magentafilter",
+				"visibility": "Transparent|LightingShadow"
+			},
+			"name": "magentafilter",
+			"transform": {
+				"translate": [2.2, 0.5, -1]
+			},
+			"physics": {
+				"shapes": {
+					"box": [1, 1, 0.02]
+				},
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"optic": {
+				"type": "gel",
+				"tint": [1, 1, 0]
+			},
+			"renderable": {
+				"model": "yellowfilter",
+				"visibility": "Transparent|LightingShadow"
+			},
+			"name": "yellowfilter",
+			"transform": {
+				"translate": [2.3, 0.5, 1]
+			},
+			"physics": {
+				"shapes": {
+					"box": [1, 1, 0.02]
+				},
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"optic": {
 				"type": "mirror",
 				"_tint": [1, 0.5, 0.5]
 			},

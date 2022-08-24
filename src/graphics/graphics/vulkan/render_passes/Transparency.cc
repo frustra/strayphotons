@@ -39,7 +39,6 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetDepthTest(true, false);
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
-                cmd.SetCullMode(vk::CullModeFlagBits::eNone);
 
                 cmd.SetBlending(true);
                 cmd.SetBlendFuncSeparate(vk::BlendFactor::eOne,

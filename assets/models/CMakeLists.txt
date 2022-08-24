@@ -94,6 +94,9 @@ set(RAW_MODELS
     redfilter
     greenfilter
     bluefilter
+    cyanfilter
+    magentafilter
+    yellowfilter
 )
 
 foreach(_model ${RAW_MODELS})
