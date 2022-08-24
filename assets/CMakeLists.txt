@@ -21,7 +21,7 @@ foreach(asset_line ${asset_list})
         endif()
 
         file(DOWNLOAD
-            "https://dd10eb56pu043.cloudfront.net/assets/${asset_path}?${asset_md5}"
+            "https://dd10eb56pu043.cloudfront.net/assets/${asset_path}?request_md5=${asset_md5}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}"
             USERPWD "${frustra_s3_auth}"
             EXPECTED_HASH "MD5=${asset_md5}"
