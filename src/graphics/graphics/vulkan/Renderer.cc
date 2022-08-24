@@ -345,7 +345,6 @@ namespace sp::vulkan {
             .Execute(executeHiddenAreaStencil(1));
 
         glm::vec3 viewPos = viewsByEye[0].invViewMat * glm::vec4(0, 0, 0, 1);
-        // TODO: Verify this position is sane for sorting
         auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[0].visibilityMask);
 
         graph.AddPass("ForwardPass")
