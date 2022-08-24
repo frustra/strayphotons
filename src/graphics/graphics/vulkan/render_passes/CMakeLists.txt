@@ -11,6 +11,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     LightSensors.cc
     Outline.cc
     Tonemap.cc
+    Transparency.cc
     VisualizeBuffer.cc
     Voxels.cc
 )

@@ -39,6 +39,7 @@ namespace sp::vulkan {
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock) {
         ZoneScoped;
         renderables.clear();
+        meshes.clear();
         opticEntities.clear();
         jointPoses.clear();
         renderableCount = 0;
@@ -57,8 +58,10 @@ namespace sp::vulkan {
             auto vkMesh = LoadMesh(model, renderable.meshIndex);
             if (!vkMesh || !vkMesh->CheckReady()) continue;
 
+            auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
+
             GPURenderableEntity gpuRenderable;
-            gpuRenderable.modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
+            gpuRenderable.modelToWorld = transform.matrix;
             gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
@@ -84,10 +87,17 @@ namespace sp::vulkan {
             }
 
             renderables.push_back(gpuRenderable);
+            meshes.emplace_back(vkMesh);
+
             renderableCount++;
             primitiveCount += vkMesh->PrimitiveCount();
             vertexCount += vkMesh->VertexCount();
         }
+
+        Assertf(renderables.size() == meshes.size(),
+            "Mismatched renderable and mesh counts: %u != %u",
+            renderables.size(),
+            meshes.size());
 
         primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(primitiveCount));
 
@@ -155,7 +165,7 @@ namespace sp::vulkan {
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
-                auto drawParams = builder.CreateBuffer({sizeof(uint16) * 4, maxDraws},
+                auto drawParams = builder.CreateBuffer({sizeof(GPUDrawParams), maxDraws},
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
@@ -179,6 +189,88 @@ namespace sp::vulkan {
                 cmd.PushConstants(constants);
 
                 cmd.Dispatch((renderableCount + 127) / 128, 1, 1);
+            });
+        return bufferIDs;
+    }
+
+    GPUScene::DrawBufferIDs GPUScene::GenerateSortedDrawsForView(rg::RenderGraph &graph,
+        glm::vec3 viewPosition,
+        ecs::VisibilityMask viewMask,
+        bool reverseSort,
+        uint32 instanceCount) {
+        DrawBufferIDs bufferIDs;
+
+        graph.AddPass("GenerateSortedDrawsForView")
+            .Build([&](rg::PassBuilder &builder) {
+                const auto maxDraws = primitiveCountPowerOfTwo;
+
+                auto drawCmds = builder.CreateBuffer({sizeof(uint32), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                bufferIDs.drawCommandsBuffer = drawCmds.id;
+
+                auto drawParams = builder.CreateBuffer({sizeof(GPUDrawParams), maxDraws},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                bufferIDs.drawParamsBuffer = drawParams.id;
+            })
+            .Execute([this, viewMask, viewPosition, bufferIDs, instanceCount, reverseSort](rg::Resources &resources,
+                         CommandContext &cmd) {
+                InlineVector<VkDrawIndexedIndirectCommand, 10 * 1024> drawCommands;
+                InlineVector<GPUDrawParams, 10 * 1024> drawParams;
+                InlineVector<float, 10 * 1024> primitiveDepth;
+
+                for (size_t i = 0; i < renderables.size(); i++) {
+                    auto &renderable = renderables[i];
+                    if (((ecs::VisibilityMask)renderable.visibilityMask & viewMask) != viewMask) continue;
+
+                    auto mesh = meshes[i].lock();
+                    if (!mesh || !mesh->CheckReady()) continue;
+
+                    for (auto &primitive : mesh->primitives) {
+                        auto &drawCmd = drawCommands.emplace_back();
+
+                        drawCmd.indexCount = primitive.indexCount;
+                        drawCmd.instanceCount = instanceCount;
+                        drawCmd.firstIndex = mesh->indexBuffer->ArrayOffset() + primitive.indexOffset;
+                        drawCmd.vertexOffset = renderable.vertexOffset + primitive.vertexOffset;
+
+                        drawCmd.firstInstance = drawParams.size();
+                        auto &drawParam = drawParams.emplace_back();
+
+                        drawParam.baseColorTexID = primitive.baseColor.index;
+                        drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
+
+                        auto worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
+                        auto relPos = (glm::vec3(worldPos) / worldPos.w) - viewPosition;
+                        primitiveDepth.push_back(glm::length(relPos));
+                    }
+                }
+
+                if (reverseSort) {
+                    // Sort primitives farthest first
+                    std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
+                        return primitiveDepth[a.firstInstance] > primitiveDepth[b.firstInstance];
+                    });
+                } else {
+                    // Sort primitives nearest first
+                    std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
+                        return primitiveDepth[a.firstInstance] < primitiveDepth[b.firstInstance];
+                    });
+                }
+
+                auto commandsBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
+                uint32_t *cmdBufferPtr = nullptr;
+                commandsBuffer->Map((void **)&cmdBufferPtr);
+                cmdBufferPtr[0] = drawCommands.size();
+                std::copy_n(drawCommands.data(),
+                    drawCommands.size(),
+                    reinterpret_cast<VkDrawIndexedIndirectCommand *>(cmdBufferPtr + 1));
+                commandsBuffer->Unmap();
+                commandsBuffer->Flush();
+
+                auto paramsBuffer = resources.GetBuffer(bufferIDs.drawParamsBuffer);
+                paramsBuffer->CopyFrom(drawParams.data(), drawParams.size());
             });
         return bufferIDs;
     }

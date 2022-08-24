@@ -39,8 +39,11 @@ namespace sp::vulkan {
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
+    static CVar<bool> CVarSortedDraw("r.SortedDraw", true, "Draw geometry in sorted depth-order");
+    static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
+
     Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), lighting(scene), voxels(scene),
+        : device(device), graph(device), scene(device), lighting(scene), transparency(scene), voxels(scene),
           guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
@@ -126,17 +129,17 @@ namespace sp::vulkan {
 #ifdef SP_XR_SUPPORT
         {
             auto scope = graph.Scope("XRView");
-            AddXRView(lock);
-            if (graph.HasResource("GBuffer0")) AddDeferredPasses(lock, elapsedTime);
+            auto view = AddXRView(lock);
+            if (graph.HasResource("GBuffer0") && view) AddDeferredPasses(lock, view, elapsedTime);
         }
         AddXRSubmit(lock);
 #endif
 
         {
             auto scope = graph.Scope("FlatView");
-            AddFlatView(lock);
-            if (graph.HasResource("GBuffer0")) {
-                AddDeferredPasses(lock, elapsedTime);
+            auto view = AddFlatView(lock);
+            if (graph.HasResource("GBuffer0") && view) {
+                AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph);
                 if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
             }
@@ -196,20 +199,22 @@ namespace sp::vulkan {
         graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
     }
 
-    void Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock) {
+    ecs::View Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock) {
         ecs::Entity windowEntity = device.GetActiveView();
 
-        if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return;
+        if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return {};
 
         auto view = windowEntity.Get<ecs::View>(lock);
-        if (view.extents.x == 0 || view.extents.y == 0) {
-            // TODO: Fix race condition with PrepareWindowView being in a separate transaction
-            // Abortf("Invalid flatview extents: %d, %d", view.extents.x, view.extents.y);
-            return;
-        }
+        if (!view) return {};
         view.UpdateViewMatrix(lock, windowEntity);
 
-        auto drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
+        GPUScene::DrawBufferIDs drawIDs;
+        if (CVarSortedDraw.Get()) {
+            glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
+            drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, view.visibilityMask, CVarDrawReverseOrder.Get());
+        } else {
+            drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
+        }
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
@@ -248,14 +253,15 @@ namespace sp::vulkan {
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
             });
+        return view;
     }
 
 #ifdef SP_XR_SUPPORT
-    void Renderer::AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock) {
-        if (!xrSystem) return;
+    ecs::View Renderer::AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock) {
+        if (!xrSystem) return {};
 
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
-        if (xrViews.size() == 0) return;
+        if (xrViews.size() == 0) return {};
 
         glm::ivec2 viewExtents;
         std::array<ecs::View, (size_t)ecs::XrEye::Count> viewsByEye;
@@ -338,7 +344,8 @@ namespace sp::vulkan {
             })
             .Execute(executeHiddenAreaStencil(1));
 
-        auto drawIDs = scene.GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
+        glm::vec3 viewPos = viewsByEye[0].invViewMat * glm::vec4(0, 0, 0, 1);
+        auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[0].visibilityMask);
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
@@ -358,7 +365,7 @@ namespace sp::vulkan {
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
-                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", sizeof(GPUViewState) * viewsByEye.size());
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
@@ -394,6 +401,7 @@ namespace sp::vulkan {
                 viewStateBuf->Unmap();
                 viewStateBuf->Flush();
             });
+        return viewsByEye[0];
     }
 
     void Renderer::AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock) {
@@ -499,9 +507,11 @@ namespace sp::vulkan {
 
     void Renderer::AddDeferredPasses(
         ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
+        const ecs::View &view,
         chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
+        transparency.AddPass(graph, view);
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);

@@ -78,6 +78,7 @@ namespace sp::vulkan {
             vkPrimitive.jointsVertexCount = assetPrimitive.jointsBuffer.Count();
             vkPrimitive.jointsVertexOffset = jointsData - jointsDataStart;
 
+            vkPrimitive.center = glm::vec3(0);
             for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
                 SceneVertex &vertex = *vertexData++;
 
@@ -91,7 +92,10 @@ namespace sp::vulkan {
                     joints.jointIndexes = assetPrimitive.jointsBuffer.Read(i);
                     joints.jointWeights = assetPrimitive.weightsBuffer.Read(i);
                 }
+
+                vkPrimitive.center += vertex.position;
             }
+            vkPrimitive.center /= vkPrimitive.vertexCount;
 
             vkPrimitive.baseColor = scene.textures.LoadGltfMaterial(source,
                 assetPrimitive.materialIndex,

@@ -110,13 +110,16 @@ namespace sp::vulkan::renderer {
                 auto &optic = rbLight.lightPath[i].Get<ecs::OpticalElement>(lock);
                 light.tint *= optic.tint;
                 if (light.tint == glm::vec3(0)) break;
+
+                auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
+                auto opticNormal = opticTransform.GetForward();
                 if (optic.type == ecs::OpticType::Gel) {
-                    auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
                     lastOpticTransform = opticTransform;
-                    lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
+                    // Make sure the optic is facing the incoming light
+                    if (glm::dot(opticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
+                        lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
+                    }
                 } else if (optic.type == ecs::OpticType::Mirror) {
-                    auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
-                    auto opticNormal = opticTransform.GetForward();
                     lastOpticTransform = opticTransform;
                     lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
                                   opticTransform.GetPosition();

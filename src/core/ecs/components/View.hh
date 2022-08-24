@@ -39,6 +39,14 @@ namespace ecs {
             viewMat = glm::inverse(invViewMat);
         }
 
+        operator bool() const {
+            return extents.x > 0 && extents.y > 0;
+        }
+
+        bool operator!() const {
+            return extents.x <= 0 || extents.y <= 0;
+        }
+
         // Matrix cache
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;

@@ -26,6 +26,7 @@ namespace sp::vulkan {
             size_t vertexOffset, vertexCount;
             size_t jointsVertexOffset, jointsVertexCount;
             TextureHandle baseColor, metallicRoughness;
+            glm::vec3 center;
         };
 
         Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
@@ -34,6 +35,9 @@ namespace sp::vulkan {
         uint32 SceneIndex() const;
         uint32 PrimitiveCount() const {
             return primitives.size();
+        }
+        uint32 IndexCount() const {
+            return indexCount;
         }
         uint32 VertexCount() const {
             return vertexCount;
@@ -68,5 +72,7 @@ namespace sp::vulkan {
         SubBufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
 
         bool ready = false;
+
+        friend class GPUScene;
     };
 } // namespace sp::vulkan

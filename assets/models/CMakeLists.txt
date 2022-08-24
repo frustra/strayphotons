@@ -91,6 +91,12 @@ set(RAW_MODELS
     mcube-physx
     mirror
     occluder
+    redfilter
+    greenfilter
+    bluefilter
+    cyanfilter
+    magentafilter
+    yellowfilter
 )
 
 foreach(_model ${RAW_MODELS})
