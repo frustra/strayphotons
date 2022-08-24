@@ -43,7 +43,7 @@ namespace ecs {
             return extents.x > 0 && extents.y > 0;
         }
 
-        bool operator !() const {
+        bool operator!() const {
             return extents.x <= 0 || extents.y <= 0;
         }
 
