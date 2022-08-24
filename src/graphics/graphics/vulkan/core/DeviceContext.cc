@@ -322,6 +322,7 @@ namespace sp::vulkan {
         vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
         enabledDeviceFeatures2.pNext = &enabledVulkan11Features;
         auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
+        enabledDeviceFeatures.dualSrcBlend = true;
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
         enabledDeviceFeatures.multiDrawIndirect = true;

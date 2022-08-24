@@ -93,7 +93,8 @@ namespace sp::vulkan {
 
         // Sort primitives nearest first by default.
         DrawBufferIDs GenerateSortedDrawsForView(rg::RenderGraph &graph,
-            const ecs::View &view,
+            glm::vec3 viewPosition,
+            ecs::VisibilityMask viewMask,
             bool reverseSort = false,
             uint32 instanceCount = 1);
 

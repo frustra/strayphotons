@@ -10,6 +10,7 @@
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
+#include "graphics/vulkan/render_passes/Transparency.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
@@ -54,16 +55,17 @@ namespace sp::vulkan {
         rg::RenderGraph graph;
 
         void BuildFrameGraph(chrono_clock::duration elapsedTime);
-        void AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
+        ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
         void AddWindowOutput();
 
 #ifdef SP_XR_SUPPORT
-        void AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock);
+        ecs::View AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock);
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
 #endif
 
         void AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
+            const ecs::View &view,
             chrono_clock::duration elapsedTime);
         void AddMenuOverlay();
 
@@ -73,6 +75,7 @@ namespace sp::vulkan {
         GPUScene scene;
 
         renderer::Lighting lighting;
+        renderer::Transparency transparency;
         renderer::Voxels voxels;
         renderer::Emissive emissive;
         renderer::SMAA smaa;

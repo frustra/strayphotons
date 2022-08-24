@@ -39,6 +39,7 @@ d10b4dfbe694e3ea8ab67940b758ef95    models/airlock/AirlockInterior_Base_Color.pn
 9b417d7c8a8ab13ae9996f6990e17044    models/airlock/AirlockInterior_Metallic.png
 abeb983346476d60bf60938c00d2dea2    models/airlock/AirlockInterior_Roughness.png
 cca8a80569b451dd5139fb058940e6d5    models/articulating-arm.glb
+788b189956a48d21d1e319fda1d84b95    models/bluefilter.gltf
 a8542bca71645613252a6b4acc96b889    models/box.gltf
 d71748db7321a116b49ca9eb0ce7c879    models/breadboard_corner.glb
 948925d131e0b7759947799dd4c47fa3    models/breadboard_edge.glb
@@ -104,6 +105,7 @@ e607aa0ab90e22f6749cb27ec36aadcd    models/door-panel-r-1.5x2/door-panel-r-1.5x2
 d68914109658ec1fc4fd09d8a954fe7f    models/duck/duckCM.png
 45df0c6862b1206c45c47457bb806f7e    models/duck/screenshot/screenshot.png
 b9efa01538a25b9cc219bb8359c42406    models/extrusion.glb
+85b0d4010ad5facac6c974d30bf79fee    models/greenfilter.gltf
 9b03d8fd268344f700e686181e3ac717    models/ground-1x1x1/ground-1x1x1.bin
 4f757bb55168b03046859109677cab92    models/ground-1x1x1/ground-1x1x1.gltf
 2455b2d3987f10df36114a9f0c7d1955    models/ground-1x1x1/ground-1x1x1.obj
@@ -163,6 +165,7 @@ fa544ade3faa1c7e1ce70b9f29f940bb    models/pbr-cube/pbr-cube.gltf
 5628c2163c9228fa80c40e11d89cd2e3    models/pbr-cube/pbr-cube.mtl
 657c7285cc510099db1f2f26cbf34c0e    models/pbr-cube/pbr-cube.obj
 68fe1dc740c960f2b7e6277ec1825644    models/red_led.glb
+92fb9fb58936315965fd9268291f7d31    models/redfilter.gltf
 570ee7268a95d80b2ad861d882deb28b    models/round-mirror-mounted.glb
 51a1772db7aa8cdd713d81fd8951e463    models/sensor/sensor.gltf
 9470767dbd586095e6a0bb1a36e6ebe7    models/sensor/sensor.mtl

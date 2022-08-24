@@ -22,7 +22,7 @@ namespace ecs {
         None = 0,
         DirectCamera = 1 << 0,
         DirectEye = 1 << 1,
-        Transparency = 1 << 2,
+        Transparent = 1 << 2,
         LightingShadow = 1 << 3,
         LightingVoxel = 1 << 4,
         Optics = 1 << 5,

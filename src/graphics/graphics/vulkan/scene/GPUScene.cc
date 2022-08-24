@@ -194,11 +194,11 @@ namespace sp::vulkan {
     }
 
     GPUScene::DrawBufferIDs GPUScene::GenerateSortedDrawsForView(rg::RenderGraph &graph,
-        const ecs::View &view,
+        glm::vec3 viewPosition,
+        ecs::VisibilityMask viewMask,
         bool reverseSort,
         uint32 instanceCount) {
         DrawBufferIDs bufferIDs;
-        glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
 
         graph.AddPass("GenerateSortedDrawsForView")
             .Build([&](rg::PassBuilder &builder) {
@@ -214,8 +214,7 @@ namespace sp::vulkan {
                     Access::HostWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
-            .Execute([this, viewMask = view.visibilityMask, viewPos, bufferIDs, instanceCount, reverseSort](
-                         rg::Resources &resources,
+            .Execute([this, viewMask, viewPosition, bufferIDs, instanceCount, reverseSort](rg::Resources &resources,
                          CommandContext &cmd) {
                 InlineVector<VkDrawIndexedIndirectCommand, 10 * 1024> drawCommands;
                 InlineVector<GPUDrawParams, 10 * 1024> drawParams;
@@ -243,7 +242,7 @@ namespace sp::vulkan {
                         drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
 
                         auto worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
-                        auto relPos = (glm::vec3(worldPos) / worldPos.w) - viewPos;
+                        auto relPos = (glm::vec3(worldPos) / worldPos.w) - viewPosition;
                         primitiveDepth.push_back(glm::length(relPos));
                     }
                 }
