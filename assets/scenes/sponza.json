@@ -10,7 +10,7 @@
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "sponza",
+					"model": "sponza2",
 					"render": true
 				}
 			}
