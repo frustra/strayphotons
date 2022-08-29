@@ -18,43 +18,38 @@ layout(binding = 1) uniform PreviousLightData {
 INCLUDE_LAYOUT(binding = 2)
 #include "lib/light_data_uniform.glsl"
 
+layout(push_constant) uniform PushConstants {
+    uint lightIndex;
+};
+
 void main() {
     vec2 flippedCoord = vec2(inTexCoord.x, 1 - inTexCoord.y);
 
-    // Find the light corresponding to this spot on the shadowmap
-    for (int i = 0; i < lightCount; i++) {
-        if (all(greaterThanEqual(flippedCoord, lights[i].mapOffset.xy)) &&
-            all(lessThan(flippedCoord, lights[i].mapOffset.xy + lights[i].mapOffset.zw))) {
-
-            if (lights[i].previousIndex >= previousLightCount) {
-                // This is the first frame this light exists, mask it off until it is included in the shadowmap
-                outLinearDepth = vec4(0);
-                return;
-            }
-
-            if (lights[i].parentIndex >= previousLightCount) break;
-            uint j = lights[i].previousIndex;
-            uint k = lights[i].parentIndex;
-
-            vec2 texCoord = (flippedCoord - lights[i].mapOffset.xy) / lights[i].mapOffset.zw;
-            vec3 fragPosition = ScreenPosToViewPos(texCoord, 0, previousLights[j].invProj);
-            vec3 worldFragPosition = (previousLights[j].invView * vec4(fragPosition, 1.0)).xyz;
-
-            // Sample the parent shadow map and check if we should write the mask
-            vec3 shadowMapPos = (previousLights[k].view * vec4(worldFragPosition, 1.0)).xyz;
-            ShadowInfo info = ShadowInfo(shadowMapPos,
-                previousLights[k].proj,
-                previousLights[k].mapOffset,
-                previousLights[k].clip,
-                previousLights[k].bounds);
-
-            float occlusion = SimpleOcclusion(info);
-            if (occlusion < 0.5) {
-                outLinearDepth = vec4(0);
-                return;
-            }
-        }
+    if (lights[lightIndex].previousIndex >= previousLightCount) {
+        // This is the first frame this light exists, mask it off until it is included in the shadowmap
+        outLinearDepth = vec4(0);
+        return;
     }
+    if (lights[lightIndex].parentIndex >= previousLightCount) discard;
 
-    discard;
+    uint i = lights[lightIndex].previousIndex;
+    uint j = lights[lightIndex].parentIndex;
+
+    vec3 fragPosition = ScreenPosToViewPos(flippedCoord, 0, previousLights[i].invProj);
+    vec3 worldFragPosition = (previousLights[i].invView * vec4(fragPosition, 1.0)).xyz;
+
+    // Sample the parent shadow map and check if we should write the mask
+    vec3 shadowMapPos = (previousLights[j].view * vec4(worldFragPosition, 1.0)).xyz;
+    ShadowInfo info = ShadowInfo(shadowMapPos,
+        previousLights[j].proj,
+        previousLights[j].mapOffset,
+        previousLights[j].clip,
+        previousLights[j].bounds);
+
+    float occlusion = SimpleOcclusion(info);
+    if (occlusion < 0.5) {
+        outLinearDepth = vec4(0);
+    } else {
+        discard;
+    }
 }

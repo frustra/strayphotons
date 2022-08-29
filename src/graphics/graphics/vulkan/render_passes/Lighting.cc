@@ -340,7 +340,21 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
                 cmd.SetYDirection(YDirection::Down);
 
-                cmd.Draw(3); // vertices are defined as constants in the vertex shader
+                struct {
+                    uint32_t lightIndex;
+                } constants;
+
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    vk::Rect2D viewport;
+                    viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
+                    viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
+                    cmd.SetViewport(viewport);
+
+                    constants.lightIndex = i;
+                    cmd.PushConstants(constants);
+
+                    cmd.Draw(3); // vertices are defined as constants in the vertex shader
+                }
             });
 
         graph.AddPass("RenderDepth")
