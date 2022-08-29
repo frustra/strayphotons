@@ -6,7 +6,6 @@
 #endif
 
 struct ShadowInfo {
-    int index;
     vec3 shadowMapPos;
     mat4 projMat;
     vec4 mapOffset;

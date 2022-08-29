@@ -97,7 +97,7 @@ vec3 DirectShading(vec3 worldPosition,
         float occlusion = step(lights[i].clip.x, -shadowMapPos.z);
 
         ShadowInfo info =
-            ShadowInfo(i, shadowMapPos, lights[i].proj, lights[i].mapOffset, lights[i].clip, lights[i].bounds);
+            ShadowInfo(shadowMapPos, lights[i].proj, lights[i].mapOffset, lights[i].clip, lights[i].bounds);
 
 #ifdef SHADOWS_ENABLED
     #ifdef USE_VSM
@@ -113,7 +113,7 @@ vec3 DirectShading(vec3 worldPosition,
 
         vec3 lightTint = vec3(spotFalloff);
 #ifdef LIGHTING_GELS
-        int gelId = lights[i].gelId;
+        uint gelId = lights[i].gelId;
         if (gelId > 0) {
             vec2 coord = ViewPosToScreenPos(shadowMapPos, lights[i].proj).xy;
             lightTint = texture(textures[gelId], vec2(coord.x, 1 - coord.y)).rgb * float(coord == clamp(coord, 0, 1));

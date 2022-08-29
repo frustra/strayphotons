@@ -47,7 +47,8 @@ struct Light {
     vec4 bounds;
     vec2 clip;
 
-    int gelId;
+    uint gelId;
+    uint previousIndex;
     uint parentIndex;
 };
 

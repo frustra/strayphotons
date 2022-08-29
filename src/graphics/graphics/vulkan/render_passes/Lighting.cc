@@ -81,13 +81,18 @@ namespace sp::vulkan::renderer {
             data.bounds = {-viewBounds, viewBounds * 2.0f};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
-            data.gelId = 0;
-            data.parentIndex = ~0u;
 
+            data.gelId = 0;
             if (!gelName.empty()) {
                 vLight.gelName = gelName;
                 vLight.gelTexture = &gelTextureCache[gelName].index;
             }
+
+            data.previousIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - previousLights.begin();
+            data.parentIndex = ~0u;
 
             if (lights.size() >= MAX_LIGHTS) break;
         }
@@ -179,14 +184,20 @@ namespace sp::vulkan::renderer {
             data.illuminance = light.illuminance;
 
             data.gelId = 0;
-            data.parentIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
-                return light.lightPath.size() + 1 == vLight.lightPath.size() &&
-                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
-            }) - previousLights.begin();
             if (!light.gelName.empty()) {
                 vLight.gelName = light.gelName;
                 vLight.gelTexture = &gelTextureCache[light.gelName].index;
             }
+
+            data.previousIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - previousLights.begin();
+
+            data.parentIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() + 1 == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - previousLights.begin();
         }
         gpuData.count = lights.size();
         previousLights = lights;
