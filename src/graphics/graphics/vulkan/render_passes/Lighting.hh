@@ -40,8 +40,9 @@ namespace sp::vulkan::renderer {
         robin_hood::unordered_map<string, TextureHandle> gelTextureCache;
 
         std::array<ecs::View, MAX_LIGHTS> views;
-        std::vector<VirtualLight> lights;
-        std::vector<VirtualLight> readbackLights;
+        std::vector<VirtualLight> lights; // Current frame shadowmap lights
+        std::vector<VirtualLight> previousLights; // Previous frame shadowmap lights
+        std::vector<VirtualLight> readbackLights; // Optic visibility readback
         std::vector<std::pair<glm::ivec2, glm::ivec2>> freeRectangles;
 
         struct GPULight {
@@ -57,13 +58,14 @@ namespace sp::vulkan::renderer {
             glm::mat4 proj;
             glm::mat4 invProj;
             glm::mat4 view;
+            glm::mat4 invView;
             glm::vec4 mapOffset;
             glm::vec4 bounds;
             glm::vec2 clip;
             int gelId;
-            float padding[1];
+            uint32_t parentIndex;
         };
-        static_assert(sizeof(GPULight) == 18 * 4 * sizeof(float), "GPULight size incorrect");
+        static_assert(sizeof(GPULight) == 22 * 4 * sizeof(float), "GPULight size incorrect");
 
         struct GPUData {
             GPULight lights[MAX_LIGHTS];

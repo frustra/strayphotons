@@ -8,7 +8,7 @@
 struct ShadowInfo {
     int index;
     vec3 shadowMapPos;
-    mat4 projMat, invProjMat;
+    mat4 projMat;
     vec4 mapOffset;
     vec2 clip;
     vec4 nearInfo;
