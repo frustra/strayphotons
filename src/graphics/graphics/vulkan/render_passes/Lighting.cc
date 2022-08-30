@@ -9,8 +9,8 @@
 #include <algorithm>
 
 namespace sp::vulkan::renderer {
-    static CVar<bool> CVarVSM("r.VSM", false, "Enable Variance Shadow Mapping");
-    static CVar<int> CVarPCF("r.PCF", 1, "Enable screen space shadow filtering (0: off, 1: on, 2: shadow map blur");
+    static CVar<bool> CVarBlurShadowMap("r.BlurShadowMap", false, "Blur the shadow map before sampling");
+    static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering (0: off, 1: on, 2: shadow map blur");
     static CVar<int> CVarLightingMode("r.LightingMode",
         1,
         "Toggle between different lighting shader modes "
@@ -75,17 +75,24 @@ namespace sp::vulkan::renderer {
             data.proj = view.projMat;
             data.invProj = view.invProjMat;
             data.view = view.viewMat;
+            data.invView = view.invViewMat;
             data.clip = view.clip;
             auto viewBounds = glm::vec2(data.invProj[0][0], data.invProj[1][1]) * data.clip.x;
             data.bounds = {-viewBounds, viewBounds * 2.0f};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
-            data.gelId = 0;
 
+            data.gelId = 0;
             if (!gelName.empty()) {
                 vLight.gelName = gelName;
                 vLight.gelTexture = &gelTextureCache[gelName].index;
             }
+
+            data.previousIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - previousLights.begin();
+            data.parentIndex = ~0u;
 
             if (lights.size() >= MAX_LIGHTS) break;
         }
@@ -170,6 +177,7 @@ namespace sp::vulkan::renderer {
             data.proj = view.projMat;
             data.invProj = view.invProjMat;
             data.view = view.viewMat;
+            data.invView = view.invViewMat;
             data.clip = view.clip;
             data.bounds = {lightViewMirrorPos.x - 0.5, lightViewMirrorPos.y - 0.5, 1, 1};
             data.intensity = light.intensity;
@@ -180,9 +188,20 @@ namespace sp::vulkan::renderer {
                 vLight.gelName = light.gelName;
                 vLight.gelTexture = &gelTextureCache[light.gelName].index;
             }
-        }
 
+            data.previousIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - previousLights.begin();
+
+            data.parentIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
+                return light.lightPath.size() + 1 == vLight.lightPath.size() &&
+                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
+            }) - previousLights.begin();
+        }
         gpuData.count = lights.size();
+        previousLights = lights;
+
         AllocateShadowMap();
 
         graph.AddPass("LightState")
@@ -285,25 +304,71 @@ namespace sp::vulkan::renderer {
                 cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
             });
 
-        graph.AddPass("RenderDepth")
+        graph.AddPass("RenderMask")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
                 auto extent = glm::max(glm::ivec2(1), shadowAtlasSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
-                desc.format = CVarVSM.Get() ? vk::Format::eR32G32Sfloat : vk::Format::eR32Sfloat;
+                desc.format = vk::Format::eR32Sfloat;
                 builder.OutputColorAttachment(0, "Linear", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.ReadPreviousFrame("Linear", Access::FragmentShaderSampleImage);
+                builder.ReadPreviousFrame("LightState", Access::FragmentShaderReadUniform);
+                builder.ReadUniform("LightState");
+            })
+            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                cmd.SetShaders("screen_cover.vert", "shadow_map_mask.frag");
 
+                auto lastFrameID = resources.GetID("ShadowMap.Linear", false, 1);
+                if (lastFrameID != InvalidResource) {
+                    cmd.SetImageView(0, 0, resources.GetImageView(lastFrameID));
+                } else {
+                    cmd.SetImageView(0, 0, scene.textures.GetBlankPixel());
+                }
+
+                auto lastStateID = resources.GetID("LightState", false, 1);
+                if (lastStateID != InvalidResource) {
+                    cmd.SetUniformBuffer(0, 1, resources.GetBuffer(lastStateID));
+                } else {
+                    cmd.SetUniformBuffer(0, 1, resources.GetBuffer("LightState"));
+                }
+
+                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
+                cmd.SetYDirection(YDirection::Down);
+
+                struct {
+                    uint32_t lightIndex;
+                } constants;
+
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    vk::Rect2D viewport;
+                    viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
+                    viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
+                    cmd.SetViewport(viewport);
+
+                    constants.lightIndex = i;
+                    cmd.PushConstants(constants);
+
+                    cmd.Draw(3); // vertices are defined as constants in the vertex shader
+                }
+            });
+
+        graph.AddPass("RenderDepth")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.SetColorAttachment(0, "Linear", {LoadOp::Load, StoreOp::Store});
+
+                builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::Store});
+
+                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
             .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map.vert", CVarVSM.Get() ? "shadow_map_vsm.frag" : "shadow_map.frag");
+                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
 
                 for (uint32_t i = 0; i < lights.size(); i++) {
                     GPUViewState lightViews[] = {{views[i]}, {}};
@@ -427,7 +492,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto shadowDepth = (CVarVSM.Get() || CVarPCF.Get() == 2) ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
+        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
@@ -450,9 +515,7 @@ namespace sp::vulkan::renderer {
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
             .Execute([this, shadowDepth](rg::Resources &resources, CommandContext &cmd) {
-                if (CVarVSM.Get()) {
-                    cmd.SetShaders("screen_cover.vert", "lighting_vsm.frag");
-                } else if (CVarPCF.Get() > 0) {
+                if (CVarPCF.Get()) {
                     cmd.SetShaders("screen_cover.vert", "lighting_pcf.frag");
                 } else {
                     cmd.SetShaders("screen_cover.vert", "lighting.frag");

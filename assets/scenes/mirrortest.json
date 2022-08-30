@@ -89,7 +89,12 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{
@@ -102,7 +107,12 @@
 				"rotate": [45.2, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{
@@ -115,7 +125,12 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{
