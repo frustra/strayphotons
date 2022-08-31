@@ -261,7 +261,7 @@ b442bd0c1836565ae7c5f6c93a56c6d5    models/sponza/8783994986360286082.jpg
 3b67ffc5f6fb3344af32e7edfd99607e    models/sponza/sponza.bin
 99f735daa53b1f15a131521ba3a706c9    models/sponza/sponza.gltf
 9d944fa4d6cf48ba48a4422163283092    models/sponza/white.png
-a0133a6036a67ea082877a3855cae37a    models/sponza2/sponza2.gltf
+e337bf407b63b98efed77b77a840e358    models/sponza2/sponza2.gltf
 96d9f220e9ab4e30b42583d38123f89f    models/spotlight-01/spotlight-01.bin
 64ef9dcd30c285d5b9168984e172cbd7    models/spotlight-01/spotlight-01.gltf
 652b0dcde78910bda91233725d2713b1    models/spotlight-01/spotlight-01.mtl
