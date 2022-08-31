@@ -32,6 +32,8 @@ namespace sp::vulkan::render_graph {
              */
             template<typename SetupFunc>
             InitialPassState &Build(SetupFunc setupFunc) {
+                ZoneScoped;
+                ZoneStr(name);
                 Assert(passIndex == ~0u, "multiple Build calls for the same pass");
                 Pass pass(name);
                 pass.scopes = graph.resources.scopeStack;

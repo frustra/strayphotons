@@ -29,6 +29,7 @@ namespace sp::vulkan::renderer {
     void AddLightSensors(RenderGraph &graph,
         GPUScene &scene,
         ecs::Lock<ecs::Read<ecs::LightSensor, ecs::TransformSnapshot>> lock) {
+        ZoneScoped;
 
         shared_ptr<LightSensorData> data;
 

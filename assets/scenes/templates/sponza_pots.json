@@ -1,0 +1,188 @@
+{
+	"entities": [
+		{
+			"name": "Flowers.001",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.002",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.003",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.004",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.005",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.006",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.007",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Flowers.008",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.001",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.002",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.003",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.004",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.005",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.006",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.007",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "Vines.008",
+			"renderable": {
+				"visibility": ""
+			}
+		},
+		{
+			"name": "FlowerPot.001",
+			"physics": {
+				"model": "sponza2.convex80",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.002",
+			"physics": {
+				"model": "sponza2.convex81",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.003",
+			"physics": {
+				"model": "sponza2.convex82",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.004",
+			"physics": {
+				"model": "sponza2.convex83",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.005",
+			"physics": {
+				"model": "sponza2.convex84",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.006",
+			"physics": {
+				"model": "sponza2.convex85",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.007",
+			"physics": {
+				"model": "sponza2.convex86",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "FlowerPot.008",
+			"physics": {
+				"model": "sponza2.convex87",
+				"density": 1
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		}
+	]
+}

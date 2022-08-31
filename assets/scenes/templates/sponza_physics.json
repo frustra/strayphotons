@@ -2,86 +2,6 @@
 	"entities": [
 		{
 			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [-2.05, 4, -6.18]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [2.75, 4, -6.18]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [-2.05, 4, -2.48]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [2.75, 4, -2.48]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [-2.05, 4, 1.22]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [2.75, 4, 1.22]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [-2.05, 4, 4.92]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [0.7, 10, 0.7],
-				"translate": [2.75, 4, 4.92]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
 				"scale": [0.2, 3, 3.7],
 				"translate": [-2, 0.4, -8]
 			},
@@ -392,26 +312,6 @@
 		},
 		{
 			"transform": {
-				"scale": [1, 10, 1],
-				"translate": [-2, 4, -10]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [1, 10, 1],
-				"translate": [2.75, 4, -10]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
 				"scale": [0.4, 4, 0.4],
 				"translate": [0.37, 6, -10.1]
 			},
@@ -444,26 +344,6 @@
 			"transform": {
 				"scale": [5.75, 1.4, 1],
 				"translate": [0.375, 3.4, 8.75]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [1, 10, 1],
-				"translate": [-2, 4, 8.75]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"transform": {
-				"scale": [1, 10, 1],
-				"translate": [2.75, 4, 8.75]
 			},
 			"physics": {
 				"model": "box",

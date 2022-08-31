@@ -4,16 +4,25 @@
 			"name": "sponza",
 			"transform": {
 				"rotate": [-90, 0, 1, 0],
-				"translate": [0, -1, 0],
-				"scale": [1.25, 1.25, 1.25]
+				"translate": [0, -1, 0]
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "sponza2",
-					"render": true
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "sponza_pots" }
+				},
+				{
+					"prefab": "template",
+					"parameters": { "source": "sponza_pillars" }
+				},
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "sponza2",
+						"render": true
+					}
 				}
-			}
+			]
 		},
 		{
 			"renderable": {
