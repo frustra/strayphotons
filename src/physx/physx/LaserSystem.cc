@@ -16,9 +16,42 @@ namespace sp {
 
     LaserSystem::LaserSystem(PhysxManager &manager) : manager(manager) {}
 
+    struct OpticFilterCallback : PxQueryFilterCallback {
+        OpticFilterCallback(ecs::Lock<ecs::Read<ecs::OpticalElement>> lock) : lock(lock) {}
+
+        virtual PxQueryHitType::Enum preFilter(const PxFilterData &filterData,
+            const PxShape *shape,
+            const PxRigidActor *actor,
+            PxHitFlags &queryFlags) {
+            if (!actor) return PxQueryHitType::eNONE;
+            auto userData = (ActorUserData *)actor->userData;
+            if (!userData) return PxQueryHitType::eNONE;
+
+            if (userData->entity.Has<ecs::OpticalElement>(lock)) {
+                auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
+                if (optic.type == ecs::OpticType::Gel) {
+                    if (optic.tint == glm::vec3(1)) {
+                        return PxQueryHitType::eNONE;
+                    } else if (optic.tint * color != glm::vec3(0)) {
+                        return PxQueryHitType::eTOUCH;
+                    }
+                }
+            }
+            return PxQueryHitType::eBLOCK;
+        }
+
+        virtual PxQueryHitType::Enum postFilter(const PxFilterData &filterData, const PxQueryHit &hit) {
+            return PxQueryHitType::eNONE;
+        }
+
+        ecs::Lock<ecs::Read<ecs::OpticalElement>> lock;
+        glm::vec3 color;
+    };
+
     void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
         ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock) {
         ZoneScoped;
+
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
             sensor.illuminance = glm::vec3(0);
@@ -36,38 +69,76 @@ namespace sp {
             lines.intensity = emitter.intensity;
             lines.relative = false;
 
-            auto &line = std::get<ecs::LaserLine::Line>(lines.line);
-            line.color = emitter.color;
-            line.points.clear();
+            if (!std::holds_alternative<ecs::LaserLine::Segments>(lines.line)) lines.line = ecs::LaserLine::Segments();
+            auto &segments = std::get<ecs::LaserLine::Segments>(lines.line);
+            segments.clear();
+            glm::vec3 color = emitter.color;
 
             glm::vec3 rayStart = transform.GetPosition();
             glm::vec3 rayDir = transform.GetForward();
-            line.points.push_back(rayStart);
+
+            std::array<physx::PxRaycastHit, 128> hitBuffer;
 
             PxRaycastBuffer hit;
+            hit.touches = hitBuffer.data();
+            hit.maxNbTouches = hitBuffer.size();
             PxFilterData filterData;
             filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP |
                                           ecs::PHYSICS_GROUP_INTERACTIVE | ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND |
                                           ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
+
+            OpticFilterCallback filterCallback(lock);
 
             const float maxDistance = 1000.0f;
             int maxReflections = CVarLaserRecursion.Get();
             bool status = true;
 
             for (int reflectCount = 0; status && reflectCount <= maxReflections; reflectCount++) {
+                filterCallback.color = color;
                 status = manager.scene->raycast(GlmVec3ToPxVec3(rayStart),
                     GlmVec3ToPxVec3(rayDir),
                     maxDistance,
                     hit,
                     PxHitFlag::eNORMAL,
-                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                    PxQueryFilterData(filterData,
+                        PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER),
+                    &filterCallback);
 
-                glm::vec3 hitPos;
                 bool reflect = false;
                 if (!status) {
-                    hitPos = rayStart + rayDir * maxDistance;
+                    auto &segment = segments.emplace_back();
+                    segment.start = rayStart;
+                    segment.end = rayStart + rayDir * maxDistance;
+                    segment.color = color;
+                    rayStart = segment.end;
                 } else {
-                    hitPos = rayStart + rayDir * hit.block.distance;
+                    std::sort(hit.touches, hit.touches + hit.nbTouches, [](auto a, auto b) {
+                        return a.distance < b.distance;
+                    });
+
+                    float startDistance = 0;
+                    for (size_t i = 0; i < hit.nbTouches; i++) {
+                        auto &touch = hit.touches[i];
+                        if (!touch.actor) continue;
+                        auto userData = (ActorUserData *)touch.actor->userData;
+                        if (!userData) continue;
+                        if (!userData->entity.Has<ecs::OpticalElement>(lock)) continue;
+                        auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
+
+                        auto &segment = segments.emplace_back();
+                        segment.start = rayStart;
+                        segment.end = rayStart + rayDir * (touch.distance - startDistance);
+                        segment.color = color;
+                        color *= optic.tint;
+                        rayStart = segment.end;
+                        startDistance = touch.distance;
+                    }
+
+                    auto &segment = segments.emplace_back();
+                    segment.start = rayStart;
+                    segment.end = rayStart + rayDir * (hit.block.distance - startDistance);
+                    segment.color = color;
+                    rayStart = segment.end;
 
                     physx::PxRigidActor *hitActor = hit.block.actor;
                     if (hitActor) {
@@ -76,21 +147,20 @@ namespace sp {
                             auto hitEntity = userData->entity;
                             if (hitEntity.Has<ecs::OpticalElement>(lock)) {
                                 auto &optic = hitEntity.Get<ecs::OpticalElement>(lock);
+                                color *= optic.tint;
                                 reflect = (optic.type == ecs::OpticType::Mirror);
                             }
                             if (hitEntity.Has<ecs::LaserSensor>(lock)) {
                                 auto &sensor = hitEntity.Get<ecs::LaserSensor>(lock);
-                                sensor.illuminance += emitter.color * emitter.intensity;
+                                sensor.illuminance += color * emitter.intensity;
                             }
                         }
                     }
                 }
 
-                line.points.push_back(hitPos);
-
                 if (reflect) {
                     rayDir = glm::normalize(glm::reflect(rayDir, PxVec3ToGlmVec3(hit.block.normal)));
-                    rayStart = hitPos + rayDir * 0.01f; // offset to prevent hitting the same object again
+                    rayStart += rayDir * 0.01f; // offset to prevent hitting the same object again
                 } else {
                     break;
                 }

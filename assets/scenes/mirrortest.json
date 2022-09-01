@@ -285,6 +285,17 @@
 			"renderable": {
 				"model": "mirror"
 			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02],
+					"transform": {
+						"translate": [0, 0, 0.0095]
+					}
+				},
+				"group": "world_overlap",
+				"density": 1,
+				"dynamic": false
+			},
 			"transform": {
 				"parent": "mirrorbox",
 				"translate": [0, 0, 0.501],
@@ -299,6 +310,17 @@
 			"renderable": {
 				"model": "mirror"
 			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02],
+					"transform": {
+						"translate": [0, 0, 0.0095]
+					}
+				},
+				"group": "world_overlap",
+				"density": 1,
+				"dynamic": false
+			},
 			"transform": {
 				"parent": "mirrorbox2",
 				"translate": [0, 0, 0.501],
@@ -312,6 +334,17 @@
 			},
 			"renderable": {
 				"model": "mirror"
+			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02],
+					"transform": {
+						"translate": [0, 0, 0.0095]
+					}
+				},
+				"group": "world_overlap",
+				"density": 1,
+				"dynamic": false
 			},
 			"transform": {
 				"parent": "mirrorbox3",

@@ -31,7 +31,7 @@ namespace sp {
             try {
 #endif
                 while (!this->exiting) {
-                    this->FramePreload();
+                    this->PreFrame();
                     if (stepMode) {
                         while (stepCount < maxStepCount) {
                             if (traceFrames) FrameMarkStart(threadName.c_str());
