@@ -2,32 +2,58 @@
 
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/GuiContext.hh"
+#include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
+#include <picojson/picojson.h>
 
 namespace sp {
     class InspectorGui : public GuiWindow {
     public:
-        InspectorGui(const string &name, ecs::Entity target = {}) : GuiWindow(name), inspectTarget(target) {}
+        InspectorGui(const string &name) : GuiWindow(name) {}
         virtual ~InspectorGui() {}
 
         void DefineContents() {
+            {
+                auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+
+                auto inspector = inspectorEntity.Get(lock);
+                if (!inspector.Has<ecs::EventInput>(lock)) return;
+
+                ecs::Event event;
+                while (ecs::EventInput::Poll(lock, inspector, EDITOR_EVENT_EDIT_TARGET, event)) {
+                    auto newTarget = std::get_if<ecs::Entity>(&event.data);
+                    if (!newTarget) {
+                        Errorf("Invalid editor event: %s", event.toString());
+                    } else {
+                        inspectTarget = *newTarget;
+                    }
+                }
+
+                if (inspectTarget) {
+                    std::string text = "Entity: " + ecs::ToString(lock, inspectTarget);
+                    ImGui::Text(text.c_str());
+
+                    ecs::EntityScope scope;
+                    if (inspector.Has<ecs::SceneInfo>(lock)) {
+                        auto &sceneInfo = inspector.Get<ecs::SceneInfo>(lock);
+                        scope.scene = sceneInfo.scene;
+                        auto scene = sceneInfo.scene.lock();
+                        if (scene) scope.prefix.scene = scene->name;
+                    }
+
+                    ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                        if (comp.HasComponent(lock, inspectTarget)) {
+                            picojson::value value;
+                            comp.SaveEntity(lock, scope, value, inspectTarget);
+                            text = std::string(comp.name) + ": " + value.serialize();
+                            ImGui::Text(text.c_str());
+                        }
+                    });
+                }
+            }
             if (!inspectTarget) {
                 ListEntitiesByTransformTree();
-                return;
-            }
-
-            {
-                auto lock =
-                    ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Renderable, ecs::Physics>,
-                        ecs::ReadSignalsLock>();
-
-                std::string text = "Entity: " + ecs::ToString(lock, inspectTarget);
-                ImGui::Text(text.c_str());
-                if (inspectTarget.Has<ecs::Renderable>(lock)) {
-                    text = "Renderable: " + inspectTarget.Get<ecs::Renderable>(lock).modelName;
-                    ImGui::Text(text.c_str());
-                }
             }
         }
 
@@ -71,6 +97,7 @@ namespace sp {
     private:
         vector<vector<ecs::Entity>> children;
 
+        ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         ecs::Entity inspectTarget;
     };
 } // namespace sp

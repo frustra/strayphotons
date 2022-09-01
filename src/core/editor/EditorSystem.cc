@@ -6,22 +6,27 @@
 #include "game/SceneManager.hh"
 
 namespace sp {
-    EditorSystem::EditorSystem() : RegisteredThread("EditorSystem", 30.0) {
+    static CVar<float> CVarEditorAngle("e.EditorAngle", -20.0f, "Tilt angle of the entity inspector gui");
+    static CVar<float> CVarEditorOffset("e.EditorOffset", 0.4f, "Distance to space the inspector gui from its target");
+
+    EditorSystem::EditorSystem() : RegisteredThread("EditorSystem", 30.0), workQueue("EditorSystem", 1) {
         funcs.Register(this,
             "edit",
             "Edit the specified entity, or the entity being looked at",
             &EditorSystem::OpenEditor);
+
         StartThread();
     }
 
     EditorSystem::~EditorSystem() {
         StopThread();
-
         GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "editor");
     }
 
     void EditorSystem::OpenEditor(std::string targetName) {
-        auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+        auto lock = ecs::World.StartTransaction<ecs::ReadAll, ecs::SendEventsLock, ecs::Write<ecs::Gui>>();
+        auto inspector = inspectorEntity.Get(lock);
+
         ecs::Entity entity;
         if (targetName.empty()) {
             auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
@@ -40,7 +45,7 @@ namespace sp {
             entity = ref.Get(lock);
         }
         targetEntity = entity;
-        if (!entity) Errorf("Entity not found: %s", targetName);
+        ecs::EventBindings::SendEvent(lock, "/edit/target", inspector, entity);
     }
 
     bool EditorSystem::ThreadInit() {
@@ -51,20 +56,43 @@ namespace sp {
                 auto &gui = inspector.Set<ecs::Gui>(lock, "inspector");
                 gui.disabled = true;
                 inspector.Set<ecs::Screen>(lock);
-                inspector.Set<ecs::EventInput>(lock, "/interact/point", "/interact/press");
+                inspector.Set<ecs::EventInput>(lock,
+                    INTERACT_EVENT_INTERACT_POINT,
+                    INTERACT_EVENT_INTERACT_PRESS,
+                    EDITOR_EVENT_EDIT_TARGET);
                 inspector.Set<ecs::Physics>(lock,
                     ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01)),
                     ecs::PhysicsGroup::UserInterface,
                     false /* dynamic */);
-
-                auto &transform = inspector.Set<ecs::TransformTree>(lock);
-                transform.parent = ecs::Name("player", "player");
-                transform.pose.Translate(glm::vec3(0, 1, -1));
+                inspector.Set<ecs::TransformTree>(lock);
             });
 
         return true;
     }
 
-    void EditorSystem::PreFrame() {}
-    void EditorSystem::Frame() {}
+    void EditorSystem::Frame() {
+        auto lock =
+            ecs::World.StartTransaction<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::TransformTree, ecs::Gui>>();
+
+        auto inspector = inspectorEntity.Get(lock);
+        auto player = playerEntity.Get(lock);
+        auto target = targetEntity.Get(lock);
+        if (!player.Has<ecs::TransformSnapshot>(lock) || !inspector.Has<ecs::TransformTree, ecs::Gui>(lock)) {
+            return;
+        }
+        auto &transform = inspector.Set<ecs::TransformTree>(lock);
+        auto &gui = inspector.Set<ecs::Gui>(lock, "inspector");
+        gui.disabled = !target.Exists(lock);
+
+        if (target.Has<ecs::TransformSnapshot>(lock)) {
+            auto playerPos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
+            auto targetPos = target.Get<ecs::TransformSnapshot>(lock).GetPosition();
+            auto playerDir = glm::normalize(glm::vec3(playerPos.x - targetPos.x, 0, playerPos.z - targetPos.z));
+            transform.pose.SetPosition(targetPos + playerDir * CVarEditorOffset.Get() + glm::vec3(0, -0.5, 0));
+            transform.pose.SetRotation(
+                glm::quat(glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(playerDir.x, playerDir.z), 0)));
+        } else {
+            transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
+        }
+    }
 } // namespace sp
