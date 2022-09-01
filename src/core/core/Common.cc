@@ -54,6 +54,30 @@ namespace sp {
         return glm::degrees(radians_);
     }
 
+    bool is_float(const string &str) {
+        int state = 0;
+        // States:
+        // 0: Start of string
+        // 1: After negative sign
+        // 2: After first digit
+        // 3: After decimal place
+        return !str.empty() && std::all_of(str.begin(), str.end(), [&](char ch) {
+            if (ch == '-') {
+                if (state != 0) return false;
+                state = 1;
+                return true;
+            } else if (std::isdigit(ch)) {
+                if (state < 2) state = 2;
+                return true;
+            } else if (ch == '.') {
+                if (state == 3) return false;
+                state = 3;
+                return true;
+            }
+            return false;
+        }) && state > 1;
+    }
+
     namespace boost_replacements {
         bool starts_with(const string &str, const string &prefix) {
             return str.rfind(prefix, 0) == 0;
