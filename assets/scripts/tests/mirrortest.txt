@@ -14,6 +14,9 @@ stepgraphics 95
 screenshot mirrortest-frame100.png
 stepgraphics
 
+sendevent player:flashlight/action/flashlight/grab
+steplogic
+
 setsignal player:player/move_noclip 1
 rotate player:flatview -60 0 1 0
 translate player:player -1 -1 -4
@@ -24,4 +27,14 @@ rotate player:flatview 70 0 1 0
 translate player:player -3 0 -2
 stepphysics
 screenshot mirrortest-bounces.png
+stepgraphics
+
+setsignal player:flashlight/on 1
+rotate player:flatview -45 0 1 0
+rotate player:flatview -55 1 0 0
+translate player:player -0.14 6 6.1
+stepphysics
+steplogic
+stepgraphics 10
+screenshot mirrortest-overhead.png
 stepgraphics

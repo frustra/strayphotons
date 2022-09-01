@@ -79,7 +79,7 @@ namespace sp {
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
-        void FramePreload() override;
+        void PreFrame() override;
         void Frame() override;
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);

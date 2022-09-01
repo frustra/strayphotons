@@ -135,7 +135,7 @@ namespace sp {
         }
     }
 
-    void PhysxManager::FramePreload() {
+    void PhysxManager::PreFrame() {
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {

@@ -285,6 +285,17 @@
 			"renderable": {
 				"model": "mirror"
 			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02],
+					"transform": {
+						"translate": [0, 0, 0.0095]
+					}
+				},
+				"group": "world_overlap",
+				"density": 1,
+				"dynamic": false
+			},
 			"transform": {
 				"parent": "mirrorbox",
 				"translate": [0, 0, 0.501],
@@ -298,6 +309,17 @@
 			},
 			"renderable": {
 				"model": "mirror"
+			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02],
+					"transform": {
+						"translate": [0, 0, 0.0095]
+					}
+				},
+				"group": "world_overlap",
+				"density": 1,
+				"dynamic": false
 			},
 			"transform": {
 				"parent": "mirrorbox2",
@@ -313,10 +335,32 @@
 			"renderable": {
 				"model": "mirror"
 			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02],
+					"transform": {
+						"translate": [0, 0, 0.0095]
+					}
+				},
+				"group": "world_overlap",
+				"density": 1,
+				"dynamic": false
+			},
 			"transform": {
 				"parent": "mirrorbox3",
 				"translate": [0, 0, 0.501],
 				"rotate": [-180, 0, 1, 0]
+			}
+		},
+		{
+			"name": "whitelaser",
+			"transform": {
+				"translate": [4, 0.5, 0.5],
+				"rotate": [55, 0, 1, 0]
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"color": [1, 1, 1]
 			}
 		},
 		{

@@ -208,6 +208,29 @@ namespace sp {
             }
         });
 
+    CFunc<string, string> CFuncSendEvent("sendevent",
+        "Send an entity an event (sendevent <entity>/<event> <value>)",
+        [](string eventStr, string value) {
+            auto [entityName, eventName] = ecs::ParseEventString(eventStr);
+
+            ecs::Event event(eventName, ecs::Entity());
+            if (!value.empty()) {
+                if (is_float(value)) {
+                    event.data = std::stof(value);
+                } else {
+                    event.data = value;
+                }
+            }
+
+            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock>();
+            auto sent = ecs::EventBindings::SendEvent(lock, entityName, eventName, event);
+            if (sent == 0) {
+                Warnf("No event target found: %s%s", entityName.String(), eventName);
+            } else {
+                Logf("Sent %u events to %s%s", sent, entityName.String(), eventName);
+            }
+        });
+
     CFunc<size_t> CFuncTraceTecs("tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", [](size_t timeMs) {
         if (timeMs == 0) {
             Logf("Trace time must be specified in milliseconds.");

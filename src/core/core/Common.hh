@@ -101,6 +101,8 @@ namespace sp {
         return std::find(vec.begin(), vec.end(), val) != vec.end();
     }
 
+    bool is_float(const string &str);
+
     namespace boost_replacements {
         bool starts_with(const string &str, const string &prefix);
         bool starts_with(const string_view &str, const string_view &prefix);
