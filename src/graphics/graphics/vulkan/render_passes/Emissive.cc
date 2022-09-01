@@ -63,8 +63,8 @@ namespace sp::vulkan::renderer {
 
                     string textureName;
                     if (screenComp.textureName.empty() && ent.Has<ecs::Gui>(lock)) {
-                        auto namePtr = std::get_if<std::string>(&ent.Get<ecs::Gui>(lock).target);
-                        if (namePtr) textureName = *namePtr + "_gui";
+                        auto &gui = ent.Get<ecs::Gui>(lock);
+                        if (!gui.target.empty() && !gui.disabled) textureName = gui.target + "_gui";
                     }
                     if (textureName.empty()) textureName = screenComp.textureName;
 

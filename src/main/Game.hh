@@ -4,6 +4,7 @@
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
@@ -65,6 +66,7 @@ namespace sp {
         std::unique_ptr<AudioManager> audio;
 #endif
         ConsoleBindingManager consoleBinding;
+        EditorSystem editor;
         GameLogic logic;
     };
 } // namespace sp
