@@ -7,7 +7,10 @@
 
 namespace sp {
     static CVar<float> CVarEditorAngle("e.EditorAngle", -20.0f, "Tilt angle of the entity inspector gui");
-    static CVar<float> CVarEditorOffset("e.EditorOffset", 0.4f, "Distance to space the inspector gui from its target");
+    static CVar<float> CVarEditorDistance("e.EditorDistance",
+        0.8f,
+        "Distance to space the inspector gui from the player");
+    static CVar<float> CVarEditorOffset("e.EditorOffset", 0.8f, "Distance to offset the inspector gui from the ground");
 
     EditorSystem::EditorSystem() : RegisteredThread("EditorSystem", 30.0), workQueue("EditorSystem", 1) {
         funcs.Register(this,
@@ -85,12 +88,13 @@ namespace sp {
         gui.disabled = !target.Exists(lock);
 
         if (target.Has<ecs::TransformSnapshot>(lock)) {
-            auto playerPos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
             auto targetPos = target.Get<ecs::TransformSnapshot>(lock).GetPosition();
-            auto playerDir = glm::normalize(glm::vec3(playerPos.x - targetPos.x, 0, playerPos.z - targetPos.z));
-            transform.pose.SetPosition(targetPos + playerDir * CVarEditorOffset.Get() + glm::vec3(0, -0.5, 0));
+            auto playerPos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
+            auto targetDir = glm::normalize(glm::vec3(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z));
+            transform.pose.SetPosition(
+                playerPos + targetDir * CVarEditorDistance.Get() + glm::vec3(0, CVarEditorOffset.Get(), 0));
             transform.pose.SetRotation(
-                glm::quat(glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(playerDir.x, playerDir.z), 0)));
+                glm::quat(glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(-targetDir.x, -targetDir.z), 0)));
         } else {
             transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
         }
