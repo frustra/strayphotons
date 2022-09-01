@@ -145,6 +145,25 @@ process_gltf_to_glb(
     TARGET
         models
     MODEL
+        sponza2
+    GLTF
+        ${CMAKE_CURRENT_LIST_DIR}/sponza2/sponza2.gltf
+    GLB
+        ${CMAKE_CURRENT_LIST_DIR}/sponza2/sponza2.glb
+    NODE_EXE
+        ${NODE_JS_EXE}
+)
+update_physics_cache(
+    TARGET
+        models
+    MODEL
+        sponza2
+)
+
+process_gltf_to_glb(
+    TARGET
+        models
+    MODEL
         duck
     GLTF
         ${CMAKE_CURRENT_LIST_DIR}/duck/duck.gltf

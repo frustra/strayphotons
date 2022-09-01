@@ -48,7 +48,10 @@ namespace sp::json {
         if constexpr (std::is_enum<T>()) {
             if (!src.is<std::string>()) return false;
             auto name = src.get<std::string>();
-            if (name.empty()) return true;
+            if (name.empty()) {
+                dst = {};
+                return true;
+            }
             auto opt = magic_enum::enum_cast<T>(name);
             if (!opt) {
                 Errorf("Unknown enum value specified for %s: %s", typeid(T).name(), name);
