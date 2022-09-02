@@ -60,12 +60,12 @@ namespace sp {
             if (!entity.Has<ecs::TransformSnapshot, ecs::LaserLine>(lock)) continue;
 
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
+            auto &lines = entity.Get<ecs::LaserLine>(lock);
+            lines.on = emitter.on;
             if (!emitter.on) continue;
 
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
-            auto &lines = entity.Get<ecs::LaserLine>(lock);
-            lines.on = true;
             lines.intensity = emitter.intensity;
             lines.relative = false;
 

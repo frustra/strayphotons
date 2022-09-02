@@ -118,6 +118,18 @@ namespace ecs {
             return ComponentField::New(nullptr, M, actions);
         }
 
+        template<typename T>
+        T *Access(void *component) const {
+            auto *field = static_cast<char *>(component) + offset;
+            return reinterpret_cast<T *>(field);
+        }
+
+        template<typename T>
+        const T *Access(const void *component) const {
+            auto *field = static_cast<const char *>(component) + offset;
+            return reinterpret_cast<const T *>(field);
+        }
+
         bool Load(const EntityScope &scope, void *component, const picojson::value &src) const;
         void Save(const EntityScope &scope,
             picojson::value &dst,
