@@ -59,10 +59,6 @@ namespace sp {
 
     SceneManager::~SceneManager() {
         {
-            std::lock_guard lock(actionMutex);
-            actionQueue.clear();
-        }
-        {
             // Make sure we don't deadlock on shutdown due to waiting on a preload.
             std::lock_guard lock(preloadMutex);
             graphicsPreload.test_and_set();
@@ -70,6 +66,10 @@ namespace sp {
             physicsPreload.test_and_set();
             physicsPreload.notify_all();
             StopThread(false);
+        }
+        {
+            std::lock_guard lock(actionMutex);
+            actionQueue.clear();
         }
         StopThread(true);
 
@@ -340,6 +340,7 @@ namespace sp {
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
         std::lock_guard lock(actionMutex);
+        if (exiting.load()) return;
         actionQueue.emplace_back(QueuedAction{action, sceneName, callback, std::promise<void>()});
     }
 
@@ -347,6 +348,7 @@ namespace sp {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);
+            if (exiting.load()) return;
             auto &entry = actionQueue.emplace_back(QueuedAction{action, sceneName, callback, std::promise<void>()});
             future = entry.promise.get_future();
         }

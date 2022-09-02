@@ -4,6 +4,8 @@
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 
+#include <functional>
+
 namespace sp {
     class EditorSystem : public RegisteredThread {
     public:
@@ -12,8 +14,11 @@ namespace sp {
 
         void OpenEditor(std::string targetName);
 
+        AsyncPtr<void> PushEdit(std::function<void()> editFunction) {
+            return workQueue.Dispatch<void>(editFunction);
+        }
+
     private:
-        bool ThreadInit() override;
         void Frame() override;
 
         DispatchQueue workQueue;
@@ -24,5 +29,7 @@ namespace sp {
 
         CFuncCollection funcs;
     };
+
+    extern EditorSystem GEditor;
 
 } // namespace sp

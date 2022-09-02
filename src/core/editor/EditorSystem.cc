@@ -12,11 +12,31 @@ namespace sp {
         "Distance to space the inspector gui from the player");
     static CVar<float> CVarEditorOffset("e.EditorOffset", 0.8f, "Distance to offset the inspector gui from the ground");
 
+    EditorSystem GEditor;
+
     EditorSystem::EditorSystem() : RegisteredThread("EditorSystem", 30.0), workQueue("EditorSystem", 1) {
         funcs.Register(this,
             "edit",
             "Edit the specified entity, or the entity being looked at",
             &EditorSystem::OpenEditor);
+
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            "editor",
+            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
+                auto &gui = inspector.Set<ecs::Gui>(lock, "inspector");
+                gui.disabled = true;
+                inspector.Set<ecs::Screen>(lock);
+                inspector.Set<ecs::EventInput>(lock,
+                    INTERACT_EVENT_INTERACT_POINT,
+                    INTERACT_EVENT_INTERACT_PRESS,
+                    EDITOR_EVENT_EDIT_TARGET);
+                inspector.Set<ecs::Physics>(lock,
+                    ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01)),
+                    ecs::PhysicsGroup::UserInterface,
+                    false /* dynamic */);
+                inspector.Set<ecs::TransformTree>(lock);
+            });
 
         StartThread();
     }
@@ -49,28 +69,6 @@ namespace sp {
         }
         targetEntity = entity;
         ecs::EventBindings::SendEvent(lock, "/edit/target", inspector, entity);
-    }
-
-    bool EditorSystem::ThreadInit() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "editor",
-            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
-                auto &gui = inspector.Set<ecs::Gui>(lock, "inspector");
-                gui.disabled = true;
-                inspector.Set<ecs::Screen>(lock);
-                inspector.Set<ecs::EventInput>(lock,
-                    INTERACT_EVENT_INTERACT_POINT,
-                    INTERACT_EVENT_INTERACT_PRESS,
-                    EDITOR_EVENT_EDIT_TARGET);
-                inspector.Set<ecs::Physics>(lock,
-                    ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01)),
-                    ecs::PhysicsGroup::UserInterface,
-                    false /* dynamic */);
-                inspector.Set<ecs::TransformTree>(lock);
-            });
-
-        return true;
     }
 
     void EditorSystem::Frame() {
