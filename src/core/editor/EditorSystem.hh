@@ -24,6 +24,7 @@ namespace sp {
         DispatchQueue workQueue;
 
         ecs::EntityRef targetEntity;
+        ecs::Entity previousTargetEntity = {};
         ecs::EntityRef playerEntity = ecs::Name("player", "player");
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
 

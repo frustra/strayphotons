@@ -80,6 +80,10 @@ namespace sp {
             return radians_;
         }
 
+        float &radians() {
+            return radians_;
+        }
+
         float degrees() const;
 
     private:

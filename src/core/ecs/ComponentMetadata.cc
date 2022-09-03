@@ -63,48 +63,12 @@ namespace ecs {
     static_assert(sizeof(FieldCast<bool>) == sizeof(FieldCastBase), "Expected FieldCast<T> to fit in Base class");
 
     const FieldCastBase *CastField(FieldCastBase &cast, ecs::FieldType type) {
-        switch (type) {
-        case FieldType::Bool:
-            return new (&cast) FieldCast<bool>();
-        case FieldType::Int32:
-            return new (&cast) FieldCast<int32_t>();
-        case FieldType::Uint32:
-            return new (&cast) FieldCast<uint32_t>();
-        case FieldType::SizeT:
-            return new (&cast) FieldCast<size_t>();
-        case FieldType::AngleT:
-            return new (&cast) FieldCast<sp::angle_t>();
-        case FieldType::Float:
-            return new (&cast) FieldCast<float>();
-        case FieldType::Double:
-            return new (&cast) FieldCast<double>();
-        case FieldType::Vec2:
-            return new (&cast) FieldCast<glm::vec2>();
-        case FieldType::Vec3:
-            return new (&cast) FieldCast<glm::vec3>();
-        case FieldType::Vec4:
-            return new (&cast) FieldCast<glm::vec4>();
-        case FieldType::IVec2:
-            return new (&cast) FieldCast<glm::ivec2>();
-        case FieldType::IVec3:
-            return new (&cast) FieldCast<glm::ivec3>();
-        case FieldType::Quat:
-            return new (&cast) FieldCast<glm::quat>();
-        case FieldType::String:
-            return new (&cast) FieldCast<std::string>();
-        case FieldType::EntityRef:
-            return new (&cast) FieldCast<EntityRef>();
-        case FieldType::Transform:
-            return new (&cast) FieldCast<Transform>();
-        case FieldType::AnimationStates:
-            return new (&cast) FieldCast<std::vector<AnimationState>>();
-        case FieldType::InterpolationMode:
-            return new (&cast) FieldCast<InterpolationMode>();
-        case FieldType::VisibilityMask:
-            return new (&cast) FieldCast<VisibilityMask>();
-        default:
-            Abortf("CastField unknown component field type: %u", type);
-        }
+        FieldCastBase *base = nullptr;
+        GetFieldType(type, [&](auto *typePtr) {
+            base = new (&cast) FieldCast<std::remove_pointer_t<decltype(typePtr)>>();
+        });
+        Assertf(base != nullptr, "CastField unknown component field type: %u", type);
+        return base;
     }
 
     bool ComponentField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {

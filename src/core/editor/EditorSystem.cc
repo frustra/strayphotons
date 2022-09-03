@@ -77,14 +77,24 @@ namespace sp {
 
         auto inspector = inspectorEntity.Get(lock);
         auto player = playerEntity.Get(lock);
-        auto target = targetEntity.Get(lock);
         if (!player.Has<ecs::TransformSnapshot>(lock) || !inspector.Has<ecs::TransformTree, ecs::Gui>(lock)) {
             return;
         }
-        auto &transform = inspector.Set<ecs::TransformTree>(lock);
-        auto &gui = inspector.Set<ecs::Gui>(lock, "inspector");
-        gui.disabled = !target.Exists(lock);
 
+        auto &transform = inspector.Get<ecs::TransformTree>(lock);
+        auto &gui = inspector.Get<ecs::Gui>(lock);
+
+        auto target = targetEntity.Get(lock);
+        if (!target.Exists(lock)) {
+            gui.disabled = true;
+            previousTargetEntity = {};
+            return;
+        } else if (target == previousTargetEntity) {
+            return;
+        }
+
+        previousTargetEntity = target;
+        gui.disabled = false;
         if (target.Has<ecs::TransformSnapshot>(lock)) {
             auto targetPos = target.Get<ecs::TransformSnapshot>(lock).GetPosition();
             auto playerPos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
@@ -93,8 +103,10 @@ namespace sp {
                 playerPos + targetDir * CVarEditorDistance.Get() + glm::vec3(0, CVarEditorOffset.Get(), 0));
             transform.pose.SetRotation(
                 glm::quat(glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(-targetDir.x, -targetDir.z), 0)));
+            transform.parent = {};
         } else {
             transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
+            transform.parent = playerEntity;
         }
     }
 } // namespace sp
