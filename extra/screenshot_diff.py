@@ -16,7 +16,7 @@ def main():
 
     bin_root = os.path.realpath(os.path.join(os.path.dirname(__file__), "../bin"))
     
-    req = urllib.request.Request("https://api.buildkite.com/v2/builds?branch=master&state=passed&page=1&per_page=1")
+    req = urllib.request.Request("https://api.buildkite.com/v2/organizations/frustra/pipelines/strayphotons/builds?branch=master&state=passed&page=1&per_page=1")
     req.add_header("Authorization", "Bearer " + args.token)
     
     response = urllib.request.urlopen(req).read()
