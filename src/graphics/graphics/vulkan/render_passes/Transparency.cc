@@ -24,9 +24,7 @@ namespace sp::vulkan::renderer {
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
 
-                auto desc = builder.DeriveImage(builder.LastOutputID());
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
-                builder.OutputColorAttachment(1, "TransparencyMask", desc, {LoadOp::DontCare, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
             .Execute([this, drawIDs](Resources &resources, CommandContext &cmd) {

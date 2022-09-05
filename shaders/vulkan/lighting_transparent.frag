@@ -37,8 +37,8 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
 layout(location = 5) flat in float emissiveScale;
-layout(location = 0) out vec4 outFragColor;
-layout(location = 1) out vec4 outTransparencyMask;
+layout(location = 0, index = 0) out vec4 outFragColor;
+layout(location = 0, index = 1) out vec4 outTransparencyMask;
 
 #include "../lib/shading.glsl"
 #include "../lib/voxel_trace_shared.glsl"
