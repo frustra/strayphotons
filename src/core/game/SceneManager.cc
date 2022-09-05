@@ -103,7 +103,7 @@ namespace sp {
             if (item.action == SceneAction::ApplySystemScene) {
                 ZoneScopedN("ApplySystemScene");
                 ZoneStr(item.sceneName);
-                if (!item.callback) {
+                if (!item.applyCallback) {
                     // Load the System scene from json
                     AddScene(item.sceneName, SceneType::System);
                 } else {
@@ -116,12 +116,7 @@ namespace sp {
 
                     {
                         auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
-                        item.callback(stagingLock, scene);
-
-                        for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
-                            auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
-                            if (sceneInfo.scene.lock() != scene) continue;
-                        }
+                        item.applyCallback(stagingLock, scene);
                     }
                     {
                         Tracef("Applying system scene: %s", scene->name);
@@ -129,6 +124,44 @@ namespace sp {
                         auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
                         scene->ApplyScene(stagingLock, liveLock);
                     }
+                }
+                item.promise.set_value();
+            } else if (item.action == SceneAction::EditStagingScene) {
+                ZoneScopedN("EditStagingScene");
+                ZoneStr(item.sceneName);
+                if (item.applyCallback) {
+                    auto scene = stagedScenes.Load(item.sceneName);
+                    if (scene) {
+                        if (scene->type != SceneType::System) {
+                            Debugf("Editing staging scene: %s", scene->name);
+                            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                            item.applyCallback(stagingLock, scene);
+                        } else {
+                            Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->name);
+                        }
+                    } else {
+                        Errorf("SceneManager::EditStagingScene: scene %s not found", item.sceneName);
+                    }
+                }
+                item.promise.set_value();
+            } else if (item.action == SceneAction::EditLiveECS) {
+                ZoneScopedN("EditLiveECS");
+                if (item.editCallback) {
+                    auto liveLock = ecs::World.StartTransaction<ecs::WriteAll>();
+                    item.editCallback(liveLock);
+                }
+                item.promise.set_value();
+            } else if (item.action == SceneAction::ApplyScene) {
+                ZoneScopedN("ApplyScene");
+                ZoneStr(item.sceneName);
+                auto scene = stagedScenes.Load(item.sceneName);
+                if (scene) {
+                    Debugf("Applying scene: %s", scene->name);
+                    auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                    auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                    scene->ApplyScene(stagingLock, liveLock);
+                } else {
+                    Errorf("SceneManager::ApplyScene: scene %s not found", item.sceneName);
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::LoadScene) {
@@ -341,7 +374,13 @@ namespace sp {
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
         std::lock_guard lock(actionMutex);
         if (exiting.load()) return;
-        actionQueue.emplace_back(QueuedAction{action, sceneName, callback, std::promise<void>()});
+        actionQueue.emplace_back(action, sceneName, callback);
+    }
+
+    void SceneManager::QueueAction(SceneAction action, EditSceneCallback callback) {
+        std::lock_guard lock(actionMutex);
+        if (exiting.load()) return;
+        actionQueue.emplace_back(action, callback);
     }
 
     void SceneManager::QueueActionAndBlock(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
@@ -349,7 +388,7 @@ namespace sp {
         {
             std::lock_guard lock(actionMutex);
             if (exiting.load()) return;
-            auto &entry = actionQueue.emplace_back(QueuedAction{action, sceneName, callback, std::promise<void>()});
+            auto &entry = actionQueue.emplace_back(action, sceneName, callback);
             future = entry.promise.get_future();
         }
         try {
@@ -682,7 +721,7 @@ namespace sp {
 
             for (size_t sceneTypeI = 0; sceneTypeI < scenes.size(); sceneTypeI++) {
                 auto sceneType = static_cast<SceneType>(sceneTypeI);
-                std::string typeName(logging::stringify<SceneType>::to_string(sceneType));
+                std::string typeName(magic_enum::enum_name<SceneType>(sceneType));
                 to_lower(typeName);
 
                 if (filterName.empty() || filterName == typeName) {
@@ -707,7 +746,7 @@ namespace sp {
                         }
                     }
                 }
-            }
+            };
         }
     }
 } // namespace sp

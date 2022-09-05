@@ -28,6 +28,8 @@ namespace sp {
             size_t newTargetState = (size_t)(signalState + 0.5);
             if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
 
+            animation.currentState = std::clamp<size_t>(animation.currentState, 0, animation.states.size() - 1);
+            animation.targetState = std::clamp<size_t>(animation.targetState, 0, animation.states.size() - 1);
             if (animation.targetState != newTargetState) {
                 auto oldNextState = animation.currentState + animation.PlayDirection();
                 animation.currentState = oldNextState;

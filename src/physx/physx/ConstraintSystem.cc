@@ -320,7 +320,7 @@ namespace sp {
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 default:
-                    Abortf("Unsupported PhysX joint type: %u", ecsJoint.type);
+                    Abortf("Unsupported PhysX joint type: %s", ecsJoint.type);
                 }
                 pxJoints.emplace_back(PhysxManager::Joint{ecsJoint, pxJoint});
             } else {

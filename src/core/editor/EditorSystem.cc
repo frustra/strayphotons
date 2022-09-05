@@ -12,9 +12,7 @@ namespace sp {
         "Distance to space the inspector gui from the player");
     static CVar<float> CVarEditorOffset("e.EditorOffset", 0.8f, "Distance to offset the inspector gui from the ground");
 
-    EditorSystem GEditor;
-
-    EditorSystem::EditorSystem() : RegisteredThread("EditorSystem", 30.0), workQueue("EditorSystem", 1) {
+    EditorSystem::EditorSystem() {
         funcs.Register(this,
             "edit",
             "Edit the specified entity, or the entity being looked at",
@@ -36,13 +34,52 @@ namespace sp {
                     ecs::PhysicsGroup::UserInterface,
                     false /* dynamic */);
                 inspector.Set<ecs::TransformTree>(lock);
-            });
 
-        StartThread();
+                auto &script = inspector.Set<ecs::Script>(lock);
+                script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
+                    [this](ecs::ScriptState &state,
+                        ecs::Lock<ecs::WriteAll> lock,
+                        ecs::Entity ent,
+                        chrono_clock::duration interval) {
+                        if (!ent.Has<ecs::TransformTree, ecs::Gui>(lock)) return;
+
+                        auto &transform = ent.Get<ecs::TransformTree>(lock);
+                        auto &gui = ent.Get<ecs::Gui>(lock);
+
+                        auto player = playerEntity.Get(lock);
+                        if (!player.Has<ecs::TransformSnapshot>(lock)) return;
+
+                        auto target = targetEntity.Get(lock);
+                        if (!target.Exists(lock)) {
+                            gui.disabled = true;
+                            previousTargetEntity = {};
+                            return;
+                        } else if (target == previousTargetEntity) {
+                            return;
+                        }
+
+                        previousTargetEntity = target;
+                        gui.disabled = false;
+                        if (target.Has<ecs::TransformSnapshot>(lock)) {
+                            auto targetPos = target.Get<const ecs::TransformSnapshot>(lock).GetPosition();
+                            auto playerPos = player.Get<const ecs::TransformSnapshot>(lock).GetPosition();
+                            auto targetDir = glm::normalize(
+                                glm::vec3(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z));
+                            transform.pose.SetPosition(playerPos + targetDir * CVarEditorDistance.Get() +
+                                                       glm::vec3(0, CVarEditorOffset.Get(), 0));
+                            transform.pose.SetRotation(glm::quat(glm::vec3(glm::radians(CVarEditorAngle.Get()),
+                                glm::atan(-targetDir.x, -targetDir.z),
+                                0)));
+                            transform.parent = {};
+                        } else {
+                            transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
+                            transform.parent = playerEntity;
+                        }
+                    });
+            });
     }
 
     EditorSystem::~EditorSystem() {
-        StopThread();
         GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "editor");
     }
 
@@ -69,44 +106,5 @@ namespace sp {
         }
         targetEntity = entity;
         ecs::EventBindings::SendEvent(lock, "/edit/target", inspector, entity);
-    }
-
-    void EditorSystem::Frame() {
-        auto lock =
-            ecs::World.StartTransaction<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::TransformTree, ecs::Gui>>();
-
-        auto inspector = inspectorEntity.Get(lock);
-        auto player = playerEntity.Get(lock);
-        if (!player.Has<ecs::TransformSnapshot>(lock) || !inspector.Has<ecs::TransformTree, ecs::Gui>(lock)) {
-            return;
-        }
-
-        auto &transform = inspector.Get<ecs::TransformTree>(lock);
-        auto &gui = inspector.Get<ecs::Gui>(lock);
-
-        auto target = targetEntity.Get(lock);
-        if (!target.Exists(lock)) {
-            gui.disabled = true;
-            previousTargetEntity = {};
-            return;
-        } else if (target == previousTargetEntity) {
-            return;
-        }
-
-        previousTargetEntity = target;
-        gui.disabled = false;
-        if (target.Has<ecs::TransformSnapshot>(lock)) {
-            auto targetPos = target.Get<ecs::TransformSnapshot>(lock).GetPosition();
-            auto playerPos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
-            auto targetDir = glm::normalize(glm::vec3(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z));
-            transform.pose.SetPosition(
-                playerPos + targetDir * CVarEditorDistance.Get() + glm::vec3(0, CVarEditorOffset.Get(), 0));
-            transform.pose.SetRotation(
-                glm::quat(glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(-targetDir.x, -targetDir.z), 0)));
-            transform.parent = {};
-        } else {
-            transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
-            transform.parent = playerEntity;
-        }
     }
 } // namespace sp

@@ -9,7 +9,7 @@
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/SceneInfo.hh"
-#include "game/SceneType.hh"
+#include "game/Scene.hh"
 
 #include <deque>
 #include <functional>
@@ -20,12 +20,14 @@
 
 namespace sp {
     class Game;
-    class Scene;
 
     static const char *const InputBindingConfigPath = "input_bindings.json";
 
     enum class SceneAction {
         ApplySystemScene, // Arguments: (sceneName, applyCallback)
+        EditStagingScene, // Arguments: (sceneName, applyCallback)
+        EditLiveECS, // Arguments: (editCallback)
+        ApplyScene, // Arguments: (sceneName)
         LoadScene, // Arguments: (sceneName)
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
@@ -36,41 +38,15 @@ namespace sp {
         Count,
     };
 
-    namespace logging {
-        template<>
-        struct stringify<SceneAction> : std::true_type {
-            static const char *to_string(const SceneAction &t) {
-                switch (t) {
-                case SceneAction::ApplySystemScene:
-                    return "ApplySystemScene";
-                case SceneAction::LoadScene:
-                    return "LoadScene";
-                case SceneAction::ReloadScene:
-                    return "ReloadScene";
-                case SceneAction::AddScene:
-                    return "AddScene";
-                case SceneAction::RemoveScene:
-                    return "RemoveScene";
-                case SceneAction::ReloadPlayer:
-                    return "ReloadPlayer";
-                case SceneAction::ReloadBindings:
-                    return "ReloadBindings";
-                case SceneAction::SyncScene:
-                    return "SyncScene";
-                default:
-                    return "SceneAction::INVALID";
-                }
-            }
-        };
-    } // namespace logging
-
     class SceneManager : public RegisteredThread {
     public:
         SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool skipPreload = false);
         ~SceneManager();
 
         using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
+        using EditSceneCallback = std::function<void(ecs::Lock<ecs::WriteAll>)>;
         void QueueAction(SceneAction action, std::string sceneName = "", PreApplySceneCallback callback = nullptr);
+        void QueueAction(SceneAction action, EditSceneCallback callback);
         void QueueActionAndBlock(SceneAction action,
             std::string sceneName = "",
             PreApplySceneCallback callback = nullptr);
@@ -109,8 +85,14 @@ namespace sp {
             SceneAction action;
 
             std::string sceneName;
-            PreApplySceneCallback callback;
+            PreApplySceneCallback applyCallback;
+            EditSceneCallback editCallback;
             std::promise<void> promise;
+
+            QueuedAction(SceneAction action, std::string sceneName, PreApplySceneCallback applyCallback = nullptr)
+                : action(action), sceneName(sceneName), applyCallback(applyCallback) {}
+            QueuedAction(SceneAction action, EditSceneCallback editCallback)
+                : action(action), editCallback(editCallback) {}
         };
 
         ecs::ECS &liveWorld;

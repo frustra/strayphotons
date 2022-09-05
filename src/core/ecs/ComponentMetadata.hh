@@ -75,7 +75,7 @@ namespace ecs {
     template<typename T, size_t I = 0>
     inline static constexpr FieldType GetFieldType() {
         if constexpr (I >= std::tuple_size_v<FieldTypes>) {
-            return FieldType::Count;
+            Abortf("Field type is not defined: %s", typeid(T).name());
         } else if constexpr (std::is_same_v<T, std::tuple_element_t<I, FieldTypes>>) {
             return (FieldType)I;
         } else {
@@ -84,11 +84,14 @@ namespace ecs {
     }
 
     template<typename Func, size_t I = 0>
-    inline static constexpr void GetFieldType(FieldType type, Func func) {
+    inline static constexpr auto GetFieldType(FieldType type, Func func) {
         if ((size_t)type == I) {
-            std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
-        } else if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
-            GetFieldType<Func, I + 1>(type, func);
+            return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
+        }
+        if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
+            return GetFieldType<Func, I + 1>(type, func);
+        } else {
+            Abortf("Unknown field type: %s", type);
         }
     }
 
@@ -110,12 +113,7 @@ namespace ecs {
 
         template<typename T, typename F>
         static constexpr ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            using BaseType = std::remove_cv_t<F>;
-            auto fieldType = GetFieldType<BaseType>();
-            Assertf(fieldType != FieldType::Count,
-                "Component field %s type must be custom: %s",
-                name,
-                typeid(BaseType).name());
+            auto fieldType = GetFieldType<std::remove_cv_t<F>>();
 
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
             return ComponentField(name, fieldType, offset, actions);

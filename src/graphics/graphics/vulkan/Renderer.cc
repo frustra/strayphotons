@@ -587,6 +587,12 @@ namespace sp::vulkan {
                 if (!model) {
                     Errorf("Preloading renderable with null model: %s", ecs::ToString(lock, ent));
                     continue;
+                } else if (renderable.meshIndex >= model->meshes.size()) {
+                    Errorf("Preloading renderable with out of range mesh index %u/%u: %s",
+                        renderable.meshIndex,
+                        model->meshes.size(),
+                        ecs::ToString(lock, ent));
+                    continue;
                 }
 
                 auto vkMesh = this->scene.LoadMesh(model, renderable.meshIndex);

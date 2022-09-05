@@ -118,6 +118,7 @@ namespace sp::vulkan {
     }
 
     shared_ptr<Mesh> GPUScene::LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex) {
+        if (meshIndex >= model->meshes.size()) return nullptr;
         auto vkMesh = activeMeshes.Load(MeshKeyView{model->name, meshIndex});
         if (!vkMesh) {
             meshesToLoad.emplace_back(model, meshIndex);
