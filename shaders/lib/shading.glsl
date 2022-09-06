@@ -72,7 +72,11 @@ vec3 DirectShading(vec3 worldPosition,
             float falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
             illuminance = notHasIllum * lights[i].intensity * falloff + hasIllum * illuminance;
+#ifdef TRANSPARENCY_SHADING
+            illuminance *= abs(dot(normal, incidence));
+#else
             illuminance *= max(dot(normal, incidence), 0);
+#endif
         }
 
         // Evaluate BRDF and calculate luminance.

@@ -6,8 +6,11 @@ layout(num_views = 2) in;
 layout(early_fragment_tests) in;
 
 #define USE_PCF
+#define TRANSPARENCY_SHADING
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
+
+const float scatterTermMultiplier = 0.1;
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
@@ -48,6 +51,7 @@ void main() {
 
     vec4 baseColorAlpha = texture(textures[baseColorTexID], inTexCoord);
     vec3 baseColor = baseColorAlpha.rgb * baseColorAlpha.a;
+    float scatterTerm = baseColorAlpha.a * scatterTermMultiplier;
 
     vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
     float roughness = metallicRoughnessSample.g;
@@ -56,16 +60,11 @@ void main() {
     vec3 emissive = emissiveScale * baseColor;
 
     // Determine coordinates of fragment.
-    vec2 screenPos = vec2(inTexCoord.x, 1 - inTexCoord.y);
-    vec3 fragPosition = ScreenPosToViewPos(screenPos, 0, view.invProjMat);
     vec3 worldPosition = (view.invViewMat * vec4(inViewPos, 1.0)).xyz;
-    vec3 worldFragPosition = (view.invViewMat * vec4(fragPosition, 1.0)).xyz;
-
     vec3 worldNormal = normalize(mat3(view.invViewMat) * inNormal);
 
     // Trace.
-    vec3 rayDir = normalize(worldPosition - worldFragPosition);
-    worldNormal *= sign(dot(worldNormal, rayDir));
+    vec3 rayDir = normalize(worldPosition - view.invViewMat[3].xyz);
     vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
     vec3 indirectSpecular = vec3(0);
@@ -86,14 +85,13 @@ void main() {
         }
     }
 
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+    vec3 directDiffuseColor = baseColor * (1 - metalness);
+    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) * directDiffuseColor;
 
-    vec3 directDiffuseColor = baseColor - baseColor * metalness;
     vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, worldNormal, roughness, metalness);
 
-    vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
-    vec3 totalLight = emissive + (directLight + indirectLight) * 0.04;
+    vec3 totalLight = emissive + (directLight + indirectDiffuse) * scatterTerm + indirectSpecular;
 
     outFragColor = vec4(totalLight * exposure, 1);
-    outTransparencyMask = vec4(baseColorAlpha.rgb * baseColorAlpha.a, 1);
+    outTransparencyMask = vec4(baseColorAlpha.rgb, 1);
 }

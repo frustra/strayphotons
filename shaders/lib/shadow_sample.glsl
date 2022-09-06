@@ -5,6 +5,8 @@
     #define TEXTURE_SAMPLER(coord) shadowMap, coord
 #endif
 
+#define SHADOW_MAP_SAMPLE_WIDTH 3
+
 struct ShadowInfo {
     vec3 shadowMapPos;
     mat4 projMat;
@@ -18,9 +20,12 @@ float SimpleOcclusionMirror(ShadowInfo info) {
 #else
 float SimpleOcclusion(ShadowInfo info) {
 #endif
+    vec2 mapSize = textureSize(shadowMap, 0).xy * info.mapOffset.zw;
     vec3 texCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat);
+    const vec2 shadowSampleWidth = 0.5 / mapSize;
 
     if (texCoord.xy != clamp(texCoord.xy, 0.0, 1.0)) return 0.0;
+    texCoord.xy = clamp(texCoord.xy, shadowSampleWidth, 1.0 - shadowSampleWidth);
 
     float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
 
@@ -37,14 +42,14 @@ float DirectOcclusionMirror(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0)
 float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     vec2 mapSize = textureSize(shadowMap, 0).xy * info.mapOffset.zw;
 #endif
-    vec2 texelSize = 1.0 / mapSize;
     vec2 shadowMapCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat).xy;
-    const vec2 shadowSampleWidth = 3 * texelSize;
+    const vec2 shadowSampleWidth = (SHADOW_MAP_SAMPLE_WIDTH + 0.5) / mapSize;
 
     // Clip and smooth out the edges of the shadow map so we don't sample neighbors
     if (shadowMapCoord != clamp(shadowMapCoord, 0.0, 1.0)) return 0.0;
     vec2 edgeTerm = linstep(vec2(0.0), shadowSampleWidth, shadowMapCoord);
     edgeTerm *= linstep(vec2(1.0), 1.0 - shadowSampleWidth, shadowMapCoord);
+    shadowMapCoord = clamp(shadowMapCoord, shadowSampleWidth, 1.0 - shadowSampleWidth);
 
     // Calculate the the shadow map depth for the current fragment
     vec3 rayDir = normalize(vec3(shadowMapCoord * info.nearInfo.zw + info.nearInfo.xy, -info.clip.x));
