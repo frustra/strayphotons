@@ -41,6 +41,12 @@ vec2 linstep(vec2 low, vec2 high, vec2 v) {
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
+vec2 bilinearMix(vec2 v00, vec2 v10, vec2 v01, vec2 v11, vec2 alpha) {
+    vec2 x1 = mix(v00, v10, alpha.x);
+    vec2 x2 = mix(v01, v11, alpha.x);
+    return mix(x1, x2, alpha.y);
+}
+
 #include "color_util.glsl"
 #include "spatial_util.glsl"
 

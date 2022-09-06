@@ -27,6 +27,17 @@ namespace sp::vulkan::renderer {
         );
     }
 
+    static glm::vec3 viewPosToScreenPos(glm::vec4 viewPos, glm::mat4 projMat) {
+        auto clip = projMat * viewPos;
+        return glm::vec3(clip) / clip.w * glm::vec3(0.5, 0.5, 1) + glm::vec3(0.5, 0.5, 0);
+    }
+
+    glm::vec2 bilinearMix(glm::vec2 v00, glm::vec2 v10, glm::vec2 v01, glm::vec2 v11, glm::vec2 alpha) {
+        glm::vec2 x1 = glm::mix(v00, v10, alpha.x);
+        glm::vec2 x2 = glm::mix(v01, v11, alpha.x);
+        return glm::mix(x1, x2, alpha.y);
+    }
+
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         ZoneScoped;
@@ -84,6 +95,7 @@ namespace sp::vulkan::renderer {
 
             data.gelId = 0;
             if (!gelName.empty()) {
+                data.cornerUVs = std::array<glm::vec2, 4>({{0, 0}, {0, 1}, {1, 1}, {1, 0}});
                 vLight.gelName = gelName;
                 vLight.gelTexture = &gelTextureCache[gelName].index;
             }
@@ -185,6 +197,25 @@ namespace sp::vulkan::renderer {
 
             data.gelId = 0;
             if (!light.gelName.empty()) {
+                // project 4 corners of optic into gel texture uv space
+                static const auto opticCornerOffsets = std::array<glm::vec2, 4>(
+                    {{-0.5, -0.5}, {-0.5, 0.5}, {0.5, 0.5}, {0.5, -0.5}});
+
+                auto &parentLight = gpuData.lights[vLight.parentIndex.value()];
+
+                for (int cornerI = 0; cornerI < 4; cornerI++) {
+                    glm::vec4 cornerOffset(opticCornerOffsets[cornerI], 0, 1);
+                    glm::vec4 cornerPointWorld(lastOpticTransform * cornerOffset, 1);
+                    glm::vec4 cornerPointView = parentLight.view * cornerPointWorld;
+                    glm::vec2 coord = viewPosToScreenPos(cornerPointView, parentLight.proj);
+
+                    data.cornerUVs[cornerI] = bilinearMix(parentLight.cornerUVs[0],
+                        parentLight.cornerUVs[3],
+                        parentLight.cornerUVs[1],
+                        parentLight.cornerUVs[2],
+                        coord);
+                }
+
                 vLight.gelName = light.gelName;
                 vLight.gelTexture = &gelTextureCache[light.gelName].index;
             }

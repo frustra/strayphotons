@@ -116,6 +116,10 @@ vec3 DirectShading(vec3 worldPosition,
         uint gelId = lights[i].gelId;
         if (gelId > 0) {
             vec2 coord = ViewPosToScreenPos(shadowMapPos, lights[i].proj).xy;
+
+            vec4 cornerUVs[2] = lights[i].cornerUVs;
+            coord = bilinearMix(cornerUVs[0].xy, cornerUVs[1].zw, cornerUVs[0].zw, cornerUVs[1].xy, coord);
+
             lightTint = texture(textures[gelId], vec2(coord.x, 1 - coord.y)).rgb * float(coord == clamp(coord, 0, 1));
         }
 #endif
