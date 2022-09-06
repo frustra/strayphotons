@@ -3,10 +3,8 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Animation.cc
     Events.cc
     Focus.cc
-    Gui.cc
     LaserLine.cc
     Name.cc
-    OpticalElement.cc
     Physics.cc
     PhysicsJoints.cc
     PhysicsQuery.cc

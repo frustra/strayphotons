@@ -41,6 +41,8 @@ namespace ecs {
             const Entity &src) const = 0;
         virtual void ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt) const = 0;
         virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
+        virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
+        virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
 
         const char *name;
         std::vector<ComponentField> fields;
@@ -137,6 +139,14 @@ namespace ecs {
 
         bool HasComponent(Lock<> lock, Entity ent) const override {
             return ent.Has<CompType>(lock);
+        }
+
+        const void *Access(Lock<ReadAll> lock, Entity ent) const override {
+            return &ent.Get<CompType>(lock);
+        }
+
+        void *Access(Lock<WriteAll> lock, Entity ent) const override {
+            return &ent.Get<CompType>(lock);
         }
 
         bool operator==(const Component<CompType> &other) const {

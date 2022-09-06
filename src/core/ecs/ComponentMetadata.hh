@@ -21,6 +21,7 @@ namespace ecs {
     struct EntityScope;
     struct AnimationState;
     enum class VisibilityMask;
+    enum class OpticType;
     enum class InterpolationMode;
 
     enum class FieldType {
@@ -34,6 +35,7 @@ namespace ecs {
         Vec2,
         Vec3,
         Vec4,
+        ColorT,
         IVec2,
         IVec3,
         Quat,
@@ -47,8 +49,56 @@ namespace ecs {
         // Enums
         InterpolationMode,
         VisibilityMask,
+        OpticType,
         Count,
     };
+
+    using FieldTypes = std::tuple<bool,
+        int32_t,
+        uint32_t,
+        size_t,
+        sp::angle_t,
+        float,
+        double,
+        glm::vec2,
+        glm::vec3,
+        glm::vec4,
+        sp::color_t,
+        glm::ivec2,
+        glm::ivec3,
+        glm::quat,
+        std::string,
+        EntityRef,
+        Transform,
+        std::vector<AnimationState>,
+        InterpolationMode,
+        VisibilityMask,
+        OpticType>;
+
+    static_assert(std::tuple_size_v<FieldTypes> == (size_t)FieldType::Count, "ComponentMetatdata field types mismatch");
+
+    template<typename T, size_t I = 0>
+    inline static constexpr FieldType GetFieldType() {
+        if constexpr (I >= std::tuple_size_v<FieldTypes>) {
+            Abortf("Field type is not defined: %s", typeid(T).name());
+        } else if constexpr (std::is_same_v<T, std::tuple_element_t<I, FieldTypes>>) {
+            return (FieldType)I;
+        } else {
+            return GetFieldType<T, I + 1>();
+        }
+    }
+
+    template<typename Func, size_t I = 0>
+    inline static constexpr auto GetFieldType(FieldType type, Func func) {
+        if ((size_t)type == I) {
+            return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
+        }
+        if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
+            return GetFieldType<Func, I + 1>(type, func);
+        } else {
+            Abortf("Unknown field type: %s", type);
+        }
+    }
 
     enum class FieldAction {
         None = 0,
@@ -68,54 +118,27 @@ namespace ecs {
 
         template<typename T, typename F>
         static constexpr ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            using BaseType = std::remove_cv_t<F>;
+            auto fieldType = GetFieldType<std::remove_cv_t<F>>();
 
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
-
-            if constexpr (std::is_same<BaseType, bool>()) {
-                return ComponentField(name, FieldType::Bool, offset, actions);
-            } else if constexpr (std::is_same<BaseType, int32_t>()) {
-                return ComponentField(name, FieldType::Int32, offset, actions);
-            } else if constexpr (std::is_same<BaseType, uint32_t>()) {
-                return ComponentField(name, FieldType::Uint32, offset, actions);
-            } else if constexpr (std::is_same<BaseType, size_t>()) {
-                return ComponentField(name, FieldType::SizeT, offset, actions);
-            } else if constexpr (std::is_same<BaseType, sp::angle_t>()) {
-                return ComponentField(name, FieldType::AngleT, offset, actions);
-            } else if constexpr (std::is_same<BaseType, float>()) {
-                return ComponentField(name, FieldType::Float, offset, actions);
-            } else if constexpr (std::is_same<BaseType, glm::vec2>()) {
-                return ComponentField(name, FieldType::Vec2, offset, actions);
-            } else if constexpr (std::is_same<BaseType, glm::vec3>()) {
-                return ComponentField(name, FieldType::Vec3, offset, actions);
-            } else if constexpr (std::is_same<BaseType, glm::vec4>()) {
-                return ComponentField(name, FieldType::Vec4, offset, actions);
-            } else if constexpr (std::is_same<BaseType, glm::ivec2>()) {
-                return ComponentField(name, FieldType::IVec2, offset, actions);
-            } else if constexpr (std::is_same<BaseType, glm::ivec3>()) {
-                return ComponentField(name, FieldType::IVec3, offset, actions);
-            } else if constexpr (std::is_same<BaseType, glm::quat>()) {
-                return ComponentField(name, FieldType::Quat, offset, actions);
-            } else if constexpr (std::is_same<BaseType, std::string>()) {
-                return ComponentField(name, FieldType::String, offset, actions);
-            } else if constexpr (std::is_same<BaseType, EntityRef>()) {
-                return ComponentField(name, FieldType::EntityRef, offset, actions);
-            } else if constexpr (std::is_same<BaseType, Transform>()) {
-                return ComponentField(name, FieldType::Transform, offset, actions);
-            } else if constexpr (std::is_same<BaseType, std::vector<AnimationState>>()) {
-                return ComponentField(name, FieldType::AnimationStates, offset, actions);
-            } else if constexpr (std::is_same<BaseType, InterpolationMode>()) {
-                return ComponentField(name, FieldType::InterpolationMode, offset, actions);
-            } else if constexpr (std::is_same<BaseType, VisibilityMask>()) {
-                return ComponentField(name, FieldType::VisibilityMask, offset, actions);
-            } else {
-                Abortf("Component field %s type must be custom: %s", name, typeid(BaseType).name());
-            }
+            return ComponentField(name, fieldType, offset, actions);
         }
 
         template<typename T, typename F>
         static constexpr ComponentField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
             return ComponentField::New(nullptr, M, actions);
+        }
+
+        template<typename T>
+        T *Access(void *component) const {
+            auto *field = static_cast<char *>(component) + offset;
+            return reinterpret_cast<T *>(field);
+        }
+
+        template<typename T>
+        const T *Access(const void *component) const {
+            auto *field = static_cast<const char *>(component) + offset;
+            return reinterpret_cast<const T *>(field);
         }
 
         bool Load(const EntityScope &scope, void *component, const picojson::value &src) const;

@@ -6,10 +6,16 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
-#include "game/SceneType.hh"
 
 namespace sp {
     class Asset;
+
+    enum class SceneType {
+        Async = 0,
+        World,
+        System,
+        Count,
+    };
 
     class Scene : public NonCopyable {
     public:

@@ -1,5 +1,6 @@
 #include "LaserSystem.hh"
 
+#include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
@@ -45,7 +46,7 @@ namespace sp {
         }
 
         ecs::Lock<ecs::Read<ecs::OpticalElement>> lock;
-        glm::vec3 color;
+        color_t color;
     };
 
     void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
@@ -60,19 +61,19 @@ namespace sp {
             if (!entity.Has<ecs::TransformSnapshot, ecs::LaserLine>(lock)) continue;
 
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
+            auto &lines = entity.Get<ecs::LaserLine>(lock);
+            lines.on = emitter.on;
             if (!emitter.on) continue;
 
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
-            auto &lines = entity.Get<ecs::LaserLine>(lock);
-            lines.on = true;
             lines.intensity = emitter.intensity;
             lines.relative = false;
 
             if (!std::holds_alternative<ecs::LaserLine::Segments>(lines.line)) lines.line = ecs::LaserLine::Segments();
             auto &segments = std::get<ecs::LaserLine::Segments>(lines.line);
             segments.clear();
-            glm::vec3 color = emitter.color;
+            color_t color = emitter.color;
 
             glm::vec3 rayStart = transform.GetPosition();
             glm::vec3 rayDir = transform.GetForward();
@@ -152,7 +153,7 @@ namespace sp {
                             }
                             if (hitEntity.Has<ecs::LaserSensor>(lock)) {
                                 auto &sensor = hitEntity.Get<ecs::LaserSensor>(lock);
-                                sensor.illuminance += color * emitter.intensity;
+                                sensor.illuminance += glm::vec3(color * emitter.intensity);
                             }
                         }
                     }

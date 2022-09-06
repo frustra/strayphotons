@@ -52,6 +52,10 @@ namespace sp::vulkan {
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
+        for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
+            AddGui(ent, ent.Get<const ecs::Gui>(lock));
+        }
+
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
             {vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16UnormS8Uint});
     }
@@ -442,6 +446,17 @@ namespace sp::vulkan {
     }
 #endif
 
+    void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
+        if (gui.context) {
+            guis.emplace_back(RenderableGui{ent, gui.context});
+        } else if (!gui.target.empty()) {
+            auto context = make_shared<WorldGuiManager>(ent, gui.target);
+            if (CreateGuiWindow(context.get(), gui.target)) {
+                guis.emplace_back(RenderableGui{ent, context.get(), context});
+            }
+        }
+    }
+
     void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock) {
         ecs::ComponentEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
@@ -456,22 +471,13 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 if (!eventEntity.Has<ecs::Gui>(lock)) continue;
-
-                const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
-                auto existingContext = std::get_if<GuiContext *>(&guiComponent.target);
-                if (existingContext) {
-                    guis.emplace_back(RenderableGui{eventEntity, *existingContext});
-                } else {
-                    auto &windowName = std::get<std::string>(guiComponent.target);
-                    auto context = make_shared<WorldGuiManager>(eventEntity, windowName);
-                    if (CreateGuiWindow(context.get(), windowName)) {
-                        guis.emplace_back(RenderableGui{eventEntity, context.get(), context});
-                    }
-                }
+                AddGui(eventEntity, eventEntity.Get<ecs::Gui>(lock));
             }
         }
 
         for (auto &gui : guis) {
+            if (!gui.entity.Has<ecs::Gui>(lock)) continue;
+            if (gui.entity.Get<ecs::Gui>(lock).disabled) continue;
             graph.AddPass("Gui")
                 .Build([&](rg::PassBuilder &builder) {
                     rg::ImageDesc desc;
@@ -580,6 +586,12 @@ namespace sp::vulkan {
                 auto model = renderable.model->Get();
                 if (!model) {
                     Errorf("Preloading renderable with null model: %s", ecs::ToString(lock, ent));
+                    continue;
+                } else if (renderable.meshIndex >= model->meshes.size()) {
+                    Errorf("Preloading renderable with out of range mesh index %u/%u: %s",
+                        renderable.meshIndex,
+                        model->meshes.size(),
+                        ecs::ToString(lock, ent));
                     continue;
                 }
 

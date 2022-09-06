@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 
@@ -8,7 +9,7 @@
 namespace ecs {
     struct LaserEmitter {
         float intensity = 1.0f; // multiplier applied to color
-        glm::vec3 color = glm::vec3(1); // HDR value
+        sp::color_t color = glm::vec3(1); // HDR value
         bool on = true;
     };
 

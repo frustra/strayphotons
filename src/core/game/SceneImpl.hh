@@ -6,7 +6,6 @@
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "ecs/components/Transform.h"
-#include "game/SceneType.hh"
 
 #include <bitset>
 

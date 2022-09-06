@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 
@@ -10,7 +11,7 @@ namespace ecs {
         float intensity = 0;
         float illuminance = 0;
         sp::angle_t spotAngle = 0.0f;
-        glm::vec3 tint = glm::vec3(1);
+        sp::color_t tint = glm::vec3(1);
         string gelName;
         bool on = true;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize

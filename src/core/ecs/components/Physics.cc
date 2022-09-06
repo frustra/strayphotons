@@ -120,16 +120,6 @@ namespace ecs {
                     Errorf("Unknown physics model value: %s", param.second.to_str());
                     return false;
                 }
-            } else if (param.first == "dynamic") {
-                physics.dynamic = param.second.get<bool>();
-            } else if (param.first == "kinematic") {
-                physics.kinematic = param.second.get<bool>();
-            } else if (param.first == "density") {
-                physics.density = param.second.get<double>();
-            } else if (param.first == "angular_damping") {
-                physics.angularDamping = param.second.get<double>();
-            } else if (param.first == "linear_damping") {
-                physics.linearDamping = param.second.get<double>();
             } else if (param.first == "group") {
                 auto groupString = param.second.get<string>();
                 sp::to_upper(groupString);
@@ -151,11 +141,6 @@ namespace ecs {
                     physics.group = PhysicsGroup::UserInterface;
                 } else {
                     Errorf("Unknown physics group: %s", groupString);
-                    return false;
-                }
-            } else if (param.first == "force") {
-                if (!sp::json::Load(scope, physics.constantForce, param.second)) {
-                    Errorf("Invalid physics force: %s", param.second.to_str());
                     return false;
                 }
             } else if (param.first == "constraint") {
@@ -189,9 +174,6 @@ namespace ecs {
                         constraintTargetName.String());
                     return false;
                 }
-            } else {
-                Errorf("Unknown physics param: %s", param.first);
-                return false;
             }
         }
         return true;

@@ -13,9 +13,10 @@ namespace sp::scripts {
                 if (ent.Has<EventInput, TransformSnapshot, Physics, PhysicsJoints>(lock)) {
                     auto &ph = ent.Get<Physics>(lock);
                     auto &joints = ent.Get<PhysicsJoints>(lock);
-                    Assertf(ph.dynamic && !ph.kinematic,
-                        "Interactive object must have dynamic physics: %s",
-                        ToString(lock, ent));
+                    if (!ph.dynamic || ph.kinematic) {
+                        Errorf("Interactive object must have dynamic physics: %s", ToString(lock, ent));
+                        return;
+                    }
 
                     struct ScriptData {
                         std::vector<Entity> grabEntities, pointEntities;

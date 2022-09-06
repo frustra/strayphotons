@@ -138,7 +138,13 @@ namespace ecs {
         }
     };
 
-    static Component<Physics> ComponentPhysics("physics");
+    static Component<Physics> ComponentPhysics("physics",
+        ComponentField::New("dynamic", &Physics::dynamic),
+        ComponentField::New("kinematic", &Physics::kinematic),
+        ComponentField::New("density", &Physics::density),
+        ComponentField::New("angular_damping", &Physics::angularDamping),
+        ComponentField::New("linear_damping", &Physics::linearDamping),
+        ComponentField::New("force", &Physics::constantForce));
 
     template<>
     bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);

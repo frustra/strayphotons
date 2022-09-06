@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <magic_enum.hpp>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -32,16 +33,9 @@ namespace sp::logging {
         return file;
     }
 
-    template<typename T>
-    struct stringify : std::false_type {
-        static const char *to_string(T &&t) {
-            Abort("stringify::to_string called on invalid type");
-        };
-    };
-
     // Convert all std::strings to const char* using constexpr if (C++17)
     // Source: https://gist.github.com/Zitrax/a2e0040d301bf4b8ef8101c0b1e3f1d5
-    // Modified to support string_view and add custom stringify overload
+    // Modified to support string_view and enums via magic_enum.hpp
     template<typename T>
     auto convert(T &&t) {
         using BaseType = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -52,8 +46,9 @@ namespace sp::logging {
             if (t.empty()) return "";
             Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
             return std::forward<T>(t).data();
-        } else if constexpr (stringify<BaseType>::value) {
-            return stringify<BaseType>::to_string(std::forward<T>(t));
+        } else if constexpr (std::is_enum_v<BaseType>) {
+            if (magic_enum::enum_name(std::forward<T>(t)).empty()) return "invalid_enum";
+            return magic_enum::enum_name(std::forward<T>(t)).data();
         } else {
             return std::forward<T>(t);
         }

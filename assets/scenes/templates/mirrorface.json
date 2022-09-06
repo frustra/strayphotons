@@ -2,7 +2,9 @@
 	"entities": [
 		{
 			"name": "optic",
-			"optic": "mirror",
+			"optic": {
+				"type": "Mirror"
+			},
 			"renderable": {
 				"model": "mirror"
 			},
