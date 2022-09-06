@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ecs/Components.hh"
 #include "core/Common.hh"
+#include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 
 #include <glm/glm.hpp>
