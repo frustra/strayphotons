@@ -17,9 +17,6 @@ namespace ecs {
     };
 
     static Component<OpticalElement> ComponentOpticalElement("optic",
-        ComponentField::New("type", &OpticalElement::type, FieldAction::AutoApply),
-        ComponentField::New("tint", &OpticalElement::tint, FieldAction::AutoApply));
-
-    template<>
-    bool Component<OpticalElement>::Load(const EntityScope &scope, OpticalElement &dst, const picojson::value &src);
+        ComponentField::New("type", &OpticalElement::type),
+        ComponentField::New("tint", &OpticalElement::tint));
 } // namespace ecs

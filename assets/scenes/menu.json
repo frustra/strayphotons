@@ -370,7 +370,9 @@
 		},
 		{
 			"name": "mount_1.round-mirror",
-			"optic": "mirror",
+			"optic": {
+				"type": "Mirror"
+			},
 			"physics": {
 				"model": "round-mirror-mounted.convex1",
 				"dynamic": false

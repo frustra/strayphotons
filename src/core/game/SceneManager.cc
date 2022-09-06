@@ -746,7 +746,7 @@ namespace sp {
                         }
                     }
                 }
-            };
+            }
         }
     }
 } // namespace sp
