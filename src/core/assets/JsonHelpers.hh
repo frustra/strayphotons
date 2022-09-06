@@ -92,6 +92,10 @@ namespace sp::json {
         return detail::LoadVec<4>(dst, src);
     }
     template<>
+    inline bool Load(const ecs::EntityScope &s, color_t &dst, const picojson::value &src) {
+        return detail::LoadVec<3>(dst.color, src);
+    }
+    template<>
     inline bool Load(const ecs::EntityScope &s, glm::ivec2 &dst, const picojson::value &src) {
         return detail::LoadVec<2>(dst, src);
     }
@@ -170,6 +174,10 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec4 &src) {
         detail::SaveVec<4>(dst, src);
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const color_t &src) {
+        detail::SaveVec<3>(dst, src.color);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec2 &src) {

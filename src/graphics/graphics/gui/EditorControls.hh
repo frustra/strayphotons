@@ -87,6 +87,10 @@ namespace sp {
         return ImGui::DragFloat4(name, (float *)&value, 0.01f);
     }
     template<>
+    bool AddImGuiElement(const char *name, color_t &value) {
+        return ImGui::ColorEdit3(name, (float *)&value);
+    }
+    template<>
     bool AddImGuiElement(const char *name, glm::ivec2 &value) {
         return ImGui::DragInt2(name, (int *)&value);
     }

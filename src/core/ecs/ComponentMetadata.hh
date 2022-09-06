@@ -21,6 +21,7 @@ namespace ecs {
     struct EntityScope;
     struct AnimationState;
     enum class VisibilityMask;
+    enum class OpticType;
     enum class InterpolationMode;
 
     enum class FieldType {
@@ -34,6 +35,7 @@ namespace ecs {
         Vec2,
         Vec3,
         Vec4,
+        ColorT,
         IVec2,
         IVec3,
         Quat,
@@ -47,6 +49,7 @@ namespace ecs {
         // Enums
         InterpolationMode,
         VisibilityMask,
+        OpticType,
         Count,
     };
 
@@ -60,6 +63,7 @@ namespace ecs {
         glm::vec2,
         glm::vec3,
         glm::vec4,
+        sp::color_t,
         glm::ivec2,
         glm::ivec3,
         glm::quat,
@@ -68,7 +72,8 @@ namespace ecs {
         Transform,
         std::vector<AnimationState>,
         InterpolationMode,
-        VisibilityMask>;
+        VisibilityMask,
+        OpticType>;
 
     static_assert(std::tuple_size_v<FieldTypes> == (size_t)FieldType::Count, "ComponentMetatdata field types mismatch");
 

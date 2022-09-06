@@ -21,7 +21,7 @@ namespace sp::vulkan::renderer {
         vector<Screen> screens;
 
         struct LaserLine {
-            glm::vec3 color;
+            color_t color;
             float radius, mediaDensityFactor;
             glm::vec3 start, end;
         };

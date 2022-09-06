@@ -20,6 +20,7 @@ using std::string_view;
 typedef std::chrono::steady_clock chrono_clock;
 
 #include <algorithm>
+#include <glm/glm.hpp>
 
 typedef unsigned char uint8;
 typedef signed char int8;
@@ -88,6 +89,34 @@ namespace sp {
 
     private:
         float radians_;
+    };
+
+    struct color_t {
+        glm::vec3 color;
+
+        color_t() : color(1) {}
+        color_t(const glm::vec3 &color) : color(color) {}
+
+        operator glm::vec3() const {
+            return color;
+        }
+
+        color_t operator*(const color_t &other) const {
+            return color * other.color;
+        }
+
+        color_t operator*(const float &multiplier) const {
+            return color * multiplier;
+        }
+
+        color_t &operator*=(const color_t &other) {
+            color *= other.color;
+            return *this;
+        }
+
+        bool operator==(const color_t &other) const {
+            return color == other.color;
+        }
     };
 
     template<typename T, typename V>

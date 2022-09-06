@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Components.hh"
+#include "core/Common.hh"
 #include "ecs/Ecs.hh"
 
 #include <glm/glm.hpp>
@@ -10,11 +11,11 @@ namespace ecs {
     struct LaserLine {
         struct Line {
             std::vector<glm::vec3> points;
-            glm::vec3 color = glm::vec3(1); // HDR value
+            sp::color_t color = glm::vec3(1); // HDR value
         };
         struct Segment {
             glm::vec3 start, end;
-            glm::vec3 color = glm::vec3(1); // HDR value
+            sp::color_t color = glm::vec3(1); // HDR value
         };
         using Segments = std::vector<Segment>;
         std::variant<Line, Segments> line = Line();
