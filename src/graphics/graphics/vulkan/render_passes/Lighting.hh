@@ -61,6 +61,7 @@ namespace sp::vulkan::renderer {
             glm::mat4 invView;
             glm::vec4 mapOffset;
             glm::vec4 bounds;
+            std::array<glm::vec2, 4> cornerUVs; // clockwise winding starting at the bottom left
             glm::vec2 clip;
             uint32_t gelId;
             uint32_t previousIndex;
@@ -68,7 +69,7 @@ namespace sp::vulkan::renderer {
 
             float padding[3];
         };
-        static_assert(sizeof(GPULight) == 23 * 4 * sizeof(float), "GPULight size incorrect");
+        static_assert(sizeof(GPULight) == 25 * 4 * sizeof(float), "GPULight size incorrect");
 
         struct GPUData {
             GPULight lights[MAX_LIGHTS];
