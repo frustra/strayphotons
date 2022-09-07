@@ -90,7 +90,7 @@ void main() {
 
     vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 
-    vec3 directDiffuseColor = baseColor - baseColor * metalness;
+    vec3 directDiffuseColor = baseColor * (1 - metalness);
     vec3 directLight =
         DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
 

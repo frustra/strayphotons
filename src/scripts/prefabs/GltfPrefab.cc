@@ -36,6 +36,11 @@ namespace ecs {
             }
         }
 
+        static std::vector<std::string> emptyList;
+        auto &skipNames = state.HasParam<decltype(emptyList)>("skip_nodes")
+                              ? state.GetParamRef<decltype(emptyList)>("skip_nodes")
+                              : emptyList;
+
         std::deque<std::pair<size_t, Entity>> nodes;
         for (auto &nodeId : model->rootNodes) {
             nodes.emplace_back(nodeId, ent);
@@ -46,6 +51,11 @@ namespace ecs {
             Assertf(model->nodes[nodeId], "Gltf node %u is not defined", nodeId);
             auto &node = *model->nodes[nodeId];
 
+            auto nodeName = getNodeName(nodeId);
+            if (sp::contains(skipNames, nodeName)) {
+                nodes.pop_front();
+                continue;
+            }
             Entity newEntity = scene->NewPrefabEntity(lock, ent, getNodeName(nodeId), prefixName);
 
             TransformTree transform(node.transform);

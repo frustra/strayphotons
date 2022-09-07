@@ -40,7 +40,7 @@ add_custom_command(
 add_custom_target(models)
 
 # Add all the model directories
-set(MODEL_FOLDERS
+set(OBJ_MODEL_FOLDERS
     01-outside
     airlock
     cardboard-box
@@ -53,7 +53,6 @@ set(MODEL_FOLDERS
     door-panel
     door-panel-l-1.5x2
     door-panel-r-1.5x2
-    # duck ## Do not process, this model comes from a known source
     ground-1x1x1
     ground-3x3
     ledge-caged-1x0.5
@@ -64,7 +63,6 @@ set(MODEL_FOLDERS
     sensor
     sensor-plate-dark
     sensor-plate-light
-    # sponza ## Do not process, this model comes from a known source
     spotlight-01
     wall-1x1
     wall-4-corner
@@ -72,16 +70,12 @@ set(MODEL_FOLDERS
     wall-4x3-door
 )
 
-foreach(_model ${MODEL_FOLDERS})
-    process_model_folder(
-        TARGET
-            models
-        MODEL
-            ${_model}
-        NODE_EXE
-            ${NODE_JS_EXE}
-    )
-endforeach()
+set(RAW_MODEL_FOLDERS
+    sponza
+    sponza2
+    duck
+    station-segment
+)
 
 set(RAW_MODELS
     box
@@ -98,6 +92,38 @@ set(RAW_MODELS
     magentafilter
     yellowfilter
 )
+
+foreach(_model ${OBJ_MODEL_FOLDERS})
+    process_model_folder(
+        TARGET
+            models
+        MODEL
+            ${_model}
+        NODE_EXE
+            ${NODE_JS_EXE}
+    )
+endforeach()
+
+foreach(_model ${RAW_MODEL_FOLDERS})
+    process_gltf_to_glb(
+        TARGET
+            models
+        MODEL
+            ${_model}
+        GLTF
+            ${CMAKE_CURRENT_LIST_DIR}/${_model}/${_model}.gltf
+        GLB
+            ${CMAKE_CURRENT_LIST_DIR}/${_model}/${_model}.glb
+        NODE_EXE
+            ${NODE_JS_EXE}
+    )
+    update_physics_cache(
+        TARGET
+            models
+        MODEL
+            ${_model}
+    )
+endforeach()
 
 foreach(_model ${RAW_MODELS})
     process_gltf_to_glb(
@@ -120,64 +146,6 @@ foreach(_model ${RAW_MODELS})
             ${_model}
     )
 endforeach()
-
-# Process duck and sponza specially
-process_gltf_to_glb(
-    TARGET
-        models
-    MODEL
-        sponza
-    GLTF
-        ${CMAKE_CURRENT_LIST_DIR}/sponza/sponza.gltf
-    GLB
-        ${CMAKE_CURRENT_LIST_DIR}/sponza/sponza.glb
-    NODE_EXE
-        ${NODE_JS_EXE}
-)
-update_physics_cache(
-    TARGET
-        models
-    MODEL
-        sponza
-)
-
-process_gltf_to_glb(
-    TARGET
-        models
-    MODEL
-        sponza2
-    GLTF
-        ${CMAKE_CURRENT_LIST_DIR}/sponza2/sponza2.gltf
-    GLB
-        ${CMAKE_CURRENT_LIST_DIR}/sponza2/sponza2.glb
-    NODE_EXE
-        ${NODE_JS_EXE}
-)
-update_physics_cache(
-    TARGET
-        models
-    MODEL
-        sponza2
-)
-
-process_gltf_to_glb(
-    TARGET
-        models
-    MODEL
-        duck
-    GLTF
-        ${CMAKE_CURRENT_LIST_DIR}/duck/duck.gltf
-    GLB
-        ${CMAKE_CURRENT_LIST_DIR}/duck/duck.glb
-    NODE_EXE
-        ${NODE_JS_EXE}
-)
-update_physics_cache(
-    TARGET
-        models
-    MODEL
-        duck
-)
 
 # Make the project exe depend on having up to date models
 add_dependencies(${PROJECT_COMMON_EXE} models)

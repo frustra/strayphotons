@@ -85,12 +85,13 @@ void main() {
         }
     }
 
-    vec3 directDiffuseColor = baseColor * (1 - metalness);
+    vec3 directDiffuseColor = baseColor * (1 - metalness) * scatterTerm;
     vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) * directDiffuseColor;
 
-    vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, worldNormal, roughness, metalness);
+    vec3 directLight =
+        DirectShading(worldPosition, -rayDir, baseColor, worldNormal, worldNormal, roughness, metalness, scatterTerm);
 
-    vec3 totalLight = emissive + (directLight + indirectDiffuse) * scatterTerm + indirectSpecular;
+    vec3 totalLight = directLight; // emissive + directLight + indirectDiffuse + indirectSpecular;
 
     outFragColor = vec4(totalLight * exposure, 1);
     outTransparencyMask = vec4(baseColorAlpha.rgb, 1);
