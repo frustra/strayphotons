@@ -185,9 +185,6 @@ namespace sp::vulkan::renderer {
             data.position = lightOrigin;
             data.tint = light.tint;
             data.direction = lightDir;
-            data.direction = lightDir;
-            data.direction = lightDir;
-            data.direction = lightDir;
             data.spotAngleCos = cos(light.spotAngle);
             data.proj = view.projMat;
             data.invProj = view.invProjMat;

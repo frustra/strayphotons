@@ -23,7 +23,6 @@ layout(location = 2) out vec4 gBuffer2; // r8unorm
 
 void main() {
     vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
-    // if (baseColor.a < 0.5) discard;
 
     vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
     float roughness = metallicRoughnessSample.g;
