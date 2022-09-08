@@ -81,7 +81,6 @@ namespace sp {
             debugGui = std::make_unique<DebugGuiManager>();
             graphics.Init();
 
-            // must create all gui instances after initializing graphics, except for the special debug gui
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
         }
 #endif

@@ -24,19 +24,17 @@ namespace sp {
 
     class GuiRenderable {
     public:
-        virtual void Add() = 0;
+        GuiRenderable(const string &name) : name(name) {}
+
+        const string name;
+        virtual void DefineContents() = 0;
 
         void PushFont(Font fontType, float fontSize);
     };
 
     class GuiWindow : public GuiRenderable {
     public:
-        const string name;
-
-        GuiWindow(const string &name) : name(name) {}
-        virtual void DefineContents() = 0;
-
-        virtual void Add();
+        GuiWindow(const string &name) : GuiRenderable(name) {}
     };
 
     class GuiContext {
@@ -44,10 +42,11 @@ namespace sp {
         GuiContext(const std::string &name);
         virtual ~GuiContext();
         void Attach(const std::shared_ptr<GuiRenderable> &component);
+        void Detach(const std::shared_ptr<GuiRenderable> &component);
         void SetGuiContext();
 
         virtual void BeforeFrame();
-        virtual void DefineWindows();
+        virtual void DefineWindows() = 0;
 
         const std::string &Name() const {
             return name;
@@ -55,13 +54,15 @@ namespace sp {
 
         void PushFont(Font fontType, float fontSize);
 
-    private:
+    protected:
         std::vector<std::shared_ptr<GuiRenderable>> components;
+
+    private:
         ImGuiContext *imCtx = nullptr;
         std::string name;
     };
 
-    bool CreateGuiWindow(GuiContext *context, const string &name);
+    shared_ptr<GuiWindow> CreateGuiWindow(GuiContext *context, const string &name);
 
     std::span<FontDef> GetFontList();
 } // namespace sp

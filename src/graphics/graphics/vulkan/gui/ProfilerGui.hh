@@ -15,7 +15,7 @@ namespace sp::vulkan {
             GPU,
         };
 
-        ProfilerGui(PerfTimer &timer) : timer(timer), msWindowSize(1000) {}
+        ProfilerGui(PerfTimer &timer) : GuiRenderable("profiler"), timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
 
         static float GetHistogramValue(void *data, int index) {
@@ -23,7 +23,7 @@ namespace sp::vulkan {
             return (float)self->drawHistogram.buckets[index];
         }
 
-        void Add() {
+        void DefineContents() {
             if (timer.lastCompleteFrame.empty()) return;
             if (!CVarProfileRender.Get()) return;
 

@@ -19,16 +19,6 @@ namespace sp {
         return fontList;
     }
 
-    void GuiWindow::Add() {
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-        ImGui::Begin(name.c_str(),
-            nullptr,
-            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-        DefineContents();
-        ImGui::End();
-    }
-
     GuiContext::GuiContext(const std::string &name) : name(name) {
         imCtx = ImGui::CreateContext();
 
@@ -70,17 +60,16 @@ namespace sp {
         SetGuiContext();
     }
 
-    void GuiContext::DefineWindows() {
-        for (auto &component : components) {
-            component->Add();
-        }
-    }
-
     void GuiContext::Attach(const std::shared_ptr<GuiRenderable> &component) {
         components.emplace_back(component);
     }
 
-    bool CreateGuiWindow(GuiContext *context, const string &windowName) {
+    void GuiContext::Detach(const std::shared_ptr<GuiRenderable> &component) {
+        auto it = std::find(components.begin(), components.end(), component);
+        if (it != components.end()) components.erase(it);
+    }
+
+    shared_ptr<GuiWindow> CreateGuiWindow(GuiContext *context, const string &windowName) {
         shared_ptr<GuiWindow> window;
         if (windowName == "lobby") {
             window = make_shared<LobbyGui>(windowName);
@@ -88,10 +77,10 @@ namespace sp {
             window = make_shared<InspectorGui>(windowName);
         } else {
             Errorf("unknown gui window: %s", windowName);
-            return false;
+            return nullptr;
         }
         context->Attach(window);
-        return true;
+        return window;
     }
 
     static void pushFont(Font fontType, float fontSize) {

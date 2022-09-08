@@ -13,6 +13,18 @@ namespace sp {
     WorldGuiManager::WorldGuiManager(ecs::Entity guiEntity, const std::string &name)
         : GuiContext(name), guiEntity(guiEntity) {}
 
+    void WorldGuiManager::DefineWindows() {
+        for (auto &window : components) {
+            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            ImGui::Begin(window->name.c_str(),
+                nullptr,
+                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+            window->DefineContents();
+            ImGui::End();
+        }
+    }
+
     void WorldGuiManager::BeforeFrame() {
         ZoneScoped;
         GuiContext::BeforeFrame();

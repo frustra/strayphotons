@@ -62,11 +62,15 @@ namespace sp::vulkan::renderer {
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
 
                     string textureName;
-                    if (screenComp.textureName.empty() && ent.Has<ecs::Gui>(lock)) {
+                    if (!screenComp.textureName.empty()) {
+                        textureName = screenComp.textureName;
+                    } else if (ent.Has<ecs::Gui>(lock)) {
                         auto &gui = ent.Get<ecs::Gui>(lock);
-                        if (!gui.target.empty() && !gui.disabled) textureName = gui.target + "_gui";
+                        if (gui.windowName.empty() || gui.target != ecs::GuiTarget::World) continue;
+                        textureName = gui.windowName + "_gui";
+                    } else {
+                        continue;
                     }
-                    if (textureName.empty()) textureName = screenComp.textureName;
 
                     if (builder.GetID(textureName, false) == InvalidResource) continue;
 
