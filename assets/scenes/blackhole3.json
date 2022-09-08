@@ -4,44 +4,38 @@
 			"name": "zone",
 			"signal_output": {},
 			"transform": {
-				"scale": [10, 5, 10],
-				"translate": [0, 2.5, 0]
+				"scale": [24, 8, 10],
+				"translate": [0, 3, 0]
 			},
 			"trigger_area": {}
 		},
 		{
-			"name": "sleeve",
+			"name": "segment",
 			"script": {
 				"prefab": "template",
-				"parameters": { "source": "station_sleeve" }
+				"parameters": { "source": "station_segment" }
 			}
 		},
 		{
 			"name": "global:divider2-3",
 			"transform": {
-				"translate": [-5, 0, 0]
+				"translate": [-12, 0, 0],
+				"rotate": [-4.5, 0, 0, 1]
 			},
 			"scene_connection": "blackhole2",
 			"signal_bindings": {
 				"load_scene_connection": "zone/trigger_player_count"
-			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "station_divider" }
 			}
 		},
 		{
 			"name": "global:divider3-4",
 			"transform": {
-				"translate": [5, 0, 0]
+				"translate": [12, 0, 0],
+				"rotate": [4.5, 0, 0, 1]
 			},
 			"scene_connection": "blackhole4",
 			"signal_bindings": {
 				"load_scene_connection": "zone/trigger_player_count"
-			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "station_divider" }
 			}
 		},
 		{

@@ -284,8 +284,6 @@ namespace sp::vulkan::renderer {
             }
 
             auto rect = freeRectangles[rectIndex];
-            rect.first += SHADOW_MAP_ATLAS_PADDING;
-            rect.second = extents - 2 * SHADOW_MAP_ATLAS_PADDING;
             views[i].offset = rect.first;
             views[i].extents = rect.second;
             gpuData.lights[i].mapOffset = glm::vec4{rect.first.x, rect.first.y, rect.second.x, rect.second.y} /
@@ -342,7 +340,9 @@ namespace sp::vulkan::renderer {
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
                 desc.format = vk::Format::eR32Sfloat;
-                builder.OutputColorAttachment(0, "Linear", desc, {LoadOp::Clear, StoreOp::Store});
+                AttachmentInfo attachmentInfo(LoadOp::Clear, StoreOp::Store);
+                attachmentInfo.SetClearColor(glm::vec4(1));
+                builder.OutputColorAttachment(0, "Linear", desc, attachmentInfo);
 
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});

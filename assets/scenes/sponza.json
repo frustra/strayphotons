@@ -19,7 +19,25 @@
 					"prefab": "gltf",
 					"parameters": {
 						"model": "sponza2",
-						"render": true
+						"render": true,
+						"skip_nodes": [
+							"Flowers.001",
+							"Flowers.002",
+							"Flowers.003",
+							"Flowers.004",
+							"Flowers.005",
+							"Flowers.006",
+							"Flowers.007",
+							"Flowers.008",
+							"Vines.001",
+							"Vines.002",
+							"Vines.003",
+							"Vines.004",
+							"Vines.005",
+							"Vines.006",
+							"Vines.007",
+							"Vines.008"
+						]
 					}
 				}
 			]

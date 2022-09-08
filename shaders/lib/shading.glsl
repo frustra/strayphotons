@@ -35,8 +35,17 @@ vec3 EvaluateBRDFSpecularImportanceSampledGGX(vec3 specularColor, float roughnes
     return Vis * F * VdotH;
 }
 
-#ifdef DIFFUSE_ONLY_SHADING
+#if defined(DIFFUSE_ONLY_SHADING)
 vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness, float metalness) {
+#elif defined(TRANSPARENCY_SHADING)
+vec3 DirectShading(vec3 worldPosition,
+    vec3 directionToView,
+    vec3 baseColor,
+    vec3 normal,
+    vec3 flatNormal,
+    float roughness,
+    float metalness,
+    float scatterTerm) {
 #else
 vec3 DirectShading(vec3 worldPosition,
     vec3 directionToView,
@@ -72,7 +81,11 @@ vec3 DirectShading(vec3 worldPosition,
             float falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
             illuminance = notHasIllum * lights[i].intensity * falloff + hasIllum * illuminance;
+#ifdef TRANSPARENCY_SHADING
+            illuminance *= abs(dot(normal, incidence));
+#else
             illuminance *= max(dot(normal, incidence), 0);
+#endif
         }
 
         // Evaluate BRDF and calculate luminance.
@@ -80,9 +93,13 @@ vec3 DirectShading(vec3 worldPosition,
         vec3 diffuseColor = baseColor * (1 - metalness * (1 - roughness));
         vec3 brdf = BRDF_Diffuse_Lambert(diffuseColor);
 #else
-        vec3 diffuseColor = baseColor - baseColor * metalness;
+    #ifdef TRANSPARENCY_SHADING
+        vec3 diffuseColor = baseColor * (1 - metalness) * scatterTerm;
+    #else
+        vec3 diffuseColor = baseColor * (1 - metalness);
+    #endif
         vec3 specularColor = mix(vec3(0.04), baseColor, metalness);
-        vec3 brdf = EvaluateBRDF(diffuseColor, specularColor, roughness, incidence, directionToView, normal);
+        vec3 brdf = EvaluateBRDF(diffuseColor, specularColor, max(roughness, 0.02), incidence, directionToView, normal);
 #endif
         vec3 luminance = brdf * illuminance * currLightColor;
 

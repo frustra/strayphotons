@@ -34,8 +34,8 @@ layout(constant_id = 2) const int VOXEL_MIP = 0;
 void main() {
     ViewState view = views[gl_ViewID_OVR];
 
-    vec4 rayPos = view.invViewMat *
-                  vec4(ScreenPosToViewPos(vec2(inTexCoord.x, 1 - inTexCoord.y), 0, view.invProjMat), 1);
+    vec2 flippedCoord = vec2(inTexCoord.x, 1 - inTexCoord.y);
+    vec4 rayPos = view.invViewMat * vec4(ScreenPosToViewPos(flippedCoord, 0, view.invProjMat), 1);
     vec3 rayDir = normalize(rayPos.xyz - view.invViewMat[3].xyz);
 
     vec3 sampleRadiance;

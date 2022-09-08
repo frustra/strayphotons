@@ -1,0 +1,36 @@
+{
+	"entities": [
+		{
+			"name": "segment",
+			"transform": {},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "station-segment",
+					"render": true,
+					"physics": "static",
+					"skip_nodes": [
+						"Walls-Y.Glass",
+						"Walls+Y.Glass",
+						"Walls-Y.Cut",
+						"Walls+Y.Cut",
+						"Ceiling.Cut1",
+						"Ceiling.Cut2"
+					]
+				}
+			}
+		},
+		{
+			"name": "segment.Walls-Y",
+			"physics": {
+				"model": "station-segment.walls-y"
+			}
+		},
+		{
+			"name": "segment.Walls+Y",
+			"physics": {
+				"model": "station-segment.walls+y"
+			}
+		}
+	]
+}

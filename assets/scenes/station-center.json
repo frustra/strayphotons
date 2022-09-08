@@ -18,7 +18,7 @@
 			"signal_output": {},
 			"transform": {
 				"scale": [20, 40, 20],
-				"translate": [0, 20, 0]
+				"translate": [0, 19, 0]
 			},
 			"script": {
 				"prefab": "template",
@@ -34,7 +34,7 @@
 			}
 		},
 		{
-			"__comment": "spoke1",
+			"name": "spoke1",
 			"renderable": {
 				"model": "box"
 			},
@@ -48,7 +48,7 @@
 			}
 		},
 		{
-			"__comment": "spoke2",
+			"name": "spoke2",
 			"renderable": {
 				"model": "box"
 			},
@@ -63,13 +63,13 @@
 			}
 		},
 		{
-			"__comment": "spoke3",
+			"name": "spoke3",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
-				"scale": [320, 6, 1],
-				"translate": [0, 160, 2],
+				"scale": [320, 5.2, 0.1],
+				"translate": [0, 160, 1.55],
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
@@ -78,14 +78,13 @@
 			}
 		},
 		{
-			"__comment": "spoke3-1",
+			"name": "spoke3-1",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
-				"scale": [155, 6, 1],
-				"translate": [0, 82.5, -4],
-				"rotate": [90, 0, 0, 1]
+				"scale": [5.2, 153.9, 0.1],
+				"translate": [0, 82.95, -3.55]
 			},
 			"physics": {
 				"model": "box",
@@ -93,14 +92,13 @@
 			}
 		},
 		{
-			"__comment": "spoke3-2",
+			"name": "spoke3-2",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
-				"scale": [160, 1, 5],
-				"translate": [3, 86, -1],
-				"rotate": [90, 0, 0, 1]
+				"scale": [0.1, 160, 5],
+				"translate": [2.55, 86, -1]
 			},
 			"physics": {
 				"model": "box",
@@ -108,14 +106,13 @@
 			}
 		},
 		{
-			"__comment": "spoke3-3",
+			"name": "spoke3-3",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
-				"scale": [160, 1, 5],
-				"translate": [-3, 86, -1],
-				"rotate": [90, 0, 0, 1]
+				"scale": [0.1, 160, 5],
+				"translate": [-2.55, 86, -1]
 			},
 			"physics": {
 				"model": "box",
@@ -123,7 +120,7 @@
 			}
 		},
 		{
-			"__comment": "spoke4",
+			"name": "spoke4",
 			"renderable": {
 				"model": "box"
 			},

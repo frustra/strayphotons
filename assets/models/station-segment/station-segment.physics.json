@@ -1,0 +1,22 @@
+{
+    "walls-y": {
+        "decompose": true,
+        "mesh_index": 0,
+        "max_hulls": 12
+    },
+    "walls+y": {
+        "decompose": true,
+        "mesh_index": 6,
+        "max_hulls": 12
+    },
+    "walls-y.cut": {
+        "decompose": true,
+        "mesh_index": 1,
+        "max_hulls": 12
+    },
+    "walls+y.cut": {
+        "decompose": true,
+        "mesh_index": 2,
+        "max_hulls": 12
+    }
+}

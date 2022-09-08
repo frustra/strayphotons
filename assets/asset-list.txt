@@ -266,6 +266,7 @@ fc46e63ace3613ebcb64db59f8dcffb0    models/sponza2/sponza2.gltf
 64ef9dcd30c285d5b9168984e172cbd7    models/spotlight-01/spotlight-01.gltf
 652b0dcde78910bda91233725d2713b1    models/spotlight-01/spotlight-01.mtl
 11d83b9570c18d0eef1616606301e0b2    models/spotlight-01/spotlight-01.obj
+72bc0f9087a28de5387f946d0669b36d    models/station-segment/station-segment.gltf
 ec23e7dd6ff7a8e00388e218ad38dad4    models/wall-1x1/wall-1x1.bin
 3551a233b2ca61e8b5c908029ac721b9    models/wall-1x1/wall-1x1.gltf
 1b7a4e83f50ca1773c502abb368566a0    models/wall-1x1/wall-1x1.obj
