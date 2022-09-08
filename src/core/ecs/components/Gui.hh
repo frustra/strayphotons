@@ -7,14 +7,21 @@ namespace sp {
 }
 
 namespace ecs {
-    struct Gui {
-        sp::GuiContext *context = nullptr;
-        std::string target; // Must be set at component creation
-        bool disabled = false;
-
-        Gui(sp::GuiContext *context = nullptr) : context(context) {}
-        Gui(std::string targetName) : target(targetName) {}
+    enum class GuiTarget {
+        None,
+        World,
+        Debug,
     };
 
-    static Component<Gui> ComponentGui("gui", ComponentField::New("target", &Gui::target));
+    struct Gui {
+        GuiTarget target = GuiTarget::World;
+        std::string windowName; // Must be set at component creation
+
+        Gui() {}
+        Gui(std::string windowName, GuiTarget target = GuiTarget::World) : windowName(windowName), target(target) {}
+    };
+
+    static Component<Gui> ComponentGui("gui",
+        ComponentField::New("windowName", &Gui::windowName),
+        ComponentField::New("target", &Gui::target));
 } // namespace ecs

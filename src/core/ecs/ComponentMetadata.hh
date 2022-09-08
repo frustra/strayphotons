@@ -23,6 +23,7 @@ namespace ecs {
     enum class VisibilityMask;
     enum class OpticType;
     enum class InterpolationMode;
+    enum class GuiTarget;
 
     enum class FieldType {
         Bool = 0,
@@ -50,6 +51,7 @@ namespace ecs {
         InterpolationMode,
         VisibilityMask,
         OpticType,
+        GuiTarget,
         Count,
     };
 
@@ -73,7 +75,8 @@ namespace ecs {
         std::vector<AnimationState>,
         InterpolationMode,
         VisibilityMask,
-        OpticType>;
+        OpticType,
+        GuiTarget>;
 
     static_assert(std::tuple_size_v<FieldTypes> == (size_t)FieldType::Count, "ComponentMetatdata field types mismatch");
 

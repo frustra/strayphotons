@@ -8,13 +8,19 @@
 
 namespace sp {
     DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::ALWAYS) {
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>>();
+        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);
         Assert(gui.Has<ecs::EventInput>(lock), "Expected debug gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
         eventInput.Register(INPUT_EVENT_TOGGLE_CONSOLE);
+
+        guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
+
+        for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
+            guis.emplace_back(GuiEntityContext{ent});
+        }
     }
 
     void DebugGuiManager::DefineWindows() {
@@ -27,7 +33,14 @@ namespace sp {
 
         static ConsoleGui console;
         if (consoleOpen) console.Add();
-        SystemGuiManager::DefineWindows();
+
+        for (auto &component : components) {
+            bool isWindow = dynamic_cast<GuiWindow *>(component.get()) != nullptr;
+
+            if (isWindow) ImGui::Begin(component->name.c_str(), nullptr, {});
+            component->DefineContents();
+            if (isWindow) ImGui::End();
+        }
 
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(4);
@@ -43,12 +56,12 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput, ecs::Gui>>();
 
-            auto gui = guiEntity.Get(lock);
-            if (gui.Has<ecs::EventInput>(lock)) {
+            auto thisEntity = guiEntity.Get(lock);
+            if (thisEntity.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
-                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
+                while (ecs::EventInput::Poll(lock, thisEntity, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
                     consoleOpen = !consoleOpen;
                 }
             }
@@ -56,6 +69,37 @@ namespace sp {
             if (lock.Has<ecs::FocusLock>()) {
                 auto &focusLock = lock.Get<ecs::FocusLock>();
                 focusChanged = focusLock.HasFocus(ecs::FocusLayer::OVERLAY) != consoleOpen;
+            }
+
+            ecs::ComponentEvent<ecs::Gui> guiEvent;
+            while (guiObserver.Poll(lock, guiEvent)) {
+                auto &eventEntity = guiEvent.entity;
+
+                if (guiEvent.type == Tecs::EventType::REMOVED) {
+                    for (auto it = guis.begin(); it != guis.end(); it++) {
+                        if (it->entity == eventEntity) {
+                            guis.erase(it);
+                            break;
+                        }
+                    }
+                } else if (guiEvent.type == Tecs::EventType::ADDED) {
+                    if (!eventEntity.Has<ecs::Gui>(lock)) continue;
+                    guis.emplace_back(GuiEntityContext{eventEntity});
+                }
+            }
+
+            for (auto &ctx : guis) {
+                Assert(ctx.entity.Has<ecs::Gui>(lock), "gui entity must have a gui component");
+
+                auto &gui = ctx.entity.Get<ecs::Gui>(lock);
+                if (gui.target == ecs::GuiTarget::Debug) {
+                    if (!ctx.window && !gui.windowName.empty()) {
+                        ctx.window = CreateGuiWindow(this, gui.windowName);
+                    }
+                } else if (ctx.window) {
+                    Detach(ctx.window);
+                    ctx.window.reset();
+                }
             }
         }
         if (focusChanged) {

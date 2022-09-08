@@ -21,7 +21,6 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, layer);
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
-                ent.Set<ecs::Gui>(lock, this);
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER, playerEntity, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);

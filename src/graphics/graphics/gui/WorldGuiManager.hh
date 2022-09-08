@@ -9,6 +9,7 @@ namespace sp {
         WorldGuiManager(ecs::Entity guiEntity, const std::string &name);
 
         virtual void BeforeFrame();
+        void DefineWindows() override;
 
     private:
         ecs::EntityRef guiEntity;

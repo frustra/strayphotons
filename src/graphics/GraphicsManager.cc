@@ -156,6 +156,8 @@ namespace sp {
 
     #if defined(SP_GRAPHICS_SUPPORT_GL)
         renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
+    #elif defined(SP_GRAPHICS_SUPPORT_VK)
+        renderer->SetMenuGui(game->menuGui.get());
     #endif
 
         if (game->debugGui) game->debugGui->BeforeFrame();

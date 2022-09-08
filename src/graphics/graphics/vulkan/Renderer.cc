@@ -125,7 +125,8 @@ namespace sp::vulkan {
 
         scene.AddGeometryWarp(graph);
         lighting.AddShadowPasses(graph);
-        AddGuis(lock);
+        AddWorldGuis(lock);
+        AddMenuGui(lock);
         lighting.AddGelTextures(graph);
         voxels.AddVoxelization(graph, lighting);
         renderer::AddLightSensors(graph, scene, lock);
@@ -447,17 +448,15 @@ namespace sp::vulkan {
 #endif
 
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
-        if (gui.context) {
-            guis.emplace_back(RenderableGui{ent, gui.context});
-        } else if (!gui.target.empty()) {
-            auto context = make_shared<WorldGuiManager>(ent, gui.target);
-            if (CreateGuiWindow(context.get(), gui.target)) {
+        if (!gui.windowName.empty()) {
+            auto context = make_shared<WorldGuiManager>(ent, gui.windowName);
+            if (CreateGuiWindow(context.get(), gui.windowName)) {
                 guis.emplace_back(RenderableGui{ent, context.get(), context});
             }
         }
     }
 
-    void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock) {
+    void Renderer::AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock) {
         ecs::ComponentEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
@@ -476,23 +475,17 @@ namespace sp::vulkan {
         }
 
         for (auto &gui : guis) {
-            if (!gui.entity.Has<ecs::Gui>(lock)) continue;
-            if (gui.entity.Get<ecs::Gui>(lock).disabled) continue;
+            if (!gui.entity.Has<ecs::Gui, ecs::Screen, ecs::TransformSnapshot>(lock)) continue;
+            if (gui.entity.Get<ecs::Gui>(lock).target != ecs::GuiTarget::World) continue;
+
             graph.AddPass("Gui")
                 .Build([&](rg::PassBuilder &builder) {
                     rg::ImageDesc desc;
                     desc.format = vk::Format::eR8G8B8A8Srgb;
                     desc.extent = vk::Extent3D(1024, 1024, 1);
 
-                    if (gui.entity.Has<ecs::Screen>(lock) && gui.entity.Has<ecs::TransformSnapshot>(lock)) {
-                        auto tf = gui.entity.Get<ecs::TransformSnapshot>(lock);
-                        desc.extent.height *= tf.GetScale().y / tf.GetScale().x;
-                    }
-
-                    MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.context);
-                    if (manager && manager->RenderMode() == MenuRenderMode::Pause) {
-                        desc.extent = vk::Extent3D(1920, 1080, 1);
-                    }
+                    auto tf = gui.entity.Get<ecs::TransformSnapshot>(lock);
+                    desc.extent.height *= tf.GetScale().y / tf.GetScale().x;
 
                     desc.mipLevels = CalculateMipmapLevels(desc.extent);
                     desc.sampler = SamplerType::TrilinearClampEdge;
@@ -509,6 +502,43 @@ namespace sp::vulkan {
 
             renderer::AddMipmap(graph, gui.renderGraphID);
         }
+    }
+
+    void Renderer::AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock) {
+        MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
+        if (!menuManager) return;
+
+        rg::ResourceID mipmapID = rg::InvalidResource;
+
+        graph.AddPass("MenuGui")
+            .Build([&](rg::PassBuilder &builder) {
+                rg::ImageDesc desc;
+                desc.format = vk::Format::eR8G8B8A8Srgb;
+                desc.extent = vk::Extent3D(1024, 1024, 1);
+
+                if (menuManager->RenderMode() == MenuRenderMode::Pause) {
+                    ecs::Entity windowEntity = device.GetActiveView();
+                    if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
+                        auto view = windowEntity.Get<ecs::View>(lock);
+                        desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                    }
+                    desc.sampler = SamplerType::BilinearClampEdge;
+                } else {
+                    desc.sampler = SamplerType::TrilinearClampEdge;
+                    desc.mipLevels = CalculateMipmapLevels(desc.extent);
+                }
+
+                auto res = builder.OutputColorAttachment(0, "menu_gui", desc, {LoadOp::Clear, StoreOp::Store});
+
+                if (desc.mipLevels > 1) mipmapID = res.id;
+            })
+            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                auto extent = resources.GetImageView("menu_gui")->Extent();
+                vk::Rect2D viewport = {{}, {extent.width, extent.height}};
+                guiRenderer->Render(*menuGui, cmd, viewport);
+            });
+
+        if (mipmapID != rg::InvalidResource) renderer::AddMipmap(graph, mipmapID);
     }
 
     void Renderer::AddDeferredPasses(
@@ -529,18 +559,10 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddMenuOverlay() {
-        auto inputID = graph.LastOutputID();
-        rg::ResourceID menuID = rg::InvalidResource;
-        for (auto &gui : guis) {
-            if (gui.context->Name() == "menu") {
-                menuID = gui.renderGraphID;
-                MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.context);
-                if (!manager || manager->RenderMode() != MenuRenderMode::Pause) return;
-                break;
-            }
-        }
-        Assert(menuID != rg::InvalidResource, "main menu doesn't exist");
+        MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
+        if (!menuManager || menuManager->RenderMode() != MenuRenderMode::Pause) return;
 
+        auto inputID = graph.LastOutputID();
         {
             auto scope = graph.Scope("MenuOverlayBlur");
             renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 2);
@@ -554,15 +576,15 @@ namespace sp::vulkan {
         graph.AddPass("MenuOverlay")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
-                builder.Read(menuID, Access::FragmentShaderSampleImage);
+                builder.Read("menu_gui", Access::FragmentShaderSampleImage);
 
                 auto desc = builder.GetResource(inputID).DeriveImage();
                 builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
             })
-            .Execute([menuID](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 cmd.DrawScreenCover(resources.GetImageView(resources.LastOutputID()));
                 cmd.SetBlending(true);
-                cmd.DrawScreenCover(resources.GetImageView(menuID));
+                cmd.DrawScreenCover(resources.GetImageView("menu_gui"));
             });
     }
 
@@ -610,5 +632,9 @@ namespace sp::vulkan {
 
     void Renderer::SetDebugGui(GuiContext &gui) {
         debugGui = &gui;
+    }
+
+    void Renderer::SetMenuGui(GuiContext *gui) {
+        menuGui = gui;
     }
 } // namespace sp::vulkan

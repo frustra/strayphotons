@@ -43,6 +43,7 @@ namespace sp::vulkan {
         void EndFrame();
 
         void SetDebugGui(GuiContext &gui);
+        void SetMenuGui(GuiContext *gui);
 
 #ifdef SP_XR_SUPPORT
         void SetXRSystem(shared_ptr<xr::XrSystem> xr) {
@@ -64,7 +65,8 @@ namespace sp::vulkan {
 #endif
 
         void AddGui(ecs::Entity ent, const ecs::Gui &gui);
-        void AddGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock);
+        void AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock);
+        void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
             const ecs::View &view,
             chrono_clock::duration elapsedTime);
@@ -90,7 +92,7 @@ namespace sp::vulkan {
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
         vector<RenderableGui> guis;
-        GuiContext *debugGui = nullptr;
+        GuiContext *debugGui = nullptr, *menuGui = nullptr;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
