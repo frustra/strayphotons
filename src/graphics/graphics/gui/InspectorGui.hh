@@ -29,11 +29,17 @@ namespace sp {
                     if (!newTarget) {
                         Errorf("Invalid editor event: %s", event.toString());
                     } else {
-                        inspectTarget = *newTarget;
+                        targetEntity = *newTarget;
                     }
                 }
 
-                if (inspectTarget) {
+                if (ImGui::Button("List Entities")) {
+                    targetEntity = {};
+                    return;
+                }
+
+                auto inspectTarget = targetEntity.Get(lock);
+                if (inspectTarget.Exists(lock)) {
                     ImGui::Text("Entity: %s", ecs::ToString(lock, inspectTarget).c_str());
 
                     ecs::EntityScope scope;
@@ -56,9 +62,11 @@ namespace sp {
                             }
                         }
                     });
+                } else if (inspectTarget) {
+                    ImGui::Text("Missing Entity: %s", ecs::ToString(lock, inspectTarget).c_str());
                 }
             }
-            if (!inspectTarget) {
+            if (!targetEntity) {
                 ListEntitiesByTransformTree();
             }
         }
@@ -91,6 +99,9 @@ namespace sp {
             if (children[ent.index].empty()) flags |= ImGuiTreeNodeFlags_Leaf;
 
             bool open = ImGui::TreeNodeEx((void *)(uintptr_t)ent.index, flags, "%s", name.c_str());
+            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+                targetEntity = ent;
+            }
             if (!open) return;
 
             for (auto child : children[ent.index]) {
@@ -104,6 +115,6 @@ namespace sp {
         vector<vector<ecs::Entity>> children;
 
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
-        ecs::Entity inspectTarget;
+        ecs::EntityRef targetEntity;
     };
 } // namespace sp
