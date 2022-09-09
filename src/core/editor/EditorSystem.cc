@@ -33,11 +33,10 @@ namespace sp {
                     INTERACT_EVENT_INTERACT_POINT,
                     INTERACT_EVENT_INTERACT_PRESS,
                     EDITOR_EVENT_EDIT_TARGET);
-                inspector.Set<ecs::Physics>(lock,
-                    ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01)),
-                    ecs::PhysicsGroup::NoClip,
-                    false /* dynamic */);
                 inspector.Set<ecs::TransformTree>(lock);
+                auto &ph = inspector.Set<ecs::Physics>(lock);
+                ph.group = ecs::PhysicsGroup::UserInterface;
+                ph.dynamic = false;
             });
     }
 
@@ -85,7 +84,7 @@ namespace sp {
 
         if (!target.Exists(lock)) {
             gui.target = ecs::GuiTarget::None;
-            physics.group = ecs::PhysicsGroup::NoClip;
+            physics.shapes.clear();
             return;
         }
 
@@ -93,10 +92,10 @@ namespace sp {
 
         if (flatMode) {
             gui.target = ecs::GuiTarget::Debug;
-            physics.group = ecs::PhysicsGroup::NoClip;
+            physics.shapes.clear();
         } else {
             gui.target = ecs::GuiTarget::World;
-            physics.group = ecs::PhysicsGroup::UserInterface;
+            physics.shapes = {ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01))};
 
             auto &transform = inspector.Get<ecs::TransformTree>(lock);
 
