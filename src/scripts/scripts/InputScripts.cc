@@ -39,44 +39,69 @@ namespace sp::scripts {
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
                     auto relativeTargetName = state.GetParam<std::string>("relative_to");
+                    auto upReferenceName = state.GetParam<std::string>("up_reference");
                     ecs::Name targetName(relativeTargetName, state.scope.prefix);
-                    if (targetName) {
-                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = targetName;
-
-                        auto target = targetEntity.Get(lock);
-                        if (target) {
-                            state.SetParam<EntityRef>("target_entity", targetEntity);
-
-                            glm::vec3 movement = glm::vec3(0);
-                            movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
-                            movement.z += SignalBindings::GetSignal(lock, ent, "move_back");
-                            movement.x -= SignalBindings::GetSignal(lock, ent, "move_left");
-                            movement.x += SignalBindings::GetSignal(lock, ent, "move_right");
-                            float vertical = SignalBindings::GetSignal(lock, ent, "move_up");
-                            vertical -= SignalBindings::GetSignal(lock, ent, "move_down");
-
-                            movement.x = std::clamp(movement.x, -1.0f, 1.0f);
-                            movement.z = std::clamp(movement.z, -1.0f, 1.0f);
-                            vertical = std::clamp(vertical, -1.0f, 1.0f);
-
-                            if (target.Has<TransformTree>(lock)) {
-                                auto parentRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
-                                movement = parentRotation * movement;
-                                if (std::abs(movement.y) > 0.999) {
-                                    movement = parentRotation * glm::vec3(0, -movement.y, 0);
-                                }
-                                movement.y = 0;
-                            }
-
-                            auto &outputComp = ent.Get<SignalOutput>(lock);
-                            outputComp.SetSignal("move_world_x", movement.x);
-                            outputComp.SetSignal("move_world_y", vertical);
-                            outputComp.SetSignal("move_world_z", movement.z);
-                        }
-                    } else {
-                        Errorf("Relative target name is invalid: %s", relativeTargetName);
+                    ecs::Name referenceName(upReferenceName, state.scope.prefix);
+                    if (!targetName) {
+                        Errorf("Relative movement target name is invalid: %s", relativeTargetName);
+                        return;
                     }
+                    if (!upReferenceName.empty() && !referenceName) {
+                        Errorf("Relative movement up reference name is invalid: %s", upReferenceName);
+                        return;
+                    }
+
+                    auto targetEntity = state.GetParam<EntityRef>("target_entity");
+                    if (targetEntity.Name() != targetName) targetEntity = targetName;
+                    auto referenceEntity = state.GetParam<EntityRef>("reference_entity");
+                    if (referenceEntity.Name() != referenceName) referenceEntity = referenceName;
+
+                    glm::vec3 movementInput = glm::vec3(0);
+                    movementInput.x -= SignalBindings::GetSignal(lock, ent, "move_left");
+                    movementInput.x += SignalBindings::GetSignal(lock, ent, "move_right");
+                    movementInput.y += SignalBindings::GetSignal(lock, ent, "move_up");
+                    movementInput.y -= SignalBindings::GetSignal(lock, ent, "move_down");
+                    movementInput.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
+                    movementInput.z += SignalBindings::GetSignal(lock, ent, "move_back");
+
+                    movementInput.x = std::clamp(movementInput.x, -1.0f, 1.0f);
+                    movementInput.y = std::clamp(movementInput.y, -1.0f, 1.0f);
+                    movementInput.z = std::clamp(movementInput.z, -1.0f, 1.0f);
+
+                    glm::quat orientation = glm::identity<glm::quat>();
+                    auto reference = referenceEntity.Get(lock);
+                    if (reference.Has<TransformTree>(lock)) {
+                        state.SetParam<EntityRef>("reference_entity", referenceEntity);
+
+                        orientation = reference.Get<const TransformTree>(lock).GetGlobalRotation(lock);
+                    }
+
+                    glm::vec3 output = glm::vec3(0);
+
+                    auto target = targetEntity.Get(lock);
+                    if (target.Has<TransformTree>(lock)) {
+                        state.SetParam<EntityRef>("target_entity", targetEntity);
+
+                        auto relativeRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
+                        relativeRotation = glm::inverse(orientation) * relativeRotation;
+                        auto flatMovement = glm::vec3(movementInput.x, 0, movementInput.z);
+                        output = relativeRotation * flatMovement;
+                        if (std::abs(output.y) > 0.999) {
+                            output = relativeRotation * glm::vec3(0, -output.y, 0);
+                        }
+                        output.y = 0;
+                        if (output != glm::vec3(0)) {
+                            output = glm::normalize(output) * glm::length(flatMovement);
+                        }
+                        output.y = movementInput.y;
+                    } else {
+                        output = movementInput;
+                    }
+
+                    auto &outputComp = ent.Get<SignalOutput>(lock);
+                    outputComp.SetSignal("move_relative_x", output.x);
+                    outputComp.SetSignal("move_relative_y", output.y);
+                    outputComp.SetSignal("move_relative_z", output.z);
                 }
             }),
         InternalScript("player_rotation",

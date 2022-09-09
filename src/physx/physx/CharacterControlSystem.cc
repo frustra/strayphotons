@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <glm/glm.hpp>
+#include <glm/gtx/vector_angle.hpp>
 #include <sstream>
 
 namespace sp {
@@ -25,6 +26,12 @@ namespace sp {
     static CVar<float> CVarCharacterSprintSpeed("p.CharacterSprintSpeed",
         5.0,
         "Character controller sprint speed (m/s)");
+    static CVar<float> CVarCharacterFlipSpeed("p.CharacterFlipSpeed",
+        0.25,
+        "Character controller reorientation speed (gravity dependant)");
+    static CVar<float> CVarCharacterMinFlipGravity("p.CharacterMinFlipGravity",
+        8.0,
+        "Character controller minimum gravity required to orient (m/s^2)");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
@@ -119,8 +126,9 @@ namespace sp {
             if (target.Has<ecs::TransformTree>(lock)) {
                 auto &targetTree = target.Get<const ecs::TransformTree>(lock);
                 targetPosition = targetTree.GetGlobalTransform(lock).GetPosition();
-                targetPosition.y = transform.GetPosition().y;
-                targetHeight = std::max(0.1f, targetTree.pose.GetPosition().y - ecs::PLAYER_RADIUS);
+                auto playerHeight = glm::dot(transform.GetUp(), targetPosition - transform.GetPosition());
+                targetPosition -= playerHeight * transform.GetUp();
+                targetHeight = std::max(0.1f, playerHeight - ecs::PLAYER_RADIUS);
 
                 if (target != userData->target) {
                     // Move the target to the physics actor when the target changes
@@ -136,7 +144,7 @@ namespace sp {
                 }
             }
 
-            // If the origin moved, teleport the controller
+            // If the entity moved, teleport the controller
             if (transform.GetPosition() != userData->actorData.pose.GetPosition()) {
                 controller.pxController->setHeight(targetHeight);
                 controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
@@ -148,7 +156,7 @@ namespace sp {
                 actor->setGlobalPose(actorPose);
 
                 userData->onGround = false;
-                userData->actorData.pose = ecs::Transform(targetPosition);
+                userData->actorData.pose.SetPosition(targetPosition);
                 userData->actorData.velocity = glm::vec3(0);
             }
 
@@ -186,10 +194,10 @@ namespace sp {
             }
 
             // Read character movement inputs
-            glm::vec3 lateralMovement = glm::vec3(0);
-            lateralMovement.x = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_X);
-            lateralMovement.z = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_Z);
-            float verticalMovement = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_Y);
+            glm::vec3 movementInput = glm::vec3(0);
+            movementInput.x = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RELATIVE_X);
+            movementInput.y = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RELATIVE_Y);
+            movementInput.z = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RELATIVE_Z);
             bool sprint = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
             bool noclip = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_NOCLIP) >= 0.5;
 
@@ -202,8 +210,12 @@ namespace sp {
             }
 
             float speed = sprint ? CVarCharacterSprintSpeed.Get() : CVarCharacterMovementSpeed.Get();
-            if (lateralMovement != glm::vec3(0)) lateralMovement = glm::normalize(lateralMovement) * speed;
-            verticalMovement = std::clamp(verticalMovement, -1.0f, 1.0f) * speed;
+            if (movementInput.x != 0 || movementInput.z != 0) {
+                auto normalized = glm::normalize(glm::vec3(movementInput.x, 0, movementInput.z)) * speed;
+                movementInput.x = normalized.x;
+                movementInput.z = normalized.z;
+            }
+            movementInput.y = std::clamp(movementInput.y, -1.0f, 1.0f) * speed;
 
             auto targetDelta = targetPosition - userData->actorData.pose.GetPosition();
 
@@ -215,22 +227,20 @@ namespace sp {
 
             // Update the capsule position, velocity, and onGround flag
             if (noclip) {
-                targetPosition += lateralMovement * dt;
-                targetPosition.y += verticalMovement * dt;
-                targetPosition += targetDelta;
+                auto worldMovement = transform.GetRotation() * movementInput;
+                auto deltaPos = worldMovement * dt + targetDelta;
+                targetPosition += deltaPos;
                 controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
                 transform.SetPosition(targetPosition);
 
                 auto movementProxy = controller.movementProxy.Get(lock);
                 if (movementProxy.Has<ecs::TransformTree>(lock)) {
                     auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
-                    auto deltaPos = (lateralMovement + glm::vec3(0, verticalMovement, 0)) * dt + targetDelta;
                     proxyTransform.pose.Translate(deltaPos);
                 }
 
                 userData->onGround = false;
-                userData->actorData.velocity = lateralMovement;
-                userData->actorData.velocity.y = verticalMovement;
+                userData->actorData.velocity = worldMovement;
             } else {
                 PxControllerState state;
                 controller.pxController->getState(state);
@@ -250,16 +260,19 @@ namespace sp {
 
                 glm::vec3 displacement;
                 if (userData->onGround || inGround) {
-                    displacement = (PxVec3ToGlmVec3(state.deltaXP) + lateralMovement) * dt;
+                    auto relativeFloorVelocity = glm::inverse(transform.GetRotation()) * PxVec3ToGlmVec3(state.deltaXP);
+                    displacement = (relativeFloorVelocity + glm::vec3(movementInput.x, 0, movementInput.z)) * dt;
                     if (jump) {
                         // Move up slightly first to detach the player from the floor
-                        displacement.y = std::max(state.deltaXP.y * dt, 0.0f) + contactOffset;
+                        displacement.y = std::max(relativeFloorVelocity.y * dt, 0.0f) + contactOffset;
                     } else {
                         // Always move down slightly for consistent onGround detection
                         displacement.y = -contactOffset;
                     }
+                    displacement = transform.GetRotation() * displacement;
                 } else {
-                    userData->actorData.velocity += lateralMovement * ecs::PLAYER_AIR_STRAFE * dt;
+                    auto worldMovement = transform.GetRotation() * movementInput;
+                    userData->actorData.velocity += worldMovement * ecs::PLAYER_AIR_STRAFE * dt;
                     displacement = userData->actorData.velocity * dt;
                 }
                 // Logf("Disp: %s + %s, State:%u, On:%u, In:%u, DeltaXp: %s, Vel: %s",
@@ -270,6 +283,10 @@ namespace sp {
                 //     inGround,
                 //     glm::to_string(PxVec3ToGlmVec3(state.deltaXP)),
                 //     glm::to_string(userData->actorData.velocity));
+
+                auto footPos = controller.pxController->getFootPosition();
+                controller.pxController->setUpDirection(GlmVec3ToPxVec3(transform.GetUp()));
+                controller.pxController->setFootPosition(footPos);
 
                 auto moveResult =
                     controller.pxController->move(GlmVec3ToPxVec3(displacement + targetDelta), 0, dt, moveQueryFilter);
@@ -295,16 +312,27 @@ namespace sp {
                     if (touchedUserData) userData->standingOn = touchedUserData->entity;
                 }
 
+                auto gravityFunction = [](glm::vec3 position) {
+                    position.x = 0;
+                    // Derived from centripetal acceleration formula, rotating around the origin
+                    float spinTerm = M_PI * CVarGravitySpin.Get() / 30;
+                    return spinTerm * spinTerm * position;
+                };
+
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN || onGround) {
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                     userData->onGround = true;
                     // Logf("OnGround, Vel: %s", glm::to_string(userData->actorData.velocity));
                 } else {
                     if (userData->onGround || inGround) {
+                        // Remove any vertical component from the displacement before adding to velocity
+                        auto flatDisplacement = displacement -
+                                                transform.GetUp() * glm::dot(transform.GetUp(), displacement);
                         userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
-                        userData->actorData.velocity.x += displacement.x / dt;
-                        userData->actorData.velocity.z += displacement.z / dt;
-                        if (jump) userData->actorData.velocity.y += ecs::PLAYER_JUMP_VELOCITY;
+                        userData->actorData.velocity += flatDisplacement / dt;
+                        if (jump)
+                            userData->actorData.velocity -= gravityFunction(newPosition) *
+                                                            0.5f; // ecs::PLAYER_JUMP_VELOCITY;
                         // Logf("WasOn: %u, In: %u, Jump: %u, DeltaXp: %s, Vel: %s",
                         //     userData->onGround,
                         //     inGround,
@@ -313,7 +341,8 @@ namespace sp {
                         //     glm::to_string(userData->actorData.velocity));
                     } else {
                         userData->actorData.velocity = deltaPos / dt;
-                        userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
+                        userData->actorData.velocity += gravityFunction(newPosition) * dt;
+                        // userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
                         // Logf("OffGround, DeltaPos: %s - %s, Vel: %s",
                         //     glm::to_string(newPosition - userData->actorData.pose.GetPosition()),
                         //     glm::to_string(targetDelta),
@@ -345,6 +374,17 @@ namespace sp {
                 }
 
                 transform.SetPosition(newPosition);
+                auto gravityVector = gravityFunction(newPosition);
+                auto gravityStrength = glm::length(gravityVector);
+                if (gravityStrength > CVarCharacterMinFlipGravity.Get()) {
+                    auto targetUpVector = glm::normalize(-gravityVector);
+                    auto targetRotation = glm::rotation(glm::vec3(0, 1, 0), targetUpVector);
+
+                    float factor = glm::radians(gravityStrength * CVarCharacterFlipSpeed.Get() * dt) /
+                                   glm::angle(transform.GetUp(), targetUpVector);
+                    factor = glm::min(factor, 1.0f);
+                    transform.SetRotation(glm::shortMix(transform.GetRotation(), targetRotation, factor));
+                }
             }
 
             userData->actorData.pose = transform;

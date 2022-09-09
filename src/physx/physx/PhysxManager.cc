@@ -26,6 +26,7 @@ namespace sp {
     using namespace physx;
 
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
+    CVar<float> CVarGravitySpin("x.GravitySpin", 2.42f, "Artificial gravity spin rotations per minute");
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
     CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
@@ -160,9 +161,10 @@ namespace sp {
 
     void PhysxManager::Frame() {
         // Wake up all actors and update the scene if gravity is changed.
-        if (CVarGravity.Changed()) {
+        if (CVarGravity.Changed() || CVarGravitySpin.Changed()) {
             ZoneScopedN("ChangeGravity");
             scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
+            CVarGravitySpin.Get(true);
 
             vector<PxActor *> buffer(256, nullptr);
             size_t startIndex = 0;
@@ -476,11 +478,17 @@ namespace sp {
         if (ph.dynamic) {
             actor = pxPhysics->createRigidDynamic(pxTransform);
 
-            if (ph.kinematic) actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+            if (ph.kinematic) {
+                actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+                actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES,
+                    true);
+            }
         } else {
             actor = pxPhysics->createRigidStatic(pxTransform);
         }
         Assert(actor, "Physx did not return valid PxRigidActor");
+
+        actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
 
         auto userData = new ActorUserData(e, globalTransform, ph.group);
         actor->userData = userData;
@@ -674,6 +682,19 @@ namespace sp {
             if (userData->linearDamping != ph.linearDamping) {
                 dynamic->setLinearDamping(ph.linearDamping);
                 userData->linearDamping = ph.linearDamping;
+            }
+
+            if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
+                auto gravityFunction = [](glm::vec3 position) {
+                    position.x = 0;
+                    // Derived from centripetal acceleration formula, rotating around the origin
+                    float spinTerm = M_PI * CVarGravitySpin.Get() / 30;
+                    return spinTerm * spinTerm * position;
+                };
+                auto gravityForce = gravityFunction(transform.GetPosition());
+                if (gravityForce != glm::vec3(0)) {
+                    dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
+                }
             }
         }
     }

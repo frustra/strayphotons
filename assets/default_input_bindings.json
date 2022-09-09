@@ -121,14 +121,14 @@
             "menu_secondary_trigger": "input:mouse/mouse_button_right",
             "menu_cursor_x": "input:mouse/mouse_cursor_x",
             "menu_cursor_y": "input:mouse/mouse_cursor_y",
-            "move_world_x": {
+            "move_relative_x": {
                 "operator": "add",
-                "values": [ "player:flatview/move_world_x", "vr:left_hand/move_world_x", "vr:right_hand/move_world_x" ]
+                "values": [ "player:flatview/move_relative_x", "vr:left_hand/move_relative_x", "vr:right_hand/move_relative_x" ]
             },
-            "move_world_y": "player:flatview/move_world_y",
-            "move_world_z": {
+            "move_relative_y": "player:flatview/move_relative_y",
+            "move_relative_z": {
                 "operator": "add",
-                "values": [ "player:flatview/move_world_z", "vr:left_hand/move_world_z", "vr:right_hand/move_world_z" ]
+                "values": [ "player:flatview/move_relative_z", "vr:left_hand/move_relative_z", "vr:right_hand/move_relative_z" ]
             },
             "move_sprint": "input:keyboard/key_left_shift"
         }

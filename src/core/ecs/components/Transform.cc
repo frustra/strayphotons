@@ -150,6 +150,11 @@ namespace ecs {
         return glm::normalize(scaledRotation * glm::vec3(0, 0, -1));
     }
 
+    glm::vec3 Transform::GetUp() const {
+        glm::mat3 scaledRotation = glm::mat3(matrix[0], matrix[1], matrix[2]);
+        return glm::normalize(scaledRotation * glm::vec3(0, 1, 0));
+    }
+
     void Transform::SetScale(const glm::vec3 &xyz) {
         matrix[0] = glm::normalize(matrix[0]) * xyz.x;
         matrix[1] = glm::normalize(matrix[1]) * xyz.y;

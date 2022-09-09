@@ -40,6 +40,7 @@ namespace sp {
     class SceneManager;
 
     extern CVar<float> CVarGravity;
+    extern CVar<float> CVarGravitySpin;
 
     struct ActorUserData {
         ecs::Entity entity;

@@ -27,7 +27,10 @@
 			"script": [
 				{
 					"onTick": "relative_movement",
-					"parameters": { "relative_to": "player:flatview" }
+					"parameters": {
+						"relative_to": "player:flatview",
+						"up_reference": "player:player"
+					}
 				},
 				{ "onTick": "camera_view" },
 				{

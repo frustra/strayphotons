@@ -4,6 +4,7 @@
 
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
+        #include "ecs/Components.hh"
         #include "ecs/EntityRef.hh"
     #endif
 
@@ -32,6 +33,7 @@ namespace ecs {
         const glm::vec3 &GetPosition() const;
         glm::quat GetRotation() const;
         glm::vec3 GetForward() const;
+        glm::vec3 GetUp() const;
         glm::vec3 GetScale() const;
         Transform GetInverse() const;
 

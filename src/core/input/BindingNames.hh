@@ -32,9 +32,9 @@ namespace sp {
     static const std::string INPUT_SIGNAL_MENU_CURSOR_Y = "menu_cursor_y";
 
     // CharacterController
-    static const std::string INPUT_SIGNAL_MOVE_WORLD_X = "move_world_x";
-    static const std::string INPUT_SIGNAL_MOVE_WORLD_Y = "move_world_y";
-    static const std::string INPUT_SIGNAL_MOVE_WORLD_Z = "move_world_z";
+    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_X = "move_relative_x";
+    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_Y = "move_relative_y";
+    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_Z = "move_relative_z";
     static const std::string INPUT_SIGNAL_MOVE_SPRINT = "move_sprint";
     static const std::string INPUT_SIGNAL_MOVE_NOCLIP = "move_noclip";
 
