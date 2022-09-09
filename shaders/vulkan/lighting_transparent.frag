@@ -91,7 +91,7 @@ void main() {
     vec3 directLight =
         DirectShading(worldPosition, -rayDir, baseColor, worldNormal, worldNormal, roughness, metalness, scatterTerm);
 
-    vec3 totalLight = directLight; // emissive + directLight + indirectDiffuse + indirectSpecular;
+    vec3 totalLight = emissive + directLight + indirectDiffuse + indirectSpecular;
 
     outFragColor = vec4(totalLight * exposure, 1);
     outTransparencyMask = vec4(baseColorAlpha.rgb, 1);

@@ -134,36 +134,6 @@
             ]
         },
         {
-            "name": "Compile Physics Hulls (vsdbg)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/hull_compiler.exe",
-            "args": ["duck"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-        },
-        {
-            "name": "Compile Physics Hulls (gdb)",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/hull_compiler",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
             "name": "Unit Tests (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
