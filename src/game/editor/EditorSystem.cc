@@ -13,15 +13,17 @@ namespace sp {
     static CVar<float> CVarEditorOffset("e.EditorOffset", 0.8f, "Distance to offset the inspector gui from the ground");
 
     EditorSystem::EditorSystem() {
-        funcs.Register(this,
-            "edit",
+        funcs.Register<std::string>("edit",
             "Edit the specified entity, or the entity being looked at",
-            &EditorSystem::OpenEditorFlat);
+            [this](std::string targetName) {
+                OpenEditor(targetName, true);
+            });
 
-        funcs.Register(this,
-            "editinworld",
+        funcs.Register<std::string>("editinworld",
             "Edit the specified entity, or the entity being looked at",
-            &EditorSystem::OpenEditorWorld);
+            [this](std::string targetName) {
+                OpenEditor(targetName, false);
+            });
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "editor",
@@ -42,14 +44,6 @@ namespace sp {
 
     EditorSystem::~EditorSystem() {
         GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "editor");
-    }
-
-    void EditorSystem::OpenEditorFlat(std::string targetName) {
-        OpenEditor(targetName, true);
-    }
-
-    void EditorSystem::OpenEditorWorld(std::string targetName) {
-        OpenEditor(targetName, false);
     }
 
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {

@@ -8,7 +8,7 @@ namespace sp {
 
 namespace ecs {
     enum class GuiTarget {
-        None,
+        None = 0,
         World,
         Debug,
     };

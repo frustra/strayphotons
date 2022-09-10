@@ -10,12 +10,9 @@ namespace sp {
         EditorSystem();
         ~EditorSystem();
 
-        void OpenEditorFlat(std::string targetName);
-        void OpenEditorWorld(std::string targetName);
+        void OpenEditor(std::string targetName, bool flatMode = true);
 
     private:
-        void OpenEditor(std::string targetName, bool flatMode);
-
         ecs::EntityRef playerEntity = ecs::Name("player", "player");
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
 
