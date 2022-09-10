@@ -8,7 +8,7 @@
 namespace ecs {
     InternalPrefab gltfPrefab("gltf", [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
         auto modelName = state.GetParam<std::string>("model");
-        auto asyncGltf = sp::GAssets.LoadGltf(modelName);
+        auto asyncGltf = sp::Assets().LoadGltf(modelName);
         auto model = asyncGltf->Get();
         if (!model) {
             Errorf("Gltf model not found: %s", modelName);

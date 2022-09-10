@@ -6,8 +6,8 @@
 
 namespace sp::vulkan::renderer {
     void SMAA::AddPass(RenderGraph &graph) {
-        if (!areaTexAsset) areaTexAsset = GAssets.LoadImage("textures/smaa/AreaTex.tga");
-        if (!searchTexAsset) searchTexAsset = GAssets.LoadImage("textures/smaa/SearchTex.tga");
+        if (!areaTexAsset) areaTexAsset = Assets().LoadImage("textures/smaa/AreaTex.tga");
+        if (!searchTexAsset) searchTexAsset = Assets().LoadImage("textures/smaa/SearchTex.tga");
         if (!areaTexAsset->Ready() || !searchTexAsset->Ready()) return;
 
         if (!areaTex) areaTex = graph.Device().LoadAssetImage(areaTexAsset->Get(), false, false);

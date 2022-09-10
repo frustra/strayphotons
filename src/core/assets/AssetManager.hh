@@ -69,5 +69,5 @@ namespace sp {
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 
-    extern AssetManager GAssets;
+    AssetManager &Assets();
 } // namespace sp

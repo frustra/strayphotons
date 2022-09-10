@@ -36,7 +36,10 @@ extern "C" {
 #include <stb_image_write.h>
 
 namespace sp {
-    AssetManager GAssets;
+    AssetManager &Assets() {
+        static AssetManager GAssets;
+        return GAssets;
+    }
 
     const char *ASSETS_DIR = "../assets/";
     const char *ASSETS_TAR = "./assets.spdata";

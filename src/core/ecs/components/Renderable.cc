@@ -9,7 +9,7 @@ namespace ecs {
     template<>
     bool Component<Renderable>::Load(const EntityScope &scope, Renderable &renderable, const picojson::value &src) {
         if (!renderable.modelName.empty()) {
-            renderable.model = sp::GAssets.LoadGltf(renderable.modelName);
+            renderable.model = sp::Assets().LoadGltf(renderable.modelName);
         }
         return true;
     }
@@ -25,7 +25,7 @@ namespace ecs {
         if (modelName.empty()) {
             visibility = VisibilityMask::None;
         } else {
-            model = sp::GAssets.LoadGltf(modelName);
+            model = sp::Assets().LoadGltf(modelName);
         }
     }
 } // namespace ecs

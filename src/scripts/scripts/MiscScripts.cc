@@ -70,7 +70,7 @@ namespace sp::scripts {
                         auto modelName = state.GetParam<std::string>("model");
 
                         std::thread([ent, transform, modelName, scope = state.scope]() {
-                            auto model = sp::GAssets.LoadGltf(modelName);
+                            auto model = sp::Assets().LoadGltf(modelName);
 
                             auto lock = World.StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {

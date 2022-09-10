@@ -27,7 +27,6 @@ add_module_configuration(
     NAME sp-vk
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
         ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
@@ -41,8 +40,6 @@ add_module_configuration(
 add_module_configuration(
     NAME sp-test
     LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_GAME_LIB}
         ${PROJECT_GAME_TEST_LIB}
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
         ${PROJECT_INPUT_GLFW_LIB}

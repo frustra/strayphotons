@@ -1453,7 +1453,7 @@ namespace sp::vulkan {
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
         ZoneScoped;
         ZoneStr(name);
-        auto asset = GAssets.Load("shaders/" + name + ".spv", AssetType::Bundled, compareHash != Hash64())->Get();
+        auto asset = Assets().Load("shaders/" + name + ".spv", AssetType::Bundled, compareHash != Hash64())->Get();
         Assertf(asset, "could not load shader: %s", name);
 
         auto newHash = Hash128To64(asset->Hash());

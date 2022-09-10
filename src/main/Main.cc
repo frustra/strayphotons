@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         string scriptPath = optionsResult["script-file"].as<string>();
 
         Logf("Loading test script: %s", scriptPath);
-        auto asset = sp::GAssets.Load("scripts/" + scriptPath)->Get();
+        auto asset = sp::Assets().Load("scripts/" + scriptPath)->Get();
         if (!asset) {
             Errorf("Test script not found: %s", scriptPath);
             return 0;
