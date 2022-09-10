@@ -33,7 +33,7 @@ namespace ecs {
 
             Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.prefix.String());
 
-            asset = sp::GAssets.Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
+            asset = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
             if (!asset) {
                 Errorf("Template not found: %s", sourceName);
                 return false;

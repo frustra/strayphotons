@@ -14,7 +14,7 @@ namespace sp {
     static CVar<float> CVarMaxVoxelFill("r.MaxVoxelFill", 0.5, "Maximum percentage of voxels that can be filled");
 
     std::atomic_bool printGfxDebug = false;
-    static CFunc<void> CFuncList("printgfx", "Print the graphics debug output", []() {
+    static CFunc<void> CFuncPrintGfx("printgfx", "Print the graphics debug output", []() {
         printGfxDebug = true;
     });
 

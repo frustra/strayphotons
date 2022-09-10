@@ -7,9 +7,10 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
-    robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
-    robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> PhysicsUpdateDefinitions;
-    robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
+    ScriptDefinitions &GetScriptDefinitions() {
+        static ScriptDefinitions GScriptDefinitions;
+        return GScriptDefinitions;
+    }
 
     static std::atomic_size_t nextInstanceId;
 
@@ -24,12 +25,13 @@ namespace ecs {
 
     bool parseScriptState(ScriptState &state, const picojson::value &src) {
         bool isOnEvent = false;
+        const auto &definitions = GetScriptDefinitions();
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
-                    auto it = ScriptDefinitions.find(scriptName);
-                    if (it != ScriptDefinitions.end()) {
+                    auto it = definitions.scripts.find(scriptName);
+                    if (it != definitions.scripts.end()) {
                         if (state) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
@@ -46,8 +48,8 @@ namespace ecs {
             } else if (param.first == "onEvent") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
-                    auto it = ScriptDefinitions.find(scriptName);
-                    if (it != ScriptDefinitions.end()) {
+                    auto it = definitions.scripts.find(scriptName);
+                    if (it != definitions.scripts.end()) {
                         if (state) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
@@ -65,8 +67,8 @@ namespace ecs {
             } else if (param.first == "onPhysicsUpdate") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
-                    auto it = PhysicsUpdateDefinitions.find(scriptName);
-                    if (it != PhysicsUpdateDefinitions.end()) {
+                    auto it = definitions.physicsUpdates.find(scriptName);
+                    if (it != definitions.physicsUpdates.end()) {
                         if (state) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
@@ -83,8 +85,8 @@ namespace ecs {
             } else if (param.first == "prefab") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
-                    auto it = PrefabDefinitions.find(scriptName);
-                    if (it != PrefabDefinitions.end()) {
+                    auto it = definitions.prefabs.find(scriptName);
+                    if (it != definitions.prefabs.end()) {
                         if (state) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;

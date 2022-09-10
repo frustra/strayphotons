@@ -100,17 +100,34 @@ namespace ecs {
         friend struct Script;
     };
 
+    struct ScriptDefinitions {
+        robin_hood::unordered_node_map<std::string, OnTickFunc> scripts;
+        robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> physicsUpdates;
+        robin_hood::unordered_node_map<std::string, PrefabFunc> prefabs;
+    };
+
+    ScriptDefinitions &GetScriptDefinitions();
+
     struct Script {
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
             return scripts.emplace_back(scope, callback);
+        }
+        ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
+            return scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName));
         }
 
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
             return scripts.emplace_back(scope, callback);
         }
+        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, const std::string &scriptName) {
+            return scripts.emplace_back(scope, GetScriptDefinitions().physicsUpdates.at(scriptName));
+        }
 
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
             return scripts.emplace_back(scope, callback);
+        }
+        ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
+            return scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName));
         }
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
@@ -127,28 +144,24 @@ namespace ecs {
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 
-    extern robin_hood::unordered_node_map<std::string, OnTickFunc> ScriptDefinitions;
-    extern robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> PhysicsUpdateDefinitions;
-    extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
-
     class InternalScript {
     public:
         InternalScript(const std::string &name, OnTickFunc &&func) {
-            ScriptDefinitions[name] = std::move(func);
+            GetScriptDefinitions().scripts[name] = std::move(func);
         }
     };
 
     class InternalPhysicsScript {
     public:
         InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func) {
-            PhysicsUpdateDefinitions[name] = std::move(func);
+            GetScriptDefinitions().physicsUpdates[name] = std::move(func);
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            PrefabDefinitions[name] = std::move(func);
+            GetScriptDefinitions().prefabs[name] = std::move(func);
         }
     };
 } // namespace ecs

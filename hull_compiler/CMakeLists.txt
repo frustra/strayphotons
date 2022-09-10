@@ -4,7 +4,7 @@ add_executable(hull_compiler
 
 target_link_libraries(hull_compiler
     ${PROJECT_CORE_LIB}
-    ${PROJECT_PHYSICS_PHYSX_LIB}
+    ${PROJECT_PHYSICS_COOKING_LIB}
     vhacd
     cxxopts
 )

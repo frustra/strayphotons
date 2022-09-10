@@ -4,7 +4,6 @@
 #include "assets/JsonHelpers.hh"
 #include "assets/PhysicsInfo.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/Scene.hh"
 
 namespace ecs {
     bool parsePhysicsShape(const EntityScope &scope, PhysicsShape &shape, const picojson::value &src) {
@@ -183,8 +182,8 @@ namespace ecs {
         : modelName(modelName), meshName(meshName) {
         Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
         Assertf(!meshName.empty(), "ConvexMesh created with empty mesh name");
-        model = sp::GAssets.LoadGltf(modelName);
-        hullSettings = sp::GAssets.LoadHullSettings(modelName, meshName);
+        model = sp::Assets().LoadGltf(modelName);
+        hullSettings = sp::Assets().LoadHullSettings(modelName, meshName);
     }
 
     PhysicsShape::PhysicsShape(const std::string &fullMeshName) {

@@ -71,7 +71,11 @@ namespace sp {
         void Frame() override;
         void InputLoop();
 
+        void RegisterCoreCommands();
+        void RegisterTracyCommands();
+
         std::map<string, CVarBase *> cvars;
+        CFuncCollection funcs;
         std::thread cliInputThread;
 
         std::mutex queueLock;
@@ -86,6 +90,8 @@ namespace sp {
 
         std::mutex historyLock;
         vector<string> history;
+
+        friend ConsoleManager &GetConsoleManager();
     };
 
     ConsoleManager &GetConsoleManager();

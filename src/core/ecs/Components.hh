@@ -4,7 +4,6 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
-#include "game/Scene.hh"
 
 #include <cstring>
 #include <functional>

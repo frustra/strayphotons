@@ -70,7 +70,7 @@ namespace sp::scripts {
                         auto modelName = state.GetParam<std::string>("model");
 
                         std::thread([ent, transform, modelName, scope = state.scope]() {
-                            auto model = sp::GAssets.LoadGltf(modelName);
+                            auto model = sp::Assets().LoadGltf(modelName);
 
                             auto lock = World.StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
@@ -90,7 +90,7 @@ namespace sp::scripts {
                                     "/interact/rotate",
                                     "/physics/broken_constraint");
                                 auto &script = newEntity.Set<Script>(lock);
-                                auto &newState = script.AddOnTick(scope, ScriptDefinitions.at("interactive_object"));
+                                auto &newState = script.AddOnTick(scope, "interactive_object");
                                 newState.filterEvents = {
                                     "/interact/grab",
                                     "/interact/point",

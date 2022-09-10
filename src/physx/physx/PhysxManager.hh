@@ -2,6 +2,7 @@
 
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
+#include "cooking/ConvexHull.hh"
 #include "core/Common.hh"
 #include "core/DispatchQueue.hh"
 #include "core/EntityMap.hh"
@@ -15,7 +16,6 @@
 #include "physx/AnimationSystem.hh"
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
-#include "physx/ConvexHull.hh"
 #include "physx/LaserSystem.hh"
 #include "physx/PhysicsQuerySystem.hh"
 #include "physx/TriggerSystem.hh"

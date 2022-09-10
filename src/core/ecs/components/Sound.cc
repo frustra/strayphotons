@@ -12,7 +12,7 @@ namespace ecs {
         auto parseObject = [&](const picojson::value &src, Sound &dst) {
             for (auto &param : src.get<picojson::object>()) {
                 if (param.first == "file") {
-                    dst.file = sp::GAssets.Load("audio/" + param.second.get<string>());
+                    dst.file = sp::Assets().Load("audio/" + param.second.get<string>());
                 } else if (param.first == "type") {
                     auto type = param.second.get<string>();
                     sp::to_upper(type);

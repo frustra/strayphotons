@@ -6,8 +6,35 @@
 #include <fstream>
 #include <sstream>
 
-namespace sp {
-    CFunc<void> CFuncList("list", "Lists all CVar names, values, and descriptions", []() {
+template<typename LockWrite, typename Callback>
+void mutateEntity(const string &entityStr, Callback callback) {
+    ecs::Name entityName(entityStr, ecs::Name());
+    if (!entityName) {
+        Logf("Could not parse entity %s", entityStr);
+        return;
+    }
+    auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, LockWrite>();
+    auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+    if (!entity) {
+        Logf("Entity %s not found", entityName.String());
+        return;
+    }
+    callback(lock, entity);
+}
+
+template<typename Callback>
+void mutateEntityTransform(const string &entityStr, Callback callback) {
+    mutateEntity<ecs::Write<ecs::TransformTree>>(entityStr, [&](auto lock, ecs::Entity entity) {
+        if (!entity.Has<ecs::TransformTree>(lock)) {
+            Logf("Entity %s has no transform", entityStr);
+            return;
+        }
+        callback(lock, entity.Get<ecs::TransformTree>(lock));
+    });
+}
+
+void sp::ConsoleManager::RegisterCoreCommands() {
+    funcs.Register("list", "Lists all CVar names, values, and descriptions", []() {
         for (auto &kv : GetConsoleManager().CVars()) {
             auto cvar = kv.second;
             if (cvar->IsValueType()) {
@@ -23,11 +50,11 @@ namespace sp {
         }
     });
 
-    CFunc<uint64, string> CFuncWait("wait", "Queue command for later (wait <ms> <command>)", [](uint64 dt, string cmd) {
+    funcs.Register<uint64, string>("wait", "Queue command for later (wait <ms> <command>)", [](uint64 dt, string cmd) {
         GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
     });
 
-    CFunc<string, string> CFuncToggle("toggle",
+    funcs.Register<string, string>("toggle",
         "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",
         [](string cvarName, string args) {
             auto cvars = GetConsoleManager().CVars();
@@ -50,7 +77,7 @@ namespace sp {
             }
         });
 
-    CFunc<void> CFuncPrintFocus("printfocus", "Print the current focus lock state", []() {
+    funcs.Register("printfocus", "Print the current focus lock state", []() {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
 
         if (lock.Has<ecs::FocusLock>()) {
@@ -63,66 +90,35 @@ namespace sp {
         }
     });
 
-    CFunc<ecs::FocusLayer> CFuncAcquireFocus("acquirefocus",
-        "Acquire focus for the specified layer",
-        [](ecs::FocusLayer layer) {
-            if (layer == ecs::FocusLayer::NEVER || layer == ecs::FocusLayer::ALWAYS) {
-                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+    funcs.Register<ecs::FocusLayer>("acquirefocus", "Acquire focus for the specified layer", [](ecs::FocusLayer layer) {
+        if (layer == ecs::FocusLayer::NEVER || layer == ecs::FocusLayer::ALWAYS) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
-                if (lock.Has<ecs::FocusLock>()) {
-                    if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
-                        std::stringstream ss;
-                        ss << layer;
-                        Logf("Failed to acquire focus layer: %s", ss.str());
-                    }
-                } else {
-                    Errorf("World does not have a FocusLock");
+            if (lock.Has<ecs::FocusLock>()) {
+                if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
+                    std::stringstream ss;
+                    ss << layer;
+                    Logf("Failed to acquire focus layer: %s", ss.str());
                 }
+            } else {
+                Errorf("World does not have a FocusLock");
             }
-        });
-
-    CFunc<ecs::FocusLayer> CFuncReleaseFocus("releasefocus",
-        "Release focus for the specified layer",
-        [](ecs::FocusLayer layer) {
-            if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
-                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
-
-                if (lock.Has<ecs::FocusLock>()) {
-                    lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
-                } else {
-                    Errorf("World does not have a FocusLock");
-                }
-            }
-        });
-
-    template<typename LockWrite, typename Callback>
-    void mutateEntity(const string &entityStr, Callback callback) {
-        ecs::Name entityName(entityStr, ecs::Name());
-        if (!entityName) {
-            Logf("Could not parse entity %s", entityStr);
-            return;
         }
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, LockWrite>();
-        auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
-        if (!entity) {
-            Logf("Entity %s not found", entityName.String());
-            return;
-        }
-        callback(lock, entity);
-    }
+    });
 
-    template<typename Callback>
-    void mutateEntityTransform(const string &entityStr, Callback callback) {
-        mutateEntity<ecs::Write<ecs::TransformTree>>(entityStr, [&](auto lock, ecs::Entity entity) {
-            if (!entity.Has<ecs::TransformTree>(lock)) {
-                Logf("Entity %s has no transform", entityStr);
-                return;
+    funcs.Register<ecs::FocusLayer>("releasefocus", "Release focus for the specified layer", [](ecs::FocusLayer layer) {
+        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+            if (lock.Has<ecs::FocusLock>()) {
+                lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
+            } else {
+                Errorf("World does not have a FocusLock");
             }
-            callback(lock, entity.Get<ecs::TransformTree>(lock));
-        });
-    }
+        }
+    });
 
-    CFunc<string, glm::vec3> CFuncTranslate("translate",
+    funcs.Register<string, glm::vec3>("translate",
         "Moves an entity a relative amount (translate <entity> <x> <y> <z>)",
         [](string entityStr, glm::vec3 value) {
             mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
@@ -130,7 +126,7 @@ namespace sp {
             });
         });
 
-    CFunc<string, float, glm::vec3> CFuncRotate("rotate",
+    funcs.Register<string, float, glm::vec3>("rotate",
         "Rotates an entity a relative amount (rotate <entity> <degrees> <x> <y> <z>)",
         [](string entityStr, float degrees, glm::vec3 plane) {
             mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
@@ -138,7 +134,7 @@ namespace sp {
             });
         });
 
-    CFunc<string, glm::vec3> CFuncScale("scale",
+    funcs.Register<string, glm::vec3>("scale",
         "Scales an entity a relative amount (scale <entity> <x> <y> <z>)",
         [](string entityStr, glm::vec3 value) {
             mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
@@ -146,7 +142,7 @@ namespace sp {
             });
         });
 
-    CFunc<string, double> CFuncSetSignal("setsignal",
+    funcs.Register<string, double>("setsignal",
         "Set a signal value (setsignal <entity>/<signal> <value>)",
         [](string signalStr, double value) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
@@ -166,7 +162,7 @@ namespace sp {
             signalComp.SetSignal(signalName, value);
         });
 
-    CFunc<string, string> CFuncToggleSignal("togglesignal",
+    funcs.Register<string, string>("togglesignal",
         "Toggle a signal between values (togglesignal <entity>/<signal> [<value_a> <value_b>])",
         [](string signalStr, string args) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
@@ -195,20 +191,18 @@ namespace sp {
             signalComp.SetSignal(signalName, signal);
         });
 
-    CFunc<string> CFuncClearSignal("clearsignal",
-        "Clear a signal value (clearsignal <entity>/<signal>)",
-        [](string signalStr) {
-            auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
+    funcs.Register<string>("clearsignal", "Clear a signal value (clearsignal <entity>/<signal>)", [](string signalStr) {
+        auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
-            auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
-            if (entity && entity.Has<ecs::SignalOutput>(lock)) {
-                auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
-                signalComp.ClearSignal(signalName);
-            }
-        });
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+        if (entity && entity.Has<ecs::SignalOutput>(lock)) {
+            auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
+            signalComp.ClearSignal(signalName);
+        }
+    });
 
-    CFunc<string, string> CFuncSendEvent("sendevent",
+    funcs.Register<string, string>("sendevent",
         "Send an entity an event (sendevent <entity>/<event> <value>)",
         [](string eventStr, string value) {
             auto [entityName, eventName] = ecs::ParseEventString(eventStr);
@@ -231,7 +225,7 @@ namespace sp {
             }
         });
 
-    CFunc<size_t> CFuncTraceTecs("tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", [](size_t timeMs) {
+    funcs.Register<size_t>("tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", [](size_t timeMs) {
         if (timeMs == 0) {
             Logf("Trace time must be specified in milliseconds.");
             return;
@@ -267,4 +261,4 @@ namespace sp {
             tracing = false;
         }).detach();
     });
-} // namespace sp
+}

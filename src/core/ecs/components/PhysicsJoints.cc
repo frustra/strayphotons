@@ -4,7 +4,6 @@
 #include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/Scene.hh"
 
 namespace ecs {
     template<>

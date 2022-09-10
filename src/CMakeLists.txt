@@ -1,5 +1,8 @@
 set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
 
+set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implementing game engine ECS systems")
+set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interface library to enable CLI test mode")
+
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
 set(PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display")
@@ -8,6 +11,7 @@ set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE
 set(PROJECT_INPUT_GLFW_LIB ${PROJECT_BASE_NAME}-input-glfw CACHE INTERNAL "Library implementing user input support using GLFW")
 
 set(PROJECT_PHYSICS_PHYSX_LIB ${PROJECT_BASE_NAME}-physics-physx CACHE INTERNAL "Library implementing physics using PhysX")
+set(PROJECT_PHYSICS_COOKING_LIB ${PROJECT_BASE_NAME}-physics-cooking CACHE INTERNAL "Library implementing convex hull generation")
 
 set(PROJECT_AUDIO_LIB ${PROJECT_BASE_NAME}-audio CACHE INTERNAL "Library implementing audio using libsoundio and Resonance Audio")
 
@@ -16,8 +20,6 @@ set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library
 
 set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library containing internal scripts")
 
-set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interface library to enable CLI test mode")
-
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 # Vulkan desktop build
@@ -25,7 +27,7 @@ add_module_configuration(
     NAME sp-vk
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
@@ -39,7 +41,6 @@ add_module_configuration(
     NAME sp-test
     LINK_LIBRARIES
         ${PROJECT_GAME_TEST_LIB}
-        ${PROJECT_CORE_LIB}
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
@@ -52,6 +53,7 @@ if(WIN32)
     add_subdirectory(audio)
 endif()
 
+add_subdirectory(game)
 add_subdirectory(graphics)
 add_subdirectory(input)
 add_subdirectory(main)

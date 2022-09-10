@@ -22,6 +22,12 @@
 namespace sp {
     ConsoleManager &GetConsoleManager() {
         static ConsoleManager GConsoleManager;
+        static bool functionsAdded = false;
+        if (!functionsAdded) {
+            functionsAdded = true;
+            GConsoleManager.RegisterCoreCommands();
+            GConsoleManager.RegisterTracyCommands();
+        }
         return GConsoleManager;
     }
 

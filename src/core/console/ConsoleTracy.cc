@@ -1,12 +1,12 @@
-#include "console/CFunc.hh"
+#include "console/Console.hh"
 
 #ifdef _WIN32
     #include <windows.h>
 #endif
 
-namespace sp {
+void sp::ConsoleManager::RegisterTracyCommands() {
 #ifdef _WIN32
-    CFunc<void> CFuncTracy("tracy", "Open tracing window", []() {
+    funcs.Register("tracy", "Open tracing window", []() {
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
         ZeroMemory(&si, sizeof(si));

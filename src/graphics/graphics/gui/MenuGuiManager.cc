@@ -172,7 +172,7 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        if (!logoTex) logoTex = graphics.GetContext()->LoadTexture(GAssets.LoadImage("logos/sp-menu.png")->Get());
+        if (!logoTex) logoTex = graphics.GetContext()->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
         ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
         if (selectedScreen == MenuScreen::Splash) {
@@ -347,7 +347,7 @@ namespace sp {
 
             if (!frustraLogoTex) {
                 frustraLogoTex = graphics.GetContext()->LoadTexture(
-                    GAssets.LoadImage("logos/credits-frustra.png")->Get());
+                    Assets().LoadImage("logos/credits-frustra.png")->Get());
             }
             ImVec2 frLogoSize(frustraLogoTex->GetWidth() * 0.5f, frustraLogoTex->GetHeight() * 0.5f);
 

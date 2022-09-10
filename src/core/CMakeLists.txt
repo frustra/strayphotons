@@ -1,4 +1,4 @@
-add_library(${PROJECT_CORE_LIB} OBJECT)
+add_library(${PROJECT_CORE_LIB} STATIC)
 
 target_include_directories(${PROJECT_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -49,10 +49,5 @@ add_subdirectory(assets)
 add_subdirectory(console)
 add_subdirectory(core)
 add_subdirectory(ecs)
-add_subdirectory(editor)
 add_subdirectory(game)
 add_subdirectory(input)
-
-add_module_sources(
-    DebugCFuncs.cc
-)

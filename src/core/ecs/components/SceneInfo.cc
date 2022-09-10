@@ -2,7 +2,6 @@
 
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/Scene.hh"
 
 namespace ecs {
     // Should be called on the live SceneInfo

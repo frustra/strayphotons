@@ -1,6 +1,5 @@
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Console.cc
-    ConsoleBindingManager.cc
     ConsoleCoreCommands.cc
     ConsoleTracy.cc
 )
