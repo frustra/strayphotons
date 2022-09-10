@@ -1,4 +1,4 @@
-add_library(${PROJECT_GAME_LIB} STATIC)
+add_library(${PROJECT_GAME_LIB} OBJECT) # Use OBJECT instead of STATIC to ensure CFunc registration
 add_library(${PROJECT_GAME_TEST_LIB} INTERFACE)
 
 target_include_directories(${PROJECT_GAME_LIB} PUBLIC

@@ -109,7 +109,7 @@ vec3 DirectShading(vec3 worldPosition,
         float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * notHasIllum + hasIllum;
 
         // Calculate direct occlusion.
-        vec3 shadowMapPos = (lights[i].view * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
+        vec3 shadowMapPos = (lights[i].view * vec4(worldPosition, 1.0)).xyz; // Position in light's view-space.
         vec3 surfaceNormal = normalize(mat3(lights[i].view) * flatNormal);
         float occlusion = step(lights[i].clip.x, -shadowMapPos.z);
 
