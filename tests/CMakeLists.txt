@@ -28,7 +28,11 @@ list(REMOVE_DUPLICATES integration_test_sources)
 
 add_executable(sp-integration-tests tests.cc ${integration_test_sources})
 target_compile_definitions(sp-integration-tests PRIVATE TEST_TYPE=\"integration\")
-target_link_libraries(sp-integration-tests ${PROJECT_CORE_LIB} ${PROJECT_PHYSICS_PHYSX_LIB})
+target_link_libraries(sp-integration-tests
+    ${PROJECT_CORE_LIB}
+    ${PROJECT_GAME_TEST_LIB}
+    ${PROJECT_PHYSICS_PHYSX_LIB}
+)
 target_include_directories(sp-integration-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # target to run the tests

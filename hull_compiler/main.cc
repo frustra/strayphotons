@@ -3,7 +3,7 @@
 #include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
-#include "physx/ConvexHull.hh"
+#include "cooking/ConvexHull.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cxxopts.hpp>

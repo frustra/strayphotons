@@ -6,6 +6,7 @@ target_include_directories(${PROJECT_SCRIPTS_LIB} PUBLIC
 
 target_link_libraries(${PROJECT_SCRIPTS_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
+    ${PROJECT_GAME_LIB}
 )
 
 target_compile_definitions(${PROJECT_SCRIPTS_LIB} PUBLIC

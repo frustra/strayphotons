@@ -3,7 +3,6 @@
 #include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
-#include "game/Scene.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>

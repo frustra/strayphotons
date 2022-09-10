@@ -14,6 +14,7 @@ target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
+    ${PROJECT_GAME_LIB}
     ImGui
 )
 

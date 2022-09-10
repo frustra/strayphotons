@@ -2,7 +2,6 @@
 
 #include "core/Common.hh"
 #include "core/Hashing.hh"
-#include "game/Scene.hh"
 
 namespace ecs {
     Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {

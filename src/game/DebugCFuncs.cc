@@ -2,6 +2,7 @@
 #include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"

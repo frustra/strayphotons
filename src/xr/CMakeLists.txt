@@ -1,5 +1,5 @@
 add_library(${PROJECT_XR_CORE_LIB} INTERFACE)
-add_library(${PROJECT_XR_OPENVR_LIB} OBJECT)
+add_library(${PROJECT_XR_OPENVR_LIB} STATIC)
 
 target_include_directories(${PROJECT_XR_CORE_LIB} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}

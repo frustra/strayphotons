@@ -1,7 +1,9 @@
-#include "Scene.hh"
+#include "game/Scene.hh"
 
 #include "core/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "game/SceneImpl.hh"
+#include "game/SceneManager.hh"
 
 namespace sp {
     void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,

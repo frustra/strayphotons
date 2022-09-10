@@ -90,7 +90,7 @@ namespace sp::scripts {
                                     "/interact/rotate",
                                     "/physics/broken_constraint");
                                 auto &script = newEntity.Set<Script>(lock);
-                                auto &newState = script.AddOnTick(scope, ScriptDefinitions.at("interactive_object"));
+                                auto &newState = script.AddOnTick(scope, "interactive_object");
                                 newState.filterEvents = {
                                     "/interact/grab",
                                     "/interact/point",

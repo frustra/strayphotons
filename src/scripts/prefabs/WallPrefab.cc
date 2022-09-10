@@ -49,7 +49,7 @@ namespace ecs {
                 LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEnt);
 
                 Script scriptComp;
-                auto &gltfState = scriptComp.AddPrefab(state.scope, PrefabDefinitions["gltf"]);
+                auto &gltfState = scriptComp.AddPrefab(state.scope, "gltf");
                 gltfState.SetParam<std::string>("model", "wall-4-corner");
                 gltfState.SetParam<std::string>("physics", "static");
                 gltfState.SetParam<bool>("render", true);
@@ -74,7 +74,7 @@ namespace ecs {
                 LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEnt);
 
                 Script scriptComp;
-                auto &gltfState = scriptComp.AddPrefab(state.scope, PrefabDefinitions["gltf"]);
+                auto &gltfState = scriptComp.AddPrefab(state.scope, "gltf");
                 gltfState.SetParam<std::string>("model", model);
                 gltfState.SetParam<std::string>("physics", "static");
                 gltfState.SetParam<bool>("render", true);

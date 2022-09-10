@@ -4,7 +4,6 @@
 #include "assets/JsonHelpers.hh"
 #include "assets/PhysicsInfo.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/Scene.hh"
 
 namespace ecs {
     bool parsePhysicsShape(const EntityScope &scope, PhysicsShape &shape, const picojson::value &src) {

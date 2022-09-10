@@ -4,7 +4,6 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
-#include "game/Scene.hh"
 
 #include <optional>
 #include <picojson/picojson.h>
