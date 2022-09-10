@@ -1,4 +1,4 @@
-add_library(${PROJECT_SCRIPTS_LIB} OBJECT)
+add_library(${PROJECT_SCRIPTS_LIB} OBJECT) # Must be OBJECT instead of STATIC so the linker doesn't skip unreferenced files
 
 target_include_directories(${PROJECT_SCRIPTS_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

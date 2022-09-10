@@ -28,6 +28,13 @@ namespace sp {
         const std::string name;
         const SceneType type;
 
+        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const {
+            auto it = namedEntities.find(entityName);
+            if (it != namedEntities.end()) return it->second;
+            return {};
+        }
+
+        // Defined in game module: game/game/Scene.cc
         ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
             ecs::Name name = ecs::Name());
@@ -42,12 +49,6 @@ namespace sp {
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
-
-        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const {
-            auto it = namedEntities.find(entityName);
-            if (it != namedEntities.end()) return it->second;
-            return {};
-        }
 
     private:
         ecs::Name GenerateEntityName(const ecs::Name &prefix);

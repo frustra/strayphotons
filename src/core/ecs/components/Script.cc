@@ -8,8 +8,8 @@
 
 namespace ecs {
     ScriptDefinitions &GetScriptDefinitions() {
-        static ScriptDefinitions definitions = {};
-        return definitions;
+        static ScriptDefinitions GScriptDefinitions;
+        return GScriptDefinitions;
     }
 
     static std::atomic_size_t nextInstanceId;
