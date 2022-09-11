@@ -136,6 +136,27 @@ namespace sp {
 
     bool is_float(const string &str);
 
+    struct float16_t {
+        uint16_t value;
+
+        float16_t() : value(0) {}
+        float16_t(const uint16_t &value) : value(value) {}
+
+        float16_t(const float &value_) {
+            if (value_ == 0.0f) {
+                value = 0u;
+            } else {
+                auto x = *reinterpret_cast<const uint32_t *>(&value_);
+                value = ((x >> 16) & 0x8000) | ((((x & 0x7f800000) - 0x38000000) >> 13) & 0x7c00) |
+                        ((x >> 13) & 0x03ff);
+            }
+        }
+
+        operator uint16_t() const {
+            return value;
+        }
+    };
+
     namespace boost_replacements {
         bool starts_with(const string &str, const string &prefix);
         bool starts_with(const string_view &str, const string_view &prefix);
