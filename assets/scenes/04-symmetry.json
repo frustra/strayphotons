@@ -19,7 +19,7 @@
 			"event_bindings": {
 				"/trigger/object/enter": {
 					"target": "console:input/action/run_command",
-					"set_value": "r.MirrorRecursion 3; setsignal global:airlock3-4.door-out/door_open 1; wait 2000 removescene 03-dark"
+					"set_value": "setsignal global:airlock3-4.door-out/door_open 1; wait 2000 removescene 03-dark"
 				}
 			}
 		},

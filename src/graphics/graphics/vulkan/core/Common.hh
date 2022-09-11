@@ -51,6 +51,26 @@ namespace sp::vulkan {
         NearestTiled,
     };
 
+    struct float16_t {
+        uint16_t value;
+
+        float16_t() : value(0) {}
+
+        float16_t(const float &value_) {
+            if (value_ == 0.0f) {
+                value = 0u;
+            } else {
+                auto x = *reinterpret_cast<const uint32_t *>(&value_);
+                value = ((x >> 16) & 0x8000) | ((((x & 0x7f800000) - 0x38000000) >> 13) & 0x7c00) |
+                        ((x >> 13) & 0x03ff);
+            }
+        }
+
+        operator float() const {
+            return ((value & 0x8000) << 16) | (((value & 0x7c00) + 0x1C000) << 13) | ((value & 0x03FF) << 13);
+        }
+    };
+
     template<typename T>
     class WrappedUniqueHandle : public NonCopyable {
     public:

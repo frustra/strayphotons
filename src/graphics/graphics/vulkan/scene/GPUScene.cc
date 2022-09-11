@@ -241,6 +241,8 @@ namespace sp::vulkan {
 
                         drawParam.baseColorTexID = primitive.baseColor.index;
                         drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
+                        drawParam.opticID = renderable.opticID;
+                        drawParam.emissiveScale = renderable.emissiveScale;
 
                         auto worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
                         auto relPos = (glm::vec3(worldPos) / worldPos.w) - viewPosition;

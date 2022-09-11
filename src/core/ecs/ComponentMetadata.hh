@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 #include <type_traits>
+#include <typeindex>
 
 namespace picojson {
     class value;
@@ -25,43 +26,17 @@ namespace ecs {
     enum class InterpolationMode;
     enum class GuiTarget;
 
-    enum class FieldType {
-        Bool = 0,
-        Int32,
-        Uint32,
-        SizeT,
-        AngleT,
-        Float,
-        Double,
-        Vec2,
-        Vec3,
-        Vec4,
-        ColorT,
-        IVec2,
-        IVec3,
-        Quat,
-        String,
-
-        // Custom Types
-        EntityRef,
-        Transform,
-        AnimationStates,
-
-        // Enums
-        InterpolationMode,
-        VisibilityMask,
-        OpticType,
-        GuiTarget,
-        Count,
-    };
-
-    using FieldTypes = std::tuple<bool,
+    using FieldTypes = std::tuple<
+        // Basic types
+        bool,
         int32_t,
         uint32_t,
         size_t,
         sp::angle_t,
         float,
         double,
+
+        // Vector types
         glm::vec2,
         glm::vec3,
         glm::vec4,
@@ -69,37 +44,28 @@ namespace ecs {
         glm::ivec2,
         glm::ivec3,
         glm::quat,
+
+        // Structs
         std::string,
         EntityRef,
         Transform,
         std::vector<AnimationState>,
+
+        // Enums
         InterpolationMode,
         VisibilityMask,
         OpticType,
         GuiTarget>;
 
-    static_assert(std::tuple_size_v<FieldTypes> == (size_t)FieldType::Count, "ComponentMetatdata field types mismatch");
-
-    template<typename T, size_t I = 0>
-    inline static constexpr FieldType GetFieldType() {
-        if constexpr (I >= std::tuple_size_v<FieldTypes>) {
-            Abortf("Field type is not defined: %s", typeid(T).name());
-        } else if constexpr (std::is_same_v<T, std::tuple_element_t<I, FieldTypes>>) {
-            return (FieldType)I;
-        } else {
-            return GetFieldType<T, I + 1>();
-        }
-    }
-
     template<typename Func, size_t I = 0>
-    inline static constexpr auto GetFieldType(FieldType type, Func func) {
-        if ((size_t)type == I) {
+    inline static constexpr auto GetFieldType(std::type_index type, Func func) {
+        if (type == std::type_index(typeid(std::tuple_element_t<I, FieldTypes>))) {
             return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
         }
         if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
             return GetFieldType<Func, I + 1>(type, func);
         } else {
-            Abortf("Unknown field type: %s", type);
+            Abortf("Type missing from FieldTypes definition: %s", type.name());
         }
     }
 
@@ -112,19 +78,17 @@ namespace ecs {
 
     struct ComponentField {
         const char *name = nullptr;
-        FieldType type = FieldType::Count;
+        std::type_index type;
         size_t offset = 0;
         FieldAction actions = ~FieldAction::None;
 
-        ComponentField(const char *name, FieldType type, size_t offset, FieldAction actions)
+        ComponentField(const char *name, std::type_index type, size_t offset, FieldAction actions)
             : name(name), type(type), offset(offset), actions(actions) {}
 
         template<typename T, typename F>
         static constexpr ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            auto fieldType = GetFieldType<std::remove_cv_t<F>>();
-
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
-            return ComponentField(name, fieldType, offset, actions);
+            return ComponentField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
         }
 
         template<typename T, typename F>

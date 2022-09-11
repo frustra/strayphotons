@@ -36,7 +36,8 @@
 		{
 			"name": "bulb",
 			"renderable": {
-				"model": "box"
+				"model": "box",
+				"emissive": 1.0
 			},
 			"transform": {
 				"parent": "scoperoot",

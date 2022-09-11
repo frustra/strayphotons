@@ -66,7 +66,7 @@ namespace sp::vulkan {
         uint16_t baseColorTexID;
         uint16_t metallicRoughnessTexID;
         uint16_t opticID = 0;
-        uint16_t emissiveScale = 0; // half-float formatted
+        float16_t emissiveScale = 0.0f;
     };
     static_assert(sizeof(GPUDrawParams) % sizeof(uint16_t) == 0, "std430 alignment");
 
