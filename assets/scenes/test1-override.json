@@ -76,7 +76,8 @@
 		{
 			"name": "test1:duck.duck.gltf2",
 			"renderable": {
-				"visibility": "DirectCamera|DirectEye"
+				"visibility": "Transparent|LightingVoxel",
+				"emissive": 2.0
 			}
 		},
 		{

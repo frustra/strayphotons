@@ -2,7 +2,7 @@
 
 #include <tests.hh>
 
-namespace IsFloatTests {
+namespace FloatHelperTests {
     using namespace testing;
 
     void TestIsFloatVariants() {
@@ -25,5 +25,12 @@ namespace IsFloatTests {
         Assert(sp::is_float("-123.345"), "Expected '-123.456' to be valid");
     }
 
+    void TestFloat16Conversions() {
+        AssertEqual<uint16_t>(sp::float16_t(0.0f), 0, "Expected to convert 0.0 (float32)");
+        AssertEqual<uint16_t>(sp::float16_t(1.2345f), 0x3CF0, "Expected to convert 1.2345 (float32)");
+        AssertEqual<uint16_t>(sp::float16_t(-0.0001f), 0x868D, "Expected to convert -0.00001 (float32)");
+    }
+
     Test test1(&TestIsFloatVariants);
-} // namespace IsFloatTests
+    Test test2(&TestFloat16Conversions);
+} // namespace FloatHelperTests
