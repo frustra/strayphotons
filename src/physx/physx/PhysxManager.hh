@@ -39,14 +39,12 @@ namespace sp {
     struct HullSettings;
     class SceneManager;
 
-    extern CVar<float> CVarGravity;
-    extern CVar<float> CVarGravitySpin;
-
     struct ActorUserData {
         ecs::Entity entity;
         ecs::Transform pose;
         glm::vec3 scale = glm::vec3(1);
         glm::vec3 velocity = glm::vec3(0);
+        glm::vec3 gravity = glm::vec3(0);
         float angularDamping = 0.0f;
         float linearDamping = 0.0f;
         ecs::PhysicsGroup physicsGroup = ecs::PhysicsGroup::NoClip;
@@ -84,7 +82,8 @@ namespace sp {
         void Frame() override;
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneInfo>> lock,
+            ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:

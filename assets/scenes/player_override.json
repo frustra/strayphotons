@@ -1,0 +1,11 @@
+{
+	"priority": "Override",
+	"properties": {
+		"gravity": [0, 0, 0],
+		"gravity_func": "station_spin"
+	},
+	"entities": [
+		{ "name": "player:player" },
+		{ "name": "player:debug-spawner" }
+	]
+}

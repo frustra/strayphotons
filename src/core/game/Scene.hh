@@ -7,6 +7,10 @@
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
 
+namespace ecs {
+    struct SceneProperties;
+}
+
 namespace sp {
     class Asset;
 
@@ -49,6 +53,8 @@ namespace sp {
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
+
+        std::shared_ptr<ecs::SceneProperties> properties;
 
     private:
         ecs::Name GenerateEntityName(const ecs::Name &prefix);

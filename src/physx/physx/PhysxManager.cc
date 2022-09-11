@@ -25,8 +25,6 @@
 namespace sp {
     using namespace physx;
 
-    CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
-    CVar<float> CVarGravitySpin("x.GravitySpin", 2.42f, "Artificial gravity spin rotations per minute");
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
     CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
@@ -160,29 +158,6 @@ namespace sp {
     }
 
     void PhysxManager::Frame() {
-        // Wake up all actors and update the scene if gravity is changed.
-        if (CVarGravity.Changed() || CVarGravitySpin.Changed()) {
-            ZoneScopedN("ChangeGravity");
-            scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
-            CVarGravitySpin.Get(true);
-
-            vector<PxActor *> buffer(256, nullptr);
-            size_t startIndex = 0;
-
-            while (true) {
-                uint32_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
-
-                for (uint32_t i = 0; i < n; i++) {
-                    auto dynamic = buffer[i]->is<PxRigidDynamic>();
-                    if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
-                }
-
-                if (n < buffer.size()) break;
-
-                startIndex += n;
-            }
-        }
-
         if (CVarPhysxDebugCollision.Changed() || CVarPhysxDebugJoints.Changed()) {
             bool collision = CVarPhysxDebugCollision.Get(true);
             bool joints = CVarPhysxDebugJoints.Get(true);
@@ -197,7 +172,7 @@ namespace sp {
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput>,
+                ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput, ecs::SceneInfo>,
                 ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController>>();
 
             // Delete actors for removed entities
@@ -359,7 +334,7 @@ namespace sp {
         ZoneScoped;
         PxSceneDesc sceneDesc(pxPhysics->getTolerancesScale());
 
-        sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
+        sceneDesc.gravity = PxVec3(0); // Gravity handled by scene properties
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
         using Group = ecs::PhysicsGroup;
@@ -541,7 +516,8 @@ namespace sp {
         return actor;
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+    void PhysxManager::UpdateActor(
+        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneInfo>> lock,
         ecs::Entity &e) {
         ZoneScoped;
         // ZoneStr(ecs::ToString(lock, e));
@@ -557,6 +533,15 @@ namespace sp {
         auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto scale = transform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
+
+        ecs::SceneProperties sceneProperties = {};
+        if (e.Has<ecs::SceneInfo>(lock)) {
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
+            auto scene = sceneInfo.scene.lock();
+            if (scene && scene->properties) {
+                sceneProperties = *scene->properties;
+            }
+        }
 
         const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
         for (auto &shape : ph.shapes) {
@@ -685,15 +670,16 @@ namespace sp {
             }
 
             if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-                auto gravityFunction = [](glm::vec3 position) {
-                    position.x = 0;
-                    // Derived from centripetal acceleration formula, rotating around the origin
-                    float spinTerm = M_PI * CVarGravitySpin.Get() / 30;
-                    return spinTerm * spinTerm * position;
-                };
-                auto gravityForce = gravityFunction(transform.GetPosition());
+                glm::vec3 gravityForce = sceneProperties.fixedGravity;
+                if (sceneProperties.gravityFunction) {
+                    gravityForce = sceneProperties.gravityFunction(transform.GetPosition());
+                }
                 if (gravityForce != glm::vec3(0)) {
                     dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
+                }
+                if (gravityForce != userData->gravity) {
+                    dynamic->wakeUp();
+                    userData->gravity = gravityForce;
                 }
             }
         }

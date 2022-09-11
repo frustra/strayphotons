@@ -28,9 +28,11 @@ namespace ecs {
         if (IsLive(entity)) {
             if (liveRefs.count(entity) == 0) return EntityRef();
             return EntityRef(liveRefs[entity].lock());
-        } else {
+        } else if (IsStaging(entity)) {
             if (stagingRefs.count(entity) == 0) return EntityRef();
             return EntityRef(stagingRefs[entity].lock());
+        } else {
+            Abortf("Invalid EntityReferenceManager entity: %s", std::to_string(entity));
         }
     }
 
@@ -42,9 +44,11 @@ namespace ecs {
         if (IsLive(entity)) {
             ref.ptr->liveEntity = entity;
             liveRefs[entity] = ref.ptr;
-        } else {
+        } else if (IsStaging(entity)) {
             ref.ptr->stagingEntity = entity;
             stagingRefs[entity] = ref.ptr;
+        } else {
+            Abortf("Invalid EntityReferenceManager entity: %s", std::to_string(entity));
         }
         return ref;
     }

@@ -11,8 +11,10 @@ namespace ecs {
 
         if (IsLive(ent)) {
             liveEntity = ent;
-        } else {
+        } else if (IsStaging(ent)) {
             stagingEntity = ent;
+        } else {
+            Abortf("Invalid EntityRef entity: %s", std::to_string(ent));
         }
     }
 
@@ -38,8 +40,10 @@ namespace ecs {
     Entity EntityRef::Get(const ecs::Lock<> &lock) const {
         if (IsLive(lock)) {
             return GetLive();
-        } else {
+        } else if (IsStaging(lock)) {
             return GetStaging();
+        } else {
+            Abortf("Invalid EntityRef lock: %u", lock.GetInstance().GetInstanceId());
         }
     }
 

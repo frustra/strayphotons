@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/components/SceneProperties.hh"
 
 #include <memory>
 
@@ -25,8 +26,10 @@ namespace ecs {
             : priority(priority), scene(scene) {
             if (IsLive(ent)) {
                 liveId = ent;
-            } else {
+            } else if (IsStaging(ent)) {
                 stagingId = ent;
+            } else {
+                Abortf("Invalid SceneInfo entity: %s", std::to_string(ent));
             }
         }
 
@@ -38,8 +41,8 @@ namespace ecs {
         SceneInfo(Entity stagingId, Entity prefabStagingId, const SceneInfo &rootSceneInfo)
             : stagingId(stagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
               scene(rootSceneInfo.scene) {
-            Assertf(!IsLive(stagingId), "Invalid stagingId in SceneInfo: %s", std::to_string(stagingId));
-            Assertf(!IsLive(prefabStagingId),
+            Assertf(IsStaging(stagingId), "Invalid stagingId in SceneInfo: %s", std::to_string(stagingId));
+            Assertf(IsStaging(prefabStagingId),
                 "Invalid prefabStagingId in SceneInfo: %s",
                 std::to_string(prefabStagingId));
         }
@@ -50,6 +53,10 @@ namespace ecs {
         // Should be called on the live SceneInfo
         // Returns true if live SceneInfo should be removed
         bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId);
+
+        // Returns highest priority scene with properties set
+        std::shared_ptr<sp::Scene> GetPriorityScene() const;
+        SceneProperties GetSceneProperties() const;
 
         Entity liveId;
         Entity stagingId, nextStagingId;

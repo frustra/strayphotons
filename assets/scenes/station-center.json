@@ -1,4 +1,8 @@
 {
+	"properties": {
+		"gravity": [0, 0, 0],
+		"gravity_func": "station_spin"
+	},
 	"entities": [
 		{
 			"name": "elevator_zone",

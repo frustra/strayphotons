@@ -5,6 +5,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 #include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
@@ -26,6 +27,12 @@ namespace sp {
     static CVar<float> CVarCharacterSprintSpeed("p.CharacterSprintSpeed",
         5.0,
         "Character controller sprint speed (m/s)");
+    static CVar<float> CVarCharacterAirStrafe("p.CharacterAirStrafe",
+        0.8,
+        "Character controller air strafe multiplier");
+    static CVar<float> CVarCharacterJumpHeight("p.CharacterJumpHeight",
+        0.4,
+        "Character controller gravity jump multiplier");
     static CVar<float> CVarCharacterFlipSpeed("p.CharacterFlipSpeed",
         0.25,
         "Character controller reorientation speed (gravity dependant)");
@@ -39,7 +46,7 @@ namespace sp {
     }
 
     void CharacterControlSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
-        ecs::Read<ecs::EventInput>,
+        ecs::Read<ecs::EventInput, ecs::SceneInfo>,
         ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
@@ -69,6 +76,9 @@ namespace sp {
                         desc.material = characterUserData->actorData.material.get();
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
                         desc.userData = characterUserData;
+
+                        // Offset capsule position so the feet are the origin
+                        desc.position.y += desc.contactOffset + desc.radius + desc.height * 0.5f;
 
                         auto pxController = manager.controllerManager->createController(desc);
                         Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
@@ -111,6 +121,12 @@ namespace sp {
                 "CharacterController should not have a TransformTree parent: %s",
                 transformTree.parent.Name().String());
             auto &transform = transformTree.pose;
+
+            ecs::SceneProperties sceneProperties = {};
+            if (entity.Has<ecs::SceneInfo>(lock)) {
+                auto &sceneInfo = entity.Get<ecs::SceneInfo>(lock);
+                sceneProperties = sceneInfo.GetSceneProperties();
+            }
 
             auto actor = controller.pxController->getActor();
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
@@ -272,7 +288,7 @@ namespace sp {
                     displacement = transform.GetRotation() * displacement;
                 } else {
                     auto worldMovement = transform.GetRotation() * movementInput;
-                    userData->actorData.velocity += worldMovement * ecs::PLAYER_AIR_STRAFE * dt;
+                    userData->actorData.velocity += worldMovement * CVarCharacterAirStrafe.Get() * dt;
                     displacement = userData->actorData.velocity * dt;
                 }
                 // Logf("Disp: %s + %s, State:%u, On:%u, In:%u, DeltaXp: %s, Vel: %s",
@@ -312,12 +328,10 @@ namespace sp {
                     if (touchedUserData) userData->standingOn = touchedUserData->entity;
                 }
 
-                auto gravityFunction = [](glm::vec3 position) {
-                    position.x = 0;
-                    // Derived from centripetal acceleration formula, rotating around the origin
-                    float spinTerm = M_PI * CVarGravitySpin.Get() / 30;
-                    return spinTerm * spinTerm * position;
-                };
+                glm::vec3 gravityForce = sceneProperties.fixedGravity;
+                if (sceneProperties.gravityFunction) {
+                    gravityForce = sceneProperties.gravityFunction(newPosition);
+                }
 
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN || onGround) {
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
@@ -330,9 +344,7 @@ namespace sp {
                                                 transform.GetUp() * glm::dot(transform.GetUp(), displacement);
                         userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                         userData->actorData.velocity += flatDisplacement / dt;
-                        if (jump)
-                            userData->actorData.velocity -= gravityFunction(newPosition) *
-                                                            0.5f; // ecs::PLAYER_JUMP_VELOCITY;
+                        if (jump) userData->actorData.velocity -= gravityForce * CVarCharacterJumpHeight.Get();
                         // Logf("WasOn: %u, In: %u, Jump: %u, DeltaXp: %s, Vel: %s",
                         //     userData->onGround,
                         //     inGround,
@@ -341,8 +353,7 @@ namespace sp {
                         //     glm::to_string(userData->actorData.velocity));
                     } else {
                         userData->actorData.velocity = deltaPos / dt;
-                        userData->actorData.velocity += gravityFunction(newPosition) * dt;
-                        // userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
+                        userData->actorData.velocity += gravityForce * dt;
                         // Logf("OffGround, DeltaPos: %s - %s, Vel: %s",
                         //     glm::to_string(newPosition - userData->actorData.pose.GetPosition()),
                         //     glm::to_string(targetDelta),
@@ -374,10 +385,10 @@ namespace sp {
                 }
 
                 transform.SetPosition(newPosition);
-                auto gravityVector = gravityFunction(newPosition);
-                auto gravityStrength = glm::length(gravityVector);
+
+                auto gravityStrength = glm::length(gravityForce);
                 if (gravityStrength > CVarCharacterMinFlipGravity.Get()) {
-                    auto targetUpVector = glm::normalize(-gravityVector);
+                    auto targetUpVector = glm::normalize(-gravityForce);
                     auto targetRotation = glm::rotation(glm::vec3(0, 1, 0), targetUpVector);
 
                     float factor = glm::radians(gravityStrength * CVarCharacterFlipSpeed.Get() * dt) /

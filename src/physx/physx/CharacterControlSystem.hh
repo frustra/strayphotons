@@ -15,7 +15,7 @@ namespace sp {
         ~CharacterControlSystem() {}
 
         void Frame(ecs::Lock<ecs::ReadSignalsLock,
-            ecs::Read<ecs::EventInput>,
+            ecs::Read<ecs::EventInput, ecs::SceneInfo>,
             ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock);
 
     private:

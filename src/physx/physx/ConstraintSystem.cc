@@ -108,9 +108,9 @@ namespace sp {
         { // Apply Vertical Force
             auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / dynamic->getMass();
             if (deltaPos.y > 0) {
-                maxAcceleration -= CVarGravity.Get();
+                maxAcceleration -= -9.81f; // CVarGravity.Get();
             } else {
-                maxAcceleration += CVarGravity.Get();
+                maxAcceleration += -9.81f; // CVarGravity.Get();
             }
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
@@ -125,7 +125,7 @@ namespace sp {
             auto deltaVelocity = targetVerticalVelocity - dynamic->getLinearVelocity().y;
 
             float force = deltaVelocity * tickFrequency * dynamic->getMass();
-            force -= CVarGravity.Get() * dynamic->getMass();
+            force -= -9.81f /*CVarGravity.Get()*/ * dynamic->getMass();
             float forceAbs = std::abs(force) + 0.00001f;
             auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
             dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));

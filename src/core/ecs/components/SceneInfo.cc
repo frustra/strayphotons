@@ -2,6 +2,7 @@
 
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 
 namespace ecs {
     // Should be called on the live SceneInfo
@@ -71,5 +72,29 @@ namespace ecs {
             this->nextStagingId = stagingInfo.nextStagingId;
         }
         return !this->stagingId;
+    }
+
+    SceneProperties SceneInfo::GetSceneProperties() const {
+        auto stagingLock = StagingWorld.StartTransaction<Read<SceneInfo>>();
+        auto entity = this->stagingId;
+        while (entity.Has<ecs::SceneInfo>(stagingLock)) {
+            auto &sceneInfo = entity.Get<ecs::SceneInfo>(stagingLock);
+            auto scene = sceneInfo.scene.lock();
+            if (scene && scene->properties) return *scene->properties;
+            entity = this->nextStagingId;
+        }
+        return {};
+    }
+
+    std::shared_ptr<sp::Scene> SceneInfo::GetPriorityScene() const {
+        auto stagingLock = StagingWorld.StartTransaction<Read<SceneInfo>>();
+        auto entity = this->stagingId;
+        while (entity.Has<ecs::SceneInfo>(stagingLock)) {
+            auto &sceneInfo = entity.Get<ecs::SceneInfo>(stagingLock);
+            auto scene = sceneInfo.scene.lock();
+            if (scene && scene->properties) return scene;
+            entity = this->nextStagingId;
+        }
+        return nullptr;
     }
 } // namespace ecs

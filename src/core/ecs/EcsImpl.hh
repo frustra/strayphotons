@@ -19,6 +19,7 @@
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/SceneConnection.hh"
 #include "ecs/components/SceneInfo.hh"
+#include "ecs/components/SceneProperties.hh"
 #include "ecs/components/Screen.hh"
 #include "ecs/components/Script.hh"
 #include "ecs/components/Signals.hh"

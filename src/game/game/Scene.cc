@@ -50,7 +50,7 @@ namespace sp {
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
-        Assertf(!ecs::IsLive(stagingLock), "Scene::NewSystemEntity must be called with a staging lock");
+        Assertf(ecs::IsStaging(stagingLock), "Scene::NewSystemEntity must be called with a staging lock");
         if (entityName) {
             if (!ValidateEntityName(entityName)) {
                 Errorf("Invalid system entity name: %s", entityName.String());
@@ -121,7 +121,7 @@ namespace sp {
         ecs::Entity prefabRoot,
         std::string relativeName,
         ecs::Name scope) {
-        Assertf(!ecs::IsLive(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
+        Assertf(ecs::IsStaging(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
 
         ecs::Name entityName;
         if (!relativeName.empty()) {

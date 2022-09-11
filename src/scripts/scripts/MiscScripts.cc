@@ -68,14 +68,21 @@ namespace sp::scripts {
                         }
 
                         auto modelName = state.GetParam<std::string>("model");
+                        std::shared_ptr<Scene> scene;
+                        if (ent.Has<SceneInfo>(lock)) {
+                            auto &sceneInfo = ent.Get<SceneInfo>(lock);
+                            scene = sceneInfo.GetPriorityScene();
+                            Logf("New entity: %s", scene->name);
+                        } else {
+                            scene = state.scope.scene.lock();
+                        }
+                        Assert(scene, "Model spawner script must have valid scene");
 
-                        std::thread([ent, transform, modelName, scope = state.scope]() {
+                        std::thread([ent, transform, modelName, scene, scope = state.scope]() {
                             auto model = sp::Assets().LoadGltf(modelName);
 
                             auto lock = ecs::StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
-                                auto scene = scope.scene.lock();
-                                Assert(scene, "Model spawner script must have valid scene");
                                 auto newEntity = scene->NewRootEntity(lock, scene, ecs::SceneInfo::Priority::Scene);
 
                                 newEntity.Set<TransformTree>(lock, transform);

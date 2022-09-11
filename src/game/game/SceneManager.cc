@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "assets/JsonHelpers.hh"
 #include "console/Console.hh"
 #include "console/ConsoleBindingManager.hh"
 #include "core/Logging.hh"
@@ -475,16 +476,53 @@ namespace sp {
             Errorf("Failed to parse scene (%s): %s", sceneName, err);
             return nullptr;
         }
+        if (!root.is<picojson::object>()) {
+            Errorf("Failed to parse scene (%s): %s", sceneName, root.to_str());
+            return nullptr;
+        }
+        auto &sceneObj = root.get<picojson::object>();
 
         auto scene = make_shared<Scene>(sceneName, sceneType, asset);
+        scene->properties = make_shared<ecs::SceneProperties>();
         ecs::EntityScope scope;
         scope.scene = scene;
         scope.prefix.scene = scene->name;
 
-        {
+        if (sceneObj.count("priority")) {
+            json::Load(scope, priority, sceneObj["priority"]);
+        }
+
+        if (sceneObj.count("properties")) {
+            auto &properties = *scene->properties;
+            auto &propertiesValue = sceneObj["properties"];
+            if (propertiesValue.is<picojson::object>()) {
+                for (auto &property : propertiesValue.get<picojson::object>()) {
+                    if (property.first == "gravity") {
+                        json::Load(scope, properties.fixedGravity, property.second);
+                    } else if (property.first == "gravity_func") {
+                        if (property.second.is<std::string>()) {
+                            auto gravityFunc = property.second.get<std::string>();
+                            if (gravityFunc == "station_spin") {
+                                properties.gravityFunction = [](glm::vec3 position) {
+                                    position.x = 0;
+                                    // Derived from centripetal acceleration formula, rotating around the origin
+                                    const float spinRpm = 2.42f; // Calculated for ~1G at 153m radius
+                                    float spinTerm = M_PI * spinRpm / 30;
+                                    return spinTerm * spinTerm * position;
+                                };
+                            }
+                        }
+                    }
+                }
+            } else {
+                Errorf("Scene contains invalid properties (%s): %s", sceneName, propertiesValue.to_str());
+            }
+        }
+
+        if (sceneObj.count("entities")) {
             auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
 
-            auto &entityList = root.get<picojson::object>()["entities"];
+            auto &entityList = sceneObj["entities"];
             std::vector<ecs::Entity> entities;
             for (auto &value : entityList.get<picojson::array>()) {
                 auto ent = value.get<picojson::object>();
@@ -545,6 +583,9 @@ namespace sp {
         picojson::value root;
         string err = picojson::parse(root, bindingConfig->String());
         if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
+        if (!root.is<picojson::object>()) {
+            Abortf("Failed to parse input binding json: %s", root.to_str());
+        }
 
         {
             auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
