@@ -7,6 +7,7 @@
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <algorithm>
+#include <glm/gtx/vector_angle.hpp>
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarBlurShadowMap("r.BlurShadowMap", false, "Blur the shadow map before sampling");
@@ -164,12 +165,11 @@ namespace sp::vulkan::renderer {
             view.viewMat = glm::inverse(view.invViewMat);
             glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
 
-            auto calcFovX = glm::atan(view.clip.x, lightViewMirrorPos.x - 0.5f) -
-                            glm::atan(view.clip.x, lightViewMirrorPos.x + 0.5f);
-            auto calcFovY = glm::atan(view.clip.x, lightViewMirrorPos.y - 0.5f) -
-                            glm::atan(view.clip.x, lightViewMirrorPos.y + 0.5f);
-            float fovMultiplier = std::max(calcFovX, calcFovY) / light.spotAngle;
-            // Clamp the multiplier, which may go negative due to float inaccuracies in atan
+            auto cornerA = glm::normalize(lightViewMirrorPos - glm::vec3(0.5f, 0.5f, 0));
+            auto cornerB = glm::normalize(lightViewMirrorPos + glm::vec3(0.5f, 0.5f, 0));
+            auto calcFovDiagonal = glm::angle(cornerA, cornerB);
+            float fovMultiplier = calcFovDiagonal / (light.spotAngle * 2.0f * 1.41f);
+            // Clamp the multiplier, so we never go larger than 2x the original resolution
             fovMultiplier = std::clamp(fovMultiplier, 0.0f, 2.0f);
 
             int extent = std::pow(2, light.shadowMapSize) * fovMultiplier;
