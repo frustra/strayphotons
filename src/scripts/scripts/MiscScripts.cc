@@ -71,8 +71,9 @@ namespace sp::scripts {
                         std::shared_ptr<Scene> scene;
                         if (ent.Has<SceneInfo>(lock)) {
                             auto &sceneInfo = ent.Get<SceneInfo>(lock);
+                            // TODO: This scene effects the spawned entity's name and may break if scene overrides are
+                            // added or removed. Live entities that have no staging copy are only partially supported.
                             scene = sceneInfo.GetPriorityScene();
-                            Logf("New entity: %s", scene->name);
                         } else {
                             scene = state.scope.scene.lock();
                         }

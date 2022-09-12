@@ -79,10 +79,12 @@ namespace ecs {
         auto entity = this->stagingId;
         while (entity.Has<ecs::SceneInfo>(stagingLock)) {
             auto &sceneInfo = entity.Get<ecs::SceneInfo>(stagingLock);
-            auto scene = sceneInfo.scene.lock();
-            if (scene && scene->properties) return *scene->properties;
+            auto sceneShared = sceneInfo.scene.lock();
+            if (sceneShared && sceneShared->properties) return *sceneShared->properties;
             entity = this->nextStagingId;
         }
+        auto sceneShared = this->scene.lock();
+        if (sceneShared && sceneShared->properties) return *sceneShared->properties;
         return {};
     }
 
@@ -91,10 +93,10 @@ namespace ecs {
         auto entity = this->stagingId;
         while (entity.Has<ecs::SceneInfo>(stagingLock)) {
             auto &sceneInfo = entity.Get<ecs::SceneInfo>(stagingLock);
-            auto scene = sceneInfo.scene.lock();
-            if (scene && scene->properties) return scene;
+            auto sceneShared = sceneInfo.scene.lock();
+            if (sceneShared && sceneShared->properties) return sceneShared;
             entity = this->nextStagingId;
         }
-        return nullptr;
+        return this->scene.lock();
     }
 } // namespace ecs

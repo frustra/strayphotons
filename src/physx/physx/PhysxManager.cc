@@ -534,13 +534,11 @@ namespace sp {
         auto scale = transform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
 
-        ecs::SceneProperties sceneProperties = {};
+        ecs::SceneProperties sceneProperties;
         if (e.Has<ecs::SceneInfo>(lock)) {
-            auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
-            auto scene = sceneInfo.scene.lock();
-            if (scene && scene->properties) {
-                sceneProperties = *scene->properties;
-            }
+            sceneProperties = e.Get<ecs::SceneInfo>(lock).GetSceneProperties();
+        } else {
+            sceneProperties = {};
         }
 
         const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
