@@ -32,6 +32,7 @@ target_link_libraries(sp-integration-tests
     ${PROJECT_CORE_LIB}
     ${PROJECT_GAME_TEST_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
+    ${PROJECT_SCRIPTS_LIB}
 )
 target_include_directories(sp-integration-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
