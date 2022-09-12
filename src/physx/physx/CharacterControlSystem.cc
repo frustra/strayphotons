@@ -75,6 +75,8 @@ namespace sp {
                         desc.contactOffset = 0.05f;
                         desc.material = characterUserData->actorData.material.get();
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
+                        desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
+                        desc.slopeLimit = cos(glm::radians(30.0f));
                         desc.userData = characterUserData;
 
                         // Offset capsule position so the feet are the origin
@@ -131,6 +133,7 @@ namespace sp {
             auto actor = controller.pxController->getActor();
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
             float contactOffset = controller.pxController->getContactOffset();
+            float capsuleRadius = controller.pxController->getRadius();
 
             float targetHeight = ecs::PLAYER_CAPSULE_HEIGHT;
             glm::vec3 targetPosition = transform.GetPosition();
@@ -144,7 +147,7 @@ namespace sp {
                 targetPosition = targetTree.GetGlobalTransform(lock).GetPosition();
                 auto playerHeight = glm::dot(transform.GetUp(), targetPosition - transform.GetPosition());
                 targetPosition -= playerHeight * transform.GetUp();
-                targetHeight = std::max(0.1f, playerHeight - ecs::PLAYER_RADIUS);
+                targetHeight = std::max(0.1f, playerHeight - capsuleRadius);
 
                 if (target != userData->target) {
                     // Move the target to the physics actor when the target changes
@@ -182,7 +185,7 @@ namespace sp {
                 if (targetHeight > currentHeight) {
                     // Check to see if there is room to expand the capsule
                     PxSweepBuffer hit;
-                    PxCapsuleGeometry capsuleGeometry(ecs::PLAYER_RADIUS, currentHeight * 0.5f);
+                    PxCapsuleGeometry capsuleGeometry(capsuleRadius, currentHeight * 0.5f);
                     auto sweepDist = targetHeight - currentHeight + contactOffset;
                     bool status = manager.scene->sweep(capsuleGeometry,
                         actor->getGlobalPose(),
@@ -268,7 +271,7 @@ namespace sp {
                 PxOverlapBuffer overlapHit;
                 overlapHit.touches = &touch;
                 overlapHit.maxNbTouches = 1;
-                PxCapsuleGeometry capsuleGeometry(ecs::PLAYER_RADIUS, currentHeight * 0.5f);
+                PxCapsuleGeometry capsuleGeometry(capsuleRadius, currentHeight * 0.5f);
                 bool inGround = manager.scene->overlap(capsuleGeometry,
                     actor->getGlobalPose(),
                     overlapHit,
@@ -318,7 +321,7 @@ namespace sp {
                 bool onGround = manager.scene->sweep(capsuleGeometry,
                     sweepStart,
                     -controller.pxController->getUpDirection(),
-                    controller.pxController->getContactOffset(),
+                    contactOffset,
                     sweepHit,
                     PxHitFlag::ePOSITION,
                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
