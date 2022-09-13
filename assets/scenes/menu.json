@@ -1,19 +1,5 @@
 {
-	"properties": {
-		"gravity": [0, 0, 0],
-		"gravity_func": "station_spin"
-	},
 	"entities": [
-		{
-			"name": "player_gravity_override",
-			"scene_connection": "player_override",
-			"signal_bindings": {
-				"load_scene_connection": "player_gravity_override"
-			},
-			"signal_output": {
-				"value": 1
-			}
-		},
 		{
 			"sound": {
 				"file": "test.ogg",

@@ -5,6 +5,11 @@
 	},
 	"entities": [
 		{
+			"name": "global:player_gravity_override",
+			"scene_connection": "player_gravity_override",
+			"signal_output": { "load_scene_connection": 1 }
+		},
+		{
 			"name": "elevator_zone",
 			"signal_output": {},
 			"transform": {

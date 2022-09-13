@@ -1,6 +1,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/GameEntities.hh"
 #include "game/Scene.hh"
 
 namespace ecs {
@@ -13,21 +14,14 @@ namespace ecs {
                 if (constSounds.occlusionWeight <= 0.0f) return;
 
                 struct Data {
-                    EntityRef listener;
-                    EntityRef listenerFallback;
                     PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
                 } data;
 
                 if (state.userData.has_value()) {
                     data = std::any_cast<Data>(state.userData);
-                } else {
-                    data.listener = EntityRef(Name{"vr", "hmd"});
-                    data.listenerFallback = EntityRef(Name{"player", "flatview"});
                 }
 
-                auto listener = data.listener.Get(lock);
-                if (!listener) listener = data.listenerFallback.Get(lock);
-
+                auto listener = sp::entities::Head().Get(lock);
                 if (listener.Has<TransformSnapshot>(lock)) {
                     auto listenerPos = listener.Get<TransformSnapshot>(lock).GetPosition();
                     auto soundPos = ent.Get<TransformSnapshot>(lock).GetPosition();

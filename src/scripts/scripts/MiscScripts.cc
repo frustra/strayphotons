@@ -68,15 +68,7 @@ namespace sp::scripts {
                         }
 
                         auto modelName = state.GetParam<std::string>("model");
-                        std::shared_ptr<Scene> scene;
-                        if (ent.Has<SceneInfo>(lock)) {
-                            auto &sceneInfo = ent.Get<SceneInfo>(lock);
-                            // TODO: This scene effects the spawned entity's name and may break if scene overrides are
-                            // added or removed. Live entities that have no staging copy are only partially supported.
-                            scene = sceneInfo.GetPriorityScene();
-                        } else {
-                            scene = state.scope.scene.lock();
-                        }
+                        auto scene = state.scope.scene.lock();
                         Assert(scene, "Model spawner script must have valid scene");
 
                         std::thread([ent, transform, modelName, scene, scope = state.scope]() {

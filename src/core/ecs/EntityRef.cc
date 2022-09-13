@@ -20,15 +20,15 @@ namespace ecs {
 
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
-        ptr = GEntityRefs.Get(ent).ptr;
+        ptr = GetEntityRefs().Get(ent).ptr;
     }
 
     EntityRef::EntityRef(const ecs::Name &name, const Entity &ent) {
         if (!name) return;
         if (ent) {
-            ptr = GEntityRefs.Set(name, ent).ptr;
+            ptr = GetEntityRefs().Set(name, ent).ptr;
         } else {
-            ptr = GEntityRefs.Get(name).ptr;
+            ptr = GetEntityRefs().Get(name).ptr;
         }
         Assertf(ptr, "EntityRef(%s, %s) is invalid", name.String(), std::to_string(ent));
     }

@@ -146,9 +146,6 @@ namespace ecs {
     static inline bool IsStaging(Lock<> lock) {
         return lock.GetInstance().GetInstanceId() == StagingWorld().GetInstanceId();
     }
-
-    template<typename T>
-    Entity EntityWith(Lock<Read<T>> lock, const T &value);
 }; // namespace ecs
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");

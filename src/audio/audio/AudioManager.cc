@@ -3,6 +3,7 @@
 #include "assets/AssetManager.hh"
 #include "core/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "game/GameEntities.hh"
 
 #include <resonance-audio/resonance_audio/base/constants_and_types.h>
 #include <resonance_audio_api.h>
@@ -125,9 +126,8 @@ namespace sp {
         ZoneScoped;
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
 
-        auto head = headEntity.Get(lock);
-        if (!head) head = headEntityFallback.Get(lock);
-        if (head && head.Has<ecs::TransformSnapshot>(lock)) {
+        auto head = entities::Head().Get(lock);
+        if (head.Has<ecs::TransformSnapshot>(lock)) {
             auto transform = head.Get<ecs::TransformSnapshot>(lock);
             auto pos = transform.GetPosition();
             auto rot = transform.GetRotation();

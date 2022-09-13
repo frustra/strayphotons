@@ -13,8 +13,8 @@ void mutateEntity(const string &entityStr, Callback callback) {
         Logf("Could not parse entity %s", entityStr);
         return;
     }
-    auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, LockWrite>();
-    auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+    auto lock = ecs::StartTransaction<LockWrite>();
+    auto entity = ecs::EntityRef(entityName).Get(lock);
     if (!entity) {
         Logf("Entity %s not found", entityName.String());
         return;
@@ -148,7 +148,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
-            auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+            auto entity = ecs::EntityRef(entityName).Get(lock);
             if (!entity) {
                 Logf("Signal entity %s not found", entityName.String());
                 return;
@@ -168,7 +168,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
-            auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+            auto entity = ecs::EntityRef(entityName).Get(lock);
             if (!entity) {
                 Logf("Signal entity %s not found", entityName.String());
                 return;
@@ -194,9 +194,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
     funcs.Register<string>("clearsignal", "Clear a signal value (clearsignal <entity>/<signal>)", [](string signalStr) {
         auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
-        auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
-        if (entity && entity.Has<ecs::SignalOutput>(lock)) {
+        auto lock = ecs::StartTransaction<ecs::Write<ecs::SignalOutput>>();
+        auto entity = ecs::EntityRef(entityName).Get(lock);
+        if (entity.Has<ecs::SignalOutput>(lock)) {
             auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
             signalComp.ClearSignal(signalName);
         }

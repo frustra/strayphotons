@@ -10,6 +10,14 @@ namespace SceneManagerTests {
 
     sp::SceneManager Scenes(true);
 
+    template<typename T>
+    ecs::Entity EntityWith(ecs::Lock<ecs::Read<T>> lock, const T &value) {
+        for (auto e : lock.template EntitiesWith<T>()) {
+            if (e.template Has<T>(lock) && e.template Get<const T>(lock) == value) return e;
+        }
+        return {};
+    }
+
     void AssertEntityScene(ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> stagingLock,
         ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> liveLock,
         std::string sceneName,
@@ -17,7 +25,7 @@ namespace SceneManagerTests {
         std::initializer_list<std::string> sceneNames) {
         Assert(sceneNames.size() > 0, "AssertEntityScene expects at least 1 scene name");
 
-        auto liveEnt = ecs::EntityWith<ecs::Name>(liveLock, ecs::Name(sceneName, entityName));
+        auto liveEnt = EntityWith<ecs::Name>(liveLock, ecs::Name(sceneName, entityName));
         Assertf(!!liveEnt, "Expected entity to exist: %s", entityName);
         Assertf(liveEnt.Has<ecs::SceneInfo>(liveLock), "Expected entity %s to have SceneInfo", entityName);
         auto &liveSceneInfo = liveEnt.Get<ecs::SceneInfo>(liveLock);
@@ -51,7 +59,7 @@ namespace SceneManagerTests {
     void systemSceneCallback(ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<sp::Scene> scene) {
         auto ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "player", "player");
-        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene, scene->properties);
         ent.Set<ecs::TransformSnapshot>(lock, glm::vec3(1, 2, 3));
         ent.Set<ecs::SignalOutput>(lock);
         ent.Set<ecs::SignalBindings>(lock);
@@ -61,7 +69,7 @@ namespace SceneManagerTests {
 
         ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "", "test");
-        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene, scene->properties);
     }
 
     void TestBasicLoadAddRemove() {
@@ -92,7 +100,7 @@ namespace SceneManagerTests {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                 auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
-                auto player = ecs::EntityWith<ecs::Name>(liveLock, ecs::Name("player", "player"));
+                auto player = EntityWith<ecs::Name>(liveLock, ecs::Name("player", "player"));
                 Assert(player.Has<ecs::Name, ecs::SceneInfo>(liveLock), "Expected player entity to be valid");
                 AssertEqual(player.Get<ecs::Name>(liveLock),
                     ecs::Name("player", "player"),

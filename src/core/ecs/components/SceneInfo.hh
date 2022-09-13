@@ -22,8 +22,11 @@ namespace ecs {
 
         SceneInfo() {}
 
-        SceneInfo(Entity ent, Priority priority, const std::shared_ptr<sp::Scene> &scene)
-            : priority(priority), scene(scene) {
+        SceneInfo(Entity ent,
+            Priority priority,
+            const std::shared_ptr<sp::Scene> &scene,
+            const std::shared_ptr<SceneProperties> &properties)
+            : priority(priority), scene(scene), properties(properties) {
             if (IsLive(ent)) {
                 liveId = ent;
             } else if (IsStaging(ent)) {
@@ -34,13 +37,13 @@ namespace ecs {
         }
 
         SceneInfo(Entity liveId, const SceneInfo &sceneInfo)
-            : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene) {
+            : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene), properties(sceneInfo.properties) {
             Assertf(IsLive(liveId), "Invalid liveId in SceneInfo: %s", std::to_string(liveId));
         }
 
         SceneInfo(Entity stagingId, Entity prefabStagingId, const SceneInfo &rootSceneInfo)
             : stagingId(stagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
-              scene(rootSceneInfo.scene) {
+              scene(rootSceneInfo.scene), properties(rootSceneInfo.properties) {
             Assertf(IsStaging(stagingId), "Invalid stagingId in SceneInfo: %s", std::to_string(stagingId));
             Assertf(IsStaging(prefabStagingId),
                 "Invalid prefabStagingId in SceneInfo: %s",
@@ -54,14 +57,11 @@ namespace ecs {
         // Returns true if live SceneInfo should be removed
         bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId);
 
-        // Returns highest priority scene with properties set
-        std::shared_ptr<sp::Scene> GetPriorityScene() const;
-        SceneProperties GetSceneProperties() const;
-
         Entity liveId;
         Entity stagingId, nextStagingId;
         Entity prefabStagingId;
         Priority priority = Priority::Scene;
         std::weak_ptr<sp::Scene> scene;
+        std::shared_ptr<SceneProperties> properties;
     };
 } // namespace ecs

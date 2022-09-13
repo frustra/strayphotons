@@ -69,9 +69,6 @@ namespace sp {
         LockFreeAudioSet<SoundSource, 65535> sounds;
         LockFreeEventQueue<SoundEvent> soundEvents;
 
-        ecs::EntityRef headEntity = ecs::Name("vr", "hmd");
-        ecs::EntityRef headEntityFallback = ecs::Name("player", "flatview");
-
         ecs::ComponentObserver<ecs::Sounds> soundObserver;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);

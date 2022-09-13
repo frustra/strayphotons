@@ -126,8 +126,8 @@ namespace sp {
 
             ecs::SceneProperties sceneProperties = {};
             if (entity.Has<ecs::SceneInfo>(lock)) {
-                auto &sceneInfo = entity.Get<ecs::SceneInfo>(lock);
-                sceneProperties = sceneInfo.GetSceneProperties();
+                auto &properties = entity.Get<ecs::SceneInfo>(lock).properties;
+                if (properties) sceneProperties = *properties;
             }
 
             auto actor = controller.pxController->getActor();

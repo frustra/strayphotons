@@ -6,7 +6,10 @@
 #include <shared_mutex>
 
 namespace ecs {
-    EntityReferenceManager GEntityRefs;
+    EntityReferenceManager &GetEntityRefs() {
+        static EntityReferenceManager GEntityRefs;
+        return GEntityRefs;
+    }
 
     EntityRef EntityReferenceManager::Get(const Name &name) {
         EntityRef ref = nameRefs.Load(name);
