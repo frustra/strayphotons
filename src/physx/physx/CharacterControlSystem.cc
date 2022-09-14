@@ -119,6 +119,8 @@ namespace sp {
                             });
 
                         PxCapsuleControllerDesc desc;
+                        desc.position = PxExtendedVec3(0, 0, 0);
+                        desc.upDirection = PxVec3(0, 1, 0);
                         desc.radius = ecs::PLAYER_RADIUS;
                         desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
                         desc.stepOffset = ecs::PLAYER_STEP_HEIGHT;
@@ -126,12 +128,6 @@ namespace sp {
                         // Decreasing the contactOffset value causes the player to be able to stand on
                         // very thin (and likely unintentional) ledges.
                         desc.contactOffset = 0.05f;
-                        desc.upDirection = PxVec3(0, 1, 0);
-
-                        // Spawn the capsule with the bottom at (0, 0, 0).
-                        desc.position = PxExtendedVec3(0.0f,
-                            desc.height * 0.5f + desc.radius + desc.contactOffset,
-                            0.0f);
 
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
                         desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
@@ -202,24 +198,25 @@ namespace sp {
             auto head = controller.head.Get(lock);
             if (head.Has<ecs::TransformTree>(lock)) {
                 auto &headTree = head.Get<const ecs::TransformTree>(lock);
+                auto headRoot = ecs::TransformTree::GetRoot(lock, head);
 
+                auto relHeadTransform = headTree.GetRelativeTransform(lock, headRoot);
                 if (headTree.parent != userData->headTarget) {
                     // Move the head to the physics actor when the head changes
-                    auto headRoot = ecs::TransformTree::GetRoot(lock, head);
                     if (headRoot != entity) {
                         auto &rootTree = headRoot.Get<ecs::TransformTree>(lock);
-                        rootTree.pose = headTree.GetGlobalTransform(lock) *
-                                        headTree.GetRelativeTransform(lock, headRoot).GetInverse();
+                        rootTree.pose = headTree.GetGlobalTransform(lock) * relHeadTransform.GetInverse();
                     }
 
                     userData->headTarget = headTree.parent.Get(lock);
                 } else {
                     // Use head as a height target and directional movement input
-                    deltaHeadPos = headTree.GetRelativeTransform(lock, entity).GetPosition();
-                    auto playerHeight = deltaHeadPos.y;
+                    deltaHeadPos = relHeadTransform.GetPosition();
                     deltaHeadPos.y = 0;
-                    targetHeight = std::max(0.1f, playerHeight - capsuleRadius - contactOffset);
                 }
+
+                auto playerHeight = relHeadTransform.GetPosition().y;
+                targetHeight = std::max(0.1f, playerHeight - capsuleRadius - contactOffset);
             }
 
             // If the entity moved, teleport the controller
