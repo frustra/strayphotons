@@ -4,9 +4,7 @@
 			"name": "player",
 			"transform": {},
 			"character_controller": {
-				"target": "vr:hmd",
-				"fallback_target": "flatview",
-				"movement_proxy": "vr:origin"
+				"head": "player:head"
 			},
 			"trigger_group": "player",
 			"event_input": [

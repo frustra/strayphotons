@@ -185,6 +185,18 @@ namespace ecs {
         return matrix != other.matrix;
     }
 
+    Entity TransformTree::GetRoot(Lock<Read<TransformTree>> lock, Entity entity) {
+        if (!entity.Has<TransformTree>(lock)) return {};
+
+        auto &tree = entity.Get<TransformTree>(lock);
+        auto parent = tree.parent.Get(lock);
+        if (!parent.Has<TransformTree>(lock)) {
+            return entity;
+        }
+
+        return GetRoot(lock, parent);
+    }
+
     Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose;
 

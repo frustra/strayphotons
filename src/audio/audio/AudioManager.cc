@@ -126,7 +126,7 @@ namespace sp {
         ZoneScoped;
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
 
-        auto head = entities::Head().Get(lock);
+        auto head = entities::Head.Get(lock);
         if (head.Has<ecs::TransformSnapshot>(lock)) {
             auto transform = head.Get<ecs::TransformSnapshot>(lock);
             auto pos = transform.GetPosition();

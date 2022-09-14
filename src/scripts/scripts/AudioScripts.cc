@@ -21,7 +21,7 @@ namespace ecs {
                     data = std::any_cast<Data>(state.userData);
                 }
 
-                auto listener = sp::entities::Head().Get(lock);
+                auto listener = sp::entities::Head.Get(lock);
                 if (listener.Has<TransformSnapshot>(lock)) {
                     auto listenerPos = listener.Get<TransformSnapshot>(lock).GetPosition();
                     auto soundPos = ent.Get<TransformSnapshot>(lock).GetPosition();

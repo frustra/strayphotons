@@ -19,13 +19,11 @@ namespace ecs {
     const float PLAYER_STEP_HEIGHT = 0.2f;
 
     struct CharacterController {
-        EntityRef target, fallbackTarget, movementProxy;
+        EntityRef head;
 
         physx::PxCapsuleController *pxController = nullptr;
     };
 
     static Component<CharacterController> ComponenCharacterController("character_controller",
-        ComponentField::New("target", &CharacterController::target),
-        ComponentField::New("fallback_target", &CharacterController::fallbackTarget),
-        ComponentField::New("movement_proxy", &CharacterController::movementProxy));
+        ComponentField::New("head", &CharacterController::head));
 } // namespace ecs

@@ -16,7 +16,7 @@ namespace sp {
         auto lock = ecs::StartTransaction<
             ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();
         auto player = entities::Player.Get(lock);
-        auto head = entities::Head().Get(lock);
+        auto head = entities::Head.Get(lock);
         if (head.Has<ecs::TransformSnapshot>(lock)) {
             auto &transform = head.Get<ecs::TransformSnapshot>(lock);
             auto position = transform.GetPosition();

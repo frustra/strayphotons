@@ -61,7 +61,7 @@ namespace sp {
     struct CharacterControllerUserData {
         ActorUserData actorData;
 
-        ecs::Entity target;
+        ecs::Entity headTarget;
         bool onGround = false;
         ecs::Entity standingOn;
         bool noclipping = false;
