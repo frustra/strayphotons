@@ -671,7 +671,8 @@ namespace sp {
                 if (sceneProperties.gravityFunction) {
                     gravityForce = sceneProperties.gravityFunction(transform.GetPosition());
                 }
-                if (gravityForce != glm::vec3(0)) {
+                // Force will accumulate on sleeping objects causing jitter
+                if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
                     dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
                 }
                 if (gravityForce != userData->gravity) {
