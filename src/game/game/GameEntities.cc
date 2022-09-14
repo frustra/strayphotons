@@ -10,6 +10,5 @@ namespace sp::entities {
     const ecs::EntityRef Head = ecs::Name("player", "head");
     const ecs::EntityRef Flatview = ecs::Name("player", "flatview");
     const ecs::EntityRef VrHmd = ecs::Name("vr", "hmd");
-    const ecs::EntityRef VrOrigin = ecs::Name("vr", "origin");
 
 } // namespace sp::entities

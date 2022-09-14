@@ -703,14 +703,6 @@ namespace sp {
             playerTransform = spawnTransform;
             playerTree.pose = spawnTransform;
         }
-        auto vrOrigin = entities::VrOrigin.Get(lock);
-        if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
-            auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(lock);
-            auto &vrTree = vrOrigin.Get<ecs::TransformTree>(lock);
-            Assert(!vrTree.parent, "VR Origin entity should not have a TransformTree parent");
-            vrTransform = spawnTransform;
-            vrTree.pose = spawnTransform;
-        }
     }
 
     void SceneManager::PrintScene(std::string filterName) {

@@ -9,6 +9,5 @@ namespace sp::entities {
     extern const ecs::EntityRef Head;
     extern const ecs::EntityRef Flatview;
     extern const ecs::EntityRef VrHmd;
-    extern const ecs::EntityRef VrOrigin;
 
 } // namespace sp::entities
