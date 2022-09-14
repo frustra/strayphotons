@@ -47,7 +47,8 @@ namespace sp {
             "character",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, entities::Head.Name());
-                ent.Set<ecs::TransformTree>(lock);
+                auto &tree = ent.Set<ecs::TransformTree>(lock);
+                tree.parent = entities::Flatview;
                 auto &script = ent.Set<ecs::Script>(lock);
                 script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
                     [](ecs::ScriptState &state,
@@ -61,10 +62,8 @@ namespace sp {
                         ecs::Entity flatview = entities::Flatview.Get(lock);
                         if (hmd.Has<ecs::TransformTree>(lock)) {
                             tree.parent = hmd;
-                        } else if (flatview.Has<ecs::TransformTree>(lock)) {
-                            tree.parent = flatview;
                         } else {
-                            tree.parent = {};
+                            tree.parent = flatview;
                         }
                     });
             });
@@ -207,14 +206,10 @@ namespace sp {
                 if (headTree.parent != userData->headTarget) {
                     // Move the head to the physics actor when the head changes
                     auto headRoot = ecs::TransformTree::GetRoot(lock, head);
-                    if (headRoot == entity && deltaHeadPos != glm::vec3(0)) {
-                        Warnf("Character controller head is not aligned (%s): %s",
-                            ecs::ToString(lock, entity),
-                            ecs::ToString(lock, head));
-                    } else {
+                    if (headRoot != entity) {
                         auto &rootTree = headRoot.Get<ecs::TransformTree>(lock);
-                        // TODO: check this is the correct multiplication
-                        rootTree.pose = headTree.GetRelativeTransform(lock, headRoot) * rootTree.pose;
+                        rootTree.pose = headTree.GetGlobalTransform(lock) *
+                                        headTree.GetRelativeTransform(lock, headRoot).GetInverse();
                     }
 
                     userData->headTarget = headTree.parent.Get(lock);
