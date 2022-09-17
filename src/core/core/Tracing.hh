@@ -10,7 +10,6 @@
     #define ZoneStrV(varname, str)
     #define ZonePrintf(...)
     #define ZonePrintfV(varname, ...)
-    #define Tracef(...)
 
 #else
 
@@ -18,8 +17,6 @@
     #define ZoneStrV(varname, str) sp::tracing::TracingZoneStr(varname, str)
     #define ZonePrintf(...) ZonePrintfV(___tracy_scoped_zone, __VA_ARGS__)
     #define ZonePrintfV(varname, ...) sp::tracing::TracingZonePrintf(varname, __VA_ARGS__)
-
-    #define Tracef(...) sp::tracing::TracingPrintf(__VA_ARGS__)
 
 // void *operator new(size_t size);
 // void operator delete(void *ptr);

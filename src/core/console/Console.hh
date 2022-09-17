@@ -34,7 +34,7 @@ namespace sp {
     };
 
     class ConsoleManager : public RegisteredThread {
-        LogOnExit logOnExit = "Console shut down =====================================================";
+        LogOnExit logOnExit = "ConsoleManager shut down ==============================================";
 
     public:
         ConsoleManager();
