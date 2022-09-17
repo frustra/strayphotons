@@ -78,6 +78,7 @@ namespace ecs {
         TransformTree(const Transform &pose) : pose(pose) {}
         TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
 
+        static void MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target);
         static Entity GetRoot(Lock<Read<TransformTree>> lock, Entity entity);
 
         // Returns a flattened Transform that includes all parent transforms.

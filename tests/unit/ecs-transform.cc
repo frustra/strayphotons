@@ -17,11 +17,15 @@ namespace EcsTransformTests {
 
             root = lock.NewEntity();
             ecs::EntityRef rootRef(ecs::Name("", "root"), root);
-            root.Set<ecs::TransformTree>(lock, glm::vec3(1, 2, 3));
+            root.Set<ecs::TransformTree>(lock,
+                glm::vec3(1, 2, 3),
+                glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0)));
 
             a = lock.NewEntity();
             ecs::EntityRef aRef(ecs::Name("", "a"), a);
-            auto &transformA = a.Set<ecs::TransformTree>(lock, glm::vec3(4, 0, 0));
+            auto &transformA = a.Set<ecs::TransformTree>(lock,
+                glm::vec3(4, 0, 0),
+                glm::angleAxis(glm::radians(90.0f), glm::vec3(0, 1, 0)));
             transformA.parent = root;
 
             b = lock.NewEntity();
@@ -48,10 +52,10 @@ namespace EcsTransformTests {
                 glm::vec3(5, 2, 3),
                 "A entity returned wrong position");
             AssertEqual(transformB.GetGlobalTransform(lock).GetPosition(),
-                glm::vec3(5, 7, 3),
+                glm::vec3(5, 2, 8),
                 "B entity returned wrong position");
             AssertEqual(transformC.GetGlobalTransform(lock).GetPosition(),
-                glm::vec3(5, 2, 9),
+                glm::vec3(11, 2, 3),
                 "C entity returned wrong position");
 
             {
@@ -79,11 +83,38 @@ namespace EcsTransformTests {
                 glm::vec3(3, -2, -3),
                 "A entity returned wrong position");
             AssertEqual(transformB.GetGlobalTransform(lock).GetPosition(),
-                glm::vec3(3, 3, -3),
+                glm::vec3(3, -2, 2),
                 "B entity returned wrong position");
             AssertEqual(transformC.GetGlobalTransform(lock).GetPosition(),
-                glm::vec3(3, -2, 3),
+                glm::vec3(9, -2, -3),
                 "C entity returned wrong position");
+        }
+        {
+            Timer t("Try moving entity via transform tree root");
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::TransformTree>>();
+
+            auto &transformRoot = root.Get<ecs::TransformTree>(lock);
+            auto &transformA = a.Get<ecs::TransformTree>(lock);
+            auto &transformB = b.Get<ecs::TransformTree>(lock);
+            auto &transformC = c.Get<ecs::TransformTree>(lock);
+
+            ecs::Transform target(glm::vec3(1, 1, 1), glm::angleAxis(glm::radians(90.0f), glm::vec3(0, 0, -1)));
+            std::cout << glm::to_string(target.GetUp()) << std::endl;
+            ecs::TransformTree::MoveViaRoot(lock, c, target);
+
+            AssertEqual(transformRoot.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(1, 1, -9),
+                "Root entity returned wrong position");
+            AssertEqual(transformA.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(1, 1, -5),
+                "A entity returned wrong position");
+            AssertEqual(transformB.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(6, 1, -5),
+                "B entity returned wrong position");
+            auto globalTransformC = transformC.GetGlobalTransform(lock);
+            AssertEqual(globalTransformC.GetPosition(), glm::vec3(1, 1, 1), "C entity returned wrong position");
+            AssertEqual(globalTransformC.GetUp(), target.GetUp(), "C entity returned wrong up vector");
+            AssertEqual(globalTransformC.GetForward(), target.GetForward(), "C entity returned wrong forward vector");
         }
         {
             Timer t("Try setting and reading rotation + scale");

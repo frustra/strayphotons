@@ -19,6 +19,17 @@
 			]
 		},
 		{
+			"name": "hmd_vis",
+			"transform": {
+				"parent": "hmd",
+				"scale": [0.1, 0.1, 0.1]
+			},
+			"renderable": {
+				"model": "box",
+				"visibility": "DirectCamera|LightingShadow|LightingVoxel"
+			}
+		},
+		{
 			"name": "left_hand",
 			"transform": {
 				"parent": "input:vr_actions_main_in_lefthand"

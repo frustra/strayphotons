@@ -197,6 +197,16 @@ namespace ecs {
         return GetRoot(lock, parent);
     }
 
+    void TransformTree::MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target) {
+        if (!entity.Has<TransformTree>(lock)) return;
+        auto &entityTree = entity.Get<TransformTree>(lock);
+
+        auto root = GetRoot(lock, entity);
+        if (!root.Has<TransformTree>(lock)) return;
+        auto &rootTree = root.Get<TransformTree>(lock);
+        rootTree.pose = target * entityTree.GetRelativeTransform(lock, root).GetInverse();
+    }
+
     Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose;
 
