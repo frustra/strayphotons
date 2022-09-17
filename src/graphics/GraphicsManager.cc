@@ -170,7 +170,7 @@ namespace sp {
 
         {
             ZoneScopedN("SyncWindowView");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
 
             auto flatview = flatviewEntity.Get(lock);
             if (flatview.Has<ecs::View>(lock)) {
@@ -239,7 +239,7 @@ namespace sp {
         {
             RenderPhase phase("Frame", timer);
 
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::XRView>,
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::XRView>,
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
 

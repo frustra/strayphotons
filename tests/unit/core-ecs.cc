@@ -10,7 +10,7 @@ namespace CoreEcsTests {
     void TryAddRemove() {
         Tecs::Entity player;
         {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
             player.Set<ecs::Name>(lock, "", "player");
@@ -25,7 +25,7 @@ namespace CoreEcsTests {
             AssertEqual(pos2, glm::vec3(1, 2, 3), "Transform did not read back correctly");
         }
         {
-            auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+            auto lock = ecs::StartTransaction<ecs::ReadAll>();
 
             auto pos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
             AssertEqual(pos, glm::vec3(1, 2, 3), "Transform did not read back correctly from new transaction");

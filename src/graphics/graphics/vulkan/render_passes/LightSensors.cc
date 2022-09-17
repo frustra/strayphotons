@@ -73,7 +73,7 @@ namespace sp::vulkan::renderer {
 
         AddBufferReadback(graph, "LightSensorValues", 0, {}, [data](BufferPtr buffer) {
             auto illuminanceValues = (glm::vec4 *)buffer->Mapped();
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::LightSensor>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::LightSensor>>();
             for (int i = 0; i < data->gpu.sensorCount; i++) {
                 auto entity = data->entities[i];
                 if (entity.Exists(lock)) {

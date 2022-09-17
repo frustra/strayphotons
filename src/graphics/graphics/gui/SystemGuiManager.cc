@@ -38,7 +38,7 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
 
             bool hasFocus = true;
             if (lock.Has<ecs::FocusLock>()) {

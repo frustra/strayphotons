@@ -13,7 +13,7 @@ namespace EcsTransformTests {
         Tecs::Entity root, a, b, c;
         {
             Timer t("Create a tree of transform parents");
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
             root = lock.NewEntity();
             ecs::EntityRef rootRef(ecs::Name("", "root"), root);
@@ -34,7 +34,7 @@ namespace EcsTransformTests {
         }
         {
             Timer t("Try reading transform positions");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::TransformTree>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::TransformTree>>();
 
             auto &transformRoot = root.Get<ecs::TransformTree>(lock);
             auto &transformA = a.Get<ecs::TransformTree>(lock);
@@ -63,7 +63,7 @@ namespace EcsTransformTests {
         }
         {
             Timer t("Try updating root transform");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::TransformTree>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree>>();
 
             auto &transformRoot = root.Get<ecs::TransformTree>(lock);
             auto &transformA = a.Get<ecs::TransformTree>(lock);
@@ -87,7 +87,7 @@ namespace EcsTransformTests {
         }
         {
             Timer t("Try setting and reading rotation + scale");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::TransformTree>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree>>();
 
             glm::quat rotation1 = glm::rotate(glm::identity<glm::quat>(), 5.f, glm::vec3(1, 0, 0));
             glm::quat rotation2 = glm::rotate(glm::identity<glm::quat>(), 8.f, glm::normalize(glm::vec3(0, 1, 1)));

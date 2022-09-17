@@ -55,7 +55,7 @@ namespace sp {
             trim(command);
 
             {
-                auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>,
+                auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>,
                     ecs::Write<ecs::Script, ecs::EventInput, ecs::EventBindings>>();
 
                 auto keyboard = keyboardEntity.Get(lock);

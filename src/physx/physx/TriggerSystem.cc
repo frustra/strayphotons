@@ -8,18 +8,18 @@
 
 namespace sp {
     TriggerSystem::TriggerSystem() {
-        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        auto lock = ecs::StartTransaction<ecs::AddRemove>();
         triggerGroupObserver = lock.Watch<ecs::ComponentEvent<ecs::TriggerGroup>>();
     }
 
     TriggerSystem::~TriggerSystem() {
-        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        auto lock = ecs::StartTransaction<ecs::AddRemove>();
         triggerGroupObserver.Stop(lock);
     }
 
     void TriggerSystem::Frame() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
             ecs::Write<ecs::TriggerArea, ecs::SignalOutput>,
             ecs::SendEventsLock>();
 

@@ -18,7 +18,7 @@ namespace sp {
 
         void DefineContents() {
             {
-                auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+                auto lock = ecs::StartTransaction<ecs::ReadAll>();
 
                 auto inspector = inspectorEntity.Get(lock);
                 if (!inspector.Has<ecs::EventInput>(lock)) return;
@@ -75,7 +75,7 @@ namespace sp {
         void ListEntitiesByTransformTree() {
             children.clear();
 
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
             auto entities = lock.EntitiesWith<ecs::TransformTree>();
 
             children.resize(entities.back().index + 1);

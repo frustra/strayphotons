@@ -47,7 +47,7 @@ namespace sp {
     }
 
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {
-        auto lock = ecs::World.StartTransaction<ecs::ReadAll,
+        auto lock = ecs::StartTransaction<ecs::ReadAll,
             ecs::SendEventsLock,
             ecs::Write<ecs::Gui, ecs::TransformTree, ecs::Physics>>();
 

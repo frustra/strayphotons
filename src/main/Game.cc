@@ -65,10 +65,10 @@ namespace sp {
             }
         }
 
-        Debugf("Bytes of memory used per entity: %u", ecs::World.GetBytesPerEntity());
+        Debugf("Bytes of memory used per entity: %u", ecs::World().GetBytesPerEntity());
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
             lock.Set<ecs::FocusLock>();
         }
 

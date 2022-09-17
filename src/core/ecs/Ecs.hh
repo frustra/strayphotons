@@ -118,14 +118,33 @@ namespace ecs {
 
     std::string ToString(Lock<Read<Name>> lock, Entity e);
 
-    extern ECS World;
+    ECS &World();
+    ECS &StagingWorld();
+
+    template<typename... Permissions>
+    inline auto StartTransaction() {
+        return World().StartTransaction<Permissions...>();
+    }
+
+    template<typename... Permissions>
+    inline auto StartStagingTransaction() {
+        return StagingWorld().StartTransaction<Permissions...>();
+    }
 
     static inline bool IsLive(const Entity &e) {
-        return Tecs::IdentifierFromGeneration(e.generation) == World.GetInstanceId();
+        return Tecs::IdentifierFromGeneration(e.generation) == World().GetInstanceId();
     }
 
     static inline bool IsLive(Lock<> lock) {
-        return lock.GetInstance().GetInstanceId() == World.GetInstanceId();
+        return lock.GetInstance().GetInstanceId() == World().GetInstanceId();
+    }
+
+    static inline bool IsStaging(const Entity &e) {
+        return Tecs::IdentifierFromGeneration(e.generation) == StagingWorld().GetInstanceId();
+    }
+
+    static inline bool IsStaging(Lock<> lock) {
+        return lock.GetInstance().GetInstanceId() == StagingWorld().GetInstanceId();
     }
 
     template<typename T>

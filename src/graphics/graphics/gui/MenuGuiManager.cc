@@ -24,8 +24,7 @@ namespace sp {
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
         : SystemGuiManager("menu", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
         {
-            auto lock =
-                ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
             auto gui = guiEntity.Get(lock);
             Assert(gui.Has<ecs::EventInput>(lock), "Expected menu gui to start with an EventInput");
@@ -49,7 +48,7 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
 
             auto gui = guiEntity.Get(lock);
             if (gui.Has<ecs::EventInput>(lock)) {
@@ -95,7 +94,7 @@ namespace sp {
         io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
 
         if (focusChanged) {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>,
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>,
                 ecs::Write<ecs::FocusLayer, ecs::FocusLock, ecs::EventInput>>();
 
             auto gui = guiEntity.Get(lock);

@@ -645,7 +645,7 @@ namespace sp::vulkan {
         ZoneScoped;
         if (!window) return;
 
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
         if (lock.Has<ecs::FocusLock>()) {
             auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
             if (layer == ecs::FocusLayer::GAME) {

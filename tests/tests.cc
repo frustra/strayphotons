@@ -23,9 +23,13 @@ int main(int argc, char **argv) {
             test();
             {
                 // Reset the ECS between tests
-                auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-                for (auto &ent : lock.Entities()) {
-                    ent.Destroy(lock);
+                auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
+                for (auto &ent : stagingLock.Entities()) {
+                    ent.Destroy(stagingLock);
+                }
+                for (auto &ent : liveLock.Entities()) {
+                    ent.Destroy(liveLock);
                 }
             }
         }
