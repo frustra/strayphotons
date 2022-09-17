@@ -19,6 +19,9 @@
 
 namespace sp {
     SceneManager &GetSceneManager() {
+        // Ensure the ECS is constructed first so it is destructed in the right order.
+        ecs::World();
+        ecs::StagingWorld();
         static SceneManager sceneManager;
         return sceneManager;
     }
