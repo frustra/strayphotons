@@ -27,7 +27,7 @@ namespace sp {
         "Character controller sprint speed (m/s)");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
-        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        auto lock = ecs::StartTransaction<ecs::AddRemove>();
         characterControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::CharacterController>>();
     }
 

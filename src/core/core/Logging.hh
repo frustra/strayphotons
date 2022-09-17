@@ -1,15 +1,17 @@
 #pragma once
 
-// #define SP_VERBOSE_LOGGING
-#include "Common.hh"
+#include "core/Common.hh"
 
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <magic_enum.hpp>
 #include <memory>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <type_traits>
 
+#define Tracef(...) ::sp::logging::Trace(__FILE__, __LINE__, __VA_ARGS__)
 #define Debugf(...) ::sp::logging::Debug(__FILE__, __LINE__, __VA_ARGS__)
 #define Logf(...) ::sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
 #define Warnf(...) ::sp::logging::Warn(__FILE__, __LINE__, __VA_ARGS__)
@@ -19,10 +21,12 @@
     if (!(condition)) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
 
 namespace sp::logging {
-    enum class Level { Error, Warn, Log, Debug };
+    enum class Level { Error, Warn, Log, Debug, Trace };
 
     // time in seconds
     float LogTime();
+    Level GetLogLevel();
+    void SetLogLevel(Level level);
 
     void GlobalLogOutput(Level lvl, const std::string &line);
 
@@ -56,40 +60,36 @@ namespace sp::logging {
 
     template<typename... T>
     inline static void writeFormatter(Level lvl, const std::string &fmt, T &&...t) {
-#ifdef SP_PACKAGE_RELEASE
-        if (lvl == logging::Level::Debug) return;
-#endif
         int size = std::snprintf(nullptr, 0, fmt.c_str(), std::forward<T>(t)...);
         std::unique_ptr<char[]> buf(new char[size + 1]);
         std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);
-        std::cerr << buf.get();
 
-        if (lvl != logging::Level::Debug) {
+        TracyMessage(buf.get(), size);
+        if (lvl > GetLogLevel()) return;
+        std::cerr << buf.get();
+        if (lvl < Level::Debug) {
             GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
         }
     }
 
-    template<typename T1, typename... Tn>
-    inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T1 t1, Tn &&...tn) {
-#ifdef SP_VERBOSE_LOGGING
-        writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(t1), convert(std::forward<Tn>(tn))..., basename(file), line);
-#else
-        writeFormatter(lvl, "%.3f " + fmt + "\n", LogTime(), convert(t1), convert(std::forward<Tn>(tn))...);
-#endif
-    }
-
-    inline static void writeLog(Level lvl, const char *file, int line, const std::string &str) {
-#ifdef SP_VERBOSE_LOGGING
-        writeFormatter(lvl, "%s  (%s:%d)\n", convert(str), basename(file), line);
-#else
-
-        writeFormatter(lvl, "%.3f %s\n", LogTime(), convert(str));
-#endif
+    template<typename... Tn>
+    inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, Tn &&...tn) {
+        writeFormatter(lvl, "%.3f " + fmt + "\n", LogTime(), convert(std::forward<Tn>(tn))...);
     }
 
     template<typename... T>
     static void ConsoleWrite(Level lvl, const std::string &fmt, T... t) {
         writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
+    }
+
+    template<typename... T>
+    static void Trace(const char *file, int line, const std::string &fmt, T... t) {
+        writeLog(Level::Trace, file, line, "[trace] " + fmt, t...);
+    }
+
+    template<typename... T>
+    static void Debug(const char *file, int line, const std::string &fmt, T... t) {
+        writeLog(Level::Debug, file, line, "[dbg] " + fmt, t...);
     }
 
     template<typename... T>
@@ -100,11 +100,6 @@ namespace sp::logging {
     template<typename... T>
     static void Warn(const char *file, int line, const std::string &fmt, T... t) {
         writeLog(Level::Warn, file, line, "[warn] " + fmt, t...);
-    }
-
-    template<typename... T>
-    static void Debug(const char *file, int line, const std::string &fmt, T... t) {
-        writeLog(Level::Debug, file, line, "[dbg] " + fmt, t...);
     }
 
     template<typename... T>
@@ -124,7 +119,9 @@ namespace sp {
         const char *message;
         LogOnExit(const char *message) : message(message) {}
         ~LogOnExit() {
-            Logf(message);
+            if (logging::Level::Debug > logging::GetLogLevel()) return;
+            std::cout << std::fixed << std::setprecision(3) << logging::LogTime() << " [log] " << message << std::endl
+                      << std::flush;
         }
     };
 } // namespace sp

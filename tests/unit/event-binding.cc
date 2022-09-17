@@ -16,7 +16,7 @@ namespace EventBindingTests {
         Tecs::Entity player, hand;
         {
             Timer t("Create a basic scene with EventBindings and EventInput components");
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
             ecs::EntityRef playerRef(ecs::Name("", "player"), player);
@@ -36,7 +36,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Try reading some bindings");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::EventBindings>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventBindings>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             auto targets = bindings.Lookup(TEST_SOURCE_BUTTON);
@@ -58,7 +58,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Send some test events");
-            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
             Assert(sentCount == 1, "Expected to successfully queue 1 event");
@@ -69,7 +69,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Read the test events");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
 
             ecs::Event event;
             auto &playerEvents = player.Get<ecs::EventInput>(lock);

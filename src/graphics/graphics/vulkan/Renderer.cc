@@ -49,7 +49,7 @@ namespace sp::vulkan {
             listImages = true;
         });
 
-        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        auto lock = ecs::StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
@@ -105,7 +105,7 @@ namespace sp::vulkan {
 
     void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name,
             ecs::TransformSnapshot,
             ecs::LaserLine,
             ecs::Light,

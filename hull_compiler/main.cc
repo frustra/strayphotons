@@ -4,6 +4,7 @@
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
 #include "cooking/ConvexHull.hh"
+#include "core/Logging.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cxxopts.hpp>
@@ -11,8 +12,6 @@
 #include <extensions/PxDefaultErrorCallback.h>
 #include <filesystem>
 #include <fstream>
-
-using namespace sp;
 
 int main(int argc, char **argv) {
     cxxopts::Options options("hull_compiler", "");
@@ -28,6 +27,8 @@ int main(int argc, char **argv) {
     }
 
     std::string modelName = optionsResult["model-name"].as<std::string>();
+
+    sp::logging::SetLogLevel(sp::logging::Level::Warn);
 
     auto modelPtr = sp::Assets().LoadGltf(modelName);
     auto model = modelPtr->Get();
@@ -57,13 +58,13 @@ int main(int argc, char **argv) {
         for (auto &[meshName, settings] : physicsInfo->GetHulls()) {
             auto settingsPtr = sp::Assets().LoadHullSettings(modelName, meshName);
 
-            auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
+            auto set = sp::hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
             if (set) continue;
 
             Logf("Updating physics collision cache: %s.%s", modelName, meshName);
 
-            set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
-            hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
+            set = sp::hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
+            sp::hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
 
             updated = true;
         }
@@ -73,13 +74,13 @@ int main(int argc, char **argv) {
         std::string meshName("convex" + std::to_string(i));
         auto settingsPtr = sp::Assets().LoadHullSettings(modelName, meshName);
 
-        auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
+        auto set = sp::hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
         if (set) continue;
 
         Logf("Updating physics collision cache: %s.%s", modelName, meshName);
 
-        set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
-        hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
+        set = sp::hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
+        sp::hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
 
         updated = true;
     }

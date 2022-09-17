@@ -8,7 +8,7 @@
 
 namespace sp {
     DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::ALWAYS) {
-        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);
         Assert(gui.Has<ecs::EventInput>(lock), "Expected debug gui to start with an EventInput");
@@ -56,7 +56,7 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput, ecs::Gui>>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput, ecs::Gui>>();
 
             auto thisEntity = guiEntity.Get(lock);
             if (thisEntity.Has<ecs::EventInput>(lock)) {
@@ -103,7 +103,7 @@ namespace sp {
             }
         }
         if (focusChanged) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock, ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock, ecs::EventInput>>();
             auto gui = guiEntity.Get(lock);
 
             auto &focusLock = lock.Get<ecs::FocusLock>();

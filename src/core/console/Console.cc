@@ -14,6 +14,7 @@
 #include "core/Tracing.hh"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <iostream>
 #include <mutex>
@@ -21,14 +22,13 @@
 
 namespace sp {
     ConsoleManager &GetConsoleManager() {
-        static ConsoleManager GConsoleManager;
-        static bool functionsAdded = false;
-        if (!functionsAdded) {
-            functionsAdded = true;
-            GConsoleManager.RegisterCoreCommands();
-            GConsoleManager.RegisterTracyCommands();
+        static ConsoleManager consoleManager;
+        static std::atomic_bool functionsAdded = false;
+        if (!functionsAdded.exchange(true)) {
+            consoleManager.RegisterCoreCommands();
+            consoleManager.RegisterTracyCommands();
         }
-        return GConsoleManager;
+        return consoleManager;
     }
 
 #ifdef USE_LINENOISE_CLI

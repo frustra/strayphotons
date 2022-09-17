@@ -81,6 +81,14 @@ function(update_physics_cache)
             endif()
         endif()
     endif()
+
+    set(model_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}/${PARAM_MODEL}.glb")
+    if(NOT EXISTS "${model_path}")
+        set(model_path "${PROJECT_SOURCE_DIR}/assets/models/${PARAM_MODEL}.glb")
+        if(NOT EXISTS "${model_path}")
+            set(model_path "")
+        endif()
+    endif()
     
     add_custom_command(
         COMMAND
@@ -91,6 +99,7 @@ function(update_physics_cache)
             "${PROJECT_SOURCE_DIR}/assets/cache/collision/${PARAM_MODEL}"
         DEPENDS
             hull_compiler
+            ${model_path}
             ${physics_path}
     )
 

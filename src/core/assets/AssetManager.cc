@@ -37,8 +37,8 @@ extern "C" {
 
 namespace sp {
     AssetManager &Assets() {
-        static AssetManager GAssets;
-        return GAssets;
+        static AssetManager assets;
+        return assets;
     }
 
     const char *ASSETS_DIR = "../assets/";

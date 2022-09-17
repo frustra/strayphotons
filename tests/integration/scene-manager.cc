@@ -8,9 +8,7 @@
 namespace SceneManagerTests {
     using namespace testing;
 
-    ecs::ECS liveWorld;
-    ecs::ECS stagingWorld;
-    sp::SceneManager Scenes(liveWorld, stagingWorld, true);
+    sp::SceneManager Scenes(true);
 
     void AssertEntityScene(ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> stagingLock,
         ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> liveLock,
@@ -72,8 +70,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"system"});
             }
         }
@@ -82,8 +80,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"player", "system"});
             }
         }
@@ -91,8 +89,8 @@ namespace SceneManagerTests {
             Timer t("Unload player scene (primary player entity)");
             std::shared_ptr<sp::Scene> playerScene;
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
-                auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
                 auto player = ecs::EntityWith<ecs::Name>(liveLock, ecs::Name("player", "player"));
                 Assert(player.Has<ecs::Name, ecs::SceneInfo>(liveLock), "Expected player entity to be valid");
@@ -107,8 +105,8 @@ namespace SceneManagerTests {
             }
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"system"});
             }
         }
@@ -117,8 +115,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"player", "system"});
             }
         }
@@ -126,8 +124,8 @@ namespace SceneManagerTests {
             Timer t("Reset ECS");
             Scenes.QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
 
-            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
-            auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+            auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+            auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
             for (auto &e : stagingLock.Entities()) {
                 e.Destroy(stagingLock);
@@ -141,8 +139,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"player"});
             }
         }
@@ -151,8 +149,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"player", "system"});
             }
         }
@@ -161,8 +159,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"player"});
             }
         }
@@ -171,8 +169,8 @@ namespace SceneManagerTests {
             Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 AssertEntityScene(stagingLock, liveLock, "player", "player", {"player", "system"});
             }
         }

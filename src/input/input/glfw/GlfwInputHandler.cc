@@ -54,7 +54,7 @@ namespace sp {
         ZoneScoped;
         {
             auto lock =
-                ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock>();
+                ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock>();
             frameLock = &lock;
             glfwPollEvents();
             frameLock = nullptr;

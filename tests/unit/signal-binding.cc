@@ -18,7 +18,7 @@ namespace SignalBindingTests {
         Tecs::Entity player, hand, unknown;
         {
             Timer t("Create a basic scene with SignalBindings and SignalOutput components");
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
             ecs::EntityRef playerRef(ecs::Name("", "player"), player);
@@ -43,7 +43,7 @@ namespace SignalBindingTests {
         }
         {
             Timer t("Try looking up some bindings");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::SignalBindings, ecs::SignalOutput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::SignalBindings, ecs::SignalOutput>>();
 
             auto &playerBindings = player.Get<ecs::SignalBindings>(lock);
             auto bindingList = playerBindings.Lookup(TEST_SIGNAL_ACTION1);
@@ -90,7 +90,7 @@ namespace SignalBindingTests {
         }
         {
             Timer t("Try reading some signals");
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION1);
             AssertEqual(val, 2.0, "Expected signal to match key source");
@@ -108,7 +108,7 @@ namespace SignalBindingTests {
         }
         {
             Timer t("Add the missing unknown entity");
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
             unknown = lock.NewEntity();
             ecs::EntityRef unknownRef(ecs::Name("", "unknown"), unknown);

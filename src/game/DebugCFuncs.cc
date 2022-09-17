@@ -12,7 +12,7 @@
 
 namespace sp {
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
-        auto lock = ecs::World.StartTransaction<
+        auto lock = ecs::StartTransaction<
             ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();
         auto player = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "player"));
         auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
@@ -67,7 +67,7 @@ namespace sp {
     });
 
     CFunc<std::string> CFuncJsonDump("jsondump", "Print out a json listing of an entity", [](std::string entityName) {
-        auto lock = ecs::World.StartTransaction<ecs::ReadAll>();
+        auto lock = ecs::StartTransaction<ecs::ReadAll>();
         ecs::Entity entity;
         if (entityName.empty()) {
             auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
@@ -113,7 +113,7 @@ namespace sp {
     });
 
     CFunc<void> CFuncPrintEvents("printevents", "Print out the current state of event queues", []() {
-        auto lock = ecs::World.StartTransaction<
+        auto lock = ecs::StartTransaction<
             ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>>();
 
         auto &focusLock = lock.Get<ecs::FocusLock>();
@@ -176,7 +176,7 @@ namespace sp {
     });
 
     CFunc<void> CFuncPrintSignals("printsignals", "Print out the values and bindings of signals", []() {
-        auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
+        auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
         Logf("Signal outputs:");
         for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
             auto &output = ent.Get<ecs::SignalOutput>(lock);
@@ -219,7 +219,7 @@ namespace sp {
     CFunc<std::string> CFuncPrintSignal("printsignal",
         "Print out the value and bindings of a specific signal",
         [](std::string signalStr) {
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
             auto [originName, signalName] = ecs::ParseSignalString(signalStr);
             if (!originName) {

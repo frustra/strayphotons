@@ -16,7 +16,7 @@ namespace FocusLockTests {
         Tecs::Entity player, keyboard, mouse;
         {
             Timer t("Set up player, keyboard, and mouse with event and signal bindings");
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
             lock.Set<ecs::FocusLock>(ecs::FocusLayer::GAME);
 
@@ -43,7 +43,7 @@ namespace FocusLockTests {
         }
         {
             Timer t("Try sending events and reading signals with GAME focus");
-            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
             Assert(sentCount == 1, "Expected to successfully queue 1 event");
@@ -64,14 +64,14 @@ namespace FocusLockTests {
         }
         {
             Timer t("Change focus to MENU");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             auto &focus = lock.Get<ecs::FocusLock>();
             Assert(focus.AcquireFocus(ecs::FocusLayer::MENU), "Expected to be able to acquire menu focus");
         }
         {
             Timer t("Try sending events and reading signals with MENU focus");
-            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
             Assert(sentCount == 0, "Expected to not to queue any events");

@@ -194,7 +194,7 @@ namespace sp {
 
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock,
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
                 ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput>,
                 ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController>>();
 
@@ -230,7 +230,7 @@ namespace sp {
 
         { // Sync ECS state from physx
             ZoneScopedN("Sync to ECS");
-            auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock,
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
                 ecs::Read<ecs::LaserEmitter,
                     ecs::OpticalElement,
                     ecs::EventBindings,
@@ -410,7 +410,7 @@ namespace sp {
         // scene->addActor(*groundPlane);
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
             physicsObserver = lock.Watch<ecs::ComponentEvent<ecs::Physics>>();
         }
     }

@@ -22,7 +22,7 @@ namespace sp {
         resonance.reset(vraudio::CreateResonanceAudioApi(2, framesPerBuffer, sampleRate));
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
             soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sounds>>();
         }
 
@@ -123,8 +123,7 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock =
-            ecs::World.StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
 
         auto head = headEntity.Get(lock);
         if (!head) head = headEntityFallback.Get(lock);

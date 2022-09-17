@@ -31,7 +31,7 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::EventInput, ecs::TransformSnapshot>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::TransformSnapshot>>();
 
             auto gui = guiEntity.Get(lock);
             if (!gui.Has<ecs::TransformSnapshot>(lock)) return;

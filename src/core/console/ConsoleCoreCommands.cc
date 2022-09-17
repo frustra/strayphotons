@@ -13,7 +13,7 @@ void mutateEntity(const string &entityStr, Callback callback) {
         Logf("Could not parse entity %s", entityStr);
         return;
     }
-    auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, LockWrite>();
+    auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, LockWrite>();
     auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
     if (!entity) {
         Logf("Entity %s not found", entityName.String());
@@ -78,7 +78,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         });
 
     funcs.Register("printfocus", "Print the current focus lock state", []() {
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
 
         if (lock.Has<ecs::FocusLock>()) {
             auto &focusLock = lock.Get<ecs::FocusLock>();
@@ -92,7 +92,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
 
     funcs.Register<ecs::FocusLayer>("acquirefocus", "Acquire focus for the specified layer", [](ecs::FocusLayer layer) {
         if (layer == ecs::FocusLayer::NEVER || layer == ecs::FocusLayer::ALWAYS) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             if (lock.Has<ecs::FocusLock>()) {
                 if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
@@ -108,7 +108,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
 
     funcs.Register<ecs::FocusLayer>("releasefocus", "Release focus for the specified layer", [](ecs::FocusLayer layer) {
         if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             if (lock.Has<ecs::FocusLock>()) {
                 lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
@@ -147,7 +147,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         [](string signalStr, double value) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
             auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
             if (!entity) {
                 Logf("Signal entity %s not found", entityName.String());
@@ -167,7 +167,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         [](string signalStr, string args) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
             auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
             if (!entity) {
                 Logf("Signal entity %s not found", entityName.String());
@@ -194,7 +194,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
     funcs.Register<string>("clearsignal", "Clear a signal value (clearsignal <entity>/<signal>)", [](string signalStr) {
         auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
         auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
         if (entity && entity.Has<ecs::SignalOutput>(lock)) {
             auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
@@ -216,7 +216,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 }
             }
 
-            auto lock = ecs::World.StartTransaction<ecs::SendEventsLock>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
             auto sent = ecs::EventBindings::SendEvent(lock, entityName, eventName, event);
             if (sent == 0) {
                 Warnf("No event target found: %s%s", entityName.String(), eventName);
@@ -241,9 +241,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         std::thread([timeMs] {
             tracy::SetThreadName("TecsTrace");
             ZoneScopedN("Tecs Trace");
-            ecs::World.StartTrace();
+            ecs::World().StartTrace();
             std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
-            auto trace = ecs::World.StopTrace();
+            auto trace = ecs::World().StopTrace();
 
             for (auto &event : trace.transactionEvents) {
                 std::stringstream ss;

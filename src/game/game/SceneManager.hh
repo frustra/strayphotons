@@ -39,8 +39,10 @@ namespace sp {
     };
 
     class SceneManager : public RegisteredThread {
+        LogOnExit logOnExit = "SceneManager shut down ================================================";
+
     public:
-        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool skipPreload = false);
+        SceneManager(bool skipPreload = false);
         ~SceneManager();
 
         using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
@@ -95,8 +97,6 @@ namespace sp {
                 : action(action), editCallback(editCallback) {}
         };
 
-        ecs::ECS &liveWorld;
-        ecs::ECS &stagingWorld;
         ecs::Entity player;
 
         LockFreeMutex actionMutex, preloadMutex;

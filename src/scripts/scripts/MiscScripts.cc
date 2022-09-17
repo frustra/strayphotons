@@ -72,7 +72,7 @@ namespace sp::scripts {
                         std::thread([ent, transform, modelName, scope = state.scope]() {
                             auto model = sp::Assets().LoadGltf(modelName);
 
-                            auto lock = World.StartTransaction<AddRemove>();
+                            auto lock = ecs::StartTransaction<AddRemove>();
                             if (ent.Has<SceneInfo>(lock)) {
                                 auto scene = scope.scene.lock();
                                 Assert(scene, "Model spawner script must have valid scene");

@@ -15,7 +15,7 @@ namespace sp {
 
     void AnimationSystem::Frame() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>>();
+        auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation, ecs::TransformTree>(lock)) continue;
 

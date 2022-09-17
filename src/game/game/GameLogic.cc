@@ -21,7 +21,7 @@ namespace sp {
 
     void GameLogic::Frame() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::WriteAll>();
+        auto lock = ecs::StartTransaction<ecs::WriteAll>();
         for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
             auto &script = entity.Get<ecs::Script>(lock);
             script.OnTick(lock, entity, interval);

@@ -29,6 +29,8 @@ namespace sp {
     };
 
     class AssetManager : public RegisteredThread {
+        LogOnExit logOnExit = "Assets shut down ======================================================";
+
     public:
         AssetManager();
 
