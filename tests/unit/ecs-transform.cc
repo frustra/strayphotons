@@ -91,7 +91,7 @@ namespace EcsTransformTests {
         }
         {
             Timer t("Try moving entity via transform tree root");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::TransformTree>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree>>();
 
             auto &transformRoot = root.Get<ecs::TransformTree>(lock);
             auto &transformA = a.Get<ecs::TransformTree>(lock);
