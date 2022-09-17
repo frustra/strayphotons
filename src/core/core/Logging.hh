@@ -124,7 +124,8 @@ namespace sp {
         const char *message;
         LogOnExit(const char *message) : message(message) {}
         ~LogOnExit() {
-            Logf(message);
+            // Logf(message);
+            std::cout << message << std::endl << std::flush;
         }
     };
 } // namespace sp

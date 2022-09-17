@@ -34,6 +34,8 @@ namespace sp {
     };
 
     class ConsoleManager : public RegisteredThread {
+        LogOnExit logOnExit = "Console shut down =====================================================";
+
     public:
         ConsoleManager();
         void AddCVar(CVarBase *cvar);

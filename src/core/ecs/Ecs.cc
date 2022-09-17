@@ -1,13 +1,17 @@
 #include "Ecs.hh"
 
-#include "EcsImpl.hh"
+#include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <typeindex>
 
 namespace ecs {
     ECS &World() {
-        static ECS world;
-        return world;
+        static struct {
+            sp::LogOnExit logOnExit = "ECS shut down =========================================================";
+            ECS instance;
+        } world;
+        return world.instance;
     }
 
     ECS &StagingWorld() {

@@ -39,6 +39,8 @@ namespace sp {
     };
 
     class SceneManager : public RegisteredThread {
+        LogOnExit logOnExit = "SceneManager shut down ================================================";
+
     public:
         SceneManager(bool skipPreload = false);
         ~SceneManager();
