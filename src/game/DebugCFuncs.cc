@@ -2,6 +2,7 @@
 #include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/GameEntities.hh"
 #include "game/Scene.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -12,14 +13,29 @@
 
 namespace sp {
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
-        auto lock = ecs::StartTransaction<
-            ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();
-        auto player = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "player"));
-        auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
-        if (flatview.Has<ecs::TransformSnapshot>(lock)) {
-            auto &transform = flatview.Get<ecs::TransformSnapshot>(lock);
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name,
+            ecs::TransformTree,
+            ecs::TransformSnapshot,
+            ecs::CharacterController,
+            ecs::PhysicsQuery>>();
+        auto player = entities::Player.Get(lock);
+        auto head = entities::Head.Get(lock);
+        if (head.Has<ecs::TransformTree>(lock)) {
+            auto &transform = head.Get<ecs::TransformTree>(lock);
+            auto position = transform.GetGlobalTransform(lock).GetPosition();
+            Logf("Head position: [%f, %f, %f]", position.x, position.y, position.z);
+        }
+        if (head.Has<ecs::TransformSnapshot>(lock)) {
+            auto &transform = head.Get<ecs::TransformSnapshot>(lock);
             auto position = transform.GetPosition();
-            Logf("Flatview position: [%f, %f, %f]", position.x, position.y, position.z);
+            Logf("Head position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
+        }
+        if (player.Has<ecs::TransformTree>(lock)) {
+            auto &transform = player.Get<ecs::TransformTree>(lock);
+            auto position = transform.GetGlobalTransform(lock).GetPosition();
+            Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+        } else {
+            Logf("Scene has no valid player");
         }
         if (player.Has<ecs::TransformSnapshot>(lock)) {
             auto &transform = player.Get<ecs::TransformSnapshot>(lock);
@@ -38,18 +54,19 @@ namespace sp {
                     Logf("Player on ground: %s", userData->onGround ? "true" : "false");
                     if (userData->standingOn) Logf("Standing on: %s", ecs::ToString(lock, userData->standingOn));
                 } else {
-                    Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+                    Logf("Player position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
                 }
             } else {
-                Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+                Logf("Player position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
             }
 #else
-            Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+            Logf("Player position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
 #endif
         } else {
-            Logf("Scene has no valid player");
+            Logf("Scene has no valid player snapshot");
         }
 
+        auto flatview = entities::Flatview.Get(lock);
         if (flatview.Has<ecs::PhysicsQuery>(lock)) {
             auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
             for (auto &subQuery : query.queries) {
@@ -70,7 +87,7 @@ namespace sp {
         auto lock = ecs::StartTransaction<ecs::ReadAll>();
         ecs::Entity entity;
         if (entityName.empty()) {
-            auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
+            auto flatview = entities::Flatview.Get(lock);
             if (flatview.Has<ecs::PhysicsQuery>(lock)) {
                 auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
                 for (auto &subQuery : query.queries) {

@@ -15,8 +15,10 @@ namespace sp::scene {
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if constexpr (std::is_same<T, ecs::Name>() || std::is_same<T, ecs::SceneInfo>()) {
+        if constexpr (std::is_same<T, ecs::Name>()) {
             if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
+        } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
+            // Ignore, this is handled by the scene
         } else if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
             // Ignore, this is handled by TransformTree
         } else if constexpr (!Tecs::is_global_component<T>()) {
@@ -48,6 +50,8 @@ namespace sp::scene {
                 !hasComponents[ecs::ECS::GetComponentIndex<ecs::TransformTree>()]) {
                 ent.Unset<ecs::TransformSnapshot>(lock);
             }
+        } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
+            // Ignore, this should always be set
         } else if constexpr (!Tecs::is_global_component<T>()) {
             if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) {
                 ent.Unset<T>(lock);

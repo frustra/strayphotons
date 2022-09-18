@@ -2,12 +2,14 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "assets/JsonHelpers.hh"
 #include "console/Console.hh"
 #include "console/ConsoleBindingManager.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "game/GameEntities.hh"
 #include "game/Scene.hh"
 
 #include <algorithm>
@@ -286,7 +288,7 @@ namespace sp {
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
-                        auto stagingPlayer = scene->GetStagingEntity(ecs::Name("player", "player"));
+                        auto stagingPlayer = scene->GetStagingEntity(entities::Player.Name());
                         if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
                             auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
                             player = sceneInfo.liveId;
@@ -369,7 +371,7 @@ namespace sp {
             scene->RemoveScene(stagingLock, liveLock);
             scene.reset();
         });
-        ecs::GEntityRefs.Tick(this->interval);
+        ecs::GetEntityRefs().Tick(this->interval);
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
@@ -475,16 +477,55 @@ namespace sp {
             Errorf("Failed to parse scene (%s): %s", sceneName, err);
             return nullptr;
         }
+        if (!root.is<picojson::object>()) {
+            Errorf("Failed to parse scene (%s): %s", sceneName, root.to_str());
+            return nullptr;
+        }
+        auto &sceneObj = root.get<picojson::object>();
 
         auto scene = make_shared<Scene>(sceneName, sceneType, asset);
         ecs::EntityScope scope;
         scope.scene = scene;
         scope.prefix.scene = scene->name;
 
-        {
+        if (sceneObj.count("priority")) {
+            json::Load(scope, priority, sceneObj["priority"]);
+        }
+
+        if (sceneObj.count("properties")) {
+            scene->properties = make_shared<ecs::SceneProperties>();
+            auto &properties = *scene->properties;
+            auto &propertiesValue = sceneObj["properties"];
+            if (propertiesValue.is<picojson::object>()) {
+                for (auto &property : propertiesValue.get<picojson::object>()) {
+                    if (property.first == "gravity") {
+                        json::Load(scope, properties.fixedGravity, property.second);
+                    } else if (property.first == "gravity_transform") {
+                        json::Load(scope, properties.gravityTransform, property.second);
+                    } else if (property.first == "gravity_func") {
+                        if (property.second.is<std::string>()) {
+                            auto gravityFunc = property.second.get<std::string>();
+                            if (gravityFunc == "station_spin") {
+                                properties.gravityFunction = [](glm::vec3 position) {
+                                    position.z = 0;
+                                    // Derived from centripetal acceleration formula, rotating around the origin
+                                    const float spinRpm = 2.42f; // Calculated for ~1G at 153m radius
+                                    float spinTerm = M_PI * spinRpm / 30;
+                                    return spinTerm * spinTerm * position;
+                                };
+                            }
+                        }
+                    }
+                }
+            } else {
+                Errorf("Scene contains invalid properties (%s): %s", sceneName, propertiesValue.to_str());
+            }
+        }
+
+        if (sceneObj.count("entities")) {
             auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
 
-            auto &entityList = root.get<picojson::object>()["entities"];
+            auto &entityList = sceneObj["entities"];
             std::vector<ecs::Entity> entities;
             for (auto &value : entityList.get<picojson::array>()) {
                 auto ent = value.get<picojson::object>();
@@ -493,7 +534,6 @@ namespace sp {
                 auto relativeName = hasName ? ent["name"].get<string>() : "";
                 ecs::Entity entity = scene->NewRootEntity(lock, scene, priority, relativeName);
 
-                entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
                 for (auto comp : ent) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
@@ -545,6 +585,9 @@ namespace sp {
         picojson::value root;
         string err = picojson::parse(root, bindingConfig->String());
         if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
+        if (!root.is<picojson::object>()) {
+            Abortf("Failed to parse input binding json: %s", root.to_str());
+        }
 
         {
             auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
@@ -578,7 +621,7 @@ namespace sp {
     void SceneManager::TranslateSceneByConnection(const std::shared_ptr<Scene> &scene) {
         auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Animation>,
             ecs::Write<ecs::TransformTree, ecs::Animation>>();
-        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformSnapshot>>();
+        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneConnection, ecs::TransformSnapshot>>();
 
         ecs::Entity liveConnection, stagingConnection;
         for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
@@ -587,10 +630,13 @@ namespace sp {
             if (sceneInfo.scene.lock() != scene) continue;
 
             auto &name = e.Get<const ecs::Name>(stagingLock);
-            liveConnection = ecs::EntityWith<ecs::Name>(liveLock, name);
+            liveConnection = ecs::EntityRef(name).Get(liveLock);
             if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
-                stagingConnection = e;
-                break;
+                auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
+                if (sp::contains(connection.scenes, scene->name)) {
+                    stagingConnection = e;
+                    break;
+                }
             }
         }
         if (stagingConnection.Has<ecs::TransformTree>(stagingLock) &&
@@ -600,6 +646,13 @@ namespace sp {
                 stagingConnection.Get<const ecs::TransformTree>(stagingLock).GetGlobalTransform(stagingLock);
             glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
             glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
+            ecs::Transform deltaTransform(deltaPos, deltaRotation);
+
+            if (scene->properties) {
+                auto &properties = *scene->properties;
+                properties.fixedGravity = deltaRotation * properties.fixedGravity;
+                properties.gravityTransform = deltaTransform * properties.gravityTransform;
+            }
 
             for (auto &e : stagingLock.EntitiesWith<ecs::TransformTree>()) {
                 if (!e.Has<ecs::TransformTree, ecs::SceneInfo>(stagingLock)) continue;
@@ -608,8 +661,9 @@ namespace sp {
 
                 auto &transform = e.Get<ecs::TransformTree>(stagingLock);
                 if (!transform.parent) {
-                    transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
-                    transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
+                    transform.pose = deltaTransform * transform.pose;
+                    // transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
+                    // transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
 
                     if (e.Has<ecs::Animation>(stagingLock)) {
                         auto &animation = e.Get<ecs::Animation>(stagingLock);
@@ -649,25 +703,18 @@ namespace sp {
     void SceneManager::RespawnPlayer(
         ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
         ecs::Entity player) {
-        auto spawn = ecs::EntityWith<ecs::Name>(lock, ecs::Name("global", "spawn"));
-        if (spawn.Has<ecs::TransformSnapshot>(lock)) {
-            auto spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
-            spawnTransform.SetScale(glm::vec3(1));
-            if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
-                auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock);
-                auto &playerTree = player.Get<ecs::TransformTree>(lock);
-                Assert(!playerTree.parent, "Player entity should not have a TransformTree parent");
-                playerTransform = spawnTransform;
-                playerTree.pose = spawnTransform;
-            }
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, ecs::Name("vr", "origin"));
-            if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
-                auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(lock);
-                auto &vrTree = vrOrigin.Get<ecs::TransformTree>(lock);
-                Assert(!vrTree.parent, "VR Origin entity should not have a TransformTree parent");
-                vrTransform = spawnTransform;
-                vrTree.pose = spawnTransform;
-            }
+        auto spawn = entities::Spawn.Get(lock);
+        if (!spawn.Has<ecs::TransformSnapshot>(lock)) return;
+
+        auto spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
+        spawnTransform.SetScale(glm::vec3(1));
+
+        if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
+            auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock);
+            auto &playerTree = player.Get<ecs::TransformTree>(lock);
+            Assert(!playerTree.parent, "Player entity should not have a TransformTree parent");
+            playerTransform = spawnTransform;
+            playerTree.pose = spawnTransform;
         }
     }
 

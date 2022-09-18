@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/RegisteredThread.hh"
+#include "ecs/EntityRef.hh"
 
 namespace sp {
 

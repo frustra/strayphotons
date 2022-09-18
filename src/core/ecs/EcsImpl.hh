@@ -19,6 +19,7 @@
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/SceneConnection.hh"
 #include "ecs/components/SceneInfo.hh"
+#include "ecs/components/SceneProperties.hh"
 #include "ecs/components/Screen.hh"
 #include "ecs/components/Script.hh"
 #include "ecs/components/Signals.hh"
@@ -28,13 +29,3 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelArea.hh"
 #include "ecs/components/XRView.hh"
-
-namespace ecs {
-    template<typename T>
-    Entity EntityWith(Lock<Read<T>> lock, const T &value) {
-        for (auto e : lock.template EntitiesWith<T>()) {
-            if (e.template Has<T>(lock) && e.template Get<const T>(lock) == value) return e;
-        }
-        return Entity();
-    }
-} // namespace ecs

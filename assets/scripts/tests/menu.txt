@@ -1,5 +1,5 @@
 loadscene menu
-rotate player:flatview -90 0 1 0
+rotate player:player -90 0 1 0
 translate player:player -1 0 0
 # Step logic and physics so the voxel_controller moves the grid into place
 steplogic

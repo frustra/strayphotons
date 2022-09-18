@@ -4,6 +4,7 @@
 
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
+        #include "ecs/Components.hh"
         #include "ecs/EntityRef.hh"
     #endif
 
@@ -32,6 +33,7 @@ namespace ecs {
         const glm::vec3 &GetPosition() const;
         glm::quat GetRotation() const;
         glm::vec3 GetForward() const;
+        glm::vec3 GetUp() const;
         glm::vec3 GetScale() const;
         Transform GetInverse() const;
 
@@ -75,6 +77,9 @@ namespace ecs {
         TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
         TransformTree(const Transform &pose) : pose(pose) {}
         TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
+
+        static void MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target);
+        static Entity GetRoot(Lock<Read<TransformTree>> lock, Entity entity);
 
         // Returns a flattened Transform that includes all parent transforms.
         Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;

@@ -4,9 +4,7 @@
 			"name": "player",
 			"transform": {},
 			"character_controller": {
-				"target": "vr:hmd",
-				"fallback_target": "flatview",
-				"movement_proxy": "vr:origin"
+				"head": "player:head"
 			},
 			"trigger_group": "player",
 			"event_input": [
@@ -27,7 +25,10 @@
 			"script": [
 				{
 					"onTick": "relative_movement",
-					"parameters": { "relative_to": "player:flatview" }
+					"parameters": {
+						"relative_to": "player:flatview",
+						"up_reference": "player:player"
+					}
 				},
 				{ "onTick": "camera_view" },
 				{

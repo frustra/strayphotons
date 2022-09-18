@@ -3,6 +3,7 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -23,12 +24,14 @@ namespace sp {
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER, playerEntity, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
+                    entities::Player,
+                    INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                    playerEntity,
+                    entities::Player,
                     INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, playerEntity, INPUT_SIGNAL_MENU_CURSOR_X);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, playerEntity, INPUT_SIGNAL_MENU_CURSOR_Y);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, entities::Player, INPUT_SIGNAL_MENU_CURSOR_X);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, entities::Player, INPUT_SIGNAL_MENU_CURSOR_Y);
             });
     }
 

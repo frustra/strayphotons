@@ -150,6 +150,11 @@ namespace ecs {
         return glm::normalize(scaledRotation * glm::vec3(0, 0, -1));
     }
 
+    glm::vec3 Transform::GetUp() const {
+        glm::mat3 scaledRotation = glm::mat3(matrix[0], matrix[1], matrix[2]);
+        return glm::normalize(scaledRotation * glm::vec3(0, 1, 0));
+    }
+
     void Transform::SetScale(const glm::vec3 &xyz) {
         matrix[0] = glm::normalize(matrix[0]) * xyz.x;
         matrix[1] = glm::normalize(matrix[1]) * xyz.y;
@@ -178,6 +183,28 @@ namespace ecs {
 
     bool Transform::operator!=(const Transform &other) const {
         return matrix != other.matrix;
+    }
+
+    Entity TransformTree::GetRoot(Lock<Read<TransformTree>> lock, Entity entity) {
+        if (!entity.Has<TransformTree>(lock)) return {};
+
+        auto &tree = entity.Get<TransformTree>(lock);
+        auto parent = tree.parent.Get(lock);
+        if (!parent.Has<TransformTree>(lock)) {
+            return entity;
+        }
+
+        return GetRoot(lock, parent);
+    }
+
+    void TransformTree::MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target) {
+        if (!entity.Has<TransformTree>(lock)) return;
+        auto &entityTree = entity.Get<TransformTree>(lock);
+
+        auto root = GetRoot(lock, entity);
+        if (!root.Has<TransformTree>(lock)) return;
+        auto &rootTree = root.Get<TransformTree>(lock);
+        rootTree.pose = target * entityTree.GetRelativeTransform(lock, root).GetInverse();
     }
 
     Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {

@@ -18,18 +18,12 @@ namespace ecs {
     const float PLAYER_CAPSULE_HEIGHT = PLAYER_HEIGHT - 2 * PLAYER_RADIUS;
     const float PLAYER_STEP_HEIGHT = 0.2f;
 
-    const float PLAYER_GRAVITY = 9.81f;
-    const float PLAYER_JUMP_VELOCITY = 4.0f;
-    const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
-
     struct CharacterController {
-        EntityRef target, fallbackTarget, movementProxy;
+        EntityRef head;
 
         physx::PxCapsuleController *pxController = nullptr;
     };
 
     static Component<CharacterController> ComponenCharacterController("character_controller",
-        ComponentField::New("target", &CharacterController::target),
-        ComponentField::New("fallback_target", &CharacterController::fallbackTarget),
-        ComponentField::New("movement_proxy", &CharacterController::movementProxy));
+        ComponentField::New("head", &CharacterController::head));
 } // namespace ecs

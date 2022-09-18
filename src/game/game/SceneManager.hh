@@ -113,6 +113,7 @@ namespace sp {
         std::shared_ptr<Scene> playerScene, bindingsScene;
         CFuncCollection funcs;
 
+        friend class SceneInfo;
         friend class Scene;
     };
 

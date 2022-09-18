@@ -3,6 +3,7 @@
 #include "console/Console.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
 
 namespace sp {
@@ -42,10 +43,6 @@ namespace sp {
             });
     }
 
-    EditorSystem::~EditorSystem() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "editor");
-    }
-
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {
         auto lock = ecs::StartTransaction<ecs::ReadAll,
             ecs::SendEventsLock,
@@ -57,7 +54,7 @@ namespace sp {
 
         ecs::Entity target;
         if (targetName.empty()) {
-            auto flatview = ecs::EntityWith<ecs::Name>(lock, ecs::Name("player", "flatview"));
+            auto flatview = entities::Flatview.Get(lock);
             if (flatview.Has<ecs::PhysicsQuery>(lock)) {
                 auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
                 for (auto &subQuery : query.queries) {
@@ -93,7 +90,7 @@ namespace sp {
 
             auto &transform = inspector.Get<ecs::TransformTree>(lock);
 
-            auto player = playerEntity.Get(lock);
+            auto player = entities::Player.Get(lock);
             if (!player.Has<ecs::TransformSnapshot>(lock)) return;
 
             if (target.Has<ecs::TransformSnapshot>(lock)) {
@@ -107,7 +104,7 @@ namespace sp {
                 transform.parent = {};
             } else {
                 transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
-                transform.parent = playerEntity;
+                transform.parent = entities::Player;
             }
         }
     }

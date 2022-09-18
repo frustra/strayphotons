@@ -39,5 +39,5 @@ namespace ecs {
         Ref(const Entity &ent);
     };
 
-    extern EntityReferenceManager GEntityRefs;
+    EntityReferenceManager &GetEntityRefs();
 } // namespace ecs

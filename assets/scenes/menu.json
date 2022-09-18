@@ -417,7 +417,7 @@
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [0, 0.05, 0]
+				"translate": [0, 0, 0]
 			}
 		},
 		{
