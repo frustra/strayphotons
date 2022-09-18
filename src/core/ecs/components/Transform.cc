@@ -166,10 +166,7 @@ namespace ecs {
     }
 
     Transform Transform::GetInverse() const {
-        auto mat = glm::inverse(glm::mat4(matrix));
-        Assertf(glm::all(glm::epsilonEqual(glm::row(mat, 3), glm::vec4(0, 0, 0, 1), 1e-5f)),
-            "Inverse is not representable");
-        return Transform(mat);
+        return Transform(glm::inverse(glm::mat4(matrix)));
     }
 
     glm::vec3 Transform::operator*(const glm::vec4 &rhs) const {
