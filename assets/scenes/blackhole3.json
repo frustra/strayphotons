@@ -1,12 +1,18 @@
 {
 	"properties": {
 		"gravity": [0, 0, 0],
+		"gravity_transform": {
+			"translate": [0, 153, 0]
+		},
 		"gravity_func": "station_spin"
 	},
 	"entities": [
 		{
 			"name": "global:player_gravity_override",
 			"scene_connection": "player_gravity_override",
+			"transform": {
+				"translate": [0, 153, 0]
+			},
 			"signal_output": { "load_scene_connection": 1 }
 		},
 		{

@@ -500,12 +500,14 @@ namespace sp {
                 for (auto &property : propertiesValue.get<picojson::object>()) {
                     if (property.first == "gravity") {
                         json::Load(scope, properties.fixedGravity, property.second);
+                    } else if (property.first == "gravity_transform") {
+                        json::Load(scope, properties.gravityTransform, property.second);
                     } else if (property.first == "gravity_func") {
                         if (property.second.is<std::string>()) {
                             auto gravityFunc = property.second.get<std::string>();
                             if (gravityFunc == "station_spin") {
                                 properties.gravityFunction = [](glm::vec3 position) {
-                                    position.x = 0;
+                                    position.z = 0;
                                     // Derived from centripetal acceleration formula, rotating around the origin
                                     const float spinRpm = 2.42f; // Calculated for ~1G at 153m radius
                                     float spinTerm = M_PI * spinRpm / 30;
@@ -619,7 +621,7 @@ namespace sp {
     void SceneManager::TranslateSceneByConnection(const std::shared_ptr<Scene> &scene) {
         auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Animation>,
             ecs::Write<ecs::TransformTree, ecs::Animation>>();
-        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformSnapshot>>();
+        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneConnection, ecs::TransformSnapshot>>();
 
         ecs::Entity liveConnection, stagingConnection;
         for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
@@ -630,8 +632,11 @@ namespace sp {
             auto &name = e.Get<const ecs::Name>(stagingLock);
             liveConnection = ecs::EntityRef(name).Get(liveLock);
             if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
-                stagingConnection = e;
-                break;
+                auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
+                if (sp::contains(connection.scenes, scene->name)) {
+                    stagingConnection = e;
+                    break;
+                }
             }
         }
         if (stagingConnection.Has<ecs::TransformTree>(stagingLock) &&
@@ -641,6 +646,13 @@ namespace sp {
                 stagingConnection.Get<const ecs::TransformTree>(stagingLock).GetGlobalTransform(stagingLock);
             glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
             glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
+            ecs::Transform deltaTransform(deltaPos, deltaRotation);
+
+            if (scene->properties) {
+                auto &properties = *scene->properties;
+                properties.fixedGravity = deltaRotation * properties.fixedGravity;
+                properties.gravityTransform = deltaTransform * properties.gravityTransform;
+            }
 
             for (auto &e : stagingLock.EntitiesWith<ecs::TransformTree>()) {
                 if (!e.Has<ecs::TransformTree, ecs::SceneInfo>(stagingLock)) continue;
@@ -649,8 +661,9 @@ namespace sp {
 
                 auto &transform = e.Get<ecs::TransformTree>(stagingLock);
                 if (!transform.parent) {
-                    transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
-                    transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
+                    transform.pose = deltaTransform * transform.pose;
+                    // transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
+                    // transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
 
                     if (e.Has<ecs::Animation>(stagingLock)) {
                         auto &animation = e.Get<ecs::Animation>(stagingLock);

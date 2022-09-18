@@ -669,7 +669,8 @@ namespace sp {
             if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
                 glm::vec3 gravityForce = sceneProperties.fixedGravity;
                 if (sceneProperties.gravityFunction) {
-                    gravityForce = sceneProperties.gravityFunction(transform.GetPosition());
+                    gravityForce = sceneProperties.gravityFunction(
+                        sceneProperties.gravityTransform * glm::vec4(transform.GetPosition(), 1));
                 }
                 // Force will accumulate on sleeping objects causing jitter
                 if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {

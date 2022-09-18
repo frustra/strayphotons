@@ -8,7 +8,7 @@
 namespace ecs {
     EntityReferenceManager &GetEntityRefs() {
         static EntityReferenceManager entityRefs;
-        return entityRefs
+        return entityRefs;
     }
 
     EntityRef EntityReferenceManager::Get(const Name &name) {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/components/SceneProperties.hh"
 
 #include <memory>
 
@@ -10,6 +9,8 @@ namespace sp {
 } // namespace sp
 
 namespace ecs {
+    struct SceneProperties;
+
     struct SceneInfo {
         // Lower priority scenes will have their components overwritten with higher priority components.
         enum class Priority : int {

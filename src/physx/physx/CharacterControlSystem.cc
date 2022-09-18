@@ -282,56 +282,59 @@ namespace sp {
             // Update the capsule orientation
             glm::vec3 gravityForce = sceneProperties.fixedGravity;
             if (sceneProperties.gravityFunction) {
-                gravityForce = sceneProperties.gravityFunction(transform.GetPosition());
+                auto gravityPos = sceneProperties.gravityTransform.GetInverse() *
+                                  glm::vec4(getHeadPosition(controller.pxController), 1);
+                gravityForce = sceneProperties.gravityTransform.GetRotation() *
+                               sceneProperties.gravityFunction(gravityPos);
             }
             auto gravityStrength = glm::length(gravityForce);
             auto gravityDir = glm::normalize(gravityForce);
             if (gravityStrength > 0 && gravityStrength > CVarCharacterMinFlipGravity.Get()) {
-                auto deltaRotation = glm::rotation(transform.GetUp(), -gravityDir);
-                auto angleDiff = glm::angle(deltaRotation);
-                auto rotationAxis = glm::axis(deltaRotation);
+                auto angleDiff = glm::angle(transform.GetUp(), -gravityDir);
+                if (angleDiff > 0.0001) {
+                    auto scaleFactor = std::min(angleDiff, glm::radians(CVarCharacterFlipSpeed.Get()) * dt) / angleDiff;
+                    auto deltaRotation = glm::rotation(transform.GetUp(), -gravityDir);
+                    deltaRotation = glm::slerp(glm::quat(), deltaRotation, scaleFactor);
+                    auto targetUpVector = deltaRotation * transform.GetUp();
 
-                angleDiff = std::min(angleDiff, glm::radians(CVarCharacterFlipSpeed.Get() * dt));
-                deltaRotation = glm::angleAxis(angleDiff, rotationAxis);
-                auto targetUpVector = deltaRotation * transform.GetUp();
+                    bool shouldRotate = true;
+                    if (!noclip) {
+                        auto halfHeight = controller.pxController->getHeight() * 0.5f;
+                        auto currentOffset = transform.GetUp() * halfHeight;
+                        auto newOffset = targetUpVector * halfHeight;
 
-                bool shouldRotate = angleDiff > 0;
-                if (shouldRotate && !noclip) {
-                    auto halfHeight = controller.pxController->getHeight() * 0.5f;
-                    auto currentOffset = transform.GetUp() * halfHeight;
-                    auto newOffset = targetUpVector * halfHeight;
+                        PxOverlapHit touch;
+                        PxOverlapBuffer overlapHit;
+                        overlapHit.touches = &touch;
+                        overlapHit.maxNbTouches = 1;
+                        PxCapsuleGeometry capsuleGeometry(capsuleRadius, currentHeight * 0.5f);
+                        auto globalPose = actor->getGlobalPose();
+                        globalPose.p += GlmVec3ToPxVec3(currentOffset - newOffset);
+                        globalPose.q = PxShortestRotation(PxVec3(1.0f, 0.0f, 0.0f), GlmVec3ToPxVec3(targetUpVector));
+                        shouldRotate = !manager.scene->overlap(capsuleGeometry,
+                            globalPose,
+                            overlapHit,
+                            PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                    }
 
-                    PxOverlapHit touch;
-                    PxOverlapBuffer overlapHit;
-                    overlapHit.touches = &touch;
-                    overlapHit.maxNbTouches = 1;
-                    PxCapsuleGeometry capsuleGeometry(capsuleRadius, currentHeight * 0.5f);
-                    auto globalPose = actor->getGlobalPose();
-                    globalPose.p += GlmVec3ToPxVec3(currentOffset - newOffset);
-                    globalPose.q = PxShortestRotation(PxVec3(1.0f, 0.0f, 0.0f), GlmVec3ToPxVec3(targetUpVector));
-                    shouldRotate = !manager.scene->overlap(capsuleGeometry,
-                        globalPose,
-                        overlapHit,
-                        PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
-                }
+                    // Only rotate the capsule in there is room to do so
+                    if (shouldRotate) {
+                        auto headPosition = getHeadPosition(controller.pxController);
+                        controller.pxController->setUpDirection(GlmVec3ToPxVec3(targetUpVector));
+                        setHeadPosition(controller.pxController, headPosition);
 
-                // Only rotate the capsule in there is room to do so
-                if (shouldRotate) {
-                    auto headPosition = getHeadPosition(controller.pxController);
-                    controller.pxController->setUpDirection(GlmVec3ToPxVec3(targetUpVector));
-                    setHeadPosition(controller.pxController, headPosition);
+                        transform.Rotate(deltaRotation);
+                        transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()));
 
-                    transform.Rotate(deltaRotation);
-                    transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()));
+                        // Rotate the head to match
+                        auto targetTransform = transform * headRelativePlayer;
+                        ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
 
-                    // Rotate the head to match
-                    auto targetTransform = transform * headRelativePlayer;
-                    // Logf("Rotating Head: %s, Up: %s, Forward: %s",
-                    //     glm::to_string(targetTransform.GetPosition()),
-                    //     glm::to_string(targetTransform.GetUp()),
-                    //     glm::to_string(targetTransform.GetForward()));
-
-                    ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+                        // Logf("Rotating Head: %s, Up: %s, Forward: %s",
+                        //     glm::to_string(targetTransform.GetPosition()),
+                        //     glm::to_string(targetTransform.GetUp()),
+                        //     glm::to_string(targetTransform.GetForward()));
+                    }
                 }
             }
 
@@ -396,14 +399,15 @@ namespace sp {
                 if (userData->onGround || inGround) {
                     velocityRelativePlayer = glm::inverse(transform.GetRotation()) * PxVec3ToGlmVec3(state.deltaXP);
                     velocityRelativePlayer += glm::vec3(movementInput.x, 0, movementInput.z);
-                    displacement = transform.GetRotation() * velocityRelativePlayer * dt;
+                    auto relative = velocityRelativePlayer * dt;
                     if (jump) {
                         // Move up slightly first to detach the player from the floor
-                        displacement += transform.GetUp() * contactOffset;
+                        relative.y = std::max(0.0f, relative.y) + contactOffset;
                     } else {
                         // Always move down slightly for consistent onGround detection
-                        displacement -= transform.GetUp() * contactOffset;
+                        relative.y = -contactOffset;
                     }
+                    displacement = transform.GetRotation() * relative;
                 } else {
                     auto worldMovement = transform.GetRotation() * movementInput;
                     userData->actorData.velocity += worldMovement * CVarCharacterAirStrafe.Get() * dt;
