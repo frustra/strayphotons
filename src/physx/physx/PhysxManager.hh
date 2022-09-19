@@ -21,6 +21,7 @@
 #include "physx/TriggerSystem.hh"
 
 #include <PxPhysicsAPI.h>
+#include <any>
 #include <extensions/PxDefaultAllocator.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <functional>
@@ -38,6 +39,7 @@ namespace sp {
     class Gltf;
     struct HullSettings;
     class SceneManager;
+    class ForceLimitedConstraint;
 
     struct ActorUserData {
         ecs::Entity entity;
@@ -132,7 +134,8 @@ namespace sp {
 
         struct Joint {
             ecs::PhysicsJoint ecsJoint;
-            physx::PxJoint *pxJoint;
+            physx::PxJoint *pxJoint = nullptr;
+            ForceLimitedConstraint *forceConstraint = nullptr;
         };
         EntityMap<vector<Joint>> joints;
 

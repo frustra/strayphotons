@@ -6,6 +6,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "input/BindingNames.hh"
+#include "physx/ForceLimitedConstraint.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -220,9 +221,11 @@ namespace sp {
     void ConstraintSystem::ReleaseJoints(ecs::Entity entity, physx::PxRigidActor *actor) {
         if (manager.joints.count(entity) == 0) return;
 
-        for (auto joint : manager.joints[entity]) {
-            joint.pxJoint->release();
+        for (auto &joint : manager.joints[entity]) {
+            if (joint.pxJoint) joint.pxJoint->release();
+            if (joint.forceConstraint) joint.forceConstraint->release();
         }
+        // TODO: release anything left in actor->getConstraints()
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
@@ -259,20 +262,19 @@ namespace sp {
             if (matchingJoint) {
                 it++;
             } else {
-                it->pxJoint->release();
+                if (it->pxJoint) it->pxJoint->release();
+                if (it->forceConstraint) it->forceConstraint->release();
                 it = pxJoints.erase(it);
                 wakeUp = true;
             }
         }
 
         for (auto &ecsJoint : ecsJoints) {
-            ecs::PhysicsJoint *oldEcsJoint = nullptr;
-            physx::PxJoint *pxJoint = nullptr;
+            PhysxManager::Joint *joint = nullptr;
 
             for (auto &j : pxJoints) {
                 if (j.ecsJoint.target == ecsJoint.target && j.ecsJoint.type == ecsJoint.type) {
-                    pxJoint = j.pxJoint;
-                    oldEcsJoint = &j.ecsJoint;
+                    joint = &j;
                     break;
                 }
             }
@@ -297,87 +299,105 @@ namespace sp {
                 remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation() * ecsJoint.remoteOrient);
             }
 
-            if (pxJoint == nullptr) {
+            if (joint == nullptr) {
+                joint = &pxJoints.emplace_back();
                 switch (ecsJoint.type) {
                 case ecs::PhysicsJointType::Fixed:
-                    pxJoint =
+                    joint->pxJoint =
                         PxFixedJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Distance:
-                    pxJoint =
+                    joint->pxJoint =
                         PxDistanceJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Spherical:
-                    pxJoint =
+                    joint->pxJoint =
                         PxSphericalJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Hinge:
-                    pxJoint =
+                    joint->pxJoint =
                         PxRevoluteJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Slider:
-                    pxJoint =
+                    joint->pxJoint =
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    break;
+                case ecs::PhysicsJointType::ForceLimited:
+                    // Free'd automatically on release();
+                    joint->forceConstraint = new ForceLimitedConstraint(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     break;
                 default:
                     Abortf("Unsupported PhysX joint type: %s", ecsJoint.type);
                 }
-                pxJoints.emplace_back(PhysxManager::Joint{ecsJoint, pxJoint});
             } else {
-                if (pxJoint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
-                    wakeUp = true;
-                    pxJoint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
-                }
-                if (pxJoint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
-                    wakeUp = true;
-                    pxJoint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                if (joint->pxJoint) {
+                    if (joint->pxJoint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
+                        wakeUp = true;
+                        joint->pxJoint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
+                    }
+                    if (joint->pxJoint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
+                        wakeUp = true;
+                        joint->pxJoint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                    }
+                } else if (joint->forceConstraint) {
+                    if (joint->forceConstraint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
+                        wakeUp = true;
+                        joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
+                    }
+                    if (joint->forceConstraint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
+                        wakeUp = true;
+                        joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                    }
                 }
 
-                if (ecsJoint == *oldEcsJoint) {
+                if (ecsJoint == joint->ecsJoint) {
                     // joint is up to date
                     continue;
                 } else {
-                    *oldEcsJoint = ecsJoint;
+                    joint->ecsJoint = ecsJoint;
                 }
             }
 
             wakeUp = true;
-            pxJoint->setActors(actor, targetActor);
+            if (joint->pxJoint) joint->pxJoint->setActors(actor, targetActor);
+            if (joint->forceConstraint) joint->forceConstraint->setActors(actor, targetActor);
             if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
-                auto distanceJoint = pxJoint->is<PxDistanceJoint>();
-                distanceJoint->setMinDistance(ecsJoint.range.x);
-                if (ecsJoint.range.y > ecsJoint.range.x) {
-                    distanceJoint->setMaxDistance(ecsJoint.range.y);
+                auto distanceJoint = joint->pxJoint->is<PxDistanceJoint>();
+                distanceJoint->setMinDistance(ecsJoint.limit.x);
+                if (ecsJoint.limit.y > ecsJoint.limit.x) {
+                    distanceJoint->setMaxDistance(ecsJoint.limit.y);
                     distanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
                 }
-                pxJoint = distanceJoint;
             } else if (ecsJoint.type == ecs::PhysicsJointType::Spherical) {
-                auto sphericalJoint = pxJoint->is<PxSphericalJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
+                auto sphericalJoint = joint->pxJoint->is<PxSphericalJoint>();
+                if (ecsJoint.limit.x != 0.0f || ecsJoint.limit.y != 0.0f) {
                     sphericalJoint->setLimitCone(
-                        PxJointLimitCone(glm::radians(ecsJoint.range.x), glm::radians(ecsJoint.range.y)));
+                        PxJointLimitCone(glm::radians(ecsJoint.limit.x), glm::radians(ecsJoint.limit.y)));
                     sphericalJoint->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
                     sphericalJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                 }
-                pxJoint = sphericalJoint;
             } else if (ecsJoint.type == ecs::PhysicsJointType::Hinge) {
-                auto revoluteJoint = pxJoint->is<PxRevoluteJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
+                auto revoluteJoint = joint->pxJoint->is<PxRevoluteJoint>();
+                if (ecsJoint.limit.x != 0.0f || ecsJoint.limit.y != 0.0f) {
                     revoluteJoint->setLimit(
-                        PxJointAngularLimitPair(glm::radians(ecsJoint.range.x), glm::radians(ecsJoint.range.y)));
+                        PxJointAngularLimitPair(glm::radians(ecsJoint.limit.x), glm::radians(ecsJoint.limit.y)));
                     revoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
                     revoluteJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                 }
-                pxJoint = revoluteJoint;
             } else if (ecsJoint.type == ecs::PhysicsJointType::Slider) {
-                auto prismaticJoint = pxJoint->is<PxPrismaticJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
+                auto prismaticJoint = joint->pxJoint->is<PxPrismaticJoint>();
+                if (ecsJoint.limit.x != 0.0f || ecsJoint.limit.y != 0.0f) {
                     prismaticJoint->setLimit(PxJointLinearLimitPair(manager.pxPhysics->getTolerancesScale(),
-                        ecsJoint.range.x,
-                        ecsJoint.range.y));
+                        ecsJoint.limit.x,
+                        ecsJoint.limit.y));
                     prismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
                 }
-                pxJoint = prismaticJoint;
+            } else if (ecsJoint.type == ecs::PhysicsJointType::ForceLimited) {
+                joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.y);
             }
         }
 

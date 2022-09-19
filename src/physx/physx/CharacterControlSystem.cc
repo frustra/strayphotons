@@ -408,6 +408,7 @@ namespace sp {
                 rootTree.pose.Translate(movementVelocity * dt);
 
                 userData->onGround = false;
+                userData->actorData.gravity = glm::vec3(0);
                 userData->actorData.velocity = movementVelocity;
             } else {
                 PxControllerState state;
@@ -513,6 +514,7 @@ namespace sp {
 
                     userData->onGround = false;
                 }
+                userData->actorData.gravity = gravityForce;
 
                 // Move the entities to their new positions
                 transform.SetPosition(newPosition);
@@ -539,6 +541,7 @@ namespace sp {
                 if (proxyActor && proxyActor->userData) {
                     auto proxyUserData = (ActorUserData *)proxyActor->userData;
                     proxyUserData->velocity = userData->actorData.velocity;
+                    proxyUserData->gravity = userData->actorData.gravity;
                 }
             }
 
