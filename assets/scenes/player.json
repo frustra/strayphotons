@@ -13,13 +13,17 @@
 			"signal_output": {}
 		},
 		{
+			"name": "flatorigin",
+			"transform": {}
+		},
+		{
 			"name": "flatview",
 			"view": {
 				"clip": [0.05, 350],
 				"visibilityMask": "DirectCamera"
 			},
 			"transform": {
-				"parent": "player",
+				"parent": "flatorigin",
 				"translate": [0, 1.5, 0]
 			},
 			"script": [

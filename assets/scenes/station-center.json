@@ -176,7 +176,7 @@
 				"/button/press": [
 					{
 						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100"
+						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100; wait 1000 removescene menu"
 					}
 				]
 			}
@@ -201,7 +201,7 @@
 				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
 				"spotAngle": 50,
-				"shadowMapSize": 11,
+				"shadowMapSize": 10,
 				"shadowMapClip": [0.01, 50]
 			},
 			"transform": {

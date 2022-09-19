@@ -184,7 +184,7 @@ namespace sp {
     }
 
     void ConsoleManager::Execute(const string cmd, const string &args) {
-        Tracef("Executing console command: %s %s", cmd, args);
+        Debugf("Executing console command: %s %s", cmd, args);
         auto cvarit = cvars.find(to_lower_copy(cmd));
         if (cvarit != cvars.end()) {
             auto cvar = cvarit->second;

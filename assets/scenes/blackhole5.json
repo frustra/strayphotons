@@ -28,7 +28,7 @@
 			"name": "segment",
 			"script": {
 				"prefab": "template",
-				"parameters": { "source": "station_segment" }
+				"parameters": { "source": "station_segment_glass" }
 			}
 		},
 		{
@@ -39,18 +39,24 @@
 			},
 			"scene_connection": "blackhole4",
 			"signal_bindings": {
-				"load_scene_connection": "zone/trigger_player_count"
+				"load_scene_connection": {
+					"operator": "add",
+					"values": [ "zone/trigger_player_count", "blackhole6:zone/trigger_player_count" ]
+				}
 			}
 		},
 		{
-			"name": "global:divider5-1",
+			"name": "global:divider5-6",
 			"transform": {
 				"translate": [12, 0, 0],
 				"rotate": [4.5, 0, 0, 1]
 			},
-			"scene_connection": "blackhole1",
+			"scene_connection": "blackhole6",
 			"signal_bindings": {
-				"load_scene_connection": "zone/trigger_player_count"
+				"load_scene_connection": {
+					"operator": "add",
+					"values": [ "zone/trigger_player_count", "blackhole4:zone/trigger_player_count" ]
+				}
 			}
 		},
 		{
@@ -63,13 +69,13 @@
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
-				"spotAngle": 50,
-				"shadowMapSize": 11,
-				"shadowMapClip": [0.01, 50]
+				"spotAngle": 70,
+				"shadowMapSize": 10,
+				"shadowMapClip": [0.1, 50]
 			},
 			"transform": {
-				"translate": [-4.8, 4.5, -2.7],
-				"rotate": [-130, 1, 1, 0]
+				"translate": [0, 6.2, 0],
+				"rotate": [-90, 1, 0, 0]
 			}
 		},
 		{
@@ -87,45 +93,6 @@
 					"axis_z": 1,
 					"speed": 1.5
 				}
-			}
-		},
-		{
-			"name": "global:blackhole",
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"parent": "global:station-center",
-				"translate": [30, -50, -100],
-				"scale": [200, 200, 10]
-			}
-		},
-		{
-			"name": "global:black-hole-center",
-			"light": {
-				"tint": [1, 1, 1],
-				"intensity": -4000,
-				"spotAngle": 25,
-				"shadowMapSize": 11,
-				"shadowMapClip": [0.1, 256]
-			},
-			"transform": {
-				"parent": "global:blackhole",
-				"translate": [0, 0, 10]
-			}
-		},
-		{
-			"name": "global:black-hole-halo",
-			"light": {
-				"tint": [1, 1, 1],
-				"intensity": 2000,
-				"spotAngle": 30,
-				"shadowMapSize": 11,
-				"shadowMapClip": [0.1, 256]
-			},
-			"transform": {
-				"parent": "global:blackhole",
-				"translate": [0, 0, 10]
 			}
 		}
 	]

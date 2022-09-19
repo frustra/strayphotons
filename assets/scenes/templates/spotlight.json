@@ -6,7 +6,7 @@
 			"spotAngle": 50,
 			"bulb": "bulb",
 			"shadowMapSize": 10,
-			"shadowMapClip": [0.18, 70]
+			"shadowMapClip": [0.01, 70]
 		}
 	},
 	"entities": [
@@ -21,7 +21,7 @@
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, -0.09]
+				"translate": [0, 0, 0.085]
 			},
 			"physics": {
 				"shapes": {
@@ -34,14 +34,21 @@
 			}
 		},
 		{
+			"name": "housing.Cube.001_Cube.006",
+			"renderable": {
+				"emissive": 5.0
+			}
+		},
+		{
 			"name": "bulb",
 			"renderable": {
 				"model": "box",
-				"emissive": 1.0
+				"visibility": "DirectCamera|DirectEye|LightingVoxel",
+				"emissive": 10.0
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, -0.16],
+				"translate": [0, 0, 0.02],
 				"scale": [0.1, 0.1, 0.03]
 			}
 		}

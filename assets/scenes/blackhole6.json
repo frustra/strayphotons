@@ -32,37 +32,37 @@
 			}
 		},
 		{
-			"name": "global:divider1-2",
+			"name": "global:divider5-6",
 			"transform": {
 				"translate": [-12, 0, 0],
 				"rotate": [-4.5, 0, 0, 1]
 			},
-			"scene_connection": "blackhole1",
+			"scene_connection": "blackhole5",
 			"signal_bindings": {
 				"load_scene_connection": {
 					"operator": "add",
-					"values": [ "zone/trigger_player_count", "blackhole3:zone/trigger_player_count" ]
+					"values": [ "zone/trigger_player_count", "blackhole7:zone/trigger_player_count" ]
 				}
 			}
 		},
 		{
-			"name": "global:divider2-3",
+			"name": "global:divider6-7",
 			"transform": {
 				"translate": [12, 0, 0],
 				"rotate": [4.5, 0, 0, 1]
 			},
-			"scene_connection": "blackhole3",
+			"scene_connection": "blackhole7",
 			"signal_bindings": {
 				"load_scene_connection": {
 					"operator": "add",
-					"values": [ "zone/trigger_player_count", "blackhole1:zone/trigger_player_count" ]
+					"values": [ "zone/trigger_player_count", "blackhole5:zone/trigger_player_count" ]
 				}
 			}
 		},
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [0, 0, 0]
+				"translate": [0, 0.05, 2]
 			}
 		},
 		{

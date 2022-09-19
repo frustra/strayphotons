@@ -198,14 +198,13 @@ namespace sp {
             float contactOffset = controller.pxController->getContactOffset();
             float capsuleRadius = controller.pxController->getRadius();
 
-            float targetHeight = controller.pxController->getHeight();
             auto headRoot = ecs::TransformTree::GetRoot(lock, head);
             auto &headTree = head.Get<const ecs::TransformTree>(lock);
             auto &rootTree = headRoot.Get<ecs::TransformTree>(lock);
             auto headRelativeRoot = headTree.GetRelativeTransform(lock, headRoot);
 
             auto playerHeight = headRelativeRoot.GetPosition().y;
-            targetHeight = std::max(0.1f, playerHeight - capsuleRadius - contactOffset);
+            float targetHeight = std::max(0.1f, playerHeight - capsuleRadius - contactOffset);
 
             ecs::Transform headRelativePlayer;
 
@@ -225,8 +224,10 @@ namespace sp {
                 headRelativePlayer.SetRotation(deltaRotation * headRelativeRoot.GetRotation());
                 headRelativePlayer.SetPosition(glm::vec3(0, headRelativeRoot.GetPosition().y, 0));
 
-                auto targetTransform = transform * headRelativePlayer;
-                ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+                if (ecs::TransformTree::GetRoot(lock, head) != entity) {
+                    auto targetTransform = transform * headRelativePlayer;
+                    ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+                }
 
                 // Logf("Teleport: %s, Up: %s, Height: %f Forward: %s",
                 //     glm::to_string(targetTransform.GetPosition()),
@@ -248,6 +249,12 @@ namespace sp {
                 manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 userData->noclipping = noclip;
                 controller.pxController->invalidateCache();
+            }
+
+            auto a = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
+            auto b = transform.GetPosition();
+            if (glm::any(glm::epsilonNotEqual(a, b, 0.000001f))) {
+                Logf("Capsule out of sync: %s", glm::to_string(a - b));
             }
 
             // Update the capsule height
@@ -291,11 +298,23 @@ namespace sp {
             auto gravityDir = glm::normalize(gravityForce);
             if (gravityStrength > 0 && gravityStrength > CVarCharacterMinFlipGravity.Get()) {
                 auto angleDiff = glm::angle(transform.GetUp(), -gravityDir);
-                if (angleDiff > 0.0001) {
-                    auto scaleFactor = std::min(angleDiff, glm::radians(CVarCharacterFlipSpeed.Get()) * dt) / angleDiff;
-                    auto deltaRotation = glm::rotation(transform.GetUp(), -gravityDir);
-                    deltaRotation = glm::slerp(glm::quat(), deltaRotation, scaleFactor);
-                    auto targetUpVector = deltaRotation * transform.GetUp();
+                if (angleDiff > 0) {
+                    glm::vec3 targetUpVector;
+                    auto maxAngle = glm::radians(CVarCharacterFlipSpeed.Get()) * dt;
+                    if (angleDiff > maxAngle) {
+                        targetUpVector = glm::slerp(transform.GetUp(), -gravityDir, maxAngle / angleDiff);
+                    } else {
+                        targetUpVector = -gravityDir;
+                    }
+                    auto deltaRotation = glm::rotation(transform.GetUp(), targetUpVector);
+
+                    // Logf("Angle diff: %s / %s = %f / %f x %s up %s",
+                    //     glm::to_string(transform.GetUp()),
+                    //     glm::to_string(-gravityDir),
+                    //     angleDiff,
+                    //     glm::angle(deltaRotation),
+                    //     glm::to_string(glm::axis(deltaRotation)),
+                    //     glm::to_string(targetUpVector));
 
                     bool shouldRotate = true;
                     if (!noclip) {
@@ -326,14 +345,16 @@ namespace sp {
                         transform.Rotate(deltaRotation);
                         transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()));
 
-                        // Rotate the head to match
-                        auto targetTransform = transform * headRelativePlayer;
-                        ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+                        if (ecs::TransformTree::GetRoot(lock, head) != entity) {
+                            // Rotate the head to match
+                            auto targetTransform = transform * headRelativePlayer;
+                            ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
 
-                        // Logf("Rotating Head: %s, Up: %s, Forward: %s",
-                        //     glm::to_string(targetTransform.GetPosition()),
-                        //     glm::to_string(targetTransform.GetUp()),
-                        //     glm::to_string(targetTransform.GetForward()));
+                            // Logf("Rotating Head: %s, Up: %s, Forward: %s",
+                            //     glm::to_string(targetTransform.GetPosition()),
+                            //     glm::to_string(targetTransform.GetUp()),
+                            //     glm::to_string(targetTransform.GetForward()));
+                        }
                     }
                 }
             }
@@ -486,19 +507,21 @@ namespace sp {
                 // Move the entities to their new positions
                 transform.SetPosition(newPosition);
 
-                auto deltaPos = newPosition - oldPosition;
-                // Subtract the head input from the movement without moving backwards.
-                // This allows the head to detatch from the player when colliding with walls.
-                deltaPos -= glm::clamp(headInput, -glm::abs(deltaPos), glm::abs(deltaPos));
+                if (ecs::TransformTree::GetRoot(lock, head) != entity) {
+                    // Subtract the head input from the movement without moving backwards.
+                    // This allows the head to detatch from the player when colliding with walls.
+                    auto deltaPos = newPosition - oldPosition;
+                    deltaPos -= glm::clamp(headInput, -glm::abs(deltaPos), glm::abs(deltaPos));
 
-                auto targetTransform = headTree.GetGlobalTransform(lock);
-                targetTransform.Translate(deltaPos);
-                ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+                    auto targetTransform = headTree.GetGlobalTransform(lock);
+                    targetTransform.Translate(deltaPos);
+                    ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
 
-                // Logf("Moving Head: %s Up: %s, Forward: %s",
-                //     glm::to_string(targetTransform.GetPosition()),
-                //     glm::to_string(targetTransform.GetUp()),
-                //     glm::to_string(targetTransform.GetForward()));
+                    // Logf("Moving Head: %s Up: %s, Forward: %s",
+                    //     glm::to_string(targetTransform.GetPosition()),
+                    //     glm::to_string(targetTransform.GetUp()),
+                    //     glm::to_string(targetTransform.GetForward()));
+                }
             }
 
             if (headRoot.Has<ecs::Physics>(lock) && manager.actors.count(headRoot) != 0) {
