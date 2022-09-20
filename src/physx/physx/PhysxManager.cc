@@ -14,6 +14,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "physx/ForceConstraint.hh"
 
 #include <PxScene.h>
 #include <chrono>
@@ -89,7 +90,8 @@ namespace sp {
         controllerManager.reset();
         for (auto &entry : joints) {
             for (auto &joint : entry.second) {
-                joint.pxJoint->release();
+                if (joint.pxJoint) joint.pxJoint->release();
+                if (joint.forceConstraint) joint.forceConstraint->release();
             }
         }
         joints.clear();

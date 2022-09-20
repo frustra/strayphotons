@@ -21,7 +21,7 @@ namespace ecs {
         Spherical,
         Hinge,
         Slider,
-        ForceLimited,
+        Force,
     };
 
     struct PhysicsJoint {

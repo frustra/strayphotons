@@ -6,7 +6,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "input/BindingNames.hh"
-#include "physx/ForceLimitedConstraint.hh"
+#include "physx/ForceConstraint.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -225,7 +225,6 @@ namespace sp {
             if (joint.pxJoint) joint.pxJoint->release();
             if (joint.forceConstraint) joint.forceConstraint->release();
         }
-        // TODO: release anything left in actor->getConstraints()
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
@@ -251,23 +250,17 @@ namespace sp {
         bool wakeUp = false;
         auto &pxJoints = manager.joints[entity];
 
-        for (auto it = pxJoints.begin(); it != pxJoints.end();) {
-            bool matchingJoint = false;
+        sp::erase_if(pxJoints, [&](auto &pxJoint) {
             for (auto &ecsJoint : ecsJoints) {
-                if (it->ecsJoint.target == ecsJoint.target && it->ecsJoint.type == ecsJoint.type) {
-                    matchingJoint = true;
-                    break;
+                if (pxJoint.ecsJoint.target == ecsJoint.target && pxJoint.ecsJoint.type == ecsJoint.type) {
+                    return false;
                 }
             }
-            if (matchingJoint) {
-                it++;
-            } else {
-                if (it->pxJoint) it->pxJoint->release();
-                if (it->forceConstraint) it->forceConstraint->release();
-                it = pxJoints.erase(it);
-                wakeUp = true;
-            }
-        }
+            if (pxJoint.pxJoint) pxJoint.pxJoint->release();
+            if (pxJoint.forceConstraint) pxJoint.forceConstraint->release();
+            wakeUp = true;
+            return true;
+        });
 
         for (auto &ecsJoint : ecsJoints) {
             PhysxManager::Joint *joint = nullptr;
@@ -322,17 +315,15 @@ namespace sp {
                     joint->pxJoint =
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
-                case ecs::PhysicsJointType::ForceLimited:
+                case ecs::PhysicsJointType::Force:
                     // Free'd automatically on release();
-                    joint->forceConstraint = new ForceLimitedConstraint(*manager.pxPhysics,
-                        actor,
-                        localTransform,
-                        targetActor,
-                        remoteTransform);
+                    joint->forceConstraint =
+                        new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 default:
                     Abortf("Unsupported PhysX joint type: %s", ecsJoint.type);
                 }
+                joint->ecsJoint = ecsJoint;
             } else {
                 if (joint->pxJoint) {
                     if (joint->pxJoint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
@@ -396,7 +387,7 @@ namespace sp {
                         ecsJoint.limit.y));
                     prismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
                 }
-            } else if (ecsJoint.type == ecs::PhysicsJointType::ForceLimited) {
+            } else if (ecsJoint.type == ecs::PhysicsJointType::Force) {
                 joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.y);
             }
         }

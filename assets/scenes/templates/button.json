@@ -131,7 +131,7 @@
 				"remote_offset": {
 					"translate": [-0.125, 0, 0]
 				},
-				"range": [-0.04, 0]
+				"limit": [-0.04, 0]
 			}],
 			"signal_output": {},
 			"trigger_group": "object"

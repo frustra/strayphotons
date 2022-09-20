@@ -39,7 +39,7 @@ namespace sp {
     class Gltf;
     struct HullSettings;
     class SceneManager;
-    class ForceLimitedConstraint;
+    class ForceConstraint;
 
     struct ActorUserData {
         ecs::Entity entity;
@@ -135,7 +135,7 @@ namespace sp {
         struct Joint {
             ecs::PhysicsJoint ecsJoint;
             physx::PxJoint *pxJoint = nullptr;
-            ForceLimitedConstraint *forceConstraint = nullptr;
+            ForceConstraint *forceConstraint = nullptr;
         };
         EntityMap<vector<Joint>> joints;
 

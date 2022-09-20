@@ -32,6 +32,8 @@ namespace ecs {
                         joint.type = PhysicsJointType::Hinge;
                     } else if (typeString == "SLIDER") {
                         joint.type = PhysicsJointType::Slider;
+                    } else if (typeString == "FORCE") {
+                        joint.type = PhysicsJointType::Force;
                     } else {
                         Errorf("Unknown joint type: %s", typeString);
                         return false;

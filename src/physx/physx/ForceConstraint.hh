@@ -5,17 +5,20 @@
 namespace sp {
     using namespace physx;
 
-    class ForceLimitedConstraint : public PxConstraintConnector {
+    class ForceConstraint : public PxConstraintConnector {
     public:
         static const PxU32 TYPE_ID = PxConcreteType::eFIRST_USER_EXTENSION;
 
         struct Data {
+            PxConstraintInvMassScale invMassScale;
             std::array<PxTransform, 2> c2b;
             float accelForce = 0.0f;
+            float accelTorque = 0.0f;
             float brakeForce = 0.0f;
+            float brakeTorque = 0.0f;
         };
 
-        ForceLimitedConstraint(PxPhysics &physics,
+        ForceConstraint(PxPhysics &physics,
             PxRigidActor *actor0,
             const PxTransform &localFrame0,
             PxRigidActor *actor1,
@@ -52,7 +55,29 @@ namespace sp {
         }
 
     private:
-        std::array<PxRigidBody *, 2> pxBodies;
+        PxTransform getCenterOfMass(uint32_t index) const;
+        PxTransform getCenterOfMass(PxRigidActor *actor) const;
+
+        static PxU32 solverPrep(Px1DConstraint *constraints,
+            PxVec3 &body0WorldOffset,
+            PxU32 maxConstraints,
+            PxConstraintInvMassScale &invMassScale,
+            const void *constantBlock,
+            const PxTransform &bA2w,
+            const PxTransform &bB2w,
+            bool useExtendedLimits,
+            PxVec3 &cA2wOut,
+            PxVec3 &cB2wOut);
+        static void project(const void *constantBlock,
+            PxTransform &bodyAToWorld,
+            PxTransform &bodyBToWorld,
+            bool projectToA);
+        static void visualize(PxConstraintVisualizer &viz,
+            const void *constantBlock,
+            const PxTransform &body0Transform,
+            const PxTransform &body1Transform,
+            PxU32 flags);
+
         std::array<PxTransform, 2> localPoses;
 
         PxConstraint *pxConstraint = nullptr;
