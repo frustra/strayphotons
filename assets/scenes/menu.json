@@ -8,7 +8,7 @@
 			"physics": {
 				"model": "box",
 				"group": "interactive",
-				"density": 1000
+				"density": 100
 			},
 			"transform": {
 				"translate": [1, 1, 0],

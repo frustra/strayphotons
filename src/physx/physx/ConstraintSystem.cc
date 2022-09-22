@@ -88,31 +88,29 @@ namespace sp {
             wakeUp |= joint->forceConstraint->setTorque(worldInertia * (deltaVelocity * tickFrequency));
         }
 
-        // Apply Movement Force
+        // Apply Linear Force
         auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() - (targetVelocity * intervalSeconds);
         if (maxForce > 0) {
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
 
-            auto targetMovementVelocity = deltaPos;
+            auto targetLinearVelocity = deltaPos;
             if (maxVelocity > deltaTick) {
-                targetMovementVelocity = glm::normalize(targetMovementVelocity);
-                targetMovementVelocity *= maxVelocity - deltaTick;
+                targetLinearVelocity = glm::normalize(targetLinearVelocity) * (maxVelocity - deltaTick);
             } else {
-                targetMovementVelocity *= tickFrequency;
+                targetLinearVelocity *= tickFrequency;
             }
-            targetMovementVelocity += targetVelocity;
-            auto deltaVelocity = targetMovementVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+            targetLinearVelocity += targetVelocity;
+            auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
 
             glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
             float forceAbs = glm::length(force) + 0.00001f;
             auto forceClampRatio = std::min(maxForce, forceAbs) / forceAbs;
             wakeUp |= joint->forceConstraint->setForce(force * forceClampRatio);
         } else {
-            auto targetMovementVelocity = deltaPos * tickFrequency + targetVelocity;
-            auto deltaVelocity = targetMovementVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-
+            auto targetLinearVelocity = deltaPos * tickFrequency + targetVelocity;
+            auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
             wakeUp |= joint->forceConstraint->setForce(deltaVelocity * tickFrequency * dynamic->getMass());
         }
 

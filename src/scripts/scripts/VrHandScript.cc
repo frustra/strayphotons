@@ -334,7 +334,6 @@ namespace sp::scripts {
             auto constraintTarget = scriptData.inputRootRef.Get(lock);
             if (constraintTarget.Has<TransformTree>(lock)) {
                 auto &inputTransform = constraintTarget.Get<TransformTree>(lock);
-                auto targetTransform = inputTransform.GetGlobalTransform(lock);
                 // Don't set the hand constraint target until the controller is valid
                 if (inputTransform.parent) {
                     if (joints.empty()) joints.resize(1);

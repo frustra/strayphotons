@@ -31,8 +31,8 @@ namespace sp {
         auto *curr = constraints;
         for (auto &axis : axes) {
             curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
-            curr->linear0 = GlmVec3ToPxVec3(axis);
-            curr->geometricError = -glm::dot(data.force, axis);
+            curr->linear0 = GlmVec3ToPxVec3(data.force * axis);
+            curr->geometricError = -1.0f;
             curr->mods.spring.stiffness = 1.0f;
             curr->mods.spring.damping = 0.0f;
             if (data.maxForce > 0.0f) {
@@ -41,9 +41,10 @@ namespace sp {
             }
             curr++;
 
-            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
-            curr->angular0 = GlmVec3ToPxVec3(axis);
-            curr->geometricError = -glm::dot(data.torque, axis);
+            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE |
+                                 Px1DConstraintFlag::eANGULAR_CONSTRAINT);
+            curr->angular0 = GlmVec3ToPxVec3(data.torque * axis);
+            curr->geometricError = -1.0f;
             curr->mods.spring.stiffness = 1.0f;
             curr->mods.spring.damping = 0.0f;
             if (data.maxTorque > 0.0f) {
@@ -159,10 +160,9 @@ namespace sp {
     }
 
     PxTransform ForceConstraint::getCenterOfMass(PxRigidActor *actor) const {
-        if (actor &&
-            (actor->getType() == PxActorType::eRIGID_DYNAMIC || actor->getType() == PxActorType::eARTICULATION_LINK)) {
+        if (actor && actor->is<PxRigidBody>()) {
             return static_cast<PxRigidBody *>(actor)->getCMassLocalPose();
-        } else if (actor && actor->getType() == PxActorType::eRIGID_STATIC) {
+        } else if (actor && actor->is<PxRigidStatic>()) {
             return static_cast<PxRigidStatic *>(actor)->getGlobalPose().getInverse();
         }
         return PxTransform(PxIdentity);
