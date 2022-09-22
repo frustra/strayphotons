@@ -10,12 +10,11 @@ namespace sp {
         static const PxU32 TYPE_ID = PxConcreteType::eFIRST_USER_EXTENSION;
 
         struct Data {
-            PxConstraintInvMassScale invMassScale;
             std::array<PxTransform, 2> c2b;
-            float accelForce = 0.0f;
-            float accelTorque = 0.0f;
-            float brakeForce = 0.0f;
-            float brakeTorque = 0.0f;
+            float maxForce = 0.0f;
+            float maxLiftForce = 0.0f;
+            float maxTorque = 0.0f;
+            glm::vec3 force, torque, gravity;
         };
 
         ForceConstraint(PxPhysics &physics,
@@ -27,7 +26,10 @@ namespace sp {
         void release();
 
         void setActors(PxRigidActor *actor0, PxRigidActor *actor1);
-        void setForceLimits(float accelForce, float brakeForce);
+        void setForceLimits(float maxForce, float maxLiftForce, float maxTorque);
+        void setForce(glm::vec3 force);
+        void setTorque(glm::vec3 torque);
+        void setGravity(glm::vec3 gravity);
 
         void setLocalPose(PxJointActorIndex::Enum actor, const PxTransform &pose);
         PxTransform getLocalPose(PxJointActorIndex::Enum actor) const;

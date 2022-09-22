@@ -5,16 +5,25 @@
 			"renderable": {
 				"model": "box"
 			},
+			"physics": {
+				"model": "box",
+				"group": "interactive",
+				"density": 1000
+			},
 			"transform": {
 				"translate": [1, 1, 0],
-				"scale": [0.06, 0.06, 0.06]
+				"scale": [0.075, 0.075, 0.075]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
 			}
 		},
 		{
 			"name": "test",
 			"renderable": {
 				"model": "box",
-				"emissive": 1
+				"emissive": 0.5
 			},
 			"transform": {
 				"translate": [1, 1, 0],
@@ -22,13 +31,12 @@
 			},
 			"physics": {
 				"model": "box",
-				"group": "interactive",
 				"density": 10
 			},
 			"physics_joints": [{
 				"target": "testroot",
 				"type": "Force",
-				"limit": [0, 0]
+				"limit": [10, 0.5]
 			}]
 		},
 		{

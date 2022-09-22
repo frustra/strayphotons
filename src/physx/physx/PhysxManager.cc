@@ -669,13 +669,7 @@ namespace sp {
             }
 
             if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-                glm::vec3 gravityForce = sceneProperties.fixedGravity;
-                if (sceneProperties.gravityFunction) {
-                    auto gravityPos = sceneProperties.gravityTransform.GetInverse() *
-                                      glm::vec4(transform.GetPosition(), 1);
-                    gravityForce = sceneProperties.gravityTransform.GetRotation() *
-                                   sceneProperties.gravityFunction(gravityPos);
-                }
+                glm::vec3 gravityForce = sceneProperties.GetGravity(transform.GetPosition());
                 // Force will accumulate on sleeping objects causing jitter
                 if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
                     dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);

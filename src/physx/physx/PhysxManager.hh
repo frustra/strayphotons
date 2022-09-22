@@ -72,6 +72,12 @@ namespace sp {
         CharacterControllerUserData(ecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
     };
 
+    struct JointState {
+        ecs::PhysicsJoint ecsJoint;
+        physx::PxJoint *pxJoint = nullptr;
+        ForceConstraint *forceConstraint = nullptr;
+    };
+
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager(bool stepMode);
@@ -132,12 +138,7 @@ namespace sp {
 
         EntityMap<physx::PxRigidActor *> actors;
 
-        struct Joint {
-            ecs::PhysicsJoint ecsJoint;
-            physx::PxJoint *pxJoint = nullptr;
-            ForceConstraint *forceConstraint = nullptr;
-        };
-        EntityMap<vector<Joint>> joints;
+        EntityMap<vector<JointState>> joints;
 
         std::mutex cacheMutex;
         PreservingMap<string, Async<ConvexHullSet>> cache;

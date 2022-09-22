@@ -287,13 +287,7 @@ namespace sp {
             }
 
             // Update the capsule orientation
-            glm::vec3 gravityForce = sceneProperties.fixedGravity;
-            if (sceneProperties.gravityFunction) {
-                auto gravityPos = sceneProperties.gravityTransform.GetInverse() *
-                                  glm::vec4(getHeadPosition(controller.pxController), 1);
-                gravityForce = sceneProperties.gravityTransform.GetRotation() *
-                               sceneProperties.gravityFunction(gravityPos);
-            }
+            glm::vec3 gravityForce = sceneProperties.GetGravity(getHeadPosition(controller.pxController));
             auto gravityStrength = glm::length(gravityForce);
             if (gravityStrength > 0 && gravityStrength > CVarCharacterMinFlipGravity.Get()) {
                 auto currentUp = transform.GetUp();
