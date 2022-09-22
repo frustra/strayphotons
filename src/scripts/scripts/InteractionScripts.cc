@@ -40,15 +40,6 @@ namespace sp::scripts {
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
-                        auto breakEvent = std::get_if<EntityRef>(&event.data);
-                        if (!breakEvent) continue;
-
-                        auto brokenConstraint = breakEvent->Get(lock);
-                        if (ph.constraint == brokenConstraint) ph.RemoveConstraint();
-                        sp::erase(scriptData.grabEntities, brokenConstraint);
-                    }
-
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
                         auto pointTransform = std::get_if<Transform>(&event.data);
                         if (pointTransform) {
@@ -65,9 +56,8 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
-                            ph.RemoveConstraint();
                             sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == event.source && joint.type == PhysicsJointType::Fixed;
+                                return joint.target == event.source && joint.type == PhysicsJointType::Force;
                             });
                             sp::erase(scriptData.grabEntities, event.source);
                         } else if (std::holds_alternative<Transform>(event.data)) {
@@ -77,29 +67,14 @@ namespace sp::scripts {
 
                             scriptData.grabEntities.emplace_back(event.source);
 
-                            if (event.source.Has<Physics>(lock)) {
-                                PhysicsJoint joint;
-                                joint.target = event.source;
-                                joint.type = PhysicsJointType::Fixed;
-                                joint.remoteOffset = invParentRotate *
-                                                     (transform.GetPosition() - parentTransform.GetPosition());
-                                joint.remoteOrient = invParentRotate * transform.GetRotation();
-                                joints.Add(joint);
-
-                                auto &parentPhysics = event.source.Get<Physics>(lock);
-                                if (parentPhysics.constraint) {
-                                    ph.SetConstraint(parentPhysics.constraint,
-                                        0.0f,
-                                        invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()) +
-                                            parentPhysics.constraintOffset,
-                                        parentPhysics.constraintRotation * invParentRotate * transform.GetRotation());
-                                }
-                            } else {
-                                ph.SetConstraint(event.source,
-                                    0.0f,
-                                    invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
-                                    invParentRotate * transform.GetRotation());
-                            }
+                            PhysicsJoint joint;
+                            joint.target = event.source;
+                            joint.type = PhysicsJointType::Force;
+                            joint.remoteOffset = invParentRotate *
+                                                 (transform.GetPosition() - parentTransform.GetPosition());
+                            joint.remoteOrient = invParentRotate * transform.GetRotation();
+                            joint.limit = glm::vec2(20.0f, 10.0f); // TODO: Read this property from event or cvar
+                            joints.Add(joint);
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
                         }
@@ -117,19 +92,13 @@ namespace sp::scripts {
                                                glm::angleAxis(input.x, upAxis);
 
                             for (auto &joint : joints.joints) {
-                                if (joint.target == event.source && joint.type == PhysicsJointType::Fixed) {
+                                if (joint.target == event.source && joint.type == PhysicsJointType::Force) {
                                     // Move the objects origin so it rotates around its center of mass
                                     auto center = joint.remoteOrient * centerOfMass;
                                     joint.remoteOffset += center - (deltaRotate * center);
                                     joint.remoteOrient = deltaRotate * joint.remoteOrient;
                                     break;
                                 }
-                            }
-                            if (ph.constraint) {
-                                // Move the objects origin so it rotates around its center of mass
-                                auto center = ph.constraintRotation * centerOfMass;
-                                ph.constraintOffset += center - (deltaRotate * center);
-                                ph.constraintRotation = deltaRotate * ph.constraintRotation;
                             }
                         }
                     }

@@ -10,7 +10,7 @@ namespace sp {
         AnimationSystem(PhysxManager &manager);
         ~AnimationSystem() {}
 
-        void Frame();
+        void Frame(ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>> lock);
 
     private:
         double RoundToFrameInterval(double value) const;

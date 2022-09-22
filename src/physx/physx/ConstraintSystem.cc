@@ -23,25 +23,31 @@ namespace sp {
 
     ConstraintSystem::ConstraintSystem(PhysxManager &manager) : manager(manager) {}
 
-    void ConstraintSystem::UpdateForceConstraint(PxRigidActor *actor,
+    /**
+     * This constraint system operates by applying forces to an object's center of mass up to a specified maximum.
+     * Forces are applied via 1D springs in PhysX's built-in constraint solver.
+     *
+     * Constrained actor velocities are capped at a calculated maximum in order for them to be able to stop on target
+     * without exceeding force limits. Additionally, a gravity-oriented lift force will be applied separetely to make
+     * trajectories more stable at the force limit.
+     *
+     * If a constraint's target distance exceeds its maximum, the constraint will break and be removed.
+     */
+    bool ConstraintSystem::UpdateForceConstraint(PxRigidActor *actor,
         JointState *joint,
         ecs::Transform transform,
         ecs::Transform targetTransform,
         glm::vec3 targetVelocity,
         glm::vec3 gravity) {
-        if (!actor || !joint || !joint->forceConstraint) return;
+        if (!actor || !joint || !joint->forceConstraint) return false;
         auto dynamic = actor->is<PxRigidDynamic>();
-        if (!dynamic) return;
+        if (!dynamic) return false;
         auto centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
 
         auto currentRotate = transform.GetRotation();
         transform.Translate(currentRotate * centerOfMass);
-
         auto targetRotate = targetTransform.GetRotation();
-        targetTransform.Translate(targetRotate * joint->ecsJoint.remoteOrient * centerOfMass);
-
-        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
-        auto deltaRotate = targetRotate * glm::inverse(currentRotate);
+        targetTransform.Translate(targetRotate * centerOfMass);
 
         float intervalSeconds = manager.interval.count() / 1e9;
         float tickFrequency = 1e9 / manager.interval.count();
@@ -49,111 +55,16 @@ namespace sp {
         float maxForce = joint->ecsJoint.limit.x;
         float maxTorque = joint->ecsJoint.limit.y;
 
-        { // Apply Torque
-            auto deltaRotation = glm::eulerAngles(deltaRotate);
+        bool wakeUp = false;
 
-            auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
-            auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
-            glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-            glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
-
-            if (maxTorque > 0) {
-                auto maxAcceleration = invWorldInertia * glm::vec3(maxTorque);
-                auto deltaTick = maxAcceleration * intervalSeconds;
-                auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
-                    std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
-                    std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
-
-                auto targetRotationVelocity = deltaRotation;
-                if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                    targetRotationVelocity = glm::normalize(targetRotationVelocity) * (maxVelocity - deltaTick);
-                } else {
-                    targetRotationVelocity *= tickFrequency;
-                }
-
-                auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-
-                glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
-                float forceAbs = glm::length(force) + 0.00001f;
-                auto forceClampRatio = std::min(maxTorque, forceAbs) / forceAbs;
-                joint->forceConstraint->setTorque(force * forceClampRatio);
-            } else {
-                auto deltaVelocity = (deltaRotation * tickFrequency) - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-                joint->forceConstraint->setTorque(worldInertia * (deltaVelocity * tickFrequency));
-            }
-        }
-
-        { // Apply Movement Force
-            if (maxForce > 0) {
-                auto maxAcceleration = maxForce / dynamic->getMass();
-                auto deltaTick = maxAcceleration * intervalSeconds;
-                auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
-
-                auto targetMovementVelocity = deltaPos;
-                if (maxVelocity > deltaTick) {
-                    targetMovementVelocity = glm::normalize(targetMovementVelocity);
-                    targetMovementVelocity *= maxVelocity - deltaTick;
-                } else {
-                    targetMovementVelocity *= tickFrequency;
-                }
-                targetMovementVelocity += targetVelocity;
-                auto deltaVelocity = targetMovementVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-
-                glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
-                float forceAbs = glm::length(force) + 0.00001f;
-                auto forceClampRatio = std::min(maxForce, forceAbs) / forceAbs;
-                joint->forceConstraint->setForce(force * forceClampRatio);
-            } else {
-                auto targetMovementVelocity = deltaPos * tickFrequency + targetVelocity;
-                auto deltaVelocity = targetMovementVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-
-                joint->forceConstraint->setForce(deltaVelocity * tickFrequency * dynamic->getMass());
-            }
-        }
-
-        joint->forceConstraint->setGravity(gravity * dynamic->getMass());
-    }
-
-    /**
-     * This constraint system operates by applying forces to an object's center of mass up to a specified maximum.
-     *
-     * Constrained actor velocities are capped at a calculated maximum in order for them to be able to stop on target
-     * without exceeding force limits. Additionally, force along the vertical axis will take gravity into account to
-     * keep objects at their target position and orientation.
-     *
-     * If a constraint's target distance exceeds its maximum, the constraint will break and be removed.
-     */
-    void ConstraintSystem::HandleForceLimitConstraint(PxRigidActor *actor,
-        const ecs::Physics &physics,
-        ecs::Transform transform,
-        ecs::Transform targetTransform,
-        glm::vec3 targetVelocity) {
-        auto dynamic = actor->is<PxRigidDynamic>();
-        if (!dynamic) return;
-        auto centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
-
-        auto currentRotate = transform.GetRotation();
-        transform.Translate(currentRotate * centerOfMass);
-
-        auto targetRotate = targetTransform.GetRotation();
-        targetTransform.Translate(targetRotate * physics.constraintRotation * centerOfMass);
-
-        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
-                        targetRotate * physics.constraintOffset;
-        auto deltaRotate = targetRotate * physics.constraintRotation * glm::inverse(currentRotate);
-
-        float intervalSeconds = manager.interval.count() / 1e9;
-        float tickFrequency = 1e9 / manager.interval.count();
-
-        { // Apply Torque
-            auto deltaRotation = glm::eulerAngles(deltaRotate);
-
-            auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
-            auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
-            glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-            glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
-
-            auto maxAcceleration = invWorldInertia * glm::vec3(CVarMaxConstraintTorque.Get());
+        // Apply Torque
+        auto deltaRotation = glm::eulerAngles(targetRotate * glm::inverse(currentRotate));
+        auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
+        auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
+        glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
+        glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
+        if (maxTorque > 0) {
+            auto maxAcceleration = invWorldInertia * glm::vec3(maxTorque);
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
@@ -165,98 +76,48 @@ namespace sp {
             } else {
                 targetRotationVelocity *= tickFrequency;
             }
+
             auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
 
             glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
             float forceAbs = glm::length(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
-
-            dynamic->addTorque(GlmVec3ToPxVec3(force) * forceClampRatio);
+            auto forceClampRatio = std::min(maxTorque, forceAbs) / forceAbs;
+            wakeUp |= joint->forceConstraint->setTorque(force * forceClampRatio);
+        } else {
+            auto deltaVelocity = (deltaRotation * tickFrequency) - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+            wakeUp |= joint->forceConstraint->setTorque(worldInertia * (deltaVelocity * tickFrequency));
         }
 
-        { // Apply Lateral Force
-            auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / dynamic->getMass();
+        // Apply Movement Force
+        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() - (targetVelocity * intervalSeconds);
+        if (maxForce > 0) {
+            auto maxAcceleration = maxForce / dynamic->getMass();
             auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(glm::vec2(deltaPos.x, deltaPos.z)));
+            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
 
-            auto targetLateralVelocity = glm::vec3(deltaPos.x, 0, deltaPos.z);
+            auto targetMovementVelocity = deltaPos;
             if (maxVelocity > deltaTick) {
-                targetLateralVelocity = glm::normalize(targetLateralVelocity);
-                targetLateralVelocity *= maxVelocity - deltaTick;
+                targetMovementVelocity = glm::normalize(targetMovementVelocity);
+                targetMovementVelocity *= maxVelocity - deltaTick;
             } else {
-                targetLateralVelocity *= tickFrequency;
+                targetMovementVelocity *= tickFrequency;
             }
-            targetLateralVelocity.x += targetVelocity.x;
-            targetLateralVelocity.z += targetVelocity.z;
-            auto deltaVelocity = targetLateralVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-            deltaVelocity.y = 0;
+            targetMovementVelocity += targetVelocity;
+            auto deltaVelocity = targetMovementVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
 
             glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
             float forceAbs = glm::length(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
-            dynamic->addForce(GlmVec3ToPxVec3(force) * forceClampRatio);
+            auto forceClampRatio = std::min(maxForce, forceAbs) / forceAbs;
+            wakeUp |= joint->forceConstraint->setForce(force * forceClampRatio);
+        } else {
+            auto targetMovementVelocity = deltaPos * tickFrequency + targetVelocity;
+            auto deltaVelocity = targetMovementVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+
+            wakeUp |= joint->forceConstraint->setForce(deltaVelocity * tickFrequency * dynamic->getMass());
         }
 
-        { // Apply Vertical Force
-            auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / dynamic->getMass();
-            if (deltaPos.y > 0) {
-                maxAcceleration -= -9.81f; // CVarGravity.Get();
-            } else {
-                maxAcceleration += -9.81f; // CVarGravity.Get();
-            }
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
-
-            float targetVerticalVelocity = 0.0f;
-            if (maxVelocity > deltaTick) {
-                targetVerticalVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
-            } else {
-                targetVerticalVelocity = deltaPos.y * tickFrequency;
-            }
-            targetVerticalVelocity += targetVelocity.y;
-            auto deltaVelocity = targetVerticalVelocity - dynamic->getLinearVelocity().y;
-
-            float force = deltaVelocity * tickFrequency * dynamic->getMass();
-            force -= -9.81f /*CVarGravity.Get()*/ * dynamic->getMass();
-            float forceAbs = std::abs(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
-            dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
-        }
-    }
-
-    void ConstraintSystem::BreakConstraints(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::CharacterController>,
-        ecs::Write<ecs::Physics>,
-        ecs::SendEventsLock> lock) {
-        ZoneScoped;
-
-        InlineVector<ecs::Entity, 32> breakList;
-        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
-            auto &controller = entity.Get<ecs::CharacterController>(lock);
-            if (controller.pxController) {
-                auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-                if (userData && userData->standingOn) breakList.push_back(userData->standingOn);
-            }
-        }
-
-        for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
-            if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
-            auto &physics = entity.Get<ecs::Physics>(lock);
-            auto constraintEntity = physics.constraint.Get(lock);
-            if (sp::contains(breakList, entity)) {
-                ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
-                physics.RemoveConstraint();
-            } else if (physics.constraintMaxDistance > 0.0f && constraintEntity.Has<ecs::TransformSnapshot>(lock)) {
-                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
-                auto &targetTransform = constraintEntity.Get<ecs::TransformSnapshot>(lock);
-
-                auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
-                                targetTransform.GetRotation() * physics.constraintOffset;
-                if (glm::length(deltaPos) > physics.constraintMaxDistance) {
-                    ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
-                    physics.RemoveConstraint();
-                }
-            }
-        }
+        wakeUp |= joint->forceConstraint->setGravity(gravity * dynamic->getMass());
+        return wakeUp;
     }
 
     void ConstraintSystem::Frame(ecs::Lock<
@@ -272,35 +133,6 @@ namespace sp {
             auto const &actor = manager.actors[entity];
 
             UpdateJoints(lock, entity, actor, transform);
-
-            auto constraintEntity = physics.constraint.Get(lock);
-            if (constraintEntity.Has<ecs::TransformTree>(lock)) {
-                auto &targetTransform = constraintEntity.Get<ecs::TransformTree>(lock);
-                glm::vec3 targetVelocity(0);
-
-                // Try and determine the velocity of the constraint target entity
-                while (constraintEntity.Has<ecs::TransformTree>(lock)) {
-                    if (manager.actors.count(constraintEntity) > 0) {
-                        auto userData = (ActorUserData *)manager.actors[constraintEntity]->userData;
-                        if (userData) targetVelocity = userData->velocity;
-                        break;
-                    } else if (constraintEntity.Has<ecs::CharacterController>(lock)) {
-                        auto &targetController = constraintEntity.Get<ecs::CharacterController>(lock);
-                        if (targetController.pxController) {
-                            auto userData = (CharacterControllerUserData *)targetController.pxController->getUserData();
-                            if (userData) targetVelocity = userData->actorData.velocity;
-                            break;
-                        }
-                    }
-                    constraintEntity = constraintEntity.Get<ecs::TransformTree>(lock).parent.Get(lock);
-                }
-
-                HandleForceLimitConstraint(actor,
-                    physics,
-                    transform,
-                    targetTransform.GetGlobalTransform(lock),
-                    targetVelocity);
-            }
 
             if (physics.constantForce != glm::vec3()) {
                 auto rotation = entity.Get<ecs::TransformTree>(lock).GetGlobalRotation(lock);
@@ -469,7 +301,7 @@ namespace sp {
                         joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
                     }
 
-                    UpdateForceConstraint(actor, joint, transform, targetTransform, targetVelocity, gravity);
+                    wakeUp |= UpdateForceConstraint(actor, joint, transform, targetTransform, targetVelocity, gravity);
                 }
 
                 if (ecsJoint == joint->ecsJoint) {

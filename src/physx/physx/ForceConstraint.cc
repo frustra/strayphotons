@@ -30,7 +30,7 @@ namespace sp {
 
         auto *curr = constraints;
         for (auto &axis : axes) {
-            curr->flags |= Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE;
+            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
             curr->linear0 = GlmVec3ToPxVec3(axis);
             curr->geometricError = -glm::dot(data.force, axis);
             curr->mods.spring.stiffness = 1.0f;
@@ -41,7 +41,7 @@ namespace sp {
             }
             curr++;
 
-            curr->flags |= Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE;
+            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
             curr->angular0 = GlmVec3ToPxVec3(axis);
             curr->geometricError = -glm::dot(data.torque, axis);
             curr->mods.spring.stiffness = 1.0f;
@@ -53,10 +53,10 @@ namespace sp {
             curr++;
         }
 
-        if (data.gravity != glm::vec3(0)) {
-            curr->flags |= Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE;
-            curr->linear0 = GlmVec3ToPxVec3(-glm::normalize(data.gravity));
-            curr->geometricError = -glm::min(data.maxLiftForce, glm::length(data.gravity));
+        if (data.gravityForce != glm::vec3(0)) {
+            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
+            curr->linear0 = GlmVec3ToPxVec3(-glm::normalize(data.gravityForce));
+            curr->geometricError = -glm::min(data.maxLiftForce, glm::length(data.gravityForce));
             curr->mods.spring.stiffness = 1.0f;
             curr->mods.spring.damping = 0.0f;
             curr->minImpulse = 0.0f;
@@ -121,22 +121,25 @@ namespace sp {
         pxConstraint->markDirty();
     }
 
-    void ForceConstraint::setForce(glm::vec3 force) {
-        if (data.force == force) return;
+    bool ForceConstraint::setForce(glm::vec3 force) {
+        if (data.force == force) return false;
         data.force = force;
         pxConstraint->markDirty();
+        return true;
     }
 
-    void ForceConstraint::setTorque(glm::vec3 torque) {
-        if (data.torque == torque) return;
+    bool ForceConstraint::setTorque(glm::vec3 torque) {
+        if (data.torque == torque) return false;
         data.torque = torque;
         pxConstraint->markDirty();
+        return true;
     }
 
-    void ForceConstraint::setGravity(glm::vec3 gravity) {
-        if (data.gravity == gravity) return;
-        data.gravity = gravity;
+    bool ForceConstraint::setGravity(glm::vec3 gravityForce) {
+        if (data.gravityForce == gravityForce) return false;
+        data.gravityForce = gravityForce;
         pxConstraint->markDirty();
+        return true;
     }
 
     void ForceConstraint::setLocalPose(PxJointActorIndex::Enum actor, const PxTransform &pose) {

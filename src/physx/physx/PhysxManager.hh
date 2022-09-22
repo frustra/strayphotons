@@ -21,7 +21,6 @@
 #include "physx/TriggerSystem.hh"
 
 #include <PxPhysicsAPI.h>
-#include <any>
 #include <extensions/PxDefaultAllocator.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <functional>

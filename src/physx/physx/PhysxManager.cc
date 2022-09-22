@@ -169,8 +169,6 @@ namespace sp {
             scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, joints);
         }
 
-        animationSystem.Frame();
-
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
@@ -188,14 +186,16 @@ namespace sp {
                 }
             }
 
+            animationSystem.Frame(lock);
+
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
                 UpdateActor(lock, ent);
             }
 
-            characterControlSystem.Frame(lock);
             constraintSystem.Frame(lock);
+            characterControlSystem.Frame(lock);
         }
 
         { // Simulate 1 physics frame (blocking)
@@ -213,12 +213,12 @@ namespace sp {
                 ecs::Read<ecs::LaserEmitter,
                     ecs::OpticalElement,
                     ecs::EventBindings,
+                    ecs::Physics,
                     ecs::EventInput,
                     ecs::CharacterController>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
-                    ecs::Physics,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
@@ -243,7 +243,8 @@ namespace sp {
                             transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                             transform.SetRotation(PxQuatToGlmQuat(pose.q));
                             ent.Set<ecs::TransformTree>(lock, transform);
-                            userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
+                            userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
+                                                 (float)(1e9 / interval.count());
                             userData->pose = transform;
                         }
                     }
@@ -281,7 +282,6 @@ namespace sp {
                 }
             }
 
-            constraintSystem.BreakConstraints(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
 
@@ -652,7 +652,8 @@ namespace sp {
                 actor->setGlobalPose(pxTransform);
             }
 
-            userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
+            userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
+                                 (float)(1e9 / interval.count());
         } else {
             userData->velocity = glm::vec3(0);
         }

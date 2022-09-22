@@ -142,37 +142,6 @@ namespace ecs {
                     Errorf("Unknown physics group: %s", groupString);
                     return false;
                 }
-            } else if (param.first == "constraint") {
-                Assert(scene, "Physics::Load must have valid scene to define constraint");
-                Name constraintTargetName;
-                float constraintMaxDistance = 0.0f;
-                Transform constraintTransform;
-                if (param.second.is<string>()) {
-                    constraintTargetName = Name(param.second.get<string>(), scope.prefix);
-                } else if (param.second.is<picojson::object>()) {
-                    for (auto constraintParam : param.second.get<picojson::object>()) {
-                        if (constraintParam.first == "target") {
-                            constraintTargetName = Name(constraintParam.second.get<string>(), scope.prefix);
-                        } else if (constraintParam.first == "break_distance") {
-                            constraintMaxDistance = constraintParam.second.get<double>();
-                        } else if (constraintParam.first == "offset") {
-                            if (!sp::json::Load(scope, constraintTransform, constraintParam.second)) {
-                                Errorf("Couldn't parse physics constraint offset as Transform");
-                                return false;
-                            }
-                        }
-                    }
-                }
-                if (constraintTargetName) {
-                    physics.SetConstraint(constraintTargetName,
-                        constraintMaxDistance,
-                        constraintTransform.GetPosition(),
-                        constraintTransform.GetRotation());
-                } else {
-                    Errorf("Component<Physics>::Load constraint name does not exist: %s",
-                        constraintTargetName.String());
-                    return false;
-                }
             }
         }
         return true;

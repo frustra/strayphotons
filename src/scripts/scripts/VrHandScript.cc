@@ -284,7 +284,7 @@ namespace sp::scripts {
     InternalPhysicsScript vrHandScript("vr_hand",
         [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
-            if (!ent.Has<Name, Physics, PhysicsQuery, TransformTree>(lock)) return;
+            if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
 
             auto scene = state.scope.scene.lock();
             Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
@@ -297,6 +297,7 @@ namespace sp::scripts {
             }
 
             auto &ph = ent.Get<Physics>(lock);
+            auto &joints = ent.Get<PhysicsJoints>(lock).joints;
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
             auto inputRoot = scriptData.inputRootRef.Get(lock);
@@ -333,10 +334,17 @@ namespace sp::scripts {
             auto constraintTarget = scriptData.inputRootRef.Get(lock);
             if (constraintTarget.Has<TransformTree>(lock)) {
                 auto &inputTransform = constraintTarget.Get<TransformTree>(lock);
+                auto targetTransform = inputTransform.GetGlobalTransform(lock);
                 // Don't set the hand constraint target until the controller is valid
-                if (inputTransform.parent && ph.constraint != constraintTarget) {
-                    ph.constraint = scriptData.inputRootRef;
-                    forceTeleport = true;
+                if (inputTransform.parent) {
+                    if (joints.empty()) joints.resize(1);
+                    if (joints[0].target != constraintTarget || joints[0].type != PhysicsJointType::Force) {
+                        joints[0].target = scriptData.inputRootRef;
+                        joints[0].type = PhysicsJointType::Force;
+                        // TODO: Read this property from event or cvar
+                        joints[0].limit = glm::vec2(20.0f, 10.0f);
+                        forceTeleport = true;
+                    }
                 }
             }
 
@@ -344,10 +352,9 @@ namespace sp::scripts {
             auto teleportDistance = state.GetParam<double>("teleport_distance");
             bool teleported = false;
             if (teleportDistance > 0 || forceTeleport) {
-                auto parentEnt = ph.constraint.Get(lock);
-                if (parentEnt.Has<TransformTree>(lock)) {
+                if (constraintTarget.Has<TransformTree>(lock)) {
                     Assertf(!transform.parent, "vr_hand script transform can't have parent");
-                    auto parentTransform = parentEnt.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                    auto parentTransform = constraintTarget.Get<TransformTree>(lock).GetGlobalTransform(lock);
 
                     auto dist = glm::length(transform.pose.GetPosition() - parentTransform.GetPosition());
                     if (dist >= teleportDistance || forceTeleport) {
