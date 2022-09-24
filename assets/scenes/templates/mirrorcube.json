@@ -7,7 +7,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"group": "interactive",
 				"density": 1
 			},
 			"script": {

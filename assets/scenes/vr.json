@@ -72,6 +72,7 @@
 				"_linear_damping": 1,
 				"angular_damping": 100
 			},
+			"physics_joints": [],
 			"physics_query": {},
 			"event_input": [
 				"/interact/press"
@@ -105,6 +106,7 @@
 				"_linear_damping": 1,
 				"angular_damping": 100
 			},
+			"physics_joints": [],
 			"physics_query": {},
 			"event_input": [
 				"/interact/press"

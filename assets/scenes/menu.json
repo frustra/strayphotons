@@ -7,7 +7,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"group": "interactive",
 				"density": 100
 			},
 			"transform": {
@@ -31,6 +30,7 @@
 			},
 			"physics": {
 				"model": "box",
+				"group": "interactive",
 				"density": 10
 			},
 			"physics_joints": [{
