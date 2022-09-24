@@ -21,18 +21,29 @@ namespace sp {
         }
 
         const Data &data = *reinterpret_cast<const Data *>(constantBlock);
-        cA2wOut = bA2w.transform(data.c2b[0]).p;
-        cB2wOut = bB2w.transform(data.c2b[1]).p;
-        body0WorldOffset = cB2wOut - bA2w.p;
+        auto cA2w = bA2w.transform(data.c2b[0]);
+        auto cB2w = bB2w.transform(data.c2b[1]);
+        body0WorldOffset = cB2w.p - bA2w.p;
         invMassScale = {1.0f, 1.0f, 1.0f, 1.0f};
+
+        cA2wOut = cA2w.p;
+        cB2wOut = cB2w.p;
 
         static const std::array<glm::vec3, 3> axes = {glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1)};
 
+        if (cA2w.q.dot(cB2w.q) < 0.0f) { // minimum distance quaternion
+            cB2w.q = -cB2w.q;
+        }
+
+        glm::vec3 deltaPos = PxVec3ToGlmVec3(cB2w.p - cA2w.p);
+        PxQuat deltaQuat = cA2w.q.getConjugate() * cB2w.q;
+        glm::mat3 constraintAxes = glm::mat3_cast(PxQuatToGlmQuat(cA2w.q));
+
         auto *curr = constraints;
-        for (auto &axis : axes) {
+        for (size_t i = 0; i < 3; i++) {
             curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
-            curr->linear0 = GlmVec3ToPxVec3(data.force * axis);
-            curr->geometricError = -1.0f;
+            curr->linear0 = GlmVec3ToPxVec3(axes[i]);
+            curr->geometricError = -glm::dot(data.force, axes[i]);
             curr->mods.spring.stiffness = 1.0f;
             curr->mods.spring.damping = 0.0f;
             if (data.maxForce > 0.0f) {
@@ -41,13 +52,18 @@ namespace sp {
             }
             curr++;
 
-            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE |
-                                 Px1DConstraintFlag::eANGULAR_CONSTRAINT);
-            curr->angular0 = GlmVec3ToPxVec3(data.torque * axis);
-            curr->geometricError = -1.0f;
-            curr->mods.spring.stiffness = 1.0f;
-            curr->mods.spring.damping = 0.0f;
+            curr->flags |= PxU16(Px1DConstraintFlag::eOUTPUT_FORCE | Px1DConstraintFlag::eANGULAR_CONSTRAINT);
+            curr->angular0 = GlmVec3ToPxVec3(constraintAxes[i]);
+            curr->geometricError = -glm::dot(PxVec3ToGlmVec3(deltaQuat.getImaginaryPart()), axes[i]);
             if (data.maxTorque > 0.0f) {
+                curr->flags |= Px1DConstraintFlag::eSPRING;
+                if (curr->geometricError != 0.0f) {
+                    curr->mods.spring.stiffness = glm::abs(glm::dot(data.torque, axes[i])) /
+                                                  glm::abs(curr->geometricError);
+                } else {
+                    curr->mods.spring.stiffness = 1.0f;
+                }
+                curr->mods.spring.damping = 0.0f;
                 curr->minImpulse = -data.maxTorque;
                 curr->maxImpulse = data.maxTorque;
             }

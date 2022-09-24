@@ -61,10 +61,8 @@ namespace sp {
         auto deltaRotation = glm::eulerAngles(targetRotate * glm::inverse(currentRotate));
         auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
         auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
-        glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-        glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
         if (maxTorque > 0) {
-            auto maxAcceleration = invWorldInertia * glm::vec3(maxTorque);
+            auto maxAcceleration = invMassInertia * maxTorque;
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
@@ -79,13 +77,14 @@ namespace sp {
 
             auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
 
-            glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
-            float forceAbs = glm::length(force) + 0.00001f;
-            auto forceClampRatio = std::min(maxTorque, forceAbs) / forceAbs;
-            wakeUp |= joint->forceConstraint->setTorque(force * forceClampRatio);
+            glm::vec3 torque = massInertia * (glm::inverse(currentRotate) * deltaVelocity) * tickFrequency;
+            float torqueAbs = glm::length(torque) + 0.00001f;
+            auto clampRatio = std::min(maxTorque, torqueAbs) / torqueAbs;
+            wakeUp |= joint->forceConstraint->setTorque(torque * clampRatio);
         } else {
             auto deltaVelocity = (deltaRotation * tickFrequency) - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-            wakeUp |= joint->forceConstraint->setTorque(worldInertia * (deltaVelocity * tickFrequency));
+            auto torque = massInertia * (glm::inverse(currentRotate) * deltaVelocity) * tickFrequency;
+            wakeUp |= joint->forceConstraint->setTorque(torque);
         }
 
         // Apply Linear Force
@@ -106,8 +105,8 @@ namespace sp {
 
             glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
             float forceAbs = glm::length(force) + 0.00001f;
-            auto forceClampRatio = std::min(maxForce, forceAbs) / forceAbs;
-            wakeUp |= joint->forceConstraint->setForce(force * forceClampRatio);
+            auto clampRatio = std::min(maxForce, forceAbs) / forceAbs;
+            wakeUp |= joint->forceConstraint->setForce(force * clampRatio);
         } else {
             auto targetLinearVelocity = deltaPos * tickFrequency + targetVelocity;
             auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
@@ -227,6 +226,10 @@ namespace sp {
                 remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation());
             }
 
+            auto currentTransform = transform;
+            currentTransform.Translate(glm::mat3(currentTransform.matrix) * ecsJoint.localOffset);
+            currentTransform.Rotate(ecsJoint.localOrient);
+
             // Try and determine the velocity of the joint target entity
             glm::vec3 targetVelocity(0);
             auto targetRoot = targetEntity;
@@ -274,7 +277,7 @@ namespace sp {
                     // Free'd automatically on release();
                     joint->forceConstraint =
                         new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
-                    UpdateForceConstraint(actor, joint, transform, targetTransform, targetVelocity, gravity);
+                    UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                     break;
                 default:
                     Abortf("Unsupported PhysX joint type: %s", ecsJoint.type);
@@ -299,7 +302,8 @@ namespace sp {
                         joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
                     }
 
-                    wakeUp |= UpdateForceConstraint(actor, joint, transform, targetTransform, targetVelocity, gravity);
+                    wakeUp |=
+                        UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                 }
 
                 if (ecsJoint == joint->ecsJoint) {
