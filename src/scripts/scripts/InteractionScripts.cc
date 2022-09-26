@@ -7,6 +7,9 @@
 namespace sp::scripts {
     using namespace ecs;
 
+    static CVar<float> CVarMaxGrabForce("i.MaxGrabForce", 20.0f, "Maximum force applied to held objects");
+    static CVar<float> CVarMaxGrabTorque("i.MaxGrabTorque", 10.0f, "Maximum torque applied to held objects");
+
     std::array interactionScripts = {
         InternalScript("interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -73,7 +76,8 @@ namespace sp::scripts {
                             joint.remoteOffset = invParentRotate *
                                                  (transform.GetPosition() - parentTransform.GetPosition());
                             joint.remoteOrient = invParentRotate * transform.GetRotation();
-                            joint.limit = glm::vec2(20.0f, 10.0f); // TODO: Read this property from event or cvar
+                            // TODO: Read this property from player
+                            joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
                             joints.Add(joint);
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());

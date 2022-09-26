@@ -41,12 +41,16 @@ namespace sp {
 
         auto *curr = constraints;
         for (size_t i = 0; i < 3; i++) {
-            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
+            curr->flags |= Px1DConstraintFlag::eOUTPUT_FORCE;
             curr->linear0 = GlmVec3ToPxVec3(axes[i]);
-            curr->geometricError = -glm::dot(data.force, axes[i]);
-            curr->mods.spring.stiffness = 1.0f;
-            curr->mods.spring.damping = 0.0f;
+            curr->geometricError = -glm::dot(deltaPos, axes[i]);
             if (data.maxForce > 0.0f) {
+                curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING);
+                if (curr->geometricError != 0.0f) {
+                    curr->geometricError = -glm::dot(data.force, axes[i]);
+                }
+                curr->mods.spring.stiffness = 1.0f;
+                curr->mods.spring.damping = 0.1f;
                 curr->minImpulse = -data.maxForce;
                 curr->maxImpulse = data.maxForce;
             }
@@ -56,14 +60,12 @@ namespace sp {
             curr->angular0 = GlmVec3ToPxVec3(constraintAxes[i]);
             curr->geometricError = -glm::dot(PxVec3ToGlmVec3(deltaQuat.getImaginaryPart()), axes[i]);
             if (data.maxTorque > 0.0f) {
-                curr->flags |= Px1DConstraintFlag::eSPRING;
+                curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING);
                 if (curr->geometricError != 0.0f) {
-                    curr->mods.spring.stiffness = glm::abs(glm::dot(data.torque, axes[i])) /
-                                                  glm::abs(curr->geometricError);
-                } else {
-                    curr->mods.spring.stiffness = 1.0f;
+                    curr->geometricError = -glm::dot(data.torque, axes[i]);
                 }
-                curr->mods.spring.damping = 0.0f;
+                curr->mods.spring.stiffness = 1.0f;
+                curr->mods.spring.damping = 0.1f;
                 curr->minImpulse = -data.maxTorque;
                 curr->maxImpulse = data.maxTorque;
             }
@@ -71,9 +73,10 @@ namespace sp {
         }
 
         if (data.gravityForce != glm::vec3(0)) {
-            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eOUTPUT_FORCE);
+            curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING |
+                                 Px1DConstraintFlag::eOUTPUT_FORCE);
             curr->linear0 = GlmVec3ToPxVec3(-glm::normalize(data.gravityForce));
-            curr->geometricError = -glm::min(data.maxLiftForce, glm::length(data.gravityForce));
+            curr->geometricError = -glm::length(data.gravityForce);
             curr->mods.spring.stiffness = 1.0f;
             curr->mods.spring.damping = 0.0f;
             curr->minImpulse = 0.0f;

@@ -5,7 +5,7 @@
 			"renderable": {
 				"model": "box"
 			},
-			"physics": {
+			"_physics": {
 				"model": "box",
 				"density": 100
 			},

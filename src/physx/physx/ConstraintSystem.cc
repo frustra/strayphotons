@@ -77,13 +77,18 @@ namespace sp {
 
             auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
 
-            glm::vec3 torque = massInertia * (glm::inverse(currentRotate) * deltaVelocity) * tickFrequency;
-            float torqueAbs = glm::length(torque) + 0.00001f;
-            auto clampRatio = std::min(maxTorque, torqueAbs) / torqueAbs;
+            // glm::vec3 torque = massInertia * (glm::inverse(currentRotate) * deltaVelocity) * tickFrequency;
+            // float torqueAbs = glm::length(torque) + 0.00001f;
+            // auto clampRatio = std::min(maxTorque, torqueAbs) / torqueAbs;
+            // wakeUp |= joint->forceConstraint->setTorque(torque * clampRatio);
+            glm::vec3 torque = glm::inverse(currentRotate) * deltaVelocity * tickFrequency;
+            glm::vec3 torqueAbs = glm::abs(torque) + 0.00001f;
+            auto clampRatio = glm::min(maxAcceleration, torqueAbs) / torqueAbs;
             wakeUp |= joint->forceConstraint->setTorque(torque * clampRatio);
         } else {
             auto deltaVelocity = (deltaRotation * tickFrequency) - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-            auto torque = massInertia * (glm::inverse(currentRotate) * deltaVelocity) * tickFrequency;
+            // auto torque = massInertia * (glm::inverse(currentRotate) * deltaVelocity) * tickFrequency;
+            auto torque = glm::inverse(currentRotate) * deltaVelocity * tickFrequency;
             wakeUp |= joint->forceConstraint->setTorque(torque);
         }
 
@@ -103,17 +108,23 @@ namespace sp {
             targetLinearVelocity += targetVelocity;
             auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
 
-            glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
-            float forceAbs = glm::length(force) + 0.00001f;
-            auto clampRatio = std::min(maxForce, forceAbs) / forceAbs;
-            wakeUp |= joint->forceConstraint->setForce(force * clampRatio);
+            // glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
+            // float forceAbs = glm::length(force) + 0.00001f;
+            // auto clampRatio = std::min(maxForce, forceAbs) / forceAbs;
+            // wakeUp |= joint->forceConstraint->setForce(force * clampRatio);
+            glm::vec3 accel = deltaVelocity * tickFrequency;
+            float accelAbs = glm::length(accel) + 0.00001f;
+            auto clampRatio = std::min(maxAcceleration, accelAbs) / accelAbs;
+            wakeUp |= joint->forceConstraint->setForce(accel * clampRatio);
         } else {
             auto targetLinearVelocity = deltaPos * tickFrequency + targetVelocity;
             auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-            wakeUp |= joint->forceConstraint->setForce(deltaVelocity * tickFrequency * dynamic->getMass());
+            wakeUp |= joint->forceConstraint->setForce(deltaVelocity * tickFrequency);
+            // wakeUp |= joint->forceConstraint->setForce(deltaVelocity * tickFrequency * dynamic->getMass());
         }
 
-        wakeUp |= joint->forceConstraint->setGravity(gravity * dynamic->getMass());
+        // wakeUp |= joint->forceConstraint->setGravity(gravity * dynamic->getMass());
+        wakeUp |= joint->forceConstraint->setGravity(gravity);
         return wakeUp;
     }
 
