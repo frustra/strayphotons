@@ -193,7 +193,7 @@
 			"name": "light",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 3.9, -1],
+				"translate": [0, 3.85, -1],
 				"rotate": [[270, 1, 0, 0]]
 			},
 			"light": {

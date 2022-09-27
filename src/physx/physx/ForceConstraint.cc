@@ -29,54 +29,51 @@ namespace sp {
         cA2wOut = cA2w.p;
         cB2wOut = cB2w.p;
 
-        static const std::array<glm::vec3, 3> axes = {glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1)};
-
         if (cA2w.q.dot(cB2w.q) < 0.0f) { // minimum distance quaternion
             cB2w.q = -cB2w.q;
         }
 
         glm::vec3 deltaPos = PxVec3ToGlmVec3(cB2w.p - cA2w.p);
         PxQuat deltaQuat = cA2w.q.getConjugate() * cB2w.q;
+        static const glm::mat3 axes = glm::identity<glm::mat3>();
         glm::mat3 constraintAxes = glm::mat3_cast(PxQuatToGlmQuat(cA2w.q));
 
         auto *curr = constraints;
         for (size_t i = 0; i < 3; i++) {
             curr->flags |= Px1DConstraintFlag::eOUTPUT_FORCE;
             curr->linear0 = GlmVec3ToPxVec3(axes[i]);
-            curr->geometricError = -glm::dot(deltaPos, axes[i]);
             if (data.maxForce > 0.0f) {
                 curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING);
-                if (curr->geometricError != 0.0f) {
-                    curr->geometricError = -glm::dot(data.force, axes[i]);
-                }
+                curr->geometricError = -glm::dot(data.linearAccel, axes[i]);
                 curr->mods.spring.stiffness = 1.0f;
-                curr->mods.spring.damping = 0.1f;
+                curr->mods.spring.damping = 0.0f;
                 curr->minImpulse = -data.maxForce;
                 curr->maxImpulse = data.maxForce;
+            } else {
+                curr->geometricError = -glm::dot(deltaPos, axes[i]);
             }
             curr++;
 
             curr->flags |= PxU16(Px1DConstraintFlag::eOUTPUT_FORCE | Px1DConstraintFlag::eANGULAR_CONSTRAINT);
             curr->angular0 = GlmVec3ToPxVec3(constraintAxes[i]);
-            curr->geometricError = -glm::dot(PxVec3ToGlmVec3(deltaQuat.getImaginaryPart()), axes[i]);
             if (data.maxTorque > 0.0f) {
                 curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING);
-                if (curr->geometricError != 0.0f) {
-                    curr->geometricError = -glm::dot(data.torque, axes[i]);
-                }
+                curr->geometricError = -glm::dot(data.angularAccel, axes[i]);
                 curr->mods.spring.stiffness = 1.0f;
-                curr->mods.spring.damping = 0.1f;
+                curr->mods.spring.damping = 0.0f;
                 curr->minImpulse = -data.maxTorque;
                 curr->maxImpulse = data.maxTorque;
+            } else {
+                curr->geometricError = -glm::dot(PxVec3ToGlmVec3(deltaQuat.getImaginaryPart()), axes[i]);
             }
             curr++;
         }
 
-        if (data.gravityForce != glm::vec3(0)) {
+        if (data.gravity != glm::vec3(0)) {
             curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING |
                                  Px1DConstraintFlag::eOUTPUT_FORCE);
-            curr->linear0 = GlmVec3ToPxVec3(-glm::normalize(data.gravityForce));
-            curr->geometricError = -glm::length(data.gravityForce);
+            curr->linear0 = GlmVec3ToPxVec3(-glm::normalize(data.gravity));
+            curr->geometricError = -glm::length(data.gravity);
             curr->mods.spring.stiffness = 1.0f;
             curr->mods.spring.damping = 0.0f;
             curr->minImpulse = 0.0f;
@@ -141,23 +138,23 @@ namespace sp {
         pxConstraint->markDirty();
     }
 
-    bool ForceConstraint::setForce(glm::vec3 force) {
-        if (data.force == force) return false;
-        data.force = force;
+    bool ForceConstraint::setLinearAccel(glm::vec3 linearAccel) {
+        if (data.linearAccel == linearAccel) return false;
+        data.linearAccel = linearAccel;
         pxConstraint->markDirty();
         return true;
     }
 
-    bool ForceConstraint::setTorque(glm::vec3 torque) {
-        if (data.torque == torque) return false;
-        data.torque = torque;
+    bool ForceConstraint::setAngularAccel(glm::vec3 angularAccel) {
+        if (data.angularAccel == angularAccel) return false;
+        data.angularAccel = angularAccel;
         pxConstraint->markDirty();
         return true;
     }
 
-    bool ForceConstraint::setGravity(glm::vec3 gravityForce) {
-        if (data.gravityForce == gravityForce) return false;
-        data.gravityForce = gravityForce;
+    bool ForceConstraint::setGravity(glm::vec3 gravityAccel) {
+        if (data.gravity == gravityAccel) return false;
+        data.gravity = gravityAccel;
         pxConstraint->markDirty();
         return true;
     }

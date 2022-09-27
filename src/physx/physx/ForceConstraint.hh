@@ -14,7 +14,9 @@ namespace sp {
             float maxForce = 0.0f;
             float maxLiftForce = 0.0f;
             float maxTorque = 0.0f;
-            glm::vec3 force, torque, gravityForce;
+            glm::vec3 linearAccel = glm::vec3(0);
+            glm::vec3 angularAccel = glm::vec3(0);
+            glm::vec3 gravity;
         };
 
         ForceConstraint(PxPhysics &physics,
@@ -27,9 +29,9 @@ namespace sp {
 
         void setActors(PxRigidActor *actor0, PxRigidActor *actor1);
         void setForceLimits(float maxForce, float maxLiftForce, float maxTorque);
-        bool setForce(glm::vec3 force);
-        bool setTorque(glm::vec3 torque);
-        bool setGravity(glm::vec3 gravityForce);
+        bool setLinearAccel(glm::vec3 linearAccel);
+        bool setAngularAccel(glm::vec3 angularAccel);
+        bool setGravity(glm::vec3 gravityAccel);
 
         void setLocalPose(PxJointActorIndex::Enum actor, const PxTransform &pose);
         PxTransform getLocalPose(PxJointActorIndex::Enum actor) const;

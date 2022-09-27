@@ -431,6 +431,13 @@
 			}
 		},
 		{
+			"name": "mirrorcube1.mirrorcube",
+			"physics": {
+				"model": "box",
+				"density": 10
+			}
+		},
+		{
 			"name": "mirrorcube2",
 			"transform": {
 				"translate": [2.25, 0.89, 2.75],
@@ -443,6 +450,13 @@
 			}
 		},
 		{
+			"name": "mirrorcube2.mirrorcube",
+			"physics": {
+				"model": "box",
+				"density": 10
+			}
+		},
+		{
 			"name": "duck",
 			"transform": {
 				"translate": [2.55, 0.83, 2.65],
@@ -452,6 +466,13 @@
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "duck" }
+			}
+		},
+		{
+			"name": "duck.duck.gltf2",
+			"physics": {
+				"model": "duck.cooked",
+				"density": 10
 			}
 		},
 		{
