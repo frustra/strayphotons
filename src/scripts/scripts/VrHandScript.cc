@@ -340,8 +340,7 @@ namespace sp::scripts {
                     if (joints[0].target != constraintTarget || joints[0].type != PhysicsJointType::Force) {
                         joints[0].target = scriptData.inputRootRef;
                         joints[0].type = PhysicsJointType::Force;
-                        // TODO: Read this property from script params
-                        joints[0].limit = glm::vec2(20.0f, 10.0f);
+                        joints[0].limit = glm::vec2(state.GetParam<double>("force_limit"), state.GetParam<double>("torque_limit"));
                         forceTeleport = true;
                     }
                 }

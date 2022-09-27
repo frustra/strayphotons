@@ -60,7 +60,7 @@ namespace sp::scripts {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
                             sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == event.source && joint.type == PhysicsJointType::Force;
+                                return joint.target == event.source;
                             });
                             sp::erase(scriptData.grabEntities, event.source);
                         } else if (std::holds_alternative<Transform>(event.data)) {
@@ -70,12 +70,15 @@ namespace sp::scripts {
 
                             scriptData.grabEntities.emplace_back(event.source);
 
+                            static CVar<bool> includeFixed("x.includeFixed", true, "");
                             PhysicsJoint joint;
                             joint.target = event.source;
-                            joint.type = PhysicsJointType::Force;
+                            joint.type = PhysicsJointType::Fixed;
                             joint.remoteOffset = invParentRotate *
                                                  (transform.GetPosition() - parentTransform.GetPosition());
                             joint.remoteOrient = invParentRotate * transform.GetRotation();
+                            if (includeFixed.Get()) joints.Add(joint);
+                            joint.type = PhysicsJointType::Force;
                             // TODO: Read this property from player
                             joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
                             joints.Add(joint);
@@ -96,12 +99,11 @@ namespace sp::scripts {
                                                glm::angleAxis(input.x, upAxis);
 
                             for (auto &joint : joints.joints) {
-                                if (joint.target == event.source && joint.type == PhysicsJointType::Force) {
+                                if (joint.target == event.source) {
                                     // Move the objects origin so it rotates around its center of mass
                                     auto center = joint.remoteOrient * centerOfMass;
                                     joint.remoteOffset += center - (deltaRotate * center);
                                     joint.remoteOrient = deltaRotate * joint.remoteOrient;
-                                    break;
                                 }
                             }
                         }

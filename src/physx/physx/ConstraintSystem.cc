@@ -58,26 +58,30 @@ namespace sp {
         bool wakeUp = false;
 
         // Update Torque
-        auto deltaRotation = glm::eulerAngles(targetRotate * glm::inverse(currentRotate));
-        auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
-        auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
         if (maxTorque > 0) {
-            auto maxAcceleration = invMassInertia * maxTorque;
+            if (glm::dot(currentRotate, targetRotate) < 0.0f) { // minimum distance quaternion
+                targetRotate = -targetRotate;
+            }
+            auto deltaRotation = glm::eulerAngles(glm::inverse(currentRotate) * targetRotate);
+            auto maxAcceleration = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor()) * maxTorque;
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
                 std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
 
-            auto targetRotationVelocity = deltaRotation;
-            if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                targetRotationVelocity = glm::normalize(targetRotationVelocity) * (maxVelocity - deltaTick);
-            } else {
-                targetRotationVelocity *= tickFrequency;
+            glm::vec3 targetAngularVelocity(0);
+            for (int i = 0; i < 3; i++) {
+                if (maxVelocity[i] > deltaTick[i]) {
+                    targetAngularVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
+                } else {
+                    targetAngularVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
+                }
             }
 
-            auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+            auto currentAngularVelocity = glm::inverse(currentRotate) * PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+            auto deltaVelocity = targetAngularVelocity - currentAngularVelocity;
 
-            glm::vec3 accel = glm::inverse(currentRotate) * deltaVelocity * tickFrequency;
+            glm::vec3 accel = deltaVelocity * tickFrequency;
             glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
             auto clampRatio = glm::min(maxAcceleration, accelAbs) / accelAbs;
             wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio);
@@ -86,8 +90,9 @@ namespace sp {
         }
 
         // Update Linear Force
-        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() - (targetVelocity * intervalSeconds);
         if (maxForce > 0) {
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() -
+                            (targetVelocity * intervalSeconds);
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
@@ -96,7 +101,7 @@ namespace sp {
             if (maxVelocity > deltaTick) {
                 targetLinearVelocity = glm::normalize(targetLinearVelocity) * (maxVelocity - deltaTick);
             } else {
-                targetLinearVelocity *= tickFrequency;
+                targetLinearVelocity *= tickFrequency * 0.5f;
             }
             targetLinearVelocity += targetVelocity;
             auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
@@ -273,6 +278,7 @@ namespace sp {
                     // Free'd automatically on release();
                     joint->forceConstraint =
                         new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    if (actor->is<PxRigidBody>()) actor->is<PxRigidBody>()->setMaxAngularVelocity(1000.0f);
                     UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                     break;
                 default:
