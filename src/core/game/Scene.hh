@@ -51,7 +51,9 @@ namespace sp {
             std::string relativeName = "",
             ecs::Name prefix = ecs::Name());
 
-        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
+        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
+            ecs::Lock<ecs::AddRemove> live,
+            bool resetLive = false);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
         std::shared_ptr<ecs::SceneProperties> properties;

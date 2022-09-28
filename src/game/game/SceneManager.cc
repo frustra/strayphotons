@@ -136,9 +136,12 @@ namespace sp {
                     auto scene = stagedScenes.Load(item.sceneName);
                     if (scene) {
                         if (scene->type != SceneType::System) {
-                            Debugf("Editing staging scene: %s", scene->name);
-                            auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
-                            item.applyCallback(stagingLock, scene);
+                            Tracef("Editing staging scene: %s", scene->name);
+                            {
+                                auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                                item.applyCallback(stagingLock, scene);
+                            }
+                            PreloadAndApplyScene(scene, true);
                         } else {
                             Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->name);
                         }
@@ -287,7 +290,7 @@ namespace sp {
 
                 playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
                 if (playerScene) {
-                    PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
+                    PreloadAndApplyScene(playerScene, false, [this](auto stagingLock, auto liveLock, auto scene) {
                         auto stagingPlayer = scene->GetStagingEntity(entities::Player.Name());
                         if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
                             auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
@@ -423,7 +426,9 @@ namespace sp {
         }
     }
 
-    void SceneManager::PreloadAndApplyScene(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback) {
+    void SceneManager::PreloadAndApplyScene(const std::shared_ptr<Scene> &scene,
+        bool resetLive,
+        OnApplySceneCallback callback) {
         ZoneScopedN("ScenePreload");
         ZoneStr(scene->name);
         {
@@ -449,7 +454,7 @@ namespace sp {
             auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
             auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
-            scene->ApplyScene(stagingLock, liveLock);
+            scene->ApplyScene(stagingLock, liveLock, resetLive);
 
             if (callback) callback(stagingLock, liveLock, scene);
 
@@ -690,7 +695,7 @@ namespace sp {
         loadedScene = LoadSceneJson(sceneName, sceneType, ecs::SceneInfo::Priority::Scene);
         if (loadedScene) {
             TranslateSceneByConnection(loadedScene);
-            PreloadAndApplyScene(loadedScene, callback);
+            PreloadAndApplyScene(loadedScene, false, callback);
 
             stagedScenes.Register(sceneName, loadedScene);
             scenes[sceneType].emplace_back(loadedScene);

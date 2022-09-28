@@ -64,7 +64,9 @@ namespace sp {
         using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
             ecs::Lock<ecs::AddRemove>,
             std::shared_ptr<Scene>)>;
-        void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback = nullptr);
+        void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene,
+            bool resetLive = false,
+            OnApplySceneCallback callback = nullptr);
 
         void Frame() override;
 

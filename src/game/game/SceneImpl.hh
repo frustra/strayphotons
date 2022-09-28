@@ -34,6 +34,22 @@ namespace sp::scene {
         (ApplyComponent<AllComponentTypes>(src, srcEnt, dst, dstEnt), ...);
     }
 
+    template<typename T>
+    inline void RemoveComponent(ecs::Lock<ecs::AddRemove> lock, Tecs::Entity ent) {
+        if constexpr (std::is_same<T, ecs::Name>()) {
+            // Ignore, scene entities should always have a Name
+        } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
+            // Ignore, scene entities should always have SceneInfo
+        } else if constexpr (!Tecs::is_global_component<T>()) {
+            if (ent.Has<T>(lock)) ent.Unset<T>(lock);
+        }
+    }
+
+    template<typename... AllComponentTypes, template<typename...> typename ECSType>
+    inline void RemoveAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> lock, ecs::Entity ent) {
+        (RemoveComponent<AllComponentTypes>(lock, ent), ...);
+    }
+
     template<typename T, typename BitsetType>
     inline void MarkHasComponent(ecs::Lock<> lock, ecs::Entity ent, BitsetType &hasComponents) {
         if constexpr (!Tecs::is_global_component<T>()) {
