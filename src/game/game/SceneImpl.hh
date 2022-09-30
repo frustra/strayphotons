@@ -19,8 +19,35 @@ namespace sp::scene {
             if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
         } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
             // Ignore, this is handled by the scene
+        } else if constexpr (std::is_same<T, ecs::TransformTree>()) {
+            if (srcEnt.Has<ecs::TransformTree>(src)) {
+                auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
+                auto dstTransform = srcTransform;
+                if (!srcTransform.parent) {
+                    auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
+                    if (rootTransform != ecs::Transform()) {
+                        dstTransform.pose = rootTransform * dstTransform.pose;
+                    }
+                }
+                ecs::LookupComponent<T>().ApplyComponent(dstTransform, dst, dstEnt);
+            }
         } else if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
             // Ignore, this is handled by TransformTree
+        } else if constexpr (std::is_same<T, ecs::Animation>()) {
+            if (srcEnt.Has<ecs::Animation, ecs::TransformTree>(src)) {
+                auto &srcAnimation = srcEnt.Get<ecs::Animation>(src);
+                auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
+                auto dstAnimation = srcAnimation;
+                if (!srcTransform.parent) {
+                    auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
+                    if (rootTransform != ecs::Transform()) {
+                        for (auto &state : dstAnimation.states) {
+                            state.pos = rootTransform * glm::vec4(state.pos, 1);
+                        }
+                    }
+                }
+                ecs::LookupComponent<T>().ApplyComponent(dstAnimation, dst, dstEnt);
+            }
         } else if constexpr (!Tecs::is_global_component<T>()) {
             ecs::LookupComponent<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
         }

@@ -623,64 +623,6 @@ namespace sp {
         return scene;
     }
 
-    void SceneManager::TranslateSceneByConnection(const std::shared_ptr<Scene> &scene) {
-        auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Animation>,
-            ecs::Write<ecs::TransformTree, ecs::Animation>>();
-        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneConnection, ecs::TransformSnapshot>>();
-
-        ecs::Entity liveConnection, stagingConnection;
-        for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
-            if (!e.Has<ecs::SceneConnection, ecs::SceneInfo, ecs::Name>(stagingLock)) continue;
-            auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
-            if (sceneInfo.scene.lock() != scene) continue;
-
-            auto &name = e.Get<const ecs::Name>(stagingLock);
-            liveConnection = ecs::EntityRef(name).Get(liveLock);
-            if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
-                auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
-                if (sp::contains(connection.scenes, scene->name)) {
-                    stagingConnection = e;
-                    break;
-                }
-            }
-        }
-        if (stagingConnection.Has<ecs::TransformTree>(stagingLock) &&
-            liveConnection.Has<ecs::TransformSnapshot>(liveLock)) {
-            auto &liveTransform = liveConnection.Get<const ecs::TransformSnapshot>(liveLock);
-            auto stagingTransform =
-                stagingConnection.Get<const ecs::TransformTree>(stagingLock).GetGlobalTransform(stagingLock);
-            glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
-            glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
-            ecs::Transform deltaTransform(deltaPos, deltaRotation);
-
-            if (scene->properties) {
-                auto &properties = *scene->properties;
-                properties.fixedGravity = deltaRotation * properties.fixedGravity;
-                properties.gravityTransform = deltaTransform * properties.gravityTransform;
-            }
-
-            for (auto &e : stagingLock.EntitiesWith<ecs::TransformTree>()) {
-                if (!e.Has<ecs::TransformTree, ecs::SceneInfo>(stagingLock)) continue;
-                auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
-                if (sceneInfo.scene.lock() != scene) continue;
-
-                auto &transform = e.Get<ecs::TransformTree>(stagingLock);
-                if (!transform.parent) {
-                    transform.pose = deltaTransform * transform.pose;
-                    // transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
-                    // transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
-
-                    if (e.Has<ecs::Animation>(stagingLock)) {
-                        auto &animation = e.Get<ecs::Animation>(stagingLock);
-                        for (auto &state : animation.states) {
-                            state.pos = deltaRotation * state.pos + deltaPos;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     std::shared_ptr<Scene> SceneManager::AddScene(std::string sceneName,
         SceneType sceneType,
         OnApplySceneCallback callback) {
@@ -694,7 +636,7 @@ namespace sp {
 
         loadedScene = LoadSceneJson(sceneName, sceneType, ecs::SceneInfo::Priority::Scene);
         if (loadedScene) {
-            TranslateSceneByConnection(loadedScene);
+            loadedScene->UpdateRootTransform();
             PreloadAndApplyScene(loadedScene, false, callback);
 
             stagedScenes.Register(sceneName, loadedScene);

@@ -82,8 +82,6 @@ namespace sp {
 
         std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, OnApplySceneCallback callback = nullptr);
 
-        void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
-
     private:
         struct QueuedAction {
             SceneAction action;

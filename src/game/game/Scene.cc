@@ -249,4 +249,56 @@ namespace sp {
         }
         active = false;
     }
+
+    void Scene::UpdateRootTransform() {
+        auto stagingLock =
+            ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::TransformTree>, ecs::Write<ecs::SceneInfo>>();
+        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneConnection, ecs::TransformSnapshot>>();
+
+        ecs::Entity liveConnection, stagingConnection;
+        for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
+            if (!e.Has<ecs::SceneConnection, ecs::SceneInfo, ecs::Name>(stagingLock)) continue;
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
+            auto scenePtr = sceneInfo.scene.lock();
+            if (scenePtr.get() != this) continue;
+
+            auto &name = e.Get<ecs::Name>(stagingLock);
+            liveConnection = ecs::EntityRef(name).Get(liveLock);
+            if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
+                auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
+                if (sp::contains(connection.scenes, this->name)) {
+                    stagingConnection = e;
+                    break;
+                }
+            }
+        }
+        if (stagingConnection.Has<ecs::TransformTree>(stagingLock) &&
+            liveConnection.Has<ecs::TransformSnapshot>(liveLock)) {
+            auto &liveTransform = liveConnection.Get<ecs::TransformSnapshot>(liveLock);
+            auto &stagingTree = stagingConnection.Get<ecs::TransformTree>(stagingLock);
+            auto stagingTransform = stagingTree.GetGlobalTransform(stagingLock);
+            glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
+            glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
+            this->rootTransform = ecs::Transform(deltaPos, deltaRotation);
+
+            if (this->properties) {
+                auto properties = *this->properties;
+                properties.fixedGravity = this->rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
+                properties.gravityTransform = this->rootTransform * properties.gravityTransform;
+
+                auto propertiesPtr = make_shared<ecs::SceneProperties>(properties);
+                for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
+                    auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
+                    auto scenePtr = sceneInfo.scene.lock();
+                    if (scenePtr.get() != this) continue;
+
+                    sceneInfo.properties = propertiesPtr;
+                }
+            }
+        }
+    }
+
+    const ecs::Transform &Scene::GetRootTransform() const {
+        return rootTransform;
+    }
 } // namespace sp

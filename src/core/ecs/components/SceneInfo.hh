@@ -58,6 +58,8 @@ namespace ecs {
         // Returns true if live SceneInfo should be removed
         bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId);
 
+        static const Transform &GetRootTransform(Lock<Read<SceneInfo>> lock, Entity ent);
+
         Entity liveId;
         Entity stagingId, nextStagingId;
         Entity prefabStagingId;

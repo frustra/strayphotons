@@ -43,6 +43,11 @@ namespace ecs {
         virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
         virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
 
+        template<typename T>
+        void ApplyComponent(const T &src, Lock<AddRemove> dstLock, Entity dst) const {
+            dynamic_cast<const Component<T> *>(this)->ApplyComponent(src, dstLock, dst);
+        }
+
         const char *name;
         std::vector<ComponentField> fields;
     };

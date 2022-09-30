@@ -56,6 +56,9 @@ namespace sp {
             bool resetLive = false);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
+        void UpdateRootTransform();
+        const ecs::Transform &GetRootTransform() const;
+
         std::shared_ptr<ecs::SceneProperties> properties;
 
     private:
@@ -68,6 +71,8 @@ namespace sp {
 
         std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
         std::vector<ecs::EntityRef> references;
+
+        ecs::Transform rootTransform;
 
         friend class SceneManager;
     };

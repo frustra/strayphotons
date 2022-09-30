@@ -96,4 +96,14 @@ namespace ecs {
         }
         return false;
     }
+
+    const Transform &SceneInfo::GetRootTransform(Lock<Read<SceneInfo>> lock, Entity ent) {
+        static Transform identity = {};
+        if (ent.Has<SceneInfo>(lock)) {
+            auto &sceneInfo = ent.Get<SceneInfo>(lock);
+            auto scene = sceneInfo.scene.lock();
+            if (scene) return scene->GetRootTransform();
+        }
+        return identity;
+    }
 } // namespace ecs
