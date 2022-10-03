@@ -9,7 +9,7 @@
 	url = https://github.com/g-truc/glm.git
 [submodule "ext/gltf-pipeline"]
 	path = ext/gltf-pipeline
-	url = https://github.com/AnalyticalGraphicsInc/gltf-pipeline.git
+	url = https://github.com/CesiumGS/gltf-pipeline.git
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/frustra/imgui.git
