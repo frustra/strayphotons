@@ -8,6 +8,7 @@
 #include "graphics/vulkan/render_passes/Readback.hh"
 
 namespace sp::vulkan::renderer {
+    static CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
@@ -60,7 +61,7 @@ namespace sp::vulkan::renderer {
         ZoneScoped;
         auto scope = graph.Scope("Voxels");
 
-        if (voxelGridSize == glm::ivec3(0)) {
+        if (voxelGridSize == glm::ivec3(0) || !CVarEnableVoxels.Get()) {
             graph.AddPass("Dummy")
                 .Build([&](rg::PassBuilder &builder) {
                     ImageDesc desc;
@@ -97,9 +98,9 @@ namespace sp::vulkan::renderer {
         struct GPUVoxelFragment {
             uint16_t position[3];
             uint16_t _padding0[1];
-            uint16_t radiance[3]; // half-float formatted
+            float16_t radiance[3];
             uint16_t _padding1[1];
-            uint16_t normal[3]; // half-float formatted
+            float16_t normal[3];
             uint16_t _padding2[1];
         };
 
