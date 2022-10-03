@@ -13,7 +13,7 @@ function(process_obj_to_gltf)
 
     add_custom_command(
         COMMAND
-            ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/obj2gltf/bin/obj2gltf.js --secure --checkTransparency --metallicRoughness -i ${PARAM_OBJ} -o ${PARAM_GLTF}
+            ${CMAKE_COMMAND} -E env NODE_ENV=production ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/obj2gltf/bin/obj2gltf.js --secure --checkTransparency --metallicRoughness -i ${PARAM_OBJ} -o ${PARAM_GLTF}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT
@@ -43,9 +43,9 @@ function(process_gltf_to_glb)
 
     add_custom_command(
         COMMAND
-            ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js -i ${PARAM_GLTF} -o ${PARAM_GLTF}
+            ${CMAKE_COMMAND} -E env NODE_ENV=production ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js -i ${PARAM_GLTF} -o ${PARAM_GLTF}
         COMMAND
-            ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js -i ${PARAM_GLTF} -o ${PARAM_GLB}
+            ${CMAKE_COMMAND} -E env NODE_ENV=production ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js -i ${PARAM_GLTF} -o ${PARAM_GLB}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT
