@@ -224,16 +224,16 @@ namespace sp {
                 headRelativePlayer.SetRotation(deltaRotation * headRelativeRoot.GetRotation());
                 headRelativePlayer.SetPosition(glm::vec3(0, headRelativeRoot.GetPosition().y, 0));
 
-                auto targetTransform = transform * headRelativePlayer;
                 if (ecs::TransformTree::GetRoot(lock, head) != entity) {
+                    auto targetTransform = transform * headRelativePlayer;
                     ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
                 }
 
-                Logf("Teleport: %s, Up: %s, Height: %f Forward: %s",
-                    glm::to_string(targetTransform.GetPosition()),
-                    glm::to_string(targetTransform.GetUp()),
-                    targetHeight,
-                    glm::to_string(targetTransform.GetForward()));
+                // Logf("Teleport: %s, Up: %s, Height: %f Forward: %s",
+                //     glm::to_string(targetTransform.GetPosition()),
+                //     glm::to_string(targetTransform.GetUp()),
+                //     targetHeight,
+                //     glm::to_string(targetTransform.GetForward()));
 
                 userData->onGround = false;
                 userData->actorData.pose = transform;
@@ -251,11 +251,11 @@ namespace sp {
                 controller.pxController->invalidateCache();
             }
 
-            auto a = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
-            auto b = transform.GetPosition();
-            if (glm::any(glm::epsilonNotEqual(a, b, 0.00001f))) {
-                Logf("Capsule out of sync: %s", glm::to_string(a - b));
-            }
+            // auto a = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
+            // auto b = transform.GetPosition();
+            // if (glm::any(glm::epsilonNotEqual(a, b, 0.000001f))) {
+            //     Logf("Capsule out of sync: %s", glm::to_string(a - b));
+            // }
 
             // Update the capsule height
             auto currentHeight = controller.pxController->getHeight();
