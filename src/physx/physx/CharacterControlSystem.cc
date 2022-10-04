@@ -251,11 +251,11 @@ namespace sp {
                 controller.pxController->invalidateCache();
             }
 
-            auto a = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
-            auto b = transform.GetPosition();
-            if (glm::any(glm::epsilonNotEqual(a, b, 0.000001f))) {
-                Logf("Capsule out of sync: %s", glm::to_string(a - b));
-            }
+            // auto a = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
+            // auto b = transform.GetPosition();
+            // if (glm::any(glm::epsilonNotEqual(a, b, 0.000001f))) {
+            //     Logf("Capsule out of sync: %s", glm::to_string(a - b));
+            // }
 
             // Update the capsule height
             auto currentHeight = controller.pxController->getHeight();
@@ -295,66 +295,76 @@ namespace sp {
                                sceneProperties.gravityFunction(gravityPos);
             }
             auto gravityStrength = glm::length(gravityForce);
-            auto gravityDir = glm::normalize(gravityForce);
             if (gravityStrength > 0 && gravityStrength > CVarCharacterMinFlipGravity.Get()) {
-                auto angleDiff = glm::angle(transform.GetUp(), -gravityDir);
-                if (angleDiff > 0) {
-                    glm::vec3 targetUpVector;
-                    auto maxAngle = glm::radians(CVarCharacterFlipSpeed.Get()) * dt;
-                    if (angleDiff > maxAngle) {
-                        targetUpVector = glm::slerp(transform.GetUp(), -gravityDir, maxAngle / angleDiff);
+                auto currentUp = transform.GetUp();
+                auto gravityUp = -glm::normalize(gravityForce);
+                auto angleDiff = glm::angle(currentUp, gravityUp);
+                float maxAngle = glm::radians(CVarCharacterFlipSpeed.Get()) * dt;
+
+                auto targetUp = gravityUp;
+                if (angleDiff > maxAngle) {
+                    auto rotationAxis = glm::cross(currentUp, gravityUp);
+                    if (glm::length2(rotationAxis) < std::numeric_limits<float>::epsilon()) {
+                        rotationAxis = glm::vec3(0, 0, 1);
                     } else {
-                        targetUpVector = -gravityDir;
+                        rotationAxis = glm::normalize(rotationAxis);
                     }
-                    auto deltaRotation = glm::rotation(transform.GetUp(), targetUpVector);
+                    targetUp = glm::angleAxis(maxAngle, rotationAxis) * currentUp;
+                }
 
-                    // Logf("Angle diff: %s / %s = %f / %f x %s up %s",
-                    //     glm::to_string(transform.GetUp()),
-                    //     glm::to_string(-gravityDir),
-                    //     angleDiff,
-                    //     glm::angle(deltaRotation),
-                    //     glm::to_string(glm::axis(deltaRotation)),
-                    //     glm::to_string(targetUpVector));
+                // if (angleDiff > 0) {
+                //     Logf("Angle diff: %s -> %s = %f up %s",
+                //         glm::to_string(currentUp),
+                //         glm::to_string(gravityUp),
+                //         angleDiff,
+                //         glm::to_string(targetUp));
+                // }
 
-                    bool shouldRotate = true;
-                    if (!noclip) {
-                        auto halfHeight = controller.pxController->getHeight() * 0.5f;
-                        auto currentOffset = transform.GetUp() * halfHeight;
-                        auto newOffset = targetUpVector * halfHeight;
+                bool shouldRotate = true;
+                if (!noclip) {
+                    auto halfHeight = controller.pxController->getHeight() * 0.5f;
+                    auto currentOffset = glm::vec3(currentUp) * halfHeight;
+                    auto newOffset = targetUp * halfHeight;
 
-                        PxOverlapHit touch;
-                        PxOverlapBuffer overlapHit;
-                        overlapHit.touches = &touch;
-                        overlapHit.maxNbTouches = 1;
-                        PxCapsuleGeometry capsuleGeometry(capsuleRadius, currentHeight * 0.5f);
-                        auto globalPose = actor->getGlobalPose();
-                        globalPose.p += GlmVec3ToPxVec3(currentOffset - newOffset);
-                        globalPose.q = PxShortestRotation(PxVec3(1.0f, 0.0f, 0.0f), GlmVec3ToPxVec3(targetUpVector));
-                        shouldRotate = !manager.scene->overlap(capsuleGeometry,
-                            globalPose,
-                            overlapHit,
-                            PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
-                    }
+                    PxOverlapHit touch;
+                    PxOverlapBuffer overlapHit;
+                    overlapHit.touches = &touch;
+                    overlapHit.maxNbTouches = 1;
+                    PxCapsuleGeometry capsuleGeometry(capsuleRadius, currentHeight * 0.5f);
+                    auto globalPose = actor->getGlobalPose();
+                    globalPose.p += GlmVec3ToPxVec3(currentOffset - newOffset);
+                    globalPose.q = PxShortestRotation(PxVec3(1.0f, 0.0f, 0.0f), GlmVec3ToPxVec3(targetUp));
+                    shouldRotate = !manager.scene->overlap(capsuleGeometry,
+                        globalPose,
+                        overlapHit,
+                        PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                }
 
-                    // Only rotate the capsule in there is room to do so
-                    if (shouldRotate) {
-                        auto headPosition = getHeadPosition(controller.pxController);
-                        controller.pxController->setUpDirection(GlmVec3ToPxVec3(targetUpVector));
-                        setHeadPosition(controller.pxController, headPosition);
+                // Only  the capsule in there is room to do so
+                if (shouldRotate) {
+                    auto headPosition = getHeadPosition(controller.pxController);
+                    controller.pxController->setUpDirection(GlmVec3ToPxVec3(targetUp));
+                    setHeadPosition(controller.pxController, headPosition);
 
-                        transform.Rotate(deltaRotation);
-                        transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()));
+                    auto currentScale = transform.GetScale();
+                    auto currentForward = transform.GetForward();
+                    auto targetRight = glm::normalize(glm::cross(currentForward, targetUp));
+                    auto targetForward = glm::normalize(glm::cross(targetRight, targetUp));
 
-                        if (ecs::TransformTree::GetRoot(lock, head) != entity) {
-                            // Rotate the head to match
-                            auto targetTransform = transform * headRelativePlayer;
-                            ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+                    transform.matrix[0] = targetRight * currentScale.x;
+                    transform.matrix[1] = targetUp * currentScale.y;
+                    transform.matrix[2] = targetForward * currentScale.z;
+                    transform.matrix[3] = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
 
-                            // Logf("Rotating Head: %s, Up: %s, Forward: %s",
-                            //     glm::to_string(targetTransform.GetPosition()),
-                            //     glm::to_string(targetTransform.GetUp()),
-                            //     glm::to_string(targetTransform.GetForward()));
-                        }
+                    if (ecs::TransformTree::GetRoot(lock, head) != entity) {
+                        // Rotate the head to match
+                        auto targetTransform = transform * headRelativePlayer;
+                        ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
+
+                        // Logf("Rotating Head: %s, Up: %s, Forward: %s",
+                        //     glm::to_string(targetTransform.GetPosition()),
+                        //     glm::to_string(targetTransform.GetUp()),
+                        //     glm::to_string(targetTransform.GetForward()));
                     }
                 }
             }
