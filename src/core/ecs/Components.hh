@@ -26,6 +26,9 @@ namespace ecs {
         Name prefix;
     };
 
+    template<typename>
+    class Component;
+
     class ComponentBase {
     public:
         ComponentBase(const char *name) : name(name) {}
