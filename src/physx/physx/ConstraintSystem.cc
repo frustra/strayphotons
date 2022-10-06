@@ -91,8 +91,7 @@ namespace sp {
 
         // Update Linear Force
         if (maxForce > 0) {
-            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() -
-                            (targetVelocity * intervalSeconds);
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
@@ -239,13 +238,10 @@ namespace sp {
                     auto userData = (ActorUserData *)manager.actors[targetRoot]->userData;
                     if (userData) targetVelocity = userData->velocity;
                     break;
-                    // } else if (targetRoot.Has<ecs::CharacterController>(lock)) {
-                    //     auto &targetController = targetRoot.Get<ecs::CharacterController>(lock);
-                    //     if (targetController.pxController) {
-                    //         auto userData = (CharacterControllerUserData
-                    //         *)targetController.pxController->getUserData(); if (userData) targetVelocity =
-                    //         userData->actorData.velocity; break;
-                    //     }
+                } else if (manager.controllers.count(targetRoot) > 0) {
+                    auto userData = (CharacterControllerUserData *)manager.controllers[targetRoot]->getUserData();
+                    if (userData) targetVelocity = userData->actorData.velocity;
+                    break;
                 }
                 targetRoot = targetRoot.Get<ecs::TransformTree>(lock).parent.Get(lock);
             }

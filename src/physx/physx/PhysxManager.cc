@@ -687,7 +687,8 @@ namespace sp {
         if (actor) {
             auto userData = (ActorUserData *)actor->userData;
 
-            if (actor->getScene()) actor->getScene()->removeActor(*actor);
+            auto scene = actor->getScene();
+            if (scene) scene->removeActor(*actor);
             actor->release();
 
             if (userData) delete userData;

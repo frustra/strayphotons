@@ -128,8 +128,6 @@ namespace sp {
                         desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
                         desc.stepOffset = ecs::PLAYER_STEP_HEIGHT;
                         desc.scaleCoeff = 1.0f; // Why is the default 0.8? No idea...
-                        // Decreasing the contactOffset value causes the player to be able to stand on
-                        // very thin (and likely unintentional) ledges.
                         desc.contactOffset = 0.05f;
 
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
@@ -151,6 +149,7 @@ namespace sp {
 
                         manager.SetCollisionGroup(actor, ecs::PhysicsGroup::Player);
 
+                        manager.controllers[controllerEvent.entity] = pxController;
                         controller.pxController = static_cast<PxCapsuleController *>(pxController);
                     }
                 }
@@ -161,6 +160,7 @@ namespace sp {
                         delete (CharacterControllerUserData *)userData;
                         controllerEvent.component.pxController->setUserData(nullptr);
                     }
+                    manager.controllers.erase(controllerEvent.entity);
 
                     controllerEvent.component.pxController->release();
                 }
