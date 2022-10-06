@@ -83,9 +83,12 @@ namespace sp {
             PxU32 flags);
 
         std::array<PxTransform, 2> localPoses;
+        ecs::Transform targetTransform;
 
         PxConstraint *pxConstraint = nullptr;
         Data data = {};
         static PxConstraintShaderTable shaderTable;
+
+        friend class ConstraintSystem;
     };
 } // namespace sp

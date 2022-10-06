@@ -114,6 +114,11 @@ namespace sp {
         }
 
         wakeUp |= joint->forceConstraint->setGravity(gravity);
+
+        if (targetTransform != joint->forceConstraint->targetTransform) {
+            joint->forceConstraint->targetTransform = targetTransform;
+            wakeUp = true;
+        }
         return wakeUp;
     }
 
@@ -230,13 +235,18 @@ namespace sp {
             currentTransform.Translate(glm::mat3(currentTransform.matrix) * ecsJoint.localOffset);
             currentTransform.Rotate(ecsJoint.localOrient);
 
+            float intervalSeconds = manager.interval.count() / 1e9;
+
             // Try and determine the velocity of the joint target entity
             glm::vec3 targetVelocity(0);
             auto targetRoot = targetEntity;
             while (targetRoot.Has<ecs::TransformTree>(lock)) {
                 if (manager.actors.count(targetRoot) > 0) {
                     auto userData = (ActorUserData *)manager.actors[targetRoot]->userData;
-                    if (userData) targetVelocity = userData->velocity;
+                    if (userData) {
+                        targetVelocity = userData->velocity;
+                        targetTransform.Translate(-targetVelocity * intervalSeconds);
+                    }
                     break;
                 } else if (manager.controllers.count(targetRoot) > 0) {
                     auto userData = (CharacterControllerUserData *)manager.controllers[targetRoot]->getUserData();
