@@ -30,8 +30,6 @@ namespace sp {
      * Constrained actor velocities are capped at a calculated maximum in order for them to be able to stop on target
      * without exceeding force limits. Additionally, a gravity-oriented lift force will be applied separetely to make
      * trajectories more stable at the force limit.
-     *
-     * If a constraint's target distance exceeds its maximum, the constraint will break and be removed.
      */
     bool ConstraintSystem::UpdateForceConstraint(PxRigidActor *actor,
         JointState *joint,
