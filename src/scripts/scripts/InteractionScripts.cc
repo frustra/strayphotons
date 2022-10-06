@@ -9,6 +9,9 @@ namespace sp::scripts {
 
     static CVar<float> CVarMaxGrabForce("i.MaxGrabForce", 20.0f, "Maximum force applied to held objects");
     static CVar<float> CVarMaxGrabTorque("i.MaxGrabTorque", 10.0f, "Maximum torque applied to held objects");
+    static CVar<bool> CVarFixedJointGrab("i.FixedJointGrab",
+        false,
+        "Toggle to use a fixed joint instead of force limited joint");
 
     std::array interactionScripts = {
         InternalScript("interactive_object",
@@ -70,17 +73,18 @@ namespace sp::scripts {
 
                             scriptData.grabEntities.emplace_back(event.source);
 
-                            static CVar<bool> includeFixed("x.includeFixed", true, "");
                             PhysicsJoint joint;
                             joint.target = event.source;
-                            joint.type = PhysicsJointType::Fixed;
+                            if (CVarFixedJointGrab.Get()) {
+                                joint.type = PhysicsJointType::Fixed;
+                            } else {
+                                joint.type = PhysicsJointType::Force;
+                                // TODO: Read this property from player
+                                joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
+                            }
                             joint.remoteOffset = invParentRotate *
                                                  (transform.GetPosition() - parentTransform.GetPosition());
                             joint.remoteOrient = invParentRotate * transform.GetRotation();
-                            if (includeFixed.Get()) joints.Add(joint);
-                            joint.type = PhysicsJointType::Force;
-                            // TODO: Read this property from player
-                            joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
                             joints.Add(joint);
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());

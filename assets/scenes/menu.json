@@ -5,12 +5,12 @@
 			"renderable": {
 				"model": "box"
 			},
-			"_physics": {
+			"physics": {
 				"model": "box",
 				"density": 100
 			},
 			"transform": {
-				"translate": [1, 1, 0],
+				"translate": [1, 1, 2.5],
 				"scale": [0.075, 0.075, 0.075]
 			},
 			"script": {
@@ -25,7 +25,7 @@
 				"emissive": 0.5
 			},
 			"transform": {
-				"translate": [1, 1, 0],
+				"translate": [1, 1, 2.5],
 				"scale": [0.5, 0.05, 0.5]
 			},
 			"physics": {
