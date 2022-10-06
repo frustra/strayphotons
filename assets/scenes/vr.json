@@ -68,10 +68,11 @@
 			},
 			"physics": {
 				"group": "player_left_hand",
-				"density": 300,
+				"density": 1000,
 				"_linear_damping": 1,
-				"angular_damping": 100
+				"_angular_damping": 100
 			},
+			"physics_joints": [],
 			"physics_query": {},
 			"event_input": [
 				"/interact/press"
@@ -89,7 +90,9 @@
 					"parameters": {
 						"hand": "left",
 						"teleport_distance": 2.0,
-						"point_distance": 2.0
+						"point_distance": 2.0,
+						"force_limit": 100.0,
+						"torque_limit": 10.0
 					}
 				}
 			]
@@ -101,10 +104,11 @@
 			},
 			"physics": {
 				"group": "player_right_hand",
-				"density": 300,
+				"density": 1000,
 				"_linear_damping": 1,
-				"angular_damping": 100
+				"_angular_damping": 100
 			},
+			"physics_joints": [],
 			"physics_query": {},
 			"event_input": [
 				"/interact/press"
@@ -122,7 +126,9 @@
 					"parameters": {
 						"hand": "right",
 						"teleport_distance": 2.0,
-						"point_distance": 2.0
+						"point_distance": 2.0,
+						"force_limit": 100.0,
+						"torque_limit": 10.0
 					}
 				}
 			]

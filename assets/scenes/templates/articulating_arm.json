@@ -39,7 +39,7 @@
 			"physics_joints": [{
 				"target": "arm.Ball_0",
 				"type": "spherical",
-				"range": [90, 90],
+				"limit": [90, 90],
 				"local_offset": {
 					"rotate": [90, 0, 0, 1]
 				},
@@ -134,7 +134,7 @@
 			"physics_joints": [{
 				"target": "arm.Arm_1",
 				"type": "spherical",
-				"range": [90, 90],
+				"limit": [90, 90],
 				"local_offset": {
 					"rotate": [90, 0, 0, 1]
 				},

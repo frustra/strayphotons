@@ -3,16 +3,14 @@
 		"event_input": [
 			"/interact/grab",
 			"/interact/point",
-			"/interact/rotate",
-			"/physics/broken_constraint"
+			"/interact/rotate"
 		],
 		"script": {
 			"onEvent": "interactive_object",
 			"filter_events": [
 				"/interact/grab",
 				"/interact/point",
-				"/interact/rotate",
-				"/physics/broken_constraint"
+				"/interact/rotate"
 			]
 		},
 		"physics_joints": [],

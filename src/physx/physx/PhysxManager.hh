@@ -38,6 +38,7 @@ namespace sp {
     class Gltf;
     struct HullSettings;
     class SceneManager;
+    class ForceConstraint;
 
     struct ActorUserData {
         ecs::Entity entity;
@@ -68,6 +69,12 @@ namespace sp {
 
         CharacterControllerUserData() {}
         CharacterControllerUserData(ecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
+    };
+
+    struct JointState {
+        ecs::PhysicsJoint ecsJoint;
+        physx::PxJoint *pxJoint = nullptr;
+        ForceConstraint *forceConstraint = nullptr;
     };
 
     class PhysxManager : public RegisteredThread {
@@ -129,12 +136,9 @@ namespace sp {
         AnimationSystem animationSystem;
 
         EntityMap<physx::PxRigidActor *> actors;
+        EntityMap<physx::PxController *> controllers;
 
-        struct Joint {
-            ecs::PhysicsJoint ecsJoint;
-            physx::PxJoint *pxJoint;
-        };
-        EntityMap<vector<Joint>> joints;
+        EntityMap<vector<JointState>> joints;
 
         std::mutex cacheMutex;
         PreservingMap<string, Async<ConvexHullSet>> cache;

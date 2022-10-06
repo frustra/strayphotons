@@ -21,13 +21,13 @@ namespace ecs {
         Spherical,
         Hinge,
         Slider,
-        Count,
+        Force,
     };
 
     struct PhysicsJoint {
         EntityRef target;
-        PhysicsJointType type = PhysicsJointType::Count;
-        glm::vec2 range = glm::vec2();
+        PhysicsJointType type = PhysicsJointType::Fixed;
+        glm::vec2 limit = glm::vec2();
         glm::vec3 localOffset = glm::vec3(), remoteOffset = glm::vec3();
         glm::quat localOrient = glm::quat(), remoteOrient = glm::quat();
 

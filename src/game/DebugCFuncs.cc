@@ -14,12 +14,20 @@
 namespace sp {
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Name,
+            ecs::SceneInfo,
             ecs::TransformTree,
             ecs::TransformSnapshot,
             ecs::CharacterController,
             ecs::PhysicsQuery>>();
         auto player = entities::Player.Get(lock);
         auto head = entities::Head.Get(lock);
+
+        ecs::SceneProperties sceneProperties = {};
+        if (player.Has<ecs::SceneInfo>(lock)) {
+            auto &properties = player.Get<ecs::SceneInfo>(lock).properties;
+            if (properties) sceneProperties = *properties;
+        }
+
         if (head.Has<ecs::TransformTree>(lock)) {
             auto &transform = head.Get<ecs::TransformTree>(lock);
             auto position = transform.GetGlobalTransform(lock).GetPosition();
@@ -29,6 +37,9 @@ namespace sp {
             auto &transform = head.Get<ecs::TransformSnapshot>(lock);
             auto position = transform.GetPosition();
             Logf("Head position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
+
+            glm::vec3 gravityForce = sceneProperties.GetGravity(position);
+            Logf("Gravity force: [%f, %f, %f]", gravityForce.x, gravityForce.y, gravityForce.z);
         }
         if (player.Has<ecs::TransformTree>(lock)) {
             auto &transform = player.Get<ecs::TransformTree>(lock);

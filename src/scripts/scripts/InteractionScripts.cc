@@ -7,6 +7,12 @@
 namespace sp::scripts {
     using namespace ecs;
 
+    static CVar<float> CVarMaxGrabForce("i.MaxGrabForce", 20.0f, "Maximum force applied to held objects");
+    static CVar<float> CVarMaxGrabTorque("i.MaxGrabTorque", 10.0f, "Maximum torque applied to held objects");
+    static CVar<bool> CVarFixedJointGrab("i.FixedJointGrab",
+        false,
+        "Toggle to use a fixed joint instead of force limited joint");
+
     std::array interactionScripts = {
         InternalScript("interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -40,15 +46,6 @@ namespace sp::scripts {
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, PHYSICS_EVENT_BROKEN_CONSTRAINT, event)) {
-                        auto breakEvent = std::get_if<EntityRef>(&event.data);
-                        if (!breakEvent) continue;
-
-                        auto brokenConstraint = breakEvent->Get(lock);
-                        if (ph.constraint == brokenConstraint) ph.RemoveConstraint();
-                        sp::erase(scriptData.grabEntities, brokenConstraint);
-                    }
-
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
                         auto pointTransform = std::get_if<Transform>(&event.data);
                         if (pointTransform) {
@@ -65,9 +62,8 @@ namespace sp::scripts {
                     while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
                         if (std::holds_alternative<bool>(event.data)) {
                             // Grab(false) = Drop
-                            ph.RemoveConstraint();
                             sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == event.source && joint.type == PhysicsJointType::Fixed;
+                                return joint.target == event.source;
                             });
                             sp::erase(scriptData.grabEntities, event.source);
                         } else if (std::holds_alternative<Transform>(event.data)) {
@@ -77,29 +73,19 @@ namespace sp::scripts {
 
                             scriptData.grabEntities.emplace_back(event.source);
 
-                            if (event.source.Has<Physics>(lock)) {
-                                PhysicsJoint joint;
-                                joint.target = event.source;
+                            PhysicsJoint joint;
+                            joint.target = event.source;
+                            if (CVarFixedJointGrab.Get()) {
                                 joint.type = PhysicsJointType::Fixed;
-                                joint.remoteOffset = invParentRotate *
-                                                     (transform.GetPosition() - parentTransform.GetPosition());
-                                joint.remoteOrient = invParentRotate * transform.GetRotation();
-                                joints.Add(joint);
-
-                                auto &parentPhysics = event.source.Get<Physics>(lock);
-                                if (parentPhysics.constraint) {
-                                    ph.SetConstraint(parentPhysics.constraint,
-                                        0.0f,
-                                        invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()) +
-                                            parentPhysics.constraintOffset,
-                                        parentPhysics.constraintRotation * invParentRotate * transform.GetRotation());
-                                }
                             } else {
-                                ph.SetConstraint(event.source,
-                                    0.0f,
-                                    invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()),
-                                    invParentRotate * transform.GetRotation());
+                                joint.type = PhysicsJointType::Force;
+                                // TODO: Read this property from player
+                                joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
                             }
+                            joint.remoteOffset = invParentRotate *
+                                                 (transform.GetPosition() - parentTransform.GetPosition());
+                            joint.remoteOrient = invParentRotate * transform.GetRotation();
+                            joints.Add(joint);
                         } else {
                             Errorf("Unsupported grab event type: %s", event.toString());
                         }
@@ -117,19 +103,12 @@ namespace sp::scripts {
                                                glm::angleAxis(input.x, upAxis);
 
                             for (auto &joint : joints.joints) {
-                                if (joint.target == event.source && joint.type == PhysicsJointType::Fixed) {
+                                if (joint.target == event.source) {
                                     // Move the objects origin so it rotates around its center of mass
                                     auto center = joint.remoteOrient * centerOfMass;
                                     joint.remoteOffset += center - (deltaRotate * center);
                                     joint.remoteOrient = deltaRotate * joint.remoteOrient;
-                                    break;
                                 }
-                            }
-                            if (ph.constraint) {
-                                // Move the objects origin so it rotates around its center of mass
-                                auto center = ph.constraintRotation * centerOfMass;
-                                ph.constraintOffset += center - (deltaRotate * center);
-                                ph.constraintRotation = deltaRotate * ph.constraintRotation;
                             }
                         }
                     }

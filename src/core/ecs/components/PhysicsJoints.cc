@@ -15,7 +15,6 @@ namespace ecs {
             PhysicsJoint joint;
 
             Transform localTransform, remoteTransform;
-            joint.type = PhysicsJointType::Fixed;
 
             for (auto jointParam : param.get<picojson::object>()) {
                 if (jointParam.first == "target") {
@@ -33,13 +32,15 @@ namespace ecs {
                         joint.type = PhysicsJointType::Hinge;
                     } else if (typeString == "SLIDER") {
                         joint.type = PhysicsJointType::Slider;
+                    } else if (typeString == "FORCE") {
+                        joint.type = PhysicsJointType::Force;
                     } else {
                         Errorf("Unknown joint type: %s", typeString);
                         return false;
                     }
-                } else if (jointParam.first == "range") {
-                    if (!sp::json::Load(scope, joint.range, jointParam.second)) {
-                        Errorf("Invalid physics_joint range: %s", jointParam.second.to_str());
+                } else if (jointParam.first == "limit") {
+                    if (!sp::json::Load(scope, joint.limit, jointParam.second)) {
+                        Errorf("Invalid physics_joint limit: %s", jointParam.second.to_str());
                         return false;
                     }
                 } else if (jointParam.first == "local_offset") {

@@ -128,8 +128,6 @@ namespace sp {
                         desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
                         desc.stepOffset = ecs::PLAYER_STEP_HEIGHT;
                         desc.scaleCoeff = 1.0f; // Why is the default 0.8? No idea...
-                        // Decreasing the contactOffset value causes the player to be able to stand on
-                        // very thin (and likely unintentional) ledges.
                         desc.contactOffset = 0.05f;
 
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
@@ -151,6 +149,7 @@ namespace sp {
 
                         manager.SetCollisionGroup(actor, ecs::PhysicsGroup::Player);
 
+                        manager.controllers[controllerEvent.entity] = pxController;
                         controller.pxController = static_cast<PxCapsuleController *>(pxController);
                     }
                 }
@@ -161,6 +160,7 @@ namespace sp {
                         delete (CharacterControllerUserData *)userData;
                         controllerEvent.component.pxController->setUserData(nullptr);
                     }
+                    manager.controllers.erase(controllerEvent.entity);
 
                     controllerEvent.component.pxController->release();
                 }
@@ -287,13 +287,7 @@ namespace sp {
             }
 
             // Update the capsule orientation
-            glm::vec3 gravityForce = sceneProperties.fixedGravity;
-            if (sceneProperties.gravityFunction) {
-                auto gravityPos = sceneProperties.gravityTransform.GetInverse() *
-                                  glm::vec4(getHeadPosition(controller.pxController), 1);
-                gravityForce = sceneProperties.gravityTransform.GetRotation() *
-                               sceneProperties.gravityFunction(gravityPos);
-            }
+            glm::vec3 gravityForce = sceneProperties.GetGravity(getHeadPosition(controller.pxController));
             auto gravityStrength = glm::length(gravityForce);
             if (gravityStrength > 0 && gravityStrength > CVarCharacterMinFlipGravity.Get()) {
                 auto currentUp = transform.GetUp();
@@ -408,6 +402,7 @@ namespace sp {
                 rootTree.pose.Translate(movementVelocity * dt);
 
                 userData->onGround = false;
+                userData->actorData.gravity = glm::vec3(0);
                 userData->actorData.velocity = movementVelocity;
             } else {
                 PxControllerState state;
@@ -513,6 +508,7 @@ namespace sp {
 
                     userData->onGround = false;
                 }
+                userData->actorData.gravity = gravityForce;
 
                 // Move the entities to their new positions
                 transform.SetPosition(newPosition);
@@ -539,6 +535,7 @@ namespace sp {
                 if (proxyActor && proxyActor->userData) {
                     auto proxyUserData = (ActorUserData *)proxyActor->userData;
                     proxyUserData->velocity = userData->actorData.velocity;
+                    proxyUserData->gravity = userData->actorData.gravity;
                 }
             }
 

@@ -20,7 +20,6 @@
 			},
 			"physics": {
 				"model": "duck.cooked",
-				"group": "interactive",
 				"density": 1
 			}
 		}

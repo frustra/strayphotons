@@ -6,6 +6,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "input/BindingNames.hh"
+#include "physx/ForceConstraint.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -24,151 +25,106 @@ namespace sp {
 
     /**
      * This constraint system operates by applying forces to an object's center of mass up to a specified maximum.
+     * Forces are applied via 1D springs in PhysX's built-in constraint solver.
      *
      * Constrained actor velocities are capped at a calculated maximum in order for them to be able to stop on target
-     * without exceeding force limits. Additionally, force along the vertical axis will take gravity into account to
-     * keep objects at their target position and orientation.
-     *
-     * If a constraint's target distance exceeds its maximum, the constraint will break and be removed.
+     * without exceeding force limits. Additionally, a gravity-oriented lift force will be applied separetely to make
+     * trajectories more stable at the force limit.
      */
-    void ConstraintSystem::HandleForceLimitConstraint(PxRigidActor *actor,
-        const ecs::Physics &physics,
+    bool ConstraintSystem::UpdateForceConstraint(PxRigidActor *actor,
+        JointState *joint,
         ecs::Transform transform,
         ecs::Transform targetTransform,
-        glm::vec3 targetVelocity) {
+        glm::vec3 targetVelocity,
+        glm::vec3 gravity) {
+        if (!actor || !joint || !joint->forceConstraint) return false;
         auto dynamic = actor->is<PxRigidDynamic>();
-        if (!dynamic) return;
+        if (!dynamic) return false;
         auto centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
 
         auto currentRotate = transform.GetRotation();
         transform.Translate(currentRotate * centerOfMass);
-
         auto targetRotate = targetTransform.GetRotation();
-        targetTransform.Translate(targetRotate * physics.constraintRotation * centerOfMass);
-
-        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
-                        targetRotate * physics.constraintOffset;
-        auto deltaRotate = targetRotate * physics.constraintRotation * glm::inverse(currentRotate);
+        targetTransform.Translate(targetRotate * centerOfMass);
 
         float intervalSeconds = manager.interval.count() / 1e9;
         float tickFrequency = 1e9 / manager.interval.count();
 
-        { // Apply Torque
-            auto deltaRotation = glm::eulerAngles(deltaRotate);
+        float maxForce = joint->ecsJoint.limit.x;
+        float maxTorque = joint->ecsJoint.limit.y;
 
-            auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
-            auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
-            glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-            glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
+        bool wakeUp = false;
 
-            auto maxAcceleration = invWorldInertia * glm::vec3(CVarMaxConstraintTorque.Get());
+        // Update Torque
+        if (maxTorque > 0) {
+            if (glm::dot(currentRotate, targetRotate) < 0.0f) { // minimum distance quaternion
+                targetRotate = -targetRotate;
+            }
+            auto deltaRotation = glm::eulerAngles(glm::inverse(currentRotate) * targetRotate);
+            auto maxAcceleration = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor()) * maxTorque;
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
                 std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
 
-            auto targetRotationVelocity = deltaRotation;
-            if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                targetRotationVelocity = glm::normalize(targetRotationVelocity) * (maxVelocity - deltaTick);
-            } else {
-                targetRotationVelocity *= tickFrequency;
-            }
-            auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-
-            glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
-            float forceAbs = glm::length(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
-
-            dynamic->addTorque(GlmVec3ToPxVec3(force) * forceClampRatio);
-        }
-
-        { // Apply Lateral Force
-            auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / dynamic->getMass();
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(glm::vec2(deltaPos.x, deltaPos.z)));
-
-            auto targetLateralVelocity = glm::vec3(deltaPos.x, 0, deltaPos.z);
-            if (maxVelocity > deltaTick) {
-                targetLateralVelocity = glm::normalize(targetLateralVelocity);
-                targetLateralVelocity *= maxVelocity - deltaTick;
-            } else {
-                targetLateralVelocity *= tickFrequency;
-            }
-            targetLateralVelocity.x += targetVelocity.x;
-            targetLateralVelocity.z += targetVelocity.z;
-            auto deltaVelocity = targetLateralVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-            deltaVelocity.y = 0;
-
-            glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
-            float forceAbs = glm::length(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
-            dynamic->addForce(GlmVec3ToPxVec3(force) * forceClampRatio);
-        }
-
-        { // Apply Vertical Force
-            auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / dynamic->getMass();
-            if (deltaPos.y > 0) {
-                maxAcceleration -= -9.81f; // CVarGravity.Get();
-            } else {
-                maxAcceleration += -9.81f; // CVarGravity.Get();
-            }
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
-
-            float targetVerticalVelocity = 0.0f;
-            if (maxVelocity > deltaTick) {
-                targetVerticalVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
-            } else {
-                targetVerticalVelocity = deltaPos.y * tickFrequency;
-            }
-            targetVerticalVelocity += targetVelocity.y;
-            auto deltaVelocity = targetVerticalVelocity - dynamic->getLinearVelocity().y;
-
-            float force = deltaVelocity * tickFrequency * dynamic->getMass();
-            force -= -9.81f /*CVarGravity.Get()*/ * dynamic->getMass();
-            float forceAbs = std::abs(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
-            dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
-        }
-    }
-
-    void ConstraintSystem::BreakConstraints(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::CharacterController>,
-        ecs::Write<ecs::Physics>,
-        ecs::SendEventsLock> lock) {
-        ZoneScoped;
-
-        InlineVector<ecs::Entity, 32> breakList;
-        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
-            auto &controller = entity.Get<ecs::CharacterController>(lock);
-            if (controller.pxController) {
-                auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-                if (userData && userData->standingOn) breakList.push_back(userData->standingOn);
-            }
-        }
-
-        for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
-            if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
-            auto &physics = entity.Get<ecs::Physics>(lock);
-            auto constraintEntity = physics.constraint.Get(lock);
-            if (sp::contains(breakList, entity)) {
-                ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
-                physics.RemoveConstraint();
-            } else if (physics.constraintMaxDistance > 0.0f && constraintEntity.Has<ecs::TransformSnapshot>(lock)) {
-                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
-                auto &targetTransform = constraintEntity.Get<ecs::TransformSnapshot>(lock);
-
-                auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
-                                targetTransform.GetRotation() * physics.constraintOffset;
-                if (glm::length(deltaPos) > physics.constraintMaxDistance) {
-                    ecs::EventBindings::SendEvent(lock, PHYSICS_EVENT_BROKEN_CONSTRAINT, entity, physics.constraint);
-                    physics.RemoveConstraint();
+            glm::vec3 targetAngularVelocity(0);
+            for (int i = 0; i < 3; i++) {
+                if (maxVelocity[i] > deltaTick[i]) {
+                    targetAngularVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
+                } else {
+                    // Divide remaining velocity delta by 2 to keep things table.
+                    // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
+                    targetAngularVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
                 }
             }
+
+            auto currentAngularVelocity = glm::inverse(currentRotate) * PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+            auto deltaVelocity = targetAngularVelocity - currentAngularVelocity;
+
+            glm::vec3 accel = deltaVelocity * tickFrequency;
+            glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
+            auto clampRatio = glm::min(maxAcceleration, accelAbs) / accelAbs;
+            wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio);
+        } else {
+            wakeUp |= joint->forceConstraint->setAngularAccel(glm::vec3(0));
         }
+
+        // Update Linear Force
+        if (maxForce > 0) {
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
+            auto maxAcceleration = maxForce / dynamic->getMass();
+            auto deltaTick = maxAcceleration * intervalSeconds;
+            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
+
+            auto targetLinearVelocity = deltaPos;
+            if (maxVelocity > deltaTick) {
+                targetLinearVelocity = glm::normalize(targetLinearVelocity) * (maxVelocity - deltaTick);
+            } else {
+                targetLinearVelocity *= tickFrequency * 0.5f;
+            }
+            targetLinearVelocity += targetVelocity;
+            auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+
+            glm::vec3 accel = deltaVelocity * tickFrequency;
+            float accelAbs = glm::length(accel) + 0.00001f;
+            auto clampRatio = std::min(maxAcceleration, accelAbs) / accelAbs;
+            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio);
+        } else {
+            wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
+        }
+
+        wakeUp |= joint->forceConstraint->setGravity(gravity);
+
+        if (targetTransform != joint->forceConstraint->targetTransform) {
+            joint->forceConstraint->targetTransform = targetTransform;
+            wakeUp = true;
+        }
+        return wakeUp;
     }
 
-    void ConstraintSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints>> lock) {
+    void ConstraintSystem::Frame(ecs::Lock<
+        ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints, ecs::SceneInfo>>
+            lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
@@ -179,35 +135,6 @@ namespace sp {
             auto const &actor = manager.actors[entity];
 
             UpdateJoints(lock, entity, actor, transform);
-
-            auto constraintEntity = physics.constraint.Get(lock);
-            if (constraintEntity.Has<ecs::TransformTree>(lock)) {
-                auto &targetTransform = constraintEntity.Get<ecs::TransformTree>(lock);
-                glm::vec3 targetVelocity(0);
-
-                // Try and determine the velocity of the constraint target entity
-                while (constraintEntity.Has<ecs::TransformTree>(lock)) {
-                    if (manager.actors.count(constraintEntity) > 0) {
-                        auto userData = (ActorUserData *)manager.actors[constraintEntity]->userData;
-                        if (userData) targetVelocity = userData->velocity;
-                        break;
-                    } else if (constraintEntity.Has<ecs::CharacterController>(lock)) {
-                        auto &targetController = constraintEntity.Get<ecs::CharacterController>(lock);
-                        if (targetController.pxController) {
-                            auto userData = (CharacterControllerUserData *)targetController.pxController->getUserData();
-                            if (userData) targetVelocity = userData->actorData.velocity;
-                            break;
-                        }
-                    }
-                    constraintEntity = constraintEntity.Get<ecs::TransformTree>(lock).parent.Get(lock);
-                }
-
-                HandleForceLimitConstraint(actor,
-                    physics,
-                    transform,
-                    targetTransform.GetGlobalTransform(lock),
-                    targetVelocity);
-            }
 
             if (physics.constantForce != glm::vec3()) {
                 auto rotation = entity.Get<ecs::TransformTree>(lock).GetGlobalRotation(lock);
@@ -220,8 +147,9 @@ namespace sp {
     void ConstraintSystem::ReleaseJoints(ecs::Entity entity, physx::PxRigidActor *actor) {
         if (manager.joints.count(entity) == 0) return;
 
-        for (auto joint : manager.joints[entity]) {
-            joint.pxJoint->release();
+        for (auto &joint : manager.joints[entity]) {
+            if (joint.pxJoint) joint.pxJoint->release();
+            if (joint.forceConstraint) joint.forceConstraint->release();
         }
 
         auto dynamic = actor->is<PxRigidDynamic>();
@@ -230,7 +158,8 @@ namespace sp {
         manager.joints.erase(entity);
     }
 
-    void ConstraintSystem::UpdateJoints(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints>> lock,
+    void ConstraintSystem::UpdateJoints(
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints, ecs::SceneInfo>> lock,
         ecs::Entity entity,
         physx::PxRigidActor *actor,
         ecs::Transform transform) {
@@ -248,31 +177,31 @@ namespace sp {
         bool wakeUp = false;
         auto &pxJoints = manager.joints[entity];
 
-        for (auto it = pxJoints.begin(); it != pxJoints.end();) {
-            bool matchingJoint = false;
+        sp::erase_if(pxJoints, [&](auto &pxJoint) {
             for (auto &ecsJoint : ecsJoints) {
-                if (it->ecsJoint.target == ecsJoint.target && it->ecsJoint.type == ecsJoint.type) {
-                    matchingJoint = true;
-                    break;
+                if (pxJoint.ecsJoint.target == ecsJoint.target && pxJoint.ecsJoint.type == ecsJoint.type) {
+                    return false;
                 }
             }
-            if (matchingJoint) {
-                it++;
-            } else {
-                it->pxJoint->release();
-                it = pxJoints.erase(it);
-                wakeUp = true;
-            }
+            if (pxJoint.pxJoint) pxJoint.pxJoint->release();
+            if (pxJoint.forceConstraint) pxJoint.forceConstraint->release();
+            wakeUp = true;
+            return true;
+        });
+
+        ecs::SceneProperties sceneProperties = {};
+        if (entity.Has<ecs::SceneInfo>(lock)) {
+            auto &properties = entity.Get<ecs::SceneInfo>(lock).properties;
+            if (properties) sceneProperties = *properties;
         }
+        auto gravity = sceneProperties.GetGravity(transform.GetPosition());
 
         for (auto &ecsJoint : ecsJoints) {
-            ecs::PhysicsJoint *oldEcsJoint = nullptr;
-            physx::PxJoint *pxJoint = nullptr;
+            JointState *joint = nullptr;
 
             for (auto &j : pxJoints) {
                 if (j.ecsJoint.target == ecsJoint.target && j.ecsJoint.type == ecsJoint.type) {
-                    pxJoint = j.pxJoint;
-                    oldEcsJoint = &j.ecsJoint;
+                    joint = &j;
                     break;
                 }
             }
@@ -283,101 +212,152 @@ namespace sp {
             PxTransform remoteTransform(PxIdentity);
             auto targetEntity = ecsJoint.target.Get(lock);
 
+            ecs::Transform targetTransform;
             if (manager.actors.count(targetEntity) > 0) {
                 targetActor = manager.actors[targetEntity];
                 auto userData = (ActorUserData *)targetActor->userData;
                 Assert(userData, "Physics targetActor is missing UserData");
                 remoteTransform.p = GlmVec3ToPxVec3(userData->scale * ecsJoint.remoteOffset);
                 remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOrient);
-            }
-            if (!targetActor && targetEntity.Has<ecs::TransformTree>(lock)) {
-                auto targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
-                remoteTransform.p = GlmVec3ToPxVec3(
-                    targetTransform.GetPosition() + glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
-                remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation() * ecsJoint.remoteOrient);
+                auto targetPose = targetActor->getGlobalPose();
+                targetTransform = ecs::Transform(PxVec3ToGlmVec3(targetPose.p), PxQuatToGlmQuat(targetPose.q));
+                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
+                targetTransform.Rotate(ecsJoint.remoteOrient);
+            } else if (targetEntity.Has<ecs::TransformTree>(lock)) {
+                targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
+                targetTransform.Rotate(ecsJoint.remoteOrient);
+                remoteTransform.p = GlmVec3ToPxVec3(targetTransform.GetPosition());
+                remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation());
             }
 
-            if (pxJoint == nullptr) {
+            auto currentTransform = transform;
+            currentTransform.Translate(glm::mat3(currentTransform.matrix) * ecsJoint.localOffset);
+            currentTransform.Rotate(ecsJoint.localOrient);
+
+            float intervalSeconds = manager.interval.count() / 1e9;
+
+            // Try and determine the velocity of the joint target entity
+            glm::vec3 targetVelocity(0);
+            auto targetRoot = targetEntity;
+            while (targetRoot.Has<ecs::TransformTree>(lock)) {
+                if (manager.actors.count(targetRoot) > 0) {
+                    auto userData = (ActorUserData *)manager.actors[targetRoot]->userData;
+                    if (userData) {
+                        targetVelocity = userData->velocity;
+                        targetTransform.Translate(-targetVelocity * intervalSeconds);
+                    }
+                    break;
+                } else if (manager.controllers.count(targetRoot) > 0) {
+                    auto userData = (CharacterControllerUserData *)manager.controllers[targetRoot]->getUserData();
+                    if (userData) targetVelocity = userData->actorData.velocity;
+                    break;
+                }
+                targetRoot = targetRoot.Get<ecs::TransformTree>(lock).parent.Get(lock);
+            }
+
+            if (joint == nullptr) {
+                joint = &pxJoints.emplace_back();
+                joint->ecsJoint = ecsJoint;
                 switch (ecsJoint.type) {
                 case ecs::PhysicsJointType::Fixed:
-                    pxJoint =
+                    joint->pxJoint =
                         PxFixedJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Distance:
-                    pxJoint =
+                    joint->pxJoint =
                         PxDistanceJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Spherical:
-                    pxJoint =
+                    joint->pxJoint =
                         PxSphericalJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Hinge:
-                    pxJoint =
+                    joint->pxJoint =
                         PxRevoluteJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Slider:
-                    pxJoint =
+                    joint->pxJoint =
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    break;
+                case ecs::PhysicsJointType::Force:
+                    // Free'd automatically on release();
+                    joint->forceConstraint =
+                        new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    if (actor->is<PxRigidBody>()) actor->is<PxRigidBody>()->setMaxAngularVelocity(1000.0f);
+                    UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                     break;
                 default:
                     Abortf("Unsupported PhysX joint type: %s", ecsJoint.type);
                 }
-                pxJoints.emplace_back(PhysxManager::Joint{ecsJoint, pxJoint});
             } else {
-                if (pxJoint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
-                    wakeUp = true;
-                    pxJoint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
-                }
-                if (pxJoint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
-                    wakeUp = true;
-                    pxJoint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                if (joint->pxJoint) {
+                    if (joint->pxJoint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
+                        wakeUp = true;
+                        joint->pxJoint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
+                    }
+                    if (joint->pxJoint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
+                        wakeUp = true;
+                        joint->pxJoint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                    }
+                } else if (joint->forceConstraint) {
+                    if (joint->forceConstraint->getLocalPose(PxJointActorIndex::eACTOR0) != localTransform) {
+                        wakeUp = true;
+                        joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
+                    }
+                    if (joint->forceConstraint->getLocalPose(PxJointActorIndex::eACTOR1) != remoteTransform) {
+                        wakeUp = true;
+                        joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                    }
+
+                    wakeUp |=
+                        UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                 }
 
-                if (ecsJoint == *oldEcsJoint) {
+                if (ecsJoint == joint->ecsJoint) {
                     // joint is up to date
                     continue;
                 } else {
-                    *oldEcsJoint = ecsJoint;
+                    joint->ecsJoint = ecsJoint;
                 }
             }
 
             wakeUp = true;
-            pxJoint->setActors(actor, targetActor);
+            if (joint->pxJoint) joint->pxJoint->setActors(actor, targetActor);
+            if (joint->forceConstraint) joint->forceConstraint->setActors(actor, targetActor);
             if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
-                auto distanceJoint = pxJoint->is<PxDistanceJoint>();
-                distanceJoint->setMinDistance(ecsJoint.range.x);
-                if (ecsJoint.range.y > ecsJoint.range.x) {
-                    distanceJoint->setMaxDistance(ecsJoint.range.y);
+                auto distanceJoint = joint->pxJoint->is<PxDistanceJoint>();
+                distanceJoint->setMinDistance(ecsJoint.limit.x);
+                if (ecsJoint.limit.y > ecsJoint.limit.x) {
+                    distanceJoint->setMaxDistance(ecsJoint.limit.y);
                     distanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
                 }
-                pxJoint = distanceJoint;
             } else if (ecsJoint.type == ecs::PhysicsJointType::Spherical) {
-                auto sphericalJoint = pxJoint->is<PxSphericalJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
+                auto sphericalJoint = joint->pxJoint->is<PxSphericalJoint>();
+                if (ecsJoint.limit.x != 0.0f || ecsJoint.limit.y != 0.0f) {
                     sphericalJoint->setLimitCone(
-                        PxJointLimitCone(glm::radians(ecsJoint.range.x), glm::radians(ecsJoint.range.y)));
+                        PxJointLimitCone(glm::radians(ecsJoint.limit.x), glm::radians(ecsJoint.limit.y)));
                     sphericalJoint->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
                     sphericalJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                 }
-                pxJoint = sphericalJoint;
             } else if (ecsJoint.type == ecs::PhysicsJointType::Hinge) {
-                auto revoluteJoint = pxJoint->is<PxRevoluteJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
+                auto revoluteJoint = joint->pxJoint->is<PxRevoluteJoint>();
+                if (ecsJoint.limit.x != 0.0f || ecsJoint.limit.y != 0.0f) {
                     revoluteJoint->setLimit(
-                        PxJointAngularLimitPair(glm::radians(ecsJoint.range.x), glm::radians(ecsJoint.range.y)));
+                        PxJointAngularLimitPair(glm::radians(ecsJoint.limit.x), glm::radians(ecsJoint.limit.y)));
                     revoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
                     revoluteJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                 }
-                pxJoint = revoluteJoint;
             } else if (ecsJoint.type == ecs::PhysicsJointType::Slider) {
-                auto prismaticJoint = pxJoint->is<PxPrismaticJoint>();
-                if (ecsJoint.range.x != 0.0f || ecsJoint.range.y != 0.0f) {
+                auto prismaticJoint = joint->pxJoint->is<PxPrismaticJoint>();
+                if (ecsJoint.limit.x != 0.0f || ecsJoint.limit.y != 0.0f) {
                     prismaticJoint->setLimit(PxJointLinearLimitPair(manager.pxPhysics->getTolerancesScale(),
-                        ecsJoint.range.x,
-                        ecsJoint.range.y));
+                        ecsJoint.limit.x,
+                        ecsJoint.limit.y));
                     prismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
                 }
-                pxJoint = prismaticJoint;
+            } else if (ecsJoint.type == ecs::PhysicsJointType::Force) {
+                joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.x, ecsJoint.limit.y);
             }
         }
 

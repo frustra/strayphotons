@@ -14,6 +14,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "physx/ForceConstraint.hh"
 
 #include <PxScene.h>
 #include <chrono>
@@ -89,7 +90,8 @@ namespace sp {
         controllerManager.reset();
         for (auto &entry : joints) {
             for (auto &joint : entry.second) {
-                joint.pxJoint->release();
+                if (joint.pxJoint) joint.pxJoint->release();
+                if (joint.forceConstraint) joint.forceConstraint->release();
             }
         }
         joints.clear();
@@ -167,8 +169,6 @@ namespace sp {
             scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, joints);
         }
 
-        animationSystem.Frame();
-
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
@@ -186,14 +186,16 @@ namespace sp {
                 }
             }
 
+            animationSystem.Frame(lock);
+
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
                 UpdateActor(lock, ent);
             }
 
-            characterControlSystem.Frame(lock);
             constraintSystem.Frame(lock);
+            characterControlSystem.Frame(lock);
         }
 
         { // Simulate 1 physics frame (blocking)
@@ -211,12 +213,12 @@ namespace sp {
                 ecs::Read<ecs::LaserEmitter,
                     ecs::OpticalElement,
                     ecs::EventBindings,
+                    ecs::Physics,
                     ecs::EventInput,
                     ecs::CharacterController>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
-                    ecs::Physics,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
@@ -241,7 +243,8 @@ namespace sp {
                             transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                             transform.SetRotation(PxQuatToGlmQuat(pose.q));
                             ent.Set<ecs::TransformTree>(lock, transform);
-                            userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
+                            userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
+                                                 (float)(1e9 / interval.count());
                             userData->pose = transform;
                         }
                     }
@@ -279,7 +282,6 @@ namespace sp {
                 }
             }
 
-            constraintSystem.BreakConstraints(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
 
@@ -650,7 +652,8 @@ namespace sp {
                 actor->setGlobalPose(pxTransform);
             }
 
-            userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
+            userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
+                                 (float)(1e9 / interval.count());
         } else {
             userData->velocity = glm::vec3(0);
         }
@@ -667,13 +670,7 @@ namespace sp {
             }
 
             if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-                glm::vec3 gravityForce = sceneProperties.fixedGravity;
-                if (sceneProperties.gravityFunction) {
-                    auto gravityPos = sceneProperties.gravityTransform.GetInverse() *
-                                      glm::vec4(transform.GetPosition(), 1);
-                    gravityForce = sceneProperties.gravityTransform.GetRotation() *
-                                   sceneProperties.gravityFunction(gravityPos);
-                }
+                glm::vec3 gravityForce = sceneProperties.GetGravity(transform.GetPosition());
                 // Force will accumulate on sleeping objects causing jitter
                 if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
                     dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
@@ -690,7 +687,8 @@ namespace sp {
         if (actor) {
             auto userData = (ActorUserData *)actor->userData;
 
-            if (actor->getScene()) actor->getScene()->removeActor(*actor);
+            auto scene = actor->getScene();
+            if (scene) scene->removeActor(*actor);
             actor->release();
 
             if (userData) delete userData;

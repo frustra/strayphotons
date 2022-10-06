@@ -1,6 +1,45 @@
 {
 	"entities": [
 		{
+			"name": "testroot",
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"model": "box",
+				"density": 100
+			},
+			"transform": {
+				"translate": [1, 1, 2.5],
+				"scale": [0.075, 0.075, 0.075]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			}
+		},
+		{
+			"name": "test",
+			"renderable": {
+				"model": "box",
+				"emissive": 0.5
+			},
+			"transform": {
+				"translate": [1, 1, 2.5],
+				"scale": [0.5, 0.05, 0.5]
+			},
+			"physics": {
+				"model": "box",
+				"group": "interactive",
+				"density": 10
+			},
+			"physics_joints": [{
+				"target": "testroot",
+				"type": "Force",
+				"limit": [10, 0.5]
+			}]
+		},
+		{
 			"sound": {
 				"file": "test.ogg",
 				"volume": 0.5,
@@ -392,6 +431,13 @@
 			}
 		},
 		{
+			"name": "mirrorcube1.mirrorcube",
+			"physics": {
+				"model": "box",
+				"density": 10
+			}
+		},
+		{
 			"name": "mirrorcube2",
 			"transform": {
 				"translate": [2.25, 0.89, 2.75],
@@ -404,6 +450,13 @@
 			}
 		},
 		{
+			"name": "mirrorcube2.mirrorcube",
+			"physics": {
+				"model": "box",
+				"density": 10
+			}
+		},
+		{
 			"name": "duck",
 			"transform": {
 				"translate": [2.55, 0.83, 2.65],
@@ -413,6 +466,13 @@
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "duck" }
+			}
+		},
+		{
+			"name": "duck.duck.gltf2",
+			"physics": {
+				"model": "duck.cooked",
+				"density": 10
 			}
 		},
 		{

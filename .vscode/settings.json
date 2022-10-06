@@ -129,7 +129,8 @@
         "*.rh": "cpp",
         "orderingmethods": "cpp",
         "fft": "cpp",
-        "openglsupport": "cpp"
+        "openglsupport": "cpp",
+        "bvh": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

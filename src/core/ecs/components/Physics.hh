@@ -117,25 +117,6 @@ namespace ecs {
         float linearDamping = 0.0f;
 
         glm::vec3 constantForce;
-
-        EntityRef constraint;
-        float constraintMaxDistance = 0.0f;
-        glm::vec3 constraintOffset;
-        glm::quat constraintRotation;
-
-        void SetConstraint(EntityRef target,
-            float maxDistance = 0.0f,
-            glm::vec3 offset = glm::vec3(),
-            glm::quat rotation = glm::quat()) {
-            constraint = target;
-            constraintMaxDistance = maxDistance;
-            constraintOffset = offset;
-            constraintRotation = rotation;
-        }
-
-        void RemoveConstraint() {
-            SetConstraint(Entity());
-        }
     };
 
     static Component<Physics> ComponentPhysics("physics",

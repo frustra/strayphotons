@@ -13,9 +13,8 @@ namespace sp {
         return frameInterval * std::round(value / frameInterval);
     }
 
-    void AnimationSystem::Frame() {
+    void AnimationSystem::Frame(ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>> lock) {
         ZoneScoped;
-        auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation, ecs::TransformTree>(lock)) continue;
 
