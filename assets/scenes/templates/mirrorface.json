@@ -10,10 +10,7 @@
 			},
 			"physics": {
 				"shapes": {
-					"box": [0.99, 0.99, 0.02],
-					"transform": {
-						"translate": [0, 0, 0.0095]
-					}
+					"box": [0.99, 0.99, 0.02]
 				},
 				"group": "world_overlap",
 				"density": 1,

@@ -64,7 +64,9 @@ namespace sp {
         using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
             ecs::Lock<ecs::AddRemove>,
             std::shared_ptr<Scene>)>;
-        void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback = nullptr);
+        void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene,
+            bool resetLive = false,
+            OnApplySceneCallback callback = nullptr);
 
         void Frame() override;
 
@@ -79,8 +81,6 @@ namespace sp {
         std::shared_ptr<Scene> LoadBindingsJson();
 
         std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, OnApplySceneCallback callback = nullptr);
-
-        void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 
     private:
         struct QueuedAction {

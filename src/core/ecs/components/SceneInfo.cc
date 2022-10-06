@@ -13,7 +13,7 @@ namespace ecs {
             "InsertWithPriority called with an invalid new SceneInfo");
         auto &newStagingInfo = newSceneInfo.stagingId.Get<SceneInfo>(staging);
 
-        if (newSceneInfo.priority >= this->priority) {
+        if (newSceneInfo.priority < this->priority) {
             // Insert into the root of the linked-list
             this->nextStagingId = newStagingInfo.nextStagingId = this->stagingId;
             this->stagingId = newSceneInfo.stagingId;
@@ -29,7 +29,7 @@ namespace ecs {
             while (nextId.Has<SceneInfo>(staging)) {
                 if (prevSceneInfo->properties) propertiesSet = true;
                 auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
-                if (newSceneInfo.priority >= nextSceneInfo.priority) break;
+                if (newSceneInfo.priority < nextSceneInfo.priority) break;
                 nextId = nextSceneInfo.nextStagingId;
                 prevSceneInfo = &nextSceneInfo;
             }
@@ -95,5 +95,15 @@ namespace ecs {
             }
         }
         return false;
+    }
+
+    const Transform &SceneInfo::GetRootTransform(Lock<Read<SceneInfo>> lock, Entity ent) {
+        static Transform identity = {};
+        if (ent.Has<SceneInfo>(lock)) {
+            auto &sceneInfo = ent.Get<SceneInfo>(lock);
+            auto scene = sceneInfo.scene.lock();
+            if (scene) return scene->GetRootTransform();
+        }
+        return identity;
     }
 } // namespace ecs

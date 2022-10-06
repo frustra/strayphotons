@@ -78,6 +78,7 @@ namespace sp::vulkan::renderer {
                     auto normalsView = resources.GetImageView("Normals");
 
                     vk::ClearColorValue clear;
+                    clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
                     vk::ImageSubresourceRange range;
                     range.layerCount = 1;
                     range.levelCount = 1;

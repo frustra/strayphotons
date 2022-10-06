@@ -14,11 +14,11 @@ namespace ecs {
     struct SceneInfo {
         // Lower priority scenes will have their components overwritten with higher priority components.
         enum class Priority : int {
-            System,
+            System, // Lowest priority
             Scene,
             Player,
             Bindings,
-            Override,
+            Override, // Highest priority
         };
 
         SceneInfo() {}
@@ -58,7 +58,10 @@ namespace ecs {
         // Returns true if live SceneInfo should be removed
         bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId);
 
+        static const Transform &GetRootTransform(Lock<Read<SceneInfo>> lock, Entity ent);
+
         Entity liveId;
+        // Staging IDs are stored in a singly-linked list, with lowest priority first.
         Entity stagingId, nextStagingId;
         Entity prefabStagingId;
         Priority priority = Priority::Scene;

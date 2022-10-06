@@ -6,12 +6,12 @@
 #include "game/SceneManager.hh"
 
 namespace sp {
-    void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
+    void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll> staging,
         ecs::Lock<ecs::AddRemove> live,
-        ecs::Entity e) {
-
+        ecs::Entity e,
+        bool resetLive = false) {
         Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-        auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
+        auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
         auto &liveSceneInfo = sceneInfo.liveId.Get<const ecs::SceneInfo>(live);
 
@@ -23,6 +23,9 @@ namespace sp {
             auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
             stagingId = stagingInfo.nextStagingId;
         }
+
+        if (resetLive) scene::RemoveAllComponents(live, sceneInfo.liveId);
+
         while (!stagingIds.empty()) {
             scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
             stagingIds.pop_back();
@@ -30,12 +33,9 @@ namespace sp {
         scene::RemoveDanglingComponents(ecs::Lock<ecs::ReadAll>(staging), live, sceneInfo.liveId);
     }
 
-    void ApplyComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
-        ecs::Lock<ecs::AddRemove> live,
-        ecs::Entity e) {
-
+    void ApplyComponentsByPriority(ecs::Lock<ecs::ReadAll> staging, ecs::Lock<ecs::AddRemove> live, ecs::Entity e) {
         Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-        auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
+        auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
         auto &liveSceneInfo = sceneInfo.liveId.Get<const ecs::SceneInfo>(live);
 
@@ -158,7 +158,8 @@ namespace sp {
     }
 
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
-        ecs::Lock<ecs::AddRemove> live) {
+        ecs::Lock<ecs::AddRemove> live,
+        bool resetLive) {
         ZoneScoped;
         ZoneStr(name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
@@ -166,14 +167,14 @@ namespace sp {
             if (sceneInfo.scene.lock().get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
-            // Skip entities that have already been added
-            if (sceneInfo.liveId) continue;
-
             if (!e.Has<ecs::Name>(staging)) {
                 Errorf("Scene contains unnamed entity: %s %s", name, ecs::ToString(staging, e));
                 continue;
             }
             auto &entityName = e.Get<const ecs::Name>(staging);
+
+            // Skip entities that have already been added
+            if (sceneInfo.liveId.Exists(live)) continue;
 
             // Find matching named entity in live scene
             sceneInfo.liveId = ecs::EntityRef(entityName).Get(live);
@@ -194,14 +195,18 @@ namespace sp {
             }
         }
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
-            auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
+            auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
             if (sceneInfo.scene.lock().get() != this) continue;
 
-            ApplyComponentsByPriority(staging, live, e);
+            if (resetLive) {
+                RebuildComponentsByPriority(staging, live, e, true);
+            } else {
+                ApplyComponentsByPriority(staging, live, e);
+            }
         }
-        for (auto e : staging.EntitiesWith<ecs::TransformTree>()) {
-            if (!e.Has<ecs::TransformTree, ecs::SceneInfo>(staging)) continue;
-            auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
+        for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
+            if (!e.Has<ecs::SceneInfo>(staging)) continue;
+            auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
             if (sceneInfo.scene.lock().get() != this) continue;
             if (!sceneInfo.liveId.Has<ecs::TransformTree>(live)) continue;
 
@@ -243,5 +248,57 @@ namespace sp {
             if (!sceneInfo.stagingId) e.Destroy(live);
         }
         active = false;
+    }
+
+    void Scene::UpdateRootTransform() {
+        auto stagingLock =
+            ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::TransformTree>, ecs::Write<ecs::SceneInfo>>();
+        auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneConnection, ecs::TransformSnapshot>>();
+
+        ecs::Entity liveConnection, stagingConnection;
+        for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
+            if (!e.Has<ecs::SceneConnection, ecs::SceneInfo, ecs::Name>(stagingLock)) continue;
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
+            auto scenePtr = sceneInfo.scene.lock();
+            if (scenePtr.get() != this) continue;
+
+            auto &name = e.Get<ecs::Name>(stagingLock);
+            liveConnection = ecs::EntityRef(name).Get(liveLock);
+            if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
+                auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
+                if (sp::contains(connection.scenes, this->name)) {
+                    stagingConnection = e;
+                    break;
+                }
+            }
+        }
+        if (stagingConnection.Has<ecs::TransformTree>(stagingLock) &&
+            liveConnection.Has<ecs::TransformSnapshot>(liveLock)) {
+            auto &liveTransform = liveConnection.Get<ecs::TransformSnapshot>(liveLock);
+            auto &stagingTree = stagingConnection.Get<ecs::TransformTree>(stagingLock);
+            auto stagingTransform = stagingTree.GetGlobalTransform(stagingLock);
+            glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
+            glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
+            this->rootTransform = ecs::Transform(deltaPos, deltaRotation);
+
+            if (this->properties) {
+                auto properties = *this->properties;
+                properties.fixedGravity = this->rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
+                properties.gravityTransform = this->rootTransform * properties.gravityTransform;
+
+                auto propertiesPtr = make_shared<ecs::SceneProperties>(properties);
+                for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
+                    auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
+                    auto scenePtr = sceneInfo.scene.lock();
+                    if (scenePtr.get() != this) continue;
+
+                    sceneInfo.properties = propertiesPtr;
+                }
+            }
+        }
+    }
+
+    const ecs::Transform &Scene::GetRootTransform() const {
+        return rootTransform;
     }
 } // namespace sp

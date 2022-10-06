@@ -51,8 +51,13 @@ namespace sp {
             std::string relativeName = "",
             ecs::Name prefix = ecs::Name());
 
-        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
+        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
+            ecs::Lock<ecs::AddRemove> live,
+            bool resetLive = false);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
+
+        void UpdateRootTransform();
+        const ecs::Transform &GetRootTransform() const;
 
         std::shared_ptr<ecs::SceneProperties> properties;
 
@@ -66,6 +71,8 @@ namespace sp {
 
         std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
         std::vector<ecs::EntityRef> references;
+
+        ecs::Transform rootTransform;
 
         friend class SceneManager;
     };

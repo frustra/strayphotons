@@ -9,6 +9,6 @@ target_compile_definitions(
     glm
     INTERFACE
         GLM_FORCE_CTOR_INIT
-        GLM_FORCE_CXX17
+        GLM_FORCE_CXX2A
         GLM_FORCE_DEPTH_ZERO_TO_ONE
 )

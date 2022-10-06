@@ -18,13 +18,14 @@ namespace sp {
 
         void DefineContents() {
             {
-                auto lock = ecs::StartTransaction<ecs::ReadAll>();
+                auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
+                auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
 
-                auto inspector = inspectorEntity.Get(lock);
-                if (!inspector.Has<ecs::EventInput>(lock)) return;
+                auto inspector = inspectorEntity.Get(liveLock);
+                if (!inspector.Has<ecs::EventInput>(liveLock)) return;
 
                 ecs::Event event;
-                while (ecs::EventInput::Poll(lock, inspector, EDITOR_EVENT_EDIT_TARGET, event)) {
+                while (ecs::EventInput::Poll(liveLock, inspector, EDITOR_EVENT_EDIT_TARGET, event)) {
                     auto newTarget = std::get_if<ecs::Entity>(&event.data);
                     if (!newTarget) {
                         Errorf("Invalid editor event: %s", event.toString());
@@ -33,37 +34,85 @@ namespace sp {
                     }
                 }
 
-                if (ImGui::Button("List Entities")) {
+                if (ImGui::Button("Entity Selector")) {
                     targetEntity = {};
                     return;
                 }
 
-                auto inspectTarget = targetEntity.Get(lock);
-                if (inspectTarget.Exists(lock)) {
-                    ImGui::Text("Entity: %s", ecs::ToString(lock, inspectTarget).c_str());
+                auto inspectTarget = targetEntity.Get(liveLock);
+                if (inspectTarget.Exists(liveLock)) {
+                    ImGui::Text("Entity: %s", ecs::ToString(liveLock, inspectTarget).c_str());
 
-                    ecs::EntityScope scope;
-                    if (inspector.Has<ecs::SceneInfo>(lock)) {
-                        auto &sceneInfo = inspector.Get<ecs::SceneInfo>(lock);
-                        scope.scene = sceneInfo.scene;
-                        auto scene = sceneInfo.scene.lock();
-                        if (scene) scope.prefix.scene = scene->name;
+                    std::shared_ptr<Scene> liveScene;
+                    if (inspector.Has<ecs::SceneInfo>(liveLock)) {
+                        auto &sceneInfo = inspector.Get<ecs::SceneInfo>(liveLock);
+                        liveScene = sceneInfo.scene.lock();
                     }
 
-                    ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                        if (!comp.HasComponent(lock, inspectTarget)) return;
-                        if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
-                            const void *component = comp.Access(lock, inspectTarget);
-                            for (auto &field : comp.fields) {
-                                ecs::GetFieldType(field.type, [&](auto *typePtr) {
-                                    using T = std::remove_pointer_t<decltype(typePtr)>;
-                                    AddFieldControls<T>(field, comp, inspectTarget, component);
-                                });
+                    if (ImGui::BeginTabBar("EditMode", ImGuiTabBarFlags_None)) {
+                        if (ImGui::BeginTabItem("Live")) {
+                            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                                if (!comp.HasComponent(liveLock, inspectTarget)) return;
+                                if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
+                                    const void *component = comp.Access(liveLock, inspectTarget);
+                                    for (auto &field : comp.fields) {
+                                        ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                                            using T = std::remove_pointer_t<decltype(typePtr)>;
+                                            AddFieldControls<T>(field, comp, liveScene, inspectTarget, component);
+                                        });
+                                    }
+                                }
+                            });
+                            ImGui::EndTabItem();
+                        }
+                        if (inspectTarget.Has<ecs::SceneInfo>(liveLock)) {
+                            auto &sceneInfo = inspectTarget.Get<ecs::SceneInfo>(liveLock);
+                            std::vector<ecs::Entity> stagingIds;
+                            auto stagingId = sceneInfo.stagingId;
+                            while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
+                                stagingIds.emplace_back(stagingId);
+
+                                auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
+                                stagingId = stagingInfo.nextStagingId;
+                            }
+                            while (!stagingIds.empty()) {
+                                auto stagingEnt = stagingIds.back();
+
+                                auto &stagingSceneInfo = stagingEnt.Get<ecs::SceneInfo>(stagingLock);
+                                auto stagingScene = stagingSceneInfo.scene.lock();
+                                if (stagingScene) {
+                                    auto tabName = "Staging - " + stagingScene->name;
+                                    if (ImGui::BeginTabItem(tabName.c_str())) {
+                                        ecs::ForEachComponent([&](const std::string &name,
+                                                                  const ecs::ComponentBase &comp) {
+                                            if (!comp.HasComponent(stagingLock, stagingEnt)) return;
+                                            if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
+                                                const void *component = comp.Access(stagingLock, stagingEnt);
+                                                for (auto &field : comp.fields) {
+                                                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                                                        using T = std::remove_pointer_t<decltype(typePtr)>;
+                                                        AddFieldControls<T>(field,
+                                                            comp,
+                                                            stagingScene,
+                                                            stagingEnt,
+                                                            component);
+                                                    });
+                                                }
+                                            }
+                                        });
+                                        ImGui::EndTabItem();
+                                    }
+                                } else {
+                                    Logf("Missing staging scene! %s", std::to_string(stagingEnt));
+                                }
+
+                                stagingIds.pop_back();
                             }
                         }
-                    });
+                        ImGui::EndTabBar();
+                    }
                 } else if (inspectTarget) {
-                    ImGui::Text("Missing Entity: %s", ecs::ToString(lock, inspectTarget).c_str());
+                    ImGui::Text("Missing Entity: %s", ecs::ToString(liveLock, inspectTarget).c_str());
                 }
             }
             if (!targetEntity) {

@@ -153,19 +153,30 @@ namespace sp {
     }
 
     template<typename T>
-    bool AddFieldControls(const ecs::ComponentField &field,
+    void AddFieldControls(const ecs::ComponentField &field,
         const ecs::ComponentBase &comp,
+        const std::shared_ptr<Scene> &scene,
         ecs::Entity target,
         const void *component) {
         auto value = *field.Access<T>(component);
-        if (!AddImGuiElement(field.name ? field.name : comp.name, value)) return true;
+        if (!AddImGuiElement(field.name ? field.name : comp.name, value)) return;
 
-        GetSceneManager().QueueAction(SceneAction::EditLiveECS,
-            [target, value, &comp, &field](ecs::Lock<ecs::WriteAll> lock) {
-                void *component = comp.Access(lock, target);
-                *field.Access<T>(component) = value;
-            });
-        return true;
+        if (ecs::IsLive(target)) {
+            GetSceneManager().QueueAction(SceneAction::EditLiveECS,
+                [target, value, &comp, &field](ecs::Lock<ecs::WriteAll> lock) {
+                    void *component = comp.Access(lock, target);
+                    *field.Access<T>(component) = value;
+                });
+        } else if (scene != nullptr) {
+            GetSceneManager().QueueAction(SceneAction::EditStagingScene,
+                scene->name,
+                [target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                    void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
+                    *field.Access<T>(component) = value;
+                });
+        } else {
+            Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
+        }
     }
 
 } // namespace sp
