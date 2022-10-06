@@ -72,6 +72,8 @@ namespace sp {
                 if (maxVelocity[i] > deltaTick[i]) {
                     targetAngularVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
                 } else {
+                    // Divide remaining velocity delta by 2 to keep things table.
+                    // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
                     targetAngularVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
                 }
             }

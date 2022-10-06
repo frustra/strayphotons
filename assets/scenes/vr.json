@@ -128,7 +128,7 @@
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
 						"force_limit": 100.0,
-						"torque_limit": 50.0
+						"torque_limit": 10.0
 					}
 				}
 			]
