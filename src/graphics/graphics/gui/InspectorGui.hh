@@ -67,8 +67,17 @@ namespace sp {
                         }
                         if (inspectTarget.Has<ecs::SceneInfo>(liveLock)) {
                             auto &sceneInfo = inspectTarget.Get<ecs::SceneInfo>(liveLock);
-                            auto stagingEnt = sceneInfo.stagingId;
-                            while (stagingEnt.Has<ecs::SceneInfo>(stagingLock)) {
+                            std::vector<ecs::Entity> stagingIds;
+                            auto stagingId = sceneInfo.stagingId;
+                            while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
+                                stagingIds.emplace_back(stagingId);
+
+                                auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
+                                stagingId = stagingInfo.nextStagingId;
+                            }
+                            while (!stagingIds.empty()) {
+                                auto stagingEnt = stagingIds.back();
+
                                 auto &stagingSceneInfo = stagingEnt.Get<ecs::SceneInfo>(stagingLock);
                                 auto stagingScene = stagingSceneInfo.scene.lock();
                                 if (stagingScene) {
@@ -97,7 +106,7 @@ namespace sp {
                                     Logf("Missing staging scene! %s", std::to_string(stagingEnt));
                                 }
 
-                                stagingEnt = stagingSceneInfo.nextStagingId;
+                                stagingIds.pop_back();
                             }
                         }
                         ImGui::EndTabBar();

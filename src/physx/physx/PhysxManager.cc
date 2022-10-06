@@ -519,7 +519,7 @@ namespace sp {
     void PhysxManager::UpdateActor(
         ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneInfo>> lock,
         ecs::Entity &e) {
-        ZoneScoped;
+        // ZoneScoped;
         // ZoneStr(ecs::ToString(lock, e));
         if (actors.count(e) == 0) {
             auto actor = CreateActor(lock, e);
