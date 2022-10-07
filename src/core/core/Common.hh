@@ -114,6 +114,11 @@ namespace sp {
             return *this;
         }
 
+        color_t &operator+=(const color_t &other) {
+            color += other.color;
+            return *this;
+        }
+
         bool operator==(const color_t &other) const {
             return color == other.color;
         }

@@ -49,7 +49,8 @@ namespace sp {
         color_t color;
     };
 
-    void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
+    void LaserSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
+        ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
         ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock) {
         ZoneScoped;
 
@@ -74,6 +75,14 @@ namespace sp {
             auto &segments = std::get<ecs::LaserLine::Segments>(lines.line);
             segments.clear();
             color_t color = emitter.color;
+
+            color_t signalColor = glm::vec3{
+                ecs::SignalBindings::GetSignal(lock, entity, "laser_color_r"),
+                ecs::SignalBindings::GetSignal(lock, entity, "laser_color_g"),
+                ecs::SignalBindings::GetSignal(lock, entity, "laser_color_b"),
+            };
+
+            color += signalColor;
 
             glm::vec3 rayStart = transform.GetPosition();
             glm::vec3 rayDir = transform.GetForward();
