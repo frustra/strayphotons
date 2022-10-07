@@ -15,6 +15,5 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Sound.cc
     Signals.cc
     Transform.cc
-    Triggers.cc
     View.cc
 )

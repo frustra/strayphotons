@@ -6,7 +6,7 @@ namespace sp {
 
     class SystemGuiManager : public GuiContext {
     public:
-        SystemGuiManager(const std::string &name, ecs::FocusLayer layer = ecs::FocusLayer::GAME);
+        SystemGuiManager(const std::string &name, ecs::FocusLayer layer = ecs::FocusLayer::Game);
 
         virtual void BeforeFrame();
 

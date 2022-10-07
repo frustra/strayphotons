@@ -7,7 +7,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::ALWAYS) {
+    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::Always) {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);
@@ -68,7 +68,7 @@ namespace sp {
 
             if (lock.Has<ecs::FocusLock>()) {
                 auto &focusLock = lock.Get<ecs::FocusLock>();
-                focusChanged = focusLock.HasFocus(ecs::FocusLayer::OVERLAY) != consoleOpen;
+                focusChanged = focusLock.HasFocus(ecs::FocusLayer::Overlay) != consoleOpen;
             }
 
             ecs::ComponentEvent<ecs::Gui> guiEvent;
@@ -110,12 +110,12 @@ namespace sp {
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
 
             if (consoleOpen) {
-                focusLock.AcquireFocus(ecs::FocusLayer::OVERLAY);
+                focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
                 if (!eventInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
                     eventInput.Register(INPUT_EVENT_MENU_TEXT_INPUT);
                 }
             } else {
-                focusLock.ReleaseFocus(ecs::FocusLayer::OVERLAY);
+                focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
                 if (eventInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
                     eventInput.Unregister(INPUT_EVENT_MENU_TEXT_INPUT);
                 }

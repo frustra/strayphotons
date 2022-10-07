@@ -116,10 +116,9 @@ namespace sp {
 
             return !!stream;
         }
-        case AssetType::Count:
-            break;
+        default:
+            Abortf("AssetManager::InputStream called with invalid asset type: %s", path);
         }
-        Abortf("AssetManager::InputStream called with invalid asset type: %s", path);
     }
 
     bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream) {

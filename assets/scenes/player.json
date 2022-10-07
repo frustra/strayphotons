@@ -6,7 +6,7 @@
 			"character_controller": {
 				"head": "player:head"
 			},
-			"trigger_group": "player",
+			"trigger_group": "Player",
 			"event_input": [
 				"/action/jump"
 			],
@@ -17,7 +17,7 @@
 			"transform": {},
 			"physics": {
 				"__comment": "Dummy actor for velocity calculation",
-				"group": "noclip",
+				"group": "NoClip",
 				"dynamic": false,
 				"shapes": {
 					"sphere": 0.1
@@ -54,7 +54,10 @@
 				"/interact/press",
 				"/interact/rotate"
 			],
-			"focus": "GAME",
+			"event_bindings": {
+				"/action/jump": "player:player/action/jump"
+			},
+			"focus": "Game",
 			"physics_query": {},
 			"signal_output": {}
 		},
@@ -83,7 +86,7 @@
 				"angle": 30,
 				"intensity": 30
 			},
-			"focus": "GAME",
+			"focus": "Game",
 			"event_input": [
 				"/action/flashlight/toggle",
 				"/action/flashlight/grab"

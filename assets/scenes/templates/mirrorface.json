@@ -12,7 +12,7 @@
 				"shapes": {
 					"box": [0.99, 0.99, 0.02]
 				},
-				"group": "world_overlap",
+				"group": "WorldOverlap",
 				"density": 1,
 				"dynamic": false
 			},

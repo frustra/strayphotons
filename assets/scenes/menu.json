@@ -30,7 +30,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"group": "interactive",
+				"group": "Interactive",
 				"density": 10
 			},
 			"physics_joints": [{

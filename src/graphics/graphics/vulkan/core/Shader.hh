@@ -19,10 +19,9 @@ namespace sp::vulkan {
         Geometry,
         Fragment,
         Compute,
-        Count,
     };
 
-    static const std::array<vk::ShaderStageFlagBits, (size_t)ShaderStage::Count> ShaderStageToFlagBits = {
+    static const sp::EnumArray<vk::ShaderStageFlagBits, ShaderStage> ShaderStageToFlagBits = {
         vk::ShaderStageFlagBits::eVertex,
         vk::ShaderStageFlagBits::eGeometry,
         vk::ShaderStageFlagBits::eFragment,
@@ -48,9 +47,9 @@ namespace sp::vulkan {
     };
 
     // Sets that represent all of the shaders bound to one pipeline, indexed by stage
-    typedef std::array<shared_ptr<Shader>, (size_t)ShaderStage::Count> ShaderSet;
-    typedef std::array<ShaderHandle, (size_t)ShaderStage::Count> ShaderHandleSet;
-    typedef std::array<Hash64, (size_t)ShaderStage::Count> ShaderHashSet;
+    typedef sp::EnumArray<shared_ptr<Shader>, ShaderStage> ShaderSet;
+    typedef sp::EnumArray<ShaderHandle, ShaderStage> ShaderHandleSet;
+    typedef sp::EnumArray<Hash64, ShaderStage> ShaderHashSet;
 
     struct DescriptorBinding {
         union {

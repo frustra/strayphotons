@@ -648,7 +648,7 @@ namespace sp::vulkan {
         auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
         if (lock.Has<ecs::FocusLock>()) {
             auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
-            if (layer == ecs::FocusLayer::GAME) {
+            if (layer == ecs::FocusLayer::Game) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             } else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

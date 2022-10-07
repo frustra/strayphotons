@@ -6,15 +6,14 @@ namespace ecs {
     enum class XrEye : size_t {
         Left = 0,
         Right,
-        Count,
     };
 
     struct XRView {
-        XrEye eye;
+        XrEye eye = XrEye::Left;
 
-        XRView() : eye(XrEye::Count) {}
+        XRView() {}
         XRView(XrEye eye) : eye(eye) {}
     };
 
-    static Component<XRView> ComponentXRView("xrview");
+    static Component<XRView> ComponentXRView("xr_view");
 }; // namespace ecs

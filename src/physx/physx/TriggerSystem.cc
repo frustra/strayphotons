@@ -73,8 +73,7 @@ namespace sp {
                 ecs::EventBindings::SendEvent(lock, *eventName, entity, triggerEnt);
             }
 
-            for (size_t i = 0; i < (size_t)ecs::TriggerGroup::Count; i++) {
-                auto triggerGroup = (ecs::TriggerGroup)i;
+            for (auto &triggerGroup : magic_enum::enum_values<ecs::TriggerGroup>()) {
                 auto entityCount = area.containedEntities[triggerGroup].size();
                 if (entity.Has<ecs::SignalOutput>(lock)) {
                     auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);

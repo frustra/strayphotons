@@ -70,7 +70,6 @@ namespace sp::xr {
                     } else if (param.first == "type") {
                         auto typeStr = param.second.get<string>();
                         to_lower(typeStr);
-                        action.type = Action::DataType::Count;
                         if (typeStr == "boolean") {
                             action.type = Action::DataType::Bool;
                         } else if (typeStr == "vector1") {

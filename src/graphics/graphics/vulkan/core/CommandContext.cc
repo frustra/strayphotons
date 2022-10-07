@@ -257,11 +257,11 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetSingleShader(ShaderStage stage, ShaderHandle handle) {
-        auto &slot = pipelineInput.state.shaders[(size_t)stage];
+        auto &slot = pipelineInput.state.shaders[stage];
         if (slot == handle) return;
         slot = handle;
 
-        auto &spec = pipelineInput.state.specializations[(size_t)stage];
+        auto &spec = pipelineInput.state.specializations[stage];
         std::fill(spec.values.begin(), spec.values.end(), 0);
         spec.set.reset();
         SetDirty(DirtyBits::Pipeline);
@@ -272,8 +272,8 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
-        Assert(pipelineInput.state.shaders[(size_t)stage], "no shader bound to set constant");
-        auto &spec = pipelineInput.state.specializations[(size_t)stage];
+        Assert(pipelineInput.state.shaders[stage], "no shader bound to set constant");
+        auto &spec = pipelineInput.state.specializations[stage];
         spec.values[index] = data;
         spec.set.set(index, true);
         SetDirty(DirtyBits::Pipeline);

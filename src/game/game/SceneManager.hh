@@ -35,7 +35,6 @@ namespace sp {
         ReloadPlayer, // Arguments: ()
         ReloadBindings, // Arguments: ()
         SyncScene, // Arguments: ()
-        Count,
     };
 
     class SceneManager : public RegisteredThread {

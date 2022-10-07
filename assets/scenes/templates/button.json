@@ -30,7 +30,7 @@
 			"trigger_area": {},
 			"physics": {
 				"model": "box",
-				"group": "world_overlap",
+				"group": "WorldOverlap",
 				"kinematic": true
 			},
 			"signal_output": {},
@@ -119,7 +119,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"group": "interactive",
+				"group": "Interactive",
 				"force": [-0.1, 0, 0],
 				"linear_damping": 10,
 				"angular_damping": 100,
@@ -134,7 +134,7 @@
 				"limit": [-0.04, 0]
 			}],
 			"signal_output": {},
-			"trigger_group": "object"
+			"trigger_group": "Object"
 		}
 	]
 }

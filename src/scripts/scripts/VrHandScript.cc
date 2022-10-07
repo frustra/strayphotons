@@ -21,7 +21,6 @@ namespace sp::scripts {
         Middle,
         Ring,
         Pinky,
-        Count,
     };
 
     struct BoneProperties {

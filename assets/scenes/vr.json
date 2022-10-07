@@ -8,7 +8,7 @@
 			},
 			"physics": {
 				"__comment": "Dummy actor for velocity calculation",
-				"group": "noclip",
+				"group": "NoClip",
 				"dynamic": false,
 				"shapes": {
 					"sphere": 0.1
@@ -67,7 +67,7 @@
 				"translate": [0, -2, 0]
 			},
 			"physics": {
-				"group": "player_left_hand",
+				"group": "PlayerLeftHand",
 				"density": 1000,
 				"_linear_damping": 1,
 				"_angular_damping": 100
@@ -103,7 +103,7 @@
 				"translate": [0, -2, 0]
 			},
 			"physics": {
-				"group": "player_right_hand",
+				"group": "PlayerRightHand",
 				"density": 1000,
 				"_linear_damping": 1,
 				"_angular_damping": 100

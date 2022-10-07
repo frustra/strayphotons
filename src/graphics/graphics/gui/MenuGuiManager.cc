@@ -22,7 +22,7 @@ namespace sp {
         "Scaling factor for menu cursor position");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
-        : SystemGuiManager("menu", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
+        : SystemGuiManager("menu", MenuOpen() ? ecs::FocusLayer::Menu : ecs::FocusLayer::Game), graphics(graphics) {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
@@ -69,14 +69,14 @@ namespace sp {
                 }
             }
 
-            auto newFocusLayer = MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME;
+            auto newFocusLayer = MenuOpen() ? ecs::FocusLayer::Menu : ecs::FocusLayer::Game;
             focusChanged = focusLayer != newFocusLayer;
             focusLayer = newFocusLayer;
 
             bool hasFocus = false;
             if (MenuOpen() && lock.Has<ecs::FocusLock>()) {
                 auto &focusLock = lock.Get<ecs::FocusLock>();
-                hasFocus = focusLock.HasPrimaryFocus(ecs::FocusLayer::MENU);
+                hasFocus = focusLock.HasPrimaryFocus(ecs::FocusLayer::Menu);
             }
             if (hasFocus && RenderMode() == MenuRenderMode::Gel) {
                 auto windowSize = CVarWindowSize.Get();
@@ -102,13 +102,13 @@ namespace sp {
             auto &focusLock = lock.Get<ecs::FocusLock>();
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             if (MenuOpen()) {
-                focusLock.AcquireFocus(ecs::FocusLayer::MENU);
+                focusLock.AcquireFocus(ecs::FocusLayer::Menu);
 
                 if (!eventInput.IsRegistered(INPUT_EVENT_MENU_BACK)) eventInput.Register(INPUT_EVENT_MENU_BACK);
                 if (!eventInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) eventInput.Register(INPUT_EVENT_MENU_ENTER);
                 if (eventInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) eventInput.Unregister(INPUT_EVENT_MENU_OPEN);
             } else {
-                focusLock.ReleaseFocus(ecs::FocusLayer::MENU);
+                focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
 
                 if (eventInput.IsRegistered(INPUT_EVENT_MENU_BACK)) eventInput.Unregister(INPUT_EVENT_MENU_BACK);
                 if (eventInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) eventInput.Unregister(INPUT_EVENT_MENU_ENTER);

@@ -6,7 +6,7 @@
 #include <type_traits>
 
 namespace sp {
-    template<typename T, class EnumType, typename ArrayT = std::array<T, static_cast<size_t>(EnumType::Count)>>
+    template<typename T, class EnumType, typename ArrayT = std::array<T, magic_enum::enum_count<EnumType>()>>
     class EnumArray : public ArrayT {
     public:
         constexpr T &operator[](const EnumType &e) {

@@ -40,7 +40,7 @@ namespace sp::vulkan {
         vk::StencilOp stencilFailOp = vk::StencilOp::eKeep;
         vk::StencilOp stencilDepthFailOp = vk::StencilOp::eKeep;
         vk::StencilOp stencilPassOp = vk::StencilOp::eKeep;
-        std::array<SpecializationData, (size_t)ShaderStage::Count> specializations = {};
+        sp::EnumArray<SpecializationData, ShaderStage> specializations = {};
     };
 
     struct PipelineCompileInput {

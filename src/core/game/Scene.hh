@@ -18,12 +18,10 @@ namespace sp {
         Async = 0,
         World,
         System,
-        Count,
     };
 
     class Scene : public NonCopyable {
     public:
-        Scene() : type(SceneType::Count) {}
         Scene(const string &name, SceneType type) : name(name), type(type) {}
         Scene(const string &name, SceneType type, shared_ptr<const Asset> asset)
             : name(name), type(type), asset(asset) {}

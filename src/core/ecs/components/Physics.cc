@@ -119,29 +119,6 @@ namespace ecs {
                     Errorf("Unknown physics model value: %s", param.second.to_str());
                     return false;
                 }
-            } else if (param.first == "group") {
-                auto groupString = param.second.get<string>();
-                sp::to_upper(groupString);
-                if (groupString == "NOCLIP") {
-                    physics.group = PhysicsGroup::NoClip;
-                } else if (groupString == "WORLD") {
-                    physics.group = PhysicsGroup::World;
-                } else if (groupString == "WORLD_OVERLAP") {
-                    physics.group = PhysicsGroup::WorldOverlap;
-                } else if (groupString == "INTERACTIVE") {
-                    physics.group = PhysicsGroup::Interactive;
-                } else if (groupString == "PLAYER") {
-                    physics.group = PhysicsGroup::Player;
-                } else if (groupString == "PLAYER_LEFT_HAND") {
-                    physics.group = PhysicsGroup::PlayerLeftHand;
-                } else if (groupString == "PLAYER_RIGHT_HAND") {
-                    physics.group = PhysicsGroup::PlayerRightHand;
-                } else if (groupString == "USER_INTERFACE") {
-                    physics.group = PhysicsGroup::UserInterface;
-                } else {
-                    Errorf("Unknown physics group: %s", groupString);
-                    return false;
-                }
             }
         }
         return true;
