@@ -2,8 +2,10 @@
 
 #include "console/CVar.hh"
 #include "core/Common.hh"
+#include "core/Logging.hh"
 
 #include <functional>
+#include <magic_enum.hpp>
 
 namespace sp {
     template<typename... ParamTypes>
@@ -43,7 +45,19 @@ namespace sp {
     private:
         template<typename T>
         void ParseArgument(T &value, std::istringstream &in, bool last) {
-            in >> value;
+            if constexpr (std::is_enum<T>()) {
+                std::string enumName;
+                in >> enumName;
+
+                auto opt = magic_enum::enum_cast<T>(enumName);
+                if (opt) {
+                    value = *opt;
+                } else {
+                    Errorf("Unknown enum value specified for %s: %s", typeid(T).name(), enumName);
+                }
+            } else {
+                in >> value;
+            }
         }
 
         void ParseArgument(string &value, std::istringstream &in, bool last) {

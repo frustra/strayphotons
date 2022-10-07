@@ -403,7 +403,7 @@ namespace sp::vulkan {
         }
 
         bool IsCompute() const {
-            return pipelineInput.state.shaders[(size_t)ShaderStage::Compute] > 0;
+            return pipelineInput.state.shaders[ShaderStage::Compute] > 0;
         }
 
         void FlushDescriptorSets(vk::PipelineBindPoint bindPoint);

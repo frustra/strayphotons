@@ -146,7 +146,7 @@ namespace sp::vulkan {
             if (graph.HasResource("GBuffer0") && view) {
                 AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph);
-                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
+                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
             }
         }
         AddWindowOutput();
@@ -269,7 +269,7 @@ namespace sp::vulkan {
         if (xrViews.size() == 0) return {};
 
         glm::ivec2 viewExtents;
-        std::array<ecs::View, (size_t)ecs::XrEye::Count> viewsByEye;
+        sp::EnumArray<ecs::View, ecs::XrEye> viewsByEye;
 
         for (auto &ent : xrViews) {
             if (!ent.Has<ecs::View>(lock)) continue;
@@ -279,8 +279,8 @@ namespace sp::vulkan {
             Assert(viewExtents == view.extents, "All XR views must have the same extents");
 
             auto &xrView = ent.Get<ecs::XRView>(lock);
-            viewsByEye[(size_t)xrView.eye] = view;
-            viewsByEye[(size_t)xrView.eye].UpdateViewMatrix(lock, ent);
+            viewsByEye[xrView.eye] = view;
+            viewsByEye[xrView.eye].UpdateViewMatrix(lock, ent);
         }
 
         xrRenderPoses.resize(xrViews.size());
@@ -349,8 +349,8 @@ namespace sp::vulkan {
             })
             .Execute(executeHiddenAreaStencil(1));
 
-        glm::vec3 viewPos = viewsByEye[0].invViewMat * glm::vec4(0, 0, 0, 1);
-        auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[0].visibilityMask);
+        glm::vec3 viewPos = viewsByEye[ecs::XrEye::Left].invViewMat * glm::vec4(0, 0, 0, 1);
+        auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[ecs::XrEye::Left].visibilityMask);
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
@@ -394,10 +394,11 @@ namespace sp::vulkan {
 
                 GPUViewState *viewState;
                 viewStateBuf->Map((void **)&viewState);
-                for (size_t i = 0; i < viewsByEye.size(); i++) {
-                    auto view = viewsByEye[i];
+                for (auto &eye : magic_enum::enum_values<ecs::XrEye>()) {
+                    auto view = viewsByEye[eye];
+                    auto i = (size_t)eye;
 
-                    if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
+                    if (this->xrSystem->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
                         view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
                     }
 
@@ -406,7 +407,7 @@ namespace sp::vulkan {
                 viewStateBuf->Unmap();
                 viewStateBuf->Flush();
             });
-        return viewsByEye[0];
+        return viewsByEye[ecs::XrEye::Left];
     }
 
     void Renderer::AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock) {

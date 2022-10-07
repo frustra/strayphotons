@@ -6,19 +6,16 @@
 
 namespace ecs {
     enum class FocusLayer : uint8_t {
-        NEVER = 0,
-        GAME,
-        MENU,
-        OVERLAY,
-        ALWAYS,
+        Never = 0,
+        Game,
+        Menu,
+        Overlay,
+        Always,
     };
-
-    std::ostream &operator<<(std::ostream &out, const FocusLayer &v);
-    std::istream &operator>>(std::istream &in, FocusLayer &v);
 
     class FocusLock {
     public:
-        FocusLock(FocusLayer layer = FocusLayer::GAME);
+        FocusLock(FocusLayer layer = FocusLayer::Game);
 
         bool AcquireFocus(FocusLayer layer);
         void ReleaseFocus(FocusLayer layer);
@@ -27,15 +24,12 @@ namespace ecs {
         FocusLayer PrimaryFocus() const;
 
     private:
-        std::bitset<static_cast<size_t>(FocusLayer::ALWAYS) - 1> layers;
+        std::bitset<static_cast<size_t>(FocusLayer::Always) - 1> layers;
     };
 
     std::ostream &operator<<(std::ostream &out, const FocusLock &v);
 
-    static Component<FocusLayer> ComponentFocusLayer("focus");
-
-    template<>
-    bool Component<FocusLayer>::Load(const EntityScope &scope, FocusLayer &dst, const picojson::value &src);
+    static Component<FocusLayer> ComponentFocusLayer("focus", ComponentField::New<FocusLayer>());
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::FocusLock);

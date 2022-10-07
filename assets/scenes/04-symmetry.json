@@ -15,7 +15,7 @@
 		{
 			"transform": {},
 			"trigger_area": {},
-			"trigger_group": "object",
+			"trigger_group": "Object",
 			"event_bindings": {
 				"/trigger/object/enter": {
 					"target": "console:input/action/run_command",

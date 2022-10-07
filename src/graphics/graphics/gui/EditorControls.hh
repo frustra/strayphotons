@@ -159,7 +159,10 @@ namespace sp {
         ecs::Entity target,
         const void *component) {
         auto value = *field.Access<T>(component);
-        if (!AddImGuiElement(field.name ? field.name : comp.name, value)) return;
+        std::string elementName = field.name ? field.name : comp.name;
+        elementName += "##";
+        elementName += comp.name + std::to_string(field.fieldIndex);
+        if (!AddImGuiElement(elementName.c_str(), value)) return;
 
         if (ecs::IsLive(target)) {
             GetSceneManager().QueueAction(SceneAction::EditLiveECS,

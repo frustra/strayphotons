@@ -25,7 +25,6 @@ namespace sp {
     enum class AssetType {
         Bundled = 0,
         External,
-        Count,
     };
 
     class AssetManager : public RegisteredThread {

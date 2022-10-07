@@ -76,6 +76,9 @@ namespace ecs {
         template<typename... Fields>
         Component(const char *name, Fields &&...fields) : Component(name) {
             (this->fields.emplace_back(fields), ...);
+            for (int i = 0; i < this->fields.size(); i++) {
+                this->fields[i].fieldIndex = i;
+            }
         }
 
         bool LoadFields(const EntityScope &scope, CompType &dst, const picojson::value &src) const {

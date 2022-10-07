@@ -28,7 +28,6 @@ namespace sp::xr {
                 Haptic,
                 Pose,
                 Skeleton,
-                Count,
             };
 
             std::string name;

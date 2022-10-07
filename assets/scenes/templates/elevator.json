@@ -56,7 +56,7 @@
 				"model": "box",
 				"kinematic": true
 			},
-			"trigger_group": "object"
+			"trigger_group": "Object"
 		},
 		{
 			"_comment": "ceiling",
@@ -72,7 +72,7 @@
 				"model": "box",
 				"kinematic": true
 			},
-			"trigger_group": "object"
+			"trigger_group": "Object"
 		},
 		{
 			"_comment": "right front wall",

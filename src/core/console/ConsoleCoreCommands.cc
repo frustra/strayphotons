@@ -91,7 +91,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
     });
 
     funcs.Register<ecs::FocusLayer>("acquirefocus", "Acquire focus for the specified layer", [](ecs::FocusLayer layer) {
-        if (layer == ecs::FocusLayer::NEVER || layer == ecs::FocusLayer::ALWAYS) {
+        if (layer == ecs::FocusLayer::Never || layer == ecs::FocusLayer::Always) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             if (lock.Has<ecs::FocusLock>()) {
@@ -107,7 +107,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
     });
 
     funcs.Register<ecs::FocusLayer>("releasefocus", "Release focus for the specified layer", [](ecs::FocusLayer layer) {
-        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+        if (layer != ecs::FocusLayer::Never && layer != ecs::FocusLayer::Always) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             if (lock.Has<ecs::FocusLock>()) {

@@ -19,7 +19,7 @@
 			"transform": {
 				"translate": [0, 0, 0]
 			},
-			"trigger_group": "object",
+			"trigger_group": "Object",
 			"animation": {
 				"interpolation": "Cubic",
 				"states": [
@@ -47,7 +47,7 @@
 			},
 			"physics": {
 				"__comment": "Dummy actor for velocity calculation",
-				"group": "noclip",
+				"group": "NoClip",
 				"dynamic": false,
 				"shapes": {
 					"sphere": 0.1

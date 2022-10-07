@@ -18,7 +18,7 @@ namespace FocusLockTests {
             Timer t("Set up player, keyboard, and mouse with event and signal bindings");
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
-            lock.Set<ecs::FocusLock>(ecs::FocusLayer::GAME);
+            lock.Set<ecs::FocusLock>(ecs::FocusLayer::Game);
 
             player = lock.NewEntity();
             keyboard = lock.NewEntity();
@@ -28,7 +28,7 @@ namespace FocusLockTests {
             ecs::EntityRef mouseRef(ecs::Name("", "mouse"), mouse);
 
             player.Set<ecs::Name>(lock, "", "player");
-            player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
+            player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::Game);
             player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
             signalBindings.Bind(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
@@ -42,7 +42,7 @@ namespace FocusLockTests {
             signalOutput.SetSignal(TEST_SIGNAL_BUTTON, 42.0);
         }
         {
-            Timer t("Try sending events and reading signals with GAME focus");
+            Timer t("Try sending events and reading signals with Game focus");
             auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);
@@ -63,14 +63,14 @@ namespace FocusLockTests {
             AssertEqual(val, 42.0, "Expected signal to match button source");
         }
         {
-            Timer t("Change focus to MENU");
+            Timer t("Change focus to Menu");
             auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             auto &focus = lock.Get<ecs::FocusLock>();
-            Assert(focus.AcquireFocus(ecs::FocusLayer::MENU), "Expected to be able to acquire menu focus");
+            Assert(focus.AcquireFocus(ecs::FocusLayer::Menu), "Expected to be able to acquire menu focus");
         }
         {
-            Timer t("Try sending events and reading signals with MENU focus");
+            Timer t("Try sending events and reading signals with Menu focus");
             auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_EVENT_KEY, keyboard, 42);

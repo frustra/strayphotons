@@ -24,7 +24,6 @@ namespace ecs {
         PlayerLeftHand,
         PlayerRightHand,
         UserInterface,
-        Count,
     };
 
     enum PhysicsGroupMask {
@@ -120,6 +119,7 @@ namespace ecs {
     };
 
     static Component<Physics> ComponentPhysics("physics",
+        ComponentField::New("group", &Physics::group),
         ComponentField::New("dynamic", &Physics::dynamic),
         ComponentField::New("kinematic", &Physics::kinematic),
         ComponentField::New("density", &Physics::density),

@@ -1,5 +1,6 @@
 #include "Pipeline.hh"
 
+#include "core/EnumTypes.hh"
 #include "core/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
@@ -19,19 +20,19 @@ namespace sp::vulkan {
     }
 
     ShaderSet FetchShaders(const DeviceContext &device, const ShaderHandleSet &handles) {
-        ShaderSet shaders;
-        for (size_t i = 0; i < (size_t)ShaderStage::Count; i++) {
-            ShaderHandle handle = handles[i];
-            if (handle) shaders[i] = device.GetShader(handle);
+        ShaderSet shaders = {};
+        for (auto &s : magic_enum::enum_values<ShaderStage>()) {
+            ShaderHandle handle = handles[s];
+            if (handle) shaders[s] = device.GetShader(handle);
         }
         return shaders;
     }
 
     ShaderHashSet GetShaderHashes(const ShaderSet &shaders) {
-        ShaderHashSet hashes;
-        for (size_t i = 0; i < (size_t)ShaderStage::Count; i++) {
-            auto &shader = shaders[i];
-            hashes[i] = shader ? shaders[i]->hash : 0;
+        ShaderHashSet hashes = {};
+        for (auto &s : magic_enum::enum_values<ShaderStage>()) {
+            auto &shader = shaders[s];
+            hashes[s] = shader ? shaders[s]->hash : 0;
         }
         return hashes;
     }
@@ -77,11 +78,11 @@ namespace sp::vulkan {
     void PipelineLayout::ReflectShaders() {
         uint32 count;
 
-        for (size_t stageIndex = 0; stageIndex < (size_t)ShaderStage::Count; stageIndex++) {
-            auto &shader = shaders[stageIndex];
+        for (auto &stageStage : magic_enum::enum_values<ShaderStage>()) {
+            auto &shader = shaders[stageStage];
             if (!shader) continue;
 
-            auto stage = ShaderStageToFlagBits[stageIndex];
+            auto stage = ShaderStageToFlagBits[stageStage];
             auto &reflect = shader->reflection;
             reflect.EnumeratePushConstantBlocks(&count, nullptr);
 
@@ -272,11 +273,11 @@ namespace sp::vulkan {
                 std::stringstream message;
                 message << "Incompatible buffer layout in binding " << set << "." << binding << " accessed by shaders ";
 
-                for (size_t i = 0; i < (size_t)ShaderStage::Count; i++) {
-                    if (setLayout.stages[binding] & ShaderStageToFlagBits[i]) {
+                for (auto &s : magic_enum::enum_values<ShaderStage>()) {
+                    if (setLayout.stages[binding] & ShaderStageToFlagBits[s]) {
                         if (reflect) message << ", ";
-                        message << shaders[i]->name;
-                        reflect = &shaders[i]->reflection;
+                        message << shaders[s]->name;
+                        reflect = &shaders[s]->reflection;
                     }
                 }
                 message << "\n";
@@ -315,7 +316,7 @@ namespace sp::vulkan {
         key.input.renderPassID = compile.renderPass ? compile.renderPass->GetUniqueID() : 0;
         key.input.shaderHashes = GetShaderHashes(shaders);
 
-        for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
+        for (auto &s : magic_enum::enum_values<ShaderStage>()) {
             auto &specInInput = compile.state.specializations[s];
             auto &specInKey = key.input.state.specializations[s];
             for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {
@@ -345,19 +346,19 @@ namespace sp::vulkan {
 
         auto &state = compile.state;
 
-        std::array<vk::PipelineShaderStageCreateInfo, (size_t)ShaderStage::Count> shaderStages;
-        std::array<vk::SpecializationInfo, (size_t)ShaderStage::Count> shaderSpecialization;
+        sp::EnumArray<vk::SpecializationInfo, ShaderStage> shaderSpecialization;
+        std::array<vk::PipelineShaderStageCreateInfo, shaderSpecialization.size()> shaderStages;
         vector<vk::SpecializationMapEntry> specializationValues;
         size_t stageCount = 0, specCount = 0;
 
-        for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
+        for (auto &s : magic_enum::enum_values<ShaderStage>()) {
             if (!shaders[s]) continue;
             auto &specIn = compile.state.specializations[s];
             if (specIn.set.any()) specCount += specIn.set.count();
         }
 
         specializationValues.reserve(specCount);
-        for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
+        for (auto &s : magic_enum::enum_values<ShaderStage>()) {
             auto &shader = shaders[s];
             if (!shader) continue;
 
@@ -385,7 +386,7 @@ namespace sp::vulkan {
             }
         }
 
-        if (shaders[(size_t)ShaderStage::Compute]) {
+        if (shaders[ShaderStage::Compute]) {
             vk::ComputePipelineCreateInfo computeInfo;
             computeInfo.stage = shaderStages[0];
             computeInfo.layout = *layout;
@@ -421,7 +422,7 @@ namespace sp::vulkan {
         vk::PipelineRasterizationStateCreateInfo rasterizer;
         rasterizer.polygonMode = state.polygonMode;
         rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.rasterizerDiscardEnable = !shaders[(size_t)ShaderStage::Fragment];
+        rasterizer.rasterizerDiscardEnable = !shaders[ShaderStage::Fragment];
         rasterizer.lineWidth = state.lineWidth;
         rasterizer.cullMode = state.cullMode;
         rasterizer.frontFace = state.frontFaceWinding;
