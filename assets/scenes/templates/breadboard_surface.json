@@ -12,9 +12,6 @@
 					"render": true
 				}
 			}
-		},
-		{
-			"trigger_area": {}
 		}
 	]
 }

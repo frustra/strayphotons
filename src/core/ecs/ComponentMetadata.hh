@@ -91,17 +91,48 @@ namespace ecs {
         ComponentField(const char *name, std::type_index type, size_t offset, FieldAction actions)
             : name(name), type(type), offset(offset), actions(actions) {}
 
+        /**
+         * Registers a component's field for serialization as a named field. For example:
+         * ComponentField::New("model", &Renderable::modelName)
+         *
+         * Result:
+         * {
+         *   "component": {
+         *     "model": "box"
+         *   }
+         * }
+         */
         template<typename T, typename F>
         static constexpr ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
             return ComponentField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
         }
 
+        /**
+         * Registers a component's field for serialization directly. For example:
+         * ComponentField::New(&TransformTree::pose)
+         *
+         * Result:
+         * {
+         *   "component": {
+         *     "translate": [1, 2, 3]
+         *   }
+         * }
+         */
         template<typename T, typename F>
         static constexpr ComponentField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
             return ComponentField::New(nullptr, M, actions);
         }
 
+        /**
+         * Registers a component type for serialization directly. For example:
+         * ComponentField::New<TriggerGroup>()
+         *
+         * Result:
+         * {
+         *   "component": "Player"
+         * }
+         */
         template<typename T>
         static constexpr ComponentField New(FieldAction actions = ~FieldAction::None) {
             return ComponentField(nullptr, std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
