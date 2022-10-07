@@ -8,8 +8,8 @@
 
 namespace ecs {
     struct LaserEmitter {
-        float intensity = 1.0f; // multiplier applied to color
-        sp::color_t color = glm::vec3(1); // HDR value
+        float intensity = 1.0f; // multiplier applied to color to produce the final luminance
+        sp::color_t color = glm::vec3(0); // HDR value, added to laser_color_* signal
         bool on = true;
     };
 
