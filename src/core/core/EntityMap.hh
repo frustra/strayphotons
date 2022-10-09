@@ -14,12 +14,17 @@ namespace sp {
     template<typename T, typename VectorT = std::vector<std::pair<TECS_ENTITY_GENERATION_TYPE, T>>>
     class EntityMap : private VectorT {
     public:
+        // Warning: This function will overwrite data when an entity index is reused.
         T &operator[](const Tecs::Entity &e) {
-            Assert(e, "Referencing EntityMap with null entity");
+            Assertf(e, "Referencing EntityMap with null entity");
             if (e.index >= VectorT::size()) VectorT::resize(e.index + 1);
             auto &entry = VectorT::operator[](e.index);
             if (entry.first == 0) entry.first = e.generation;
-            Assert(entry.first == e.generation, "Referencing EntityMap with conflicting entity generation");
+            if (entry.first == e.generation) {
+                return entry.second;
+            } else {
+                entry = {e.generation, {}};
+            }
             return entry.second;
         }
 
@@ -44,9 +49,7 @@ namespace sp {
         void erase(const Tecs::Entity &e) {
             if (!e || e.index >= VectorT::size()) return;
             auto &entry = VectorT::operator[](e.index);
-            if (entry.first == 0) return;
-            Assert(entry.first == e.generation, "Referencing EntityMap with conflicting entity generation");
-            entry.second = {};
+            if (entry.first == e.generation) entry.second = {};
         }
 
         using VectorT::clear;
