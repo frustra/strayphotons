@@ -7,7 +7,48 @@
 #include <vector>
 
 namespace sp {
-    // TODO: Implement using a std::vector that uses Tecs::Entity index and generation
-    template<typename T>
-    class EntityMap : public std::map<Tecs::Entity, T> {};
+    /**
+     * An entity map implementation meant to mimic the behavior of std::map<Tecs::Entity, T>.
+     * Values are stored in a vector according to their entity index, allowing for O(1) insertions and deletions.
+     */
+    template<typename T, typename VectorT = std::vector<std::pair<TECS_ENTITY_GENERATION_TYPE, T>>>
+    class EntityMap : private VectorT {
+    public:
+        T &operator[](const Tecs::Entity &e) {
+            Assert(e, "Referencing EntityMap with null entity");
+            if (e.index >= VectorT::size()) VectorT::resize(e.index + 1);
+            auto &entry = VectorT::operator[](e.index);
+            if (entry.first == 0) entry.first = e.generation;
+            Assert(entry.first == e.generation, "Referencing EntityMap with conflicting entity generation");
+            return entry.second;
+        }
+
+        T *find(const Tecs::Entity &e) {
+            if (!e || e.index >= VectorT::size()) return nullptr;
+            auto &entry = VectorT::operator[](e.index);
+            if (entry.first == e.generation) return &entry.second;
+            return nullptr;
+        }
+
+        // Iteration of this type is allowed, but inefficient due to its sparse layout.
+        using VectorT::begin;
+        using VectorT::end;
+
+        size_t count(const Tecs::Entity &e) const {
+            if (!e || e.index >= VectorT::size()) return 0;
+            auto &entry = VectorT::operator[](e.index);
+            if (entry.first == e.generation) return 1;
+            return 0;
+        }
+
+        void erase(const Tecs::Entity &e) {
+            if (!e || e.index >= VectorT::size()) return;
+            auto &entry = VectorT::operator[](e.index);
+            if (entry.first == 0) return;
+            Assert(entry.first == e.generation, "Referencing EntityMap with conflicting entity generation");
+            entry.second = {};
+        }
+
+        using VectorT::clear;
+    };
 } // namespace sp

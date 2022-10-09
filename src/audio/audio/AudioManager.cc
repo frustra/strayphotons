@@ -139,15 +139,15 @@ namespace sp {
         while (soundObserver.Poll(lock, compEvent)) {
             if (compEvent.type != Tecs::EventType::REMOVED) continue;
 
-            auto it = soundEntityMap.find(compEvent.entity);
-            if (it == soundEntityMap.end()) continue;
+            auto *entSound = soundEntityMap.find(compEvent.entity);
+            if (!entSound) continue;
 
-            for (auto id : it->second) {
+            for (auto id : *entSound) {
                 auto &state = sounds.Get(id);
                 if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
                 sounds.FreeItem(id);
             }
-            soundEntityMap.erase(it);
+            soundEntityMap.erase(compEvent.entity);
         }
 
         auto globalVolumeChanged = CVarVolume.Changed();
@@ -157,9 +157,7 @@ namespace sp {
             vector<size_t> *soundIDs;
 
             auto &sources = ent.Get<ecs::Sounds>(lock);
-            auto entSound = soundEntityMap.find(ent);
-
-            if (entSound == soundEntityMap.end()) {
+            if (soundEntityMap.count(ent) == 0) {
                 soundIDs = &soundEntityMap[ent];
                 for (auto &source : sources.sounds) {
                     auto soundID = sounds.AllocateItem();
@@ -187,7 +185,7 @@ namespace sp {
                         });
                 }
             } else {
-                soundIDs = &entSound->second;
+                soundIDs = &soundEntityMap[ent];
             }
 
             for (size_t i = 0; i < sources.sounds.size() && i < soundIDs->size(); i++) {
