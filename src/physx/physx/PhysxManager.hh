@@ -144,7 +144,12 @@ namespace sp {
         PreservingMap<string, Async<ConvexHullSet>> cache;
         DispatchQueue workQueue;
 
-        EntityMap<std::pair<ecs::Transform, int>> transformCache;
+        struct TransformCacheEntry {
+            ecs::Entity parent;
+            ecs::Transform pose;
+            int dirty = -1;
+        };
+        EntityMap<TransformCacheEntry> transformCache;
 
         friend class CharacterControlSystem;
         friend class ConstraintSystem;

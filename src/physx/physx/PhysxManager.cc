@@ -262,20 +262,22 @@ namespace sp {
                     while (treeEnt.Has<ecs::TransformTree>(lock)) {
                         auto &tree = treeEnt.Get<const ecs::TransformTree>(lock);
                         auto &cache = transformCache[treeEnt];
-                        if (cache.second < 0) {
-                            dirty = tree.pose != cache.first;
-                            cache.first = tree.pose;
+                        treeEnt = tree.parent.Get(lock);
+
+                        if (cache.dirty < 0) {
+                            dirty = tree.pose != cache.pose || treeEnt != cache.parent;
                             if (dirty) {
-                                cache.second = 1;
+                                cache.pose = tree.pose;
+                                cache.parent = treeEnt;
+                                cache.dirty = 1;
                                 break;
                             } else {
-                                cache.second = 0;
+                                cache.dirty = 0;
                             }
-                        } else if (cache.second > 0) {
+                        } else if (cache.dirty > 0) {
                             dirty = true;
                             break;
                         }
-                        treeEnt = tree.parent.Get(lock);
                     }
                     if (!dirty) continue;
 
@@ -359,7 +361,7 @@ namespace sp {
             ZoneScopedN("TransformCache Reset");
             // Reset dirty flags in transform cache outside of the transaction
             for (auto &[generation, cache] : transformCache) {
-                if (generation != 0) cache.second = -1;
+                if (generation != 0) cache.dirty = -1;
             }
         }
     }
