@@ -227,7 +227,7 @@ namespace sp {
                 ecs::PhysicsUpdateLock>();
 
             {
-                ZoneScopedN("UpdateSnapshots(DynamicPhysics)");
+                ZoneScopedN("UpdateSnapshots(Dynamic)");
                 for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                     if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
@@ -252,9 +252,35 @@ namespace sp {
             }
 
             {
-                ZoneScopedN("UpdateSnapshots(NonPhysics)");
-                for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                ZoneScopedN("UpdateSnapshots(NonDynamic)");
+                for (auto &ent : lock.EntitiesWith<ecs::TransformTree>()) {
                     if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
+
+                    // Only recalculate the transform snapshot for entities that moved.
+                    auto treeEnt = ent;
+                    bool dirty = false;
+                    while (treeEnt.Has<ecs::TransformTree>(lock)) {
+                        auto &tree = treeEnt.Get<const ecs::TransformTree>(lock);
+                        auto &cache = transformCache[treeEnt];
+                        treeEnt = tree.parent.Get(lock);
+
+                        if (cache.dirty < 0) {
+                            dirty = tree.pose != cache.pose || treeEnt != cache.parent;
+                            if (dirty) {
+                                cache.pose = tree.pose;
+                                cache.parent = treeEnt;
+                                cache.dirty = 1;
+                                break;
+                            } else {
+                                cache.dirty = 0;
+                            }
+                        } else if (cache.dirty > 0) {
+                            dirty = true;
+                            break;
+                        }
+                    }
+                    if (!dirty) continue;
+
                     auto transform = ent.Get<const ecs::TransformTree>(lock).GetGlobalTransform(lock);
                     ent.Set<ecs::TransformSnapshot>(lock, transform);
 
@@ -330,6 +356,14 @@ namespace sp {
 
         triggerSystem.Frame();
         cache.Tick(interval);
+
+        {
+            ZoneScopedN("TransformCache Reset");
+            // Reset dirty flags in transform cache outside of the transaction
+            for (auto &[generation, cache] : transformCache) {
+                if (generation != 0) cache.dirty = -1;
+            }
+        }
     }
 
     void PhysxManager::CreatePhysxScene() {

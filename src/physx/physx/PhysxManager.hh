@@ -104,7 +104,7 @@ namespace sp {
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
-        vector<uint8_t> scratchBlock;
+        std::vector<uint8_t> scratchBlock;
 
         SceneManager &scenes;
         CFuncCollection funcs;
@@ -143,6 +143,13 @@ namespace sp {
         std::mutex cacheMutex;
         PreservingMap<string, Async<ConvexHullSet>> cache;
         DispatchQueue workQueue;
+
+        struct TransformCacheEntry {
+            ecs::Entity parent;
+            ecs::Transform pose;
+            int dirty = -1;
+        };
+        EntityMap<TransformCacheEntry> transformCache;
 
         friend class CharacterControlSystem;
         friend class ConstraintSystem;

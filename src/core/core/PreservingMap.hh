@@ -81,7 +81,7 @@ namespace sp {
 
             auto [it, inserted] = storage.emplace(key, source);
             if (!inserted) {
-                Assert(allowReplace, "Tried to register existing value in PreservingMap");
+                Assertf(allowReplace, "Tried to register existing value in PreservingMap");
                 it->second.last_use = 0;
                 it->second.value = source;
             }
