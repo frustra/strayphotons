@@ -54,6 +54,16 @@ namespace sp {
         float maxForce = joint->ecsJoint.limit.x;
         float maxTorque = joint->ecsJoint.limit.y;
 
+        float magneticRadiusScale = 1.0f;
+        if (joint->ecsJoint.type == ecs::PhysicsJointType::Magnetic) {
+            auto distance = glm::length(deltaPos);
+            if (distance > joint->ecsJoint.magnetRadius || joint->ecsJoint.magnetRadius <= 0.0f) {
+                magneticRadiusScale = 0.0f;
+            } else {
+                magneticRadiusScale = 1.0f - (distance / joint->ecsJoint.magnetRadius);
+            }
+        }
+
         bool wakeUp = false;
 
         // Update Torque
@@ -85,7 +95,7 @@ namespace sp {
             glm::vec3 accel = deltaVelocity * tickFrequency;
             glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
             auto clampRatio = glm::min(maxAcceleration, accelAbs) / accelAbs;
-            wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio);
+            wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio * magneticRadiusScale);
         } else {
             wakeUp |= joint->forceConstraint->setAngularAccel(glm::vec3(0));
         }
@@ -110,7 +120,7 @@ namespace sp {
             glm::vec3 accel = deltaVelocity * tickFrequency;
             float accelAbs = glm::length(accel) + 0.00001f;
             auto clampRatio = std::min(maxAcceleration, accelAbs) / accelAbs;
-            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio);
+            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio * magneticRadiusScale);
         } else {
             wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
         }
@@ -287,6 +297,7 @@ namespace sp {
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Force:
+                case ecs::PhysicsJointType::Magnetic:
                     // Free'd automatically on release();
                     joint->forceConstraint =
                         new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
@@ -362,6 +373,8 @@ namespace sp {
                     prismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
                 }
             } else if (ecsJoint.type == ecs::PhysicsJointType::Force) {
+                joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.x, ecsJoint.limit.y);
+            } else if (ecsJoint.type == ecs::PhysicsJointType::Magnetic) {
                 joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.x, ecsJoint.limit.y);
             }
         }
