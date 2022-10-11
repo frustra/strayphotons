@@ -14,7 +14,7 @@ namespace ecs {
     };
 
     static Component<LaserEmitter> ComponentLaserEmitter("laser_emitter",
-        ComponentField::New("insensity", &LaserEmitter::intensity),
+        ComponentField::New("intensity", &LaserEmitter::intensity),
         ComponentField::New("color", &LaserEmitter::color),
         ComponentField::New("on", &LaserEmitter::on));
 } // namespace ecs
