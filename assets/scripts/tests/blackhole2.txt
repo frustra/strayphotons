@@ -1,0 +1,15 @@
+loadscene blackhole2
+setsignal player:player/move_noclip 1
+steplogic
+rotate player:player 180 0 1 0
+rotate player:flatview -35 1 0 0
+translate player:player 0.5 0 -0.6
+stepphysics
+stepgraphics
+screenshot blackhole2_table_1.png
+stepgraphics
+translate blackhole2:mirrorcube1.mirrorcube 0 -10 0
+stepphysics 2
+printdebug
+screenshot blackhole2_table_2.png
+stepgraphics

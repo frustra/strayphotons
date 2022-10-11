@@ -87,6 +87,8 @@ namespace sp {
     PhysxManager::~PhysxManager() {
         StopThread();
 
+        workQueue.Shutdown();
+
         controllerManager.reset();
         for (auto &entry : joints) {
             for (auto &joint : entry.second) {

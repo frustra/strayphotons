@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "core/Defer.hh"
 #include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/Common.hh"
@@ -72,15 +73,6 @@ namespace sp::vulkan {
         deltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
         lastTime = currTime;
     }
-
-    template<typename Fn>
-    struct Defer {
-        Defer(Fn &&fn) : fn(std::move(fn)) {}
-        ~Defer() {
-            fn();
-        }
-        Fn fn;
-    };
 
     void GuiRenderer::Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport) {
         if (!fontView->Ready()) return;

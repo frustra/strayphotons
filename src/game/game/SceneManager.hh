@@ -38,11 +38,10 @@ namespace sp {
     };
 
     class SceneManager : public RegisteredThread {
-        LogOnExit logOnExit = "SceneManager shut down ================================================";
-
     public:
         SceneManager(bool skipPreload = false);
         ~SceneManager();
+        void Shutdown();
 
         using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
         using EditSceneCallback = std::function<void(ecs::Lock<ecs::WriteAll>)>;

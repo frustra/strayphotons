@@ -58,6 +58,11 @@ namespace sp {
         cliInputThread.detach();
     }
 
+    void ConsoleManager::Shutdown() {
+        StopThread();
+        Logf("ConsoleManager shut down ==============================================");
+    }
+
     void ConsoleManager::AddCVar(CVarBase *cvar) {
         cvars[cvar->GetNameLower()] = cvar;
     }

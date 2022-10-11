@@ -3,6 +3,7 @@
 #include "console/CFunc.hh"
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
+#include "core/Defer.hh"
 #include "ecs/Ecs.hh"
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
@@ -50,6 +51,12 @@ namespace sp {
 
         CFuncCollection funcs;
 
+    private:
+        struct ShutdownManagers {
+            ~ShutdownManagers();
+        } shutdownManagers;
+
+    public:
 #ifdef SP_GRAPHICS_SUPPORT
         GraphicsManager graphics;
 
