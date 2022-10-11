@@ -47,6 +47,11 @@ namespace sp {
 
     Game::~Game() {}
 
+    Game::ShutdownManagers::~ShutdownManagers() {
+        GetConsoleManager().Shutdown();
+        GetSceneManager().Shutdown();
+    }
+
     int Game::Start() {
         tracy::SetThreadName("Main");
         int exitCode;

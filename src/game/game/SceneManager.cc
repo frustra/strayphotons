@@ -61,6 +61,10 @@ namespace sp {
     }
 
     SceneManager::~SceneManager() {
+        if (!exiting.load()) Shutdown();
+    }
+
+    void SceneManager::Shutdown() {
         {
             // Make sure we don't deadlock on shutdown due to waiting on a preload.
             std::lock_guard lock(preloadMutex);
@@ -94,6 +98,8 @@ namespace sp {
             bindingsScene->RemoveScene(stagingLock, liveLock);
             bindingsScene.reset();
         }
+
+        LogOnExit logOnExit = "SceneManager shut down ================================================";
     }
 
     void SceneManager::RunSceneActions() {

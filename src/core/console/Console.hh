@@ -34,13 +34,13 @@ namespace sp {
     };
 
     class ConsoleManager : public RegisteredThread {
-        LogOnExit logOnExit = "ConsoleManager shut down ==============================================";
-
     public:
         ConsoleManager();
+        void StartThread(const ConsoleScript *startupScript);
+        void Shutdown();
+
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
-        void StartThread(const ConsoleScript *startupScript);
 
         void AddLog(logging::Level lvl, const string &line);
 
