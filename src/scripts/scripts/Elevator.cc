@@ -35,10 +35,11 @@ namespace sp::scripts {
             bool shouldPlay = abs(delta) > 1e-8;
             if (shouldPlay || elevator.frames++ > 69) {
                 if (shouldPlay != elevator.playing) {
-                    if (shouldPlay)
+                    if (shouldPlay) {
                         EventBindings::SendEvent(lock, "/sound/play", ent, 0);
-                    else
+                    } else {
                         EventBindings::SendEvent(lock, "/sound/stop", ent, 0);
+                    }
                     elevator.playing = shouldPlay;
                 }
                 elevator.lastTransform = transform;

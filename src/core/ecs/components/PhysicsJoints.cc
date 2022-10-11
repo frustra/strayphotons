@@ -34,6 +34,8 @@ namespace ecs {
                         joint.type = PhysicsJointType::Slider;
                     } else if (typeString == "FORCE") {
                         joint.type = PhysicsJointType::Force;
+                    } else if (typeString == "MAGNETIC") {
+                        joint.type = PhysicsJointType::Magnetic;
                     } else {
                         Errorf("Unknown joint type: %s", typeString);
                         return false;
@@ -41,6 +43,11 @@ namespace ecs {
                 } else if (jointParam.first == "limit") {
                     if (!sp::json::Load(scope, joint.limit, jointParam.second)) {
                         Errorf("Invalid physics_joint limit: %s", jointParam.second.to_str());
+                        return false;
+                    }
+                } else if (jointParam.first == "magnet_radius") {
+                    if (!sp::json::Load(scope, joint.magnetRadius, jointParam.second)) {
+                        Errorf("Invalid magnet_radius: %s", jointParam.second.to_str());
                         return false;
                     }
                 } else if (jointParam.first == "local_offset") {

@@ -102,7 +102,11 @@ namespace sp {
     bool AddImGuiElement(const char *name, glm::quat &value) {
         // TODO: Add grab handle for orientation
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value));
-        if (ImGui::SliderFloat3(name, (float *)&angles, -360.0f, 360.0f, "%.1f deg")) {
+        for (glm::length_t i = 0; i < angles.length(); i++) {
+            if (angles[i] < 0.0f) angles[i] += 360.0f;
+        }
+
+        if (ImGui::SliderFloat3(name, (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
             value = glm::quat(glm::radians(angles));
             return true;
         }
@@ -126,7 +130,10 @@ namespace sp {
 
         text = std::string(name) + ".rotation";
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value.GetRotation()));
-        if (ImGui::SliderFloat3(text.c_str(), (float *)&angles, -360.0f, 360.0f, "%.1f deg")) {
+        for (glm::length_t i = 0; i < angles.length(); i++) {
+            if (angles[i] < 0.0f) angles[i] += 360.0f;
+        }
+        if (ImGui::SliderFloat3(text.c_str(), (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
             value.SetRotation(glm::quat(glm::radians(angles)));
             changed = true;
         }
