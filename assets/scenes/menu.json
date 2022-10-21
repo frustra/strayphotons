@@ -84,7 +84,7 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -432,13 +432,6 @@
 			}
 		},
 		{
-			"name": "mirrorcube1.mirrorcube",
-			"physics": {
-				"model": "box",
-				"density": 10
-			}
-		},
-		{
 			"name": "mirrorcube2",
 			"transform": {
 				"translate": [2.25, 0.89, 2.75],
@@ -448,13 +441,6 @@
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "mirrorcube" }
-			}
-		},
-		{
-			"name": "mirrorcube2.mirrorcube",
-			"physics": {
-				"model": "box",
-				"density": 10
 			}
 		},
 		{
@@ -470,13 +456,6 @@
 			}
 		},
 		{
-			"name": "duck.duck.gltf2",
-			"physics": {
-				"model": "duck.cooked",
-				"density": 10
-			}
-		},
-		{
 			"name": "plug",
 			"transform": {
 				"translate": [2.75, 0.9, 2.65]
@@ -486,8 +465,7 @@
 				"mesh_index": 2
 			},
 			"physics": {
-				"model": "articulating-arm.convex2",
-				"density": 1000
+				"model": "articulating-arm.convex2"
 			},
 			"physics_joints": [],
 			"trigger_group": "Magnetic",

@@ -1,0 +1,16 @@
+loadscene force-joints
+steplogic
+stepphysics
+screenshot force-joints-frame0.png
+stepgraphics
+setsignal force-joints:platform_root/animation_state 3
+steplogic
+stepphysics 100
+screenshot force-joints-frame1.png
+stepgraphics
+stepphysics 500
+screenshot force-joints-frame2.png
+stepgraphics
+stepphysics 500
+screenshot force-joints-frame3.png
+stepgraphics

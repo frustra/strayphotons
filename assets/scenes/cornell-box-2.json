@@ -1,5 +1,14 @@
 {
+	"properties": {
+		"gravity": [0, 0, 0]
+	},
 	"entities": [
+		{
+			"name": "global:player_gravity_none",
+			"scene_connection": "player_gravity_none",
+			"transform": {},
+			"signal_output": { "load_scene_connection": 1 }
+		},
 		{
 			"transform": {
 				"scale": [2, 2, 2]
@@ -15,7 +24,7 @@
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [-0.01, 0.2, 9.6],
+				"translate": [-0.01, 0.5, 9.6],
 				"rotate": [0, 0, 1, 0]
 			},
 			"trigger_area": {},
@@ -41,7 +50,7 @@
 				"model": "box"
 			},
 			"transform": {
-				"translate": [-0.01, -0.3, 9.6]
+				"translate": [-0.01, 0, 9.6]
 			},
 			"physics": {
 				"model": "box",

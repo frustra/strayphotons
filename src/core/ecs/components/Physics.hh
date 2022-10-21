@@ -103,14 +103,15 @@ namespace ecs {
 
     struct Physics {
         Physics() {}
-        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float density = 1.0f)
-            : shapes({shape}), group(group), dynamic(dynamic), density(density) {}
+        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float mass = 1.0f)
+            : shapes({shape}), group(group), dynamic(dynamic), mass(mass) {}
 
         std::vector<PhysicsShape> shapes;
 
         PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;
         bool kinematic = false; // only dynamic actors can be kinematic
+        float mass = 0.0f; // kilograms (density used if mass is zero)
         float density = 1000.0f; // kg/m^3
         float angularDamping = 0.05f;
         float linearDamping = 0.0f;
@@ -122,6 +123,7 @@ namespace ecs {
         ComponentField::New("group", &Physics::group),
         ComponentField::New("dynamic", &Physics::dynamic),
         ComponentField::New("kinematic", &Physics::kinematic),
+        ComponentField::New("mass", &Physics::mass),
         ComponentField::New("density", &Physics::density),
         ComponentField::New("angular_damping", &Physics::angularDamping),
         ComponentField::New("linear_damping", &Physics::linearDamping),

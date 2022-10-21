@@ -1,0 +1,154 @@
+{
+	"properties": {
+		"gravity": [0, 0, 0]
+	},
+	"entities": [
+		{
+			"name": "global:player_gravity_none",
+			"scene_connection": "player_gravity_none",
+			"transform": {},
+			"signal_output": { "load_scene_connection": 1 }
+		},
+		{
+			"name": "background",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"translate": [0, 1, -2.5],
+				"scale": [4, 2, 0.1]
+			}
+		},
+		{
+			"name": "origin",
+			"transform": {}
+		},
+		{
+			"name": "force_test1",
+			"renderable": {
+				"model": "box",
+				"emissive": 0.1
+			},
+			"transform": {
+				"translate": [0, 1.6, -2],
+				"scale": [0.05, 0.05, 0.05]
+			},
+			"physics": {
+				"model": "box",
+				"density": 1000
+			},
+			"physics_joints": [{
+				"target": "origin",
+				"remote_offset": {
+					"translate": [0, 1.6, -2]
+				},
+				"type": "Force",
+				"limit": [0.65, 0.5]
+			}]
+		},
+		{
+			"name": "force_test2",
+			"renderable": {
+				"model": "box",
+				"emissive": 0.1
+			},
+			"transform": {
+				"translate": [0, 1.7, -2],
+				"scale": [0.05, 0.05, 0.05]
+			},
+			"physics": {
+				"model": "box",
+				"density": 1000
+			},
+			"physics_joints": [{
+				"target": "origin",
+				"remote_offset": {
+					"translate": [0, 1.7, -2]
+				},
+				"type": "Force",
+				"limit": [1, 0.5]
+			}]
+		},
+		{
+			"name": "force_test3",
+			"renderable": {
+				"model": "box",
+				"emissive": 0.1
+			},
+			"transform": {
+				"translate": [0, 1.8, -2],
+				"scale": [0.05, 0.05, 0.05]
+			},
+			"physics": {
+				"model": "box",
+				"density": 1000
+			},
+			"physics_joints": [{
+				"target": "origin",
+				"remote_offset": {
+					"translate": [0, 1.8, -2]
+				},
+				"type": "Force"
+			}]
+		},
+		{
+			"name": "fixed_test",
+			"renderable": {
+				"model": "box",
+				"emissive": 0.1
+			},
+			"transform": {
+				"translate": [0, 1.9, -2],
+				"scale": [0.05, 0.05, 0.05]
+			},
+			"physics": {
+				"model": "box",
+				"density": 1000
+			},
+			"physics_joints": [{
+				"target": "origin",
+				"remote_offset": {
+					"translate": [0, 1.9, -2]
+				},
+				"type": "Fixed"
+			}]
+		},
+		{
+			"name": "global:spawn",
+			"transform": {
+				"translate": [0, 0, 0]
+			}
+		},
+		{
+			"name": "platform",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"translate": [0, -0.25, 0],
+				"scale": [4, 0.5, 4]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"name": "light",
+			"transform": {
+				"translate": [0, 4, 0],
+				"rotate": [[270, 1, 0, 0]]
+			},
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 100,
+				"spotAngle": 50,
+				"shadowMapSize": 11
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "spotlight" }
+			}
+		}
+	]
+}

@@ -8,8 +8,8 @@
 	},
 	"entities": [
 		{
-			"name": "global:player_gravity_override",
-			"scene_connection": "player_gravity_override",
+			"name": "global:player_gravity_spin",
+			"scene_connection": "player_gravity_spin",
 			"transform": {
 				"translate": [0, 153, 0]
 			},

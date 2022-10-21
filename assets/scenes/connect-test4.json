@@ -168,7 +168,7 @@
 			},
 			"physics": {
 				"model": "cardboard-box",
-				"density": 1
+				"mass": 1
 			}
 		},
 		{
