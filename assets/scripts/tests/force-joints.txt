@@ -1,16 +1,17 @@
 loadscene force-joints
+r.Exposure 1
 steplogic
-stepphysics
 screenshot force-joints-frame0.png
 stepgraphics
-setsignal force-joints:platform_root/animation_state 3
-steplogic
-stepphysics 100
+stepphysics
+# assert_position force-joints:test_linear -1.499931 2 -1.9
+# assert_position force-joints:test_linear_offset_joint -1.499931 2.25 -2
+# assert_position force-joints:test_linear_offset_shape -1.499931 2 -1.95
 screenshot force-joints-frame1.png
 stepgraphics
-stepphysics 500
+stepphysics
 screenshot force-joints-frame2.png
 stepgraphics
-stepphysics 500
+stepphysics
 screenshot force-joints-frame3.png
 stepgraphics
