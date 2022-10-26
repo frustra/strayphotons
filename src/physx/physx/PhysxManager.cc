@@ -81,6 +81,7 @@ namespace sp {
                 laser.line = ecs::LaserLine::Segments();
             });
 
+        RegisterDebugCommands();
         StartThread(stepMode);
     }
 
@@ -760,7 +761,24 @@ namespace sp {
         if (userData) userData->physicsGroup = group;
     }
 
-    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) {
+    glm::vec3 PhysxManager::GetEntityVelocity(ecs::Lock<ecs::Read<ecs::TransformTree>> lock, ecs::Entity ent) const {
+        ecs::Entity root = ent;
+        while (root.Has<ecs::TransformTree>(lock)) {
+            if (actors.count(root) > 0) {
+                auto userData = (ActorUserData *)actors[root]->userData;
+                if (userData) return userData->velocity;
+                break;
+            } else if (controllers.count(root) > 0) {
+                auto userData = (CharacterControllerUserData *)controllers[root]->getUserData();
+                if (userData) return userData->actorData.velocity;
+                break;
+            }
+            root = root.Get<ecs::TransformTree>(lock).parent.Get(lock);
+        }
+        return glm::vec3(0);
+    }
+
+    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) const {
         auto scale = shape.transform.GetScale() * parentScale;
         return std::visit(
             [this, &scale](auto &&arg) {

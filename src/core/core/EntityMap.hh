@@ -28,7 +28,22 @@ namespace sp {
             return entry.second;
         }
 
+        const T &operator[](const Tecs::Entity &e) const {
+            Assertf(e, "Referencing EntityMap with null entity");
+            Assertf(e.index < VectorT::size(), "Referencing EntityMap with out of range entity");
+            auto &entry = VectorT::operator[](e.index);
+            Assertf(entry.first == e.generation, "Referencing EntityMap with mismatched generation id");
+            return entry.second;
+        }
+
         T *find(const Tecs::Entity &e) {
+            if (!e || e.index >= VectorT::size()) return nullptr;
+            auto &entry = VectorT::operator[](e.index);
+            if (entry.first == e.generation) return &entry.second;
+            return nullptr;
+        }
+
+        const T *find(const Tecs::Entity &e) const {
             if (!e || e.index >= VectorT::size()) return nullptr;
             auto &entry = VectorT::operator[](e.index);
             if (entry.first == e.generation) return &entry.second;

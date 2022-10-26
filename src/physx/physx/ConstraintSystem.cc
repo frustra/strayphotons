@@ -83,9 +83,7 @@ namespace sp {
                 if (maxVelocity[i] > deltaTick[i]) {
                     targetAngularVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
                 } else {
-                    // Divide remaining velocity delta by 2 to keep things table.
-                    // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
-                    targetAngularVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
+                    targetAngularVelocity[i] = deltaRotation[i] * tickFrequency;
                 }
             }
 
@@ -106,19 +104,32 @@ namespace sp {
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
 
-            auto targetLinearVelocity = deltaPos;
+            auto targetLinearVelocity = deltaPos * tickFrequency;
             if (maxVelocity > deltaTick) {
-                targetLinearVelocity = glm::normalize(targetLinearVelocity) * (maxVelocity - deltaTick);
-            } else {
-                targetLinearVelocity *= tickFrequency * 0.5f;
+                targetLinearVelocity = glm::normalize(deltaPos) * (maxVelocity - deltaTick);
             }
             targetLinearVelocity += targetVelocity;
             auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
 
             glm::vec3 accel = deltaVelocity * tickFrequency;
-            float accelAbs = glm::length(accel) + 0.00001f;
-            auto clampRatio = std::min(maxAcceleration, accelAbs) / accelAbs;
+            float accelAbs = glm::length(accel);
+            float clampRatio = 1.0f;
+            if (accelAbs > maxAcceleration) {
+                if (maxAcceleration > 0.0001f) {
+                    clampRatio = maxAcceleration / accelAbs;
+                } else {
+                    clampRatio = 0.0f;
+                }
+            }
             wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio * magneticRadiusScale);
+            Logf("%s: DeltaPos %s VCurr %s VMax %f VTarget %s Force %s Ratio %f",
+                std::to_string(((ActorUserData *)actor->userData)->entity),
+                glm::to_string(deltaPos),
+                glm::to_string(PxVec3ToGlmVec3(dynamic->getLinearVelocity())),
+                maxVelocity,
+                glm::to_string(targetLinearVelocity),
+                glm::to_string(accel * clampRatio),
+                clampRatio);
         } else {
             wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
         }

@@ -82,7 +82,7 @@ namespace sp {
         PhysxManager(bool stepMode);
         virtual ~PhysxManager() override;
 
-        void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
+        glm::vec3 GetEntityVelocity(ecs::Lock<ecs::Read<ecs::TransformTree>> lock, ecs::Entity ent) const;
 
     private:
         void PreFrame() override;
@@ -92,15 +92,18 @@ namespace sp {
         void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneInfo>> lock,
             ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
+        void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
         void CreatePhysxScene();
         void DestroyPhysxScene();
         void CacheDebugLines();
+        void RegisterDebugCommands();
 
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(AsyncPtr<Gltf> model, AsyncPtr<HullSettings> settings);
 
-        physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale = glm::vec3(1));
+        physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape,
+            glm::vec3 parentScale = glm::vec3(1)) const;
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;

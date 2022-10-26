@@ -40,33 +40,33 @@ namespace sp {
 
         auto *curr = constraints;
         for (size_t i = 0; i < 3; i++) {
-            curr->flags |= Px1DConstraintFlag::eOUTPUT_FORCE;
-            curr->linear0 = GlmVec3ToPxVec3(axes[i]);
             if (data.maxForce > 0.0f) {
+                curr->flags |= Px1DConstraintFlag::eOUTPUT_FORCE;
+                curr->linear0 = GlmVec3ToPxVec3(axes[i]);
                 curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING);
-                curr->geometricError = -glm::dot(data.linearAccel, axes[i]);
-                curr->mods.spring.stiffness = 1.0f;
+                curr->geometricError = -glm::dot(data.linearAccel, axes[i]) * 1000.0f;
+                curr->mods.spring.stiffness = 0.001f; // Use a very small stiffness value so changes in geometric error
+                                                      // don't drastically change the applied force.
                 curr->mods.spring.damping = 0.0f;
                 curr->minImpulse = -data.maxForce;
                 curr->maxImpulse = data.maxForce;
-            } else {
-                curr->geometricError = -glm::dot(deltaPos, axes[i]);
+                // curr->geometricError = -glm::dot(deltaPos, axes[i]);
+                curr++;
             }
-            curr++;
 
-            curr->flags |= PxU16(Px1DConstraintFlag::eOUTPUT_FORCE | Px1DConstraintFlag::eANGULAR_CONSTRAINT);
-            curr->angular0 = GlmVec3ToPxVec3(constraintAxes[i]);
             if (data.maxTorque > 0.0f) {
+                curr->flags |= PxU16(Px1DConstraintFlag::eOUTPUT_FORCE | Px1DConstraintFlag::eANGULAR_CONSTRAINT);
+                curr->angular0 = GlmVec3ToPxVec3(constraintAxes[i]);
                 curr->flags |= PxU16(Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eACCELERATION_SPRING);
-                curr->geometricError = -glm::dot(data.angularAccel, axes[i]);
-                curr->mods.spring.stiffness = 1.0f;
+                curr->geometricError = -glm::dot(data.angularAccel, axes[i]) * 1000.0f;
+                curr->mods.spring.stiffness = 0.001f; // Use a very small stiffness value so changes in geometric error
+                                                      // don't drastically change the applied force.
                 curr->mods.spring.damping = 0.0f;
                 curr->minImpulse = -data.maxTorque;
                 curr->maxImpulse = data.maxTorque;
-            } else {
-                curr->geometricError = -glm::dot(PxVec3ToGlmVec3(deltaQuat.getImaginaryPart()), axes[i]);
+                // curr->geometricError = -glm::dot(PxVec3ToGlmVec3(deltaQuat.getImaginaryPart()), axes[i]);
+                curr++;
             }
-            curr++;
         }
 
         if (data.gravity != glm::vec3(0)) {
