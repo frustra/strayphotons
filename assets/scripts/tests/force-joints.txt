@@ -17,7 +17,7 @@ assert_position force-joints:test_linear_offset_shape -1.430556 2 -1.95
 assert_velocity force-joints:test_linear 8.333331 0 0
 assert_velocity force-joints:test_linear_offset_joint 8.333331 0 0
 assert_velocity force-joints:test_linear_offset_shape 8.333331 0 0
-#set_velocity force-joints:test_linear 8.333331 -10 0
+set_velocity force-joints:test_linear 8.333331 -10 0
 #screenshot force-joints-frame1.png
 stepgraphics
 stepphysics
