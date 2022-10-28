@@ -104,60 +104,52 @@ namespace sp {
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto linearDirection = glm::normalize(deltaPos);
             auto currentDeltaVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity()) - targetEndVelocity;
+            auto accelVector = linearDirection * maxAcceleration * intervalSeconds;
 
             // Maximum velocity achievable over deltaPos distance
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
             // Number of frames required to decelerate from maxVelocity to 0
             auto maxVelocityFrames = maxVelocity / maxAcceleration * tickFrequency;
             // Number of frames required to decelerate from currentVelocity to 0
-            auto currentVelocityFrames = glm::length(currentDeltaVelocity) / maxAcceleration * tickFrequency;
+            auto decelFrames = glm::length(currentDeltaVelocity) / maxAcceleration * tickFrequency;
 
-            glm::vec3 stopDistanceDecel(0);
-            glm::vec3 currVelocity = currentDeltaVelocity;
-            auto decelVector = linearDirection * maxAcceleration * intervalSeconds;
-            auto clampedVelocity = glm::sign(decelVector) *
-                                   glm::max(glm::abs(currentDeltaVelocity) - glm::abs(decelVector), 0.0f);
-            auto nextDeltaPosDecel = deltaPos - (currentDeltaVelocity - clampedVelocity) * intervalSeconds;
-            for (float i = 0.0f; i < currentVelocityFrames; i += 1.0f) {
-                currVelocity += -linearDirection * maxAcceleration * intervalSeconds;
-                stopDistanceDecel += currVelocity * intervalSeconds;
-            }
+            auto clampedVelocity = glm::sign(accelVector) *
+                                   glm::max(glm::abs(currentDeltaVelocity) - glm::abs(accelVector), 0.0f);
 
-            currVelocity = currentDeltaVelocity;
-            glm::vec3 stopDistanceNeutral = currVelocity * intervalSeconds;
-            auto nextDeltaPosNeutral = deltaPos - currentDeltaVelocity * intervalSeconds;
-            for (float i = 0.0f; i < currentVelocityFrames; i += 1.0f) {
-                currVelocity += -linearDirection * maxAcceleration * intervalSeconds;
-                stopDistanceNeutral += currVelocity * intervalSeconds;
-            }
+            auto calcGeometricSeries = [&](float frames, float startVelocity) {
+                auto deltaV = maxAcceleration * intervalSeconds;
+                return intervalSeconds * frames * 0.5f * (startVelocity + startVelocity - deltaV * (frames - 1.0f));
+            };
 
-            currVelocity = currentDeltaVelocity + linearDirection * maxAcceleration * intervalSeconds;
-            glm::vec3 stopDistanceAccel = currVelocity * intervalSeconds;
-            auto nextDeltaPosAccel = deltaPos - currVelocity * intervalSeconds;
-            for (float i = 0.0f; i < currentVelocityFrames; i += 1.0f) {
-                currVelocity += -linearDirection * maxAcceleration * intervalSeconds;
-                stopDistanceAccel += currVelocity * intervalSeconds;
-            }
+            float availableStopDist = glm::length(deltaPos);
+            float stopDistDecel = calcGeometricSeries(decelFrames, glm::length(clampedVelocity));
+            float stopDistNeutral = calcGeometricSeries(decelFrames, glm::length(currentDeltaVelocity));
+            float stopDistAccel = calcGeometricSeries(decelFrames + 1.0f,
+                glm::length(currentDeltaVelocity + accelVector));
 
-            Logf("StopDist: %f, %f, %f, Decel: %s Neutral: %s Accel: %s",
-                glm::length(stopDistanceDecel),
-                glm::length(stopDistanceNeutral),
-                glm::length(stopDistanceAccel),
-                glm::to_string(nextDeltaPosDecel),
-                glm::to_string(nextDeltaPosNeutral),
-                glm::to_string(nextDeltaPosAccel));
+            Logf("StopDist Decel: %f Neutral: %f Accel: %f", stopDistDecel, stopDistNeutral, stopDistAccel);
+
+            auto deltaTick = maxAcceleration * intervalSeconds;
+            auto subFrameMovement = deltaTick * intervalSeconds;
 
             glm::vec3 accel;
-            if (glm::length(stopDistanceDecel) > glm::length(nextDeltaPosDecel)) {
-                Logf("DecelDistance: %s", glm::to_string(stopDistanceDecel));
+            if (availableStopDist < subFrameMovement && glm::length(currentDeltaVelocity) < deltaTick) {
                 accel = -currentDeltaVelocity * tickFrequency;
-            } else if (glm::length(stopDistanceNeutral) > glm::length(nextDeltaPosNeutral)) {
-                Logf("NeutralDistance: %s", glm::to_string(stopDistanceNeutral));
-                accel = -linearDirection * maxAcceleration;
-                accel += (deltaPos - stopDistanceNeutral) * tickFrequency;
-            } else if (glm::length(stopDistanceAccel) > glm::length(nextDeltaPosAccel)) {
-                Logf("AccelDistance: %s", glm::to_string(stopDistanceAccel));
-                accel = (deltaPos - stopDistanceAccel) * tickFrequency;
+                Logf("FinalFrame: %s + %s",
+                    glm::to_string(accel),
+                    glm::to_string(deltaPos * tickFrequency * tickFrequency));
+                accel += deltaPos * tickFrequency * tickFrequency * 0.5f;
+            } else if (stopDistDecel > availableStopDist) {
+                Logf("DecelDistance: %f > %f", stopDistDecel, availableStopDist);
+                accel = -currentDeltaVelocity * tickFrequency;
+            } else if (stopDistNeutral > availableStopDist) {
+                float clampRatio = (availableStopDist - stopDistNeutral) / (stopDistNeutral - stopDistDecel);
+                Logf("NeutralDistance: %f > %f = %f", stopDistNeutral, availableStopDist, clampRatio);
+                accel = linearDirection * maxAcceleration * clampRatio;
+            } else if (stopDistAccel > availableStopDist) {
+                float clampRatio = (availableStopDist - stopDistNeutral) / (stopDistAccel - stopDistNeutral);
+                Logf("AccelDistance: %f > %f = %f", stopDistAccel, availableStopDist, clampRatio);
+                accel = linearDirection * maxAcceleration * clampRatio;
             } else {
                 accel = linearDirection * maxAcceleration;
             }
@@ -180,7 +172,7 @@ namespace sp {
                 std::to_string(((ActorUserData *)actor->userData)->entity),
                 glm::to_string(deltaPos),
                 glm::to_string(currentDeltaVelocity),
-                currentVelocityFrames,
+                decelFrames,
                 maxVelocityFrames,
                 glm::to_string(accel * intervalSeconds),
                 glm::to_string(accel * clampRatio),
