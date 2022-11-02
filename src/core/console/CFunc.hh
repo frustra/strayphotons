@@ -61,16 +61,14 @@ namespace sp {
             }
         }
 
-        template<>
-        void ParseArgument<ecs::EntityRef>(ecs::EntityRef &value, std::istringstream &in, bool last) {
+        void ParseArgument(ecs::EntityRef &value, std::istringstream &in, bool last) {
             std::string entityName;
             in >> entityName;
 
             value = ecs::Name(entityName, ecs::Name());
         }
 
-        template<>
-        void ParseArgument<string>(string &value, std::istringstream &in, bool last) {
+        void ParseArgument(string &value, std::istringstream &in, bool last) {
             in >> std::ws;
             if (last) {
                 std::getline(in, value);
