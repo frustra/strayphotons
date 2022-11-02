@@ -210,7 +210,7 @@
 				"group": "NoClip",
 				"mass": 1
 			},
-			"physics_joints": [{
+			"_physics_joints": [{
 				"target": "origin",
 				"remote_offset": {
 					"translate": [-0.5, 1.5, -1.9],
@@ -235,7 +235,7 @@
 				"group": "NoClip",
 				"mass": 1
 			},
-			"physics_joints": [{
+			"_physics_joints": [{
 				"target": "origin",
 				"local_offset": {
 					"translate": [0, 0.5, 0]
@@ -263,7 +263,7 @@
 				"group": "NoClip",
 				"mass": 1
 			},
-			"physics_joints": [{
+			"_physics_joints": [{
 				"target": "origin",
 				"remote_offset": {
 					"translate": [-0.5, 1.5, -1.95],

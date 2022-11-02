@@ -82,8 +82,6 @@ namespace sp {
         PhysxManager(bool stepMode);
         virtual ~PhysxManager() override;
 
-        glm::vec3 GetEntityVelocity(ecs::Lock<ecs::Read<ecs::TransformTree>> lock, ecs::Entity ent) const;
-
     private:
         void PreFrame() override;
         void Frame() override;

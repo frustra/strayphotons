@@ -102,8 +102,10 @@ namespace sp {
         if (maxForce > 0 && deltaPos != glm::vec3(0)) {
             // Calculations done using the target as the frame of reference (i.e. the target is always stationary)
             auto maxAcceleration = maxForce / dynamic->getMass();
-            auto linearDirection = glm::normalize(deltaPos);
             auto currentDeltaVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity()) - targetEndVelocity;
+            // TODO: This direction does not account for any initial velocity perpendicular to this axis.
+            // The solution might need to apply a velocity-matching force separate from the below linear solution.
+            auto linearDirection = glm::normalize(deltaPos);
             auto accelVector = linearDirection * maxAcceleration * intervalSeconds;
 
             // Maximum velocity achievable over deltaPos distance
@@ -138,7 +140,10 @@ namespace sp {
                 Logf("FinalFrame: %s + %s",
                     glm::to_string(accel),
                     glm::to_string(deltaPos * tickFrequency * tickFrequency));
-                accel += deltaPos * tickFrequency * tickFrequency * 0.5f;
+
+                // TODO: This causes deltaPos == vec3(0) on the next frame, but with non-zero velocity.
+                // Currently the frame is skipped over, but should be applying a force to stop.
+                accel += deltaPos * tickFrequency * tickFrequency;
             } else if (stopDistDecel > availableStopDist) {
                 Logf("DecelDistance: %f > %f", stopDistDecel, availableStopDist);
                 accel = -currentDeltaVelocity * tickFrequency;
@@ -167,6 +172,7 @@ namespace sp {
                     clampRatio = 0.0f;
                 }
             }
+
             wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio * magneticRadiusScale);
             Logf("%s: DeltaPos %s VCurr %s VCurrF %f VMaxF %f VDelta %s Force %s Ratio %f",
                 std::to_string(((ActorUserData *)actor->userData)->entity),
