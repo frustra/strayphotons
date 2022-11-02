@@ -36,7 +36,6 @@
 			"physics_joints": [{
 				"target": "testroot",
 				"type": "Force",
-				"magnet_radius": 1,
 				"limit": [10, 0.5]
 			}]
 		},
@@ -454,34 +453,6 @@
 				"prefab": "template",
 				"parameters": { "source": "duck" }
 			}
-		},
-		{
-			"name": "plug",
-			"transform": {
-				"translate": [2.75, 0.9, 2.65]
-			},
-			"renderable": {
-				"model": "articulating-arm",
-				"mesh_index": 2
-			},
-			"physics": {
-				"model": "articulating-arm.convex2"
-			},
-			"physics_joints": [],
-			"trigger_group": "Magnetic",
-			"event_input": [
-				"/magnetic/nearby"
-			],
-			"script": [
-				{
-					"prefab": "template",
-					"parameters": { "source": "interactive" }
-				},
-				{
-					"onEvent": "magnetic_plug",
-					"filter_events": ["/magnetic/nearby"]
-				}
-			]
 		},
 		{
 			"name": "global:spawn",

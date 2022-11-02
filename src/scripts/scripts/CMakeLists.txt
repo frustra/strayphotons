@@ -6,7 +6,6 @@ target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     InputScripts.cc
     InteractionScripts.cc
     LightScripts.cc
-    Magnets.cc
     MiscScripts.cc
     PhysicsScripts.cc
     VrHandScript.cc

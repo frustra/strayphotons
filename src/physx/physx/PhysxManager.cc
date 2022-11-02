@@ -496,8 +496,6 @@ namespace sp {
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES,
                     true);
-            } else {
-                // actor->is<PxRigidBody>()->setMaxAngularVelocity(1000.0f);
             }
         } else {
             actor = pxPhysics->createRigidStatic(pxTransform);
