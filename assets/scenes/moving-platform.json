@@ -150,7 +150,7 @@
 			}]
 		},
 		{
-			"name": "force_test3",
+			"name": "fixed_test",
 			"renderable": {
 				"model": "box",
 				"emissive": 0.1
@@ -168,29 +168,6 @@
 				"target": "platform_root",
 				"remote_offset": {
 					"translate": [0, 1.8, -2]
-				},
-				"type": "Force"
-			}]
-		},
-		{
-			"name": "fixed_test",
-			"renderable": {
-				"model": "box",
-				"emissive": 0.1
-			},
-			"transform": {
-				"parent": "platform_root",
-				"translate": [0, 1.9, -2],
-				"scale": [0.05, 0.05, 0.05]
-			},
-			"physics": {
-				"model": "box",
-				"density": 1000
-			},
-			"physics_joints": [{
-				"target": "platform_root",
-				"remote_offset": {
-					"translate": [0, 1.9, -2]
 				},
 				"type": "Fixed"
 			}]
