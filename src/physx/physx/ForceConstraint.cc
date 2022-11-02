@@ -29,12 +29,12 @@ namespace sp {
         cA2wOut = cA2w.p;
         cB2wOut = cB2w.p;
 
-        if (cA2w.q.dot(cB2w.q) < 0.0f) { // minimum distance quaternion
-            cB2w.q = -cB2w.q;
-        }
+        // if (cA2w.q.dot(cB2w.q) < 0.0f) { // minimum distance quaternion
+        //     cB2w.q = -cB2w.q;
+        // }
 
-        glm::vec3 deltaPos = PxVec3ToGlmVec3(cB2w.p - cA2w.p);
-        PxQuat deltaQuat = cA2w.q.getConjugate() * cB2w.q;
+        // glm::vec3 deltaPos = PxVec3ToGlmVec3(cB2w.p - cA2w.p);
+        // PxQuat deltaQuat = cA2w.q.getConjugate() * cB2w.q;
         static const glm::mat3 axes = glm::identity<glm::mat3>();
         glm::mat3 constraintAxes = glm::mat3_cast(PxQuatToGlmQuat(cA2w.q));
 
