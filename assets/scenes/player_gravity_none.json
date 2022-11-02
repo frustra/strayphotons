@@ -1,13 +1,11 @@
 {
 	"priority": "Override",
 	"properties": {
-		"gravity": [0, 0, 0],
-		"gravity_transform": {},
-		"gravity_func": "station_spin"
+		"gravity": [0, 0, 0]
 	},
 	"entities": [
 		{
-			"name": "global:player_gravity_override",
+			"name": "global:player_gravity_none",
 			"scene_connection": [],
 			"transform": {}
 		},

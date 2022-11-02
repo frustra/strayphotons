@@ -90,7 +90,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -108,7 +108,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -126,7 +126,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -150,7 +150,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -174,7 +174,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -198,7 +198,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -222,7 +222,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -246,7 +246,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -270,7 +270,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",
@@ -293,7 +293,6 @@
 					}
 				},
 				"group": "WorldOverlap",
-				"density": 1,
 				"dynamic": false
 			},
 			"transform": {
@@ -318,7 +317,6 @@
 					}
 				},
 				"group": "WorldOverlap",
-				"density": 1,
 				"dynamic": false
 			},
 			"transform": {
@@ -343,7 +341,6 @@
 					}
 				},
 				"group": "WorldOverlap",
-				"density": 1,
 				"dynamic": false
 			},
 			"transform": {

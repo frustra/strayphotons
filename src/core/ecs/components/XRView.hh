@@ -3,7 +3,7 @@
 #include <ecs/Components.hh>
 
 namespace ecs {
-    enum class XrEye : size_t {
+    enum class XrEye {
         Left = 0,
         Right,
     };

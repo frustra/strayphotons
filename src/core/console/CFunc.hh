@@ -3,6 +3,7 @@
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "ecs/EntityRef.hh"
 
 #include <functional>
 #include <magic_enum.hpp>
@@ -58,6 +59,13 @@ namespace sp {
             } else {
                 in >> value;
             }
+        }
+
+        void ParseArgument(ecs::EntityRef &value, std::istringstream &in, bool last) {
+            std::string entityName;
+            in >> entityName;
+
+            value = ecs::Name(entityName, ecs::Name());
         }
 
         void ParseArgument(string &value, std::istringstream &in, bool last) {

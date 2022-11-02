@@ -123,7 +123,7 @@
 				"force": [-0.1, 0, 0],
 				"linear_damping": 10,
 				"angular_damping": 100,
-				"density": 10
+				"mass": 0.01
 			},
 			"physics_joints": [{
 				"target": "button",

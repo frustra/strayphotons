@@ -35,7 +35,7 @@ namespace sp {
         JointState *joint,
         ecs::Transform transform,
         ecs::Transform targetTransform,
-        glm::vec3 targetVelocity,
+        glm::vec3 targetEndVelocity,
         glm::vec3 gravity) {
         if (!actor || !joint || !joint->forceConstraint) return false;
         auto dynamic = actor->is<PxRigidDynamic>();
@@ -46,6 +46,7 @@ namespace sp {
         transform.Translate(currentRotate * centerOfMass);
         auto targetRotate = targetTransform.GetRotation();
         targetTransform.Translate(targetRotate * centerOfMass);
+        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
 
         float intervalSeconds = manager.interval.count() / 1e9;
         float tickFrequency = 1e9 / manager.interval.count();
@@ -67,19 +68,19 @@ namespace sp {
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
                 std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
 
-            glm::vec3 targetAngularVelocity(0);
+            glm::vec3 targetVelocity(0);
             for (int i = 0; i < 3; i++) {
                 if (maxVelocity[i] > deltaTick[i]) {
-                    targetAngularVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
+                    targetVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
                 } else {
-                    // Divide remaining velocity delta by 2 to keep things table.
+                    // Divide remaining velocity delta by 2 to keep things stable.
                     // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
-                    targetAngularVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
+                    targetVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
                 }
             }
 
             auto currentAngularVelocity = glm::inverse(currentRotate) * PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-            auto deltaVelocity = targetAngularVelocity - currentAngularVelocity;
+            auto deltaVelocity = targetVelocity - currentAngularVelocity;
 
             glm::vec3 accel = deltaVelocity * tickFrequency;
             glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
@@ -91,19 +92,20 @@ namespace sp {
 
         // Update Linear Force
         if (maxForce > 0) {
-            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
 
-            auto targetLinearVelocity = deltaPos;
+            auto targetVelocity = deltaPos;
             if (maxVelocity > deltaTick) {
-                targetLinearVelocity = glm::normalize(targetLinearVelocity) * (maxVelocity - deltaTick);
+                targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
             } else {
-                targetLinearVelocity *= tickFrequency * 0.5f;
+                // Divide remaining velocity delta by 2 to keep things stable.
+                // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
+                targetVelocity *= tickFrequency * 0.5f;
             }
-            targetLinearVelocity += targetVelocity;
-            auto deltaVelocity = targetLinearVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+            targetVelocity += targetEndVelocity;
+            auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
 
             glm::vec3 accel = deltaVelocity * tickFrequency;
             float accelAbs = glm::length(accel) + 0.00001f;
@@ -113,7 +115,11 @@ namespace sp {
             wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
         }
 
-        wakeUp |= joint->forceConstraint->setGravity(gravity);
+        if (joint->ecsJoint.type == ecs::PhysicsJointType::Force) {
+            wakeUp |= joint->forceConstraint->setGravity(gravity);
+        } else {
+            wakeUp |= joint->forceConstraint->setGravity(glm::vec3(0));
+        }
 
         if (targetTransform != joint->forceConstraint->targetTransform) {
             joint->forceConstraint->targetTransform = targetTransform;
@@ -284,7 +290,6 @@ namespace sp {
                     // Free'd automatically on release();
                     joint->forceConstraint =
                         new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
-                    if (actor->is<PxRigidBody>()) actor->is<PxRigidBody>()->setMaxAngularVelocity(1000.0f);
                     UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                     break;
                 default:

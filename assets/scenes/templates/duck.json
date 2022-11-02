@@ -20,7 +20,7 @@
 			},
 			"physics": {
 				"model": "duck.cooked",
-				"density": 1
+				"mass": 1
 			}
 		}
 	]

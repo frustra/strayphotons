@@ -7,7 +7,7 @@
 			},
 			"physics": {
 				"model": "box",
-				"density": 1
+				"mass": 1
 			},
 			"script": {
 				"prefab": "template",

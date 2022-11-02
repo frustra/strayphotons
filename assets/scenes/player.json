@@ -15,8 +15,9 @@
 		{
 			"name": "flatorigin",
 			"transform": {},
-			"physics": {
+			"_physics": {
 				"__comment": "Dummy actor for velocity calculation",
+				"__comment2": "Due to the player's instant acceleration, this may not actually be desirable",
 				"group": "NoClip",
 				"dynamic": false,
 				"shapes": {

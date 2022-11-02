@@ -16,11 +16,14 @@ namespace physx {
 
 namespace ecs {
     enum class PhysicsJointType {
+        // PhysX built-in joints
         Fixed = 0,
         Distance,
         Spherical,
         Hinge,
         Slider,
+
+        // Custom force-limited joints
         Force,
     };
 

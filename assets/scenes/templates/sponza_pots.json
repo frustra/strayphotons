@@ -4,7 +4,7 @@
 			"name": "FlowerPot.001",
 			"physics": {
 				"model": "sponza2.convex80",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -15,7 +15,7 @@
 			"name": "FlowerPot.002",
 			"physics": {
 				"model": "sponza2.convex81",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -26,7 +26,7 @@
 			"name": "FlowerPot.003",
 			"physics": {
 				"model": "sponza2.convex82",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -37,7 +37,7 @@
 			"name": "FlowerPot.004",
 			"physics": {
 				"model": "sponza2.convex83",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -48,7 +48,7 @@
 			"name": "FlowerPot.005",
 			"physics": {
 				"model": "sponza2.convex84",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -59,7 +59,7 @@
 			"name": "FlowerPot.006",
 			"physics": {
 				"model": "sponza2.convex85",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -70,7 +70,7 @@
 			"name": "FlowerPot.007",
 			"physics": {
 				"model": "sponza2.convex86",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",
@@ -81,7 +81,7 @@
 			"name": "FlowerPot.008",
 			"physics": {
 				"model": "sponza2.convex87",
-				"density": 1
+				"mass": 10
 			},
 			"script": {
 				"prefab": "template",

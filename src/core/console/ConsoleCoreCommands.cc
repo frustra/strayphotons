@@ -6,31 +6,17 @@
 #include <fstream>
 #include <sstream>
 
-template<typename LockWrite, typename Callback>
-void mutateEntity(const string &entityStr, Callback callback) {
-    ecs::Name entityName(entityStr, ecs::Name());
-    if (!entityName) {
-        Logf("Could not parse entity %s", entityStr);
-        return;
-    }
-    auto lock = ecs::StartTransaction<LockWrite>();
-    auto entity = ecs::EntityRef(entityName).Get(lock);
-    if (!entity) {
-        Logf("Entity %s not found", entityName.String());
-        return;
-    }
-    callback(lock, entity);
-}
-
 template<typename Callback>
-void mutateEntityTransform(const string &entityStr, Callback callback) {
-    mutateEntity<ecs::Write<ecs::TransformTree>>(entityStr, [&](auto lock, ecs::Entity entity) {
-        if (!entity.Has<ecs::TransformTree>(lock)) {
-            Logf("Entity %s has no transform", entityStr);
-            return;
-        }
+void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
+    auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree>>();
+    auto entity = entityRef.Get(lock);
+    if (!entity.Exists(lock)) {
+        Errorf("Entity does not exist: %s", entityRef.Name().String());
+    } else if (!entity.Has<ecs::TransformTree>(lock)) {
+        Errorf("Entity has no TransformTree: %s", entityRef.Name().String());
+    } else {
         callback(lock, entity.Get<ecs::TransformTree>(lock));
-    });
+    }
 }
 
 void sp::ConsoleManager::RegisterCoreCommands() {
@@ -118,26 +104,26 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         }
     });
 
-    funcs.Register<string, glm::vec3>("translate",
+    funcs.Register<ecs::EntityRef, glm::vec3>("translate",
         "Moves an entity a relative amount (translate <entity> <x> <y> <z>)",
-        [](string entityStr, glm::vec3 value) {
-            mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
+        [](ecs::EntityRef entityRef, glm::vec3 value) {
+            mutateEntityTransform(entityRef, [&](auto lock, ecs::TransformTree &transform) {
                 transform.pose.Translate(value);
             });
         });
 
-    funcs.Register<string, float, glm::vec3>("rotate",
+    funcs.Register<ecs::EntityRef, float, glm::vec3>("rotate",
         "Rotates an entity a relative amount (rotate <entity> <degrees> <x> <y> <z>)",
-        [](string entityStr, float degrees, glm::vec3 plane) {
-            mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
+        [](ecs::EntityRef entityRef, float degrees, glm::vec3 plane) {
+            mutateEntityTransform(entityRef, [&](auto lock, ecs::TransformTree &transform) {
                 transform.pose.Rotate(glm::radians(degrees), plane);
             });
         });
 
-    funcs.Register<string, glm::vec3>("scale",
+    funcs.Register<ecs::EntityRef, glm::vec3>("scale",
         "Scales an entity a relative amount (scale <entity> <x> <y> <z>)",
-        [](string entityStr, glm::vec3 value) {
-            mutateEntityTransform(entityStr, [&](auto lock, ecs::TransformTree &transform) {
+        [](ecs::EntityRef entityRef, glm::vec3 value) {
+            mutateEntityTransform(entityRef, [&](auto lock, ecs::TransformTree &transform) {
                 transform.pose.Scale(value);
             });
         });

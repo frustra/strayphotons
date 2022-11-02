@@ -21,8 +21,17 @@ namespace ecs {
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
     struct Event {
-        using EventData = std::
-            variant<bool, char, int, double, glm::vec2, glm::vec3, Transform, EntityRef, Tecs::Entity, std::string>;
+        using EventData = std::variant<bool,
+            char,
+            int,
+            float,
+            double,
+            glm::vec2,
+            glm::vec3,
+            Transform,
+            EntityRef,
+            Tecs::Entity,
+            std::string>;
 
         std::string name;
         Entity source;

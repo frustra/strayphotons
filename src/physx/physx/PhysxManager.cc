@@ -81,6 +81,7 @@ namespace sp {
                 laser.line = ecs::LaserLine::Segments();
             });
 
+        RegisterDebugCommands();
         StartThread(stepMode);
     }
 
@@ -541,7 +542,11 @@ namespace sp {
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic) {
-            PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+            if (ph.mass > 0.0f) {
+                PxRigidBodyExt::setMassAndUpdateInertia(*dynamic, ph.mass);
+            } else {
+                PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+            }
             dynamic->setAngularDamping(ph.angularDamping);
             dynamic->setLinearDamping(ph.linearDamping);
 
@@ -678,7 +683,13 @@ namespace sp {
             }
         }
 
-        if (dynamic && shapesChanged) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+        if (dynamic && shapesChanged) {
+            if (ph.mass > 0.0f) {
+                PxRigidBodyExt::setMassAndUpdateInertia(*dynamic, ph.mass);
+            } else {
+                PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+            }
+        }
         if (glm::any(glm::notEqual(transform.matrix, userData->pose.matrix, 1e-5f))) {
             // Logf("Updating actor position: %s", ecs::ToString(lock, e));
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
@@ -748,7 +759,7 @@ namespace sp {
         if (userData) userData->physicsGroup = group;
     }
 
-    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) {
+    PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) const {
         auto scale = shape.transform.GetScale() * parentScale;
         return std::visit(
             [this, &scale](auto &&arg) {
