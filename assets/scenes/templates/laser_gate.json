@@ -1,0 +1,125 @@
+{
+	"entities": [
+		{
+			"name": "mount",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, 0],
+				"scale": 0.05
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "box",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		},
+		{
+			"name": "source",
+			"transform": {
+				"parent": "mount",
+				"translate": [0, 0, -0.5],
+				"rotate": [180, 0, 1, 0],
+				"scale": 2
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "sensor",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		},
+		{
+			"name": "source.Icosphere",
+			"signal_output": {},
+			"laser_sensor": {}
+		},
+		{
+			"name": "gate",
+			"transform": {
+				"parent": "mount",
+				"translate": [0.5, 0, 0],
+				"rotate": [90, 0, 1, 0],
+				"scale": 2
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "sensor",
+					"render": true,
+					"physics": "static"
+				}
+			}
+		},
+		{
+			"name": "gate.Icosphere",
+			"signal_output": {},
+			"laser_sensor": {}
+		},
+		{
+			"name": "output",
+			"transform": {
+				"parent": "mount",
+				"translate": [0, 0, 0.26],
+				"rotate": [180, 0, 1, 0],
+				"scale": 25
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "laser-plug",
+					"render": true
+				}
+			},
+			"signal_output": {
+				"gate_scale": 10
+			},
+			"signal_bindings": {
+				"gate_value_r": {
+					"operator": "multiply",
+					"values": ["gate.Icosphere/light_value_r", "output/gate_scale"]
+				},
+				"gate_enable_r": {
+					"operator": "count",
+					"values": ["output/gate_value_r"]
+				},
+				"laser_color_r": {
+					"operator": "multiply",
+					"values": ["source.Icosphere/light_value_r", "output/gate_enable_r"]
+				},
+				"gate_value_g": {
+					"operator": "multiply",
+					"values": ["gate.Icosphere/light_value_g", "output/gate_scale"]
+				},
+				"gate_enable_g": {
+					"operator": "count",
+					"values": ["output/gate_value_g"]
+				},
+				"laser_color_g": {
+					"operator": "multiply",
+					"values": ["source.Icosphere/light_value_g", "output/gate_enable_g"]
+				},
+				"gate_value_b": {
+					"operator": "multiply",
+					"values": ["gate.Icosphere/light_value_b", "output/gate_scale"]
+				},
+				"gate_enable_b": {
+					"operator": "count",
+					"values": ["output/gate_value_b"]
+				},
+				"laser_color_b": {
+					"operator": "multiply",
+					"values": ["source.Icosphere/light_value_b", "output/gate_enable_b"]
+				}
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"start_distance": 0.01
+			}
+		}
+	]
+}

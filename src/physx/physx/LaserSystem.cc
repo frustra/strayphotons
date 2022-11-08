@@ -87,6 +87,8 @@ namespace sp {
             glm::vec3 rayStart = transform.GetPosition();
             glm::vec3 rayDir = transform.GetForward();
 
+            rayStart += rayDir * emitter.startDistance * transform.GetScale();
+
             std::array<physx::PxRaycastHit, 128> hitBuffer;
 
             PxRaycastBuffer hit;
