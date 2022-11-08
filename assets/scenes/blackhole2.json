@@ -109,7 +109,7 @@
 		{
 			"name": "mirrorcube1",
 			"transform": {
-				"translate": [0.4, 0.89, 0.14],
+				"translate": [0.35, 0.89, 0.14],
 				"rotate": [160, 0, 1, 0],
 				"scale": 0.1
 			},
@@ -146,7 +146,7 @@
 			},
 			"laser_line": {},
 			"laser_emitter": {
-				"intensity": 10,
+				"intensity": 5,
 				"color": [1, 0, 0]
 			}
 		},
@@ -198,13 +198,13 @@
 			"name": "laser_fiber_1_sensor.Icosphere",
 			"signal_output": {},
 			"laser_sensor": {
-				"threshold": [1, 0, 0]
+				"threshold": [0, 0, 0]
 			}
 		},
 		{
 			"name": "laser_fiber_1_output_mount",
 			"transform": {
-				"translate": [0.86, 0.86, 0.28],
+				"translate": [0.86, 0.86, 0.30],
 				"rotate": [90, 0, 1, 0]
 			},
 			"script": {
@@ -228,10 +228,54 @@
 				}
 			},
 			"signal_bindings": {
-				"laser_color_r": "laser_fiber_1_sensor.Icosphere/light_value_r"
+				"laser_color_r": "laser_fiber_1_sensor.Icosphere/light_value_r",
+				"laser_color_g": "laser_fiber_1_sensor.Icosphere/light_value_g",
+				"laser_color_b": "laser_fiber_1_sensor.Icosphere/light_value_b"
 			},
 			"laser_line": {},
 			"laser_emitter": {}
+		},
+		{
+			"name": "gate1",
+			"transform": {
+				"translate": [0.54, 0.86, 0.30]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "laser_gate" }
+			}
+		},
+		{
+			"name": "laser_mount_2",
+			"transform": {
+				"translate": [0.54, 0.86, 0.06],
+				"rotate": [180, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "laser-plug-mount",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "laser_plug_2",
+			"transform": {
+				"parent": "laser_mount_2.round-fitting-mount"
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "laser-plug",
+					"render": true
+				}
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"intensity": 20,
+				"color": [1, 1, 0]
+			}
 		}
 	]
 }

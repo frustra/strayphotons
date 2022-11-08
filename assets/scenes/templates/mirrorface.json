@@ -3,7 +3,8 @@
 		{
 			"name": "optic",
 			"optic": {
-				"type": "Mirror"
+				"type": "Mirror",
+				"tint": [0.95, 0.95, 0.95]
 			},
 			"renderable": {
 				"model": "mirror"
