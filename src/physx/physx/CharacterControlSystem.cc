@@ -49,6 +49,7 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "character",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                // Create Head entity which automatically points to the active player mode
                 auto ent = scene->NewSystemEntity(lock, scene, entities::Head.Name());
                 auto &tree = ent.Set<ecs::TransformTree>(lock);
                 tree.parent = entities::Flatview;
@@ -102,6 +103,20 @@ namespace sp {
         PxTransform globalPose(GlmVec3ToPxVec3(capsulePosition));
         globalPose.q = PxShortestRotation(PxVec3(1.0f, 0.0f, 0.0f), pxController->getUpDirection());
         pxController->getActor()->setGlobalPose(globalPose);
+    }
+
+    void CharacterControlSystem::RegisterEvents() {
+        auto lock = ecs::StartTransaction<ecs::Write<ecs::CharacterController, ecs::EventInput>>();
+        for (auto &ent : lock.EntitiesWith<ecs::CharacterController>()) {
+            if (!ent.Has<ecs::CharacterController, ecs::EventInput>(lock)) continue;
+            auto &readController = ent.Get<const ecs::CharacterController>(lock);
+            if (!readController.eventQueue) {
+                auto &writeController = ent.Get<ecs::CharacterController>(lock);
+                auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                writeController.eventQueue = ecs::NewEventQueue();
+                eventInput.Register(lock, writeController.eventQueue, "/action/jump");
+            }
+        }
     }
 
     void CharacterControlSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
@@ -371,11 +386,10 @@ namespace sp {
             bool sprint = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
 
             bool jump = false;
-            if (entity.Has<ecs::EventInput>(lock)) {
-                ecs::Event event;
-                while (ecs::EventInput::Poll(lock, entity, "/action/jump", event)) {
-                    jump = true;
-                }
+            ecs::Event event;
+            while (ecs::EventInput::Poll(lock, controller.eventQueue, event)) {
+                if (event.name != "/action/jump") continue;
+                jump = true;
             }
 
             float speed = sprint ? CVarCharacterSprintSpeed.Get() : CVarCharacterMovementSpeed.Get();

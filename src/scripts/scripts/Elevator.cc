@@ -13,7 +13,7 @@ namespace sp::scripts {
 
     InternalScript elevatorScript("elevator",
         [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<EventInput, TransformSnapshot, Sounds>(lock)) return;
+            if (!ent.Has<TransformSnapshot, Sounds>(lock)) return;
             auto &transform = ent.Get<TransformSnapshot>(lock);
             auto &sounds = ent.Get<Sounds>(lock);
 

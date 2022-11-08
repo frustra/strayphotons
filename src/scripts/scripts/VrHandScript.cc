@@ -182,7 +182,8 @@ namespace sp::scripts {
         };
     };
 
-    static void handlePointing(ScriptData &scriptData,
+    static void handlePointing(ScriptState &state,
+        ScriptData &scriptData,
         PhysicsUpdateLock lock,
         Entity ent,
         bool isPointing,
@@ -258,7 +259,9 @@ namespace sp::scripts {
         }
 
         Event event;
-        while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_PRESS, event)) {
+        while (EventInput::Poll(lock, state.eventQueue, event)) {
+            if (event.name != INTERACT_EVENT_INTERACT_PRESS) continue;
+
             if (std::holds_alternative<bool>(event.data)) {
                 if (scriptData.pressEntity) {
                     // Unpress the currently pressed entity
@@ -280,7 +283,8 @@ namespace sp::scripts {
         }
     }
 
-    InternalPhysicsScript vrHandScript("vr_hand",
+    InternalPhysicsScript vrHandScript(
+        "vr_hand",
         [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
@@ -392,7 +396,7 @@ namespace sp::scripts {
 
             auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_middle");
             bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
-            handlePointing(scriptData, lock, ent, isPointing, state.GetParam<double>("point_distance"));
+            handlePointing(state, scriptData, lock, ent, isPointing, state.GetParam<double>("point_distance"));
 
             // Update the hand's physics shape
             ph.shapes.clear();
@@ -418,5 +422,6 @@ namespace sp::scripts {
             }
 
             state.userData = scriptData;
-        });
+        },
+        INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

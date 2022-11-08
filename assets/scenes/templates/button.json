@@ -10,9 +10,7 @@
 				"file": "click2.ogg",
 				"volume": 0.4
 			}],
-			"event_input": [
-				"/sound/play"
-			],
+			"event_input": {},
 			"signal_bindings": {
 				"button_pressed": "button_body/trigger_object_enter"
 			}
@@ -27,7 +25,7 @@
 				"translate": [-0.05, 0, 0],
 				"scale": [0.1, 0.1, 0.1]
 			},
-			"trigger_area": {},
+			"trigger_area": "Box",
 			"physics": {
 				"model": "box",
 				"group": "WorldOverlap",

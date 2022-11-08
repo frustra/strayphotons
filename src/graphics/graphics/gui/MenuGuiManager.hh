@@ -25,6 +25,8 @@ namespace sp {
     private:
         GraphicsManager &graphics;
 
+        ecs::EventQueueRef events = ecs::NewEventQueue();
+
         MenuScreen selectedScreen = MenuScreen::Splash;
 
         shared_ptr<GpuTexture> logoTex, frustraLogoTex;

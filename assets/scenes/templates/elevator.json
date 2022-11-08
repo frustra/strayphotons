@@ -31,9 +31,7 @@
 			]
 		},
 		"signal_output": {},
-		"event_input": [
-			"/sound/play"
-		],
+		"event_input": {},
 		"script": {
 			"onTick": "elevator"
 		},

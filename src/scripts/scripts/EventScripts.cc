@@ -15,11 +15,11 @@ namespace ecs {
 
                 bool gateOpen = signalValue >= signalThreshold;
 
-                auto inputEvent = state.GetParam<string>("input_event");
+                state.events = {state.GetParam<string>("input_event")};
                 auto outputEvent = state.GetParam<string>("output_event");
 
                 Event event;
-                while (EventInput::Poll(lock, ent, inputEvent, event)) {
+                while (EventInput::Poll(lock, state.eventQueue, event)) {
                     if (!gateOpen) continue;
 
                     EventBindings::SendEvent(lock, outputEvent, ent, event.data);

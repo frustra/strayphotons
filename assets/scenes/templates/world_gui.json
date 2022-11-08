@@ -7,11 +7,7 @@
 				"box": [1, 1, 0.01]
 			}
 		},
-		"event_input": [
-			"/interact/point",
-			"/interact/press"
-		],
-		"screen": {
-		}
+		"event_input": {},
+		"screen": {}
 	}
 }

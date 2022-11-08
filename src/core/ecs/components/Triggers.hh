@@ -14,6 +14,8 @@ namespace ecs {
         Magnetic,
     };
 
+    enum class TriggerShape : uint8_t { Box = 0, Sphere = 1 };
+
     static sp::EnumArray<std::string, TriggerGroup> TriggerGroupSignalNames = {
         "trigger_player_count",
         "trigger_object_count",
@@ -27,9 +29,10 @@ namespace ecs {
     };
 
     struct TriggerArea {
+        TriggerShape shape = TriggerShape::Box;
         sp::EnumArray<robin_hood::unordered_flat_set<Entity>, TriggerGroup> containedEntities;
     };
 
     static Component<TriggerGroup> ComponentTriggerGroup("trigger_group", ComponentField::New<TriggerGroup>());
-    static Component<TriggerArea> ComponentTriggerArea("trigger_area");
+    static Component<TriggerArea> ComponentTriggerArea("trigger_area", ComponentField::New(&TriggerArea::shape));
 } // namespace ecs

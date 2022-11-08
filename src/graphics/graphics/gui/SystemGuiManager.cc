@@ -21,7 +21,7 @@ namespace sp {
             [this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, layer);
-                ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
+                ent.Set<ecs::EventInput>(lock);
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
@@ -33,6 +33,17 @@ namespace sp {
                 signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, entities::Player, INPUT_SIGNAL_MENU_CURSOR_X);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, entities::Player, INPUT_SIGNAL_MENU_CURSOR_Y);
             });
+
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto gui = guiEntity.Get(lock);
+            Assertf(gui.Has<ecs::EventInput>(lock),
+                "System Gui entity has no EventInput: %s",
+                std::to_string(guiEntity));
+            auto &eventInput = gui.Get<ecs::EventInput>(lock);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
+        }
     }
 
     void SystemGuiManager::BeforeFrame() {
@@ -77,14 +88,13 @@ namespace sp {
             io.MouseWheelH = 0.0f;
             if (hasFocus) {
                 auto gui = guiEntity.Get(lock);
-                if (gui.Has<ecs::EventInput>(lock)) {
-                    ecs::Event event;
-                    while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_SCROLL, event)) {
+                ecs::Event event;
+                while (ecs::EventInput::Poll(lock, events, event)) {
+                    if (event.name == INPUT_EVENT_MENU_SCROLL) {
                         auto &scroll = std::get<glm::vec2>(event.data);
                         io.MouseWheel += scroll.y;
                         io.MouseWheelH += scroll.x;
-                    }
-                    while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_TEXT_INPUT, event)) {
+                    } else if (event.name == INPUT_EVENT_MENU_TEXT_INPUT) {
                         io.AddInputCharacter(std::get<char>(event.data));
                     }
                 }

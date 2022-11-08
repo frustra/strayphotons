@@ -14,7 +14,7 @@
 		},
 		{
 			"transform": {},
-			"trigger_area": {},
+			"trigger_area": "Box",
 			"trigger_group": "Object",
 			"event_bindings": {
 				"/trigger/object/enter": {

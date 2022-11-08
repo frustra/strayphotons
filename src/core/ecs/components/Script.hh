@@ -10,6 +10,7 @@
 #include <any>
 #include <functional>
 #include <robin_hood.h>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -25,6 +26,19 @@ namespace ecs {
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(ScriptState &, Lock<AddRemove>, Entity)>;
 
+    struct ScriptDefinition {
+        std::vector<std::string> events;
+        std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
+    };
+
+    struct ScriptDefinitions {
+        robin_hood::unordered_node_map<std::string, ScriptDefinition> scripts;
+        robin_hood::unordered_node_map<std::string, ScriptDefinition> physicsUpdates;
+        robin_hood::unordered_node_map<std::string, ScriptDefinition> prefabs;
+    };
+
+    ScriptDefinitions &GetScriptDefinitions();
+
     class ScriptState {
     public:
         using ParameterType = typename std::variant<bool,
@@ -39,6 +53,7 @@ namespace ecs {
 
         ScriptState() : callback(std::monostate()) {}
         ScriptState(const EntityScope &scope);
+        ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
         ScriptState(const EntityScope &scope, OnTickFunc callback);
         ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback);
         ScriptState(const EntityScope &scope, PrefabFunc callback);
@@ -89,7 +104,9 @@ namespace ecs {
 
         EntityScope scope;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
-        std::vector<std::string> filterEvents;
+        bool filterOnEvent = false;
+        ecs::EventQueueRef eventQueue;
+        std::vector<std::string> events;
 
         std::any userData;
 
@@ -99,14 +116,6 @@ namespace ecs {
 
         friend struct Script;
     };
-
-    struct ScriptDefinitions {
-        robin_hood::unordered_node_map<std::string, OnTickFunc> scripts;
-        robin_hood::unordered_node_map<std::string, OnPhysicsUpdateFunc> physicsUpdates;
-        robin_hood::unordered_node_map<std::string, PrefabFunc> prefabs;
-    };
-
-    ScriptDefinitions &GetScriptDefinitions();
 
     struct Script {
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
@@ -146,22 +155,24 @@ namespace ecs {
 
     class InternalScript {
     public:
-        InternalScript(const std::string &name, OnTickFunc &&func) {
-            GetScriptDefinitions().scripts[name] = std::move(func);
+        template<typename... Events>
+        InternalScript(const std::string &name, OnTickFunc &&func, Events... events) {
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{{events...}, func});
         }
     };
 
     class InternalPhysicsScript {
     public:
-        InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func) {
-            GetScriptDefinitions().physicsUpdates[name] = std::move(func);
+        template<typename... Events>
+        InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func, Events... events) {
+            GetScriptDefinitions().physicsUpdates.emplace(name, ScriptDefinition{{events...}, func});
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().prefabs[name] = std::move(func);
+            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{{}, func});
         }
     };
 } // namespace ecs

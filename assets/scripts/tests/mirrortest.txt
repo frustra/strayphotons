@@ -1,5 +1,6 @@
 loadscene mirrortest
 r.Exposure 2
+steplogic
 stepphysics
 screenshot mirrortest-frame000.png
 stepgraphics

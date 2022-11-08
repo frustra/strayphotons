@@ -137,17 +137,32 @@ namespace sp {
 
         ecs::ComponentEvent<ecs::Sounds> compEvent;
         while (soundObserver.Poll(lock, compEvent)) {
-            if (compEvent.type != Tecs::EventType::REMOVED) continue;
+            if (compEvent.type == Tecs::EventType::ADDED) {
+                if (!compEvent.entity.Has<ecs::EventInput, ecs::Sounds>(lock)) continue;
+                std::thread([this, ent = compEvent.entity]() {
+                    auto lock = ecs::StartTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>();
+                    if (!ent.Has<ecs::EventInput, ecs::Sounds>(lock)) return;
 
-            auto *entSound = soundEntityMap.find(compEvent.entity);
-            if (!entSound) continue;
+                    auto &sounds = ent.Get<ecs::Sounds>(lock);
+                    if (!sounds.eventQueue) sounds.eventQueue = ecs::NewEventQueue();
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/play");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/resume");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/pause");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/stop");
+                }).detach();
+            } else if (compEvent.type == Tecs::EventType::REMOVED) {
 
-            for (auto id : *entSound) {
-                auto &state = sounds.Get(id);
-                if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
-                sounds.FreeItem(id);
+                auto *entSound = soundEntityMap.find(compEvent.entity);
+                if (!entSound) continue;
+
+                for (auto id : *entSound) {
+                    auto &state = sounds.Get(id);
+                    if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
+                    sounds.FreeItem(id);
+                }
+                soundEntityMap.erase(compEvent.entity);
             }
-            soundEntityMap.erase(compEvent.entity);
         }
 
         auto globalVolumeChanged = CVarVolume.Changed();
@@ -227,26 +242,20 @@ namespace sp {
                 }
             }
 
-            if (ent.Has<ecs::EventInput>(lock)) {
-                ecs::Event event;
-                while (ecs::EventInput::Poll(lock, ent, "/sound/play", event)) {
-                    auto i = std::get_if<int>(&event.data);
-                    auto soundID = soundIDs->at(i ? *i : 0);
+            ecs::Event event;
+            while (ecs::EventInput::Poll(lock, sources.eventQueue, event)) {
+                int *ptr = std::get_if<int>(&event.data);
+                int index = ptr ? *ptr : 0;
+                if (index >= soundIDs->size()) continue;
+                auto soundID = soundIDs->at(index);
+
+                if (event.name == "/sound/play") {
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::PlayFromStart, soundID});
-                }
-                while (ecs::EventInput::Poll(lock, ent, "/sound/resume", event)) {
-                    auto i = std::get_if<int>(&event.data);
-                    auto soundID = soundIDs->at(i ? *i : 0);
+                } else if (event.name == "/sound/resume") {
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Resume, soundID});
-                }
-                while (ecs::EventInput::Poll(lock, ent, "/sound/pause", event)) {
-                    auto i = std::get_if<int>(&event.data);
-                    auto soundID = soundIDs->at(i ? *i : 0);
+                } else if (event.name == "/sound/pause") {
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Pause, soundID});
-                }
-                while (ecs::EventInput::Poll(lock, ent, "/sound/stop", event)) {
-                    auto i = std::get_if<int>(&event.data);
-                    auto soundID = soundIDs->at(i ? *i : 0);
+                } else if (event.name == "/sound/stop") {
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Stop, soundID});
                 }
             }

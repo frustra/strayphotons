@@ -27,14 +27,16 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
             auto gui = guiEntity.Get(lock);
-            Assert(gui.Has<ecs::EventInput>(lock), "Expected menu gui to start with an EventInput");
+            Assertf(gui.Has<ecs::EventInput>(lock),
+                "Expected menu gui to start with an EventInput: %s",
+                guiEntity.Name().String());
 
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             if (MenuOpen()) {
-                eventInput.Register(INPUT_EVENT_MENU_BACK);
-                eventInput.Register(INPUT_EVENT_MENU_ENTER);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
             } else {
-                eventInput.Register(INPUT_EVENT_MENU_OPEN);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
             }
         }
     }
@@ -50,21 +52,18 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
 
-            auto gui = guiEntity.Get(lock);
-            if (gui.Has<ecs::EventInput>(lock)) {
-                ecs::Event event;
-                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_OPEN, event)) {
+            ecs::Event event;
+            while (ecs::EventInput::Poll(lock, events, event)) {
+                if (event.name == INPUT_EVENT_MENU_OPEN) {
                     selectedScreen = MenuScreen::Main;
                     SetRenderMode(MenuRenderMode::Pause);
-                }
-                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_BACK, event)) {
+                } else if (event.name == INPUT_EVENT_MENU_BACK) {
                     if (selectedScreen == MenuScreen::Main) {
                         if (RenderMode() == MenuRenderMode::Pause) SetRenderMode(MenuRenderMode::None);
                     } else {
                         selectedScreen = MenuScreen::Main;
                     }
-                }
-                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_ENTER, event)) {
+                } else if (event.name == INPUT_EVENT_MENU_ENTER) {
                     if (selectedScreen == MenuScreen::Splash) selectedScreen = MenuScreen::Main;
                 }
             }
@@ -104,15 +103,15 @@ namespace sp {
             if (MenuOpen()) {
                 focusLock.AcquireFocus(ecs::FocusLayer::Menu);
 
-                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_BACK)) eventInput.Register(INPUT_EVENT_MENU_BACK);
-                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) eventInput.Register(INPUT_EVENT_MENU_ENTER);
-                if (eventInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) eventInput.Unregister(INPUT_EVENT_MENU_OPEN);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
+                eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
 
-                if (eventInput.IsRegistered(INPUT_EVENT_MENU_BACK)) eventInput.Unregister(INPUT_EVENT_MENU_BACK);
-                if (eventInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) eventInput.Unregister(INPUT_EVENT_MENU_ENTER);
-                if (!eventInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) eventInput.Register(INPUT_EVENT_MENU_OPEN);
+                eventInput.Unregister(events, INPUT_EVENT_MENU_BACK);
+                eventInput.Unregister(events, INPUT_EVENT_MENU_ENTER);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
             }
         }
     }

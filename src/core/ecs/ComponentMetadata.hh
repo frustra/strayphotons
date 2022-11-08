@@ -26,6 +26,7 @@ namespace ecs {
     enum class InterpolationMode;
     enum class OpticType;
     enum class PhysicsGroup : uint16_t;
+    enum class TriggerShape : uint8_t;
     enum class VisibilityMask;
 
     using FieldTypes = std::tuple<
@@ -60,6 +61,7 @@ namespace ecs {
         OpticType,
         PhysicsGroup,
         TriggerGroup,
+        TriggerShape,
         VisibilityMask>;
 
     template<typename Func, size_t I = 0>

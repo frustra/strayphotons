@@ -8,14 +8,6 @@
 #include <sstream>
 
 namespace ecs {
-    template<>
-    bool Component<EventInput>::Load(const EntityScope &scope, EventInput &input, const picojson::value &src) {
-        for (auto event : src.get<picojson::array>()) {
-            input.Register(event.get<std::string>());
-        }
-        return true;
-    }
-
     bool parseEventData(Event::EventData &data, const picojson::value &src) {
         if (src.is<bool>()) {
             data = src.get<bool>();
@@ -104,14 +96,6 @@ namespace ecs {
     }
 
     template<>
-    void Component<EventInput>::Apply(const EventInput &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstInput = dst.Get<EventInput>(lock);
-        for (auto &input : src.events) {
-            if (!dstInput.IsRegistered(input.first)) dstInput.Register(input.first);
-        }
-    }
-
-    template<>
     void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstBindings = dst.Get<EventBindings>(lock);
         dstBindings.CopyBindings(src);
@@ -174,49 +158,52 @@ namespace ecs {
 
     bool EventQueue::Poll(Event &eventOut) {
         std::lock_guard lock(mutex);
-        if (events.empty()) return false;
+        if (events.empty()) {
+            eventOut = Event();
+            return false;
+        }
 
         eventOut = events.front();
         events.pop();
         return true;
     }
 
-    void EventInput::Register(const std::string &binding) {
-        events.emplace(binding, make_shared<EventQueue>());
+    EventQueueRef NewEventQueue() {
+        return make_shared<EventQueue>();
     }
 
-    bool EventInput::IsRegistered(const std::string &binding) const {
-        return events.count(binding) > 0;
+    void EventInput::Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding) {
+        Assertf(IsLive(lock), "Attempting to register event on non-live entity: %s", binding);
+
+        auto &queueList = events[binding];
+        if (sp::contains(queueList, queue)) return;
+        queueList.emplace_back(queue);
     }
 
-    void EventInput::Unregister(const std::string &binding) {
-        events.erase(binding);
+    void EventInput::Unregister(const std::shared_ptr<EventQueue> &queue, const std::string &binding) {
+        if (!queue) return;
+
+        auto it = events.find(binding);
+        if (it != events.end()) {
+            sp::erase(it->second, queue);
+            if (it->second.empty()) events.erase(it);
+        }
     }
 
     bool EventInput::Add(const std::string &binding, const Event &event) const {
-        auto queue = events.find(binding);
-        if (queue != events.end()) {
-            queue->second->Add(event);
+        auto it = events.find(binding);
+        if (it != events.end()) {
+            for (auto &queue : it->second) {
+                queue->Add(event);
+            }
             return true;
         }
         return false;
     }
 
-    bool EventInput::HasEvents(const std::string &binding) const {
-        auto queue = events.find(binding);
-        return queue != events.end() && !queue->second->Empty();
-    }
-
-    bool EventInput::Poll(const std::string &binding, Event &eventOut) const {
-        auto queue = events.find(binding);
-        if (queue != events.end() && queue->second->Poll(eventOut)) return true;
-        eventOut = Event();
-        return false;
-    }
-
-    bool EventInput::Poll(Lock<Read<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut) {
-        if (!ent.Has<EventInput>(lock)) return false;
-        return ent.Get<const EventInput>(lock).Poll(binding, eventOut);
+    bool EventInput::Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut) {
+        if (!queue) return false;
+        return queue->Poll(eventOut);
     }
 
     void EventBindings::CopyBindings(const EventBindings &src) {
@@ -345,6 +332,7 @@ namespace ecs {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
                     Event modifiedEvent = event;
+                    modifiedEvent.name = binding.destQueue;
                     if (binding.setValue) {
                         modifiedEvent.data = *binding.setValue;
                     } else if (binding.multiplyValue) {

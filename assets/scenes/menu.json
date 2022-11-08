@@ -239,17 +239,12 @@
 					}
 				]
 			},
-			"event_input": [
-				"/button/press"
-			],
+			"event_input": {},
 			"signal_bindings": {
 				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
 			},
 			"script": {
 				"onEvent": "event_gate_by_signal",
-				"filter_events": [
-					"/button/press"
-				],
 				"parameters": {
 					"input_event": "/button/press",
 					"output_event": "open_door",

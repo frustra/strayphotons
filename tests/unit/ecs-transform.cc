@@ -99,7 +99,6 @@ namespace EcsTransformTests {
             auto &transformC = c.Get<ecs::TransformTree>(lock);
 
             ecs::Transform target(glm::vec3(1, 1, 1), glm::angleAxis(glm::radians(90.0f), glm::vec3(0, 0, -1)));
-            std::cout << glm::to_string(target.GetUp()) << std::endl;
             ecs::TransformTree::MoveViaRoot(lock, c, target);
 
             AssertEqual(transformRoot.GetGlobalTransform(lock).GetPosition(),

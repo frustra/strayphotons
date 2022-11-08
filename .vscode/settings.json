@@ -24,5 +24,6 @@
         "ext/**/*.c": true,
         "ext/**/*.cpp": true
     },
-    "C_Cpp.exclusionPolicy": "checkFilesAndFolders"
+    "C_Cpp.exclusionPolicy": "checkFilesAndFolders",
+    "C_Cpp.autoAddFileAssociations": false
 }

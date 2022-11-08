@@ -162,11 +162,13 @@ namespace sp {
             }
 
             auto &input = ent.Get<ecs::EventInput>(lock);
-            for (auto &[eventName, queue] : input.events) {
-                if (queue->Empty()) {
-                    Logf("  %s: empty", eventName);
-                } else {
-                    Logf("  %s: %u events", eventName, queue->Size());
+            for (auto &[eventName, queues] : input.events) {
+                for (auto &queue : queues) {
+                    if (queue->Empty()) {
+                        Logf("  %s: empty", eventName);
+                    } else {
+                        Logf("  %s: %u events", eventName, queue->Size());
+                    }
                 }
             }
         }

@@ -2,6 +2,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/components/Events.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
@@ -21,6 +22,7 @@ namespace ecs {
     struct CharacterController {
         EntityRef head;
 
+        ecs::EventQueueRef eventQueue;
         physx::PxCapsuleController *pxController = nullptr;
     };
 

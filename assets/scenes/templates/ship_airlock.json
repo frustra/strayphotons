@@ -12,7 +12,7 @@
 				"parameters": { "source": "laser_cube" }
 			},
 			"signal_output": {},
-			"trigger_area": {}
+			"trigger_area": "Box"
 		},
 		{
 			"name": "door-in",

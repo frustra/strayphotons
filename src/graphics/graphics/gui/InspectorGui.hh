@@ -13,7 +13,18 @@
 namespace sp {
     class InspectorGui : public GuiWindow {
     public:
-        InspectorGui(const string &name) : GuiWindow(name) {}
+        InspectorGui(const string &name) : GuiWindow(name) {
+            std::thread([this]() {
+                auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+
+                auto inspector = inspectorEntity.Get(lock);
+                Assertf(inspector.Has<ecs::EventInput>(lock),
+                    "InspectorGui entity is missing EventInput: %s",
+                    inspectorEntity.Name().String());
+                auto &eventInput = inspector.Get<ecs::EventInput>(lock);
+                eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
+            }).detach();
+        }
         virtual ~InspectorGui() {}
 
         void DefineContents() {
@@ -25,7 +36,9 @@ namespace sp {
                 if (!inspector.Has<ecs::EventInput>(liveLock)) return;
 
                 ecs::Event event;
-                while (ecs::EventInput::Poll(liveLock, inspector, EDITOR_EVENT_EDIT_TARGET, event)) {
+                while (ecs::EventInput::Poll(liveLock, events, event)) {
+                    if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
+
                     auto newTarget = std::get_if<ecs::Entity>(&event.data);
                     if (!newTarget) {
                         Errorf("Invalid editor event: %s", event.toString());
@@ -162,6 +175,8 @@ namespace sp {
 
     private:
         vector<vector<ecs::Entity>> children;
+
+        ecs::EventQueueRef events = ecs::NewEventQueue();
 
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         ecs::EntityRef targetEntity;
