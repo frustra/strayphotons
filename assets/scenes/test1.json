@@ -245,7 +245,7 @@
 		{
 			"name": "mova-mirror.mirrorface.optic",
 			"optic": {
-				"tint": [1, 1, 1]
+				"tint": [1, 1, 0.99]
 			}
 		},
 		{
