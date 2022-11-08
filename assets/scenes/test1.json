@@ -243,6 +243,12 @@
 			}
 		},
 		{
+			"name": "mova-mirror.mirrorface.optic",
+			"optic": {
+				"tint": [1, 1, 1]
+			}
+		},
+		{
 			"name": "mcube",
 			"transform": {
 				"translate": [-2.2, 2.5, 3]
