@@ -41,8 +41,16 @@ namespace sp {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) continue;
                 auto &transform = triggerEnt.Get<ecs::TransformSnapshot>(lock);
                 auto entityPos = invAreaTransform * glm::vec4(transform.GetPosition(), 1.0);
-                bool inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
-                              glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
+                bool inArea = false;
+                switch (area.shape) {
+                case ecs::TriggerShape::Box:
+                    inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
+                             glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
+                    break;
+                case ecs::TriggerShape::Sphere:
+                    inArea = glm::length(entityPos) < 1.0;
+                    break;
+                }
 
                 auto &triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);
                 auto &containedEntities = area.containedEntities[triggerGroup];

@@ -85,8 +85,6 @@ namespace sp {
         std::array<PxTransform, 2> localPoses;
         ecs::Transform targetTransform;
 
-        float magnetRadius = -1.0f;
-
         PxConstraint *pxConstraint = nullptr;
         Data data = {};
         static PxConstraintShaderTable shaderTable;

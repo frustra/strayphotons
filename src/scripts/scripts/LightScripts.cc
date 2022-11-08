@@ -12,9 +12,10 @@ namespace sp::scripts {
         "Flashlight parent entity name");
 
     std::array lightScripts = {
-        InternalScript("flashlight",
+        InternalScript(
+            "flashlight",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Light, TransformTree, SignalOutput, EventInput>(lock)) {
+                if (ent.Has<Light, TransformTree, SignalOutput>(lock)) {
                     auto &light = ent.Get<Light>(lock);
                     auto &signalComp = ent.Get<SignalOutput>(lock);
 
@@ -23,28 +24,31 @@ namespace sp::scripts {
                     light.spotAngle = glm::radians(signalComp.GetSignal("angle"));
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/action/flashlight/toggle", event)) {
-                        signalComp.SetSignal("on", light.on ? 0.0 : 1.0);
-                        light.on = !light.on;
-                    }
-                    while (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
-                        auto &transform = ent.Get<TransformTree>(lock);
-                        if (transform.parent) {
-                            transform.pose = transform.GetGlobalTransform(lock);
-                            transform.parent = EntityRef();
-                        } else {
-                            ecs::Name parentName(CVarFlashlightParent.Get(), ecs::Name());
-                            if (parentName) {
-                                transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
-                                transform.pose.SetRotation(glm::quat());
-                                transform.parent = parentName;
+                    while (EventInput::Poll(lock, state.eventQueue, event)) {
+                        if (event.name == "/action/flashlight/toggle") {
+                            signalComp.SetSignal("on", light.on ? 0.0 : 1.0);
+                            light.on = !light.on;
+                        } else if (event.name == "/action/flashlight/grab") {
+                            auto &transform = ent.Get<TransformTree>(lock);
+                            if (transform.parent) {
+                                transform.pose = transform.GetGlobalTransform(lock);
+                                transform.parent = EntityRef();
                             } else {
-                                Errorf("Flashlight parent entity name is invalid: %s", CVarFlashlightParent.Get());
+                                ecs::Name parentName(CVarFlashlightParent.Get(), ecs::Name());
+                                if (parentName) {
+                                    transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
+                                    transform.pose.SetRotation(glm::quat());
+                                    transform.parent = parentName;
+                                } else {
+                                    Errorf("Flashlight parent entity name is invalid: %s", CVarFlashlightParent.Get());
+                                }
                             }
                         }
                     }
                 }
-            }),
+            },
+            "/action/flashlight/toggle",
+            "/action/flashlight/grab"),
 
         InternalScript("sun",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {

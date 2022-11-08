@@ -32,7 +32,6 @@ namespace ecs {
         EntityRef target;
         PhysicsJointType type = PhysicsJointType::Fixed;
         glm::vec2 limit = glm::vec2();
-        float magnetRadius = -1.0f;
         glm::vec3 localOffset = glm::vec3(), remoteOffset = glm::vec3();
         glm::quat localOrient = glm::quat(), remoteOrient = glm::quat();
 

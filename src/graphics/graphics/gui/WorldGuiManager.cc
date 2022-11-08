@@ -10,8 +10,15 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    WorldGuiManager::WorldGuiManager(ecs::Entity guiEntity, const std::string &name)
-        : GuiContext(name), guiEntity(guiEntity) {}
+    WorldGuiManager::WorldGuiManager(ecs::Entity gui, const std::string &name) : GuiContext(name), guiEntity(gui) {}
+
+    void WorldGuiManager::RegisterEvents(ecs::Lock<ecs::Write<ecs::EventInput>> lock) {
+        auto gui = guiEntity.Get(lock);
+        Assertf(gui.Has<ecs::EventInput>(lock), "World Gui entity has no EventInput: %s", std::to_string(guiEntity));
+        auto &eventInput = gui.Get<ecs::EventInput>(lock);
+        eventInput.Register(events, INTERACT_EVENT_INTERACT_POINT);
+        eventInput.Register(events, INTERACT_EVENT_INTERACT_PRESS);
+    }
 
     void WorldGuiManager::DefineWindows() {
         for (auto &window : components) {
@@ -42,30 +49,37 @@ namespace sp {
 
             if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
-                while (ecs::EventInput::Poll(lock, gui, INTERACT_EVENT_INTERACT_POINT, event)) {
-                    if (std::holds_alternative<ecs::Transform>(event.data)) {
-                        auto pointWorld = std::get<ecs::Transform>(event.data).GetPosition();
-                        auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
-                        pointOnScreen += 0.5f;
+                while (ecs::EventInput::Poll(lock, events, event)) {
+                    if (event.name == INTERACT_EVENT_INTERACT_POINT) {
 
-                        glm::vec2 mousePos = {
-                            pointOnScreen.x * io.DisplaySize.x,
-                            (1.0f - pointOnScreen.y) * io.DisplaySize.y,
-                        };
+                        if (std::holds_alternative<ecs::Transform>(event.data)) {
+                            auto pointWorld = std::get<ecs::Transform>(event.data).GetPosition();
+                            auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
+                            pointOnScreen += 0.5f;
 
-                        auto existingPos = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
-                            return state.sourceEntity == event.source;
-                        });
+                            glm::vec2 mousePos = {
+                                pointOnScreen.x * io.DisplaySize.x,
+                                (1.0f - pointOnScreen.y) * io.DisplaySize.y,
+                            };
 
-                        if (existingPos != pointingStack.end()) {
-                            existingPos->mousePos = mousePos;
+                            auto existingPos = std::find_if(pointingStack.begin(),
+                                pointingStack.end(),
+                                [&](auto &state) {
+                                    return state.sourceEntity == event.source;
+                                });
+
+                            if (existingPos != pointingStack.end()) {
+                                existingPos->mousePos = mousePos;
+                            } else {
+                                pointingStack.emplace_back(PointingState{event.source, mousePos});
+                            }
                         } else {
-                            pointingStack.emplace_back(PointingState{event.source, mousePos});
+                            erase_if(pointingStack, [&](auto &state) {
+                                return state.sourceEntity == event.source;
+                            });
                         }
-                    } else {
-                        erase_if(pointingStack, [&](auto &state) {
-                            return state.sourceEntity == event.source;
-                        });
+                    } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
+                        if (std::holds_alternative<bool>(event.data)) io.MouseDown[0] = std::get<bool>(event.data);
                     }
                 }
 
@@ -74,10 +88,6 @@ namespace sp {
 
                     io.MousePos.x = mousePos.x;
                     io.MousePos.y = mousePos.y;
-                }
-
-                while (ecs::EventInput::Poll(lock, gui, INTERACT_EVENT_INTERACT_PRESS, event)) {
-                    if (std::holds_alternative<bool>(event.data)) io.MouseDown[0] = std::get<bool>(event.data);
                 }
             } else {
                 io.MouseDown[0] = false;

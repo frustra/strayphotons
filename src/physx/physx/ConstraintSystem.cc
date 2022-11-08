@@ -54,16 +54,6 @@ namespace sp {
         float maxForce = joint->ecsJoint.limit.x;
         float maxTorque = joint->ecsJoint.limit.y;
 
-        float magneticRadiusScale = 1.0f;
-        if (joint->ecsJoint.type == ecs::PhysicsJointType::Magnetic) {
-            auto distance = glm::length(deltaPos);
-            if (distance > joint->ecsJoint.magnetRadius || joint->ecsJoint.magnetRadius <= 0.0f) {
-                magneticRadiusScale = 0.0f;
-            } else {
-                magneticRadiusScale = 1.0f - (distance / joint->ecsJoint.magnetRadius);
-            }
-        }
-
         bool wakeUp = false;
 
         // Update Torque
@@ -95,7 +85,7 @@ namespace sp {
             glm::vec3 accel = deltaVelocity * tickFrequency;
             glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
             auto clampRatio = glm::min(maxAcceleration, accelAbs) / accelAbs;
-            wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio * magneticRadiusScale);
+            wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio);
         } else {
             wakeUp |= joint->forceConstraint->setAngularAccel(glm::vec3(0));
         }
@@ -120,7 +110,7 @@ namespace sp {
             glm::vec3 accel = deltaVelocity * tickFrequency;
             float accelAbs = glm::length(accel) + 0.00001f;
             auto clampRatio = std::min(maxAcceleration, accelAbs) / accelAbs;
-            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio * magneticRadiusScale);
+            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio);
         } else {
             wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
         }

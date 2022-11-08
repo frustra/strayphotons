@@ -45,11 +45,6 @@ namespace ecs {
                         Errorf("Invalid physics_joint limit: %s", jointParam.second.to_str());
                         return false;
                     }
-                } else if (jointParam.first == "magnet_radius") {
-                    if (!sp::json::Load(scope, joint.magnetRadius, jointParam.second)) {
-                        Errorf("Invalid magnet_radius: %s", jointParam.second.to_str());
-                        return false;
-                    }
                 } else if (jointParam.first == "local_offset") {
                     if (!sp::json::Load(scope, localTransform, jointParam.second)) {
                         Errorf("Couldn't parse physics joint local_offset as Transform");

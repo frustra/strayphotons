@@ -15,7 +15,7 @@
 			}
 		},
 		{
-			"trigger_area": {},
+			"trigger_area": "Sphere",
 			"transform": {
 				"parent": "surface",
 				"translate": [0, 0.03, 0],
@@ -31,11 +31,7 @@
 					"parameters": { "source": "laser_cube" }
 				},
 				{
-					"onEvent": "magnetic_socket",
-					"filter_events": [
-						"/trigger/magnetic/enter",
-						"/trigger/magnetic/leave"
-					]
+					"onEvent": "magnetic_socket"
 				}
 			]
 		}

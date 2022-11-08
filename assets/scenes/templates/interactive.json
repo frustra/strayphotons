@@ -6,12 +6,7 @@
 			"/interact/rotate"
 		],
 		"script": {
-			"onEvent": "interactive_object",
-			"filter_events": [
-				"/interact/grab",
-				"/interact/point",
-				"/interact/rotate"
-			]
+			"onEvent": "interactive_object"
 		},
 		"physics_joints": [],
 		"physics_query": {}

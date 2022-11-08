@@ -16,25 +16,27 @@ namespace sp::scripts {
         "Enable Smooth Rotation instead of Snap Rotation");
 
     std::array inputScripts = {
-        InternalScript("joystick_calibration",
+        InternalScript(
+            "joystick_calibration",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<Name, EventInput>(lock)) {
-                    Event event;
-                    while (EventInput::Poll(lock, ent, "/action/joystick_in", event)) {
-                        auto data = std::get_if<glm::vec2>(&event.data);
-                        if (data) {
-                            float factorParamX = state.GetParam<double>("scale_x");
-                            float factorParamY = state.GetParam<double>("scale_y");
-                            EventBindings::SendEvent(lock,
-                                "/script/joystick_out",
-                                ent,
-                                glm::vec2(data->x * factorParamX, data->y * factorParamY));
-                        } else {
-                            Errorf("Unsupported joystick_in event type: %s", event.toString());
-                        }
+                Event event;
+                while (EventInput::Poll(lock, state.eventQueue, event)) {
+                    if (event.name != "/action/joystick_in") continue;
+
+                    auto data = std::get_if<glm::vec2>(&event.data);
+                    if (data) {
+                        float factorParamX = state.GetParam<double>("scale_x");
+                        float factorParamY = state.GetParam<double>("scale_y");
+                        EventBindings::SendEvent(lock,
+                            "/script/joystick_out",
+                            ent,
+                            glm::vec2(data->x * factorParamX, data->y * factorParamY));
+                    } else {
+                        Errorf("Unsupported joystick_in event type: %s", event.toString());
                     }
                 }
-            }),
+            },
+            "/action/joystick_in"),
         InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
                 if (ent.Has<SignalOutput>(lock)) {
@@ -104,9 +106,10 @@ namespace sp::scripts {
                     outputComp.SetSignal("move_relative_z", output.z);
                 }
             }),
-        InternalScript("player_rotation",
+        InternalScript(
+            "player_rotation",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformTree>(lock)) {
+                if (ent.Has<TransformTree>(lock)) {
                     auto relativeTargetName = state.GetParam<std::string>("relative_to");
                     auto targetEntity = state.GetParam<EntityRef>("target_entity");
                     ecs::Name targetName(relativeTargetName, state.scope.prefix);
@@ -132,7 +135,9 @@ namespace sp::scripts {
                         }
                     } else {
                         Event event;
-                        while (EventInput::Poll(lock, ent, "/action/snap_rotate", event)) {
+                        while (EventInput::Poll(lock, state.eventQueue, event)) {
+                            if (event.name != "/action/snap_rotate") continue;
+
                             auto angleDiff = std::get<double>(event.data);
                             if (angleDiff != 0.0f) {
                                 transform.pose.Rotate(glm::radians(angleDiff), glm::vec3(0, -1, 0));
@@ -146,12 +151,16 @@ namespace sp::scripts {
                         transform.pose.Translate(oldPosition - newPosition);
                     }
                 }
-            }),
-        InternalScript("camera_view",
+            },
+            "/action/snap_rotate"),
+        InternalScript(
+            "camera_view",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformTree>(lock)) {
+                if (ent.Has<TransformTree>(lock)) {
                     Event event;
-                    while (EventInput::Poll(lock, ent, "/script/camera_rotate", event)) {
+                    while (EventInput::Poll(lock, state.eventQueue, event)) {
+                        if (event.name != "/script/camera_rotate") continue;
+
                         auto angleDiff = std::get<glm::vec2>(event.data);
                         if (SignalBindings::GetSignal(lock, ent, "interact_rotate") < 0.5) {
                             // Apply pitch/yaw rotations
@@ -173,6 +182,7 @@ namespace sp::scripts {
                         }
                     }
                 }
-            }),
+            },
+            "/script/camera_rotate"),
     };
 } // namespace sp::scripts

@@ -36,7 +36,6 @@
 			"physics_joints": [{
 				"target": "testroot",
 				"type": "Force",
-				"magnet_radius": 1,
 				"limit": [10, 0.5]
 			}]
 		},
@@ -248,9 +247,6 @@
 			},
 			"script": {
 				"onEvent": "event_gate_by_signal",
-				"filter_events": [
-					"/button/press"
-				],
 				"parameters": {
 					"input_event": "/button/press",
 					"output_event": "open_door",
@@ -479,8 +475,7 @@
 					"parameters": { "source": "interactive" }
 				},
 				{
-					"onEvent": "magnetic_plug",
-					"filter_events": ["/magnetic/nearby"]
+					"onEvent": "magnetic_plug"
 				}
 			]
 		},

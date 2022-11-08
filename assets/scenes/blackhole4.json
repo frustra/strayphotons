@@ -22,7 +22,7 @@
 				"scale": [24, 8, 10],
 				"translate": [0, 3, 0]
 			},
-			"trigger_area": {}
+			"trigger_area": "Box"
 		},
 		{
 			"name": "segment",

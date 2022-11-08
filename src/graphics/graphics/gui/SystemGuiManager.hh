@@ -14,6 +14,8 @@ namespace sp {
         ecs::EntityRef guiEntity;
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
 
+        ecs::EventQueueRef events = ecs::NewEventQueue();
+
         ecs::FocusLayer focusLayer;
     };
 } // namespace sp

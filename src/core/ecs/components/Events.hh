@@ -52,6 +52,8 @@ namespace ecs {
 
     class EventQueue {
     public:
+        EventQueue() {}
+
         void Add(const Event &event);
         bool Empty();
         size_t Size();
@@ -62,27 +64,20 @@ namespace ecs {
         sp::LockFreeMutex mutex;
     };
 
-    struct EventInput {
-        robin_hood::unordered_map<std::string, shared_ptr<EventQueue>> events;
+    using EventQueueRef = std::shared_ptr<EventQueue>;
 
+    EventQueueRef NewEventQueue();
+
+    struct EventInput {
         EventInput() {}
 
-        template<class... Args>
-        EventInput(const Args &...eventList) {
-            for (auto &event : {eventList...}) {
-                Register(event);
-            }
-        }
-
-        void Register(const std::string &binding);
-        bool IsRegistered(const std::string &binding) const;
-        void Unregister(const std::string &binding);
+        void Register(const EventQueueRef &queue, const std::string &binding);
+        void Unregister(const EventQueueRef &queue, const std::string &binding);
 
         bool Add(const std::string &binding, const Event &event) const;
-        bool HasEvents(const std::string &binding) const;
-        bool Poll(const std::string &binding, Event &eventOut) const;
+        static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        static bool Poll(Lock<Read<EventInput>> lock, Entity ent, const std::string &binding, Event &eventOut);
+        robin_hood::unordered_map<std::string, std::vector<std::shared_ptr<EventQueue>>> events;
     };
 
     class EventBindings {
@@ -136,11 +131,7 @@ namespace ecs {
     static Component<EventBindings> ComponentEventBindings("event_bindings");
 
     template<>
-    bool Component<EventInput>::Load(const EntityScope &scope, EventInput &dst, const picojson::value &src);
-    template<>
     bool Component<EventBindings>::Load(const EntityScope &scope, EventBindings &dst, const picojson::value &src);
-    template<>
-    void Component<EventInput>::Apply(const EventInput &src, Lock<AddRemove> lock, Entity dst);
     template<>
     void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

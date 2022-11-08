@@ -14,9 +14,10 @@ namespace sp::scripts {
         "Toggle to use a fixed joint instead of force limited joint");
 
     std::array interactionScripts = {
-        InternalScript("interactive_object",
+        InternalScript(
+            "interactive_object",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformSnapshot, Physics, PhysicsJoints>(lock)) {
+                if (ent.Has<TransformSnapshot, Physics, PhysicsJoints>(lock)) {
                     auto &ph = ent.Get<Physics>(lock);
                     auto &joints = ent.Get<PhysicsJoints>(lock);
                     if (!ph.dynamic || ph.kinematic) {
@@ -46,68 +47,66 @@ namespace sp::scripts {
                     }
 
                     Event event;
-                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_POINT, event)) {
-                        auto pointTransform = std::get_if<Transform>(&event.data);
-                        if (pointTransform) {
-                            scriptData.pointTransform = *pointTransform;
-                            scriptData.pointEntities.emplace_back(event.source);
-                        } else if (std::holds_alternative<bool>(event.data)) {
-                            scriptData.pointTransform = {};
-                            sp::erase(scriptData.pointEntities, event.source);
-                        } else {
-                            Errorf("Unsupported point event type: %s", event.toString());
-                        }
-                    }
-
-                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
-                        if (std::holds_alternative<bool>(event.data)) {
-                            // Grab(false) = Drop
-                            sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == event.source;
-                            });
-                            sp::erase(scriptData.grabEntities, event.source);
-                        } else if (std::holds_alternative<Transform>(event.data)) {
-                            auto &parentTransform = std::get<Transform>(event.data);
-                            auto &transform = ent.Get<TransformSnapshot>(lock);
-                            auto invParentRotate = glm::inverse(parentTransform.GetRotation());
-
-                            scriptData.grabEntities.emplace_back(event.source);
-
-                            PhysicsJoint joint;
-                            joint.target = event.source;
-                            if (CVarFixedJointGrab.Get()) {
-                                joint.type = PhysicsJointType::Fixed;
+                    while (EventInput::Poll(lock, state.eventQueue, event)) {
+                        if (event.name == INTERACT_EVENT_INTERACT_POINT) {
+                            auto pointTransform = std::get_if<Transform>(&event.data);
+                            if (pointTransform) {
+                                scriptData.pointTransform = *pointTransform;
+                                scriptData.pointEntities.emplace_back(event.source);
+                            } else if (std::holds_alternative<bool>(event.data)) {
+                                scriptData.pointTransform = {};
+                                sp::erase(scriptData.pointEntities, event.source);
                             } else {
-                                joint.type = PhysicsJointType::Force;
-                                // TODO: Read this property from player
-                                joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
+                                Errorf("Unsupported point event type: %s", event.toString());
                             }
-                            joint.remoteOffset = invParentRotate *
-                                                 (transform.GetPosition() - parentTransform.GetPosition());
-                            joint.remoteOrient = invParentRotate * transform.GetRotation();
-                            joints.Add(joint);
-                        } else {
-                            Errorf("Unsupported grab event type: %s", event.toString());
-                        }
-                    }
+                        } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                            if (std::holds_alternative<bool>(event.data)) {
+                                // Grab(false) = Drop
+                                sp::erase_if(joints.joints, [&](auto &&joint) {
+                                    return joint.target == event.source;
+                                });
+                                sp::erase(scriptData.grabEntities, event.source);
+                            } else if (std::holds_alternative<Transform>(event.data)) {
+                                auto &parentTransform = std::get<Transform>(event.data);
+                                auto &transform = ent.Get<TransformSnapshot>(lock);
+                                auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
-                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
-                        if (std::holds_alternative<glm::vec2>(event.data)) {
-                            if (!event.source.Has<TransformSnapshot>(lock)) continue;
+                                scriptData.grabEntities.emplace_back(event.source);
 
-                            auto &input = std::get<glm::vec2>(event.data);
-                            auto &transform = event.source.Get<const TransformSnapshot>(lock);
+                                PhysicsJoint joint;
+                                joint.target = event.source;
+                                if (CVarFixedJointGrab.Get()) {
+                                    joint.type = PhysicsJointType::Fixed;
+                                } else {
+                                    joint.type = PhysicsJointType::Force;
+                                    // TODO: Read this property from player
+                                    joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
+                                }
+                                joint.remoteOffset = invParentRotate *
+                                                     (transform.GetPosition() - parentTransform.GetPosition());
+                                joint.remoteOrient = invParentRotate * transform.GetRotation();
+                                joints.Add(joint);
+                            } else {
+                                Errorf("Unsupported grab event type: %s", event.toString());
+                            }
+                        } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
+                            if (std::holds_alternative<glm::vec2>(event.data)) {
+                                if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
-                            auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
-                            auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
-                                               glm::angleAxis(input.x, upAxis);
+                                auto &input = std::get<glm::vec2>(event.data);
+                                auto &transform = event.source.Get<const TransformSnapshot>(lock);
 
-                            for (auto &joint : joints.joints) {
-                                if (joint.target == event.source) {
-                                    // Move the objects origin so it rotates around its center of mass
-                                    auto center = joint.remoteOrient * centerOfMass;
-                                    joint.remoteOffset += center - (deltaRotate * center);
-                                    joint.remoteOrient = deltaRotate * joint.remoteOrient;
+                                auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
+                                auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
+                                                   glm::angleAxis(input.x, upAxis);
+
+                                for (auto &joint : joints.joints) {
+                                    if (joint.target == event.source) {
+                                        // Move the objects origin so it rotates around its center of mass
+                                        auto center = joint.remoteOrient * centerOfMass;
+                                        joint.remoteOffset += center - (deltaRotate * center);
+                                        joint.remoteOrient = deltaRotate * joint.remoteOrient;
+                                    }
                                 }
                             }
                         }
@@ -137,10 +136,14 @@ namespace sp::scripts {
 
                     state.userData = scriptData;
                 }
-            }),
-        InternalScript("interact_handler",
+            },
+            INTERACT_EVENT_INTERACT_POINT,
+            INTERACT_EVENT_INTERACT_GRAB,
+            INTERACT_EVENT_INTERACT_ROTATE),
+        InternalScript(
+            "interact_handler",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (ent.Has<EventInput, TransformSnapshot, PhysicsQuery>(lock)) {
+                if (ent.Has<TransformSnapshot, PhysicsQuery>(lock)) {
                     auto &query = ent.Get<PhysicsQuery>(lock);
                     auto &transform = ent.Get<TransformSnapshot>(lock);
 
@@ -163,61 +166,60 @@ namespace sp::scripts {
                                 PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
                     }
 
+                    bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
+
                     Event event;
-                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_GRAB, event)) {
-                        if (std::holds_alternative<bool>(event.data)) {
-                            auto &grabEvent = std::get<bool>(event.data);
-                            auto justDropped = scriptData.grabEntity;
-                            if (scriptData.grabEntity) {
-                                // Drop the currently held entity
-                                EventBindings::SendEvent(lock,
-                                    scriptData.grabEntity,
-                                    INTERACT_EVENT_INTERACT_GRAB,
-                                    Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
-                                scriptData.grabEntity = {};
-                            }
-                            if (grabEvent && raycastResult.target && raycastResult.target != justDropped) {
-                                // Grab the entity being looked at
-                                if (EventBindings::SendEvent(lock,
-                                        raycastResult.target,
+                    while (EventInput::Poll(lock, state.eventQueue, event)) {
+                        if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                            if (std::holds_alternative<bool>(event.data)) {
+                                auto &grabEvent = std::get<bool>(event.data);
+                                auto justDropped = scriptData.grabEntity;
+                                if (scriptData.grabEntity) {
+                                    // Drop the currently held entity
+                                    EventBindings::SendEvent(lock,
+                                        scriptData.grabEntity,
                                         INTERACT_EVENT_INTERACT_GRAB,
-                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    scriptData.grabEntity = raycastResult.target;
+                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                                    scriptData.grabEntity = {};
+                                }
+                                if (grabEvent && raycastResult.target && raycastResult.target != justDropped) {
+                                    // Grab the entity being looked at
+                                    if (EventBindings::SendEvent(lock,
+                                            raycastResult.target,
+                                            INTERACT_EVENT_INTERACT_GRAB,
+                                            Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
+                                        scriptData.grabEntity = raycastResult.target;
+                                    }
+                                }
+                            } else {
+                                Errorf("Unsupported grab event type: %s", event.toString());
+                            }
+                        } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
+                            if (std::holds_alternative<bool>(event.data)) {
+                                if (scriptData.pressEntity) {
+                                    // Unpress the currently pressed entity
+                                    EventBindings::SendEvent(lock,
+                                        scriptData.pressEntity,
+                                        INTERACT_EVENT_INTERACT_PRESS,
+                                        Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
+                                    scriptData.pressEntity = {};
+                                }
+                                if (std::get<bool>(event.data) && raycastResult.target) {
+                                    // Press the entity being looked at
+                                    EventBindings::SendEvent(lock,
+                                        raycastResult.target,
+                                        INTERACT_EVENT_INTERACT_PRESS,
+                                        Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
+                                    scriptData.pressEntity = raycastResult.target;
                                 }
                             }
-                        } else {
-                            Errorf("Unsupported grab event type: %s", event.toString());
-                        }
-                    }
-
-                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_PRESS, event)) {
-                        if (std::holds_alternative<bool>(event.data)) {
-                            if (scriptData.pressEntity) {
-                                // Unpress the currently pressed entity
+                        } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
+                            if (rotating && scriptData.grabEntity) {
                                 EventBindings::SendEvent(lock,
-                                    scriptData.pressEntity,
-                                    INTERACT_EVENT_INTERACT_PRESS,
-                                    Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
-                                scriptData.pressEntity = {};
+                                    scriptData.grabEntity,
+                                    INTERACT_EVENT_INTERACT_ROTATE,
+                                    Event{INTERACT_EVENT_INTERACT_ROTATE, ent, event.data});
                             }
-                            if (std::get<bool>(event.data) && raycastResult.target) {
-                                // Press the entity being looked at
-                                EventBindings::SendEvent(lock,
-                                    raycastResult.target,
-                                    INTERACT_EVENT_INTERACT_PRESS,
-                                    Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
-                                scriptData.pressEntity = raycastResult.target;
-                            }
-                        }
-                    }
-
-                    bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
-                    while (EventInput::Poll(lock, ent, INTERACT_EVENT_INTERACT_ROTATE, event)) {
-                        if (rotating && scriptData.grabEntity) {
-                            EventBindings::SendEvent(lock,
-                                scriptData.grabEntity,
-                                INTERACT_EVENT_INTERACT_ROTATE,
-                                Event{INTERACT_EVENT_INTERACT_ROTATE, ent, event.data});
                         }
                     }
 
@@ -239,6 +241,9 @@ namespace sp::scripts {
 
                     state.userData = scriptData;
                 }
-            }),
+            },
+            INTERACT_EVENT_INTERACT_GRAB,
+            INTERACT_EVENT_INTERACT_PRESS,
+            INTERACT_EVENT_INTERACT_ROTATE),
     };
 } // namespace sp::scripts

@@ -2,6 +2,7 @@
 
 #include "assets/Async.hh"
 #include "ecs/Components.hh"
+#include "ecs/components/Events.hh"
 
 namespace sp {
     class Asset;
@@ -26,6 +27,7 @@ namespace ecs {
 
     struct Sounds {
         vector<Sound> sounds;
+        EventQueueRef eventQueue;
 
         // Update these fields at any point
         float occlusion = 0.0f, occlusionWeight = 1.0f;

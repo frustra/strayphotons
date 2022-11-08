@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/components/Events.hh"
 #include "graphics/gui/SystemGuiManager.hh"
 
 namespace sp {
@@ -19,6 +20,8 @@ namespace sp {
 
         bool consoleOpen = false;
         ecs::ComponentObserver<ecs::Gui> guiObserver;
+
+        ecs::EventQueueRef events = ecs::NewEventQueue();
 
         struct GuiEntityContext {
             ecs::Entity entity;

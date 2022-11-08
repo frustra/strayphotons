@@ -26,7 +26,7 @@
 				"prefab": "template",
 				"parameters": { "source": "laser_cube" }
 			},
-			"trigger_area": {}
+			"trigger_area": "Box"
 		},
 		{
 			"name": "transition_zone",
@@ -39,7 +39,7 @@
 				"prefab": "template",
 				"parameters": { "source": "laser_cube" }
 			},
-			"trigger_area": {}
+			"trigger_area": "Box"
 		},
 		{
 			"name": "global:spawn",
@@ -188,7 +188,7 @@
 				"scale": [3, 1, 3]
 			},
 			"signal_output": {},
-			"trigger_area": {},
+			"trigger_area": "Box",
 			"event_bindings": {
 				"/trigger/object/enter": {
 					"target": "console:input/action/run_command",

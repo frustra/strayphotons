@@ -22,7 +22,7 @@
 				"scale": [2.5, 3, 2.5]
 			},
 			"signal_output": {},
-			"trigger_area": {},
+			"trigger_area": "Box",
 			"event_bindings": {
 				"/trigger/player/enter": "scoperoot/trigger/player/enter"
 			}

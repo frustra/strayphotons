@@ -32,14 +32,16 @@ namespace sp {
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
                 inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
                 inspector.Set<ecs::Screen>(lock);
-                inspector.Set<ecs::EventInput>(lock,
-                    INTERACT_EVENT_INTERACT_POINT,
-                    INTERACT_EVENT_INTERACT_PRESS,
-                    EDITOR_EVENT_EDIT_TARGET);
                 inspector.Set<ecs::TransformTree>(lock);
+
                 auto &ph = inspector.Set<ecs::Physics>(lock);
                 ph.group = ecs::PhysicsGroup::UserInterface;
                 ph.dynamic = false;
+
+                auto &eventInput = inspector.Set<ecs::EventInput>(lock);
+                eventInput.Register(events, INTERACT_EVENT_INTERACT_POINT);
+                eventInput.Register(events, INTERACT_EVENT_INTERACT_PRESS);
+                eventInput.Register(events, EDITOR_EVENT_EDIT_TARGET);
             });
     }
 

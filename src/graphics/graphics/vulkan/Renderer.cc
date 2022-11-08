@@ -53,7 +53,7 @@ namespace sp::vulkan {
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
-            AddGui(ent, ent.Get<const ecs::Gui>(lock));
+            AddGui(lock, ent);
         }
 
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
@@ -448,9 +448,11 @@ namespace sp::vulkan {
     }
 #endif
 
-    void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
+    void Renderer::AddGui(ecs::Lock<ecs::Read<ecs::Gui>, ecs::Write<ecs::EventInput>> lock, ecs::Entity ent) {
+        auto &gui = ent.Get<ecs::Gui>(lock);
         if (!gui.windowName.empty()) {
             auto context = make_shared<WorldGuiManager>(ent, gui.windowName);
+            context->RegisterEvents(lock);
             if (CreateGuiWindow(context.get(), gui.windowName)) {
                 guis.emplace_back(RenderableGui{ent, context.get(), context});
             }
@@ -471,7 +473,7 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 if (!eventEntity.Has<ecs::Gui>(lock)) continue;
-                AddGui(eventEntity, eventEntity.Get<ecs::Gui>(lock));
+                AddGui(lock, eventEntity);
             }
         }
 
