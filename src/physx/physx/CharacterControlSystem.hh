@@ -14,7 +14,7 @@ namespace sp {
         CharacterControlSystem(PhysxManager &manager);
         ~CharacterControlSystem() {}
 
-        void Prepare();
+        void RegisterEvents();
         void Frame(ecs::Lock<ecs::ReadSignalsLock,
             ecs::Read<ecs::EventInput, ecs::SceneInfo>,
             ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock);

@@ -287,7 +287,6 @@ namespace sp {
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Force:
-                case ecs::PhysicsJointType::Magnetic:
                     // Free'd automatically on release();
                     joint->forceConstraint =
                         new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
@@ -363,8 +362,6 @@ namespace sp {
                     prismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
                 }
             } else if (ecsJoint.type == ecs::PhysicsJointType::Force) {
-                joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.x, ecsJoint.limit.y);
-            } else if (ecsJoint.type == ecs::PhysicsJointType::Magnetic) {
                 joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.x, ecsJoint.limit.y);
             }
         }

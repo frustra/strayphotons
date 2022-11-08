@@ -48,7 +48,7 @@ namespace sp {
                              glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
                     break;
                 case ecs::TriggerShape::Sphere:
-                    inArea = glm::length(entityPos) < 1.0;
+                    inArea = glm::length(entityPos) < 0.5;
                     break;
                 }
 

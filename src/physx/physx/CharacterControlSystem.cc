@@ -105,7 +105,7 @@ namespace sp {
         pxController->getActor()->setGlobalPose(globalPose);
     }
 
-    void CharacterControlSystem::Prepare() {
+    void CharacterControlSystem::RegisterEvents() {
         auto lock = ecs::StartTransaction<ecs::Write<ecs::CharacterController, ecs::EventInput>>();
         for (auto &ent : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!ent.Has<ecs::CharacterController, ecs::EventInput>(lock)) continue;

@@ -172,7 +172,7 @@ namespace sp {
             scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, joints);
         }
 
-        characterControlSystem.Prepare();
+        characterControlSystem.RegisterEvents();
 
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
@@ -498,8 +498,6 @@ namespace sp {
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES,
                     true);
-            } else {
-                // actor->is<PxRigidBody>()->setMaxAngularVelocity(1000.0f);
             }
         } else {
             actor = pxPhysics->createRigidStatic(pxTransform);

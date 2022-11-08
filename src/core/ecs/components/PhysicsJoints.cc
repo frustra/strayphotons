@@ -34,8 +34,6 @@ namespace ecs {
                         joint.type = PhysicsJointType::Slider;
                     } else if (typeString == "FORCE") {
                         joint.type = PhysicsJointType::Force;
-                    } else if (typeString == "MAGNETIC") {
-                        joint.type = PhysicsJointType::Magnetic;
                     } else {
                         Errorf("Unknown joint type: %s", typeString);
                         return false;
