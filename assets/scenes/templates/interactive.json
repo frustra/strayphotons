@@ -1,10 +1,6 @@
 {
 	"components": {
-		"event_input": [
-			"/interact/grab",
-			"/interact/point",
-			"/interact/rotate"
-		],
+		"event_input": {},
 		"script": {
 			"onEvent": "interactive_object"
 		},

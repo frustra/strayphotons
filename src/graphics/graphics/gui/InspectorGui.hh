@@ -22,7 +22,7 @@ namespace sp {
                     "InspectorGui entity is missing EventInput: %s",
                     inspectorEntity.Name().String());
                 auto &eventInput = inspector.Get<ecs::EventInput>(lock);
-                eventInput.Register(events, EDITOR_EVENT_EDIT_TARGET);
+                eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
             }).detach();
         }
         virtual ~InspectorGui() {}

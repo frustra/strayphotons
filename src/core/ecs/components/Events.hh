@@ -71,7 +71,7 @@ namespace ecs {
     struct EventInput {
         EventInput() {}
 
-        void Register(const EventQueueRef &queue, const std::string &binding);
+        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding);
         void Unregister(const EventQueueRef &queue, const std::string &binding);
 
         bool Add(const std::string &binding, const Event &event) const;

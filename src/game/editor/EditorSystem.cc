@@ -32,17 +32,25 @@ namespace sp {
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
                 inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
                 inspector.Set<ecs::Screen>(lock);
+                inspector.Set<ecs::EventInput>(lock);
                 inspector.Set<ecs::TransformTree>(lock);
 
                 auto &ph = inspector.Set<ecs::Physics>(lock);
                 ph.group = ecs::PhysicsGroup::UserInterface;
                 ph.dynamic = false;
-
-                auto &eventInput = inspector.Set<ecs::EventInput>(lock);
-                eventInput.Register(events, INTERACT_EVENT_INTERACT_POINT);
-                eventInput.Register(events, INTERACT_EVENT_INTERACT_PRESS);
-                eventInput.Register(events, EDITOR_EVENT_EDIT_TARGET);
             });
+
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto inspector = inspectorEntity.Get(lock);
+            Assertf(inspector.Has<ecs::EventInput>(lock),
+                "Inspector entity has no EventInput: %s",
+                std::to_string(inspectorEntity));
+            auto &eventInput = inspector.Get<ecs::EventInput>(lock);
+            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
+            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
+            eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
+        }
     }
 
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {

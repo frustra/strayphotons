@@ -21,9 +21,7 @@ namespace sp {
             [this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, layer);
-                auto &eventInput = ent.Set<ecs::EventInput>(lock);
-                eventInput.Register(events, INPUT_EVENT_MENU_SCROLL);
-                eventInput.Register(events, INPUT_EVENT_MENU_TEXT_INPUT);
+                ent.Set<ecs::EventInput>(lock);
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
@@ -35,6 +33,17 @@ namespace sp {
                 signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, entities::Player, INPUT_SIGNAL_MENU_CURSOR_X);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, entities::Player, INPUT_SIGNAL_MENU_CURSOR_Y);
             });
+
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto gui = guiEntity.Get(lock);
+            Assertf(gui.Has<ecs::EventInput>(lock),
+                "System Gui entity has no EventInput: %s",
+                std::to_string(guiEntity));
+            auto &eventInput = gui.Get<ecs::EventInput>(lock);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
+        }
     }
 
     void SystemGuiManager::BeforeFrame() {

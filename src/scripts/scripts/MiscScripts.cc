@@ -90,9 +90,9 @@ namespace sp::scripts {
                             auto &script = newEntity.Set<Script>(lock);
                             auto &newState = script.AddOnTick(scope, "interactive_object");
                             newState.filterOnEvent = true;
-                            eventInput.Register(newState.eventQueue, "/interact/grab");
-                            eventInput.Register(newState.eventQueue, "/interact/point");
-                            eventInput.Register(newState.eventQueue, "/interact/rotate");
+                            eventInput.Register(lock, newState.eventQueue, "/interact/grab");
+                            eventInput.Register(lock, newState.eventQueue, "/interact/point");
+                            eventInput.Register(lock, newState.eventQueue, "/interact/rotate");
                         }
                     }).detach();
                 }

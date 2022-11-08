@@ -14,9 +14,7 @@
 					"sphere": 0.1
 				}
 			},
-			"event_input": [
-				"/action/snap_rotate"
-			]
+			"event_input": {},
 		},
 		{
 			"name": "hmd_vis",
@@ -74,9 +72,7 @@
 			},
 			"physics_joints": [],
 			"physics_query": {},
-			"event_input": [
-				"/interact/press"
-			],
+			"event_input": {},
 			"script": [
 				{
 					"prefab": "gltf",
@@ -110,9 +106,7 @@
 			},
 			"physics_joints": [],
 			"physics_query": {},
-			"event_input": [
-				"/interact/press"
-			],
+			"event_input": {},
 			"script": [
 				{
 					"prefab": "gltf",

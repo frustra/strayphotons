@@ -21,10 +21,7 @@
 				"translate": [0, 0.03, 0],
 				"scale": [0.08, 0.08, 0.08]
 			},
-			"event_input": [
-				"/trigger/magnetic/enter",
-				"/trigger/magnetic/leave"
-			],
+			"event_input": {},
 			"script": [
 				{
 					"prefab": "template",

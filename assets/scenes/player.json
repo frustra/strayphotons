@@ -7,9 +7,7 @@
 				"head": "player:head"
 			},
 			"trigger_group": "Player",
-			"event_input": [
-				"/action/jump"
-			],
+			"event_input": {},
 			"signal_output": {}
 		},
 		{
@@ -49,12 +47,7 @@
 					"parameters": { "grab_distance": 2.0 }
 				}
 			],
-			"event_input": [
-				"/script/camera_rotate",
-				"/interact/grab",
-				"/interact/press",
-				"/interact/rotate"
-			],
+			"event_input": {},
 			"event_bindings": {
 				"/action/jump": "player:player/action/jump"
 			},
@@ -64,9 +57,7 @@
 		},
 		{
 			"name": "debug-spawner",
-			"event_input": [
-				"/script/spawn"
-			],
+			"event_input": {},
 			"script": {
 				"onTick": "model_spawner",
 				"parameters": {
@@ -88,10 +79,7 @@
 				"intensity": 30
 			},
 			"focus": "Game",
-			"event_input": [
-				"/action/flashlight/toggle",
-				"/action/flashlight/grab"
-			],
+			"event_input": {},
 			"script": {
 				"onTick": "flashlight"
 			},

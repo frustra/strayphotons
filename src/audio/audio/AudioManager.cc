@@ -146,10 +146,10 @@ namespace sp {
                     auto &sounds = ent.Get<ecs::Sounds>(lock);
                     if (!sounds.eventQueue) sounds.eventQueue = ecs::NewEventQueue();
                     auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                    eventInput.Register(sounds.eventQueue, "/sound/play");
-                    eventInput.Register(sounds.eventQueue, "/sound/resume");
-                    eventInput.Register(sounds.eventQueue, "/sound/pause");
-                    eventInput.Register(sounds.eventQueue, "/sound/stop");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/play");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/resume");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/pause");
+                    eventInput.Register(lock, sounds.eventQueue, "/sound/stop");
                 }).detach();
             } else if (compEvent.type == Tecs::EventType::REMOVED) {
 

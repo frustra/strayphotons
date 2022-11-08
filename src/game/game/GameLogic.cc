@@ -35,7 +35,7 @@ namespace sp {
                         auto &writeState = writeScript.scripts[i];
                         writeState.eventQueue = ecs::NewEventQueue();
                         for (auto &event : writeState.events) {
-                            eventInput.Register(writeState.eventQueue, event);
+                            eventInput.Register(lock, writeState.eventQueue, event);
                         }
                     }
                 }

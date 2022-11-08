@@ -172,7 +172,9 @@ namespace ecs {
         return make_shared<EventQueue>();
     }
 
-    void EventInput::Register(const EventQueueRef &queue, const std::string &binding) {
+    void EventInput::Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding) {
+        Assertf(IsLive(lock), "Attempting to register event on non-live entity: %s", binding);
+        
         auto &queueList = events[binding];
         if (sp::contains(queueList, queue)) return;
         queueList.emplace_back(queue);

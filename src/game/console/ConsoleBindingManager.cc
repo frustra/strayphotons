@@ -33,6 +33,7 @@ namespace sp {
                         }
                     });
                 scriptState.events = {ACTION_EVENT_RUN_COMMAND};
+                scriptState.filterOnEvent = true;
             });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);

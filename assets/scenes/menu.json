@@ -239,9 +239,7 @@
 					}
 				]
 			},
-			"event_input": [
-				"/button/press"
-			],
+			"event_input": {},
 			"signal_bindings": {
 				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
 			},
@@ -466,9 +464,7 @@
 			},
 			"physics_joints": [],
 			"trigger_group": "Magnetic",
-			"event_input": [
-				"/magnetic/nearby"
-			],
+			"event_input": {},
 			"script": [
 				{
 					"prefab": "template",

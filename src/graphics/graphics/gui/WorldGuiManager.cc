@@ -18,8 +18,8 @@ namespace sp {
                 "World Gui entity has no EventInput: %s",
                 std::to_string(guiEntity));
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
-            eventInput.Register(events, INTERACT_EVENT_INTERACT_POINT);
-            eventInput.Register(events, INTERACT_EVENT_INTERACT_PRESS);
+            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
+            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
         }).detach();
     }
 

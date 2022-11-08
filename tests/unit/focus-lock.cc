@@ -31,7 +31,7 @@ namespace FocusLockTests {
             player.Set<ecs::Name>(lock, "", "player");
             player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::Game);
             auto &eventInput = player.Set<ecs::EventInput>(lock);
-            eventInput.Register(playerQueue, TEST_EVENT_ACTION);
+            eventInput.Register(lock, playerQueue, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
             signalBindings.Bind(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
 

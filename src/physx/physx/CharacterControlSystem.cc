@@ -114,7 +114,7 @@ namespace sp {
                 auto &writeController = ent.Get<ecs::CharacterController>(lock);
                 auto &eventInput = ent.Get<ecs::EventInput>(lock);
                 writeController.eventQueue = ecs::NewEventQueue();
-                eventInput.Register(writeController.eventQueue, "/action/jump");
+                eventInput.Register(lock, writeController.eventQueue, "/action/jump");
             }
         }
     }

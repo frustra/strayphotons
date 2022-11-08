@@ -33,10 +33,10 @@ namespace sp {
 
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             if (MenuOpen()) {
-                eventInput.Register(events, INPUT_EVENT_MENU_BACK);
-                eventInput.Register(events, INPUT_EVENT_MENU_ENTER);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
             } else {
-                eventInput.Register(events, INPUT_EVENT_MENU_OPEN);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
             }
         }
     }
@@ -103,15 +103,15 @@ namespace sp {
             if (MenuOpen()) {
                 focusLock.AcquireFocus(ecs::FocusLayer::Menu);
 
-                eventInput.Register(events, INPUT_EVENT_MENU_BACK);
-                eventInput.Register(events, INPUT_EVENT_MENU_ENTER);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
                 eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
 
                 eventInput.Unregister(events, INPUT_EVENT_MENU_BACK);
                 eventInput.Unregister(events, INPUT_EVENT_MENU_ENTER);
-                eventInput.Register(events, INPUT_EVENT_MENU_OPEN);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
             }
         }
     }

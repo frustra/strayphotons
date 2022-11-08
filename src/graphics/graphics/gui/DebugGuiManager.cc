@@ -14,7 +14,7 @@ namespace sp {
         Assert(gui.Has<ecs::EventInput>(lock), "Expected debug gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
-        eventInput.Register(events, INPUT_EVENT_TOGGLE_CONSOLE);
+        eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
 
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
 
@@ -110,7 +110,7 @@ namespace sp {
 
             if (consoleOpen) {
                 focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
-                eventInput.Register(events, INPUT_EVENT_MENU_TEXT_INPUT);
+                eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
                 eventInput.Unregister(events, INPUT_EVENT_MENU_TEXT_INPUT);

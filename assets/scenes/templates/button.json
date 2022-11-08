@@ -10,9 +10,7 @@
 				"file": "click2.ogg",
 				"volume": 0.4
 			}],
-			"event_input": [
-				"/sound/play"
-			],
+			"event_input": {},
 			"signal_bindings": {
 				"button_pressed": "button_body/trigger_object_enter"
 			}

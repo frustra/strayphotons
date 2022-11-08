@@ -25,15 +25,15 @@ namespace EventBindingTests {
             ecs::EntityRef playerRef(ecs::Name("", "player"), player);
             player.Set<ecs::Name>(lock, "", "player");
             auto &playerEventInput = player.Set<ecs::EventInput>(lock);
-            playerEventInput.Register(playerQueue, TEST_EVENT_ACTION2);
+            playerEventInput.Register(lock, playerQueue, TEST_EVENT_ACTION2);
 
             hand = lock.NewEntity();
             ecs::EntityRef handRef(ecs::Name("", "hand"), hand);
             hand.Set<ecs::Name>(lock, "", "hand");
             auto &handEventInput = hand.Set<ecs::EventInput>(lock);
-            handEventInput.Register(handQueue1, TEST_EVENT_ACTION1);
-            handEventInput.Register(handQueue1, TEST_EVENT_ACTION2);
-            handEventInput.Register(handQueue2, TEST_EVENT_ACTION2);
+            handEventInput.Register(lock, handQueue1, TEST_EVENT_ACTION1);
+            handEventInput.Register(lock, handQueue1, TEST_EVENT_ACTION2);
+            handEventInput.Register(lock, handQueue2, TEST_EVENT_ACTION2);
             AssertEqual(handEventInput.events.size(), 2u, "EventInput did not save correctly");
 
             auto &playerBindings = player.Set<ecs::EventBindings>(lock);
