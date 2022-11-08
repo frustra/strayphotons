@@ -14,14 +14,16 @@ namespace sp {
     class InspectorGui : public GuiWindow {
     public:
         InspectorGui(const string &name) : GuiWindow(name) {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+            std::thread([this]() {
+                auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
 
-            auto inspector = inspectorEntity.Get(lock);
-            Assertf(inspector.Has<ecs::EventInput>(lock),
-                "InspectorGui entity is missing EventInput: %s",
-                inspectorEntity.Name().String());
-            auto &eventInput = inspector.Get<ecs::EventInput>(lock);
-            eventInput.Register(events, EDITOR_EVENT_EDIT_TARGET);
+                auto inspector = inspectorEntity.Get(lock);
+                Assertf(inspector.Has<ecs::EventInput>(lock),
+                    "InspectorGui entity is missing EventInput: %s",
+                    inspectorEntity.Name().String());
+                auto &eventInput = inspector.Get<ecs::EventInput>(lock);
+                eventInput.Register(events, EDITOR_EVENT_EDIT_TARGET);
+            }).detach();
         }
         virtual ~InspectorGui() {}
 

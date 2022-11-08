@@ -10,14 +10,17 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    WorldGuiManager::WorldGuiManager(ecs::Entity gui, const std::string &name) : GuiContext(name), guiEntity(gui) {}
-
-    void WorldGuiManager::RegisterEvents(ecs::Lock<ecs::Write<ecs::EventInput>> lock) {
-        auto gui = guiEntity.Get(lock);
-        Assertf(gui.Has<ecs::EventInput>(lock), "World Gui entity has no EventInput: %s", std::to_string(guiEntity));
-        auto &eventInput = gui.Get<ecs::EventInput>(lock);
-        eventInput.Register(events, INTERACT_EVENT_INTERACT_POINT);
-        eventInput.Register(events, INTERACT_EVENT_INTERACT_PRESS);
+    WorldGuiManager::WorldGuiManager(ecs::Entity gui, const std::string &name) : GuiContext(name), guiEntity(gui) {
+        std::thread([this]() {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto gui = guiEntity.Get(lock);
+            Assertf(gui.Has<ecs::EventInput>(lock),
+                "World Gui entity has no EventInput: %s",
+                std::to_string(guiEntity));
+            auto &eventInput = gui.Get<ecs::EventInput>(lock);
+            eventInput.Register(events, INTERACT_EVENT_INTERACT_POINT);
+            eventInput.Register(events, INTERACT_EVENT_INTERACT_PRESS);
+        }).detach();
     }
 
     void WorldGuiManager::DefineWindows() {

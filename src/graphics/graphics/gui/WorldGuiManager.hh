@@ -9,8 +9,6 @@ namespace sp {
     public:
         WorldGuiManager(ecs::Entity gui, const std::string &name);
 
-        void RegisterEvents(ecs::Lock<ecs::Write<ecs::EventInput>> lock);
-
         virtual void BeforeFrame();
         void DefineWindows() override;
 

@@ -124,22 +124,6 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>();
-            for (auto &ent : lock.EntitiesWith<ecs::Sounds>()) {
-                if (!ent.Has<ecs::Sounds, ecs::EventInput>(lock)) continue;
-                auto &readSounds = ent.Get<const ecs::Sounds>(lock);
-                if (!readSounds.eventQueue) {
-                    auto &writeSounds = ent.Get<ecs::Sounds>(lock);
-                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                    writeSounds.eventQueue = ecs::NewEventQueue();
-                    eventInput.Register(writeSounds.eventQueue, "/sound/play");
-                    eventInput.Register(writeSounds.eventQueue, "/sound/resume");
-                    eventInput.Register(writeSounds.eventQueue, "/sound/pause");
-                    eventInput.Register(writeSounds.eventQueue, "/sound/stop");
-                }
-            }
-        }
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
 
         auto head = entities::Head.Get(lock);
@@ -153,17 +137,32 @@ namespace sp {
 
         ecs::ComponentEvent<ecs::Sounds> compEvent;
         while (soundObserver.Poll(lock, compEvent)) {
-            if (compEvent.type != Tecs::EventType::REMOVED) continue;
+            if (compEvent.type == Tecs::EventType::ADDED) {
+                if (!compEvent.entity.Has<ecs::EventInput, ecs::Sounds>(lock)) continue;
+                std::thread([this, ent = compEvent.entity]() {
+                    auto lock = ecs::StartTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>();
+                    if (!ent.Has<ecs::EventInput, ecs::Sounds>(lock)) return;
 
-            auto *entSound = soundEntityMap.find(compEvent.entity);
-            if (!entSound) continue;
+                    auto &sounds = ent.Get<ecs::Sounds>(lock);
+                    if (!sounds.eventQueue) sounds.eventQueue = ecs::NewEventQueue();
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Register(sounds.eventQueue, "/sound/play");
+                    eventInput.Register(sounds.eventQueue, "/sound/resume");
+                    eventInput.Register(sounds.eventQueue, "/sound/pause");
+                    eventInput.Register(sounds.eventQueue, "/sound/stop");
+                }).detach();
+            } else if (compEvent.type == Tecs::EventType::REMOVED) {
 
-            for (auto id : *entSound) {
-                auto &state = sounds.Get(id);
-                if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
-                sounds.FreeItem(id);
+                auto *entSound = soundEntityMap.find(compEvent.entity);
+                if (!entSound) continue;
+
+                for (auto id : *entSound) {
+                    auto &state = sounds.Get(id);
+                    if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
+                    sounds.FreeItem(id);
+                }
+                soundEntityMap.erase(compEvent.entity);
             }
-            soundEntityMap.erase(compEvent.entity);
         }
 
         auto globalVolumeChanged = CVarVolume.Changed();
@@ -249,17 +248,15 @@ namespace sp {
                 int index = ptr ? *ptr : 0;
                 if (index >= soundIDs->size()) continue;
                 auto soundID = soundIDs->at(index);
-                auto &sound = self->sounds.Get(soundID);
+
                 if (event.name == "/sound/play") {
-                    sound.bufferOffset = 0;
-                    sound.play = true;
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::PlayFromStart, soundID});
                 } else if (event.name == "/sound/resume") {
-                    sound.play = true;
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Resume, soundID});
                 } else if (event.name == "/sound/pause") {
-                    sound.play = false;
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Pause, soundID});
                 } else if (event.name == "/sound/stop") {
-                    sound.play = false;
-                    sound.bufferOffset = 0;
+                    soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Stop, soundID});
                 }
             }
         }
@@ -282,6 +279,22 @@ namespace sp {
 
         ZoneScoped;
         auto self = static_cast<AudioManager *>(outstream->userdata);
+
+        self->soundEvents.TryPollEvents([&](const SoundEvent &event) {
+            auto &sound = self->sounds.Get(event.soundID);
+            switch (event.type) {
+            case SoundEvent::Type::PlayFromStart:
+                sound.bufferOffset = 0;
+            case SoundEvent::Type::Resume:
+                sound.play = true;
+                break;
+            case SoundEvent::Type::Stop:
+                sound.bufferOffset = 0;
+            case SoundEvent::Type::Pause:
+                sound.play = false;
+                break;
+            }
+        });
 
         struct SoundIoChannelArea *areas;
         int framesPerBuffer = self->framesPerBuffer;
@@ -310,18 +323,18 @@ namespace sp {
                     if (!source.play || !source.audioBuffer->Ready()) continue;
 
                     auto &audioBuffer = *source.audioBuffer->Get();
-                    auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
-                    size_t bufferOffset = source.bufferOffset.fetch_add(floatsPerSourceBuffer);
-                    auto floatsRemaining = audioBuffer.samples.size() - bufferOffset;
+                    auto floatsRemaining = audioBuffer.samples.size() - source.bufferOffset;
 
                     auto framesRemaining = std::min((size_t)framesPerBuffer,
                         floatsRemaining / audioBuffer.channelCount);
 
                     self->resonance->SetInterleavedBuffer(source.resonanceID,
-                        &audioBuffer.samples[bufferOffset],
+                        &audioBuffer.samples[source.bufferOffset],
                         audioBuffer.channelCount,
                         framesRemaining);
 
+                    auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
+                    source.bufferOffset += floatsPerSourceBuffer;
                     if (source.bufferOffset >= audioBuffer.samples.size()) {
                         source.bufferOffset = 0;
                         if (!source.loop) source.play = false;

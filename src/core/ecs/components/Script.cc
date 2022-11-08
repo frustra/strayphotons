@@ -177,7 +177,7 @@ namespace ecs {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnTickFunc>(&state.callback);
             if (callback) {
-                if (state.filterOnEvent && state.eventQueue->Empty()) continue;
+                if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnTick");
                 ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);

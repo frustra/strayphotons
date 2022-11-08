@@ -50,12 +50,24 @@ namespace sp {
             int resonanceID = -1;
             AsyncPtr<nqr::AudioData> audioBuffer;
             float volume, occlusion;
-            std::atomic_bool loop, play;
-            std::atomic_size_t bufferOffset;
+            bool loop, play;
+            size_t bufferOffset;
+        };
+
+        struct SoundEvent {
+            enum class Type {
+                PlayFromStart,
+                Resume,
+                Pause,
+                Stop,
+            } type;
+
+            size_t soundID;
         };
 
         EntityMap<vector<size_t>> soundEntityMap;
         LockFreeAudioSet<SoundSource, 65535> sounds;
+        LockFreeEventQueue<SoundEvent> soundEvents;
 
         ecs::ComponentObserver<ecs::Sounds> soundObserver;
 
