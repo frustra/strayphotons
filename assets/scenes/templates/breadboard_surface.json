@@ -13,24 +13,6 @@
 					"render": true
 				}
 			}
-		},
-		{
-			"trigger_area": "Sphere",
-			"transform": {
-				"parent": "surface",
-				"translate": [0, 0.03, 0],
-				"scale": [0.08, 0.08, 0.08]
-			},
-			"event_input": {},
-			"script": [
-				{
-					"prefab": "template",
-					"parameters": { "source": "laser_cube" }
-				},
-				{
-					"onEvent": "magnetic_socket"
-				}
-			]
 		}
 	]
 }
