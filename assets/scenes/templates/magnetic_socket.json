@@ -1,0 +1,27 @@
+{
+	"components": {
+		"trigger_area": "Sphere",
+		"transform": {},
+		"event_input": {},
+		"signal_output": {
+			"snap_enable": 0
+		},
+		"script": {
+			"onEvent": "magnetic_socket"
+		}
+	},
+	"entities": [
+		{
+			"name": "enable_trigger",
+			"trigger_area": "Sphere",
+			"transform": {
+				"parent": "scoperoot",
+				"scale": [1.05, 1.05, 1.05]
+			},
+			"event_bindings": {
+				"/trigger/magnetic/enter": "scoperoot/trigger/magnetic/enter",
+				"/trigger/magnetic/leave": "scoperoot/trigger/magnetic/leave"
+			}
+		}
+	]
+}

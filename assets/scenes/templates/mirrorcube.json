@@ -9,10 +9,18 @@
 				"model": "box",
 				"mass": 1
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "interactive" }
-			}
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "interactive" }
+				},
+				{
+					"onEvent": "magnetic_plug"
+				}
+			],
+			"physics_joints": [],
+			"trigger_group": "Magnetic",
+			"event_input": {}
 		},
 		{
 			"name": "model",

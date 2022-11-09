@@ -14,7 +14,7 @@
 					"sphere": 0.1
 				}
 			},
-			"event_input": {},
+			"event_input": {}
 		},
 		{
 			"name": "hmd_vis",
