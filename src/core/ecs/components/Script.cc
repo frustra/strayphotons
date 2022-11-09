@@ -198,6 +198,8 @@ namespace ecs {
         ZoneScopedN("Prefab");
         ZoneStr(ecs::ToString(lock, ent));
         for (size_t i = 0; i < scripts.size(); i++) {
+            // Prefab scripts may add additional scripts while iterating. Script state references may not be
+            // valid if the vector is resized, so we need to create a read-only copy.
             auto state = scripts[i];
             auto callback = std::get_if<PrefabFunc>(&state.callback);
             if (callback) (*callback)(state, lock, ent);

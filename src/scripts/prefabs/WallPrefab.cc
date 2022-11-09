@@ -8,7 +8,7 @@
 #include <glm/gtx/vector_angle.hpp>
 
 namespace ecs {
-    InternalPrefab wallPrefab("wall", [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+    InternalPrefab wallPrefab("wall", [](const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
         auto scene = state.scope.scene.lock();
         Assertf(scene, "wall prefab does not have a valid scene: %s", ToString(lock, ent));
         if (!state.HasParam<vector<double>>("segments_x") || !state.HasParam<vector<double>>("segments_y")) return;

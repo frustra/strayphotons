@@ -24,7 +24,7 @@ namespace ecs {
 
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
-    using PrefabFunc = std::function<void(ScriptState &, Lock<AddRemove>, Entity)>;
+    using PrefabFunc = std::function<void(const ScriptState &, Lock<AddRemove>, Entity)>;
 
     struct ScriptDefinition {
         std::vector<std::string> events;

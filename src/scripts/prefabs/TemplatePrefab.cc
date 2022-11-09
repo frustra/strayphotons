@@ -132,7 +132,7 @@ namespace ecs {
         }
     };
 
-    InternalPrefab templatePrefab("template", [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+    InternalPrefab templatePrefab("template", [](const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
         auto scene = state.scope.scene.lock();
         Assertf(scene, "template prefab does not have a valid scene: %s", ToString(lock, ent));
 
@@ -143,7 +143,7 @@ namespace ecs {
         parser.AddEntities(lock);
     });
 
-    InternalPrefab tilePrefab("tile", [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+    InternalPrefab tilePrefab("tile", [](const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
         auto scene = state.scope.scene.lock();
         Assertf(scene, "tile prefab does not have a valid scene: %s", ToString(lock, ent));
 
