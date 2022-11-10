@@ -61,7 +61,7 @@
 			"name": "output",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0.0125],
+				"translate": [0, 0, 0.0029],
 				"rotate": [180, 0, 1, 0],
 				"scale": 1.25
 			},
