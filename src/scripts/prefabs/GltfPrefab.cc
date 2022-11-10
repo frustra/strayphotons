@@ -69,26 +69,7 @@ namespace ecs {
             PhysicsGroup group = PhysicsGroup::World;
             auto physicsGroupParam = state.GetParam<std::string>("physics_group");
             if (!physicsGroupParam.empty()) {
-                sp::to_upper(physicsGroupParam);
-                if (physicsGroupParam == "NOCLIP") {
-                    group = PhysicsGroup::NoClip;
-                } else if (physicsGroupParam == "WORLD") {
-                    group = PhysicsGroup::World;
-                } else if (physicsGroupParam == "WORLD_OVERLAP") {
-                    group = PhysicsGroup::WorldOverlap;
-                } else if (physicsGroupParam == "INTERACTIVE") {
-                    group = PhysicsGroup::Interactive;
-                } else if (physicsGroupParam == "PLAYER") {
-                    group = PhysicsGroup::Player;
-                } else if (physicsGroupParam == "PLAYER_LEFT_HAND") {
-                    group = PhysicsGroup::PlayerLeftHand;
-                } else if (physicsGroupParam == "PLAYER_RIGHT_HAND") {
-                    group = PhysicsGroup::PlayerRightHand;
-                } else if (physicsGroupParam == "USER_INTERFACE") {
-                    group = PhysicsGroup::UserInterface;
-                } else {
-                    Abortf("Unknown gltf physics group param: %s", physicsGroupParam);
-                }
+                group = magic_enum::enum_cast<PhysicsGroup>(physicsGroupParam).value_or(group);
             }
 
             if (node.meshIndex) {
