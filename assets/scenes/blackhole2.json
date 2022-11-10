@@ -119,121 +119,45 @@
 			}
 		},
 		{
-			"name": "laser_mount_1",
+			"name": "emitter1",
 			"transform": {
 				"translate": [0.14, 0.86, 0.14],
-				"rotate": [-90, 0, 1, 0]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug-mount",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "laser_plug_1",
-			"transform": {
-				"parent": "laser_mount_1.round-fitting-mount"
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug",
-					"render": true
-				}
-			},
-			"laser_line": {},
-			"laser_emitter": {
-				"intensity": 5,
-				"color": [1, 0, 0]
-			}
-		},
-		{
-			"name": "laser_fiber_1_socket_mount",
-			"transform": {
-				"translate": [0.86, 0.86, 0.14],
-				"rotate": [-90, 0, 1, 0]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug-mount",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "laser_fiber_1_socket",
-			"transform": {
-				"parent": "laser_fiber_1_socket_mount",
-				"translate": [0, 0, 0.025]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-socket",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "laser_fiber_1_sensor",
-			"transform": {
-				"parent": "laser_fiber_1_socket",
-				"translate": [0, 0, -0.03],
-				"scale": 0.05
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "sensor",
-					"render": true,
-					"physics": "static"
-				}
-			}
-		},
-		{
-			"name": "laser_fiber_1_sensor.Icosphere",
-			"signal_output": {},
-			"laser_sensor": {
-				"threshold": [0, 0, 0]
-			}
-		},
-		{
-			"name": "laser_fiber_1_output_mount",
-			"transform": {
-				"translate": [0.86, 0.86, 0.30],
 				"rotate": [90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug-mount",
-					"render": true
-				}
+				"prefab": "template",
+				"parameters": { "source": "laser_emitter_block" }
+			},
+			"signal_output": {
+				"laser_color_r": 5
 			}
 		},
 		{
-			"name": "laser_fiber_1_output",
+			"name": "sensor1",
 			"transform": {
-				"parent": "laser_fiber_1_output_mount.round-fitting-mount"
+				"translate": [0.86, 0.86, 0.14],
+				"rotate": [90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug",
-					"render": true
-				}
+				"prefab": "template",
+				"parameters": { "source": "laser_sensor_block" }
+			}
+		},
+		{
+			"name": "emitter2",
+			"transform": {
+				"translate": [0.86, 0.86, 0.30],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "laser_emitter_block" }
 			},
 			"signal_bindings": {
-				"laser_color_r": "laser_fiber_1_sensor.Icosphere/light_value_r",
-				"laser_color_g": "laser_fiber_1_sensor.Icosphere/light_value_g",
-				"laser_color_b": "laser_fiber_1_sensor.Icosphere/light_value_b"
-			},
-			"laser_line": {},
-			"laser_emitter": {}
+				"laser_color_r": "sensor1/light_value_r",
+				"laser_color_g": "sensor1/light_value_g",
+				"laser_color_b": "sensor1/light_value_b"
+			}
 		},
 		{
 			"name": "gate1",
@@ -242,39 +166,21 @@
 			},
 			"script": {
 				"prefab": "template",
-				"parameters": { "source": "laser_gate" }
+				"parameters": { "source": "laser_gate_block" }
 			}
 		},
 		{
-			"name": "laser_mount_2",
+			"name": "emitter3",
 			"transform": {
-				"translate": [0.54, 0.86, 0.06],
-				"rotate": [180, 0, 1, 0]
+				"translate": [0.54, 0.86, 0.06]
 			},
 			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug-mount",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "laser_plug_2",
-			"transform": {
-				"parent": "laser_mount_2.round-fitting-mount"
+				"prefab": "template",
+				"parameters": { "source": "laser_emitter_block" }
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug",
-					"render": true
-				}
-			},
-			"laser_line": {},
-			"laser_emitter": {
-				"intensity": 20,
-				"color": [1, 1, 0]
+			"signal_output": {
+				"laser_color_r": 20,
+				"laser_color_g": 20
 			}
 		}
 	]

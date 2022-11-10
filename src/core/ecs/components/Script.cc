@@ -197,7 +197,8 @@ namespace ecs {
     void Script::Prefab(Lock<AddRemove> lock, const Entity &ent) {
         ZoneScopedN("Prefab");
         ZoneStr(ecs::ToString(lock, ent));
-        for (auto &state : scripts) {
+        for (size_t i = 0; i < scripts.size(); i++) {
+            auto state = scripts[i];
             auto callback = std::get_if<PrefabFunc>(&state.callback);
             if (callback) (*callback)(state, lock, ent);
         }

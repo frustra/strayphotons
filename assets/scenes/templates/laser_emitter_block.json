@@ -1,0 +1,86 @@
+{
+	"components": {
+		"transform": {
+		},
+		"physics": {
+			"shapes": [
+				{
+					"box": [0.065, 0.01, 0.065],
+					"transform": {
+						"translate": [0, -0.015, 0]
+					}
+				},
+				{
+					"box": [0.03, 0.03, 0.03]
+				}
+			],
+			"dynamic": true
+		},
+		"signal_bindings": {
+			"laser_color_r": [],
+			"laser_color_g": [],
+			"laser_color_b": []
+		},
+		"script": {
+			"prefab": "template",
+			"parameters": { "source": "interactive" }
+		}
+	},
+	"entities": [
+		{
+			"name": "mount",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, -0.015, 0],
+				"scale": [0.065, 0.01, 0.065]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "box",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "block-gizmo",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, 0],
+				"scale": [0.03, 0.03, 0.03]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "box",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "output",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0, 0.0125],
+				"rotate": [180, 0, 1, 0],
+				"scale": 1.25
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "laser-plug",
+					"render": true
+				}
+			},
+			"signal_bindings": {
+				"laser_color_r": "scoperoot/laser_color_r",
+				"laser_color_g": "scoperoot/laser_color_g",
+				"laser_color_b": "scoperoot/laser_color_b"
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"start_distance": 0.01
+			}
+		}
+	]
+}
