@@ -6,7 +6,9 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 
+#include <cmath>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <type_traits>
 #include <typeindex>
 
@@ -28,6 +30,7 @@ namespace ecs {
     enum class PhysicsGroup : uint16_t;
     enum class TriggerShape : uint8_t;
     enum class VisibilityMask;
+    enum class XrEye;
 
     using FieldTypes = std::tuple<
         // Basic types
@@ -62,7 +65,8 @@ namespace ecs {
         PhysicsGroup,
         TriggerGroup,
         TriggerShape,
-        VisibilityMask>;
+        VisibilityMask,
+        XrEye>;
 
     template<typename Func, size_t I = 0>
     inline static constexpr auto GetFieldType(std::type_index type, Func func) {
@@ -152,6 +156,7 @@ namespace ecs {
             return reinterpret_cast<const T *>(field);
         }
 
+        void InitUndefined(void *component, const void *defaultComponent) const;
         bool Load(const EntityScope &scope, void *component, const picojson::value &src) const;
         void Save(const EntityScope &scope,
             picojson::value &dst,

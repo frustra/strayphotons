@@ -5,6 +5,11 @@
 
 namespace ecs {
     template<>
+    void Component<LaserLine>::InitUndefined(LaserLine &dst) {
+        dst.line = LaserLine::Line{{}, glm::vec3(INFINITY)};
+    }
+
+    template<>
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
             Errorf("Invalid laser line: %s", src.to_str());
@@ -66,14 +71,21 @@ namespace ecs {
 
     template<>
     void Component<LaserLine>::Apply(const LaserLine &src, Lock<AddRemove> lock, Entity dst) {
-        static const LaserLine::Line defaultLine = {};
+        auto &defaultComp = IsLive(lock) ? ComponentLaserLine.defaultLiveComponent
+                                         : ComponentLaserLine.defaultStagingComponent;
+        auto *defaultLine = std::get_if<LaserLine::Line>(&defaultComp.line);
 
         auto &dstLine = dst.Get<LaserLine>(lock);
         auto *line = std::get_if<LaserLine::Line>(&dstLine.line);
         auto *srcLine = std::get_if<LaserLine::Line>(&src.line);
+        auto *srcSegments = std::get_if<LaserLine::Segments>(&src.line);
         if (line && srcLine) {
-            if (line->color == defaultLine.color) line->color = srcLine->color;
+            if (defaultLine && line->color == defaultLine->color && !std::isinf(srcLine->color[0])) {
+                line->color = srcLine->color;
+            }
             if (line->points.empty()) line->points = srcLine->points;
+        } else if (line && defaultLine && srcSegments) {
+            dstLine.line = *srcSegments;
         }
     }
 } // namespace ecs

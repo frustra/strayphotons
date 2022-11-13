@@ -17,9 +17,9 @@
 			"dynamic": true
 		},
 		"signal_bindings": {
-			"laser_color_r": [],
-			"laser_color_g": [],
-			"laser_color_b": []
+			"laser_color_r": {},
+			"laser_color_g": {},
+			"laser_color_b": {}
 		},
 		"script": {
 			"prefab": "template",

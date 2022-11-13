@@ -44,4 +44,10 @@ namespace ecs {
         }
         return true;
     }
+
+    template<>
+    void Component<Sounds>::Apply(const Sounds &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstSounds = dst.Get<Sounds>(lock);
+        if (dstSounds.sounds.empty()) dstSounds.sounds = src.sounds;
+    }
 } // namespace ecs

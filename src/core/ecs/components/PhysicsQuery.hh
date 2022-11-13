@@ -137,7 +137,4 @@ namespace ecs {
     };
 
     static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
-
-    template<>
-    bool Component<PhysicsQuery>::Load(const EntityScope &scope, PhysicsQuery &dst, const picojson::value &src);
 } // namespace ecs

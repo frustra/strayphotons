@@ -35,6 +35,8 @@ namespace ecs {
         ComponentField::New("radius", &LaserLine::radius));
 
     template<>
+    void Component<LaserLine>::InitUndefined(LaserLine &dst);
+    template<>
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src);
     template<>
     void Component<LaserLine>::Save(Lock<Read<Name>> lock,

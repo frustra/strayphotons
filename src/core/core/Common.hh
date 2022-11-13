@@ -101,6 +101,10 @@ namespace sp {
             return color;
         }
 
+        const float &operator[](size_t i) const {
+            return color[i];
+        }
+
         color_t operator*(const color_t &other) const {
             return color * other.color;
         }

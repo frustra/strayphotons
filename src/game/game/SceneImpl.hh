@@ -22,7 +22,7 @@ namespace sp::scene {
         } else if constexpr (std::is_same<T, ecs::TransformTree>()) {
             if (srcEnt.Has<ecs::TransformTree>(src)) {
                 auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
-                auto dstTransform = srcTransform;
+                ecs::TransformTree dstTransform(srcTransform.pose.Get(), srcTransform.parent);
                 if (!srcTransform.parent) {
                     auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
                     if (rootTransform != ecs::Transform()) {

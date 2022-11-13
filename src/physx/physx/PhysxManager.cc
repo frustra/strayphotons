@@ -327,6 +327,9 @@ namespace sp {
             auto debugLines = debugLineEntity.Get(lock);
             if (debugLines.Has<ecs::LaserLine>(lock)) {
                 auto &laser = debugLines.Get<ecs::LaserLine>(lock);
+                if (!std::holds_alternative<ecs::LaserLine::Segments>(laser.line)) {
+                    laser.line = ecs::LaserLine::Segments();
+                }
                 auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);
                 segments.clear();
                 if (CVarPhysxDebugCollision.Get() || CVarPhysxDebugJoints.Get()) {

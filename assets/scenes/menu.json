@@ -91,7 +91,7 @@
 			}
 		},
 		{
-			"__comment": "floor",
+			"name": "floor",
 			"renderable": {
 				"model": "box"
 			},
@@ -105,7 +105,7 @@
 			}
 		},
 		{
-			"__comment": "ceiling",
+			"name": "ceiling",
 			"renderable": {
 				"model": "box"
 			},
@@ -119,7 +119,7 @@
 			}
 		},
 		{
-			"__comment": "projection_wall",
+			"name": "projection_wall",
 			"renderable": {
 				"model": "box"
 			},
@@ -133,7 +133,7 @@
 			}
 		},
 		{
-			"__comment": "left_wall",
+			"name": "left_wall",
 			"renderable": {
 				"model": "box"
 			},
@@ -147,7 +147,7 @@
 			}
 		},
 		{
-			"__comment": "back_wall",
+			"name": "back_wall",
 			"renderable": {
 				"model": "box"
 			},
@@ -161,7 +161,7 @@
 			}
 		},
 		{
-			"__comment": "right_wall_front",
+			"name": "right_wall_front",
 			"renderable": {
 				"model": "box"
 			},
@@ -175,7 +175,7 @@
 			}
 		},
 		{
-			"__comment": "right_wall_back",
+			"name": "right_wall_back",
 			"renderable": {
 				"model": "box"
 			},
@@ -189,7 +189,7 @@
 			}
 		},
 		{
-			"__comment": "right_wall_top",
+			"name": "right_wall_top",
 			"renderable": {
 				"model": "box"
 			},
@@ -296,7 +296,7 @@
 			}
 		},
 		{
-			"__comment": "button_highlighter",
+			"name": "button_highlighter",
 			"light": {
 				"tint": [0.5, 1, 0.5],
 				"intensity": 1,

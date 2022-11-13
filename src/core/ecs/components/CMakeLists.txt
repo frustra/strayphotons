@@ -7,7 +7,6 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Name.cc
     Physics.cc
     PhysicsJoints.cc
-    PhysicsQuery.cc
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc
