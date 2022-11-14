@@ -84,6 +84,7 @@
 			}
 		},
 		{
+			"name": "laseremitter",
 			"transform": {
 				"translate": [0, 0.95, 1],
 				"rotate": [-10, 0, 1, 0]
@@ -245,7 +246,7 @@
 		{
 			"name": "mova-mirror.mirrorface.optic",
 			"optic": {
-				"tint": [1, 1, 0.99]
+				"tint": [1, 1, 1]
 			}
 		},
 		{
