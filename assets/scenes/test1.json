@@ -18,30 +18,30 @@
 		{
 			"name": "animbox",
 			"transform": {
-				"translate": [0, 2, -4.875]
+				"translate": [0, 1.5, -4.875]
 			},
 			"animation": {
 				"interpolation": "Cubic",
-				"tension": 0.1,
+				"tension": 0.05,
 				"states": [
 					{
-						"delay": 1,
-						"translate": [0, 2, -4.875],
+						"delay": 0.5,
+						"translate": [0, 1.5, -4.875],
 						"translate_tangent": [0, 0, 0]
 					},
 					{
 						"delay": 1,
-						"translate": [0, 3.5, -4.875],
-						"translate_tangent": [0, 3, 0]
+						"translate": [0, 2, -4.875],
+						"translate_tangent": [0, 1.5, 0]
 					},
 					{
 						"delay": 1,
-						"translate": [0, 7, -4.875],
-						"translate_tangent": [0, 3, 0]
+						"translate": [0, 5, -4.875],
+						"translate_tangent": [0, 1.5, 0]
 					},
 					{
-						"delay": 1,
-						"translate": [0, 8.5, -4.875],
+						"delay": 0.5,
+						"translate": [0, 5.5, -4.875],
 						"translate_tangent": [0, 0, 0]
 					}
 				]
