@@ -146,25 +146,16 @@ namespace ecs {
         }
 
         void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
+            const auto &defaultComponent = IsLive(dstLock) ? defaultLiveComponent : defaultStagingComponent;
             CompType *dstComp;
             if (!dst.Has<CompType>(dstLock)) {
-                if (IsLive(dstLock)) {
-                    dstComp = &dst.Set<CompType>(dstLock, defaultLiveComponent);
-                } else {
-                    dstComp = &dst.Set<CompType>(dstLock, defaultStagingComponent);
-                }
+                dstComp = &dst.Set<CompType>(dstLock, defaultComponent);
             } else {
                 dstComp = &dst.Get<CompType>(dstLock);
             }
             // Merge existing component with a new one
-            if (IsLive(dstLock)) {
-                for (auto &field : this->fields) {
-                    field.Apply(dstComp, &src, &defaultLiveComponent);
-                }
-            } else {
-                for (auto &field : this->fields) {
-                    field.Apply(dstComp, &src, &defaultStagingComponent);
-                }
+            for (auto &field : this->fields) {
+                field.Apply(dstComp, &src, &defaultComponent);
             }
             Apply(src, dstLock, dst);
         }

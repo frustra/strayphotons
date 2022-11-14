@@ -89,7 +89,6 @@ namespace sp::scripts {
                             newEntity.Set<EventInput>(lock);
                             auto &script = newEntity.Set<Script>(lock);
                             auto &newState = script.AddOnTick(scope, "interactive_object");
-                            newState.events = {"/interact/grab", "/interact/point", "/interact/rotate"};
                             newState.filterOnEvent = true;
                         }
                     }).detach();

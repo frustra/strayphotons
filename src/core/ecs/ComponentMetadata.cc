@@ -47,8 +47,6 @@ namespace ecs {
             auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
 
             if constexpr (has_type<T, UndefinedValuesTuple>()) {
-                auto foo = getUndefinedFieldValues();
-                (void)foo;
                 value = std::get<T>(getUndefinedFieldValues());
             } else {
                 value = defaultValue;

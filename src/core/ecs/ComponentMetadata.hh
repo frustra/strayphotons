@@ -6,9 +6,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 
-#include <cmath>
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <type_traits>
 #include <typeindex>
 
