@@ -22,7 +22,8 @@ namespace ecs {
                 while (EventInput::Poll(lock, state.eventQueue, event)) {
                     if (!gateOpen) continue;
 
-                    EventBindings::SendEvent(lock, outputEvent, ent, event.data);
+                    event.name = outputEvent;
+                    EventBindings::SendEvent(lock, ent, event);
                 }
             }),
     };

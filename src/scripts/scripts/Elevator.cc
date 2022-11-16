@@ -36,9 +36,9 @@ namespace sp::scripts {
             if (shouldPlay || elevator.frames++ > 69) {
                 if (shouldPlay != elevator.playing) {
                     if (shouldPlay) {
-                        EventBindings::SendEvent(lock, "/sound/play", ent, 0);
+                        EventBindings::SendEvent(lock, ent, Event{"/sound/play", ent, 0});
                     } else {
-                        EventBindings::SendEvent(lock, "/sound/stop", ent, 0);
+                        EventBindings::SendEvent(lock, ent, Event{"/sound/stop", ent, 0});
                     }
                     elevator.playing = shouldPlay;
                 }

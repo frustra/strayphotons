@@ -191,8 +191,8 @@ namespace ecs {
         }
     }
 
-    bool EventInput::Add(const std::string &binding, const Event &event) const {
-        auto it = events.find(binding);
+    bool EventInput::Add(const Event &event) const {
+        auto it = events.find(event.name);
         if (it != events.end()) {
             for (auto &queue : it->second) {
                 queue->Add(event);
@@ -299,13 +299,9 @@ namespace ecs {
         return list;
     }
 
-    size_t EventBindings::SendEvent(SendEventsLock lock,
-        const EntityRef &target,
-        const std::string &bindingName,
-        const Event &event,
-        size_t depth) {
+    size_t EventBindings::SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth) {
         if (depth > MAX_EVENT_BINDING_DEPTH) {
-            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), bindingName);
+            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
             return 0;
         }
         auto ent = target.Get(lock);
@@ -324,11 +320,11 @@ namespace ecs {
         size_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<EventInput>(lock);
-            if (eventInput.Add(bindingName, event)) eventsSent++;
+            if (eventInput.Add(event)) eventsSent++;
         }
         if (ent.Has<EventBindings>(lock)) {
             auto &bindings = ent.Get<EventBindings>(lock);
-            auto list = bindings.sourceToDest.find(bindingName);
+            auto list = bindings.sourceToDest.find(event.name);
             if (list != bindings.sourceToDest.end()) {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
@@ -356,8 +352,7 @@ namespace ecs {
                             },
                             modifiedEvent.data);
                     }
-                    eventsSent +=
-                        EventBindings::SendEvent(lock, binding.target, binding.destQueue, modifiedEvent, depth + 1);
+                    eventsSent += EventBindings::SendEvent(lock, binding.target, modifiedEvent, depth + 1);
                 }
             }
         }
