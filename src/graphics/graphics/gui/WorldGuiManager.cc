@@ -14,9 +14,8 @@ namespace sp {
         std::thread([this]() {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
             auto gui = guiEntity.Get(lock);
-            Assertf(gui.Has<ecs::EventInput>(lock),
-                "World Gui entity has no EventInput: %s",
-                std::to_string(guiEntity));
+            if (!gui.Has<ecs::EventInput>(lock)) return;
+
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
             eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);

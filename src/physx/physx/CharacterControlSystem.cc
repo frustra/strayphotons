@@ -529,7 +529,7 @@ namespace sp {
 
                 if (ecs::TransformTree::GetRoot(lock, head) != entity) {
                     // Subtract the head input from the movement without moving backwards.
-                    // This allows the head to detatch from the player when colliding with walls.
+                    // This allows the head to detach from the player when colliding with walls.
                     auto deltaPos = newPosition - oldPosition;
                     deltaPos -= glm::clamp(headInput, -glm::abs(deltaPos), glm::abs(deltaPos));
 

@@ -6,7 +6,7 @@
 namespace ecs {
     template<>
     void Component<LaserLine>::InitUndefined(LaserLine &dst) {
-        dst.line = LaserLine::Line{{}, glm::vec3(INFINITY)};
+        dst.line = LaserLine::Line{{}, glm::vec3(-INFINITY)};
     }
 
     template<>

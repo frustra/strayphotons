@@ -86,7 +86,7 @@ namespace sp::json {
 namespace ecs {
     template<>
     void Component<TransformTree>::InitUndefined(TransformTree &dst) {
-        dst.pose = glm::mat4x3(INFINITY);
+        dst.pose = glm::mat4x3(-INFINITY);
     }
 
     template<>

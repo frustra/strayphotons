@@ -195,6 +195,7 @@ namespace sp {
                             if (!audioBuffer) {
                                 audioBuffer = make_shared<nqr::AudioData>();
                                 loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
+                                decoderCache.Register(asset.get(), audioBuffer);
                             }
                             return audioBuffer;
                         });
