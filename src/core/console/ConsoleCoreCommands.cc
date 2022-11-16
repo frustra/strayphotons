@@ -203,7 +203,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             }
 
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-            auto sent = ecs::EventBindings::SendEvent(lock, entityName, eventName, event);
+            auto sent = ecs::EventBindings::SendEvent(lock, entityName, event);
             if (sent == 0) {
                 Warnf("No event target found: %s%s", entityName.String(), eventName);
             } else {

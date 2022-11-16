@@ -178,7 +178,6 @@ namespace sp::scripts {
                                     // Drop the currently held entity
                                     EventBindings::SendEvent(lock,
                                         scriptData.grabEntity,
-                                        INTERACT_EVENT_INTERACT_GRAB,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                     scriptData.grabEntity = {};
                                 }
@@ -186,7 +185,6 @@ namespace sp::scripts {
                                     // Grab the entity being looked at
                                     if (EventBindings::SendEvent(lock,
                                             raycastResult.target,
-                                            INTERACT_EVENT_INTERACT_GRAB,
                                             Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
                                         scriptData.grabEntity = raycastResult.target;
                                     }
@@ -200,7 +198,6 @@ namespace sp::scripts {
                                     // Unpress the currently pressed entity
                                     EventBindings::SendEvent(lock,
                                         scriptData.pressEntity,
-                                        INTERACT_EVENT_INTERACT_PRESS,
                                         Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
                                     scriptData.pressEntity = {};
                                 }
@@ -208,7 +205,6 @@ namespace sp::scripts {
                                     // Press the entity being looked at
                                     EventBindings::SendEvent(lock,
                                         raycastResult.target,
-                                        INTERACT_EVENT_INTERACT_PRESS,
                                         Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
                                     scriptData.pressEntity = raycastResult.target;
                                 }
@@ -217,7 +213,6 @@ namespace sp::scripts {
                             if (rotating && scriptData.grabEntity) {
                                 EventBindings::SendEvent(lock,
                                     scriptData.grabEntity,
-                                    INTERACT_EVENT_INTERACT_ROTATE,
                                     Event{INTERACT_EVENT_INTERACT_ROTATE, ent, event.data});
                             }
                         }
@@ -226,7 +221,6 @@ namespace sp::scripts {
                     if (scriptData.pointEntity && raycastResult.target != scriptData.pointEntity) {
                         EventBindings::SendEvent(lock,
                             scriptData.pointEntity,
-                            INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
                     }
                     if (raycastResult.target) {
@@ -234,7 +228,6 @@ namespace sp::scripts {
                         pointTransfrom.SetPosition(raycastResult.position);
                         EventBindings::SendEvent(lock,
                             raycastResult.target,
-                            INTERACT_EVENT_INTERACT_POINT,
                             Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransfrom});
                     }
                     scriptData.pointEntity = raycastResult.target;

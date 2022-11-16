@@ -193,9 +193,8 @@ namespace sp::xr {
 
                             if (digitalActionData.bActive && digitalActionData.bChanged) {
                                 ecs::EventBindings::SendEvent(lock,
-                                    action.name,
                                     originEntity,
-                                    digitalActionData.bState);
+                                    ecs::Event{action.name, originEntity, digitalActionData.bState});
                             }
 
                             if (originEntity.Has<ecs::SignalOutput>(lock)) {
@@ -223,19 +222,23 @@ namespace sp::xr {
                                                                 analogActionData.z != 0.0f)) {
                                 switch (action.type) {
                                 case Action::DataType::Vec1:
-                                    ecs::EventBindings::SendEvent(lock, action.name, originEntity, analogActionData.x);
+                                    ecs::EventBindings::SendEvent(lock,
+                                        originEntity,
+                                        ecs::Event{action.name, originEntity, analogActionData.x});
                                     break;
                                 case Action::DataType::Vec2:
                                     ecs::EventBindings::SendEvent(lock,
-                                        action.name,
                                         originEntity,
-                                        glm::vec2(analogActionData.x, analogActionData.y));
+                                        ecs::Event{action.name,
+                                            originEntity,
+                                            glm::vec2(analogActionData.x, analogActionData.y)});
                                     break;
                                 case Action::DataType::Vec3:
                                     ecs::EventBindings::SendEvent(lock,
-                                        action.name,
                                         originEntity,
-                                        glm::vec3(analogActionData.x, analogActionData.y, analogActionData.z));
+                                        ecs::Event{action.name,
+                                            originEntity,
+                                            glm::vec3(analogActionData.x, analogActionData.y, analogActionData.z)});
                                     break;
                                 default:
                                     break;

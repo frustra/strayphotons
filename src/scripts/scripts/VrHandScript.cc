@@ -229,18 +229,12 @@ namespace sp::scripts {
         }
 
         if (scriptData.pointEntity && scriptData.pointEntity != pointTarget) {
-            EventBindings::SendEvent(lock,
-                scriptData.pointEntity,
-                INTERACT_EVENT_INTERACT_POINT,
-                Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
+            EventBindings::SendEvent(lock, scriptData.pointEntity, Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
         }
         if (pointTarget) {
             Transform pointTransform;
             pointTransform.SetPosition(pointPos);
-            EventBindings::SendEvent(lock,
-                pointTarget,
-                INTERACT_EVENT_INTERACT_POINT,
-                Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransform});
+            EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransform});
         }
         scriptData.pointEntity = pointTarget;
 
@@ -267,16 +261,12 @@ namespace sp::scripts {
                     // Unpress the currently pressed entity
                     EventBindings::SendEvent(lock,
                         scriptData.pressEntity,
-                        INTERACT_EVENT_INTERACT_PRESS,
                         Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
                     scriptData.pressEntity = {};
                 }
                 if (std::get<bool>(event.data) && pointTarget) {
                     // Press the entity being looked at
-                    EventBindings::SendEvent(lock,
-                        pointTarget,
-                        INTERACT_EVENT_INTERACT_PRESS,
-                        Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
+                    EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
                     scriptData.pressEntity = pointTarget;
                 }
             }
@@ -377,10 +367,7 @@ namespace sp::scripts {
             }
             if (scriptData.grabEntity && scriptData.grabEntity != grabTarget) {
                 // Drop the currently held entity
-                EventBindings::SendEvent(lock,
-                    scriptData.grabEntity,
-                    INTERACT_EVENT_INTERACT_GRAB,
-                    Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                EventBindings::SendEvent(lock, scriptData.grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                 scriptData.grabEntity = {};
             }
             if (grabTarget && grabTarget != scriptData.grabEntity) {
@@ -388,7 +375,6 @@ namespace sp::scripts {
                 auto globalTransform = transform.GetGlobalTransform(lock);
                 if (EventBindings::SendEvent(lock,
                         grabTarget,
-                        INTERACT_EVENT_INTERACT_GRAB,
                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, globalTransform}) > 0) {
                     scriptData.grabEntity = grabTarget;
                 }

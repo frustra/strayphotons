@@ -67,11 +67,11 @@ namespace EventBindingTests {
             Timer t("Send some test events");
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
-            auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
+            auto sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_BUTTON, player, 42});
             Assert(sentCount == 1, "Expected to successfully queue 1 event");
-            sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_KEY, player, 'a');
+            sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'a'});
             Assert(sentCount == 2, "Expected to successfully queue 2 events");
-            sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_KEY, player, 'b');
+            sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'b'});
             Assert(sentCount == 2, "Expected to successfully queue 2 events");
         }
         {
@@ -145,11 +145,11 @@ namespace EventBindingTests {
             Timer t("Send some more test events");
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
-            auto sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
+            auto sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_BUTTON, player, 42});
             Assert(sentCount == 0, "Expected to successfully queue 0 events");
-            sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_KEY, player, 'a');
+            sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'a'});
             Assert(sentCount == 0, "Expected to successfully queue 0 events");
-            sentCount = ecs::EventBindings::SendEvent(lock, TEST_SOURCE_KEY, player, 'b');
+            sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'b'});
             Assert(sentCount == 0, "Expected to successfully queue 0 events");
         }
     }

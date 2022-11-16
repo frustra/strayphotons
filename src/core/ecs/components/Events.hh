@@ -74,7 +74,7 @@ namespace ecs {
         void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding);
         void Unregister(const EventQueueRef &queue, const std::string &binding);
 
-        bool Add(const std::string &binding, const Event &event) const;
+        bool Add(const Event &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
         robin_hood::unordered_map<std::string, std::vector<std::shared_ptr<EventQueue>>> events;
@@ -110,16 +110,7 @@ namespace ecs {
         const BindingList *Lookup(const std::string source) const;
         std::vector<std::string> GetBindingNames() const;
 
-        static size_t SendEvent(SendEventsLock lock,
-            const EntityRef &target,
-            const std::string &bindingName,
-            const Event &event,
-            size_t depth = 0);
-
-        template<typename T>
-        static inline size_t SendEvent(SendEventsLock lock, const std::string &name, const Entity &source, T data) {
-            return SendEvent(lock, source, name, Event{name, source, data});
-        }
+        static size_t SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth = 0);
 
     private:
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;

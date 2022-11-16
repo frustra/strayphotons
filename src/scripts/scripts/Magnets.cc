@@ -20,6 +20,7 @@ namespace sp::scripts {
 
                 struct ScriptData {
                     Entity socketEntity;
+                    std::vector<Entity> grabEntities;
                 };
                 ScriptData scriptData = {};
                 if (state.userData.has_value()) scriptData = std::any_cast<ScriptData>(state.userData);
@@ -34,16 +35,26 @@ namespace sp::scripts {
                         joints.Add(joint);
 
                         scriptData.socketEntity = event.source;
+
+                        for (auto &grabEntity : scriptData.grabEntities) {
+                            EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                        }
                     } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
-                        auto data = std::get_if<Transform>(&event.data);
-                        if (!data) continue;
+                        if (std::holds_alternative<bool>(event.data)) {
+                            // Grab(false) = Drop
+                            sp::erase(scriptData.grabEntities, event.source);
+                        } else if (std::holds_alternative<Transform>(event.data)) {
+                            if (scriptData.socketEntity) {
+                                Logf("Detached: %s", ecs::ToString(lock, scriptData.socketEntity));
 
-                        if (scriptData.socketEntity) {
-                            Logf("Detached: %s", ecs::ToString(lock, scriptData.socketEntity));
+                                sp::erase_if(joints.joints, [&](auto &&joint) {
+                                    return joint.target == scriptData.socketEntity;
+                                });
+                            }
 
-                            sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == scriptData.socketEntity;
-                            });
+                            scriptData.grabEntities.emplace_back(event.source);
+                        } else {
+                            Errorf("Unsupported grab event type: %s", event.toString());
                         }
                     }
                 }
@@ -84,10 +95,7 @@ namespace sp::scripts {
                             } else {
                                 Logf("Attached: %s", ecs::ToString(lock, event.source));
                                 scriptData.disabledEntities.emplace(*data);
-                                EventBindings::SendEvent(lock,
-                                    *data,
-                                    "/magnet/attach",
-                                    Event{"/magnet/attach", ent, true});
+                                EventBindings::SendEvent(lock, *data, Event{"/magnet/attach", ent, true});
                             }
                         }
                     }

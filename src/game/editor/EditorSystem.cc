@@ -89,7 +89,7 @@ namespace sp {
             return;
         }
 
-        ecs::EventBindings::SendEvent(lock, "/edit/target", inspector, target);
+        ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{"/edit/target", inspector, target});
 
         if (flatMode) {
             gui.target = ecs::GuiTarget::Debug;
