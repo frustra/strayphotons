@@ -218,7 +218,9 @@ namespace sp::vulkan::render_graph {
 
                 auto last = GetAccessInfo(lastAccess);
                 if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-                if (nextAccess == Access::ColorAttachmentWrite) last.imageLayout = vk::ImageLayout::eUndefined;
+                if (nextAccess == Access::ColorAttachmentWrite || nextAccess == Access::DepthStencilAttachmentWrite) {
+                    last.imageLayout = vk::ImageLayout::eUndefined;
+                }
 
                 if (!cmd) cmd = device.GetFrameCommandContext();
 

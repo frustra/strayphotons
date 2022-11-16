@@ -164,6 +164,7 @@ namespace sp::vulkan {
                     });
 
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
+                builder.Read(bufferIDs.drawCommandsBuffer, Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
                 auto drawParams = builder.CreateBuffer({sizeof(GPUDrawParams), maxDraws},
@@ -315,6 +316,7 @@ namespace sp::vulkan {
                     });
 
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
+                builder.Read("WarpedVertexDrawCmds", Access::ComputeShaderReadStorage);
                 builder.Write("WarpedVertexDrawCmds", Access::ComputeShaderWrite);
 
                 builder.CreateBuffer("WarpedVertexDrawParams",

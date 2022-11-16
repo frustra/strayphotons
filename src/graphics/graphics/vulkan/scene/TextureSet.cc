@@ -8,6 +8,8 @@ namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device, DispatchQueue &workQueue) : device(device), workQueue(workQueue) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
+        textures[0] = CreateSinglePixel(glm::vec4(1));
+        texturesToFlush.push_back(0);
     }
 
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
@@ -250,9 +252,8 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr TextureSet::GetBlankPixel() {
-        auto &texPtr = textures[0];
-        if (!texPtr) texPtr = CreateSinglePixel(glm::vec4(1));
-        return texPtr;
+        DebugAssertf(textures.size() > 0 && textures[0], "Blank pixel texture is missing");
+        return textures[0];
     }
 
     ImageViewPtr TextureSet::CreateSinglePixel(glm::vec4 value) {

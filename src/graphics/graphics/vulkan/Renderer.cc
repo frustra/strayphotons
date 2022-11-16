@@ -240,6 +240,7 @@ namespace sp::vulkan {
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
+                builder.Read("ViewState", Access::VertexShaderReadUniform);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
