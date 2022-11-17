@@ -36,8 +36,10 @@ typedef int64_t int64;
 
 #ifdef SP_DEBUG
     #define DebugAssert(condition, message) Assert(condition, message)
+    #define DebugAssertf(condition, ...) Assertf(condition, __VA_ARGS__)
 #else
     #define DebugAssert(condition, message)
+    #define DebugAssertf(condition, ...)
 #endif
 
 namespace sp {

@@ -53,8 +53,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
 
-                cmd.SetBindlessDescriptors(2, scene.textures.GetDescriptorSet());
-
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),

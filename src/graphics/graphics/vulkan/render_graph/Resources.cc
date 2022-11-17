@@ -115,7 +115,12 @@ namespace sp::vulkan::render_graph {
         Assertf(res.type == Resource::Type::Buffer, "resource %s is not a buffer", resourceNames[id]);
         Assertf(RefCount(id) > 0, "can't get buffer %s without accessing it", resourceNames[id]);
         auto &buf = buffers[res.id];
-        if (!buf) buf = device.GetBuffer(res.bufferDesc);
+        if (!buf) {
+            DebugAssertf(res.bufferDesc.usage != vk::BufferUsageFlags(),
+                "resource %s has no usage flags",
+                resourceNames[id]);
+            buf = device.GetBuffer(res.bufferDesc);
+        }
         DebugAssert(res.bufferDesc.usage == buf->Usage(), "buffer usage mismatch");
         return buf;
     }

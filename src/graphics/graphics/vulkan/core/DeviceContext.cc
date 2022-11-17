@@ -284,12 +284,15 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
         Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
         Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
+        Assert(availableDeviceFeatures.drawIndirectFirstInstance, "device must support drawIndirectFirstInstance");
         Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
         Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableVulkan11Features.multiview, "device must support multiview");
         Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
         Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
+        Assert(availableVulkan11Features.uniformAndStorageBuffer16BitAccess,
+            "device must support uniformAndStorageBuffer16BitAccess");
         Assert(availableVulkan12Features.shaderOutputViewportIndex, "device must support shaderOutputViewportIndex");
         Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
         Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
@@ -315,6 +318,7 @@ namespace sp::vulkan {
 
         vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
         enabledVulkan11Features.storageBuffer16BitAccess = true;
+        enabledVulkan11Features.uniformAndStorageBuffer16BitAccess = true;
         enabledVulkan11Features.multiview = true;
         enabledVulkan11Features.shaderDrawParameters = true;
         enabledVulkan11Features.pNext = &enabledVulkan12Features;
@@ -326,6 +330,7 @@ namespace sp::vulkan {
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
         enabledDeviceFeatures.multiDrawIndirect = true;
+        enabledDeviceFeatures.drawIndirectFirstInstance = true;
         enabledDeviceFeatures.multiViewport = true;
         enabledDeviceFeatures.shaderInt16 = true;
         enabledDeviceFeatures.fragmentStoresAndAtomics = true;
@@ -827,7 +832,7 @@ namespace sp::vulkan {
         Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence, lastSubmit);
     }
 
-    void DeviceContext::Submit(vk::ArrayProxy<CommandContextPtr> cmds,
+    void DeviceContext::Submit(vk::ArrayProxyNoTemporaries<CommandContextPtr> cmds,
         vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
         vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
@@ -902,6 +907,7 @@ namespace sp::vulkan {
     }
 
     BufferPtr DeviceContext::AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
+        DebugAssert(usage != vk::BufferUsageFlags(), "AllocateBuffer called without usage flags");
         vk::BufferCreateInfo bufferInfo;
         bufferInfo.size = layout.size;
         bufferInfo.usage = usage;
