@@ -18,9 +18,8 @@ namespace sp {
                 auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
 
                 auto inspector = inspectorEntity.Get(lock);
-                Assertf(inspector.Has<ecs::EventInput>(lock),
-                    "InspectorGui entity is missing EventInput: %s",
-                    inspectorEntity.Name().String());
+                if (!inspector.Has<ecs::EventInput>(lock)) return;
+
                 auto &eventInput = inspector.Get<ecs::EventInput>(lock);
                 eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
             }).detach();

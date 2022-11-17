@@ -86,13 +86,10 @@ namespace sp::scripts {
                             newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, true, 1.0f);
                             newEntity.Set<PhysicsJoints>(lock);
                             newEntity.Set<PhysicsQuery>(lock);
-                            auto &eventInput = newEntity.Set<EventInput>(lock);
+                            newEntity.Set<EventInput>(lock);
                             auto &script = newEntity.Set<Script>(lock);
                             auto &newState = script.AddOnTick(scope, "interactive_object");
                             newState.filterOnEvent = true;
-                            eventInput.Register(lock, newState.eventQueue, "/interact/grab");
-                            eventInput.Register(lock, newState.eventQueue, "/interact/point");
-                            eventInput.Register(lock, newState.eventQueue, "/interact/rotate");
                         }
                     }).detach();
                 }

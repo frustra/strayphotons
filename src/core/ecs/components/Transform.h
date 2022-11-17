@@ -35,6 +35,7 @@ namespace ecs {
         glm::vec3 GetForward() const;
         glm::vec3 GetUp() const;
         glm::vec3 GetScale() const;
+        const Transform &Get() const;
         Transform GetInverse() const;
 
         glm::vec3 operator*(const glm::vec4 &rhs) const;
@@ -75,7 +76,7 @@ namespace ecs {
 
         TransformTree() {}
         TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
-        TransformTree(const Transform &pose) : pose(pose) {}
+        TransformTree(const Transform &pose, EntityRef parent = {}) : pose(pose), parent(parent) {}
         TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
 
         static void MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target);
@@ -96,6 +97,8 @@ namespace ecs {
         ComponentField::New(&TransformTree::pose, ~FieldAction::AutoApply),
         ComponentField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
 
+    template<>
+    void Component<TransformTree>::InitUndefined(TransformTree &dst);
     template<>
     void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst);
     #endif

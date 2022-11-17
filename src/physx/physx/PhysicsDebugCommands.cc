@@ -14,7 +14,7 @@ bool floatEqual(float a, float b) {
 
 void assertEqual(glm::vec3 a, glm::vec3 b) {
     if (!floatEqual(a.x, b.x) || !floatEqual(a.y, b.y) || !floatEqual(a.z, b.z)) {
-        Errorf("Assertion failed: %s != %s", glm::to_string(a), glm::to_string(b));
+        Abortf("Assertion failed: %s != %s", glm::to_string(a), glm::to_string(b));
     }
 }
 

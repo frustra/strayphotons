@@ -62,9 +62,23 @@ namespace ecs {
 
     template<typename CompType>
     class Component : public ComponentBase {
+    private:
+        const CompType defaultLiveComponent = {};
+        const CompType defaultStagingComponent;
+
+        template<typename... Fields>
+        CompType makeDefaultStagingComponent(Fields &&...fields) {
+            static const CompType defaultComp = {};
+            CompType comp = {};
+            (fields.InitUndefined(&comp, &defaultComp), ...);
+            InitUndefined(comp);
+            return comp;
+        }
+
     public:
         Component() : ComponentBase("") {}
-        Component(const char *name) : ComponentBase(name) {
+        Component(const char *name, const CompType defaultStagingComp = {})
+            : ComponentBase(name), defaultStagingComponent(defaultStagingComp) {
             auto existing = dynamic_cast<const Component<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
@@ -74,7 +88,7 @@ namespace ecs {
         }
 
         template<typename... Fields>
-        Component(const char *name, Fields &&...fields) : Component(name) {
+        Component(const char *name, Fields &&...fields) : Component(name, makeDefaultStagingComponent(fields...)) {
             (this->fields.emplace_back(fields), ...);
             for (int i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
@@ -95,19 +109,19 @@ namespace ecs {
             const EntityScope &scope,
             Entity &dst,
             const picojson::value &src) const override {
+            DebugAssert(IsStaging(lock), "LoadEntity should only be called with a staging lock");
             if (dst.Has<CompType>(lock)) {
-                static const CompType defaultComp = {};
-                CompType srcComp;
+                CompType srcComp = defaultStagingComponent;
                 if (!LoadFields(scope, srcComp, src)) return false;
                 if (!Load(scope, srcComp, src)) return false;
                 auto &comp = dst.Get<CompType>(lock);
                 for (auto &field : this->fields) {
-                    field.Apply(&comp, &srcComp, &defaultComp);
+                    field.Apply(&comp, &srcComp, &defaultStagingComponent);
                 }
                 Apply(srcComp, lock, dst);
                 return true;
             } else {
-                auto &comp = dst.Set<CompType>(lock);
+                auto &comp = dst.Set<CompType>(lock, defaultStagingComponent);
                 if (!LoadFields(scope, comp, src)) return false;
                 return Load(scope, comp, src);
             }
@@ -117,27 +131,33 @@ namespace ecs {
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const override {
-            static const CompType defaultValue = {};
             auto &comp = src.Get<CompType>(lock);
 
-            for (auto &field : this->fields) {
-                field.Save(scope, dst, &comp, &defaultValue);
+            if (IsLive(lock)) {
+                for (auto &field : this->fields) {
+                    field.Save(scope, dst, &comp, &defaultLiveComponent);
+                }
+            } else {
+                for (auto &field : this->fields) {
+                    field.Save(scope, dst, &comp, &defaultStagingComponent);
+                }
             }
             Save(lock, scope, dst, comp);
         }
 
         void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
-            static const CompType defaultValues = {};
+            const auto &defaultComponent = IsLive(dstLock) ? defaultLiveComponent : defaultStagingComponent;
+            CompType *dstComp;
             if (!dst.Has<CompType>(dstLock)) {
-                dst.Set<CompType>(dstLock, src);
+                dstComp = &dst.Set<CompType>(dstLock, defaultComponent);
             } else {
-                // Merge existing component with a new one
-                auto &dstComp = dst.Get<CompType>(dstLock);
-                for (auto &field : this->fields) {
-                    field.Apply(&dstComp, &src, &defaultValues);
-                }
-                Apply(src, dstLock, dst);
+                dstComp = &dst.Get<CompType>(dstLock);
             }
+            // Merge existing component with a new one
+            for (auto &field : this->fields) {
+                field.Apply(dstComp, &src, &defaultComponent);
+            }
+            Apply(src, dstLock, dst);
         }
 
         void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) const override {
@@ -168,6 +188,10 @@ namespace ecs {
         }
 
     protected:
+        static void InitUndefined(CompType &dst) {
+            // Custom field init is always called, default to no-op.
+        }
+
         static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
             // Custom field serialization is always called, default to no-op.
             return true;

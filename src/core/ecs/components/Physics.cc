@@ -124,6 +124,12 @@ namespace ecs {
         return true;
     }
 
+    template<>
+    void Component<Physics>::Apply(const Physics &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstPhysics = dst.Get<Physics>(lock);
+        if (dstPhysics.shapes.empty()) dstPhysics.shapes = src.shapes;
+    }
+
     PhysicsShape::ConvexMesh::ConvexMesh(const std::string &modelName, const std::string &meshName)
         : modelName(modelName), meshName(meshName) {
         Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
