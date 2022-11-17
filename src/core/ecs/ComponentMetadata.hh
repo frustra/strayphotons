@@ -19,6 +19,7 @@ namespace sp {
 }
 
 namespace ecs {
+    enum class FieldAction;
     struct EntityScope;
     struct AnimationState;
     enum class FocusLayer : uint8_t;
@@ -29,7 +30,14 @@ namespace ecs {
     enum class TriggerShape : uint8_t;
     enum class VisibilityMask;
     enum class XrEye;
+}; // namespace ecs
 
+template<>
+struct magic_enum::customize::enum_range<ecs::FieldAction> {
+    static constexpr bool is_flags = true;
+};
+
+namespace ecs {
     using FieldTypes = std::tuple<
         // Basic types
         bool,

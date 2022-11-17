@@ -33,7 +33,6 @@ namespace sp::vulkan {
         TextureHandle Add(const AsyncPtr<ImageView> &asyncPtr);
 
         ImageViewPtr Get(TextureIndex i) {
-            if (i == 0) return GetBlankPixel();
             Assertf(i < textures.size(), "Invalid texture index: %u", i);
             return textures[i];
         }

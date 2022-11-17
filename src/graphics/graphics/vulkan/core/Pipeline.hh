@@ -55,10 +55,10 @@ namespace sp::vulkan {
         uint32 storageImagesMask = 0;
         uint32 lastBinding = 0;
 
-        vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET];
+        vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET] = {};
 
         // count is usually 1, can be higher for array bindings, or 0 for an unbounded array
-        uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET];
+        uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET] = {};
     };
 
     struct PipelineLayoutInfo {
@@ -66,7 +66,7 @@ namespace sp::vulkan {
 
         uint32 descriptorSetsMask = 0;
         uint32 bindlessMask = 0;
-        DescriptorSetLayoutInfo descriptorSets[MAX_BOUND_DESCRIPTOR_SETS];
+        DescriptorSetLayoutInfo descriptorSets[MAX_BOUND_DESCRIPTOR_SETS] = {};
 
         struct MemorySize {
             vk::DeviceSize sizeBase = 0, sizeIncrement = 0;

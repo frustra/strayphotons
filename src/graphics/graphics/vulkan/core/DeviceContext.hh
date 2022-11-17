@@ -99,7 +99,7 @@ namespace sp::vulkan {
             vk::Fence fence = {},
             bool lastSubmit = false);
 
-        void Submit(vk::ArrayProxy<CommandContextPtr> cmds,
+        void Submit(vk::ArrayProxyNoTemporaries<CommandContextPtr> cmds,
             vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
             vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
             vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
