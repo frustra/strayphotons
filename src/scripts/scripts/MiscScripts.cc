@@ -36,8 +36,9 @@ namespace sp::scripts {
                     }
                 }
                 if (newTriggered != oldTriggered) {
-                    if (newTriggered != 0.0f)
+                    if (newTriggered != 0.0f) {
                         EventBindings::SendEvent(lock, ent, Event{outputName, ent, (double)newTriggered});
+                    }
                     state.SetParam<bool>("triggered", newTriggered);
                 }
             }),

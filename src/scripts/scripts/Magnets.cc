@@ -14,8 +14,7 @@ namespace sp::scripts {
         InternalScript(
             "magnetic_plug",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                if (!ent.Has<TransformTree, PhysicsJoints>(lock)) return;
-                auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                if (!ent.Has<PhysicsJoints>(lock)) return;
                 auto &joints = ent.Get<PhysicsJoints>(lock);
 
                 struct ScriptData {
@@ -45,7 +44,9 @@ namespace sp::scripts {
                             sp::erase(scriptData.grabEntities, event.source);
                         } else if (std::holds_alternative<Transform>(event.data)) {
                             if (scriptData.socketEntity) {
-                                Logf("Detached: %s", ecs::ToString(lock, scriptData.socketEntity));
+                                Debugf("Detached: %s from %s",
+                                    ecs::ToString(lock, ent),
+                                    ecs::ToString(lock, scriptData.socketEntity));
 
                                 sp::erase_if(joints.joints, [&](auto &&joint) {
                                     return joint.target == scriptData.socketEntity;
@@ -85,18 +86,13 @@ namespace sp::scripts {
 
                     if (event.name == "/trigger/magnetic/leave") {
                         if (event.source == enableTrigger) {
-                            Logf("Enabled: %s", ecs::ToString(lock, event.source));
                             scriptData.disabledEntities.erase(*data);
                         }
                     } else if (event.name == "/trigger/magnetic/enter") {
-                        if (event.source == ent) {
-                            if (scriptData.disabledEntities.contains(*data)) {
-                                Logf("Ignoring: %s", ecs::ToString(lock, event.source));
-                            } else {
-                                Logf("Attached: %s", ecs::ToString(lock, event.source));
-                                scriptData.disabledEntities.emplace(*data);
-                                EventBindings::SendEvent(lock, *data, Event{"/magnet/attach", ent, true});
-                            }
+                        if (event.source == ent && !scriptData.disabledEntities.contains(*data)) {
+                            Debugf("Attached: %s to %s", ecs::ToString(lock, *data), ecs::ToString(lock, event.source));
+                            scriptData.disabledEntities.emplace(*data);
+                            EventBindings::SendEvent(lock, *data, Event{"/magnet/attach", ent, true});
                         }
                     }
                 }
