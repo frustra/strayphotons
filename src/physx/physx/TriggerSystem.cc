@@ -78,7 +78,7 @@ namespace sp {
                         entityPos.z);
                 }
 
-                ecs::EventBindings::SendEvent(lock, *eventName, entity, triggerEnt);
+                ecs::EventBindings::SendEvent(lock, entity, ecs::Event{*eventName, entity, triggerEnt});
             }
 
             for (auto &triggerGroup : magic_enum::enum_values<ecs::TriggerGroup>()) {

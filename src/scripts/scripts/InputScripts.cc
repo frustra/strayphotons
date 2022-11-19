@@ -28,9 +28,10 @@ namespace sp::scripts {
                         float factorParamX = state.GetParam<double>("scale_x");
                         float factorParamY = state.GetParam<double>("scale_y");
                         EventBindings::SendEvent(lock,
-                            "/script/joystick_out",
                             ent,
-                            glm::vec2(data->x * factorParamX, data->y * factorParamY));
+                            Event{"/script/joystick_out",
+                                ent,
+                                glm::vec2(data->x * factorParamX, data->y * factorParamY)});
                     } else {
                         Errorf("Unsupported joystick_in event type: %s", event.toString());
                     }

@@ -450,6 +450,32 @@
 			}
 		},
 		{
+			"name": "plug",
+			"transform": {
+				"translate": [2.75, 0.9, 2.65]
+			},
+			"renderable": {
+				"model": "articulating-arm",
+				"mesh_index": 2
+			},
+			"physics": {
+				"model": "articulating-arm.convex2",
+				"density": 1000
+			},
+			"physics_joints": [],
+			"trigger_group": "Magnetic",
+			"event_input": {},
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "interactive" }
+				},
+				{
+					"onEvent": "magnetic_plug"
+				}
+			]
+		},
+		{
 			"name": "global:spawn",
 			"transform": {
 				"translate": [0, 0, 0]

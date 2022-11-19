@@ -13,6 +13,18 @@
 					"render": true
 				}
 			}
+		},
+		{
+			"name": "socket",
+			"transform": {
+				"parent": "surface",
+				"translate": [0, 0.05, 0],
+				"scale": [0.08, 0.08, 0.08]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "magnetic_socket" }
+			}
 		}
 	]
 }

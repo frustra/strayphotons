@@ -6,7 +6,7 @@
 #include "game/Scene.hh"
 
 namespace ecs {
-    InternalPrefab gltfPrefab("gltf", [](ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+    InternalPrefab gltfPrefab("gltf", [](const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
         auto modelName = state.GetParam<std::string>("model");
         auto asyncGltf = sp::Assets().LoadGltf(modelName);
         auto model = asyncGltf->Get();
