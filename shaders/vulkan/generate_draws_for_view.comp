@@ -56,8 +56,12 @@ void main() {
         draw.firstInstance = drawIndex;
         drawCommands[drawIndex] = draw;
 
-        drawParams[drawIndex].baseColorTexID = uint16_t(prim.baseColorTexID);
-        drawParams[drawIndex].metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
+        drawParams[drawIndex].baseColorTexID = renderable.baseColorOverrideID >= 0
+                                                   ? uint16_t(renderable.baseColorOverrideID)
+                                                   : uint16_t(prim.baseColorTexID);
+        drawParams[drawIndex].metallicRoughnessTexID = renderable.metallicRoughnessOverrideID >= 0
+                                                           ? uint16_t(renderable.metallicRoughnessOverrideID)
+                                                           : uint16_t(prim.metallicRoughnessTexID);
         drawParams[drawIndex].opticID = uint16_t(renderable.opticID);
         drawParams[drawIndex].emissiveScale = float16_t(renderable.emissiveScale);
     }

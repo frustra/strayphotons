@@ -52,13 +52,14 @@ namespace sp::vulkan {
 
     struct GPURenderableEntity {
         glm::mat4 modelToWorld;
-        uint32 meshIndex;
-        uint32 visibilityMask;
-        uint32 vertexOffset;
-        uint32 jointPosesOffset = 0xffffffff;
-        uint32 opticID = 0;
+        uint32_t meshIndex;
+        uint32_t visibilityMask;
+        uint32_t vertexOffset;
+        uint32_t jointPosesOffset = 0xffffffff;
+        uint32_t opticID = 0;
         float emissiveScale = 0;
-        float _padding[2];
+        int32_t baseColorOverrideID = -1;
+        int32_t metallicRoughnessOverrideID = -1;
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 

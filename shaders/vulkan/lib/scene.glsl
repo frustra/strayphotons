@@ -20,6 +20,8 @@ struct RenderableEntity {
     uint jointPosesOffset;
     uint opticID;
     float emissiveScale;
+    int baseColorOverrideID;
+    int metallicRoughnessOverrideID;
 };
 
 struct SceneVertex {
