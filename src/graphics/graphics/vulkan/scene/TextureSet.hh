@@ -3,6 +3,7 @@
 #include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "core/DispatchQueue.hh"
+#include "core/Hashing.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
@@ -37,8 +38,8 @@ namespace sp::vulkan {
             return textures[i];
         }
 
-        ImageViewPtr GetBlankPixel();
-        ImageViewPtr CreateSinglePixel(glm::vec4 value);
+        ImageViewPtr GetSinglePixel(glm::vec4 value);
+        TextureIndex GetSinglePixelIndex(glm::vec4 value);
 
         vk::DescriptorSet GetDescriptorSet() const {
             return textureDescriptorSet;
@@ -51,6 +52,7 @@ namespace sp::vulkan {
         void Flush();
 
     private:
+        ImageViewPtr CreateSinglePixel(glm::u8vec4 value);
         void ReleaseTexture(TextureIndex i);
         TextureIndex AllocateTextureIndex();
 
@@ -62,6 +64,9 @@ namespace sp::vulkan {
         vk::DescriptorSet textureDescriptorSet;
 
         robin_hood::unordered_map<string, TextureHandle> textureCache;
+
+        using PixelColorKey = HashKey<glm::u8vec4>;
+        robin_hood::unordered_map<PixelColorKey, TextureIndex, PixelColorKey::Hasher> singlePixelMap;
 
         DeviceContext &device;
         DispatchQueue &workQueue;

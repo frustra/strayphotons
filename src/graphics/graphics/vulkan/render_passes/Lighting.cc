@@ -358,7 +358,7 @@ namespace sp::vulkan::renderer {
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView(0, 0, resources.GetImageView(lastFrameID));
                 } else {
-                    cmd.SetImageView(0, 0, scene.textures.GetBlankPixel());
+                    cmd.SetImageView(0, 0, scene.textures.GetSinglePixel(glm::vec4(1)));
                 }
 
                 auto lastStateID = resources.GetID("LightState", false, 1);
