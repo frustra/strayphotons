@@ -12,16 +12,15 @@ namespace ecs {
     struct has_type<T, std::tuple<Un...>> : std::disjunction<std::is_same<T, Un>...> {};
 
     const auto &getUndefinedFieldValues() {
-        static const auto undefinedValues =
-            std::make_tuple<sp::angle_t, float, double, glm::vec2, glm::vec3, glm::vec4, sp::color_t, glm::quat>(
-                sp::angle_t(-INFINITY),
-                -std::numeric_limits<float>::infinity(),
-                -std::numeric_limits<double>::infinity(),
-                glm::vec2(-INFINITY),
-                glm::vec3(-INFINITY),
-                glm::vec4(-INFINITY),
-                sp::color_t(glm::vec3(-INFINITY)),
-                glm::quat(-INFINITY, -INFINITY, -INFINITY, -INFINITY));
+        static const auto undefinedValues = std::make_tuple(sp::angle_t(-INFINITY),
+            -std::numeric_limits<float>::infinity(),
+            -std::numeric_limits<double>::infinity(),
+            glm::vec2(-INFINITY),
+            glm::vec3(-INFINITY),
+            glm::vec4(-INFINITY),
+            sp::color_t(glm::vec3(-INFINITY)),
+            sp::color_alpha_t(glm::vec4(-INFINITY)),
+            glm::quat(-INFINITY, -INFINITY, -INFINITY, -INFINITY));
         return undefinedValues;
     };
 

@@ -68,14 +68,12 @@ namespace sp::vulkan {
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
             gpuRenderable.emissiveScale = renderable.emissiveScale;
-            if (glm::all(glm::greaterThanEqual(renderable.colorOverride, glm::vec3(0)))) {
-                gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(
-                    glm::vec4(renderable.colorOverride, 1));
+            if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
+                gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(renderable.colorOverride);
             }
             if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
-                auto clampedValues = glm::clamp(renderable.metallicRoughnessOverride, glm::vec2(0), glm::vec2(1));
                 gpuRenderable.metallicRoughnessOverrideID = textures.GetSinglePixelIndex(
-                    glm::vec4(clampedValues, 0, 1));
+                    glm::vec4(renderable.metallicRoughnessOverride, 0, 1));
             }
             if (ent.Has<ecs::OpticalElement>(lock)) {
                 opticEntities.emplace_back(ent);
@@ -111,6 +109,8 @@ namespace sp::vulkan {
             meshes.size());
 
         primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(primitiveCount));
+
+        textures.Flush();
 
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {

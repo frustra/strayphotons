@@ -64,9 +64,7 @@ namespace sp::vulkan {
         vk::DescriptorSet textureDescriptorSet;
 
         robin_hood::unordered_map<string, TextureHandle> textureCache;
-
-        using PixelColorKey = HashKey<glm::u8vec4>;
-        robin_hood::unordered_map<PixelColorKey, TextureIndex, PixelColorKey::Hasher> singlePixelMap;
+        robin_hood::unordered_map<uint32_t, TextureIndex> singlePixelMap;
 
         DeviceContext &device;
         DispatchQueue &workQueue;

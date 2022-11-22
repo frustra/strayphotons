@@ -10,7 +10,7 @@ namespace sp::vulkan {
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
         textures[0] = CreateSinglePixel(glm::vec4(1));
         texturesToFlush.push_back(0);
-        singlePixelMap.emplace(glm::vec4(1), 0);
+        singlePixelMap.emplace(0xFFFFFFFFu, 0);
     }
 
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
@@ -20,6 +20,7 @@ namespace sp::vulkan {
     }
 
     TextureHandle TextureSet::Add(const ImageViewPtr &ptr) {
+        DebugAssertf(ptr, "TextureSet::Add called with null image view");
         auto it = std::find(textures.begin(), textures.end(), ptr);
         if (it != textures.end()) return {(TextureIndex)(it - textures.begin()), {}};
 
@@ -34,6 +35,7 @@ namespace sp::vulkan {
 
         auto i = AllocateTextureIndex();
         return {i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
+                    DebugAssertf(view, "TextureSet::Add missing image view");
                     textures[i] = view;
                     texturesToFlush.push_back(i);
                 })};
@@ -232,8 +234,8 @@ namespace sp::vulkan {
         for (auto descriptorIndex : texturesToFlush) {
             auto tex = textures[descriptorIndex];
             if (!tex) {
-                Warnf("Trying to flush descriptor for null texture handle at index: %u", descriptorIndex);
-                continue;
+                // Texture has been released, change the descriptor to a blank pixel
+                tex = textures[0];
             }
             descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
         }
@@ -259,12 +261,13 @@ namespace sp::vulkan {
     }
 
     TextureIndex TextureSet::GetSinglePixelIndex(glm::vec4 value) {
-        glm::u8vec4 byteValue = value * 255.0f;
+        glm::u8vec4 byteVec = glm::clamp(value, glm::vec4(0), glm::vec4(1)) * 255.0f;
+        uint32_t byteValue = *(uint32_t *)&byteVec;
         auto it = singlePixelMap.find(byteValue);
         if (it != singlePixelMap.end()) return it->second;
 
         auto i = AllocateTextureIndex();
-        textures[i] = CreateSinglePixel(byteValue);
+        textures[i] = CreateSinglePixel(byteVec);
         texturesToFlush.push_back(i);
         singlePixelMap.emplace(byteValue, i);
         return i;

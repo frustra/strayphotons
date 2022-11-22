@@ -48,7 +48,7 @@ namespace ecs {
         VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye |
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
-        glm::vec3 colorOverride = glm::vec3(-1);
+        sp::color_alpha_t colorOverride = glm::vec4(-1);
         glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
 
         bool IsVisible(VisibilityMask viewMask) const {

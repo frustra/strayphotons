@@ -39,7 +39,6 @@ d10b4dfbe694e3ea8ab67940b758ef95    models/airlock/AirlockInterior_Base_Color.pn
 9b417d7c8a8ab13ae9996f6990e17044    models/airlock/AirlockInterior_Metallic.png
 abeb983346476d60bf60938c00d2dea2    models/airlock/AirlockInterior_Roughness.png
 cca8a80569b451dd5139fb058940e6d5    models/articulating-arm.glb
-4e5e3db3c56c3cc120f03a3419f0f694    models/bluefilter.gltf
 a8542bca71645613252a6b4acc96b889    models/box.gltf
 d71748db7321a116b49ca9eb0ce7c879    models/breadboard_corner.glb
 948925d131e0b7759947799dd4c47fa3    models/breadboard_edge.glb
@@ -57,10 +56,10 @@ a13f74657d0dd22d21d8018b48707cd3    models/ceiling-3x3/ceiling-3x3.obj
 920480972b8cb61d54bf191972735d00    models/ceiling-3x3/Material_Height.png
 d4086398b443c7d3be268ddc5ecff898    models/ceiling-3x3/Material_Metallic.png
 58e9289359f0fa0985ec53ba6139dbee    models/ceiling-3x3/Material_Roughness.png
+609e045860b1c9918a41376d2f523a27    models/colorfilter.gltf
 ccf2848cc2242bee66b6272ef46d7a5d    models/cornell-box-1.gltf
 8419e7aa5b30a308cd5e409e2318129c    models/cornell-box-2.gltf
 a2a2fa0b54b13ff4e03b33208fe8c3d8    models/cornell-box-3.gltf
-992798e3ac568a36d6a811fd34a62bd0    models/cyanfilter.gltf
 2bce7262a043546d50e5c438a5bcbd47    models/dodecahedron/dodecahedron.bin
 5ad82baf568557a43b383fe78c628b94    models/dodecahedron/dodecahedron.gltf
 923517b9f47bbdbdcbf181e2c1c4ff02    models/dodecahedron/dodecahedron.obj
@@ -106,7 +105,6 @@ e607aa0ab90e22f6749cb27ec36aadcd    models/door-panel-r-1.5x2/door-panel-r-1.5x2
 d68914109658ec1fc4fd09d8a954fe7f    models/duck/duckCM.png
 45df0c6862b1206c45c47457bb806f7e    models/duck/screenshot/screenshot.png
 b9efa01538a25b9cc219bb8359c42406    models/extrusion.glb
-252cc45c51e5c9425747cf94633b1395    models/greenfilter.gltf
 9b03d8fd268344f700e686181e3ac717    models/ground-1x1x1/ground-1x1x1.bin
 4f757bb55168b03046859109677cab92    models/ground-1x1x1/ground-1x1x1.gltf
 2455b2d3987f10df36114a9f0c7d1955    models/ground-1x1x1/ground-1x1x1.obj
@@ -141,7 +139,6 @@ d99165dd72e8c55054020a5dfb2fd307    models/level1/Pillar_Roughness.png
 cbbe4f5c0a8ebebee486ae2c1bfa6528    models/level1/Walls_Base_Color.png
 348140d545bb0bd5f9f0de10d2045869    models/level1/Walls_Height.png
 15eb3cffb37af22a00925c2dd6a1d800    models/level1/Walls_Roughness.png
-6d2f5ec659ab8d97fba9094be2516770    models/magentafilter.gltf
 ea0f3016bb87523b5b93091822554b07    models/mcube/Material.001_Base_Color.png
 1705699ec611faded01a5ab8263fb3ef    models/mcube/Material.001_Height.png
 1a2e3067c89738ccb7a36805ba8292a5    models/mcube/Material.001_Metallic.png
@@ -167,7 +164,6 @@ fa544ade3faa1c7e1ce70b9f29f940bb    models/pbr-cube/pbr-cube.gltf
 5628c2163c9228fa80c40e11d89cd2e3    models/pbr-cube/pbr-cube.mtl
 657c7285cc510099db1f2f26cbf34c0e    models/pbr-cube/pbr-cube.obj
 68fe1dc740c960f2b7e6277ec1825644    models/red_led.glb
-e44d7a60dfcc9f36690a3f4308e6660c    models/redfilter.gltf
 570ee7268a95d80b2ad861d882deb28b    models/round-mirror-mounted.glb
 51a1772db7aa8cdd713d81fd8951e463    models/sensor/sensor.gltf
 9470767dbd586095e6a0bb1a36e6ebe7    models/sensor/sensor.mtl
@@ -289,7 +285,6 @@ d575c2e2f135db63bb8f32b535d5a721    models/wall-4x3-door/Material_Roughness.png
 85e637b0f9607249686ecafb0d2f979f    models/wall-4x3-door/wall-4x3-door.gltf
 452cabfd0e48c9d628b4d063817d9200    models/wall-4x3-door/wall-4x3-door.mtl
 558ba8138f8be5b013682b3a8418c8df    models/wall-4x3-door/wall-4x3-door.obj
-6fd6b118cef28bd525b8f46e81109d15    models/yellowfilter.gltf
 7392d4c1cc880bb1f77d46a7dc73bbb8    textures/flashlight.jpg
 9f9ab4d877271bae6f8644f55cb16af2    textures/flashlight.png
 d505e2f46236ab748c3550864796e837    textures/smaa/AreaTex.tga

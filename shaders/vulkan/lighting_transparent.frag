@@ -10,7 +10,7 @@ layout(early_fragment_tests) in;
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
 
-const float scatterTermMultiplier = 0.1;
+const float scatterTermMultiplier = 0.2;
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"

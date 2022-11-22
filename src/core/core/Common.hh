@@ -130,6 +130,26 @@ namespace sp {
         }
     };
 
+    struct color_alpha_t {
+        glm::vec4 color;
+
+        color_alpha_t() : color(1) {}
+        color_alpha_t(const glm::vec3 &rgb) : color(rgb, 1) {}
+        color_alpha_t(const glm::vec4 &rgba) : color(rgba) {}
+
+        operator glm::vec4() const {
+            return color;
+        }
+
+        const float &operator[](size_t i) const {
+            return color[i];
+        }
+
+        bool operator==(const color_alpha_t &other) const {
+            return color == other.color;
+        }
+    };
+
     template<typename T, typename V>
     inline void erase(T &vec, const V &val) {
         vec.erase(std::remove(vec.begin(), vec.end(), val), vec.end());

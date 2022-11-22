@@ -139,8 +139,9 @@
 				"tint": [1, 0, 0]
 			},
 			"renderable": {
-				"model": "redfilter",
-				"visibility": "Transparent|LightingShadow"
+				"model": "colorfilter",
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [1, 0, 0, 0.5]
 			},
 			"name": "redfilter",
 			"transform": {
@@ -163,8 +164,9 @@
 				"tint": [0, 1, 0]
 			},
 			"renderable": {
-				"model": "greenfilter",
-				"visibility": "Transparent|LightingShadow"
+				"model": "colorfilter",
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [0, 1, 0, 0.5]
 			},
 			"name": "greenfilter",
 			"transform": {
@@ -187,8 +189,9 @@
 				"tint": [0, 0, 1]
 			},
 			"renderable": {
-				"model": "bluefilter",
-				"visibility": "Transparent|LightingShadow"
+				"model": "colorfilter",
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [0, 0, 1, 0.5]
 			},
 			"name": "bluefilter",
 			"transform": {
@@ -211,8 +214,9 @@
 				"tint": [0, 1, 1]
 			},
 			"renderable": {
-				"model": "cyanfilter",
-				"visibility": "Transparent|LightingShadow"
+				"model": "colorfilter",
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [0, 1, 1, 0.5]
 			},
 			"name": "cyanfilter",
 			"transform": {
@@ -235,8 +239,9 @@
 				"tint": [1, 0, 1]
 			},
 			"renderable": {
-				"model": "magentafilter",
-				"visibility": "Transparent|LightingShadow"
+				"model": "colorfilter",
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [1, 0, 1, 0.5]
 			},
 			"name": "magentafilter",
 			"transform": {
@@ -259,8 +264,9 @@
 				"tint": [1, 1, 0]
 			},
 			"renderable": {
-				"model": "yellowfilter",
-				"visibility": "Transparent|LightingShadow"
+				"model": "colorfilter",
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [1, 1, 0, 0.5]
 			},
 			"name": "yellowfilter",
 			"transform": {
