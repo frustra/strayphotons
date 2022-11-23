@@ -14,7 +14,7 @@ namespace ecs {
         if (!state.HasParam<vector<double>>("segments_x") || !state.HasParam<vector<double>>("segments_y")) return;
         if (!state.HasParam<vector<string>>("segment_types") || !state.HasParam<double>("stride")) return;
         Assertf(ent.Has<Name>(lock), "Wall prefab root has no name: %s", ToString(lock, ent));
-        auto &prefixName = ent.Get<Name>(lock);
+        auto prefixName = ent.Get<Name>(lock);
 
         float yOffset = state.GetParam<double>("y_offset");
         float stride = state.GetParam<double>("stride");

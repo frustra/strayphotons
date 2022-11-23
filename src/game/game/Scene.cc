@@ -138,7 +138,6 @@ namespace sp {
         Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
             "Prefab root %s does not have SceneInfo",
             ecs::ToString(stagingLock, prefabRoot));
-        auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
 
         if (!entityName) entityName = GenerateEntityName(scope);
         if (!entityName) {
@@ -150,6 +149,7 @@ namespace sp {
         }
 
         auto entity = stagingLock.NewEntity();
+        auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
         entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, rootSceneInfo);
         entity.Set<ecs::Name>(stagingLock, entityName);
         namedEntities.emplace(entityName, entity);
