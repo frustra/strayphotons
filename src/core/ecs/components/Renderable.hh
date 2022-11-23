@@ -48,6 +48,8 @@ namespace ecs {
         VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye |
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
+        sp::color_alpha_t colorOverride = glm::vec4(-1);
+        glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
 
         bool IsVisible(VisibilityMask viewMask) const {
             return (visibility & viewMask) == viewMask;
@@ -58,7 +60,9 @@ namespace ecs {
         ComponentField::New("model", &Renderable::modelName),
         ComponentField::New("mesh_index", &Renderable::meshIndex),
         ComponentField::New("visibility", &Renderable::visibility),
-        ComponentField::New("emissive", &Renderable::emissiveScale));
+        ComponentField::New("emissive", &Renderable::emissiveScale),
+        ComponentField::New("color_override", &Renderable::colorOverride),
+        ComponentField::New("metallic_roughness_override", &Renderable::metallicRoughnessOverride));
 
     template<>
     bool Component<Renderable>::Load(const EntityScope &scope, Renderable &dst, const picojson::value &src);

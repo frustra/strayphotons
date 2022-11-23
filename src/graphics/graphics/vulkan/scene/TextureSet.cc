@@ -10,6 +10,7 @@ namespace sp::vulkan {
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
         textures[0] = CreateSinglePixel(glm::vec4(1));
         texturesToFlush.push_back(0);
+        singlePixelMap.emplace(0xFFFFFFFFu, 0);
     }
 
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
@@ -19,6 +20,7 @@ namespace sp::vulkan {
     }
 
     TextureHandle TextureSet::Add(const ImageViewPtr &ptr) {
+        DebugAssertf(ptr, "TextureSet::Add called with null image view");
         auto it = std::find(textures.begin(), textures.end(), ptr);
         if (it != textures.end()) return {(TextureIndex)(it - textures.begin()), {}};
 
@@ -33,6 +35,7 @@ namespace sp::vulkan {
 
         auto i = AllocateTextureIndex();
         return {i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
+                    DebugAssertf(view, "TextureSet::Add missing image view");
                     textures[i] = view;
                     texturesToFlush.push_back(i);
                 })};
@@ -63,7 +66,10 @@ namespace sp::vulkan {
 
         auto imageFut = Assets().LoadImage(name);
         auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=, this](shared_ptr<sp::Image> image) {
-            if (!image) return make_shared<Async<ImageView>>(GetBlankPixel());
+            if (!image) {
+                Warnf("Missing asset image: %s", name);
+                return make_shared<Async<ImageView>>(GetSinglePixel(glm::vec4(1, 0, 1, 1)));
+            }
             return device.LoadAssetImage(image, genMipmap, srgb);
         });
         auto pending = Add(imageView);
@@ -227,7 +233,10 @@ namespace sp::vulkan {
 
         for (auto descriptorIndex : texturesToFlush) {
             auto tex = textures[descriptorIndex];
-            if (!tex) tex = GetBlankPixel();
+            if (!tex) {
+                // Texture has been released, change the descriptor to a blank pixel
+                tex = textures[0];
+            }
             descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
         }
 
@@ -251,16 +260,27 @@ namespace sp::vulkan {
         texturesToFlush.clear();
     }
 
-    ImageViewPtr TextureSet::GetBlankPixel() {
-        DebugAssertf(textures.size() > 0 && textures[0], "Blank pixel texture is missing");
-        return textures[0];
+    TextureIndex TextureSet::GetSinglePixelIndex(glm::vec4 value) {
+        glm::u8vec4 byteVec = glm::clamp(value, glm::vec4(0), glm::vec4(1)) * 255.0f;
+        uint32_t byteValue = *(uint32_t *)&byteVec;
+        auto it = singlePixelMap.find(byteValue);
+        if (it != singlePixelMap.end()) return it->second;
+
+        auto i = AllocateTextureIndex();
+        textures[i] = CreateSinglePixel(byteVec);
+        texturesToFlush.push_back(i);
+        singlePixelMap.emplace(byteValue, i);
+        return i;
     }
 
-    ImageViewPtr TextureSet::CreateSinglePixel(glm::vec4 value) {
-        uint8 data[4];
-        for (size_t i = 0; i < 4; i++) {
-            data[i] = (uint8_t)(255.0 * value[i]);
-        }
+    ImageViewPtr TextureSet::GetSinglePixel(glm::vec4 value) {
+        auto index = GetSinglePixelIndex(value);
+        DebugAssertf(index < textures.size(), "GetSinglePixelIndex returned out of bounds index: %u", index);
+        return textures[index];
+    }
+
+    ImageViewPtr TextureSet::CreateSinglePixel(glm::u8vec4 value) {
+        static_assert(sizeof(value) == sizeof(uint8[4]));
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
@@ -270,7 +290,7 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {data, sizeof(data)});
+        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
         device.FlushMainQueue();
         return fut->Get();
     }

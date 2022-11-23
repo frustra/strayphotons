@@ -66,6 +66,13 @@ namespace sp::vulkan {
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
             gpuRenderable.emissiveScale = renderable.emissiveScale;
+            if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
+                gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(renderable.colorOverride);
+            }
+            if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
+                gpuRenderable.metallicRoughnessOverrideID = textures.GetSinglePixelIndex(
+                    glm::vec4(renderable.metallicRoughnessOverride, 0, 1));
+            }
             if (ent.Has<ecs::OpticalElement>(lock)) {
                 opticEntities.emplace_back(ent);
                 gpuRenderable.opticID = opticEntities.size();
@@ -100,6 +107,8 @@ namespace sp::vulkan {
             meshes.size());
 
         primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(primitiveCount));
+
+        textures.Flush();
 
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {
@@ -240,8 +249,11 @@ namespace sp::vulkan {
                         drawCmd.firstInstance = drawParams.size();
                         auto &drawParam = drawParams.emplace_back();
 
-                        drawParam.baseColorTexID = primitive.baseColor.index;
-                        drawParam.metallicRoughnessTexID = primitive.metallicRoughness.index;
+                        drawParam.baseColorTexID = renderable.baseColorOverrideID >= 0 ? renderable.baseColorOverrideID
+                                                                                       : primitive.baseColor.index;
+                        drawParam.metallicRoughnessTexID = renderable.metallicRoughnessOverrideID >= 0
+                                                               ? renderable.metallicRoughnessOverrideID
+                                                               : primitive.metallicRoughness.index;
                         drawParam.opticID = renderable.opticID;
                         drawParam.emissiveScale = renderable.emissiveScale;
 
