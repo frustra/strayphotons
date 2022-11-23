@@ -18,7 +18,7 @@ namespace ecs {
         auto scene = state.scope.scene.lock();
         Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
         Assertf(ent.Has<Name>(lock), "Gltf prefab root has no name: %s", ToString(lock, ent));
-        auto &prefixName = ent.Get<Name>(lock);
+        auto prefixName = ent.Get<Name>(lock);
 
         auto getNodeName = [&](size_t nodeId) {
             auto &node = *model->nodes[nodeId];

@@ -141,7 +141,7 @@ namespace ecs {
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
         void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
-        void Prefab(Lock<AddRemove> lock, const Entity &ent);
+        static void Prefab(Lock<AddRemove> lock, const Entity &ent);
 
         std::vector<ScriptState> scripts;
     };
