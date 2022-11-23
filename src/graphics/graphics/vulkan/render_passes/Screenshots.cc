@@ -7,7 +7,7 @@
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 
 #include <filesystem>
-#include <stb_image_write.h>
+#include <fpng.h>
 
 namespace sp::vulkan::renderer {
     Screenshots::Screenshots() {
@@ -157,14 +157,20 @@ namespace sp::vulkan::renderer {
         vk::ImageSubresource subResource = {vk::ImageAspectFlagBits::eColor, 0, 0};
         auto subResourceLayout = device->getImageSubresourceLayout(*outputImage, subResource);
 
+        static bool fpng_init = false;
+        if (!fpng_init) {
+            fpng::fpng_init();
+            fpng_init = true;
+        }
+
         uint8 *data;
         outputImage->Map((void **)&data);
-        stbi_write_png((const char *)fullPath.string().c_str(),
+        fpng::fpng_encode_image_to_file(fullPath.string().c_str(),
+            data + subResourceLayout.offset,
             extent.width,
             extent.height,
             components,
-            data + subResourceLayout.offset,
-            subResourceLayout.rowPitch);
+            fpng::FPNG_ENCODE_SLOWER); // FPNG_ENCODE_SLOWER = 2-pass compression for smaller files
         outputImage->Unmap();
     }
 } // namespace sp::vulkan::renderer

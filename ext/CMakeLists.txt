@@ -7,6 +7,7 @@ add_subdirectory(physx)
 
 # These projects require more configuration that is encapsulated their own CMake files
 include(cxxopts.cmake)
+include(fpng.cmake)
 include(glfw.cmake)
 include(glfw-egl.cmake)
 include(glm.cmake)

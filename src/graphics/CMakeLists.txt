@@ -18,9 +18,12 @@ target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ImGui
 )
 
-target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PUBLIC
-    ${PROJECT_GRAPHICS_CORE_LIB}
-    Vulkan::Vulkan
+target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+    PUBLIC
+        ${PROJECT_GRAPHICS_CORE_LIB}
+        Vulkan::Vulkan
+    PRIVATE
+        fpng
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
