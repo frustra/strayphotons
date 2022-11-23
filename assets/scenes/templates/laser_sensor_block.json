@@ -16,10 +16,18 @@
 			],
 			"dynamic": true
 		},
-		"script": {
-			"prefab": "template",
-			"parameters": { "source": "interactive" }
-		},
+		"physics_joints": [],
+		"trigger_group": "Magnetic",
+		"event_input": {},
+		"script": [
+			{
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			},
+			{
+				"onEvent": "magnetic_plug"
+			}
+		],
 		"signal_bindings": {
 			"light_value_r": "source.Icosphere/light_value_r",
 			"light_value_g": "source.Icosphere/light_value_g",

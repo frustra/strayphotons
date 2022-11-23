@@ -18,8 +18,8 @@
 			"name": "socket",
 			"transform": {
 				"parent": "surface",
-				"translate": [0, 0.05, 0],
-				"scale": [0.08, 0.08, 0.08]
+				"translate": [0, 0.02, 0],
+				"scale": [0.1, 0.1, 0.1]
 			},
 			"script": {
 				"prefab": "template",
