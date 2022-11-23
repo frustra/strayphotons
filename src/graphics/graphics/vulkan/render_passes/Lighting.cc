@@ -307,6 +307,7 @@ namespace sp::vulkan::renderer {
                     if (gel.second.index != 0) continue;
                     gel.second = scene.textures.Add(resources.GetImageView(gel.first.substr(6)));
                 }
+                scene.textures.Flush();
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
                     if (lights[i].gelTexture) gpuData.lights[i].gelId = *lights[i].gelTexture;
                 }
