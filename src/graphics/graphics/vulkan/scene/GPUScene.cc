@@ -58,8 +58,6 @@ namespace sp::vulkan {
             auto vkMesh = LoadMesh(model, renderable.meshIndex);
             if (!vkMesh || !vkMesh->CheckReady()) continue;
 
-            // TODO: Reload any override textures
-
             auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
 
             GPURenderableEntity gpuRenderable;
@@ -251,10 +249,9 @@ namespace sp::vulkan {
                         drawCmd.firstInstance = drawParams.size();
                         auto &drawParam = drawParams.emplace_back();
 
-                        drawParam.baseColorTexID = renderable.baseColorOverrideID >= 0.0f
-                                                       ? renderable.baseColorOverrideID
-                                                       : primitive.baseColor.index;
-                        drawParam.metallicRoughnessTexID = renderable.metallicRoughnessOverrideID >= 0.0f
+                        drawParam.baseColorTexID = renderable.baseColorOverrideID >= 0 ? renderable.baseColorOverrideID
+                                                                                       : primitive.baseColor.index;
+                        drawParam.metallicRoughnessTexID = renderable.metallicRoughnessOverrideID >= 0
                                                                ? renderable.metallicRoughnessOverrideID
                                                                : primitive.metallicRoughness.index;
                         drawParam.opticID = renderable.opticID;
