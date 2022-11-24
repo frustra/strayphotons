@@ -471,11 +471,11 @@ namespace sp::vulkan::renderer {
                 for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
                     for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
                         uint32 visible = visibility[lightIndex][opticIndex];
-                        if (visible > 1) {
-                            Tracef("Uhhh");
-                            Abortf("Uhhh");
+                        if (visible == 1) {
+                            Assertf(opticIndex < optics.size(), "Optic index out of range");
+                        } else if (visible != 0) {
+                            Abortf("OpticVisibilityReadback got unexpected value: %u", visible);
                         }
-                        if (visible == 1 && opticIndex >= optics.size()) Abortf("Optic index out of range");
                     }
                 }
 
