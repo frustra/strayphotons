@@ -9,6 +9,7 @@ namespace ecs {
     enum class OpticType {
         Gel = 0,
         Mirror,
+        Splitter,
     };
 
     struct OpticalElement {
