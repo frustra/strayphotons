@@ -8,10 +8,6 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    static CVar<float> CVarMagnetDetachDistance("i.MagnetDetachDistance",
-        0.5f,
-        "Vertical distance required to detach a magnetic plug from a socket");
-
     glm::quat calcSnapRotation(glm::quat plug, glm::quat socket, float snapAngle = glm::radians(45.0f)) {
         auto plugRelativeSocket = (glm::inverse(socket) * plug) * glm::vec3(0, 0, -1);
         if (std::abs(plugRelativeSocket.y) > 0.999) {
