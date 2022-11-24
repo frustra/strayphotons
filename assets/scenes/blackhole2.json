@@ -181,6 +181,30 @@
 				"laser_color_r": 20,
 				"laser_color_g": 20
 			}
+		},
+		{
+			"name": "sensor_door",
+			"transform": {
+				"translate": [0.54, 0.86, 0.86],
+				"rotate": [0, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "laser_sensor_block" }
+			}
+		},
+		{
+			"name": "door1",
+			"transform": {
+				"translate": [4, 0.0, 0]
+			},
+			"signal_bindings": {
+				"door_open": "sensor_door/light_value_r"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
 		}
 	]
 }
