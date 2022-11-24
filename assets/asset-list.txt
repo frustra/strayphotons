@@ -149,6 +149,7 @@ fb70d29a0c936a19ac73f89a0cdbb3e2    models/mcube/mcube.obj
 6cbfc97fea0ecf2f192c4c20f7e50c89    models/mcube-physx.gltf
 cfa55365c8008b63b5baabc16e891b04    models/mirror.gltf
 3b012fc43776f6936c17296624e1666e    models/occluder.gltf
+21d0f8abe6658bf07a87f307e0c0e451    models/octagon.glb
 f1a15bd5a12b8bd2e67bb1a7c90a22bf    models/parking-block/None_Base_Color.png
 ba99e944c2be1665691764eafc74c13b    models/parking-block/None_Height.png
 5604ab36692384bc31f4c6b52f591f94    models/parking-block/None_Roughness.png

@@ -8,7 +8,7 @@ stepphysics
 stepgraphics
 screenshot blackhole2_table_1.png
 stepgraphics
-translate blackhole2:mirrorcube1.mirrorcube 0 -10 0
+translate blackhole2:mirror1 0 -10 0
 stepphysics 3
 printdebug
 screenshot blackhole2_table_2.png
