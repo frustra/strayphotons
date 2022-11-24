@@ -107,15 +107,14 @@
 			}
 		},
 		{
-			"name": "mirrorcube1",
+			"name": "mirror1",
 			"transform": {
 				"translate": [0.35, 0.89, 0.14],
-				"rotate": [160, 0, 1, 0],
-				"scale": 0.1
+				"rotate": [160, 0, 1, 0]
 			},
 			"script": {
 				"prefab": "template",
-				"parameters": { "source": "mirrorcube" }
+				"parameters": { "source": "mirror_block" }
 			}
 		},
 		{

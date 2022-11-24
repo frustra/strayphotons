@@ -11,7 +11,10 @@
 					}
 				},
 				{
-					"box": [0.03, 0.03, 0.03]
+					"box": [0.03, 0.01, 0.03],
+					"transform": {
+						"translate": [0, 0.02, 0]
+					}
 				}
 			],
 			"dynamic": true
@@ -54,8 +57,8 @@
 			"name": "block-gizmo",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0],
-				"scale": [0.03, 0.03, 0.03]
+				"translate": [0, -0.01, 0],
+				"scale": [0.0215, 0.005, 0.0215]
 			},
 			"script": {
 				"prefab": "gltf",
@@ -66,28 +69,38 @@
 			}
 		},
 		{
-			"name": "output",
+			"name": "optic",
+			"optic": {
+				"type": "Mirror",
+				"tint": [0.95, 0.95, 0.95]
+			},
+			"renderable": {
+				"model": "mirror"
+			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02]
+				},
+				"group": "WorldOverlap",
+				"dynamic": false
+			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0.0029],
-				"rotate": [180, 0, 1, 0],
-				"scale": 1.25
+				"rotate": [-45, 0, 1, 0],
+				"translate": [0.0002, 0.005, -0.0002],
+				"scale": 0.03
+			}
+		},
+		{
+			"name": "occluder",
+			"renderable": {
+				"model": "occluder"
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "laser-plug",
-					"render": true
-				}
-			},
-			"signal_bindings": {
-				"laser_color_r": "scoperoot/laser_color_r",
-				"laser_color_g": "scoperoot/laser_color_g",
-				"laser_color_b": "scoperoot/laser_color_b"
-			},
-			"laser_line": {},
-			"laser_emitter": {
-				"start_distance": 0.01
+			"transform": {
+				"parent": "scoperoot",
+				"scale": 0.03,
+				"translate": [-0.0002, 0.005, 0.0002],
+				"rotate": [135, 0, 1, 0]
 			}
 		}
 	]
