@@ -15,7 +15,7 @@ namespace sp::scripts {
         }
         plugRelativeSocket.y = 0;
         plugRelativeSocket = glm::normalize(plugRelativeSocket);
-        auto yaw = std::atan2f(plugRelativeSocket.x, -plugRelativeSocket.z);
+        auto yaw = glm::atan(plugRelativeSocket.x, -plugRelativeSocket.z);
         auto rounded = std::round(yaw / snapAngle) * snapAngle;
         return glm::quat(glm::vec3(0, rounded, 0));
     }
