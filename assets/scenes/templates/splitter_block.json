@@ -58,13 +58,13 @@
 		{
 			"name": "optic",
 			"optic": {
-				"type": "Mirror",
-				"tint": [0.95, 0.95, 0.95]
+				"type": "Splitter",
+				"tint": [0.5, 0.5, 0.5]
 			},
 			"renderable": {
 				"model": "colorfilter",
-				"color_override": [0.95, 0.95, 0.95, 1.0],
-				"metallic_roughness_override": [0.0, 1.0]
+				"visibility": "Transparent|LightingShadow",
+				"color_override": [0.5, 0.5, 0.5, 0.5]
 			},
 			"physics": {
 				"shapes": {

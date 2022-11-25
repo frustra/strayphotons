@@ -61,7 +61,7 @@ namespace sp {
                 if (inArea) {
                     eventName = &ecs::TriggerGroupEventNames[triggerGroup].first;
                     containedEntities.insert(triggerEnt);
-                    Debugf("%s entered TriggerArea %s at: %f %f %f",
+                    Tracef("%s entered TriggerArea %s at: %f %f %f",
                         ecs::ToString(lock, triggerEnt),
                         ecs::ToString(lock, entity),
                         entityPos.x,
@@ -70,7 +70,7 @@ namespace sp {
                 } else {
                     eventName = &ecs::TriggerGroupEventNames[triggerGroup].second;
                     containedEntities.erase(triggerEnt);
-                    Debugf("%s leaving TriggerArea %s at: %f %f %f",
+                    Tracef("%s leaving TriggerArea %s at: %f %f %f",
                         ecs::ToString(lock, triggerEnt),
                         ecs::ToString(lock, entity),
                         entityPos.x,

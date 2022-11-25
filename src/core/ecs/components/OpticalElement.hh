@@ -9,6 +9,7 @@ namespace ecs {
     enum class OpticType {
         Gel = 0,
         Mirror,
+        Splitter, // Tint defines reflected color
     };
 
     struct OpticalElement {

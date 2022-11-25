@@ -118,6 +118,17 @@
 			}
 		},
 		{
+			"name": "spliiter1",
+			"transform": {
+				"translate": [0.35, 0.86, 0.34],
+				"rotate": [160, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "splitter_block" }
+			}
+		},
+		{
 			"name": "emitter1",
 			"transform": {
 				"translate": [0.14, 0.86, 0.14],
