@@ -14,6 +14,7 @@ namespace sp {
     using namespace physx;
 
     CVar<int> CVarLaserRecursion("x.LaserRecursion", 10, "maximum number of laser bounces");
+    CVar<float> CVarLaserBounceOffset("x.LaserBounceOffset", 0.001f, "Distance to offset laser bounces");
 
     LaserSystem::LaserSystem(PhysxManager &manager) : manager(manager) {}
 
@@ -33,7 +34,13 @@ namespace sp {
                 if (optic.type == ecs::OpticType::Gel) {
                     if (optic.tint == glm::vec3(1)) {
                         return PxQueryHitType::eNONE;
-                    } else if (optic.tint * color != glm::vec3(0)) {
+                    } else if (color * optic.tint != glm::vec3(0)) {
+                        return PxQueryHitType::eTOUCH;
+                    }
+                } else if (optic.type == ecs::OpticType::Splitter) {
+                    if (optic.tint == glm::vec3(0)) {
+                        return PxQueryHitType::eNONE;
+                    } else if (color * (glm::vec3(1) - optic.tint.color) != glm::vec3(0)) {
                         return PxQueryHitType::eTOUCH;
                     }
                 }
@@ -103,6 +110,7 @@ namespace sp {
 
             const float maxDistance = 1000.0f;
             int maxReflections = CVarLaserRecursion.Get();
+            float bounceOffset = CVarLaserBounceOffset.Get();
             bool status = true;
 
             emitterQueue.clear();
@@ -154,6 +162,16 @@ namespace sp {
                         laserStart.color *= optic.tint;
                         laserStart.rayStart = segment.end;
                         startDistance = touch.distance;
+
+                        if (optic.type == ecs::OpticType::Splitter) {
+                            auto &reflectionStart = emitterQueue.emplace_back();
+                            reflectionStart.rayDir = glm::normalize(
+                                glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(touch.normal)));
+                            // offset to prevent hitting the same object again
+                            reflectionStart.rayStart = laserStart.rayStart + reflectionStart.rayDir * bounceOffset;
+                            reflectionStart.color = laserStart.color;
+                            reflectionStart.depth = laserStart.depth;
+                        }
                     }
 
                     auto &segment = segments.emplace_back();
@@ -172,31 +190,14 @@ namespace sp {
                             }
                             if (hitEntity.Has<ecs::OpticalElement>(lock)) {
                                 auto &optic = hitEntity.Get<ecs::OpticalElement>(lock);
-                                if (optic.type == ecs::OpticType::Mirror) {
+                                if (optic.type == ecs::OpticType::Mirror || optic.type == ecs::OpticType::Splitter) {
                                     laserStart.color *= optic.tint;
+                                    if (laserStart.color == glm::vec3(0)) continue;
                                     laserStart.rayDir = glm::normalize(
                                         glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(hit.block.normal)));
                                     // offset to prevent hitting the same object again
-                                    laserStart.rayStart = segment.end + laserStart.rayDir * 0.01f;
+                                    laserStart.rayStart = segment.end + laserStart.rayDir * bounceOffset;
                                     emitterQueue.emplace_back(laserStart);
-                                } else if (optic.type == ecs::OpticType::Splitter) {
-                                    auto inputColor = laserStart.color;
-                                    auto mirrorTint = optic.tint;
-                                    auto gelTint = glm::vec3(1) - mirrorTint.color;
-                                    if (inputColor * gelTint != glm::vec3(0)) {
-                                        laserStart.color = inputColor * gelTint;
-                                        // offset to prevent hitting the same object again
-                                        laserStart.rayStart = segment.end + laserStart.rayDir * 0.01f;
-                                        emitterQueue.emplace_back(laserStart);
-                                    }
-                                    if (inputColor * mirrorTint != glm::vec3(0)) {
-                                        laserStart.color = inputColor * mirrorTint;
-                                        laserStart.rayDir = glm::normalize(
-                                            glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(hit.block.normal)));
-                                        // offset to prevent hitting the same object again
-                                        laserStart.rayStart = segment.end + laserStart.rayDir * 0.01f;
-                                        emitterQueue.emplace_back(laserStart);
-                                    }
                                 }
                             }
                         }
