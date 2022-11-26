@@ -128,6 +128,17 @@
 			}
 		},
 		{
+			"name": "diode1",
+			"transform": {
+				"translate": [0.54, 0.86, 0.5],
+				"rotate": [0, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "laser_diode_block" }
+			}
+		},
+		{
 			"name": "emitter1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],

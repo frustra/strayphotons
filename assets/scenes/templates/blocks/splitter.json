@@ -40,8 +40,12 @@
 				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
-			"renderable": {
-				"model": "octagon"
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "octagon",
+					"render": true
+				}
 			}
 		},
 		{
