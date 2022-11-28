@@ -5,8 +5,8 @@
 
 namespace ecs {
     Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {
-        Assertf(scene.find_first_of(":/ ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
-        Assertf(entity.find_first_of(":/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
+        Assertf(scene.find_first_of(",():/ ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
+        Assertf(entity.find_first_of(",():/ ") == std::string::npos, "Entity name has invalid character: '%s'", scene);
     }
 
     Name::Name(std::string_view relativeName, const Name &scope) {
@@ -37,15 +37,15 @@ namespace ecs {
             }
         } else {
             entity.clear();
-            Errorf("Invalid name has no scene: %s", relativeName);
+            Errorf("Invalid name has no scene: %s", std::string(relativeName));
             return false;
         }
-        if (scene.find_first_of(":/ ") != std::string::npos) {
+        if (scene.find_first_of(",():/ ") != std::string::npos) {
             entity.clear();
             Errorf("Scene name has invalid character: '%s'", scene);
             return false;
         }
-        if (entity.find_first_of(":/ ") != std::string::npos) {
+        if (entity.find_first_of(",():/ ") != std::string::npos) {
             entity.clear();
             Errorf("Entity name has invalid character: '%s'", entity);
             return false;

@@ -218,7 +218,7 @@ namespace sp {
             }
         }
 
-        Logf("");
+        /*Logf("");
         Logf("Signal bindings:");
         for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
             auto &bindings = ent.Get<ecs::SignalBindings>(lock);
@@ -243,7 +243,7 @@ namespace sp {
                     }
                 }
             }
-        }
+        }*/
     });
 
     CFunc<std::string> CFuncPrintSignal("printsignal",
@@ -266,7 +266,7 @@ namespace sp {
                 if (signalOutput.HasSignal(signalName))
                     Logf("  Signal output: %.2f", signalOutput.GetSignal(signalName));
             }
-            if (ent.Has<ecs::SignalBindings>(lock)) {
+            /*if (ent.Has<ecs::SignalBindings>(lock)) {
                 auto &bindings = ent.Get<ecs::SignalBindings>(lock);
                 auto bindingList = bindings.Lookup(signalName);
 
@@ -291,6 +291,6 @@ namespace sp {
                         }
                     }
                 }
-            }
+            }*/
         });
 } // namespace sp

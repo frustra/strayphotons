@@ -46,14 +46,8 @@
 					}
 				]
 			},
-			"signal_output": {
-				"constant": 4
-			},
 			"signal_bindings": {
-				"animation_state": {
-					"operator": "multiply",
-					"values": [ "lasersensor", "animbox/constant" ]
-				}
+				"animation_state": "lasersensor * 4"
 			}
 		},
 		{
@@ -120,10 +114,7 @@
 			},
 			"signal_output": {},
 			"signal_bindings": {
-				"value": {
-					"operator": "min",
-					"values": [ "sensor1/light_value_r", "sensor1/light_value_g", "sensor1/light_value_b"]
-				}
+				"value": "min(min(sensor1/light_value_r, sensor1/light_value_g), sensor1/light_value_b)"
 			},
 			"script": { "onTick": "light_sensor" }
 		},

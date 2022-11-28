@@ -32,10 +32,7 @@
 			"light_value_r": "source.Icosphere/light_value_r",
 			"light_value_g": "source.Icosphere/light_value_g",
 			"light_value_b": "source.Icosphere/light_value_b",
-			"value": {
-				"operator": "binary_and",
-				"values": [ "scoperoot/light_value_r", "scoperoot/light_value_g", "scoperoot/light_value_b"]
-			}
+			"value": "scoperoot/light_value_r && scoperoot/light_value_g && scoperoot/light_value_b"
 		}
 	},
 	"entities": [

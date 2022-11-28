@@ -65,14 +65,8 @@
             "rotation_rpm": 40
         },
         "signal_bindings": {
-            "smooth_rotation_unscaled": {
-                "operator": "add",
-                "values": [ "vr:controller_left/actions_main_in_rotation_x", "vr:controller_right/actions_main_in_rotation_x" ]
-            },
-            "smooth_rotation": {
-                "operator": "multiply",
-                "values": ["vr:origin/smooth_rotation_unscaled", "vr:origin/rotation_rpm"]
-            }
+            "smooth_rotation_unscaled": "vr:controller_left/actions_main_in_rotation_x + vr:controller_right/actions_main_in_rotation_x",
+            "smooth_rotation": "vr:origin/smooth_rotation_unscaled * vr:origin/rotation_rpm"
         }
     },
     "vr:left_hand": {
@@ -121,15 +115,9 @@
             "menu_secondary_trigger": "input:mouse/mouse_button_right",
             "menu_cursor_x": "input:mouse/mouse_cursor_x",
             "menu_cursor_y": "input:mouse/mouse_cursor_y",
-            "move_relative_x": {
-                "operator": "add",
-                "values": [ "player:flatview/move_relative_x", "vr:left_hand/move_relative_x", "vr:right_hand/move_relative_x" ]
-            },
+            "move_relative_x": "player:flatview/move_relative_x + vr:left_hand/move_relative_x + vr:right_hand/move_relative_x",
             "move_relative_y": "player:flatview/move_relative_y",
-            "move_relative_z": {
-                "operator": "add",
-                "values": [ "player:flatview/move_relative_z", "vr:left_hand/move_relative_z", "vr:right_hand/move_relative_z" ]
-            },
+            "move_relative_z": "player:flatview/move_relative_z + vr:left_hand/move_relative_z + vr:right_hand/move_relative_z",
             "move_sprint": "input:keyboard/key_left_shift"
         }
     },

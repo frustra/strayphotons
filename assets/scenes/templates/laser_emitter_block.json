@@ -17,9 +17,9 @@
 			"dynamic": true
 		},
 		"signal_bindings": {
-			"laser_color_r": {},
-			"laser_color_g": {},
-			"laser_color_b": {}
+			"laser_color_r": "0.0",
+			"laser_color_g": "0.0",
+			"laser_color_b": "0.0"
 		},
 		"physics_joints": [],
 		"trigger_group": "Magnetic",

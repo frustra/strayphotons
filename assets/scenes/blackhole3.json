@@ -39,10 +39,7 @@
 			},
 			"scene_connection": "blackhole2",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"operator": "add",
-					"values": [ "zone/trigger_player_count", "blackhole4:zone/trigger_player_count" ]
-				}
+				"load_scene_connection": "zone/trigger_player_count + blackhole4:zone/trigger_player_count"
 			}
 		},
 		{
@@ -53,10 +50,7 @@
 			},
 			"scene_connection": "blackhole4",
 			"signal_bindings": {
-				"load_scene_connection": {
-					"operator": "add",
-					"values": [ "zone/trigger_player_count", "blackhole2:zone/trigger_player_count" ]
-				}
+				"load_scene_connection": "zone/trigger_player_count + blackhole2:zone/trigger_player_count"
 			}
 		},
 		{
