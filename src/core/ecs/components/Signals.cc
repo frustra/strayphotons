@@ -92,6 +92,10 @@ namespace ecs {
         bindings.erase(name);
     }
 
+    bool SignalBindings::HasBinding(const std::string &name) const {
+        return bindings.count(name) > 0;
+    }
+
     const SignalExpression &SignalBindings::GetBinding(const std::string &name) const {
         auto list = bindings.find(name);
         if (list != bindings.end()) {

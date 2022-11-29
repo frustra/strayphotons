@@ -221,7 +221,7 @@ namespace sp {
                 for (auto &bindingName : bindings.GetBindingNames()) {
                     auto &binding = bindings.GetBinding(bindingName);
                     if (binding.nodes.empty() || binding.rootIndex < 0) {
-                        Logf("    %s = 0.0000", bindingName);
+                        Logf("    %s = nil", bindingName);
                     } else {
                         Logf("    %s = %.4f = %s",
                             bindingName,
@@ -252,38 +252,26 @@ namespace sp {
 
             auto ent = ecs::EntityRef(originName).Get(lock);
             auto value = ecs::SignalBindings::GetSignal(lock, ent, signalName);
-            Logf("%s/%s = %.2f", originName.String(), signalName, value);
+            Logf("%s/%s = %.4f", originName.String(), signalName, value);
 
             if (ent.Has<ecs::SignalOutput>(lock)) {
                 auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
-                if (signalOutput.HasSignal(signalName))
-                    Logf("  Signal output: %.2f", signalOutput.GetSignal(signalName));
-            }
-            /*if (ent.Has<ecs::SignalBindings>(lock)) {
-                auto &bindings = ent.Get<ecs::SignalBindings>(lock);
-                auto bindingList = bindings.Lookup(signalName);
-
-                std::stringstream ss;
-                if (!bindingList || bindingList->sources.empty()) {
-                    ss << "none";
-                } else {
-                    ss << bindingList->operation;
+                if (signalOutput.HasSignal(signalName)) {
+                    Logf("  Signal output: %.4f", signalOutput.GetSignal(signalName));
                 }
-                Logf("  Signal bindings: %s", ss.str());
-                if (bindingList) {
-                    for (auto &source : bindingList->sources) {
-                        auto e = source.first.Get(lock);
-                        double bindingValue = ecs::SignalBindings::GetSignal(lock, e, source.second);
-                        if (e) {
-                            Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), bindingValue);
-                        } else {
-                            Logf("      %s on %s(missing): %.2f",
-                                source.second,
-                                source.first.Name().String(),
-                                bindingValue);
-                        }
+            }
+            if (ent.Has<ecs::SignalBindings>(lock)) {
+                auto &bindings = ent.Get<ecs::SignalBindings>(lock);
+                if (bindings.HasBinding(signalName)) {
+                    auto &binding = bindings.GetBinding(signalName);
+                    if (binding.nodes.empty() || binding.rootIndex < 0) {
+                        Logf("  Signal binding: nil");
+                    } else {
+                        Logf("  Signal binding: %.4f = %s",
+                            binding.Evaluate(lock),
+                            binding.nodeDebug[binding.rootIndex]);
                     }
                 }
-            }*/
+            }
         });
 } // namespace sp

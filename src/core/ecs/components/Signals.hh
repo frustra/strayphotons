@@ -34,6 +34,7 @@ namespace ecs {
         void SetBinding(const std::string &name, const std::string &expr, const Name &scope = Name());
         void SetBinding(const std::string &name, EntityRef entity, const std::string &signalName);
         void ClearBinding(const std::string &name);
+        bool HasBinding(const std::string &name) const;
         const SignalExpression &GetBinding(const std::string &name) const;
 
         static double GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth = 0);
