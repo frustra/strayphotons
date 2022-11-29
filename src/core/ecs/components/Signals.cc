@@ -127,7 +127,7 @@ namespace ecs {
         if (!ent.Has<SignalBindings>(lock)) return 0.0;
 
         auto &bindings = ent.Get<SignalBindings>(lock);
-        return bindings.GetBinding(name).Evaluate(lock);
+        return bindings.GetBinding(name).Evaluate(lock, depth);
     }
 
     std::vector<std::string> SignalBindings::GetBindingNames() const {
