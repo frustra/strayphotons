@@ -5,6 +5,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Ecs.cc
     EntityRef.cc
     EntityReferenceManager.cc
+    SignalExpression.cc
 )
 
 target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC

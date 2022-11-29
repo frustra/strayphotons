@@ -372,7 +372,7 @@ namespace sp {
         RunSceneActions();
         UpdateSceneConnections();
 
-        stagedScenes.Tick(this->interval, [this](std::shared_ptr<Scene> &scene) {
+        stagedScenes.Tick(this->interval, [](std::shared_ptr<Scene> &scene) {
             ZoneScopedN("RemoveExpiredScene");
             ZoneStr(scene->name);
             auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();

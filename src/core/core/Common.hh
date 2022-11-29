@@ -169,7 +169,7 @@ namespace sp {
         return std::find(vec.begin(), vec.end(), val) != vec.end();
     }
 
-    bool is_float(const string &str);
+    bool is_float(string_view str);
 
     struct float16_t {
         uint16_t value;

@@ -30,7 +30,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"signal_bindings": {
-				"in_signal": "combinator/value"
+				"in_signal": "sensor1 && sensor2"
 			},
 			"event_bindings": {
 				"/trigger/player/enter": {
@@ -44,16 +44,7 @@
 			}
 		},
 		{
-			"name": "combinator",
-			"signal_bindings": {
-				"value": {
-					"operator": "binary_and",
-					"values": ["sensor1", "sensor2"]
-				}
-			}
-		},
-		{
-			"__comment": "floor",
+			"name": "floor",
 			"transform": {
 				"translate": [-1.5, 0, -1.5]
 			},
@@ -68,7 +59,7 @@
 			}
 		},
 		{
-			"__comment": "ceiling",
+			"name": "ceiling",
 			"transform": {
 				"translate": [-1.5, 4, -1.5]
 			},
@@ -102,7 +93,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"signal_output": {
-				"sensitivity": 5
+				"sensitivity": 0.1
 			},
 			"script": {
 				"prefab": "template",
@@ -116,7 +107,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"signal_output": {
-				"sensitivity": 5
+				"sensitivity": 0.1
 			},
 			"script": {
 				"prefab": "template",
@@ -186,7 +177,7 @@
 		{
 			"name": "light1",
 			"transform": {
-				"translate": [0.1, 0.8, 4.5],
+				"translate": [0.2, 0.8, 4.5],
 				"rotate": [[-90, 0, 1, 0]]
 			},
 			"light": {

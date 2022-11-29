@@ -54,7 +54,7 @@ namespace sp {
         return glm::degrees(radians_);
     }
 
-    bool is_float(const string &str) {
+    bool is_float(string_view str) {
         int state = 0;
         // States:
         // 0: Start of string

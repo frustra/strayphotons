@@ -27,59 +27,9 @@ namespace ecs {
         const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             if (bind.second.is<std::string>()) {
-                auto [originName, signalName] = ParseSignalString(bind.second.get<std::string>(), scope.prefix);
-                if (originName) {
-                    auto originRef = originName;
-                    bindings.Bind(bind.first, originRef, signalName);
-                } else {
-                    Errorf("Invalid signal binding origin: %s", bind.second.get<std::string>());
-                    return false;
-                }
-            } else if (bind.second.is<picojson::object>()) {
-                for (auto source : bind.second.get<picojson::object>()) {
-                    if (source.first == "operator") {
-                        auto operatorName = source.second.get<std::string>();
-                        sp::to_upper(operatorName);
-                        if (operatorName == "ADD") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::ADD);
-                        } else if (operatorName == "MIN") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MIN);
-                        } else if (operatorName == "MAX") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MAX);
-                        } else if (operatorName == "MULTIPLY") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MULTIPLY);
-                        } else if (operatorName == "COUNT") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::COUNT);
-                        } else if (operatorName == "BINARY_AND") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_AND);
-                        } else if (operatorName == "BINARY_OR") {
-                            bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_OR);
-                        } else {
-                            Errorf("Unknown signal binding combine operator: %s", operatorName);
-                            return false;
-                        }
-                    } else if (source.first == "values") {
-                        if (!source.second.is<picojson::array>()) {
-                            Errorf("Invalid signal binding source: %s", bind.first);
-                            return false;
-                        }
-                        for (auto origin : source.second.get<picojson::array>()) {
-                            auto [originName, signalName] = ParseSignalString(origin.get<std::string>(), scope.prefix);
-                            if (originName) {
-                                auto originRef = originName;
-                                bindings.Bind(bind.first, originRef, signalName);
-                            } else {
-                                Errorf("Invalid signal binding origin: %s", origin.get<std::string>());
-                                return false;
-                            }
-                        }
-                    } else {
-                        Errorf("Unknown signal binding source field: %s", source.first);
-                        return false;
-                    }
-                }
+                bindings.SetBinding(bind.first, bind.second.get<std::string>(), scope.prefix);
             } else {
-                Errorf("Unknown signal binding type: %s", bind.first);
+                Errorf("Unknown signal binding expression type: %s = %s", bind.first, bind.second.to_str());
                 return false;
             }
         }
@@ -98,39 +48,6 @@ namespace ecs {
     void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstBindings = dst.Get<SignalBindings>(lock);
         dstBindings.CopyBindings(src);
-    }
-
-    std::ostream &operator<<(std::ostream &out, const SignalBindings::CombineOperator &v) {
-        switch (v) {
-        case SignalBindings::CombineOperator::ADD:
-            return out << "CombineOperator::ADD";
-        case SignalBindings::CombineOperator::MIN:
-            return out << "CombineOperator::MIN";
-        case SignalBindings::CombineOperator::MAX:
-            return out << "CombineOperator::MAX";
-        case SignalBindings::CombineOperator::MULTIPLY:
-            return out << "CombineOperator::MULTIPLY";
-        case SignalBindings::CombineOperator::COUNT:
-            return out << "CombineOperator::COUNT";
-        case SignalBindings::CombineOperator::BINARY_AND:
-            return out << "CombineOperator::BINARY_AND";
-        case SignalBindings::CombineOperator::BINARY_OR:
-            return out << "CombineOperator::BINARY_OR";
-        default:
-            return out << "CombineOperator::INVALID";
-        }
-    }
-
-    std::pair<ecs::Name, std::string> ParseSignalString(const std::string &str, const Name &scope) {
-        size_t delimiter = str.find('/');
-        ecs::Name entityName(str.substr(0, delimiter), scope);
-        if (entityName) {
-            std::string signalName = "value";
-            if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
-            return std::make_pair(entityName, signalName);
-        } else {
-            return std::make_pair(ecs::Name(), "");
-        }
     }
 
     void SignalOutput::SetSignal(const std::string &name, double value) {
@@ -156,95 +73,36 @@ namespace ecs {
     }
 
     void SignalBindings::CopyBindings(const SignalBindings &src) {
-        for (auto &[name, srcList] : src.destToSource) {
-            auto dstList = destToSource.find(name);
-            if (dstList != destToSource.end()) {
-                dstList->second.operation = srcList.operation;
-                auto &vec = dstList->second.sources;
-                for (auto &binding : srcList.sources) {
-                    if (!sp::contains(vec, binding)) vec.emplace_back(binding);
-                }
-            } else {
-                destToSource.emplace(name, srcList);
-            }
+        for (auto &[name, srcExpr] : src.bindings) {
+            bindings.emplace(name, srcExpr);
         }
     }
 
-    void SignalBindings::SetCombineOperation(const std::string &name, CombineOperator operation) {
-        auto list = destToSource.find(name);
-        if (list != destToSource.end()) {
-            list->second.operation = operation;
-        } else {
-            destToSource.emplace(name, BindingList{operation});
-        }
+    void SignalBindings::SetBinding(const std::string &name, const std::string &expr, const Name &scope) {
+        Tracef("SetBinding %s = %s", name, expr);
+        bindings.emplace(name, SignalExpression{expr, scope});
     }
 
-    void SignalBindings::Bind(const std::string &name, EntityRef origin, std::string source) {
-        Tracef("Binding %s to %s on %s", name, source, origin.Name().String());
-        Binding newBinding(origin, source);
-
-        auto list = destToSource.find(name);
-        if (list != destToSource.end()) {
-            auto &vec = list->second.sources;
-            if (!sp::contains(vec, newBinding)) vec.emplace_back(newBinding);
-        } else {
-            destToSource.emplace(name, BindingList{{newBinding}});
-        }
+    void SignalBindings::SetBinding(const std::string &name, EntityRef entity, const std::string &signalName) {
+        Tracef("SetBinding %s = %s/%s", name, entity.Name().String(), signalName);
+        bindings.emplace(name, SignalExpression{entity.Name(), signalName});
     }
 
-    void SignalBindings::Unbind(const std::string &name, EntityRef origin, std::string source) {
-        auto list = destToSource.find(name);
-        if (list != destToSource.end()) {
-            auto &sources = list->second.sources;
-            auto binding = sources.begin();
-            while (binding != sources.end()) {
-                if (binding->first == origin && binding->second == source) {
-                    binding = sources.erase(binding);
-                } else {
-                    binding++;
-                }
-            }
-        }
+    void SignalBindings::ClearBinding(const std::string &name) {
+        bindings.erase(name);
     }
 
-    void SignalBindings::UnbindAll(const std::string &name) {
-        destToSource.erase(name);
+    bool SignalBindings::HasBinding(const std::string &name) const {
+        return bindings.count(name) > 0;
     }
 
-    void SignalBindings::UnbindOrigin(EntityRef origin) {
-        for (auto &list : destToSource) {
-            auto &sources = list.second.sources;
-            auto binding = sources.begin();
-            while (binding != sources.end()) {
-                if (binding->first == origin) {
-                    binding = sources.erase(binding);
-                } else {
-                    binding++;
-                }
-            }
+    const SignalExpression &SignalBindings::GetBinding(const std::string &name) const {
+        auto list = bindings.find(name);
+        if (list != bindings.end()) {
+            return list->second;
         }
-    }
-
-    void SignalBindings::UnbindSource(EntityRef origin, std::string source) {
-        for (auto &list : destToSource) {
-            auto &sources = list.second.sources;
-            auto binding = sources.begin();
-            while (binding != sources.end()) {
-                if (binding->first == origin && binding->second == source) {
-                    binding = sources.erase(binding);
-                } else {
-                    binding++;
-                }
-            }
-        }
-    }
-
-    const SignalBindings::BindingList *SignalBindings::Lookup(const std::string name) const {
-        auto list = destToSource.find(name);
-        if (list != destToSource.end()) {
-            return &list->second;
-        }
-        return nullptr;
+        static const SignalExpression defaultExpr = {};
+        return defaultExpr;
     }
 
     double SignalBindings::GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth) {
@@ -269,73 +127,13 @@ namespace ecs {
         if (!ent.Has<SignalBindings>(lock)) return 0.0;
 
         auto &bindings = ent.Get<SignalBindings>(lock);
-        auto bindingList = bindings.Lookup(name);
-        if (bindingList == nullptr) return 0.0;
-
-        switch (bindingList->operation) {
-        case CombineOperator::ADD:
-        case CombineOperator::MIN:
-        case CombineOperator::MAX:
-        case CombineOperator::MULTIPLY: {
-            std::optional<double> output;
-            for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get(lock);
-                auto val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1);
-                switch (bindingList->operation) {
-                case CombineOperator::ADD:
-                    output = output.value_or(0.0) + val;
-                    break;
-                case CombineOperator::MIN:
-                    output = std::min(output.value_or(val), val);
-                    break;
-                case CombineOperator::MAX:
-                    output = std::max(output.value_or(val), val);
-                    break;
-                case CombineOperator::MULTIPLY:
-                    output = output.value_or(1.0) * val;
-                    break;
-                default:
-                    sp::Abort("Bad signal combine operator");
-                }
-            }
-            return output.value_or(0.0);
-        } break;
-        case CombineOperator::COUNT: {
-            double output = 0.0;
-            for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get(lock);
-                if (SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5) output += 1.0;
-            }
-            return output;
-        } break;
-        case CombineOperator::BINARY_AND:
-        case CombineOperator::BINARY_OR: {
-            std::optional<bool> output;
-            for (auto &signal : bindingList->sources) {
-                auto origin = signal.first.Get(lock);
-                bool val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5;
-                switch (bindingList->operation) {
-                case CombineOperator::BINARY_AND:
-                    output = output.value_or(true) && val;
-                    break;
-                case CombineOperator::BINARY_OR:
-                    output = output.value_or(false) || val;
-                    break;
-                default:
-                    sp::Abort("Bad signal combine operator");
-                }
-            }
-            return output.value_or(false) ? 1.0 : 0.0;
-        } break;
-        default:
-            sp::Abort("Bad signal combine operator");
-        }
+        return bindings.GetBinding(name).Evaluate(lock);
     }
 
     std::vector<std::string> SignalBindings::GetBindingNames() const {
-        std::vector<std::string> list(destToSource.size());
+        std::vector<std::string> list(bindings.size());
         size_t i = 0;
-        for (auto &entry : destToSource) {
+        for (auto &entry : bindings) {
             list[i++] = entry.first;
         }
         return list;

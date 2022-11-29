@@ -119,7 +119,7 @@ namespace ecs {
                     auto &transform = newEntity.Get<ecs::TransformTree>(lock);
                     if (!transform.parent) {
                         if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
-                        transform.pose = offset * transform.pose;
+                        transform.pose = offset * transform.pose.Get();
                     }
                 }
 

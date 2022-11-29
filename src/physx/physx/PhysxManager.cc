@@ -767,7 +767,7 @@ namespace sp {
     PxGeometryHolder PhysxManager::GeometryFromShape(const ecs::PhysicsShape &shape, glm::vec3 parentScale) const {
         auto scale = shape.transform.GetScale() * parentScale;
         return std::visit(
-            [this, &scale](auto &&arg) {
+            [&scale](auto &&arg) {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
                     auto avgScale = (scale.x + scale.y + scale.z) / 3.0f;

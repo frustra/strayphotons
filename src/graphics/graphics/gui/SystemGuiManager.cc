@@ -24,14 +24,14 @@ namespace sp {
                 ent.Set<ecs::EventInput>(lock);
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
+                signalBindings.SetBinding(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
                     entities::Player,
                     INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
+                signalBindings.SetBinding(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
                     entities::Player,
                     INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, entities::Player, INPUT_SIGNAL_MENU_CURSOR_X);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, entities::Player, INPUT_SIGNAL_MENU_CURSOR_Y);
+                signalBindings.SetBinding(INPUT_SIGNAL_MENU_CURSOR_X, entities::Player, INPUT_SIGNAL_MENU_CURSOR_X);
+                signalBindings.SetBinding(INPUT_SIGNAL_MENU_CURSOR_Y, entities::Player, INPUT_SIGNAL_MENU_CURSOR_Y);
             });
 
         {

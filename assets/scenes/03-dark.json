@@ -45,7 +45,7 @@
 			}
 		},
 		{
-			"__comment": "floor",
+			"name": "floor1",
 			"transform": {
 				"translate": [-1.5, 0, -1.5]
 			},
@@ -60,7 +60,7 @@
 			}
 		},
 		{
-			"__comment": "floor2",
+			"name": "floor2",
 			"transform": {
 				"translate": [-4.5, 0, 4.5]
 			},
@@ -75,7 +75,7 @@
 			}
 		},
 		{
-			"__comment": "ceiling",
+			"name": "ceiling",
 			"transform": {
 				"translate": [-4.5, 4, -1.5]
 			},
@@ -118,7 +118,7 @@
 		{
 			"name": "light1",
 			"transform": {
-				"translate": [3, 0.5, 0.1],
+				"translate": [3, 0.5, 0.2],
 				"rotate": [[180, 0, 1, 0]]
 			},
 			"light": {
@@ -138,7 +138,7 @@
 				"rotate": [90, 0, 1, 0]
 			},
 			"signal_output": {
-				"sensitivity": 2.5
+				"sensitivity": 0.2
 			},
 			"script": {
 				"prefab": "template",
@@ -183,7 +183,7 @@
 		{
 			"name": "light2",
 			"transform": {
-				"translate": [7.5, 3.9, 1.5],
+				"translate": [7.5, 3.8, 1.5],
 				"rotate": [[90, 0, 1, 0], [-55, 1, 0, 0]]
 			},
 			"light": {
@@ -203,7 +203,7 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"signal_output": {
-				"sensitivity": 5
+				"sensitivity": 0.1
 			},
 			"script": {
 				"prefab": "template",

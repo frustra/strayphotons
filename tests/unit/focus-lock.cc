@@ -33,7 +33,7 @@ namespace FocusLockTests {
             auto &eventInput = player.Set<ecs::EventInput>(lock);
             eventInput.Register(lock, playerQueue, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
-            signalBindings.Bind(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
+            signalBindings.SetBinding(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
 
             keyboard.Set<ecs::Name>(lock, "", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
