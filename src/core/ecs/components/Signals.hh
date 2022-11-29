@@ -13,24 +13,16 @@
 namespace ecs {
     static const size_t MAX_SIGNAL_BINDING_DEPTH = 10;
 
-    class SignalOutput {
-    public:
+    struct SignalOutput {
         void SetSignal(const std::string &name, double value);
         void ClearSignal(const std::string &name);
         bool HasSignal(const std::string &name) const;
         double GetSignal(const std::string &name) const;
-        const std::map<std::string, double> &GetSignals() const;
 
-    private:
-        std::map<std::string, double> signals;
+        robin_hood::unordered_map<std::string, double> signals;
     };
 
-    class SignalBindings {
-    public:
-        SignalBindings() {}
-
-        void CopyBindings(const SignalBindings &src);
-
+    struct SignalBindings {
         void SetBinding(const std::string &name, const std::string &expr, const Name &scope = Name());
         void SetBinding(const std::string &name, EntityRef entity, const std::string &signalName);
         void ClearBinding(const std::string &name);
@@ -38,9 +30,7 @@ namespace ecs {
         const SignalExpression &GetBinding(const std::string &name) const;
 
         static double GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth = 0);
-        std::vector<std::string> GetBindingNames() const;
 
-    private:
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };
 

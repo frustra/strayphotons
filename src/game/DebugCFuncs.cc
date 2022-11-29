@@ -212,19 +212,19 @@ namespace sp {
             Logf("  %s:", ecs::ToString(lock, ent));
             if (ent.Has<ecs::SignalOutput>(lock)) {
                 auto &output = ent.Get<ecs::SignalOutput>(lock);
-                for (auto &signal : output.GetSignals()) {
+                for (auto &signal : output.signals) {
                     Logf("    %s = %.4f", signal.first, signal.second);
                 }
             }
             if (ent.Has<ecs::SignalBindings>(lock)) {
                 auto &bindings = ent.Get<ecs::SignalBindings>(lock);
-                for (auto &bindingName : bindings.GetBindingNames()) {
-                    auto &binding = bindings.GetBinding(bindingName);
+                for (auto &pair : bindings.bindings) {
+                    auto &binding = pair.second;
                     if (binding.nodes.empty() || binding.rootIndex < 0) {
-                        Logf("    %s = nil", bindingName);
+                        Logf("    %s = nil", pair.first);
                     } else {
                         Logf("    %s = %.4f = %s",
-                            bindingName,
+                            pair.first,
                             binding.Evaluate(lock),
                             binding.nodeDebug[binding.rootIndex]);
                     }
