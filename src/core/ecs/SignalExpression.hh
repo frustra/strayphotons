@@ -47,7 +47,7 @@ namespace ecs {
             Node(T &&arg, size_t startToken, size_t endToken) : NodeVariant(arg), startToken(startToken) {}
         };
 
-        double Evaluate(ReadSignalsLock lock) const;
+        double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;
 
         const std::string expr;
         std::vector<std::string_view> tokens; // string_views into expr

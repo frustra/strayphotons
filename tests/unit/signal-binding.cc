@@ -29,6 +29,8 @@ namespace SignalBindingTests {
             auto &signalOutput = player.Set<ecs::SignalOutput>(lock);
             signalOutput.SetSignal(TEST_SOURCE_BUTTON, 1.0);
             signalOutput.SetSignal(TEST_SOURCE_KEY, 2.0);
+            signalOutput.SetSignal("test_a", 0.0);
+            signalOutput.SetSignal("test_b", 1.0);
 
             hand = lock.NewEntity();
             ecs::EntityRef handRef(ecs::Name("player", "hand"), hand);
@@ -61,6 +63,9 @@ namespace SignalBindingTests {
             playerBindings.SetBinding("test", "sin()");
             playerBindings.SetBinding("test", "");
             playerBindings.ClearBinding("test");
+
+            playerBindings.SetBinding("test_fib", "player/test_a + player/test_b", ecs::Name("player", ""));
+            playerBindings.SetBinding("test_recurse", "player/test_recurse + 1", ecs::Name("player", ""));
 
             auto &handBindings = hand.Set<ecs::SignalBindings>(lock);
             handBindings.SetBinding(TEST_SIGNAL_ACTION1, "player/device1_button", ecs::Name("player", ""));
@@ -127,6 +132,31 @@ namespace SignalBindingTests {
             AssertEqual(expr3.nodeDebug[0], "foo:unknown/device1_button", "Unexpected expression node");
             Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
                 "Expected expression node to be signal");
+        }
+        {
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
+
+            Timer t("Try reading recursive signal binding");
+            double val = ecs::SignalBindings::GetSignal(lock, player, "test_recurse");
+            AssertEqual(val,
+                (double)ecs::MAX_SIGNAL_BINDING_DEPTH + 1.0,
+                "Expected invalid signal due to depth overflow");
+        }
+        {
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>>();
+
+            auto &signals = player.Get<ecs::SignalOutput>(lock);
+
+            {
+                Timer t("Test calculate the fibonacci sequence");
+                for (size_t i = 0; i < 1000; i++) {
+                    double val = ecs::SignalBindings::GetSignal(lock, player, "test_fib");
+                    signals.SetSignal("test_a", signals.GetSignal("test_b"));
+                    signals.SetSignal("test_b", val);
+                }
+                double fib = signals.GetSignal("test_a");
+                Logf("1000th fibonacci number: %e", fib);
+            }
         }
         {
             Timer t("Try reading some signals");

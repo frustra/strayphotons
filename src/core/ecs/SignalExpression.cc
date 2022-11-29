@@ -514,7 +514,7 @@ namespace ecs {
         }
     }
 
-    double evaluateNode(ReadSignalsLock lock, const SignalExpression &expr, int nodeIndex) {
+    double evaluateNode(const ReadSignalsLock &lock, size_t depth, const SignalExpression &expr, int nodeIndex) {
         if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
 
         double result = std::visit(
@@ -523,18 +523,21 @@ namespace ecs {
                 if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                     return node.value;
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                    return SignalBindings::GetSignal(lock, EntityRef(node.entityName).Get(lock), node.signalName);
+                    return SignalBindings::GetSignal(lock,
+                        EntityRef(node.entityName).Get(lock),
+                        node.signalName,
+                        depth + 1);
                 } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
-                    return node.evaluate(evaluateNode(lock, expr, node.inputIndex));
+                    return node.evaluate(evaluateNode(lock, depth, expr, node.inputIndex));
                 } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
-                    return node.evaluate(evaluateNode(lock, expr, node.inputIndexA),
-                        evaluateNode(lock, expr, node.inputIndexB));
+                    return node.evaluate(evaluateNode(lock, depth, expr, node.inputIndexA),
+                        evaluateNode(lock, depth, expr, node.inputIndexB));
                 } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
-                    double ifValue = evaluateNode(lock, expr, node.ifIndex);
+                    double ifValue = evaluateNode(lock, depth, expr, node.ifIndex);
                     if (ifValue >= 0.5) {
-                        return evaluateNode(lock, expr, node.trueIndex);
+                        return evaluateNode(lock, depth, expr, node.trueIndex);
                     } else {
-                        return evaluateNode(lock, expr, node.falseIndex);
+                        return evaluateNode(lock, depth, expr, node.falseIndex);
                     }
                 } else {
                     Abortf("Invalid signal operation: %s", typeid(T).name());
@@ -552,9 +555,9 @@ namespace ecs {
         return result;
     };
 
-    double SignalExpression::Evaluate(ReadSignalsLock lock) const {
+    double SignalExpression::Evaluate(ReadSignalsLock lock, size_t depth) const {
         if (nodes.empty() || rootIndex < 0) return 0.0f;
         // Debugf("Eval '%s'", expr);
-        return evaluateNode(lock, *this, rootIndex);
+        return evaluateNode(lock, depth, *this, rootIndex);
     }
 } // namespace ecs

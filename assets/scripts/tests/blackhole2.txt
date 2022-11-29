@@ -4,7 +4,7 @@ steplogic
 rotate player:player 180 0 1 0
 rotate player:flatview -35 1 0 0
 translate player:player 0.5 0 -0.6
-stepphysics
+stepphysics 2
 stepgraphics
 screenshot blackhole2_table_1.png
 stepgraphics
