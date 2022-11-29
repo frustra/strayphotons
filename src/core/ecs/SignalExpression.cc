@@ -455,7 +455,7 @@ namespace ecs {
                 expr.nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
                     tokenIndex,
                     tokenIndex + 1);
-                expr.nodeDebug.emplace_back(token);
+                expr.nodeDebug.emplace_back(entityName.String() + "/" + signalName);
                 tokenIndex++;
             }
         }

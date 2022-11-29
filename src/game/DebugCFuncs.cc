@@ -207,43 +207,36 @@ namespace sp {
 
     CFunc<void> CFuncPrintSignals("printsignals", "Print out the values and bindings of signals", []() {
         auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
-        Logf("Signal outputs:");
-        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
-            auto &output = ent.Get<ecs::SignalOutput>(lock);
-            auto &signals = output.GetSignals();
-
-            Logf("  %s:%s", ecs::ToString(lock, ent), signals.empty() ? " none" : "");
-            for (auto &[signalName, value] : signals) {
-                Logf("    %s: %.2f", signalName, value);
-            }
-        }
-
-        /*Logf("");
-        Logf("Signal bindings:");
-        for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
-            auto &bindings = ent.Get<ecs::SignalBindings>(lock);
-            auto bindingNames = bindings.GetBindingNames();
-            Logf("  %s:%s", ecs::ToString(lock, ent), bindingNames.empty() ? " none" : "");
-            for (auto &bindingName : bindingNames) {
-                auto list = bindings.Lookup(bindingName);
-                std::stringstream ss;
-                if (list->sources.empty()) {
-                    ss << "none";
-                } else {
-                    ss << list->operation;
+        Logf("Signals:");
+        static const auto printEntity = [&lock](ecs::Entity ent) {
+            Logf("  %s:", ecs::ToString(lock, ent));
+            if (ent.Has<ecs::SignalOutput>(lock)) {
+                auto &output = ent.Get<ecs::SignalOutput>(lock);
+                for (auto &[signalName, value] : output.GetSignals()) {
+                    Logf("    %s: %.4f", signalName, value);
                 }
-                Logf("    %s: %s", bindingName, ss.str());
-                for (auto &source : list->sources) {
-                    auto e = source.first.Get(lock);
-                    double value = ecs::SignalBindings::GetSignal(lock, e, source.second);
-                    if (e) {
-                        Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), value);
+            }
+            if (ent.Has<ecs::SignalBindings>(lock)) {
+                auto &bindings = ent.Get<ecs::SignalBindings>(lock);
+                for (auto &bindingName : bindings.GetBindingNames()) {
+                    auto &binding = bindings.GetBinding(bindingName);
+                    if (binding.nodes.empty() || binding.rootIndex < 0) {
+                        Logf("    %s = 0.0", bindingName);
                     } else {
-                        Logf("      %s on %s(missing): %.2f", source.second, source.first.Name().String(), value);
+                        Logf("    %s = %.4f = %s",
+                            bindingName,
+                            binding.Evaluate(lock),
+                            binding.nodeDebug[binding.rootIndex]);
                     }
                 }
             }
-        }*/
+        };
+        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
+            printEntity(ent);
+        }
+        for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
+            if (!ent.Has<ecs::SignalOutput>(lock)) printEntity(ent);
+        }
     });
 
     CFunc<std::string> CFuncPrintSignal("printsignal",

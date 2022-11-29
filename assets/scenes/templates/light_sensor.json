@@ -5,13 +5,10 @@
 			"direction": [0, 0, 1]
 		},
 		"signal_output": {
-			"sensitivity": 5
+			"sensitivity": 0.5
 		},
 		"signal_bindings": {
-			"light_value_r_scaled": "scoperoot/light_value_r * scoperoot/sensitivity",
-			"light_value_g_scaled": "scoperoot/light_value_g * scoperoot/sensitivity",
-			"light_value_b_scaled": "scoperoot/light_value_b * scoperoot/sensitivity",
-			"value": "scoperoot/light_value_r_scaled && scoperoot/light_value_g_scaled && scoperoot/light_value_b_scaled"
+			"value": "min(min(scoperoot/light_value_r, scoperoot/light_value_g), scoperoot/light_value_b) >= scoperoot/sensitivity"
 		},
 		"script": { "onTick": "light_sensor" }
 	},

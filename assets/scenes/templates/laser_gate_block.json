@@ -154,12 +154,12 @@
 				}
 			},
 			"signal_output": {
-				"gate_scale": 10
+				"gate_sensitivity": 0.5
 			},
 			"signal_bindings": {
-				"laser_color_r": "(gate.Icosphere/light_value_r * output/gate_scale) ? source.Icosphere/light_value_r : 0",
-				"laser_color_g": "(gate.Icosphere/light_value_g * output/gate_scale) ? source.Icosphere/light_value_g : 0",
-				"laser_color_b": "(gate.Icosphere/light_value_b * output/gate_scale) ? source.Icosphere/light_value_b : 0"
+				"laser_color_r": "gate.Icosphere/light_value_r >= output/gate_sensitivity ? source.Icosphere/light_value_r : 0",
+				"laser_color_g": "gate.Icosphere/light_value_g >= output/gate_sensitivity ? source.Icosphere/light_value_g : 0",
+				"laser_color_b": "gate.Icosphere/light_value_b >= output/gate_sensitivity ? source.Icosphere/light_value_b : 0"
 			},
 			"laser_line": {},
 			"laser_emitter": {

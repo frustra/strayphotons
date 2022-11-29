@@ -65,8 +65,7 @@
             "rotation_rpm": 40
         },
         "signal_bindings": {
-            "smooth_rotation_unscaled": "vr:controller_left/actions_main_in_rotation_x + vr:controller_right/actions_main_in_rotation_x",
-            "smooth_rotation": "vr:origin/smooth_rotation_unscaled * vr:origin/rotation_rpm"
+            "smooth_rotation": "(vr:controller_left/actions_main_in_rotation_x + vr:controller_right/actions_main_in_rotation_x) * vr:origin/rotation_rpm"
         }
     },
     "vr:left_hand": {
