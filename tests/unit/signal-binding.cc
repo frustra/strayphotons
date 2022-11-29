@@ -66,47 +66,68 @@ namespace SignalBindingTests {
             handBindings.SetBinding(TEST_SIGNAL_ACTION1, "player/device1_button", ecs::Name("player", ""));
             handBindings.SetBinding(TEST_SIGNAL_ACTION3, "foo:unknown/device1_button", ecs::Name("player", ""));
         }
-        /*{
+        {
             Timer t("Try looking up some bindings");
             auto lock = ecs::StartTransaction<ecs::Read<ecs::SignalBindings, ecs::SignalOutput>>();
 
             auto &playerBindings = player.Get<ecs::SignalBindings>(lock);
-            auto &bindingExpr = playerBindings.GetBinding(TEST_SIGNAL_ACTION1);
-            AssertEqual(bindingExpr.expr, "self/device2_key", "Expected expression to be set");
-            AssertEqual(bindingExpr.nodes.size(), 1u, "Unexpected a single expression node");
-            auto &rootNode = *bindingExpr.nodes.begin();
-            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(rootNode),
+            auto &expr1 = playerBindings.GetBinding(TEST_SIGNAL_ACTION1);
+            AssertEqual(expr1.expr, "player/device2_key", "Expected expression to be set");
+            AssertEqual(expr1.nodes.size(), 1u, "Expected a single expression node");
+            AssertEqual(expr1.rootIndex, 0, "Expected expression root node to be 0");
+            AssertEqual(expr1.nodeDebug[0], "player:player/device2_key", "Unexpected expression node");
+            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr1.nodes[0]),
                 "Expected expression node to be signal");
 
-            bindingList = playerBindings.Lookup(TEST_SIGNAL_ACTION2);
-            Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
-            AssertEqual(bindingList->operation,
-                ecs::SignalBindings::CombineOperator::ADD,
-                "Expected default combine operator");
-            auto it = bindingList->sources.begin();
-            AssertEqual(it->first.GetLive(), player, "Expected action2 to be bound on player");
-            AssertEqual(it->second, TEST_SOURCE_KEY, "Expected action2 to be bound to key source");
-            it++;
-            AssertEqual(it->first.GetLive(), player, "Expected action2 to be bound on player");
-            AssertEqual(it->second, TEST_SOURCE_BUTTON, "Expected action2 to be bound to button source");
-            it++;
-            Assert(it == bindingList->sources.end(), "Expected action2 to have no more bindings");
+            auto &expr2 = playerBindings.GetBinding(TEST_SIGNAL_ACTION2);
+            AssertEqual(expr2.expr, "player/device2_key + player/device1_button", "Expected expression to be set");
+            AssertEqual(expr2.nodes.size(), 3u, "Expected 3 expression nodes");
+            AssertEqual(expr2.rootIndex, 2, "Expected expression root node to be 2");
+            AssertEqual(expr2.nodeDebug[0], "player:player/device2_key", "Unexpected expression node");
+            AssertEqual(expr2.nodeDebug[1], "player:player/device1_button", "Unexpected expression node");
+            AssertEqual(expr2.nodeDebug[2],
+                "player:player/device2_key + player:player/device1_button",
+                "Unexpected expression node");
+            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[0]),
+                "Expected expression node to be signal");
+            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[1]),
+                "Expected expression node to be signal");
+            Assert(std::holds_alternative<ecs::SignalExpression::TwoInputOperation>(expr2.nodes[2]),
+                "Expected expression node to an add operator");
+
+            auto &expr4 = playerBindings.GetBinding(TEST_SIGNAL_ACTION4);
+            AssertEqual(expr4.expr, "3 +4 *2 /(1 - -5)+1 /0");
+            AssertEqual(expr4.nodes.size(), 13u, "Expected 3 expression nodes");
+            AssertEqual(expr4.rootIndex, 12, "Expected expression root node to be 12");
+            AssertEqual(expr4.nodeDebug[expr4.rootIndex],
+                "3 + 4 * 2 / ( 1 - -5 ) + 1 / 0",
+                "Unexpected expression node");
+
+            auto &expr5 = playerBindings.GetBinding(TEST_SIGNAL_ACTION5);
+            AssertEqual(expr5.expr, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
+            AssertEqual(expr5.nodes.size(), 13u, "Expected 3 expression nodes");
+            AssertEqual(expr5.rootIndex, 12, "Expected expression root node to be 12");
+            AssertEqual(expr5.nodeDebug[expr5.rootIndex],
+                "cos( max( 2 , 3 ) / 3 * 3.14159265359 ) * -1 ? 42 : 0.1",
+                "Unexpected expression node");
+
+            auto &expr6 = playerBindings.GetBinding(TEST_SIGNAL_ACTION6);
+            AssertEqual(expr6.expr, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
+            AssertEqual(expr6.nodes.size(), 15u, "Expected 3 expression nodes");
+            AssertEqual(expr6.rootIndex, 14, "Expected expression root node to be 13");
+            AssertEqual(expr6.nodeDebug[expr6.rootIndex],
+                "( 0.2 + 0.3 && 2 == 1 * 2 ) + 0.6 == 2 - 0.4",
+                "Unexpected expression node");
 
             auto &handBindings = hand.Get<ecs::SignalBindings>(lock);
-            bindingList = handBindings.Lookup(TEST_SIGNAL_ACTION3);
-            Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
-            AssertEqual(bindingList->operation,
-                ecs::SignalBindings::CombineOperator::ADD,
-                "Expected default combine operator");
-            AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
-            AssertEqual(bindingList->sources.begin()->first.Name(),
-                ecs::Name("", "unknown"),
-                "Expected action3 to be bound on unknown");
-            Assert(!bindingList->sources.begin()->first.GetLive(), "Expected action3 to be bound on unknown");
-            AssertEqual(bindingList->sources.begin()->second,
-                TEST_SOURCE_BUTTON,
-                "Expected action3 to be bound to button source");
-        }*/
+            auto &expr3 = handBindings.GetBinding(TEST_SIGNAL_ACTION3);
+            AssertEqual(expr3.expr, "foo:unknown/device1_button", "Expected expression to be set");
+            AssertEqual(expr3.nodes.size(), 1u, "Expected a single expression node");
+            AssertEqual(expr3.rootIndex, 0, "Expected expression root node to be 0");
+            AssertEqual(expr3.nodeDebug[0], "foo:unknown/device1_button", "Unexpected expression node");
+            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
+                "Expected expression node to be signal");
+        }
         {
             Timer t("Try reading some signals");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
