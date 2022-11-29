@@ -212,8 +212,8 @@ namespace sp {
             Logf("  %s:", ecs::ToString(lock, ent));
             if (ent.Has<ecs::SignalOutput>(lock)) {
                 auto &output = ent.Get<ecs::SignalOutput>(lock);
-                for (auto &[signalName, value] : output.GetSignals()) {
-                    Logf("    %s: %.4f", signalName, value);
+                for (auto &signal : output.GetSignals()) {
+                    Logf("    %s = %.4f", signal.first, signal.second);
                 }
             }
             if (ent.Has<ecs::SignalBindings>(lock)) {
@@ -221,7 +221,7 @@ namespace sp {
                 for (auto &bindingName : bindings.GetBindingNames()) {
                     auto &binding = bindings.GetBinding(bindingName);
                     if (binding.nodes.empty() || binding.rootIndex < 0) {
-                        Logf("    %s = 0.0", bindingName);
+                        Logf("    %s = 0.0000", bindingName);
                     } else {
                         Logf("    %s = %.4f = %s",
                             bindingName,
