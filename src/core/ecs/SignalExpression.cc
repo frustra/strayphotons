@@ -20,22 +20,40 @@ namespace ecs {
 
     struct PrecedenceTable {
         constexpr PrecedenceTable() {
-            values[0] = 6;
-            values['('] = 5;
-            values[','] = 5;
-            values[')'] = 5;
-            values['?'] = 4;
-            values[':'] = 4;
-            values['&'] = 3;
-            values['|'] = 3;
-            values['+'] = 2;
-            values['-'] = 2;
-            values['*'] = 1;
-            values['/'] = 1;
-            values['_'] = 0; // Used as unary - operator
+            // Unary - operator
+            values['_'] = 1;
+
+            // Math operators
+            values['*'] = 2;
+            values['/'] = 2;
+            values['+'] = 3;
+            values['-'] = 3;
+
+            // Comparison operators
+            values['>'] = 4;
+            values['<'] = 4;
+            values['='] = 4;
+            values['!'] = 4;
+
+            // Boolean operators
+            values['&'] = 5;
+            values['|'] = 5;
+
+            // Branch operators
+            values['?'] = 6;
+            values[':'] = 6;
+
+            // Function and expression braces
+            values['('] = 7;
+            values[','] = 7;
+            values[')'] = 7;
+
+            values[0] = 8;
         }
 
-        bool Compare(char curr, char next) const {
+        bool Compare(uint8_t curr, uint8_t next) const {
+            int nextPrecedence = values[next];
+            if (nextPrecedence == 0) return false;
             return values[curr] <= values[next];
         }
 
@@ -53,7 +71,7 @@ namespace ecs {
         return std::string(startPtr, (size_t)(endPtr - startPtr));
     }
 
-    int parseNode(SignalExpression &expr, const Name &scope, size_t &tokenIndex, char precedence = '\x0') {
+    int parseNode(SignalExpression &expr, const Name &scope, size_t &tokenIndex, uint8_t precedence = '\x0') {
         if (tokenIndex >= expr.tokens.size()) {
             Errorf("Failed to parse signal expression, unexpected end of expression: %s", expr.expr);
             return -1;
@@ -65,7 +83,7 @@ namespace ecs {
         size_t nodeStart = tokenIndex;
         while (tokenIndex < expr.tokens.size()) {
             auto &token = expr.tokens[tokenIndex];
-            if (index >= 0 && token.size() == 1 && precedenceLookup.Compare(precedence, token[0])) return index;
+            if (index >= 0 && token.size() >= 1 && precedenceLookup.Compare(precedence, token[0])) return index;
 
             if (token == "?") {
                 if (index < 0) {
@@ -280,7 +298,9 @@ namespace ecs {
 
                 expr.nodeDebug.emplace_back(
                     std::string(token) + "( " + expr.nodeDebug[aIndex] + " , " + expr.nodeDebug[bIndex] + " )");
-            } else if (token == "+" || token == "-" || token == "*" || token == "/" || token == "&&" || token == "||") {
+            } else if (token == "+" || token == "-" || token == "*" || token == "/" || token == "&&" || token == "||" ||
+                       token == ">" || token == ">=" || token == "<" || token == "<=" || token == "==" ||
+                       token == "!=") {
                 if (index < 0) {
                     Errorf("Failed to parse signal expression, unexpected operator '%s': %s",
                         std::string(token),
@@ -346,6 +366,54 @@ namespace ecs {
                                                 bIndex,
                                                 [](double a, double b) {
                                                     return a >= 0.5 || b >= 0.5;
+                                                }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == ">") {
+                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                                bIndex,
+                                                [](double a, double b) {
+                                                    return a > b;
+                                                }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == ">=") {
+                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                                bIndex,
+                                                [](double a, double b) {
+                                                    return a >= b;
+                                                }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == "<") {
+                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                                bIndex,
+                                                [](double a, double b) {
+                                                    return a < b;
+                                                }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == "<=") {
+                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                                bIndex,
+                                                [](double a, double b) {
+                                                    return a <= b;
+                                                }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == "==") {
+                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                                bIndex,
+                                                [](double a, double b) {
+                                                    return a == b;
+                                                }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == "!=") {
+                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                                bIndex,
+                                                [](double a, double b) {
+                                                    return a != b;
                                                 }},
                         startToken,
                         tokenIndex);
@@ -447,7 +515,7 @@ namespace ecs {
     }
 
     double evaluateNode(ReadSignalsLock lock, const SignalExpression &expr, int nodeIndex) {
-        if (nodeIndex < 0 || nodeIndex >= expr.nodes.size()) return 0.0f;
+        if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
 
         double result = std::visit(
             [&](auto &&node) {
@@ -468,11 +536,15 @@ namespace ecs {
                     } else {
                         return evaluateNode(lock, expr, node.falseIndex);
                     }
+                } else {
+                    Abortf("Invalid signal operation: %s", typeid(T).name());
                 }
             },
             expr.nodes[nodeIndex]);
 
-        // Debugf("Eval '%s' = %f", expr.nodeDebug[nodeIndex], result);
+        // if (!std::holds_alternative<SignalExpression::ConstantNode>(expr.nodes[nodeIndex])) {
+        //     Debugf("     '%s' = %f", expr.nodeDebug[nodeIndex], result);
+        // }
         if (!std::isfinite(result)) {
             Warnf("Signal expression evaluation error: %s = %f", expr.nodeDebug[nodeIndex], result);
             return 0.0;
@@ -482,6 +554,7 @@ namespace ecs {
 
     double SignalExpression::Evaluate(ReadSignalsLock lock) const {
         if (nodes.empty() || rootIndex < 0) return 0.0f;
+        // Debugf("Eval '%s'", expr);
         return evaluateNode(lock, *this, rootIndex);
     }
 } // namespace ecs

@@ -15,6 +15,7 @@ namespace SignalBindingTests {
     const std::string TEST_SIGNAL_ACTION3 = "test-action3";
     const std::string TEST_SIGNAL_ACTION4 = "test-action4";
     const std::string TEST_SIGNAL_ACTION5 = "test-action5";
+    const std::string TEST_SIGNAL_ACTION6 = "test-action6";
 
     void TrySetSignals() {
         Tecs::Entity player, hand, unknown;
@@ -45,6 +46,9 @@ namespace SignalBindingTests {
                 ecs::Name("player", ""));
             playerBindings.SetBinding(TEST_SIGNAL_ACTION4, "3 +4 *2 /(1 - -5)+1 /0");
             playerBindings.SetBinding(TEST_SIGNAL_ACTION5, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
+            playerBindings.SetBinding(TEST_SIGNAL_ACTION6, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
+
+            // Test a bunch of invalid expressions to make sure they don't crash the parser
             playerBindings.SetBinding("test", "cos(");
             playerBindings.SetBinding("test", "max(signal,");
             playerBindings.SetBinding("test", "-");
@@ -116,7 +120,9 @@ namespace SignalBindingTests {
             val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION4);
             AssertEqual(val, 13.0 / 3.0, "Expected signal to match constants expression");
             val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION5);
-            AssertEqual(val, 42.0, "Expected signal to match constants expression");
+            AssertEqual(val, 42.0, "Expected signal to match trig expression");
+            val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION6);
+            AssertEqual(val, 1.0, "Expected signal to match comparison expression");
             val = ecs::SignalBindings::GetSignal(lock, player, "foo");
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");
 
