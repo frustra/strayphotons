@@ -48,7 +48,7 @@ namespace sp {
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "character",
-            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+            [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 // Create Head entity which automatically points to the active player mode
                 auto ent = scene->NewSystemEntity(lock, scene, entities::Head.Name());
                 auto &tree = ent.Set<ecs::TransformTree>(lock);

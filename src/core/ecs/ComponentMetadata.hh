@@ -76,7 +76,7 @@ namespace ecs {
         XrEye>;
 
     template<typename Func, size_t I = 0>
-    inline static constexpr auto GetFieldType(std::type_index type, Func func) {
+    inline static const auto GetFieldType(std::type_index type, Func func) {
         if (type == std::type_index(typeid(std::tuple_element_t<I, FieldTypes>))) {
             return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
         }
@@ -116,7 +116,7 @@ namespace ecs {
          * }
          */
         template<typename T, typename F>
-        static constexpr ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
+        static const ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
             return ComponentField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
         }
@@ -133,7 +133,7 @@ namespace ecs {
          * }
          */
         template<typename T, typename F>
-        static constexpr ComponentField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
+        static const ComponentField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
             return ComponentField::New(nullptr, M, actions);
         }
 
@@ -147,7 +147,7 @@ namespace ecs {
          * }
          */
         template<typename T>
-        static constexpr ComponentField New(FieldAction actions = ~FieldAction::None) {
+        static const ComponentField New(FieldAction actions = ~FieldAction::None) {
             return ComponentField(nullptr, std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
         }
 

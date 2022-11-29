@@ -279,7 +279,7 @@ namespace sp {
                 continue;
             }
 
-            hullSet->hulls.emplace_back(pxMesh, [i, name = settings->name](physx::PxConvexMesh *ptr) {
+            hullSet->hulls.emplace_back(pxMesh, [](physx::PxConvexMesh *ptr) {
                 ptr->release();
             });
         }

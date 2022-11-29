@@ -21,32 +21,32 @@ namespace ecs {
     struct PrecedenceTable {
         constexpr PrecedenceTable() {
             // Unary - operator
-            values['_'] = 1;
+            values[u8'_'] = 1;
 
             // Math operators
-            values['*'] = 2;
-            values['/'] = 2;
-            values['+'] = 3;
-            values['-'] = 3;
+            values[u8'*'] = 2;
+            values[u8'/'] = 2;
+            values[u8'+'] = 3;
+            values[u8'-'] = 3;
 
             // Comparison operators
-            values['>'] = 4;
-            values['<'] = 4;
-            values['='] = 4;
-            values['!'] = 4;
+            values[u8'>'] = 4;
+            values[u8'<'] = 4;
+            values[u8'='] = 4;
+            values[u8'!'] = 4;
 
             // Boolean operators
-            values['&'] = 5;
-            values['|'] = 5;
+            values[u8'&'] = 5;
+            values[u8'|'] = 5;
 
             // Branch operators
-            values['?'] = 6;
-            values[':'] = 6;
+            values[u8'?'] = 6;
+            values[u8':'] = 6;
 
             // Function and expression braces
-            values['('] = 7;
-            values[','] = 7;
-            values[')'] = 7;
+            values[u8'('] = 7;
+            values[u8','] = 7;
+            values[u8')'] = 7;
 
             values[0] = 8;
         }
@@ -540,7 +540,7 @@ namespace ecs {
                     Abortf("Invalid signal operation: %s", typeid(T).name());
                 }
             },
-            expr.nodes[nodeIndex]);
+            (SignalExpression::NodeVariant)expr.nodes[nodeIndex]);
 
         // if (!std::holds_alternative<SignalExpression::ConstantNode>(expr.nodes[nodeIndex])) {
         //     Debugf("     '%s' = %f", expr.nodeDebug[nodeIndex], result);

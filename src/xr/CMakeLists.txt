@@ -11,6 +11,7 @@ target_link_libraries(${PROJECT_XR_CORE_LIB} INTERFACE
 
 target_link_libraries(${PROJECT_XR_OPENVR_LIB} PUBLIC
     ${PROJECT_XR_CORE_LIB}
+    ${PROJECT_GAME_LIB}
     ${PROJECT_GRAPHICS_CORE_LIB}
     openvr
 )
