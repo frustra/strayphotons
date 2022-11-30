@@ -39,8 +39,8 @@ namespace ecs {
     struct SceneInfo;
     struct Screen;
     struct Script;
-    class SignalOutput;
-    class SignalBindings;
+    struct SignalOutput;
+    struct SignalBindings;
     struct Sounds;
     struct Transform;
     typedef Transform TransformSnapshot;

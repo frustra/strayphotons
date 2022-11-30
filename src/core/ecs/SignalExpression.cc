@@ -471,10 +471,10 @@ namespace ecs {
         return index;
     }
 
-    SignalExpression::SignalExpression(const Name &entityName, const std::string &signalName)
-        : expr(entityName.String() + "/" + signalName) {
+    SignalExpression::SignalExpression(const EntityRef &entity, const std::string &signalName)
+        : expr(entity.Name().String() + "/" + signalName) {
         tokens.emplace_back(expr);
-        nodes.emplace_back(SignalNode{entityName, signalName}, 0, 0);
+        nodes.emplace_back(SignalNode{entity, signalName}, 0, 0);
         nodeDebug.emplace_back(expr);
     }
 
@@ -523,10 +523,7 @@ namespace ecs {
                 if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                     return node.value;
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                    return SignalBindings::GetSignal(lock,
-                        EntityRef(node.entityName).Get(lock),
-                        node.signalName,
-                        depth + 1);
+                    return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
                 } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
                     return node.evaluate(evaluateNode(lock, depth, expr, node.inputIndex));
                 } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {

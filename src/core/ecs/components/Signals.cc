@@ -39,15 +39,19 @@ namespace ecs {
     template<>
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstOutput = dst.Get<SignalOutput>(lock);
-        for (auto &signal : src.GetSignals()) {
-            if (!dstOutput.HasSignal(signal.first)) dstOutput.SetSignal(signal.first, signal.second);
+        for (auto &signal : src.signals) {
+            // noop if key already exists
+            dstOutput.signals.emplace(signal.first, signal.second);
         }
     }
 
     template<>
     void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstBindings = dst.Get<SignalBindings>(lock);
-        dstBindings.CopyBindings(src);
+        for (auto &binding : src.bindings) {
+            // noop if key already exists
+            dstBindings.bindings.emplace(binding.first, binding.second);
+        }
     }
 
     void SignalOutput::SetSignal(const std::string &name, double value) {
@@ -66,16 +70,6 @@ namespace ecs {
         auto signal = signals.find(name);
         if (signal != signals.end()) return signal->second;
         return 0.0;
-    }
-
-    const std::map<std::string, double> &SignalOutput::GetSignals() const {
-        return signals;
-    }
-
-    void SignalBindings::CopyBindings(const SignalBindings &src) {
-        for (auto &[name, srcExpr] : src.bindings) {
-            bindings.emplace(name, srcExpr);
-        }
     }
 
     void SignalBindings::SetBinding(const std::string &name, const std::string &expr, const Name &scope) {
@@ -128,14 +122,5 @@ namespace ecs {
 
         auto &bindings = ent.Get<SignalBindings>(lock);
         return bindings.GetBinding(name).Evaluate(lock, depth);
-    }
-
-    std::vector<std::string> SignalBindings::GetBindingNames() const {
-        std::vector<std::string> list(bindings.size());
-        size_t i = 0;
-        for (auto &entry : bindings) {
-            list[i++] = entry.first;
-        }
-        return list;
     }
 } // namespace ecs

@@ -12,14 +12,14 @@ namespace ecs {
 
     struct SignalExpression {
         SignalExpression() {}
-        SignalExpression(const Name &entityName, const std::string &signalName);
+        SignalExpression(const EntityRef &entity, const std::string &signalName);
         SignalExpression(std::string_view expr, const Name &scope = Name());
 
         struct ConstantNode {
             double value = 0.0f;
         };
         struct SignalNode {
-            Name entityName;
+            EntityRef entity;
             std::string signalName = "value";
         };
         struct OneInputOperation {
