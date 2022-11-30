@@ -67,7 +67,7 @@ namespace sp {
                                 if (!comp.HasComponent(liveLock, inspectTarget)) return;
                                 if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
                                     const void *component = comp.Access(liveLock, inspectTarget);
-                                    for (auto &field : comp.fields) {
+                                    for (auto &field : comp.metadata.fields) {
                                         ecs::GetFieldType(field.type, [&](auto *typePtr) {
                                             using T = std::remove_pointer_t<decltype(typePtr)>;
                                             AddFieldControls<T>(field, comp, liveScene, inspectTarget, component);
@@ -100,7 +100,7 @@ namespace sp {
                                             if (!comp.HasComponent(stagingLock, stagingEnt)) return;
                                             if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
                                                 const void *component = comp.Access(stagingLock, stagingEnt);
-                                                for (auto &field : comp.fields) {
+                                                for (auto &field : comp.metadata.fields) {
                                                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
                                                         using T = std::remove_pointer_t<decltype(typePtr)>;
                                                         AddFieldControls<T>(field,

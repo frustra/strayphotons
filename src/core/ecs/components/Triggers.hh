@@ -33,6 +33,9 @@ namespace ecs {
         sp::EnumArray<robin_hood::unordered_flat_set<Entity>, TriggerGroup> containedEntities;
     };
 
-    static Component<TriggerGroup> ComponentTriggerGroup("trigger_group", ComponentField::New<TriggerGroup>());
-    static Component<TriggerArea> ComponentTriggerArea("trigger_area", ComponentField::New(&TriggerArea::shape));
+    static StructMetadata MetadataTriggerGroup(typeid(TriggerGroup), StructField::New<TriggerGroup>());
+    static Component<TriggerGroup> ComponentTriggerGroup("trigger_group", MetadataTriggerGroup);
+
+    static StructMetadata MetadataTriggerArea(typeid(TriggerArea), StructField::New(&TriggerArea::shape));
+    static Component<TriggerArea> ComponentTriggerArea("trigger_area", MetadataTriggerArea);
 } // namespace ecs

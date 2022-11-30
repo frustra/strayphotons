@@ -1,4 +1,4 @@
-#include "ComponentMetadata.hh"
+#include "StructMetadata.hh"
 
 #include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
@@ -6,6 +6,22 @@
 #include <cstring>
 
 namespace ecs {
+    typedef std::map<std::type_index, const StructMetadata *> MetadataTypeMap;
+    MetadataTypeMap *metadataTypeMap = nullptr;
+
+    const StructMetadata *StructMetadata::Get(const std::type_index &idx) {
+        if (metadataTypeMap == nullptr) metadataTypeMap = new MetadataTypeMap();
+
+        auto it = metadataTypeMap->find(idx);
+        if (it != metadataTypeMap->end()) return it->second;
+        return nullptr;
+    }
+
+    void StructMetadata::Register(const std::type_index &idx, const StructMetadata *comp) {
+        if (metadataTypeMap == nullptr) metadataTypeMap = new MetadataTypeMap();
+        metadataTypeMap->emplace(idx, comp);
+    }
+
     template<typename, typename>
     struct has_type;
     template<typename T, typename... Un>
@@ -35,7 +51,7 @@ namespace ecs {
         }
     }
 
-    void ComponentField::InitUndefined(void *component, const void *defaultComponent) const {
+    void StructField::InitUndefined(void *component, const void *defaultComponent) const {
         auto *field = static_cast<char *>(component) + offset;
         auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
 
@@ -53,7 +69,7 @@ namespace ecs {
         });
     }
 
-    bool ComponentField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
+    bool StructField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
         if (!(actions & FieldAction::AutoLoad)) return true;
 
         auto *dstfield = static_cast<char *>(component) + offset;
@@ -61,7 +77,7 @@ namespace ecs {
 
         if (name != nullptr) {
             if (!src.is<picojson::object>()) {
-                Errorf("ComponentField::Load '%s' invalid component object: %s", name, src.to_str());
+                Errorf("StructField::Load '%s' invalid component object: %s", name, src.to_str());
                 return false;
             }
             auto &obj = src.get<picojson::object>();
@@ -85,7 +101,7 @@ namespace ecs {
         });
     }
 
-    void ComponentField::Save(const EntityScope &scope,
+    void StructField::Save(const EntityScope &scope,
         picojson::value &dst,
         const void *component,
         const void *defaultComponent) const {
@@ -115,7 +131,7 @@ namespace ecs {
         }
     }
 
-    void ComponentField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
+    void StructField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
         if (!(actions & FieldAction::AutoApply)) return;
 
         auto *dstField = static_cast<char *>(dstComponent) + offset;

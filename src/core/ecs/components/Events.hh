@@ -118,8 +118,11 @@ namespace ecs {
 
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope = Name());
 
-    static Component<EventInput> ComponentEventInput("event_input");
-    static Component<EventBindings> ComponentEventBindings("event_bindings");
+    static StructMetadata MetadataEventInput(typeid(EventInput));
+    static Component<EventInput> ComponentEventInput("event_input", MetadataEventInput);
+
+    static StructMetadata MetadataEventBindings(typeid(EventBindings));
+    static Component<EventBindings> ComponentEventBindings("event_bindings", MetadataEventBindings);
 
     template<>
     bool Component<EventBindings>::Load(const EntityScope &scope, EventBindings &dst, const picojson::value &src);

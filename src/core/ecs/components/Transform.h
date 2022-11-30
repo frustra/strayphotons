@@ -93,12 +93,13 @@ namespace ecs {
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
-    static Component<TransformTree> ComponentTransformTree("transform",
-        ComponentField::New(&TransformTree::pose, ~FieldAction::AutoApply),
-        ComponentField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
+    static StructMetadata MetadataTransformTree(typeid(TransformTree),
+        StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
+        StructField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
+    static Component<TransformTree> ComponentTransformTree("transform", MetadataTransformTree);
 
     template<>
-    void Component<TransformTree>::InitUndefined(TransformTree &dst);
+    void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);
     template<>
     void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst);
     #endif

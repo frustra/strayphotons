@@ -48,11 +48,12 @@ namespace ecs {
         }
     };
 
-    static Component<Animation> ComponentAnimation("animation",
-        ComponentField::New("states", &Animation::states),
-        ComponentField::New("defaultState", &Animation::targetState),
-        ComponentField::New("interpolation", &Animation::interpolation),
-        ComponentField::New("tension", &Animation::tension));
+    static StructMetadata MetadataAnimation(typeid(Animation),
+        StructField::New("states", &Animation::states),
+        StructField::New("defaultState", &Animation::targetState),
+        StructField::New("interpolation", &Animation::interpolation),
+        StructField::New("tension", &Animation::tension));
+    static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
 
     template<>
     bool Component<Animation>::Load(const EntityScope &scope, Animation &dst, const picojson::value &src);

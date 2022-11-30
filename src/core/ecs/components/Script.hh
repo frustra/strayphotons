@@ -146,7 +146,8 @@ namespace ecs {
         std::vector<ScriptState> scripts;
     };
 
-    static Component<Script> ComponentScript("script");
+    static StructMetadata MetadataScript(typeid(Script));
+    static Component<Script> ComponentScript("script", MetadataScript);
 
     template<>
     bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src);

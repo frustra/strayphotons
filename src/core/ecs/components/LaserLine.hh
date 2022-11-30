@@ -27,22 +27,20 @@ namespace ecs {
         float radius = 0.003; // in world units
     };
 
-    static Component<LaserLine> ComponentLaserLine("laser_line",
-        ComponentField::New("intensity", &LaserLine::intensity),
-        ComponentField::New("media_density", &LaserLine::mediaDensityFactor),
-        ComponentField::New("on", &LaserLine::on),
-        ComponentField::New("relative", &LaserLine::relative),
-        ComponentField::New("radius", &LaserLine::radius));
+    static StructMetadata MetadataLaserLine(typeid(LaserLine),
+        StructField::New("intensity", &LaserLine::intensity),
+        StructField::New("media_density", &LaserLine::mediaDensityFactor),
+        StructField::New("on", &LaserLine::on),
+        StructField::New("relative", &LaserLine::relative),
+        StructField::New("radius", &LaserLine::radius));
+    static Component<LaserLine> ComponentLaserLine("laser_line", MetadataLaserLine);
 
     template<>
-    void Component<LaserLine>::InitUndefined(LaserLine &dst);
+    void StructMetadata::InitUndefined<LaserLine>(LaserLine &dst);
     template<>
     bool Component<LaserLine>::Load(const EntityScope &scope, LaserLine &dst, const picojson::value &src);
     template<>
-    void Component<LaserLine>::Save(Lock<Read<Name>> lock,
-        const EntityScope &scope,
-        picojson::value &dst,
-        const LaserLine &src);
+    void Component<LaserLine>::Save(const EntityScope &scope, picojson::value &dst, const LaserLine &src);
     template<>
     void Component<LaserLine>::Apply(const LaserLine &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

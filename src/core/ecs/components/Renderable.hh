@@ -56,13 +56,14 @@ namespace ecs {
         }
     };
 
-    static Component<Renderable> ComponentRenderable("renderable",
-        ComponentField::New("model", &Renderable::modelName),
-        ComponentField::New("mesh_index", &Renderable::meshIndex),
-        ComponentField::New("visibility", &Renderable::visibility),
-        ComponentField::New("emissive", &Renderable::emissiveScale),
-        ComponentField::New("color_override", &Renderable::colorOverride),
-        ComponentField::New("metallic_roughness_override", &Renderable::metallicRoughnessOverride));
+    static StructMetadata MetadataRenderable(typeid(Renderable),
+        StructField::New("model", &Renderable::modelName),
+        StructField::New("mesh_index", &Renderable::meshIndex),
+        StructField::New("visibility", &Renderable::visibility),
+        StructField::New("emissive", &Renderable::emissiveScale),
+        StructField::New("color_override", &Renderable::colorOverride),
+        StructField::New("metallic_roughness_override", &Renderable::metallicRoughnessOverride));
+    static Component<Renderable> ComponentRenderable("renderable", MetadataRenderable);
 
     template<>
     bool Component<Renderable>::Load(const EntityScope &scope, Renderable &dst, const picojson::value &src);

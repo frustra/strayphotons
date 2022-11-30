@@ -45,7 +45,8 @@ namespace ecs {
         }
     };
 
-    static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints");
+    static StructMetadata MetadataPhysicsJoints(typeid(PhysicsJoints));
+    static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints", MetadataPhysicsJoints);
 
     template<>
     bool Component<PhysicsJoints>::Load(const EntityScope &scope, PhysicsJoints &dst, const picojson::value &src);

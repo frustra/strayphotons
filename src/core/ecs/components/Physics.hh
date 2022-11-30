@@ -119,15 +119,16 @@ namespace ecs {
         glm::vec3 constantForce;
     };
 
-    static Component<Physics> ComponentPhysics("physics",
-        ComponentField::New("group", &Physics::group),
-        ComponentField::New("dynamic", &Physics::dynamic),
-        ComponentField::New("kinematic", &Physics::kinematic),
-        ComponentField::New("mass", &Physics::mass),
-        ComponentField::New("density", &Physics::density),
-        ComponentField::New("angular_damping", &Physics::angularDamping),
-        ComponentField::New("linear_damping", &Physics::linearDamping),
-        ComponentField::New("force", &Physics::constantForce));
+    static StructMetadata MetadataPhysics(typeid(Physics),
+        StructField::New("group", &Physics::group),
+        StructField::New("dynamic", &Physics::dynamic),
+        StructField::New("kinematic", &Physics::kinematic),
+        StructField::New("mass", &Physics::mass),
+        StructField::New("density", &Physics::density),
+        StructField::New("angular_damping", &Physics::angularDamping),
+        StructField::New("linear_damping", &Physics::linearDamping),
+        StructField::New("force", &Physics::constantForce));
+    static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
 
     template<>
     bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);

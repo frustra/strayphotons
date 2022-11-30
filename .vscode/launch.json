@@ -38,6 +38,20 @@
             ]
         },
         {
+            "name": "StrayPhotons Hull Compiler (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/hull_compiler.exe",
+            "args": ["cardboard-box"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "sourceFileMap": {
+                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
+            }
+        },
+        {
             "name": "StrayPhotons No VR (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",

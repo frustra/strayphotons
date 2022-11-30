@@ -5,7 +5,7 @@
 
 namespace ecs {
     template<>
-    void Component<LaserLine>::InitUndefined(LaserLine &dst) {
+    void StructMetadata::InitUndefined<LaserLine>(LaserLine &dst) {
         dst.line = LaserLine::Line{{}, glm::vec3(-INFINITY)};
     }
 
@@ -35,10 +35,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<LaserLine>::Save(Lock<Read<Name>> lock,
-        const EntityScope &scope,
-        picojson::value &dst,
-        const LaserLine &src) {
+    void Component<LaserLine>::Save(const EntityScope &scope, picojson::value &dst, const LaserLine &src) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 

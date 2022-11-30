@@ -33,7 +33,8 @@ namespace ecs {
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static Component<Sounds> ComponentSound("sound");
+    static StructMetadata MetadataSounds(typeid(Sounds));
+    static Component<Sounds> ComponentSound("sound", MetadataSounds);
 
     template<>
     bool Component<Sounds>::Load(const EntityScope &scope, Sounds &dst, const picojson::value &src);

@@ -94,61 +94,63 @@ namespace ecs {
         AutoApply = 1 << 2,
     };
 
-    struct ComponentField {
+    struct StructField {
         const char *name = nullptr;
         std::type_index type;
         size_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
 
-        ComponentField(const char *name, std::type_index type, size_t offset, FieldAction actions)
+        StructField(const char *name, std::type_index type, size_t offset, FieldAction actions)
             : name(name), type(type), offset(offset), actions(actions) {}
 
         /**
-         * Registers a component's field for serialization as a named field. For example:
-         * ComponentField::New("model", &Renderable::modelName)
+         * Registers a struct's field for serialization as a named field. For example:
+         * StructField::New("model", &Renderable::modelName)
          *
          * Result:
          * {
-         *   "component": {
+         *   "renderable": {
          *     "model": "box"
          *   }
          * }
          */
         template<typename T, typename F>
-        static const ComponentField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
+        static const StructField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
-            return ComponentField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
+            return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
         }
 
         /**
-         * Registers a component's field for serialization directly. For example:
-         * ComponentField::New(&TransformTree::pose)
+         * Registers a struct's field for serialization directly. For example:
+         * StructField::New(&TransformTree::pose)
          *
          * Result:
          * {
-         *   "component": {
+         *   "transform": {
          *     "translate": [1, 2, 3]
          *   }
          * }
          */
         template<typename T, typename F>
-        static const ComponentField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return ComponentField::New(nullptr, M, actions);
+        static const StructField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
+            return StructField::New(nullptr, M, actions);
         }
 
         /**
-         * Registers a component type for serialization directly. For example:
-         * ComponentField::New<TriggerGroup>()
+         * Registers a type for serialization directly. For example:
+         * StructField::New<TriggerGroup>()
          *
          * Result:
          * {
-         *   "component": "Player"
+         *   "trigger_group": "Player"
          * }
+         *
+         * This field variant may also be used to define custom serialization functions for a type.
          */
         template<typename T>
-        static const ComponentField New(FieldAction actions = ~FieldAction::None) {
-            return ComponentField(nullptr, std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+        static const StructField New(FieldAction actions = ~FieldAction::None) {
+            return StructField(nullptr, std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
         }
 
         template<typename T>
@@ -172,4 +174,35 @@ namespace ecs {
         void Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const;
     };
 
+    class StructMetadata {
+    public:
+        template<typename... Fields>
+        StructMetadata(const std::type_index &idx, Fields &&...fields) : type(idx) {
+            (this->fields.emplace_back(fields), ...);
+            for (int i = 0; i < this->fields.size(); i++) {
+                this->fields[i].fieldIndex = i;
+            }
+            Register(type, this);
+        }
+
+        static const StructMetadata *Get(const std::type_index &idx);
+
+        template<typename T>
+        const StructMetadata &Get() {
+            auto ptr = Get(std::type_index(typeid(T)));
+            Assertf(ptr != nullptr, "Couldn't lookup metadata for type: %s", typeid(T).name());
+            return *dynamic_cast<const StructMetadata *>(ptr);
+        }
+
+        const std::type_index type;
+        std::vector<StructField> fields;
+
+        template<typename T>
+        static void InitUndefined(T &dst) {
+            // Custom field init is always called, default to no-op.
+        }
+
+    private:
+        static void Register(const std::type_index &idx, const StructMetadata *comp);
+    };
 }; // namespace ecs

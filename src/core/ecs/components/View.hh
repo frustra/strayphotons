@@ -52,12 +52,13 @@ namespace ecs {
         glm::mat4 viewMat, invViewMat;
     };
 
-    static Component<View> ComponentView("view",
-        ComponentField::New("offset", &View::offset),
-        ComponentField::New("extents", &View::extents),
-        ComponentField::New("fov", &View::fov),
-        ComponentField::New("clip", &View::clip),
-        ComponentField::New("visibilityMask", &View::visibilityMask));
+    static StructMetadata MetadataView(typeid(View),
+        StructField::New("offset", &View::offset),
+        StructField::New("extents", &View::extents),
+        StructField::New("fov", &View::fov),
+        StructField::New("clip", &View::clip),
+        StructField::New("visibilityMask", &View::visibilityMask));
+    static Component<View> ComponentView("view", MetadataView);
 
     template<>
     bool Component<View>::Load(const EntityScope &scope, View &dst, const picojson::value &src);
