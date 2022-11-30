@@ -7,6 +7,7 @@
 #include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
+#include <robin_hood.h>
 #include <type_traits>
 #include <typeindex>
 
@@ -22,6 +23,7 @@ namespace ecs {
     enum class FieldAction;
     struct EntityScope;
     struct AnimationState;
+    struct EventBinding;
     enum class FocusLayer : uint8_t;
     enum class GuiTarget;
     enum class InterpolationMode;
@@ -63,6 +65,8 @@ namespace ecs {
         EntityRef,
         Transform,
         std::vector<AnimationState>,
+        std::optional<double>,
+        robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
 
         // Enums
         FocusLayer,
@@ -154,24 +158,24 @@ namespace ecs {
         }
 
         template<typename T>
-        T *Access(void *component) const {
-            auto *field = static_cast<char *>(component) + offset;
+        T *Access(void *structPtr) const {
+            auto *field = static_cast<char *>(structPtr) + offset;
             return reinterpret_cast<T *>(field);
         }
 
         template<typename T>
-        const T *Access(const void *component) const {
-            auto *field = static_cast<const char *>(component) + offset;
+        const T *Access(const void *structPtr) const {
+            auto *field = static_cast<const char *>(structPtr) + offset;
             return reinterpret_cast<const T *>(field);
         }
 
-        void InitUndefined(void *component, const void *defaultComponent) const;
-        bool Load(const EntityScope &scope, void *component, const picojson::value &src) const;
+        void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        bool Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const;
         void Save(const EntityScope &scope,
             picojson::value &dst,
-            const void *component,
-            const void *defaultComponent) const;
-        void Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const;
+            const void *srcStruct,
+            const void *defaultStruct) const;
+        void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
     };
 
     class StructMetadata {
@@ -188,7 +192,7 @@ namespace ecs {
         static const StructMetadata *Get(const std::type_index &idx);
 
         template<typename T>
-        const StructMetadata &Get() {
+        static const StructMetadata &Get() {
             auto ptr = Get(std::type_index(typeid(T)));
             Assertf(ptr != nullptr, "Couldn't lookup metadata for type: %s", typeid(T).name());
             return *dynamic_cast<const StructMetadata *>(ptr);
@@ -200,6 +204,17 @@ namespace ecs {
         template<typename T>
         static void InitUndefined(T &dst) {
             // Custom field init is always called, default to no-op.
+        }
+
+        template<typename T>
+        static bool Load(const EntityScope &scope, T &dst, const picojson::value &src) {
+            // Custom field serialization is always called, default to no-op.
+            return true;
+        }
+
+        template<typename T>
+        static void Save(const EntityScope &scope, picojson::value &dst, const T &src) {
+            // Custom field serialization is always called, default to no-op.
         }
 
     private:

@@ -49,7 +49,7 @@ namespace ecs {
     static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints", MetadataPhysicsJoints);
 
     template<>
-    bool Component<PhysicsJoints>::Load(const EntityScope &scope, PhysicsJoints &dst, const picojson::value &src);
+    bool StructMetadata::Load<PhysicsJoints>(const EntityScope &scope, PhysicsJoints &dst, const picojson::value &src);
     template<>
     void Component<PhysicsJoints>::Apply(const PhysicsJoints &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

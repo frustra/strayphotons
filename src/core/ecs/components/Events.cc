@@ -1,5 +1,6 @@
 #include "Events.hh"
 
+#include "assets/JsonHelpers.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityReferenceManager.hh"
 
@@ -22,7 +23,10 @@ namespace ecs {
         return true;
     }
 
-    bool parseEventBinding(const EntityScope &scope, EventBindings::Binding &binding, const picojson::value &src) {
+    template<>
+    bool StructMetadata::Load<EventBinding>(const EntityScope &scope,
+        EventBinding &binding,
+        const picojson::value &src) {
         if (src.is<std::string>()) {
             auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope.prefix);
             if (targetName) {
@@ -56,16 +60,6 @@ namespace ecs {
                         Errorf("Invalid event binding set_value: %s", param.second.to_str());
                         return false;
                     }
-                } else if (param.first == "multiply_value") {
-                    if (param.second.is<double>()) {
-                        binding.multiplyValue = param.second.get<double>();
-                    } else {
-                        Errorf("Unsupported multiply_value value: %s", param.second.to_str());
-                        return false;
-                    }
-                } else {
-                    Errorf("Unknown event binding field: %s", param.first);
-                    return false;
                 }
             }
         } else {
@@ -76,29 +70,38 @@ namespace ecs {
     }
 
     template<>
-    bool Component<EventBindings>::Load(const EntityScope &scope, EventBindings &bindings, const picojson::value &src) {
-        auto scene = scope.scene.lock();
-        Assert(scene, "EventBindings::Load must have valid scene");
-        for (auto param : src.get<picojson::object>()) {
-            if (param.second.is<picojson::array>()) {
-                for (auto bind : param.second.get<picojson::array>()) {
-                    EventBindings::Binding binding;
-                    if (!parseEventBinding(scope, binding, bind)) return false;
-                    bindings.Bind(param.first, binding);
-                }
-            } else {
-                EventBindings::Binding binding;
-                if (!parseEventBinding(scope, binding, param.second)) return false;
-                bindings.Bind(param.first, binding);
+    void StructMetadata::Save<EventBinding>(const EntityScope &scope, picojson::value &dst, const EventBinding &src) {
+        std::string bindingStr = src.target.Name().String() + src.destQueue;
+        if (!src.setValue && !src.multiplyValue) {
+            dst = picojson::value(bindingStr);
+        } else {
+            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+            auto &obj = dst.get<picojson::object>();
+            obj["target"] = picojson::value(bindingStr);
+            if (src.setValue) {
+                std::visit(
+                    [&](auto &&value) {
+                        sp::json::Save(scope, obj["set_value"], value);
+                    },
+                    *src.setValue);
             }
         }
-        return true;
     }
 
     template<>
     void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstBindings = dst.Get<EventBindings>(lock);
-        dstBindings.CopyBindings(src);
+        for (auto &[source, srcList] : src.sourceToDest) {
+            auto dstList = dstBindings.sourceToDest.find(source);
+            if (dstList != dstBindings.sourceToDest.end()) {
+                auto &vec = dstList->second;
+                for (auto &binding : srcList) {
+                    if (!sp::contains(vec, binding)) vec.emplace_back(binding);
+                }
+            } else {
+                dstBindings.sourceToDest.emplace(source, srcList);
+            }
+        }
     }
 
     std::string Event::toString() const {
@@ -207,21 +210,7 @@ namespace ecs {
         return queue->Poll(eventOut);
     }
 
-    void EventBindings::CopyBindings(const EventBindings &src) {
-        for (auto &[source, srcList] : src.sourceToDest) {
-            auto dstList = sourceToDest.find(source);
-            if (dstList != sourceToDest.end()) {
-                auto &vec = dstList->second;
-                for (auto &binding : srcList) {
-                    if (!sp::contains(vec, binding)) vec.emplace_back(binding);
-                }
-            } else {
-                sourceToDest.emplace(source, srcList);
-            }
-        }
-    }
-
-    void EventBindings::Bind(std::string source, const Binding &binding) {
+    void EventBindings::Bind(std::string source, const EventBinding &binding) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             auto &vec = list->second;
@@ -232,7 +221,7 @@ namespace ecs {
     }
 
     void EventBindings::Bind(std::string source, EntityRef target, std::string dest) {
-        Binding binding;
+        EventBinding binding;
         binding.target = target;
         binding.destQueue = dest;
         Bind(source, binding);
@@ -280,23 +269,6 @@ namespace ecs {
                 }
             }
         }
-    }
-
-    const EventBindings::BindingList *EventBindings::Lookup(const std::string source) const {
-        auto list = sourceToDest.find(source);
-        if (list != sourceToDest.end()) {
-            return &list->second;
-        }
-        return nullptr;
-    }
-
-    std::vector<std::string> EventBindings::GetBindingNames() const {
-        std::vector<std::string> list(sourceToDest.size());
-        size_t i = 0;
-        for (auto &entry : sourceToDest) {
-            list[i++] = entry.first;
-        }
-        return list;
     }
 
     size_t EventBindings::SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth) {

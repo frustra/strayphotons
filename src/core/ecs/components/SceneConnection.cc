@@ -7,7 +7,9 @@
 
 namespace ecs {
     template<>
-    bool Component<SceneConnection>::Load(const EntityScope &scope, SceneConnection &dst, const picojson::value &src) {
+    bool StructMetadata::Load<SceneConnection>(const EntityScope &scope,
+        SceneConnection &dst,
+        const picojson::value &src) {
         if (src.is<std::string>()) {
             dst.scenes.emplace_back(src.get<std::string>());
         } else if (src.is<picojson::array>()) {

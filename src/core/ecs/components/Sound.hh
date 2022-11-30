@@ -37,7 +37,7 @@ namespace ecs {
     static Component<Sounds> ComponentSound("sound", MetadataSounds);
 
     template<>
-    bool Component<Sounds>::Load(const EntityScope &scope, Sounds &dst, const picojson::value &src);
+    bool StructMetadata::Load<Sounds>(const EntityScope &scope, Sounds &dst, const picojson::value &src);
     template<>
     void Component<Sounds>::Apply(const Sounds &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

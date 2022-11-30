@@ -89,7 +89,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<Physics>::Load(const EntityScope &scope, Physics &physics, const picojson::value &src) {
+    bool StructMetadata::Load<Physics>(const EntityScope &scope, Physics &physics, const picojson::value &src) {
         auto scene = scope.scene.lock();
         Assert(scene, "Physics::Load must have valid scene");
         for (auto param : src.get<picojson::object>()) {

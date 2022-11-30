@@ -142,7 +142,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src) {
+    bool StructMetadata::Load<Script>(const EntityScope &scope, Script &dst, const picojson::value &src) {
         if (src.is<picojson::object>()) {
             ScriptState state(scope);
             if (!parseScriptState(state, src)) return false;

@@ -190,10 +190,9 @@ namespace sp {
             }
 
             auto &bindings = ent.Get<ecs::EventBindings>(lock);
-            for (auto &bindingName : bindings.GetBindingNames()) {
-                auto list = bindings.Lookup(bindingName);
-                Logf("    %s:%s", bindingName, list->empty() ? " none" : "");
-                for (auto &binding : *list) {
+            for (auto &[bindingName, list] : bindings.sourceToDest) {
+                Logf("    %s:%s", bindingName, list.empty() ? " none" : "");
+                for (auto &binding : list) {
                     auto target = binding.target.Get(lock);
                     if (target) {
                         Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, target));

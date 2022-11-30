@@ -60,6 +60,13 @@ namespace ecs {
     const ComponentBase *LookupComponent(const std::type_index &idx);
     void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
 
+    template<typename T>
+    const Component<T> &LookupComponent() {
+        auto ptr = LookupComponent(std::type_index(typeid(T)));
+        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
+        return *dynamic_cast<const Component<T> *>(ptr);
+    }
+
     template<typename CompType>
     class Component : public ComponentBase {
     private:
@@ -105,7 +112,7 @@ namespace ecs {
             if (dst.Has<CompType>(lock)) {
                 CompType srcComp = defaultStagingComponent;
                 if (!LoadFields(scope, srcComp, src)) return false;
-                if (!Load(scope, srcComp, src)) return false;
+                if (!StructMetadata::Load<CompType>(scope, srcComp, src)) return false;
                 auto &comp = dst.Get<CompType>(lock);
                 for (auto &field : metadata.fields) {
                     field.Apply(&comp, &srcComp, &defaultStagingComponent);
@@ -115,7 +122,7 @@ namespace ecs {
             } else {
                 auto &comp = dst.Set<CompType>(lock, defaultStagingComponent);
                 if (!LoadFields(scope, comp, src)) return false;
-                return Load(scope, comp, src);
+                return StructMetadata::Load<CompType>(scope, comp, src);
             }
         }
 
@@ -134,7 +141,7 @@ namespace ecs {
                     field.Save(scope, dst, &comp, &defaultStagingComponent);
                 }
             }
-            Save(scope, dst, comp);
+            StructMetadata::Save<CompType>(scope, dst, comp);
         }
 
         void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
@@ -180,24 +187,8 @@ namespace ecs {
         }
 
     protected:
-        static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
-            // Custom field serialization is always called, default to no-op.
-            return true;
-        }
-
-        static void Save(const EntityScope &scope, picojson::value &dst, const CompType &src) {
-            // Custom field serialization is always called, default to no-op.
-        }
-
         static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {
             // Custom field apply is always called, default to no-op.
         }
     };
-
-    template<typename T>
-    const Component<T> &LookupComponent() {
-        auto ptr = LookupComponent(std::type_index(typeid(T)));
-        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
-        return *dynamic_cast<const Component<T> *>(ptr);
-    }
 }; // namespace ecs

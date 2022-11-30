@@ -173,12 +173,10 @@
 		{
 			"name": "elevator.control.button",
 			"event_bindings": {
-				"/button/press": [
-					{
-						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100; wait 1000 removescene menu"
-					}
-				]
+				"/button/press": {
+					"target": "console:input/action/run_command",
+					"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100; wait 1000 removescene menu"
+				}
 			}
 		},
 		{

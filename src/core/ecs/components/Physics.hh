@@ -131,7 +131,7 @@ namespace ecs {
     static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
 
     template<>
-    bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);
+    bool StructMetadata::Load<Physics>(const EntityScope &scope, Physics &dst, const picojson::value &src);
     template<>
     void Component<Physics>::Apply(const Physics &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

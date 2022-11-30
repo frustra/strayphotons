@@ -33,6 +33,13 @@ namespace ecs {
         }
     };
 
+    static StructMetadata MetadataAnimationState(typeid(AnimationState),
+        StructField::New("delay", &AnimationState::delay),
+        StructField::New("translate", &AnimationState::pos),
+        StructField::New("scale", &AnimationState::scale),
+        StructField::New("translate_tangent", &AnimationState::tangentPos),
+        StructField::New("scale_tangent", &AnimationState::tangentScale));
+
     class Animation {
     public:
         std::vector<AnimationState> states;
@@ -56,5 +63,5 @@ namespace ecs {
     static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
 
     template<>
-    bool Component<Animation>::Load(const EntityScope &scope, Animation &dst, const picojson::value &src);
+    bool StructMetadata::Load<Animation>(const EntityScope &scope, Animation &dst, const picojson::value &src);
 } // namespace ecs

@@ -150,7 +150,7 @@ namespace ecs {
     static Component<Script> ComponentScript("script", MetadataScript);
 
     template<>
-    bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src);
+    bool StructMetadata::Load<Script>(const EntityScope &scope, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 

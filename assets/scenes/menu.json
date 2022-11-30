@@ -232,12 +232,10 @@
 		{
 			"name": "airlock_in_button.button",
 			"event_bindings": {
-				"open_door": [
-					{
-						"target": "console:input/action/run_command",
-						"set_value": "togglesignal global:ship_airlock.door-in/door_open"
-					}
-				]
+				"open_door": {
+					"target": "console:input/action/run_command",
+					"set_value": "togglesignal global:ship_airlock.door-in/door_open"
+				}
 			},
 			"event_input": {},
 			"signal_bindings": {

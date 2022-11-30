@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Sounds>::Load(const EntityScope &scope, Sounds &dst, const picojson::value &src) {
+    bool StructMetadata::Load<Sounds>(const EntityScope &scope, Sounds &dst, const picojson::value &src) {
         auto parseObject = [&](const picojson::value &src, Sound &dst) {
             for (auto &param : src.get<picojson::object>()) {
                 if (param.first == "file") {

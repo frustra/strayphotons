@@ -51,9 +51,9 @@ namespace ecs {
         }
     }
 
-    void StructField::InitUndefined(void *component, const void *defaultComponent) const {
-        auto *field = static_cast<char *>(component) + offset;
-        auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
+    void StructField::InitUndefined(void *dstStruct, const void *defaultStruct) const {
+        auto *field = static_cast<char *>(dstStruct) + offset;
+        auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
         GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
@@ -69,16 +69,18 @@ namespace ecs {
         });
     }
 
-    bool StructField::Load(const EntityScope &scope, void *component, const picojson::value &src) const {
+    bool StructField::Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const {
         if (!(actions & FieldAction::AutoLoad)) return true;
 
-        auto *dstfield = static_cast<char *>(component) + offset;
+        auto *dstfield = static_cast<char *>(dstStruct) + offset;
         auto *srcField = &src;
 
         if (name != nullptr) {
             if (!src.is<picojson::object>()) {
-                Errorf("StructField::Load '%s' invalid component object: %s", name, src.to_str());
-                return false;
+                // Errorf("StructField::Load '%s' invalid struct object: %s", name, src.to_str());
+                // return false;
+                // Silently leave missing fields as default
+                return true;
             }
             auto &obj = src.get<picojson::object>();
             auto it = obj.find(name);
@@ -103,12 +105,12 @@ namespace ecs {
 
     void StructField::Save(const EntityScope &scope,
         picojson::value &dst,
-        const void *component,
-        const void *defaultComponent) const {
+        const void *srcStruct,
+        const void *defaultStruct) const {
         if (!(actions & FieldAction::AutoSave)) return;
 
-        auto *field = static_cast<const char *>(component) + offset;
-        auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
+        auto *field = static_cast<const char *>(srcStruct) + offset;
+        auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
         if (name != nullptr) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
@@ -131,12 +133,12 @@ namespace ecs {
         }
     }
 
-    void StructField::Apply(void *dstComponent, const void *srcComponent, const void *defaultComponent) const {
+    void StructField::Apply(void *dstStruct, const void *srcStruct, const void *defaultStruct) const {
         if (!(actions & FieldAction::AutoApply)) return;
 
-        auto *dstField = static_cast<char *>(dstComponent) + offset;
-        auto *srcField = static_cast<const char *>(srcComponent) + offset;
-        auto *defaultField = static_cast<const char *>(defaultComponent) + offset;
+        auto *dstField = static_cast<char *>(dstStruct) + offset;
+        auto *srcField = static_cast<const char *>(srcStruct) + offset;
+        auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
         GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;

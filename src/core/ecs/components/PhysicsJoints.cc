@@ -7,7 +7,9 @@
 
 namespace ecs {
     template<>
-    bool Component<PhysicsJoints>::Load(const EntityScope &scope, PhysicsJoints &joints, const picojson::value &src) {
+    bool StructMetadata::Load<PhysicsJoints>(const EntityScope &scope,
+        PhysicsJoints &joints,
+        const picojson::value &src) {
         auto scene = scope.scene.lock();
         Assert(scene, "PhysicsJoints::Load must have valid scene to define joint");
         for (auto param : src.get<picojson::array>()) {

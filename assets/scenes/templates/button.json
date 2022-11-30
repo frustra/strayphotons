@@ -37,12 +37,10 @@
 					"button/button/press",
 					"button/sound/play"
 				],
-				"/trigger/object/leave": [
-					{
-						"target": "button/sound/play",
-						"set_value": 1
-					}
-				]
+				"/trigger/object/leave": {
+					"target": "button/sound/play",
+					"set_value": 1
+				}
 			}
 		},
 		{

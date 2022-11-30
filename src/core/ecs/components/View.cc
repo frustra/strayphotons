@@ -10,7 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<View>::Load(const EntityScope &scope, View &view, const picojson::value &src) {
+    bool StructMetadata::Load<View>(const EntityScope &scope, View &view, const picojson::value &src) {
         view.UpdateProjectionMatrix();
         return true;
     }
