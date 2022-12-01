@@ -1,5 +1,6 @@
 #include "SignalExpression.hh"
 
+#include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
@@ -472,13 +473,13 @@ namespace ecs {
     }
 
     SignalExpression::SignalExpression(const EntityRef &entity, const std::string &signalName)
-        : expr(entity.Name().String() + "/" + signalName) {
+        : scope(entity.Name().scene, ""), expr(entity.Name().String() + "/" + signalName) {
         tokens.emplace_back(expr);
         nodes.emplace_back(SignalNode{entity, signalName}, 0, 0);
         nodeDebug.emplace_back(expr);
     }
 
-    SignalExpression::SignalExpression(std::string_view expr, const Name &scope) : expr(expr) {
+    SignalExpression::SignalExpression(std::string_view expr, const Name &scope) : scope(scope), expr(expr) {
         // Tokenize the expression before parsing
         std::string_view exprView = this->expr;
         size_t tokenStart = 0;
@@ -558,3 +559,32 @@ namespace ecs {
         return evaluateNode(lock, depth, *this, rootIndex);
     }
 } // namespace ecs
+
+namespace sp::json {
+    template<>
+    bool Load(const ecs::EntityScope &scope, ecs::SignalExpression &dst, const picojson::value &src) {
+        if (src.is<std::string>()) {
+            dst = ecs::SignalExpression(src.get<std::string>(), scope.prefix);
+            return !dst.nodes.empty();
+        } else {
+            Errorf("Invalid signal expression: %s", src.to_str());
+            return false;
+        }
+    }
+
+    template<>
+    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::SignalExpression &src) {
+        if (src.scope != scope.prefix) {
+            // TODO: Remap signal names to new scope instead of converting to fully qualified names
+            Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
+                src.expr,
+                src.scope.String(),
+                scope.prefix.String());
+            DebugAssertf(src.rootIndex >= 0 && src.rootIndex < src.nodeDebug.size(),
+                "Saving invalid signal expression");
+            dst = picojson::value(src.nodeDebug[src.rootIndex]);
+        } else {
+            dst = picojson::value(src.expr);
+        }
+    }
+} // namespace sp::json

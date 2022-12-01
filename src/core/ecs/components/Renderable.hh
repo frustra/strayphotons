@@ -12,6 +12,10 @@ namespace sp {
     class Gltf;
 }
 
+namespace ecs {
+    enum class VisibilityMask;
+}
+
 template<>
 struct magic_enum::customize::enum_range<ecs::VisibilityMask> {
     static constexpr bool is_flags = true;

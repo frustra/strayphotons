@@ -15,6 +15,10 @@ namespace ecs {
         SignalExpression(const EntityRef &entity, const std::string &signalName);
         SignalExpression(std::string_view expr, const Name &scope = Name());
 
+        SignalExpression(const SignalExpression &other)
+            : scope(other.scope), expr(other.expr), nodes(other.nodes), nodeDebug(other.nodeDebug),
+              rootIndex(other.rootIndex) {}
+
         struct ConstantNode {
             double value = 0.0f;
         };
@@ -49,7 +53,12 @@ namespace ecs {
 
         double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;
 
-        const std::string expr;
+        bool operator==(const SignalExpression &other) const {
+            return expr == other.expr && scope == other.scope;
+        }
+
+        Name scope;
+        std::string expr;
         std::vector<std::string_view> tokens; // string_views into expr
         std::vector<Node> nodes;
         std::vector<std::string> nodeDebug;

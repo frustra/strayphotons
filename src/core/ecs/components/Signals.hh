@@ -34,19 +34,13 @@ namespace ecs {
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };
 
-    static StructMetadata MetadataSignalOutput(typeid(SignalOutput));
+    static StructMetadata MetadataSignalOutput(typeid(SignalOutput), StructField::New(&SignalOutput::signals));
     static Component<SignalOutput> ComponentSignalReceiver("signal_output", MetadataSignalOutput);
-    template<>
-    bool StructMetadata::Load<SignalOutput>(const EntityScope &scope, SignalOutput &dst, const picojson::value &src);
     template<>
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst);
 
-    static StructMetadata MetadataSignalBindings(typeid(SignalBindings));
+    static StructMetadata MetadataSignalBindings(typeid(SignalBindings), StructField::New(&SignalBindings::bindings));
     static Component<SignalBindings> ComponentSignalBindings("signal_bindings", MetadataSignalBindings);
-    template<>
-    bool StructMetadata::Load<SignalBindings>(const EntityScope &scope,
-        SignalBindings &dst,
-        const picojson::value &src);
     template<>
     void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

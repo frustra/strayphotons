@@ -2,6 +2,7 @@
 
 #include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
+#include "ecs/StructFieldTypes.hh"
 
 #include <cstring>
 

@@ -170,6 +170,19 @@ namespace sp::json {
     }
     template<typename T>
     inline bool Load(const ecs::EntityScope &s,
+        robin_hood::unordered_flat_map<std::string, T> &dst,
+        const picojson::value &src) {
+        if (!src.is<picojson::object>()) return false;
+        for (auto &p : src.get<picojson::object>()) {
+            if (!sp::json::Load(s, dst[p.first], p.second)) {
+                dst.clear();
+                return false;
+            }
+        }
+        return true;
+    }
+    template<typename T>
+    inline bool Load(const ecs::EntityScope &s,
         robin_hood::unordered_node_map<std::string, T> &dst,
         const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
@@ -280,6 +293,16 @@ namespace sp::json {
     template<typename T>
     inline void Save(const ecs::EntityScope &s,
         picojson::value &dst,
+        const robin_hood::unordered_flat_map<std::string, T> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<typename T>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
         const robin_hood::unordered_node_map<std::string, T> &src) {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
@@ -302,10 +325,18 @@ namespace sp::json {
     }
 } // namespace sp::json
 
-// Defined in components/Transform.cc
+// Defined in ecs/components/Transform.cc
 namespace sp::json {
     template<>
     bool Load(const ecs::EntityScope &scope, ecs::Transform &dst, const picojson::value &src);
     template<>
     void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::Transform &src);
+} // namespace sp::json
+
+// Defined in ecs/SignalExpression.cc
+namespace sp::json {
+    template<>
+    bool Load(const ecs::EntityScope &scope, ecs::SignalExpression &dst, const picojson::value &src);
+    template<>
+    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::SignalExpression &src);
 } // namespace sp::json
