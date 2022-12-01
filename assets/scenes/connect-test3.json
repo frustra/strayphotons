@@ -20,7 +20,9 @@
 				"translate": [0, -5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -33,7 +35,9 @@
 				"translate": [4.95, 5, 2.9]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -46,7 +50,9 @@
 				"translate": [4.95, 5, -2.9]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -59,7 +65,9 @@
 				"translate": [4.95, 6.25, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -87,7 +95,9 @@
 				"translate": [2.9, 5, 4.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -100,7 +110,9 @@
 				"translate": [-2.9, 5, 4.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -113,7 +125,9 @@
 				"translate": [0, 6.25, 4.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -142,7 +156,9 @@
 				"translate": [0, 5, -10]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -155,7 +171,9 @@
 				"translate": [-10, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -167,7 +185,9 @@
 				"translate": [0, 1, -2]
 			},
 			"physics": {
-				"model": "dodecahedron"
+				"shapes": {
+					"model": "dodecahedron"
+				}
 			}
 		},
 		{

@@ -45,7 +45,7 @@ namespace sp {
             auto inspector = inspectorEntity.Get(lock);
             Assertf(inspector.Has<ecs::EventInput>(lock),
                 "Inspector entity has no EventInput: %s",
-                std::to_string(inspectorEntity));
+                inspectorEntity.Name().String());
             auto &eventInput = inspector.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
             eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);

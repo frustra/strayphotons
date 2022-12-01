@@ -6,7 +6,9 @@
 				"parent": "scoperoot"
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"mass": 1
 			},
 			"script": [

@@ -61,7 +61,7 @@ namespace sp::vulkan {
             return handle;
         }
 
-        operator bool() {
+        explicit operator bool() {
             return !!data;
         }
 

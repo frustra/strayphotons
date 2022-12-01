@@ -6,7 +6,9 @@
 				"scale": [1, 4, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -23,7 +25,9 @@
 				"scale": [1, 4, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -40,7 +44,9 @@
 				"scale": [1, 4, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -57,7 +63,9 @@
 				"scale": [1, 4, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -75,7 +83,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -93,7 +103,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -111,7 +123,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -129,7 +143,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -147,7 +163,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -165,7 +183,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -183,7 +203,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {
@@ -201,7 +223,9 @@
 				"scale": [1, 4.6, 1]
 			},
 			"physics": {
-				"model": "extrusion",
+				"shapes": {
+					"model": "extrusion"
+				},
 				"dynamic": false
 			},
 			"script": {

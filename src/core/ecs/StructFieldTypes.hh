@@ -29,7 +29,10 @@ namespace ecs {
     enum class InterpolationMode;
     enum class OpticType;
     enum class PhysicsGroup : uint16_t;
+    struct PhysicsShape;
     struct SignalExpression;
+    enum class SoundType;
+    class Sound;
     enum class TriggerShape : uint8_t;
     enum class VisibilityMask;
     enum class XrEye;
@@ -58,7 +61,10 @@ namespace ecs {
         std::string,
         EntityRef,
         Transform,
+        std::vector<std::string>,
         std::vector<AnimationState>,
+        std::vector<PhysicsShape>,
+        std::vector<Sound>,
         std::optional<double>,
         robin_hood::unordered_map<std::string, double>,
         robin_hood::unordered_map<std::string, SignalExpression>,
@@ -70,6 +76,7 @@ namespace ecs {
         InterpolationMode,
         OpticType,
         PhysicsGroup,
+        SoundType,
         TriggerGroup,
         TriggerShape,
         VisibilityMask,

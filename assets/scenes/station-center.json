@@ -58,7 +58,9 @@
 				"translate": [0, 160, 2]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -73,7 +75,9 @@
 				"rotate": [45, 0, 0, 1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -88,7 +92,9 @@
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -102,7 +108,9 @@
 				"translate": [0, 82.95, -3.55]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -116,7 +124,9 @@
 				"translate": [2.55, 86, -1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -130,7 +140,9 @@
 				"translate": [-2.55, 86, -1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -145,7 +157,9 @@
 				"rotate": [-45, 0, 0, 1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},

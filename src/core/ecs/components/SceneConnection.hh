@@ -13,13 +13,9 @@ namespace ecs {
         SceneConnection(std::string scene) : scenes({scene}) {}
     };
 
-    static StructMetadata MetadataSceneConnection(typeid(SceneConnection));
+    static StructMetadata MetadataSceneConnection(typeid(SceneConnection), StructField::New(&SceneConnection::scenes));
     static Component<SceneConnection> ComponentSceneConnection("scene_connection", MetadataSceneConnection);
 
-    template<>
-    bool StructMetadata::Load<SceneConnection>(const EntityScope &scope,
-        SceneConnection &dst,
-        const picojson::value &src);
     template<>
     void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

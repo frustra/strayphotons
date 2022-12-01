@@ -26,7 +26,9 @@
 		{
 			"name": "lot.Walls1_Cube.004",
 			"physics": {
-				"model": "01-outside.walls1",
+				"shapes": {
+					"model": "01-outside.walls1"
+				},
 				"dynamic": false
 			}
 		},
@@ -72,7 +74,9 @@
 				"rotate": [-30, 0, 1, 0]
 			},
 			"physics": {
-				"model": "cardboard-box",
+				"shapes": {
+					"model": "cardboard-box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -89,7 +93,9 @@
 				"rotate": [-80, 0, 1, 0]
 			},
 			"physics": {
-				"model": "cardboard-box",
+				"shapes": {
+					"model": "cardboard-box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -106,7 +112,9 @@
 				"rotate": [85, 0, 1, 0]
 			},
 			"physics": {
-				"model": "cardboard-box",
+				"shapes": {
+					"model": "cardboard-box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -124,7 +132,9 @@
 				"rotate": [90, 0, 1, 0]
 			},
 			"physics": {
-				"model": "parking-block",
+				"shapes": {
+					"model": "parking-block"
+				},
 				"dynamic": false
 			}
 		},
@@ -138,7 +148,9 @@
 				"rotate": [90, 0, 1, 0]
 			},
 			"physics": {
-				"model": "parking-block",
+				"shapes": {
+					"model": "parking-block"
+				},
 				"dynamic": false
 			}
 		},
@@ -152,7 +164,9 @@
 				"rotate": [90, 0, 1, 0]
 			},
 			"physics": {
-				"model": "parking-block",
+				"shapes": {
+					"model": "parking-block"
+				},
 				"dynamic": false
 			}
 		},
@@ -162,7 +176,9 @@
 				"translate": [-1, 5, 2]
 			},
 			"physics": {
-				"model": "occluder",
+				"shapes": {
+					"model": "occluder"
+				},
 				"dynamic": false
 			}
 		},

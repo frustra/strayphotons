@@ -129,7 +129,9 @@
 				"translate": [-0.01, 0, 9.6]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},

@@ -9,35 +9,47 @@ namespace sp {
 }
 
 namespace ecs {
+    enum class SoundType {
+        Object,
+        Stereo,
+        Ambisonic,
+    };
+
     class Sound {
     public:
         // Set these fields before adding the Sound to the scene
-        enum class Type {
-            Object,
-            Stereo,
-            Ambisonic,
-        } type = Type::Object;
+        SoundType type = SoundType::Object;
 
+        std::string filePath;
         sp::AsyncPtr<sp::Asset> file; // TODO: should make the asset system unpack the audio file
         bool loop = false, playOnLoad = false;
 
         // Update these fields at any point
         float volume = 1.0f;
+
+        bool operator==(const Sound &other) const {
+            return type == other.type && filePath == other.filePath && loop == other.loop &&
+                   playOnLoad == other.playOnLoad && volume == other.volume;
+        }
     };
 
+    static StructMetadata MetadataSound(typeid(Sound),
+        StructField::New("type", &Sound::type),
+        StructField::New("file", &Sound::filePath),
+        StructField::New("loop", &Sound::loop),
+        StructField::New("play_on_load", &Sound::playOnLoad),
+        StructField::New("volume", &Sound::volume));
+    template<>
+    bool StructMetadata::Load<Sound>(const EntityScope &scope, Sound &dst, const picojson::value &src);
+
     struct Sounds {
-        vector<Sound> sounds;
+        std::vector<Sound> sounds;
         EventQueueRef eventQueue;
 
         // Update these fields at any point
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static StructMetadata MetadataSounds(typeid(Sounds));
+    static StructMetadata MetadataSounds(typeid(Sounds), StructField::New(&Sounds::sounds));
     static Component<Sounds> ComponentSound("sound", MetadataSounds);
-
-    template<>
-    bool StructMetadata::Load<Sounds>(const EntityScope &scope, Sounds &dst, const picojson::value &src);
-    template<>
-    void Component<Sounds>::Apply(const Sounds &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

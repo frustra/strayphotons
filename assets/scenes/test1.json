@@ -73,7 +73,9 @@
 				"model": "sensor-plate-dark"
 			},
 			"physics": {
-				"model": "sensor-plate-dark",
+				"shapes": {
+					"model": "sensor-plate-dark"
+				},
 				"dynamic": false
 			}
 		},
@@ -105,7 +107,9 @@
 				"translate": [0, 1.05, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			},
 			"light_sensor": {
@@ -144,7 +148,9 @@
 				"animation_state": "sensor1"
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -157,7 +163,9 @@
 				"translate": [0, -5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -170,7 +178,9 @@
 				"translate": [10, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -183,7 +193,9 @@
 				"translate": [0, 5, 10]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -196,7 +208,9 @@
 				"translate": [0, 5, -10]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -209,7 +223,9 @@
 				"translate": [-10, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -246,7 +262,9 @@
 				"translate": [-2.2, 2.5, 3]
 			},
 			"physics": {
-				"model": "box"
+				"shapes": {
+					"model": "box"
+				}
 			},
 			"script": {
 				"prefab": "template",
@@ -275,7 +293,9 @@
 				"rotate": [40, 0, 1, 0]
 			},
 			"physics": {
-				"model": "pbr-cube"
+				"shapes": {
+					"model": "pbr-cube"
+				}
 			}
 		},
 		{
@@ -286,7 +306,9 @@
 				"translate": [-1.5, 3.5, 2.5]
 			},
 			"physics": {
-				"model": "box"
+				"shapes": {
+					"model": "box"
+				}
 			},
 			"script": {
 				"prefab": "template",
@@ -301,7 +323,9 @@
 				"translate": [-1, 2.5, 2]
 			},
 			"physics": {
-				"model": "box"
+				"shapes": {
+					"model": "box"
+				}
 			},
 			"script": {
 				"prefab": "template",
@@ -316,7 +340,9 @@
 				"translate": [3, 1, -0.5]
 			},
 			"physics": {
-				"model": "dodecahedron"
+				"shapes": {
+					"model": "dodecahedron"
+				}
 			},
 			"script": {
 				"prefab": "template",

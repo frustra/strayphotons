@@ -6,7 +6,9 @@
 				"translate": [-2, 0.4, -8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -16,7 +18,9 @@
 				"translate": [-2, 3.4, -8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -26,7 +30,9 @@
 				"translate": [-2.05, 6, -8.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -36,7 +42,9 @@
 				"translate": [-2, 0.4, -4.3]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -46,7 +54,9 @@
 				"translate": [-2, 3.4, -4.3]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -56,7 +66,9 @@
 				"translate": [-2.05, 6, -4.35]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -66,7 +78,9 @@
 				"translate": [-2, 0.4, -0.6]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -76,7 +90,9 @@
 				"translate": [-2, 3.4, -0.6]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -86,7 +102,9 @@
 				"translate": [-2.05, 6, -0.65]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -96,7 +114,9 @@
 				"translate": [-2, 0.4, 3.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -106,7 +126,9 @@
 				"translate": [-2, 3.4, 3.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -116,7 +138,9 @@
 				"translate": [-2.05, 6, 3.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -126,7 +150,9 @@
 				"translate": [-2, 0.4, 6.8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -136,7 +162,9 @@
 				"translate": [-2, 3.4, 6.8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -146,7 +174,9 @@
 				"translate": [-2.05, 6, 6.75]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -156,7 +186,9 @@
 				"translate": [2.75, 0.4, -8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -166,7 +198,9 @@
 				"translate": [2.75, 3.4, -8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -176,7 +210,9 @@
 				"translate": [2.8, 6, -8.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -186,7 +222,9 @@
 				"translate": [2.75, 0.4, -4.3]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -196,7 +234,9 @@
 				"translate": [2.75, 3.4, -4.3]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -206,7 +246,9 @@
 				"translate": [2.8, 6, -4.35]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -216,7 +258,9 @@
 				"translate": [2.75, 0.4, -0.6]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -226,7 +270,9 @@
 				"translate": [2.75, 3.4, -0.6]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -236,7 +282,9 @@
 				"translate": [2.8, 6, -0.65]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -246,7 +294,9 @@
 				"translate": [2.75, 0.4, 3.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -256,7 +306,9 @@
 				"translate": [2.75, 3.4, 3.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -266,7 +318,9 @@
 				"translate": [2.8, 6, 3.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -276,7 +330,9 @@
 				"translate": [2.75, 0.4, 6.8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -286,7 +342,9 @@
 				"translate": [2.75, 3.4, 6.8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -296,7 +354,9 @@
 				"translate": [2.8, 6, 6.75]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -306,7 +366,9 @@
 				"translate": [0.375, 3.4, -10]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -316,7 +378,9 @@
 				"translate": [0.37, 6, -10.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -326,7 +390,9 @@
 				"translate": [0.37, 2.95, -12.5]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -336,7 +402,9 @@
 				"translate": [0.37, 4, -14.5]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -346,7 +414,9 @@
 				"translate": [0.375, 3.4, 8.75]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -356,7 +426,9 @@
 				"translate": [0.37, 6, 8.8]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -366,7 +438,9 @@
 				"translate": [0.37, 2.95, 11]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -376,7 +450,9 @@
 				"translate": [0.37, 4, 13.2]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -386,7 +462,9 @@
 				"translate": [-4.1, 2.95, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -396,7 +474,9 @@
 				"translate": [-5.9, 4, -0.5]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -406,7 +486,9 @@
 				"translate": [4.9, 2.95, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -416,7 +498,9 @@
 				"translate": [6.65, 4, -0.5]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -427,7 +511,9 @@
 				"translate": [0, -1.07, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		}

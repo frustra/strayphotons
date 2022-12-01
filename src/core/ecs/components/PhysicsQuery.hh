@@ -13,12 +13,8 @@ namespace ecs {
         struct Handle {
             size_t index = ~0u;
 
-            operator bool() const {
+            explicit operator bool() const {
                 return index != ~0u;
-            }
-
-            bool operator!() const {
-                return index == ~0u;
             }
         };
 

@@ -6,7 +6,9 @@
 				"model": "box"
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"density": 100
 			},
 			"transform": {
@@ -29,7 +31,9 @@
 				"scale": [0.5, 0.05, 0.5]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"group": "Interactive",
 				"density": 10
 			},
@@ -82,7 +86,9 @@
 				"model": "cardboard-box"
 			},
 			"physics": {
-				"model": "cardboard-box",
+				"shapes": {
+					"model": "cardboard-box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -100,7 +106,9 @@
 				"translate": [0, -0.25, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -114,7 +122,9 @@
 				"translate": [0, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -128,7 +138,9 @@
 				"translate": [0, 2.5, -4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -142,7 +154,9 @@
 				"translate": [-5, 2.5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -156,7 +170,9 @@
 				"translate": [0, 2.5, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -170,7 +186,9 @@
 				"translate": [5, 2.5, -2.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -184,7 +202,9 @@
 				"translate": [5, 2.5, 2.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -198,7 +218,9 @@
 				"translate": [5, 4.4, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -407,7 +429,9 @@
 				"type": "Mirror"
 			},
 			"physics": {
-				"model": "round-mirror-mounted.convex1",
+				"shapes": {
+					"model": "round-mirror-mounted.convex1"
+				},
 				"dynamic": false
 			}
 		},
@@ -457,7 +481,9 @@
 				"mesh_index": 2
 			},
 			"physics": {
-				"model": "articulating-arm.convex2",
+				"shapes": {
+					"model": "articulating-arm.convex2"
+				},
 				"density": 1000
 			},
 			"physics_joints": [],

@@ -3,84 +3,108 @@
 		{
 			"name": "LowerPillar.001",
 			"physics": {
-				"model": "sponza2.convex28",
+				"shapes": {
+					"model": "sponza2.convex28"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.002",
 			"physics": {
-				"model": "sponza2.convex29",
+				"shapes": {
+					"model": "sponza2.convex29"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.003",
 			"physics": {
-				"model": "sponza2.convex30",
+				"shapes": {
+					"model": "sponza2.convex30"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.004",
 			"physics": {
-				"model": "sponza2.convex31",
+				"shapes": {
+					"model": "sponza2.convex31"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.005",
 			"physics": {
-				"model": "sponza2.convex32",
+				"shapes": {
+					"model": "sponza2.convex32"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.006",
 			"physics": {
-				"model": "sponza2.convex33",
+				"shapes": {
+					"model": "sponza2.convex33"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.007",
 			"physics": {
-				"model": "sponza2.convex34",
+				"shapes": {
+					"model": "sponza2.convex34"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.008",
 			"physics": {
-				"model": "sponza2.convex35",
+				"shapes": {
+					"model": "sponza2.convex35"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.009",
 			"physics": {
-				"model": "sponza2.convex36",
+				"shapes": {
+					"model": "sponza2.convex36"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.010",
 			"physics": {
-				"model": "sponza2.convex37",
+				"shapes": {
+					"model": "sponza2.convex37"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.011",
 			"physics": {
-				"model": "sponza2.convex38",
+				"shapes": {
+					"model": "sponza2.convex38"
+				},
 				"dynamic": false
 			}
 		},
 		{
 			"name": "LowerPillar.012",
 			"physics": {
-				"model": "sponza2.convex39",
+				"shapes": {
+					"model": "sponza2.convex39"
+				},
 				"dynamic": false
 			}
 		}

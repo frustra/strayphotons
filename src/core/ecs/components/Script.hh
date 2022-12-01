@@ -90,7 +90,7 @@ namespace ecs {
             }
         }
 
-        operator bool() const {
+        explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(callback);
         }
 

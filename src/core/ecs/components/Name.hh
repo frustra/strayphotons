@@ -24,7 +24,7 @@ namespace ecs {
             return scene + ":" + entity;
         }
 
-        operator bool() const {
+        explicit operator bool() const {
             return !entity.empty();
         }
 

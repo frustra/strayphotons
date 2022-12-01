@@ -73,7 +73,9 @@
 				"scale": [4, 0.5, 4.15]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -88,7 +90,9 @@
 				"scale": [0.5, 4.1, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -103,7 +107,9 @@
 				"scale": [0.5, 4.1, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -118,7 +124,9 @@
 				"scale": [4, 0.1, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},

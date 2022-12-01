@@ -27,7 +27,9 @@
 			},
 			"trigger_area": "Box",
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"group": "WorldOverlap",
 				"kinematic": true
 			},
@@ -54,7 +56,9 @@
 				"scale": [1.1, 0.1, 1.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -69,7 +73,9 @@
 				"scale": [1.1, 1.1, 0.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -84,7 +90,9 @@
 				"scale": [1.1, 1.1, 0.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -99,7 +107,9 @@
 				"scale": [1.1, 0.1, 1.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -114,7 +124,9 @@
 				"scale": [0.05, 0.05, 0.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"group": "Interactive",
 				"force": [-0.1, 0, 0],
 				"linear_damping": 10,

@@ -19,7 +19,9 @@
 				"parameters": { "source": "interactive" }
 			},
 			"physics": {
-				"model": "duck.cooked",
+				"shapes": {
+					"model": "duck.cooked"
+				},
 				"mass": 1
 			}
 		}

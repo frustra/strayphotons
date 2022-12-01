@@ -39,7 +39,7 @@ namespace ecs {
             viewMat = glm::inverse(invViewMat);
         }
 
-        operator bool() const {
+        explicit operator bool() const {
             return extents.x > 0 && extents.y > 0;
         }
 

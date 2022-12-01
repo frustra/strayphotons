@@ -24,7 +24,9 @@
 			"physics": {
 				"angular_damping": 50,
 				"linear_damping": 50,
-				"model": "articulating-arm.convex2",
+				"shapes": {
+					"model": "articulating-arm.convex2"
+				},
 				"dynamic": false,
 				"group": "WorldOverlap"
 			}
@@ -34,7 +36,9 @@
 			"physics": {
 				"angular_damping": 50,
 				"linear_damping": 50,
-				"model": "articulating-arm.convex0"
+				"shapes": {
+					"model": "articulating-arm.convex0"
+				}
 			},
 			"physics_joints": [{
 				"target": "arm.Ball_0",
@@ -53,7 +57,9 @@
 			"name": "arm.Socket_0",
 			"physics": {
 				"angular_damping": 50,
-				"model": "articulating-arm.convex6",
+				"shapes": {
+					"model": "articulating-arm.convex6"
+				},
 				"group": "WorldOverlap"
 			},
 			"physics_joints": [{
@@ -65,7 +71,9 @@
 			"name": "arm.Knob",
 			"physics": {
 				"angular_damping": 100,
-				"model": "articulating-arm.convex4"
+				"shapes": {
+					"model": "articulating-arm.convex4"
+				}
 			},
 			"physics_joints": [{
 				"target": "arm.Arm_0",
@@ -86,7 +94,9 @@
 			"name": "arm.Shaft",
 			"physics": {
 				"angular_damping": 50,
-				"model": "articulating-arm.convex5",
+				"shapes": {
+					"model": "articulating-arm.convex5"
+				},
 				"group": "WorldOverlap"
 			},
 			"physics_joints": [{
@@ -102,7 +112,9 @@
 			"physics": {
 				"angular_damping": 50,
 				"linear_damping": 50,
-				"model": "articulating-arm.convex1"
+				"shapes": {
+					"model": "articulating-arm.convex1"
+				}
 			},
 			"physics_joints": [{
 				"target": "arm.Arm_0",
@@ -116,7 +128,9 @@
 			"name": "arm.Socket_1",
 			"physics": {
 				"angular_damping": 50,
-				"model": "articulating-arm.convex7",
+				"shapes": {
+					"model": "articulating-arm.convex7"
+				},
 				"group": "WorldOverlap"
 			},
 			"physics_joints": [{
@@ -129,7 +143,9 @@
 			"physics": {
 				"angular_damping": 100,
 				"linear_damping": 100,
-				"model": "articulating-arm.convex3"
+				"shapes": {
+					"model": "articulating-arm.convex3"
+				}
 			},
 			"physics_joints": [{
 				"target": "arm.Arm_1",
