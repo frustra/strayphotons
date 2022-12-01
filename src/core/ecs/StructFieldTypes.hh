@@ -29,7 +29,9 @@ namespace ecs {
     enum class InterpolationMode;
     enum class OpticType;
     enum class PhysicsGroup : uint16_t;
+    enum class PhysicsJointType;
     struct PhysicsShape;
+    struct PhysicsJoint;
     struct SignalExpression;
     enum class SoundType;
     class Sound;
@@ -64,6 +66,7 @@ namespace ecs {
         std::vector<std::string>,
         std::vector<AnimationState>,
         std::vector<PhysicsShape>,
+        std::vector<PhysicsJoint>,
         std::vector<Sound>,
         std::optional<double>,
         robin_hood::unordered_map<std::string, double>,
@@ -76,6 +79,7 @@ namespace ecs {
         InterpolationMode,
         OpticType,
         PhysicsGroup,
+        PhysicsJointType,
         SoundType,
         TriggerGroup,
         TriggerShape,

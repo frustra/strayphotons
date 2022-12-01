@@ -138,12 +138,6 @@ namespace ecs {
         sp::json::SaveIfChanged(scope, obj, "transform", src.transform, {});
     }
 
-    template<>
-    void Component<Physics>::Apply(const Physics &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstPhysics = dst.Get<Physics>(lock);
-        if (dstPhysics.shapes.empty()) dstPhysics.shapes = src.shapes;
-    }
-
     PhysicsShape::ConvexMesh::ConvexMesh(const std::string &fullMeshName) {
         auto sep = fullMeshName.find('.');
         if (sep != std::string::npos) {

@@ -213,8 +213,8 @@ namespace sp {
             }
 
             physx::PxRigidActor *targetActor = nullptr;
-            PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset),
-                GlmQuatToPxQuat(ecsJoint.localOrient));
+            PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset.GetPosition()),
+                GlmQuatToPxQuat(ecsJoint.localOffset.GetRotation()));
             PxTransform remoteTransform(PxIdentity);
             auto targetEntity = ecsJoint.target.Get(lock);
 
@@ -223,23 +223,23 @@ namespace sp {
                 targetActor = manager.actors[targetEntity];
                 auto userData = (ActorUserData *)targetActor->userData;
                 Assert(userData, "Physics targetActor is missing UserData");
-                remoteTransform.p = GlmVec3ToPxVec3(userData->scale * ecsJoint.remoteOffset);
-                remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOrient);
+                remoteTransform.p = GlmVec3ToPxVec3(userData->scale * ecsJoint.remoteOffset.GetPosition());
+                remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOffset.GetRotation());
                 auto targetPose = targetActor->getGlobalPose();
                 targetTransform = ecs::Transform(PxVec3ToGlmVec3(targetPose.p), PxQuatToGlmQuat(targetPose.q));
-                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
-                targetTransform.Rotate(ecsJoint.remoteOrient);
+                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset.GetPosition());
+                targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
             } else if (targetEntity.Has<ecs::TransformTree>(lock)) {
                 targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
-                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset);
-                targetTransform.Rotate(ecsJoint.remoteOrient);
+                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset.GetPosition());
+                targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
                 remoteTransform.p = GlmVec3ToPxVec3(targetTransform.GetPosition());
                 remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation());
             }
 
             auto currentTransform = transform;
-            currentTransform.Translate(glm::mat3(currentTransform.matrix) * ecsJoint.localOffset);
-            currentTransform.Rotate(ecsJoint.localOrient);
+            currentTransform.Translate(glm::mat3(currentTransform.matrix) * ecsJoint.localOffset.GetPosition());
+            currentTransform.Rotate(ecsJoint.localOffset.GetRotation());
 
             float intervalSeconds = manager.interval.count() / 1e9;
 

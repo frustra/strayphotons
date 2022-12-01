@@ -27,10 +27,7 @@ namespace ecs {
         AnimationState() {}
         AnimationState(glm::vec3 pos, glm::vec3 scale) : pos(pos), scale(scale) {}
 
-        bool operator==(const AnimationState &other) const {
-            return pos == other.pos && scale == other.scale && tangentPos == other.tangentPos &&
-                   tangentScale == other.tangentScale;
-        }
+        bool operator==(const AnimationState &) const = default;
     };
 
     static StructMetadata MetadataAnimationState(typeid(AnimationState),

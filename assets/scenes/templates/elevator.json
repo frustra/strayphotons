@@ -2,7 +2,7 @@
 	"components": {
 		"sound": {
 			"file": "dryer.ogg",
-			"type": "ambisonic",
+			"type": "Ambisonic",
 			"volume": 0.1
 		},
 		"animation": {

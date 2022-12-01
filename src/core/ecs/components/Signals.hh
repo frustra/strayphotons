@@ -39,7 +39,8 @@ namespace ecs {
     template<>
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst);
 
-    static StructMetadata MetadataSignalBindings(typeid(SignalBindings), StructField::New(&SignalBindings::bindings));
+    static StructMetadata MetadataSignalBindings(typeid(SignalBindings),
+        StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply));
     static Component<SignalBindings> ComponentSignalBindings("signal_bindings", MetadataSignalBindings);
     template<>
     void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst);

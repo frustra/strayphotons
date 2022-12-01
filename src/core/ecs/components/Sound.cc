@@ -14,4 +14,12 @@ namespace ecs {
         }
         return true;
     }
+
+    template<>
+    void Component<Sounds>::Apply(const Sounds &src, Lock<AddRemove> lock, Entity dst) {
+        auto &dstSounds = dst.Get<Sounds>(lock);
+        for (auto &sound : src.sounds) {
+            if (!sp::contains(dstSounds.sounds, sound)) dstSounds.sounds.emplace_back(sound);
+        }
+    }
 } // namespace ecs

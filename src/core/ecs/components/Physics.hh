@@ -137,7 +137,4 @@ namespace ecs {
         StructField::New("linear_damping", &Physics::linearDamping),
         StructField::New("force", &Physics::constantForce));
     static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
-
-    template<>
-    void Component<Physics>::Apply(const Physics &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

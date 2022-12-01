@@ -31,7 +31,8 @@ namespace ecs {
             bool operator==(const Raycast &other) const {
                 return filterGroup == other.filterGroup && maxDistance == other.maxDistance &&
                        direction == other.direction && position == other.position &&
-                       relativeDirection == other.relativeDirection && relativePosition == other.relativePosition;
+                       relativeDirection == other.relativeDirection && relativePosition == other.relativePosition &&
+                       maxHits == other.maxHits;
             }
 
             struct Result {

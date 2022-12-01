@@ -87,9 +87,7 @@ namespace ecs {
         std::optional<Event::EventData> setValue;
         std::optional<double> multiplyValue;
 
-        bool operator==(const EventBinding &other) const {
-            return target == other.target && destQueue == other.destQueue && setValue == other.setValue;
-        }
+        bool operator==(const EventBinding &) const = default;
     };
 
     static StructMetadata MetadataEventBinding(typeid(EventBinding),
@@ -121,7 +119,8 @@ namespace ecs {
     static StructMetadata MetadataEventInput(typeid(EventInput));
     static Component<EventInput> ComponentEventInput("event_input", MetadataEventInput);
 
-    static StructMetadata MetadataEventBindings(typeid(EventBindings), StructField::New(&EventBindings::sourceToDest));
+    static StructMetadata MetadataEventBindings(typeid(EventBindings),
+        StructField::New(&EventBindings::sourceToDest, ~FieldAction::AutoApply));
     static Component<EventBindings> ComponentEventBindings("event_bindings", MetadataEventBindings);
 
     template<>

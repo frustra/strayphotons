@@ -13,7 +13,8 @@ namespace ecs {
         SceneConnection(std::string scene) : scenes({scene}) {}
     };
 
-    static StructMetadata MetadataSceneConnection(typeid(SceneConnection), StructField::New(&SceneConnection::scenes));
+    static StructMetadata MetadataSceneConnection(typeid(SceneConnection),
+        StructField::New(&SceneConnection::scenes, ~FieldAction::AutoApply));
     static Component<SceneConnection> ComponentSceneConnection("scene_connection", MetadataSceneConnection);
 
     template<>
