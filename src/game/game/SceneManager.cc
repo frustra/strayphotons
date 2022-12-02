@@ -17,6 +17,7 @@
 #include <fstream>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
+#include <robin_hood.h>
 #include <shared_mutex>
 
 namespace sp {
@@ -342,16 +343,18 @@ namespace sp {
 
     void SceneManager::UpdateSceneConnections() {
         ZoneScoped;
-        requiredSceneList.clear();
+        robin_hood::unordered_set<std::string> requiredSceneList = {};
         {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::SceneConnection>>();
 
             for (auto &ent : lock.EntitiesWith<ecs::SceneConnection>()) {
-                auto loadSignal = ecs::SignalBindings::GetSignal(lock, ent, "load_scene_connection");
-                if (loadSignal >= 0.5) {
-                    auto &connection = ent.Get<ecs::SceneConnection>(lock);
-                    for (auto &sceneName : connection.scenes) {
-                        if (!contains(requiredSceneList, sceneName)) requiredSceneList.emplace_back(sceneName);
+                auto &connection = ent.Get<ecs::SceneConnection>(lock);
+                for (auto &[sceneName, signals] : connection.scenes) {
+                    for (auto &expr : signals) {
+                        if (expr.Evaluate(lock) >= 0.5) {
+                            requiredSceneList.emplace(sceneName);
+                            break;
+                        }
                     }
                 }
             }

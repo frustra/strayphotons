@@ -6,7 +6,7 @@
 				"translate": [0, 0.0, 1.5],
 				"rotate": [180, 0, 1, 0]
 			},
-			"scene_connection": "02-mirrors",
+			"scene_connection": { "02-mirrors": "0" },
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "airlock" }
@@ -29,7 +29,7 @@
 				"translate": [7.5, 0, 12],
 				"rotate": [90, 0, 1, 0]
 			},
-			"scene_connection": "04-symmetry",
+			"scene_connection": { "04-symmetry": "0" },
 			"signal_bindings": {
 				"in_signal": "sensor2/value"
 			},

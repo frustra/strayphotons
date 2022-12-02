@@ -50,7 +50,7 @@
 			"transform": {
 				"translate": [-8.1, 0.6, -7]
 			},
-			"scene_connection": "02-mirrors",
+			"scene_connection": { "02-mirrors": "0" },
 			"signal_bindings": {
 				"in_signal": "sensor1/value"
 			},

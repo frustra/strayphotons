@@ -230,9 +230,8 @@
 				"translate": [7.05, 0, 0],
 				"rotate": [90, 0, 1, 0]
 			},
-			"scene_connection": "station-center",
-			"signal_bindings": {
-				"load_scene_connection": "global:ship_airlock.triggerzone/trigger_player_count"
+			"scene_connection": {
+				"station-center": "global:ship_airlock.triggerzone/trigger_player_count"
 			},
 			"script": {
 				"prefab": "template",

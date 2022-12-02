@@ -6,7 +6,7 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_none",
-			"scene_connection": [],
+			"scene_connection": {},
 			"transform": {}
 		},
 		{ "name": "player:player" },

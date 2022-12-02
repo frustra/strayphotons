@@ -6,7 +6,7 @@
 				"translate": [4.5, 0, 9],
 				"rotate": [-90, 0, 1, 0]
 			},
-			"scene_connection": "03-dark",
+			"scene_connection": { "03-dark": "0" },
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "airlock" }
@@ -35,7 +35,7 @@
 			"event_bindings": {
 				"/trigger/player/enter": {
 					"target": "console:input/action/run_command",
-					"set_value": "setsignal airlock4-menu.door-in/door_open 0; wait 1000 loadscene menu"
+					"set_value": "setsignal 04-symmetry:airlock4-menu.door-in/door_open 0; wait 1000 loadscene menu"
 				}
 			},
 			"script": {

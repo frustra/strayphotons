@@ -9,11 +9,10 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": "player_gravity_spin",
+			"scene_connection": { "player_gravity_spin": "1" },
 			"transform": {
 				"translate": [0, 153, 0]
-			},
-			"signal_output": { "load_scene_connection": 1 }
+			}
 		},
 		{
 			"name": "zone",
@@ -22,7 +21,10 @@
 				"scale": [24, 8, 10],
 				"translate": [0, 3, 0]
 			},
-			"trigger_area": "Box"
+			"trigger_area": "Box",
+			"scene_connection": {
+				"blackhole1": "zone/trigger_player_count"
+			}
 		},
 		{
 			"name": "segment",
@@ -37,9 +39,8 @@
 				"translate": [-12, 0, 0],
 				"rotate": [-4.5, 0, 0, 1]
 			},
-			"scene_connection": "blackhole8",
-			"signal_bindings": {
-				"load_scene_connection": "zone/trigger_player_count + blackhole2:zone/trigger_player_count"
+			"scene_connection": {
+				"blackhole8": "zone/trigger_player_count + blackhole2:zone/trigger_player_count"
 			}
 		},
 		{
@@ -48,9 +49,8 @@
 				"translate": [12, 0, 0],
 				"rotate": [4.5, 0, 0, 1]
 			},
-			"scene_connection": "blackhole2",
-			"signal_bindings": {
-				"load_scene_connection": "zone/trigger_player_count + blackhole8:zone/trigger_player_count"
+			"scene_connection": {
+				"blackhole2": "blackhole8:zone/trigger_player_count || zone/trigger_player_count"
 			}
 		},
 		{
@@ -186,9 +186,8 @@
 				"translate": [0, 0, -1.0],
 				"rotate": [180, 0, 1, 0]
 			},
-			"scene_connection": "station-center",
-			"signal_bindings": {
-				"load_scene_connection": "zone/trigger_player_count"
+			"scene_connection": {
+				"station-center": "zone/trigger_player_count"
 			}
 		},
 		{

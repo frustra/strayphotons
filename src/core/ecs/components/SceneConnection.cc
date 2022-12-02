@@ -9,8 +9,9 @@ namespace ecs {
     template<>
     void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstConnection = dst.Get<SceneConnection>(lock);
-        for (auto &scene : src.scenes) {
-            if (!sp::contains(dstConnection.scenes, scene)) dstConnection.scenes.emplace_back(scene);
+        for (auto &[scene, signals] : src.scenes) {
+            auto &scenes = dstConnection.scenes[scene];
+            scenes.insert(scenes.end(), signals.begin(), signals.end());
         }
     }
 } // namespace ecs

@@ -5,9 +5,8 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_none",
-			"scene_connection": "player_gravity_none",
-			"transform": {},
-			"signal_output": { "load_scene_connection": 1 }
+			"scene_connection": { "player_gravity_none": "1" },
+			"transform": {}
 		},
 		{
 			"name": "background",

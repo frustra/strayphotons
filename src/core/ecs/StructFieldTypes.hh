@@ -71,6 +71,7 @@ namespace ecs {
         std::optional<double>,
         robin_hood::unordered_map<std::string, double>,
         robin_hood::unordered_map<std::string, SignalExpression>,
+        robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
         robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
 
         // Enums

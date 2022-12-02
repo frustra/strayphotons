@@ -1,5 +1,3 @@
-#pragma once
-
 #include "InspectorGui.hh"
 
 #include "ecs/EcsImpl.hh"
