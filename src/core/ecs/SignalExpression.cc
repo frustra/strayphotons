@@ -576,10 +576,10 @@ namespace sp::json {
     void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::SignalExpression &src) {
         if (src.scope != scope.prefix) {
             // TODO: Remap signal names to new scope instead of converting to fully qualified names
-            Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
-                src.expr,
-                src.scope.String(),
-                scope.prefix.String());
+            // Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
+            //     src.expr,
+            //     src.scope.String(),
+            //     scope.prefix.String());
             DebugAssertf(src.rootIndex >= 0 && src.rootIndex < src.nodeDebug.size(),
                 "Saving invalid signal expression");
             dst = picojson::value(src.nodeDebug[src.rootIndex]);
