@@ -82,9 +82,9 @@ namespace sp::scripts {
                                     // TODO: Read this property from player
                                     joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
                                 }
-                                joint.remoteOffset = invParentRotate *
-                                                     (transform.GetPosition() - parentTransform.GetPosition());
-                                joint.remoteOrient = invParentRotate * transform.GetRotation();
+                                joint.remoteOffset.SetPosition(
+                                    invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
+                                joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
                                 joints.Add(joint);
                             } else {
                                 Errorf("Unsupported grab event type: %s", event.toString());
@@ -103,9 +103,9 @@ namespace sp::scripts {
                                 for (auto &joint : joints.joints) {
                                     if (joint.target == event.source) {
                                         // Move the objects origin so it rotates around its center of mass
-                                        auto center = joint.remoteOrient * centerOfMass;
-                                        joint.remoteOffset += center - (deltaRotate * center);
-                                        joint.remoteOrient = deltaRotate * joint.remoteOrient;
+                                        auto center = joint.remoteOffset.GetRotation() * centerOfMass;
+                                        joint.remoteOffset.Translate(center - (deltaRotate * center));
+                                        joint.remoteOffset.SetRotation(deltaRotate * joint.remoteOffset.GetRotation());
                                     }
                                 }
                             }

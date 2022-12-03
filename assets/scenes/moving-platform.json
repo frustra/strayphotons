@@ -10,7 +10,9 @@
 				"scale": [204, 2, 0.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -68,7 +70,9 @@
 				"scale": [4, 0.5, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -83,7 +87,9 @@
 				"scale": [0.5, 1.5, 0.1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"kinematic": true
 			}
 		},
@@ -113,7 +119,9 @@
 				"scale": [0.05, 0.05, 0.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"density": 1000
 			},
 			"physics_joints": [{
@@ -137,7 +145,9 @@
 				"scale": [0.05, 0.05, 0.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"density": 1000
 			},
 			"physics_joints": [{
@@ -161,7 +171,9 @@
 				"scale": [0.05, 0.05, 0.05]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"density": 1000
 			},
 			"physics_joints": [{

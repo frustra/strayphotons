@@ -9,5 +9,6 @@ namespace ecs {
         glm::ivec3 extents = glm::ivec3(128);
     };
 
-    static Component<VoxelArea> ComponentVoxelArea("voxel_area", ComponentField::New("extents", &VoxelArea::extents));
+    static StructMetadata MetadataVoxelArea(typeid(VoxelArea), StructField::New("extents", &VoxelArea::extents));
+    static Component<VoxelArea> ComponentVoxelArea("voxel_area", MetadataVoxelArea);
 } // namespace ecs

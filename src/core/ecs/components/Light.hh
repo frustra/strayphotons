@@ -18,13 +18,14 @@ namespace ecs {
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
     };
 
-    static Component<Light> ComponentLight("light",
-        ComponentField::New("intensity", &Light::intensity),
-        ComponentField::New("illuminance", &Light::illuminance),
-        ComponentField::New("spotAngle", &Light::spotAngle),
-        ComponentField::New("tint", &Light::tint),
-        ComponentField::New("gel", &Light::gelName),
-        ComponentField::New("on", &Light::on),
-        ComponentField::New("shadowMapSize", &Light::shadowMapSize),
-        ComponentField::New("shadowMapClip", &Light::shadowMapClip));
+    static StructMetadata MetadataLight(typeid(Light),
+        StructField::New("intensity", &Light::intensity),
+        StructField::New("illuminance", &Light::illuminance),
+        StructField::New("spotAngle", &Light::spotAngle),
+        StructField::New("tint", &Light::tint),
+        StructField::New("gel", &Light::gelName),
+        StructField::New("on", &Light::on),
+        StructField::New("shadowMapSize", &Light::shadowMapSize),
+        StructField::New("shadowMapClip", &Light::shadowMapClip));
+    static Component<Light> ComponentLight("light", MetadataLight);
 } // namespace ecs

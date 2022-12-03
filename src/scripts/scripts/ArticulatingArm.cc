@@ -52,10 +52,8 @@ namespace sp::scripts {
                     auto &joint = joints.emplace_back();
                     joint.target = ent;
                     joint.type = ecs::PhysicsJointType::Fixed;
-                    auto transform = child.Get<ecs::TransformSnapshot>(lock).GetInverse() *
-                                     ent.Get<ecs::TransformSnapshot>(lock);
-                    joint.localOffset = transform.GetPosition();
-                    joint.localOrient = transform.GetRotation();
+                    joint.localOffset = child.Get<ecs::TransformSnapshot>(lock).GetInverse() *
+                                        ent.Get<ecs::TransformSnapshot>(lock);
                 } else if (scriptData.locked) {
                     sp::erase_if(joints, [ent](auto &&arg) {
                         return arg.target == ent && arg.type == ecs::PhysicsJointType::Fixed;

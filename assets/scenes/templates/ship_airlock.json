@@ -56,12 +56,10 @@
 		{
 			"name": "button-out.button",
 			"event_bindings": {
-				"/button/press": [
-					{
-						"target": "console:input/action/run_command",
-						"set_value": "togglesignal global:ship_airlock.door-out/door_open; wait 300 togglesignal station-center:elevator.door/door_open"
-					}
-				]
+				"/button/press": {
+					"target": "console:input/action/run_command",
+					"set_value": "togglesignal global:ship_airlock.door-out/door_open; wait 300 togglesignal station-center:elevator.door/door_open"
+				}
 			}
 		},
 		{
@@ -75,7 +73,9 @@
 				"scale": [4, 0.5, 4.15]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -90,7 +90,9 @@
 				"scale": [0.5, 4.1, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -105,7 +107,9 @@
 				"scale": [0.5, 4.1, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -120,7 +124,9 @@
 				"scale": [4, 0.1, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},

@@ -36,7 +36,7 @@ namespace sp {
             Accessor(const tinygltf::Model &model, int accessorIndex);
             Accessor(const Gltf &model, int accessorIndex);
 
-            operator bool() const {
+            explicit operator bool() const {
                 return buffer && typeIndex >= 0;
             }
 

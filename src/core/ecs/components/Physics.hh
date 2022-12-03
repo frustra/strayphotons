@@ -76,6 +76,7 @@ namespace ecs {
             sp::AsyncPtr<sp::HullSettings> hullSettings;
 
             ConvexMesh() {}
+            ConvexMesh(const std::string &fullMeshName);
             ConvexMesh(const std::string &modelName, const std::string &meshName);
             ConvexMesh(const std::string &modelName, size_t meshIndex)
                 : ConvexMesh(modelName, "convex" + std::to_string(meshIndex)) {}
@@ -91,15 +92,21 @@ namespace ecs {
         PhysicsShape(Capsule capsule, Transform transform = Transform()) : shape(capsule), transform(transform) {}
         PhysicsShape(Box box, Transform transform = Transform()) : shape(box), transform(transform) {}
         PhysicsShape(Plane plane, Transform transform = Transform()) : shape(plane), transform(transform) {}
-        PhysicsShape(ConvexMesh mesh) : shape(mesh) {}
-        PhysicsShape(const std::string &fullMeshName);
+        PhysicsShape(ConvexMesh mesh, Transform transform = Transform()) : shape(mesh), transform(transform) {}
+        PhysicsShape(const std::string &fullMeshName) : shape(ConvexMesh(fullMeshName)), transform() {}
 
-        operator bool() const {
+        explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(shape);
         }
 
         bool operator==(const PhysicsShape &) const = default;
     };
+
+    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape));
+    template<>
+    bool StructMetadata::Load<PhysicsShape>(const EntityScope &scope, PhysicsShape &dst, const picojson::value &src);
+    template<>
+    void StructMetadata::Save<PhysicsShape>(const EntityScope &scope, picojson::value &dst, const PhysicsShape &src);
 
     struct Physics {
         Physics() {}
@@ -119,18 +126,15 @@ namespace ecs {
         glm::vec3 constantForce;
     };
 
-    static Component<Physics> ComponentPhysics("physics",
-        ComponentField::New("group", &Physics::group),
-        ComponentField::New("dynamic", &Physics::dynamic),
-        ComponentField::New("kinematic", &Physics::kinematic),
-        ComponentField::New("mass", &Physics::mass),
-        ComponentField::New("density", &Physics::density),
-        ComponentField::New("angular_damping", &Physics::angularDamping),
-        ComponentField::New("linear_damping", &Physics::linearDamping),
-        ComponentField::New("force", &Physics::constantForce));
-
-    template<>
-    bool Component<Physics>::Load(const EntityScope &scope, Physics &dst, const picojson::value &src);
-    template<>
-    void Component<Physics>::Apply(const Physics &src, Lock<AddRemove> lock, Entity dst);
+    static StructMetadata MetadataPhysics(typeid(Physics),
+        StructField::New("shapes", &Physics::shapes),
+        StructField::New("group", &Physics::group),
+        StructField::New("dynamic", &Physics::dynamic),
+        StructField::New("kinematic", &Physics::kinematic),
+        StructField::New("mass", &Physics::mass),
+        StructField::New("density", &Physics::density),
+        StructField::New("angular_damping", &Physics::angularDamping),
+        StructField::New("linear_damping", &Physics::linearDamping),
+        StructField::New("force", &Physics::constantForce));
+    static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
 } // namespace ecs

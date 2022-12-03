@@ -18,7 +18,8 @@ namespace ecs {
         LightSensor(glm::vec3 p, glm::vec3 n) : position(p), direction(n) {}
     };
 
-    static Component<LightSensor> ComponentLightSensor("light_sensor",
-        ComponentField::New("position", &LightSensor::position),
-        ComponentField::New("direction", &LightSensor::direction));
+    static StructMetadata MetadataLightSensor(typeid(LightSensor),
+        StructField::New("position", &LightSensor::position),
+        StructField::New("direction", &LightSensor::direction));
+    static Component<LightSensor> ComponentLightSensor("light_sensor", MetadataLightSensor);
 } // namespace ecs

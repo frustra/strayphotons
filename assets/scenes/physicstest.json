@@ -9,7 +9,9 @@
 				"scale": [1000, 1, 1000]
 			},
 			"physics": {
-				"model": "ground-3x3",
+				"shapes": {
+					"model": "ground-3x3"
+				},
 				"dynamic": false
 			}
 		},
@@ -23,7 +25,9 @@
 				"rotate": [-10, 1, 0, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},

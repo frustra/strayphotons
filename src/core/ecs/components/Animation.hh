@@ -27,11 +27,15 @@ namespace ecs {
         AnimationState() {}
         AnimationState(glm::vec3 pos, glm::vec3 scale) : pos(pos), scale(scale) {}
 
-        bool operator==(const AnimationState &other) const {
-            return pos == other.pos && scale == other.scale && tangentPos == other.tangentPos &&
-                   tangentScale == other.tangentScale;
-        }
+        bool operator==(const AnimationState &) const = default;
     };
+
+    static StructMetadata MetadataAnimationState(typeid(AnimationState),
+        StructField::New("delay", &AnimationState::delay),
+        StructField::New("translate", &AnimationState::pos),
+        StructField::New("scale", &AnimationState::scale),
+        StructField::New("translate_tangent", &AnimationState::tangentPos),
+        StructField::New("scale_tangent", &AnimationState::tangentScale));
 
     class Animation {
     public:
@@ -48,12 +52,13 @@ namespace ecs {
         }
     };
 
-    static Component<Animation> ComponentAnimation("animation",
-        ComponentField::New("states", &Animation::states),
-        ComponentField::New("defaultState", &Animation::targetState),
-        ComponentField::New("interpolation", &Animation::interpolation),
-        ComponentField::New("tension", &Animation::tension));
+    static StructMetadata MetadataAnimation(typeid(Animation),
+        StructField::New("states", &Animation::states),
+        StructField::New("defaultState", &Animation::targetState),
+        StructField::New("interpolation", &Animation::interpolation),
+        StructField::New("tension", &Animation::tension));
+    static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
 
     template<>
-    bool Component<Animation>::Load(const EntityScope &scope, Animation &dst, const picojson::value &src);
+    bool StructMetadata::Load<Animation>(const EntityScope &scope, Animation &dst, const picojson::value &src);
 } // namespace ecs

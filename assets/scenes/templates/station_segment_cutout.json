@@ -22,13 +22,17 @@
 		{
 			"name": "segment.Walls-Y.Cut",
 			"physics": {
-				"model": "station-segment.walls-y.cut"
+				"shapes": {
+					"model": "station-segment.walls-y.cut"
+				}
 			}
 		},
 		{
 			"name": "segment.Walls+Y.Cut",
 			"physics": {
-				"model": "station-segment.walls+y.cut"
+				"shapes": {
+					"model": "station-segment.walls+y.cut"
+				}
 			}
 		}
 	]

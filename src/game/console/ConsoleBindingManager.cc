@@ -68,7 +68,7 @@ namespace sp {
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
                 bindings.Unbind(eventName, consoleInputEntity, ACTION_EVENT_RUN_COMMAND);
 
-                ecs::EventBindings::Binding binding;
+                ecs::EventBinding binding;
                 binding.target = consoleInputEntity;
                 binding.destQueue = ACTION_EVENT_RUN_COMMAND;
                 binding.setValue = command;

@@ -23,12 +23,8 @@ namespace ecs {
         Entity GetLive() const;
         Entity GetStaging() const;
 
-        operator bool() const {
+        explicit operator bool() const {
             return !!ptr;
-        }
-
-        bool operator!() const {
-            return !ptr;
         }
 
         bool operator==(const EntityRef &other) const;

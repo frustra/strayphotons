@@ -154,7 +154,9 @@
 				"translate": [0, 1, -4]
 			},
 			"physics": {
-				"model": "cardboard-box",
+				"shapes": {
+					"model": "cardboard-box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -171,7 +173,9 @@
 				"rotate": [-30, 0, 0, 1]
 			},
 			"physics": {
-				"model": "dodecahedron"
+				"shapes": {
+					"model": "dodecahedron"
+				}
 			},
 			"script": {
 				"prefab": "template",
@@ -231,7 +235,7 @@
 			"script": {"onTick": "sun"},
 			"signal_output": {
 				"position": 0.2,
-				"fix_position": true
+				"fix_position": 1
 			}
 		}
 	]

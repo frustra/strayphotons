@@ -9,11 +9,10 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": "player_gravity_spin",
+			"scene_connection": { "player_gravity_spin": "1" },
 			"transform": {
 				"translate": [0, 153, 0]
-			},
-			"signal_output": { "load_scene_connection": 1 }
+			}
 		},
 		{
 			"name": "elevator_zone",
@@ -58,7 +57,9 @@
 				"translate": [0, 160, 2]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -73,7 +74,9 @@
 				"rotate": [45, 0, 0, 1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -88,7 +91,9 @@
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -102,7 +107,9 @@
 				"translate": [0, 82.95, -3.55]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -116,7 +123,9 @@
 				"translate": [2.55, 86, -1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -130,7 +139,9 @@
 				"translate": [-2.55, 86, -1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -145,7 +156,9 @@
 				"rotate": [-45, 0, 0, 1]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -154,9 +167,8 @@
 			"transform": {
 				"translate": [0, 160, -5.1]
 			},
-			"scene_connection": [],
-			"signal_bindings": {
-				"load_scene_connection": "elevator_zone/trigger_player_count"
+			"scene_connection": {
+				"station-center": "elevator_zone/trigger_player_count"
 			},
 			"script": {
 				"prefab": "template",
@@ -173,12 +185,10 @@
 		{
 			"name": "elevator.control.button",
 			"event_bindings": {
-				"/button/press": [
-					{
-						"target": "console:input/action/run_command",
-						"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100; wait 1000 removescene menu"
-					}
-				]
+				"/button/press": {
+					"target": "console:input/action/run_command",
+					"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_state 0 100; wait 1000 removescene menu"
+				}
 			}
 		},
 		{
@@ -214,9 +224,8 @@
 			"transform": {
 				"translate": [0, 0, 0]
 			},
-			"scene_connection": "blackhole1",
-			"signal_bindings": {
-				"load_scene_connection": "transition_zone/trigger_player_count"
+			"scene_connection": {
+				"blackhole1": "transition_zone/trigger_player_count"
 			}
 		}
 	]

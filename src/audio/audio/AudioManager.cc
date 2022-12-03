@@ -211,11 +211,11 @@ namespace sp {
                 auto resonanceID = state.resonanceID;
                 if (resonanceID == -1 && state.audioBuffer->Ready()) {
                     auto channelCount = state.audioBuffer->Get()->channelCount;
-                    if (source.type == ecs::Sound::Type::Object) {
+                    if (source.type == ecs::SoundType::Object) {
                         resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
-                    } else if (source.type == ecs::Sound::Type::Stereo) {
+                    } else if (source.type == ecs::SoundType::Stereo) {
                         resonanceID = resonance->CreateStereoSource(channelCount);
-                    } else if (source.type == ecs::Sound::Type::Ambisonic) {
+                    } else if (source.type == ecs::SoundType::Ambisonic) {
                         resonanceID = resonance->CreateAmbisonicSource(channelCount);
                     }
                     state.resonanceID = resonanceID;

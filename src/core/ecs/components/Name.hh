@@ -24,13 +24,11 @@ namespace ecs {
             return scene + ":" + entity;
         }
 
-        operator bool() const {
+        explicit operator bool() const {
             return !entity.empty();
         }
 
-        bool operator==(const Name &other) const {
-            return scene == other.scene && entity == other.entity;
-        }
+        bool operator==(const Name &) const = default;
     };
 
     std::ostream &operator<<(std::ostream &out, const Name &v);

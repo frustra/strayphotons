@@ -6,7 +6,7 @@
 				"translate": [0, 0.0, 1.5],
 				"rotate": [180, 0, 1, 0]
 			},
-			"scene_connection": "01-outside",
+			"scene_connection": { "01-outside": "0" },
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "airlock" }
@@ -29,7 +29,7 @@
 				"translate": [10.5, 0, -3],
 				"rotate": [-90, 0, 1, 0]
 			},
-			"scene_connection": "03-dark",
+			"scene_connection": { "03-dark": "0" },
 			"signal_bindings": {
 				"in_signal": "sensor2/value"
 			},

@@ -8,7 +8,7 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": [],
+			"scene_connection": {},
 			"transform": {}
 		},
 		{ "name": "player:player" },

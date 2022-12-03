@@ -23,7 +23,9 @@
 				"translate": [0, 0, -0.005]
 			},
 			"physics": {
-				"model": "sensor-plate-light",
+				"shapes": {
+					"model": "sensor-plate-light"
+				},
 				"dynamic": false
 			}
 		},

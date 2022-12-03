@@ -151,6 +151,7 @@ namespace sp {
                     auto asset = std::make_shared<Asset>(path);
                     asset->buffer.resize(size);
                     in.read((char *)asset->buffer.data(), size);
+                    Assertf(in.good(), "Failed to read whole asset file: %s", path);
                     in.close();
 
                     return asset;

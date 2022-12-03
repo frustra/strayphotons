@@ -1,22 +1,27 @@
 #pragma once
 
 #include "ecs/Components.hh"
+#include "ecs/SignalExpression.hh"
 
+#include <robin_hood.h>
 #include <string>
 #include <vector>
 
 namespace ecs {
     struct SceneConnection {
-        std::vector<std::string> scenes;
+        // Load a scene if any of the signal expressions provded evaluate to true
+        robin_hood::unordered_map<std::string, std::vector<SignalExpression>> scenes;
 
         SceneConnection() {}
-        SceneConnection(std::string scene) : scenes({scene}) {}
+        SceneConnection(std::string scene, const SignalExpression &expr) {
+            scenes.emplace(scene, std::vector<SignalExpression>{expr});
+        }
     };
 
-    static Component<SceneConnection> ComponentSceneConnection("scene_connection");
+    static StructMetadata MetadataSceneConnection(typeid(SceneConnection),
+        StructField::New(&SceneConnection::scenes, ~FieldAction::AutoApply));
+    static Component<SceneConnection> ComponentSceneConnection("scene_connection", MetadataSceneConnection);
 
-    template<>
-    bool Component<SceneConnection>::Load(const EntityScope &scope, SceneConnection &dst, const picojson::value &src);
     template<>
     void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

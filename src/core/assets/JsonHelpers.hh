@@ -4,9 +4,11 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/StructMetadata.hh"
 
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
+#include <robin_hood.h>
 #include <string>
 #include <vector>
 
@@ -59,9 +61,19 @@ namespace sp::json {
             }
             dst = *opt;
             return true;
-        } else {
+        } else if constexpr (std::is_convertible_v<double, T>) {
             if (!src.is<double>()) return false;
             dst = (T)src.get<double>();
+            return true;
+        } else {
+            auto &metadata = ecs::StructMetadata::Get<T>();
+            for (auto &field : metadata.fields) {
+                if (!field.Load(s, &dst, src)) {
+                    Errorf("Struct metadata %s has invalid field: %s", typeid(T).name(), field.name);
+                    return false;
+                }
+            }
+            ecs::StructMetadata::Load(s, dst, src);
             return true;
         }
     }
@@ -128,24 +140,59 @@ namespace sp::json {
         return name.empty() == !dst;
     }
     template<typename T>
+    inline bool Load(const ecs::EntityScope &s, std::optional<T> &dst, const picojson::value &src) {
+        T entry;
+        if (!sp::json::Load(s, entry, src)) {
+            return false;
+        }
+        dst = entry;
+        return true;
+    }
+    template<typename T>
     inline bool Load(const ecs::EntityScope &s, std::vector<T> &dst, const picojson::value &src) {
         if (src.is<picojson::array>()) {
             for (auto &p : src.get<picojson::array>()) {
-                auto &point = dst.emplace_back();
-                if (!sp::json::Load(s, point, p)) {
+                auto &entry = dst.emplace_back();
+                if (!sp::json::Load(s, entry, p)) {
                     dst.clear();
                     return false;
                 }
             }
             return true;
         } else {
-            T point;
-            if (!sp::json::Load(s, point, src)) {
+            T entry;
+            if (!sp::json::Load(s, entry, src)) {
                 return false;
             }
-            dst.emplace_back(point);
+            dst.emplace_back(entry);
             return true;
         }
+    }
+    template<typename T>
+    inline bool Load(const ecs::EntityScope &s,
+        robin_hood::unordered_flat_map<std::string, T> &dst,
+        const picojson::value &src) {
+        if (!src.is<picojson::object>()) return false;
+        for (auto &p : src.get<picojson::object>()) {
+            if (!sp::json::Load(s, dst[p.first], p.second)) {
+                dst.clear();
+                return false;
+            }
+        }
+        return true;
+    }
+    template<typename T>
+    inline bool Load(const ecs::EntityScope &s,
+        robin_hood::unordered_node_map<std::string, T> &dst,
+        const picojson::value &src) {
+        if (!src.is<picojson::object>()) return false;
+        for (auto &p : src.get<picojson::object>()) {
+            if (!sp::json::Load(s, dst[p.first], p.second)) {
+                dst.clear();
+                return false;
+            }
+        }
+        return true;
     }
 
     // Default Save handler for enums, and all integer and float types
@@ -153,8 +200,15 @@ namespace sp::json {
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const T &src) {
         if constexpr (std::is_enum<T>()) {
             dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
-        } else {
+        } else if constexpr (std::is_convertible_v<T, double>) {
             dst = picojson::value((double)src);
+        } else {
+            auto &metadata = ecs::StructMetadata::Get<T>();
+            static const T defaultValue = {};
+            for (auto &field : metadata.fields) {
+                field.Save(s, dst, &src, &defaultValue);
+            }
+            ecs::StructMetadata::Save(s, dst, src);
         }
     }
 
@@ -221,6 +275,10 @@ namespace sp::json {
         dst = picojson::value(prefixLen >= refName.length() ? refName : refName.substr(prefixLen));
     }
     template<typename T>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::optional<T> &src) {
+        if (src) Save(s, dst, *src);
+    }
+    template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {
         if (src.size() == 1) {
             Save(s, dst, src[0]);
@@ -231,6 +289,26 @@ namespace sp::json {
             }
             dst = picojson::value(vec);
         }
+    }
+    template<typename T>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_flat_map<std::string, T> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<typename T>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_node_map<std::string, T> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key], value);
+        }
+        dst = picojson::value(obj);
     }
 
     template<typename T>
@@ -245,20 +323,4 @@ namespace sp::json {
         }
         return false;
     }
-} // namespace sp::json
-
-// Defined in components/Animation.cc
-namespace sp::json {
-    template<>
-    bool Load(const ecs::EntityScope &scope, ecs::AnimationState &dst, const picojson::value &src);
-    template<>
-    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::AnimationState &src);
-} // namespace sp::json
-
-// Defined in components/Transform.cc
-namespace sp::json {
-    template<>
-    bool Load(const ecs::EntityScope &scope, ecs::Transform &dst, const picojson::value &src);
-    template<>
-    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::Transform &src);
 } // namespace sp::json

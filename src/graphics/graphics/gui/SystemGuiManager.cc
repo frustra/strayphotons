@@ -39,7 +39,7 @@ namespace sp {
             auto gui = guiEntity.Get(lock);
             Assertf(gui.Has<ecs::EventInput>(lock),
                 "System Gui entity has no EventInput: %s",
-                std::to_string(guiEntity));
+                guiEntity.Name().String());
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
             eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);

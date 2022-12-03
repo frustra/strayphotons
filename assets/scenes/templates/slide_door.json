@@ -38,7 +38,9 @@
 				"animation_state": "scoperoot/door_open"
 			},
 			"physics": {
-				"model": "door-panel",
+				"shapes": {
+					"model": "door-panel"
+				},
 				"dynamic": false
 			}
 		},
@@ -68,7 +70,9 @@
 				"animation_state": "scoperoot/door_open"
 			},
 			"physics": {
-				"model": "door-panel",
+				"shapes": {
+					"model": "door-panel"
+				},
 				"dynamic": false
 			}
 		}		

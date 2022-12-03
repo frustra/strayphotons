@@ -10,33 +10,6 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(const EntityScope &scope, SignalOutput &output, const picojson::value &src) {
-        for (auto param : src.get<picojson::object>()) {
-            if (param.second.is<bool>()) {
-                output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
-            } else {
-                output.SetSignal(param.first, param.second.get<double>());
-            }
-        }
-        return true;
-    }
-
-    template<>
-    bool Component<SignalBindings>::Load(const EntityScope &scope,
-        SignalBindings &bindings,
-        const picojson::value &src) {
-        for (auto bind : src.get<picojson::object>()) {
-            if (bind.second.is<std::string>()) {
-                bindings.SetBinding(bind.first, bind.second.get<std::string>(), scope.prefix);
-            } else {
-                Errorf("Unknown signal binding expression type: %s = %s", bind.first, bind.second.to_str());
-                return false;
-            }
-        }
-        return true;
-    }
-
-    template<>
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstOutput = dst.Get<SignalOutput>(lock);
         for (auto &signal : src.signals) {

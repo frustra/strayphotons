@@ -3,7 +3,9 @@
 		{
 			"name": "FlowerPot.001",
 			"physics": {
-				"model": "sponza2.convex80",
+				"shapes": {
+					"model": "sponza2.convex80"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -14,7 +16,9 @@
 		{
 			"name": "FlowerPot.002",
 			"physics": {
-				"model": "sponza2.convex81",
+				"shapes": {
+					"model": "sponza2.convex81"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -25,7 +29,9 @@
 		{
 			"name": "FlowerPot.003",
 			"physics": {
-				"model": "sponza2.convex82",
+				"shapes": {
+					"model": "sponza2.convex82"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -36,7 +42,9 @@
 		{
 			"name": "FlowerPot.004",
 			"physics": {
-				"model": "sponza2.convex83",
+				"shapes": {
+					"model": "sponza2.convex83"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -47,7 +55,9 @@
 		{
 			"name": "FlowerPot.005",
 			"physics": {
-				"model": "sponza2.convex84",
+				"shapes": {
+					"model": "sponza2.convex84"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -58,7 +68,9 @@
 		{
 			"name": "FlowerPot.006",
 			"physics": {
-				"model": "sponza2.convex85",
+				"shapes": {
+					"model": "sponza2.convex85"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -69,7 +81,9 @@
 		{
 			"name": "FlowerPot.007",
 			"physics": {
-				"model": "sponza2.convex86",
+				"shapes": {
+					"model": "sponza2.convex86"
+				},
 				"mass": 10
 			},
 			"script": {
@@ -80,7 +94,9 @@
 		{
 			"name": "FlowerPot.008",
 			"physics": {
-				"model": "sponza2.convex87",
+				"shapes": {
+					"model": "sponza2.convex87"
+				},
 				"mass": 10
 			},
 			"script": {

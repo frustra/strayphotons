@@ -9,7 +9,9 @@
 				"translate": [0, -5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -22,7 +24,9 @@
 				"translate": [10, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -35,7 +39,9 @@
 				"translate": [0, 5, 10]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -48,7 +54,9 @@
 				"translate": [0, 5, -10]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -61,7 +69,9 @@
 				"translate": [-10, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -89,7 +99,9 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -107,7 +119,9 @@
 				"rotate": [45.2, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -125,7 +139,9 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"mass": 1
 			},
 			"script": {

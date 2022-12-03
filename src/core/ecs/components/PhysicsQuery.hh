@@ -13,12 +13,8 @@ namespace ecs {
         struct Handle {
             size_t index = ~0u;
 
-            operator bool() const {
+            explicit operator bool() const {
                 return index != ~0u;
-            }
-
-            bool operator!() const {
-                return index == ~0u;
             }
         };
 
@@ -35,7 +31,8 @@ namespace ecs {
             bool operator==(const Raycast &other) const {
                 return filterGroup == other.filterGroup && maxDistance == other.maxDistance &&
                        direction == other.direction && position == other.position &&
-                       relativeDirection == other.relativeDirection && relativePosition == other.relativePosition;
+                       relativeDirection == other.relativeDirection && relativePosition == other.relativePosition &&
+                       maxHits == other.maxHits;
             }
 
             struct Result {
@@ -136,5 +133,6 @@ namespace ecs {
         }
     };
 
-    static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
+    static StructMetadata MetadataPhysicsQuery(typeid(PhysicsQuery));
+    static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query", MetadataPhysicsQuery);
 } // namespace ecs

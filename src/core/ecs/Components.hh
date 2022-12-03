@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ecs/ComponentMetadata.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/StructMetadata.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
 
@@ -31,7 +31,7 @@ namespace ecs {
 
     class ComponentBase {
     public:
-        ComponentBase(const char *name) : name(name) {}
+        ComponentBase(const char *name, const StructMetadata &metadata) : name(name), metadata(metadata) {}
 
         virtual bool LoadEntity(Lock<AddRemove> lock,
             const EntityScope &scope,
@@ -52,7 +52,7 @@ namespace ecs {
         }
 
         const char *name;
-        std::vector<ComponentField> fields;
+        const StructMetadata &metadata;
     };
 
     void RegisterComponent(const char *name, const std::type_index &idx, ComponentBase *comp);
@@ -60,25 +60,32 @@ namespace ecs {
     const ComponentBase *LookupComponent(const std::type_index &idx);
     void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
 
+    template<typename T>
+    const Component<T> &LookupComponent() {
+        auto ptr = LookupComponent(std::type_index(typeid(T)));
+        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
+        return *dynamic_cast<const Component<T> *>(ptr);
+    }
+
     template<typename CompType>
     class Component : public ComponentBase {
     private:
         const CompType defaultLiveComponent = {};
         const CompType defaultStagingComponent;
 
-        template<typename... Fields>
-        CompType makeDefaultStagingComponent(Fields &&...fields) {
+        CompType makeDefaultStagingComponent(const StructMetadata &metadata) {
             static const CompType defaultComp = {};
             CompType comp = {};
-            (fields.InitUndefined(&comp, &defaultComp), ...);
-            InitUndefined(comp);
+            for (auto &field : metadata.fields) {
+                field.InitUndefined(&comp, &defaultComp);
+            }
+            StructMetadata::InitUndefined(comp);
             return comp;
         }
 
     public:
-        Component() : ComponentBase("") {}
-        Component(const char *name, const CompType defaultStagingComp = {})
-            : ComponentBase(name), defaultStagingComponent(defaultStagingComp) {
+        Component(const char *name, const StructMetadata &metadata)
+            : ComponentBase(name, metadata), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
             auto existing = dynamic_cast<const Component<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
@@ -87,16 +94,8 @@ namespace ecs {
             }
         }
 
-        template<typename... Fields>
-        Component(const char *name, Fields &&...fields) : Component(name, makeDefaultStagingComponent(fields...)) {
-            (this->fields.emplace_back(fields), ...);
-            for (int i = 0; i < this->fields.size(); i++) {
-                this->fields[i].fieldIndex = i;
-            }
-        }
-
         bool LoadFields(const EntityScope &scope, CompType &dst, const picojson::value &src) const {
-            for (auto &field : this->fields) {
+            for (auto &field : metadata.fields) {
                 if (!field.Load(scope, &dst, src)) {
                     Errorf("Component %s has invalid field: %s", name, field.name);
                     return false;
@@ -113,9 +112,9 @@ namespace ecs {
             if (dst.Has<CompType>(lock)) {
                 CompType srcComp = defaultStagingComponent;
                 if (!LoadFields(scope, srcComp, src)) return false;
-                if (!Load(scope, srcComp, src)) return false;
+                if (!StructMetadata::Load<CompType>(scope, srcComp, src)) return false;
                 auto &comp = dst.Get<CompType>(lock);
-                for (auto &field : this->fields) {
+                for (auto &field : metadata.fields) {
                     field.Apply(&comp, &srcComp, &defaultStagingComponent);
                 }
                 Apply(srcComp, lock, dst);
@@ -123,7 +122,7 @@ namespace ecs {
             } else {
                 auto &comp = dst.Set<CompType>(lock, defaultStagingComponent);
                 if (!LoadFields(scope, comp, src)) return false;
-                return Load(scope, comp, src);
+                return StructMetadata::Load<CompType>(scope, comp, src);
             }
         }
 
@@ -134,15 +133,15 @@ namespace ecs {
             auto &comp = src.Get<CompType>(lock);
 
             if (IsLive(lock)) {
-                for (auto &field : this->fields) {
+                for (auto &field : metadata.fields) {
                     field.Save(scope, dst, &comp, &defaultLiveComponent);
                 }
             } else {
-                for (auto &field : this->fields) {
+                for (auto &field : metadata.fields) {
                     field.Save(scope, dst, &comp, &defaultStagingComponent);
                 }
             }
-            Save(lock, scope, dst, comp);
+            StructMetadata::Save<CompType>(scope, dst, comp);
         }
 
         void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
@@ -154,7 +153,7 @@ namespace ecs {
                 dstComp = &dst.Get<CompType>(dstLock);
             }
             // Merge existing component with a new one
-            for (auto &field : this->fields) {
+            for (auto &field : metadata.fields) {
                 field.Apply(dstComp, &src, &defaultComponent);
             }
             Apply(src, dstLock, dst);
@@ -188,28 +187,8 @@ namespace ecs {
         }
 
     protected:
-        static void InitUndefined(CompType &dst) {
-            // Custom field init is always called, default to no-op.
-        }
-
-        static bool Load(const EntityScope &scope, CompType &dst, const picojson::value &src) {
-            // Custom field serialization is always called, default to no-op.
-            return true;
-        }
-
-        static void Save(Lock<Read<Name>> lock, const EntityScope &scope, picojson::value &dst, const CompType &src) {
-            // Custom field serialization is always called, default to no-op.
-        }
-
         static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {
             // Custom field apply is always called, default to no-op.
         }
     };
-
-    template<typename T>
-    const Component<T> &LookupComponent() {
-        auto ptr = LookupComponent(std::type_index(typeid(T)));
-        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
-        return *dynamic_cast<const Component<T> *>(ptr);
-    }
 }; // namespace ecs

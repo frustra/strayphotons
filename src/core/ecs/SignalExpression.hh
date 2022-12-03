@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/StructMetadata.hh"
 
 #include <functional>
 #include <memory>
@@ -14,6 +15,10 @@ namespace ecs {
         SignalExpression() {}
         SignalExpression(const EntityRef &entity, const std::string &signalName);
         SignalExpression(std::string_view expr, const Name &scope = Name());
+
+        SignalExpression(const SignalExpression &other)
+            : scope(other.scope), expr(other.expr), nodes(other.nodes), nodeDebug(other.nodeDebug),
+              rootIndex(other.rootIndex) {}
 
         struct ConstantNode {
             double value = 0.0f;
@@ -49,12 +54,27 @@ namespace ecs {
 
         double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;
 
-        const std::string expr;
+        bool operator==(const SignalExpression &other) const {
+            return expr == other.expr && scope == other.scope;
+        }
+
+        Name scope;
+        std::string expr;
         std::vector<std::string_view> tokens; // string_views into expr
         std::vector<Node> nodes;
         std::vector<std::string> nodeDebug;
         int rootIndex = 0;
     };
 
-    std::pair<ecs::Name, std::string> ParseSignalString(std::string_view str, const Name &scope = Name());
+    std::pair<Name, std::string> ParseSignalString(std::string_view str, const Name &scope = Name());
+
+    static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
+    template<>
+    bool StructMetadata::Load<SignalExpression>(const EntityScope &scope,
+        SignalExpression &dst,
+        const picojson::value &src);
+    template<>
+    void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
+        picojson::value &dst,
+        const SignalExpression &src);
 } // namespace ecs

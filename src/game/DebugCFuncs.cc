@@ -133,6 +133,9 @@ namespace sp {
         }
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (comp.HasComponent(lock, entity)) {
+                if (comp.metadata.fields.empty()) {
+                    components[comp.name].set<picojson::object>({});
+                }
                 comp.SaveEntity(lock, scope, components[comp.name], entity);
             }
         });
@@ -190,10 +193,9 @@ namespace sp {
             }
 
             auto &bindings = ent.Get<ecs::EventBindings>(lock);
-            for (auto &bindingName : bindings.GetBindingNames()) {
-                auto list = bindings.Lookup(bindingName);
-                Logf("    %s:%s", bindingName, list->empty() ? " none" : "");
-                for (auto &binding : *list) {
+            for (auto &[bindingName, list] : bindings.sourceToDest) {
+                Logf("    %s:%s", bindingName, list.empty() ? " none" : "");
+                for (auto &binding : list) {
                     auto target = binding.target.Get(lock);
                     if (target) {
                         Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, target));

@@ -164,7 +164,7 @@ namespace sp {
     }
 
     template<typename T>
-    void AddFieldControls(const ecs::ComponentField &field,
+    void AddFieldControls(const ecs::StructField &field,
         const ecs::ComponentBase &comp,
         const std::shared_ptr<Scene> &scene,
         ecs::Entity target,

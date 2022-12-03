@@ -6,7 +6,9 @@
 				"model": "box"
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"density": 100
 			},
 			"transform": {
@@ -29,7 +31,9 @@
 				"scale": [0.5, 0.05, 0.5]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"group": "Interactive",
 				"density": 10
 			},
@@ -82,7 +86,9 @@
 				"model": "cardboard-box"
 			},
 			"physics": {
-				"model": "cardboard-box",
+				"shapes": {
+					"model": "cardboard-box"
+				},
 				"mass": 1
 			},
 			"script": {
@@ -100,7 +106,9 @@
 				"translate": [0, -0.25, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -114,7 +122,9 @@
 				"translate": [0, 5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -128,7 +138,9 @@
 				"translate": [0, 2.5, -4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -142,7 +154,9 @@
 				"translate": [-5, 2.5, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -156,7 +170,9 @@
 				"translate": [0, 2.5, 4]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -170,7 +186,9 @@
 				"translate": [5, 2.5, -2.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -184,7 +202,9 @@
 				"translate": [5, 2.5, 2.95]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -198,7 +218,9 @@
 				"translate": [5, 4.4, 0]
 			},
 			"physics": {
-				"model": "box",
+				"shapes": {
+					"model": "box"
+				},
 				"dynamic": false
 			}
 		},
@@ -208,9 +230,8 @@
 				"translate": [7.05, 0, 0],
 				"rotate": [90, 0, 1, 0]
 			},
-			"scene_connection": "station-center",
-			"signal_bindings": {
-				"load_scene_connection": "global:ship_airlock.triggerzone/trigger_player_count"
+			"scene_connection": {
+				"station-center": "global:ship_airlock.triggerzone/trigger_player_count"
 			},
 			"script": {
 				"prefab": "template",
@@ -232,12 +253,10 @@
 		{
 			"name": "airlock_in_button.button",
 			"event_bindings": {
-				"open_door": [
-					{
-						"target": "console:input/action/run_command",
-						"set_value": "togglesignal global:ship_airlock.door-in/door_open"
-					}
-				]
+				"open_door": {
+					"target": "console:input/action/run_command",
+					"set_value": "togglesignal global:ship_airlock.door-in/door_open"
+				}
 			},
 			"event_input": {},
 			"signal_bindings": {
@@ -409,7 +428,9 @@
 				"type": "Mirror"
 			},
 			"physics": {
-				"model": "round-mirror-mounted.convex1",
+				"shapes": {
+					"model": "round-mirror-mounted.convex1"
+				},
 				"dynamic": false
 			}
 		},
@@ -459,7 +480,9 @@
 				"mesh_index": 2
 			},
 			"physics": {
-				"model": "articulating-arm.convex2",
+				"shapes": {
+					"model": "articulating-arm.convex2"
+				},
 				"density": 1000
 			},
 			"physics_joints": [],

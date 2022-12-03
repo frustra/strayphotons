@@ -51,8 +51,7 @@ namespace ecs {
             std::vector<double>,
             std::vector<std::string>>;
 
-        ScriptState() : callback(std::monostate()) {}
-        ScriptState(const EntityScope &scope);
+        ScriptState();
         ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
         ScriptState(const EntityScope &scope, OnTickFunc callback);
         ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback);
@@ -90,7 +89,7 @@ namespace ecs {
             }
         }
 
-        operator bool() const {
+        explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(callback);
         }
 
@@ -116,6 +115,12 @@ namespace ecs {
 
         friend struct Script;
     };
+
+    static StructMetadata MetadataScriptState(typeid(ScriptState));
+    template<>
+    bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &dst, const picojson::value &src);
+    template<>
+    void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src);
 
     struct Script {
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
@@ -146,10 +151,9 @@ namespace ecs {
         std::vector<ScriptState> scripts;
     };
 
-    static Component<Script> ComponentScript("script");
+    static StructMetadata MetadataScript(typeid(Script), StructField::New(&Script::scripts, ~FieldAction::AutoApply));
+    static Component<Script> ComponentScript("script", MetadataScript);
 
-    template<>
-    bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src);
     template<>
     void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
 

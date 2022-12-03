@@ -14,8 +14,7 @@ namespace ecs {
 
     static std::atomic_size_t nextInstanceId;
 
-    ScriptState::ScriptState(const EntityScope &scope)
-        : scope(scope), callback(std::monostate()), instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState() : callback(std::monostate()), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), callback(definition.callback), events(definition.events), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
@@ -25,8 +24,10 @@ namespace ecs {
     ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
         : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
 
-    bool parseScriptState(ScriptState &state, const picojson::value &src) {
+    template<>
+    bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
+        state.scope = scope;
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
                 if (param.second.is<std::string>()) {
@@ -138,31 +139,17 @@ namespace ecs {
                 }
             }
         }
+        if (std::holds_alternative<std::monostate>(state.callback)) {
+            Errorf("Script has no definition: %s", src.to_str());
+            return false;
+        }
         return true;
     }
 
     template<>
-    bool Component<Script>::Load(const EntityScope &scope, Script &dst, const picojson::value &src) {
-        if (src.is<picojson::object>()) {
-            ScriptState state(scope);
-            if (!parseScriptState(state, src)) return false;
-            dst.scripts.push_back(std::move(state));
-        } else if (src.is<picojson::array>()) {
-            for (auto entry : src.get<picojson::array>()) {
-                if (entry.is<picojson::object>()) {
-                    ScriptState state(scope);
-                    if (!parseScriptState(state, entry)) return false;
-                    dst.scripts.push_back(std::move(state));
-                } else {
-                    Errorf("Invalid script entry: %s", entry.to_str());
-                    return false;
-                }
-            }
-        } else {
-            Errorf("Invalid script component: %s", src.to_str());
-            return false;
-        }
-        return true;
+    void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src) {
+        // TODO
+        dst = picojson::value("not implemented");
     }
 
     template<>

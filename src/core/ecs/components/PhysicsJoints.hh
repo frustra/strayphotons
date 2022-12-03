@@ -3,6 +3,7 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>
 
@@ -31,24 +32,31 @@ namespace ecs {
         EntityRef target;
         PhysicsJointType type = PhysicsJointType::Fixed;
         glm::vec2 limit = glm::vec2();
-        glm::vec3 localOffset = glm::vec3(), remoteOffset = glm::vec3();
-        glm::quat localOrient = glm::quat(), remoteOrient = glm::quat();
+        Transform localOffset = Transform();
+        Transform remoteOffset = Transform();
 
         bool operator==(const PhysicsJoint &) const = default;
     };
 
+    static StructMetadata MetadataPhysicsJoint(typeid(PhysicsJoint),
+        StructField::New("target", &PhysicsJoint::target),
+        StructField::New("type", &PhysicsJoint::type),
+        StructField::New("limit", &PhysicsJoint::limit),
+        StructField::New("local_offset", &PhysicsJoint::localOffset),
+        StructField::New("remote_offset", &PhysicsJoint::remoteOffset));
+
     struct PhysicsJoints {
-        vector<PhysicsJoint> joints;
+        std::vector<PhysicsJoint> joints;
 
         void Add(const PhysicsJoint &joint) {
             joints.push_back(joint);
         }
     };
 
-    static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints");
+    static StructMetadata MetadataPhysicsJoints(typeid(PhysicsJoints),
+        StructField::New(&PhysicsJoints::joints, ~FieldAction::AutoApply));
+    static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints", MetadataPhysicsJoints);
 
-    template<>
-    bool Component<PhysicsJoints>::Load(const EntityScope &scope, PhysicsJoints &dst, const picojson::value &src);
     template<>
     void Component<PhysicsJoints>::Apply(const PhysicsJoints &src, Lock<AddRemove> lock, Entity dst);
 } // namespace ecs

@@ -7,22 +7,11 @@
 
 namespace ecs {
     template<>
-    bool Component<SceneConnection>::Load(const EntityScope &scope, SceneConnection &dst, const picojson::value &src) {
-        if (src.is<std::string>()) {
-            dst.scenes.emplace_back(src.get<std::string>());
-        } else if (src.is<picojson::array>()) {
-            for (auto sceneParam : src.get<picojson::array>()) {
-                dst.scenes.emplace_back(sceneParam.get<std::string>());
-            }
-        }
-        return true;
-    }
-
-    template<>
     void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstConnection = dst.Get<SceneConnection>(lock);
-        for (auto &scene : src.scenes) {
-            if (!sp::contains(dstConnection.scenes, scene)) dstConnection.scenes.emplace_back(scene);
+        for (auto &[scene, signals] : src.scenes) {
+            auto &scenes = dstConnection.scenes[scene];
+            scenes.insert(scenes.end(), signals.begin(), signals.end());
         }
     }
 } // namespace ecs

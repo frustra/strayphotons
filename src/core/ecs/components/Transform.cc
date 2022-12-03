@@ -9,9 +9,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-namespace sp::json {
+namespace ecs {
     template<>
-    bool Load(const ecs::EntityScope &scope, ecs::Transform &transform, const picojson::value &src) {
+    bool StructMetadata::Load<Transform>(const EntityScope &scope, Transform &transform, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
             Errorf("Invalid transform: %s", src.to_str());
             return false;
@@ -69,7 +69,7 @@ namespace sp::json {
     }
 
     template<>
-    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::Transform &src) {
+    void StructMetadata::Save<Transform>(const EntityScope &scope, picojson::value &dst, const Transform &src) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
@@ -77,15 +77,13 @@ namespace sp::json {
         static const auto defaultRotation = defaultTransform.GetRotation();
         static const auto defaultScale = defaultTransform.GetScale();
 
-        SaveIfChanged(scope, obj, "translate", src.GetPosition(), defaultTransform.GetPosition());
-        SaveIfChanged(scope, obj, "rotate", src.GetRotation(), defaultRotation);
-        SaveIfChanged(scope, obj, "scale", src.GetScale(), defaultScale);
+        sp::json::SaveIfChanged(scope, obj, "translate", src.GetPosition(), defaultTransform.GetPosition());
+        sp::json::SaveIfChanged(scope, obj, "rotate", src.GetRotation(), defaultRotation);
+        sp::json::SaveIfChanged(scope, obj, "scale", src.GetScale(), defaultScale);
     }
-} // namespace sp::json
 
-namespace ecs {
     template<>
-    void Component<TransformTree>::InitUndefined(TransformTree &dst) {
+    void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst) {
         dst.pose = glm::mat4x3(-INFINITY);
     }
 

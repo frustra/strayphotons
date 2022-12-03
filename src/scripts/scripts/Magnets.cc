@@ -74,8 +74,8 @@ namespace sp::scripts {
                                         PhysicsJoint joint;
                                         joint.target = nearestSocket;
                                         joint.type = PhysicsJointType::Fixed;
-                                        joint.localOrient = calcSnapRotation(plugTransform.GetRotation(),
-                                            socketTransform.GetRotation());
+                                        joint.localOffset.SetRotation(calcSnapRotation(plugTransform.GetRotation(),
+                                            socketTransform.GetRotation()));
                                         joints.Add(joint);
 
                                         scriptData.attachedEntity = nearestSocket;
