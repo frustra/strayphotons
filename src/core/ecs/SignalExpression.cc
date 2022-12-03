@@ -558,11 +558,11 @@ namespace ecs {
         // Debugf("Eval '%s'", expr);
         return evaluateNode(lock, depth, *this, rootIndex);
     }
-} // namespace ecs
 
-namespace sp::json {
     template<>
-    bool Load(const ecs::EntityScope &scope, ecs::SignalExpression &dst, const picojson::value &src) {
+    bool StructMetadata::Load<SignalExpression>(const EntityScope &scope,
+        SignalExpression &dst,
+        const picojson::value &src) {
         if (src.is<std::string>()) {
             dst = ecs::SignalExpression(src.get<std::string>(), scope.prefix);
             return !dst.nodes.empty();
@@ -573,7 +573,9 @@ namespace sp::json {
     }
 
     template<>
-    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::SignalExpression &src) {
+    void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
+        picojson::value &dst,
+        const SignalExpression &src) {
         if (src.scope != scope.prefix) {
             // TODO: Remap signal names to new scope instead of converting to fully qualified names
             // Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
@@ -587,4 +589,4 @@ namespace sp::json {
             dst = picojson::value(src.expr);
         }
     }
-} // namespace sp::json
+} // namespace ecs

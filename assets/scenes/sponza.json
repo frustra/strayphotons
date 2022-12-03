@@ -235,7 +235,7 @@
 			"script": {"onTick": "sun"},
 			"signal_output": {
 				"position": 0.2,
-				"fix_position": true
+				"fix_position": 1
 			}
 		}
 	]

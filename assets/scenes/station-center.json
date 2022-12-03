@@ -21,10 +21,6 @@
 				"scale": [5, 164, 6],
 				"translate": [0, 82, -0.5]
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_cube" }
-			},
 			"trigger_area": "Box"
 		},
 		{

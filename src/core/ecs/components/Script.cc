@@ -149,6 +149,7 @@ namespace ecs {
     template<>
     void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src) {
         // TODO
+        dst = picojson::value("not implemented");
     }
 
     template<>

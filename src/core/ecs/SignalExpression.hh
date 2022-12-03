@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/StructMetadata.hh"
 
 #include <functional>
 #include <memory>
@@ -65,5 +66,15 @@ namespace ecs {
         int rootIndex = 0;
     };
 
-    std::pair<ecs::Name, std::string> ParseSignalString(std::string_view str, const Name &scope = Name());
+    std::pair<Name, std::string> ParseSignalString(std::string_view str, const Name &scope = Name());
+
+    static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
+    template<>
+    bool StructMetadata::Load<SignalExpression>(const EntityScope &scope,
+        SignalExpression &dst,
+        const picojson::value &src);
+    template<>
+    void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
+        picojson::value &dst,
+        const SignalExpression &src);
 } // namespace ecs

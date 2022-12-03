@@ -93,6 +93,12 @@ namespace ecs {
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
+    static StructMetadata MetadataTransform(typeid(Transform));
+    template<>
+    bool StructMetadata::Load<Transform>(const EntityScope &scope, Transform &dst, const picojson::value &src);
+    template<>
+    void StructMetadata::Save<Transform>(const EntityScope &scope, picojson::value &dst, const Transform &src);
+
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
         StructField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));

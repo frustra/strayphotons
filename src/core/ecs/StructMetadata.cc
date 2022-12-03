@@ -78,8 +78,6 @@ namespace ecs {
 
         if (name != nullptr) {
             if (!src.is<picojson::object>()) {
-                // Errorf("StructField::Load '%s' invalid struct object: %s", name, src.to_str());
-                // return false;
                 // Silently leave missing fields as default
                 return true;
             }

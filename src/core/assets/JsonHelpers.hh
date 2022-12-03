@@ -205,8 +205,12 @@ namespace sp::json {
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
             static const T defaultValue = {};
-            for (auto &field : metadata.fields) {
-                field.Save(s, dst, &src, &defaultValue);
+            if (metadata.fields.empty()) {
+                dst.set<picojson::object>({});
+            } else {
+                for (auto &field : metadata.fields) {
+                    field.Save(s, dst, &src, &defaultValue);
+                }
             }
             ecs::StructMetadata::Save(s, dst, src);
         }
@@ -323,20 +327,4 @@ namespace sp::json {
         }
         return false;
     }
-} // namespace sp::json
-
-// Defined in ecs/components/Transform.cc
-namespace sp::json {
-    template<>
-    bool Load(const ecs::EntityScope &scope, ecs::Transform &dst, const picojson::value &src);
-    template<>
-    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::Transform &src);
-} // namespace sp::json
-
-// Defined in ecs/SignalExpression.cc
-namespace sp::json {
-    template<>
-    bool Load(const ecs::EntityScope &scope, ecs::SignalExpression &dst, const picojson::value &src);
-    template<>
-    void Save(const ecs::EntityScope &scope, picojson::value &dst, const ecs::SignalExpression &src);
 } // namespace sp::json
