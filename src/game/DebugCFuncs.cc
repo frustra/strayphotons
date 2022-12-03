@@ -133,6 +133,9 @@ namespace sp {
         }
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (comp.HasComponent(lock, entity)) {
+                if (comp.metadata.fields.empty()) {
+                    components[comp.name].set<picojson::object>({});
+                }
                 comp.SaveEntity(lock, scope, components[comp.name], entity);
             }
         });

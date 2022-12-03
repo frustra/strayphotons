@@ -205,12 +205,8 @@ namespace sp::json {
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
             static const T defaultValue = {};
-            if (metadata.fields.empty()) {
-                dst.set<picojson::object>({});
-            } else {
-                for (auto &field : metadata.fields) {
-                    field.Save(s, dst, &src, &defaultValue);
-                }
+            for (auto &field : metadata.fields) {
+                field.Save(s, dst, &src, &defaultValue);
             }
             ecs::StructMetadata::Save(s, dst, src);
         }
