@@ -157,6 +157,11 @@ namespace sp {
                     }
                 }
                 item.promise.set_value();
+            } else if (item.action == SceneAction::SaveStagingScene) {
+                ZoneScopedN("SaveStagingScene");
+                ZoneStr(item.sceneName);
+                SaveSceneJson(item.sceneName);
+                item.promise.set_value();
             } else if (item.action == SceneAction::EditLiveECS) {
                 ZoneScopedN("EditLiveECS");
                 if (item.editCallback) {
@@ -571,6 +576,52 @@ namespace sp {
             }
         }
         return scene;
+    }
+
+    void SceneManager::SaveSceneJson(const std::string &sceneName) {
+        auto scene = stagedScenes.Load(sceneName);
+        if (scene) {
+            Tracef("Saving staging scene: %s", scene->name);
+            auto staging = ecs::StartStagingTransaction<ecs::ReadAll>();
+
+            ecs::EntityScope scope;
+            scope.scene = scene;
+            scope.prefix.scene = scene->name;
+
+            picojson::array entities;
+            for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
+                if (!e.Has<ecs::SceneInfo>(staging)) continue;
+                auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
+                auto scenePtr = sceneInfo.scene.lock();
+                // Skip entities that aren't part of this scene, or were created by a prefab script
+                if (scenePtr != scene || sceneInfo.prefabStagingId) continue;
+                Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
+
+                picojson::object components;
+                if (e.Has<ecs::Name>(staging)) {
+                    auto &name = e.Get<ecs::Name>(staging);
+                    if (scene->ValidateEntityName(name)) {
+                        json::Save(scope, components["name"], name);
+                    }
+                }
+                ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                    if (comp.HasComponent(staging, e)) {
+                        if (comp.metadata.fields.empty()) {
+                            components[comp.name].set<picojson::object>({});
+                        }
+                        comp.SaveEntity(staging, scope, components[comp.name], e);
+                    }
+                });
+                entities.emplace_back(components);
+            }
+
+            picojson::object sceneObj;
+            sceneObj["entities"] = picojson::value(entities);
+            auto val = picojson::value(sceneObj);
+            Logf("Scene %s:\n%s", scene->name, val.serialize(true));
+        } else {
+            Errorf("SceneManager::SaveSceneJson: scene %s not found", sceneName);
+        }
     }
 
     std::shared_ptr<Scene> SceneManager::LoadBindingsJson() {

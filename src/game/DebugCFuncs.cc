@@ -4,6 +4,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
+#include "game/SceneManager.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
@@ -142,6 +143,12 @@ namespace sp {
         auto val = picojson::value(components);
         Logf("Entity %s:\n%s", ecs::ToString(lock, entity), val.serialize(true));
     });
+
+    CFunc<std::string> CFuncSaveScene("savescene",
+        "Print out a json serialization of the specified staging scene",
+        [](std::string sceneName) {
+            GetSceneManager().QueueActionAndBlock(SceneAction::SaveStagingScene, sceneName);
+        });
 
     CFunc<void> CFuncPrintEvents("printevents", "Print out the current state of event queues", []() {
         auto lock = ecs::StartTransaction<

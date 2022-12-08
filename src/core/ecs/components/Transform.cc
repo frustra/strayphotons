@@ -79,7 +79,16 @@ namespace ecs {
 
         sp::json::SaveIfChanged(scope, obj, "translate", src.GetPosition(), defaultTransform.GetPosition());
         sp::json::SaveIfChanged(scope, obj, "rotate", src.GetRotation(), defaultRotation);
-        sp::json::SaveIfChanged(scope, obj, "scale", src.GetScale(), defaultScale);
+
+        auto scale = src.GetScale();
+        if (glm::any(glm::epsilonNotEqual(scale, defaultScale, std::numeric_limits<float>::epsilon() * 5.0f))) {
+            // If the scale is the same in all axes, only save a single float
+            if (glm::all(glm::epsilonEqual(scale, glm::vec3(scale.x), std::numeric_limits<float>::epsilon() * 5.0f))) {
+                sp::json::Save(scope, obj["scale"], scale.x);
+            } else {
+                sp::json::Save(scope, obj["scale"], scale);
+            }
+        }
     }
 
     template<>
