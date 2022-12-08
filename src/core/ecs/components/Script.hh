@@ -27,13 +27,13 @@ namespace ecs {
     using PrefabFunc = std::function<void(const ScriptState &, Lock<AddRemove>, Entity)>;
 
     struct ScriptDefinition {
+        std::string name;
         std::vector<std::string> events;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
     };
 
     struct ScriptDefinitions {
         robin_hood::unordered_node_map<std::string, ScriptDefinition> scripts;
-        robin_hood::unordered_node_map<std::string, ScriptDefinition> physicsUpdates;
         robin_hood::unordered_node_map<std::string, ScriptDefinition> prefabs;
     };
 
@@ -44,8 +44,6 @@ namespace ecs {
         using ParameterType = typename std::variant<bool,
             double,
             std::string,
-            Entity,
-            EntityRef,
             glm::vec3,
             std::vector<bool>,
             std::vector<double>,
@@ -90,7 +88,7 @@ namespace ecs {
         }
 
         explicit operator bool() const {
-            return !std::holds_alternative<std::monostate>(callback);
+            return !std::holds_alternative<std::monostate>(definition.callback);
         }
 
         bool operator==(const ScriptState &other) const {
@@ -102,10 +100,9 @@ namespace ecs {
         }
 
         EntityScope scope;
-        std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
+        ScriptDefinition definition;
         bool filterOnEvent = false;
         ecs::EventQueueRef eventQueue;
-        std::vector<std::string> events;
 
         std::any userData;
 
@@ -114,6 +111,7 @@ namespace ecs {
         size_t instanceId = 0;
 
         friend struct Script;
+        friend class StructMetadata;
     };
 
     static StructMetadata MetadataScriptState(typeid(ScriptState));
@@ -134,7 +132,7 @@ namespace ecs {
             return scripts.emplace_back(scope, callback);
         }
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, const std::string &scriptName) {
-            return scripts.emplace_back(scope, GetScriptDefinitions().physicsUpdates.at(scriptName));
+            return scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName));
         }
 
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
@@ -161,7 +159,7 @@ namespace ecs {
     public:
         template<typename... Events>
         InternalScript(const std::string &name, OnTickFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{{events...}, func});
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, func});
         }
     };
 
@@ -169,14 +167,14 @@ namespace ecs {
     public:
         template<typename... Events>
         InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func, Events... events) {
-            GetScriptDefinitions().physicsUpdates.emplace(name, ScriptDefinition{{events...}, func});
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, func});
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{{}, func});
+            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, func});
         }
     };
 } // namespace ecs

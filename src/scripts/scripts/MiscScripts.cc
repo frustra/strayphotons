@@ -45,6 +45,29 @@ namespace sp::scripts {
         InternalScript(
             "model_spawner",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                struct ScriptData {
+                    EntityRef targetEntity;
+                };
+
+                ScriptData scriptData;
+                if (state.userData.has_value()) {
+                    scriptData = std::any_cast<ScriptData>(state.userData);
+                } else {
+                    auto fullTargetName = state.GetParam<std::string>("relative_to");
+                    ecs::Name targetName(fullTargetName, state.scope.prefix);
+                    if (!targetName) {
+                        Errorf("Model spawner relative target name is invalid: %s", fullTargetName);
+                        return;
+                    }
+                    scriptData.targetEntity = targetName;
+                }
+
+                Transform relativeTransform;
+                auto target = scriptData.targetEntity.Get(lock);
+                if (target.Has<TransformSnapshot>(lock)) {
+                    relativeTransform = target.Get<TransformSnapshot>(lock);
+                }
+
                 Event event;
                 while (EventInput::Poll(lock, state.eventQueue, event)) {
                     if (event.name != "/script/spawn") continue;
@@ -54,22 +77,7 @@ namespace sp::scripts {
                     position.y = state.GetParam<double>("position_y");
                     position.z = state.GetParam<double>("position_z");
                     Transform transform(position);
-
-                    auto fullTargetName = state.GetParam<std::string>("relative_to");
-                    ecs::Name targetName(fullTargetName, state.scope.prefix);
-                    if (targetName) {
-                        auto targetEntity = state.GetParam<EntityRef>("target_entity");
-                        if (targetEntity.Name() != targetName) targetEntity = targetName;
-
-                        auto target = targetEntity.Get(lock);
-                        if (target) {
-                            state.SetParam<EntityRef>("target_entity", targetEntity);
-
-                            if (target.Has<TransformSnapshot>(lock)) {
-                                transform = target.Get<TransformSnapshot>(lock) * transform;
-                            }
-                        }
-                    }
+                    transform = relativeTransform * transform;
 
                     auto modelName = state.GetParam<std::string>("model");
                     auto scene = state.scope.scene.lock();
@@ -95,6 +103,8 @@ namespace sp::scripts {
                         }
                     }).detach();
                 }
+
+                state.userData = scriptData;
             },
             "/script/spawn"),
         InternalScript("rotate",

@@ -41,7 +41,7 @@
 						"up_reference": "player:player"
 					}
 				},
-				{ "onTick": "camera_view" },
+				{ "onEvent": "camera_view" },
 				{
 					"onTick": "interact_handler",
 					"parameters": { "grab_distance": 2.0 }
@@ -59,7 +59,7 @@
 			"name": "debug-spawner",
 			"event_input": {},
 			"script": {
-				"onTick": "model_spawner",
+				"onEvent": "model_spawner",
 				"parameters": {
 					"model": "cardboard-box",
 					"relative_to": "player:flatview",
