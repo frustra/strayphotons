@@ -43,8 +43,6 @@ function(process_gltf_to_glb)
 
     add_custom_command(
         COMMAND
-            ${CMAKE_COMMAND} -E env NODE_ENV=production ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js -i ${PARAM_GLTF} -o ${PARAM_GLTF}
-        COMMAND
             ${CMAKE_COMMAND} -E env NODE_ENV=production ${PARAM_NODE_EXE} ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js -i ${PARAM_GLTF} -o ${PARAM_GLB}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
