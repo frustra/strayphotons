@@ -5,6 +5,9 @@ namespace ecs {
     std::array eventScripts = {
         InternalScript("event_gate_by_signal",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                state.definition.events = {state.GetParam<string>("input_event")};
+                state.filterOnEvent = true; // Effective next tick, only run when events arrive.
+
                 auto signalName = state.GetParam<string>("signal_name");
                 auto signalValue = SignalBindings::GetSignal(lock, ent, signalName);
 
@@ -15,7 +18,6 @@ namespace ecs {
 
                 bool gateOpen = signalValue >= signalThreshold;
 
-                state.events = {state.GetParam<string>("input_event")};
                 auto outputEvent = state.GetParam<string>("output_event");
 
                 Event event;

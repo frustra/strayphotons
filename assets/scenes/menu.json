@@ -516,7 +516,7 @@
 		{
 			"transform": {},
 			"script": {
-				"onPhysicsUpdate": "voxel_controller",
+				"onTick": "voxel_controller",
 				"parameters": {
 					"follow_target": "player:player",
 					"alignment_target": "station-center:elevator",

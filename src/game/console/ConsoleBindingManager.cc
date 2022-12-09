@@ -32,7 +32,7 @@ namespace sp {
                             }
                         }
                     });
-                scriptState.events = {ACTION_EVENT_RUN_COMMAND};
+                scriptState.definition.events = {ACTION_EVENT_RUN_COMMAND};
                 scriptState.filterOnEvent = true;
             });
 

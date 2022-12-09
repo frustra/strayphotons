@@ -26,6 +26,7 @@ namespace sp {
     enum class SceneAction {
         ApplySystemScene, // Arguments: (sceneName, applyCallback)
         EditStagingScene, // Arguments: (sceneName, applyCallback)
+        SaveStagingScene, // Arguments: (sceneName)
         EditLiveECS, // Arguments: (editCallback)
         ApplyScene, // Arguments: (sceneName)
         LoadScene, // Arguments: (sceneName)
@@ -75,6 +76,7 @@ namespace sp {
         std::shared_ptr<Scene> LoadSceneJson(const std::string &name,
             SceneType sceneType,
             ecs::SceneInfo::Priority priority);
+        void SaveSceneJson(const std::string &name);
 
         std::shared_ptr<Scene> LoadBindingsJson();
 

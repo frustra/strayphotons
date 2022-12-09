@@ -1,10 +1,10 @@
 #include "Script.hh"
 
+#include "assets/JsonHelpers.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <atomic>
-#include <picojson/picojson.h>
 
 namespace ecs {
     ScriptDefinitions &GetScriptDefinitions() {
@@ -14,15 +14,15 @@ namespace ecs {
 
     static std::atomic_size_t nextInstanceId;
 
-    ScriptState::ScriptState() : callback(std::monostate()), instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
-        : scope(scope), callback(definition.callback), events(definition.events), instanceId(++nextInstanceId) {}
+        : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
-        : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback)
-        : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
-        : scope(scope), callback(callback), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, callback}), instanceId(++nextInstanceId) {}
 
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
@@ -38,8 +38,7 @@ namespace ecs {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
                         }
-                        state.events = it->second.events;
-                        state.callback = it->second.callback;
+                        state.definition = it->second;
                     } else {
                         Errorf("Script has unknown onTick definition: %s", scriptName);
                         return false;
@@ -57,8 +56,7 @@ namespace ecs {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
                         }
-                        state.events = it->second.events;
-                        state.callback = it->second.callback;
+                        state.definition = it->second;
                         state.filterOnEvent = true;
                     } else {
                         Errorf("Script has unknown onEvent definition: %s", scriptName);
@@ -66,25 +64,6 @@ namespace ecs {
                     }
                 } else {
                     Errorf("Script onEvent has invalid definition: %s", param.second.to_str());
-                    return false;
-                }
-            } else if (param.first == "onPhysicsUpdate") {
-                if (param.second.is<std::string>()) {
-                    auto scriptName = param.second.get<std::string>();
-                    auto it = definitions.physicsUpdates.find(scriptName);
-                    if (it != definitions.physicsUpdates.end()) {
-                        if (state) {
-                            Errorf("Script has multiple definitions: %s", scriptName);
-                            return false;
-                        }
-                        state.events = it->second.events;
-                        state.callback = it->second.callback;
-                    } else {
-                        Errorf("Script has unknown onPhysicsUpdate definition: %s", scriptName);
-                        return false;
-                    }
-                } else {
-                    Errorf("Script onPhysicsUpdate has invalid definition: %s", param.second.to_str());
                     return false;
                 }
             } else if (param.first == "prefab") {
@@ -96,7 +75,7 @@ namespace ecs {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
                         }
-                        state.callback = it->second.callback;
+                        state.definition = it->second;
                     } else {
                         Errorf("Script has unknown prefab definition: %s", scriptName);
                         return false;
@@ -139,7 +118,7 @@ namespace ecs {
                 }
             }
         }
-        if (std::holds_alternative<std::monostate>(state.callback)) {
+        if (std::holds_alternative<std::monostate>(state.definition.callback)) {
             Errorf("Script has no definition: %s", src.to_str());
             return false;
         }
@@ -148,8 +127,31 @@ namespace ecs {
 
     template<>
     void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src) {
-        // TODO
-        dst = picojson::value("not implemented");
+        if (src.definition.name.empty()) {
+            dst = picojson::value("inline C++ lambda");
+        } else if (!std::holds_alternative<std::monostate>(src.definition.callback)) {
+            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+            auto &obj = dst.get<picojson::object>();
+            if (std::holds_alternative<PrefabFunc>(src.definition.callback)) {
+                obj["prefab"] = picojson::value(src.definition.name);
+            } else if (src.filterOnEvent) {
+                obj["onEvent"] = picojson::value(src.definition.name);
+            } else {
+                obj["onTick"] = picojson::value(src.definition.name);
+            }
+            if (!src.parameters.empty()) {
+                auto &paramValue = obj["parameters"];
+                paramValue.set<picojson::object>({});
+                auto &paramObj = paramValue.get<picojson::object>();
+                for (auto &[name, param] : src.parameters) {
+                    std::visit(
+                        [&](auto &&arg) {
+                            sp::json::Save(scope, paramObj[name], arg);
+                        },
+                        param);
+                }
+            }
+        }
     }
 
     template<>
@@ -162,7 +164,7 @@ namespace ecs {
 
     void Script::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &state : scripts) {
-            auto callback = std::get_if<OnTickFunc>(&state.callback);
+            auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback) {
                 if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnTick");
@@ -173,11 +175,14 @@ namespace ecs {
     }
 
     void Script::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
-        ZoneScopedN("OnPhysicsUpdate");
-        // ZoneStr(ecs::ToString(lock, ent));
         for (auto &state : scripts) {
-            auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.callback);
-            if (callback) (*callback)(state, lock, ent, interval);
+            auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
+            if (callback) {
+                if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
+                ZoneScopedN("OnPhysicsUpdate");
+                ZoneStr(ecs::ToString(lock, ent));
+                (*callback)(state, lock, ent, interval);
+            }
         }
     }
 
@@ -190,7 +195,7 @@ namespace ecs {
         for (size_t i = 0; i < ent.Get<const Script>(lock).scripts.size(); i++) {
             // Create a read-only copy of the script state so the passed reference is stable.
             auto state = ent.Get<const Script>(lock).scripts[i];
-            auto callback = std::get_if<PrefabFunc>(&state.callback);
+            auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
             if (callback) (*callback)(state, lock, ent);
         }
     }

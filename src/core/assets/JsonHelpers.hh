@@ -133,6 +133,13 @@ namespace sp::json {
         return true;
     }
     template<>
+    inline bool Load(const ecs::EntityScope &s, ecs::Name &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        auto name = src.get<std::string>();
+        dst = ecs::Name(name, s.prefix);
+        return name.empty() == !dst;
+    }
+    template<>
     inline bool Load(const ecs::EntityScope &s, ecs::EntityRef &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         auto name = src.get<std::string>();
@@ -259,20 +266,25 @@ namespace sp::json {
         dst = picojson::value(src);
     }
     template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::Name &src) {
+        auto strName = src.String();
+        auto prefix = s.prefix.String();
+        size_t prefixLen = 0;
+        for (; prefixLen < strName.length() && prefixLen < prefix.length(); prefixLen++) {
+            if (strName[prefixLen] != prefix[prefixLen]) break;
+        }
+        dst = picojson::value(prefixLen >= strName.length() ? strName : strName.substr(prefixLen));
+    }
+    template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
-        auto refName = src.Name().String();
-        if (!refName.empty() && !src) {
+        auto refName = src.Name();
+        if (!refName && src) {
             Errorf("Can't serialize unnamed EntityRef: %s / %s",
                 std::to_string(src.GetLive()),
                 std::to_string(src.GetStaging()));
             return;
         }
-        auto prefix = s.prefix.String();
-        size_t prefixLen = 0;
-        for (; prefixLen < refName.length() && prefixLen < prefix.length(); prefixLen++) {
-            if (refName[prefixLen] != prefix[prefixLen]) break;
-        }
-        dst = picojson::value(prefixLen >= refName.length() ? refName : refName.substr(prefixLen));
+        Save(s, dst, refName);
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::optional<T> &src) {

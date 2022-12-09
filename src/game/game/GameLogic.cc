@@ -29,12 +29,12 @@ namespace sp {
                 auto &readScript = entity.Get<const ecs::Script>(lock);
                 for (size_t i = 0; i < readScript.scripts.size(); i++) {
                     auto &readState = readScript.scripts[i];
-                    if (!readState.events.empty() && !readState.eventQueue) {
+                    if (!readState.definition.events.empty() && !readState.eventQueue) {
                         auto &eventInput = entity.Get<ecs::EventInput>(lock);
                         auto &writeScript = entity.Get<ecs::Script>(lock);
                         auto &writeState = writeScript.scripts[i];
                         writeState.eventQueue = ecs::NewEventQueue();
-                        for (auto &event : writeState.events) {
+                        for (auto &event : writeState.definition.events) {
                             eventInput.Register(lock, writeState.eventQueue, event);
                         }
                     }

@@ -82,7 +82,7 @@
 					}
 				},
 				{
-					"onPhysicsUpdate": "vr_hand",
+					"onTick": "vr_hand",
 					"parameters": {
 						"hand": "left",
 						"teleport_distance": 2.0,
@@ -116,7 +116,7 @@
 					}
 				},
 				{
-					"onPhysicsUpdate": "vr_hand",
+					"onTick": "vr_hand",
 					"parameters": {
 						"hand": "right",
 						"teleport_distance": 2.0,
