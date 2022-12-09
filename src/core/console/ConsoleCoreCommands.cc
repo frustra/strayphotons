@@ -4,6 +4,7 @@
 #include "ecs/Ecs.hh"
 
 #include <fstream>
+#include <shared_mutex>
 #include <sstream>
 
 template<typename Callback>

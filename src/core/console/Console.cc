@@ -18,6 +18,7 @@
 #include <chrono>
 #include <iostream>
 #include <mutex>
+#include <shared_mutex>
 #include <sstream>
 
 namespace sp {
