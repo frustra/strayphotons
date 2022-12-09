@@ -64,10 +64,12 @@ namespace sp {
     }
 
     void ConsoleManager::AddCVar(CVarBase *cvar) {
+        std::lock_guard lock(cvarLock);
         cvars[cvar->GetNameLower()] = cvar;
     }
 
     void ConsoleManager::RemoveCVar(CVarBase *cvar) {
+        std::lock_guard lock(cvarLock);
         cvars.erase(cvar->GetNameLower());
     }
 
@@ -190,6 +192,7 @@ namespace sp {
 
     void ConsoleManager::Execute(const string cmd, const string &args) {
         Debugf("Executing console command: %s %s", cmd, args);
+        std::shared_lock lock(cvarLock);
         auto cvarit = cvars.find(to_lower_copy(cmd));
         if (cvarit != cvars.end()) {
             auto cvar = cvarit->second;
@@ -231,6 +234,8 @@ namespace sp {
     }
 
     ConsoleManager::Completions ConsoleManager::AllCompletions(const string &rawInput, bool requestNewCompletions) {
+        std::shared_lock lock(cvarLock);
+
         Completions result;
         result.pending = false;
 

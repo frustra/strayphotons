@@ -3,6 +3,7 @@
 #include "console/CFunc.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
+#include "core/LockFreeMutex.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 
@@ -63,10 +64,6 @@ namespace sp {
         };
         Completions AllCompletions(const string &input, bool requestNewCompletions);
 
-        const std::map<string, CVarBase *> CVars() {
-            return cvars;
-        }
-
     private:
         void Execute(const string cmd, const string &args);
 
@@ -76,6 +73,7 @@ namespace sp {
         void RegisterCoreCommands();
         void RegisterTracyCommands();
 
+        LockFreeMutex cvarLock;
         std::map<string, CVarBase *> cvars;
         CFuncCollection funcs;
         std::thread cliInputThread;
