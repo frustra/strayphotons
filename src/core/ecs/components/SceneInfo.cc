@@ -11,21 +11,27 @@ namespace ecs {
         Assert(this->stagingId.Has<SceneInfo>(staging), "InsertWithPriority called on an invalid SceneInfo");
         Assert(newSceneInfo.stagingId.Has<SceneInfo>(staging),
             "InsertWithPriority called with an invalid new SceneInfo");
+
         auto &newStagingInfo = newSceneInfo.stagingId.Get<SceneInfo>(staging);
+        auto lastStagingInfo = &newStagingInfo;
+        while (lastStagingInfo->nextStagingId.Has<SceneInfo>(staging)) {
+            lastStagingInfo = &lastStagingInfo->nextStagingId.Get<SceneInfo>(staging);
+        }
 
         if (newSceneInfo.priority < this->priority) {
             // Insert into the root of the linked-list
-            this->nextStagingId = newStagingInfo.nextStagingId = this->stagingId;
+            lastStagingInfo->nextStagingId = this->stagingId;
+            this->nextStagingId = newStagingInfo.nextStagingId;
             this->stagingId = newSceneInfo.stagingId;
             this->priority = newSceneInfo.priority;
             this->scene = newSceneInfo.scene;
             if (newSceneInfo.properties) this->properties = newSceneInfo.properties;
         } else {
             // Search the linked-list for a place to insert
-            auto &stagingInfo = this->stagingId.Get<SceneInfo>(staging);
+            auto &rootStagingInfo = this->stagingId.Get<SceneInfo>(staging);
             bool propertiesSet = false;
-            SceneInfo *prevSceneInfo = &stagingInfo;
-            auto nextId = stagingInfo.nextStagingId;
+            SceneInfo *prevSceneInfo = &rootStagingInfo;
+            auto nextId = rootStagingInfo.nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
                 if (prevSceneInfo->properties) propertiesSet = true;
                 auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
@@ -38,9 +44,9 @@ namespace ecs {
                 return;
             }
             if (!propertiesSet && newSceneInfo.properties) this->properties = newSceneInfo.properties;
-            newStagingInfo.nextStagingId = nextId;
+            lastStagingInfo->nextStagingId = nextId;
             prevSceneInfo->nextStagingId = newSceneInfo.stagingId;
-            this->nextStagingId = stagingInfo.nextStagingId;
+            this->nextStagingId = rootStagingInfo.nextStagingId;
         }
     }
 
@@ -57,6 +63,7 @@ namespace ecs {
             this->stagingId = this->nextStagingId;
             if (this->nextStagingId.Has<SceneInfo>(staging)) {
                 auto &nextStagingInfo = this->nextStagingId.Get<SceneInfo>(staging);
+                nextStagingInfo.stagingId = this->nextStagingId;
                 this->nextStagingId = nextStagingInfo.nextStagingId;
                 this->priority = nextStagingInfo.priority;
                 this->scene = nextStagingInfo.scene;
@@ -68,7 +75,7 @@ namespace ecs {
             auto nextId = this->nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
                 auto &sceneInfo = nextId.Get<SceneInfo>(staging);
-                if (sceneInfo.stagingId == removeId) {
+                if (nextId == removeId) {
                     prevSceneInfo->nextStagingId = sceneInfo.nextStagingId;
                     removedEntry = &sceneInfo;
                     break;
@@ -77,14 +84,23 @@ namespace ecs {
                 prevSceneInfo = &sceneInfo;
             }
             this->nextStagingId = stagingInfo.nextStagingId;
+            Assertf(removedEntry, "Expected to find removal id %s in SceneInfo tree", std::to_string(removeId));
         }
-        Assertf(removedEntry, "Expected to find removal id %s in SceneInfo tree", std::to_string(removeId));
+
+        auto nextId = removedEntry->nextStagingId;
+        while (nextId.Has<ecs::SceneInfo>(staging)) {
+            auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+            if (nextSceneInfo.stagingId != removeId) break;
+
+            nextSceneInfo.stagingId = removedEntry->nextStagingId;
+            nextId = nextSceneInfo.nextStagingId;
+        }
         if (!this->stagingId) return true;
 
         if (this->properties && this->properties == removedEntry->properties) {
             this->properties.reset();
             // Find next highest priority scene properties
-            auto nextId = removedEntry->nextStagingId;
+            nextId = removedEntry->nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
                 auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
                 if (nextSceneInfo.properties) {

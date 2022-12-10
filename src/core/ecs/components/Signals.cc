@@ -13,8 +13,8 @@ namespace ecs {
     void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstOutput = dst.Get<SignalOutput>(lock);
         for (auto &signal : src.signals) {
-            // noop if key already exists
-            dstOutput.signals.emplace(signal.first, signal.second);
+            // Replace existing values
+            dstOutput.signals[signal.first] = signal.second;
         }
     }
 
@@ -22,8 +22,8 @@ namespace ecs {
     void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst) {
         auto &dstBindings = dst.Get<SignalBindings>(lock);
         for (auto &binding : src.bindings) {
-            // noop if key already exists
-            dstBindings.bindings.emplace(binding.first, binding.second);
+            // Replace existing values
+            dstBindings.bindings[binding.first] = binding.second;
         }
     }
 

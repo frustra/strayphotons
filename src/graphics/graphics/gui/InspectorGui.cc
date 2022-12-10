@@ -131,7 +131,7 @@ namespace sp {
                             auto &stagingSceneInfo = stagingEnt.Get<ecs::SceneInfo>(stagingLock);
                             auto stagingScene = stagingSceneInfo.scene.lock();
                             if (stagingScene) {
-                                auto tabName = "Staging - " + stagingScene->name;
+                                auto tabName = "Staging - " + stagingScene->name + " - " + std::to_string(stagingEnt);
                                 if (ImGui::BeginTabItem(tabName.c_str())) {
                                     ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
                                         if (!comp.HasComponent(stagingLock, stagingEnt)) return;
