@@ -16,10 +16,9 @@ namespace ecs {
     }
 
     template<>
-    void Component<Sounds>::Apply(const Sounds &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstSounds = dst.Get<Sounds>(lock);
+    void Component<Sounds>::Apply(Sounds &dst, const Sounds &src, bool liveTarget) {
         for (auto &sound : src.sounds) {
-            if (!sp::contains(dstSounds.sounds, sound)) dstSounds.sounds.emplace_back(sound);
+            if (!sp::contains(dst.sounds, sound)) dst.sounds.emplace_back(sound);
         }
     }
 } // namespace ecs

@@ -58,13 +58,8 @@ namespace ecs {
             }
             Entity newEntity = scene->NewPrefabEntity(lock, ent, getNodeName(nodeId), prefixName);
 
-            TransformTree transform(node.transform);
-            if (parentEnt.Has<TransformTree>(lock)) {
-                transform.parent = parentEnt;
-            } else {
-                parentEnt = Entity();
-            }
-            LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEntity);
+            auto &transform = newEntity.Set<TransformTree>(lock, node.transform);
+            if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
 
             PhysicsGroup group = PhysicsGroup::World;
             auto physicsGroupParam = state.GetParam<std::string>("physics_group");
@@ -74,7 +69,7 @@ namespace ecs {
 
             if (node.meshIndex) {
                 if (state.GetParam<bool>("render")) {
-                    Renderable renderable(modelName, asyncGltf, *node.meshIndex);
+                    auto &renderable = newEntity.Set<Renderable>(lock, modelName, asyncGltf, *node.meshIndex);
 
                     if (node.skinIndex) {
                         auto &skin = model->skins[*node.skinIndex];
@@ -88,15 +83,13 @@ namespace ecs {
                             }
                         }
                     }
-
-                    LookupComponent<Renderable>().ApplyComponent(renderable, lock, newEntity);
                 }
 
                 auto physicsParam = state.GetParam<std::string>("physics");
                 if (!physicsParam.empty()) {
                     sp::to_lower(physicsParam);
                     PhysicsShape::ConvexMesh mesh(modelName, *node.meshIndex);
-                    Physics physics(mesh);
+                    auto &physics = newEntity.Set<Physics>(lock, mesh, group);
                     if (physicsParam == "dynamic") {
                         physics.dynamic = true;
                     } else if (physicsParam == "kinematic") {
@@ -107,9 +100,6 @@ namespace ecs {
                     } else {
                         Abortf("Unknown gltf physics param: %s", physicsParam);
                     }
-                    physics.group = group;
-
-                    LookupComponent<Physics>().ApplyComponent(physics, lock, newEntity);
                 }
             }
 

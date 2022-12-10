@@ -7,10 +7,9 @@
 
 namespace ecs {
     template<>
-    void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstConnection = dst.Get<SceneConnection>(lock);
+    void Component<SceneConnection>::Apply(SceneConnection &dst, const SceneConnection &src, bool liveTarget) {
         for (auto &[scene, signals] : src.scenes) {
-            auto &scenes = dstConnection.scenes[scene];
+            auto &scenes = dst.scenes[scene];
             scenes.insert(scenes.end(), signals.begin(), signals.end());
         }
     }

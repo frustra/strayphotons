@@ -6,50 +6,6 @@
 #include "game/SceneManager.hh"
 
 namespace sp {
-    void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll> staging,
-        ecs::Lock<ecs::AddRemove> live,
-        ecs::Entity e,
-        bool resetLive = false) {
-        Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-        auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-        Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
-        auto &liveSceneInfo = sceneInfo.liveId.Get<const ecs::SceneInfo>(live);
-
-        std::vector<ecs::Entity> stagingIds;
-        auto stagingId = liveSceneInfo.stagingId;
-        while (stagingId.Has<ecs::SceneInfo>(staging)) {
-            stagingIds.emplace_back(stagingId);
-
-            auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
-            stagingId = stagingInfo.nextStagingId;
-        }
-
-        if (resetLive) scene::RemoveAllComponents(live, sceneInfo.liveId);
-
-        while (!stagingIds.empty()) {
-            scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
-            stagingIds.pop_back();
-        }
-        scene::RemoveDanglingComponents(ecs::Lock<ecs::ReadAll>(staging), live, sceneInfo.liveId);
-    }
-
-    void ApplyComponentsByPriority(ecs::Lock<ecs::ReadAll> staging, ecs::Lock<ecs::AddRemove> live, ecs::Entity e) {
-        Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-        auto &rootSceneInfo = e.Get<ecs::SceneInfo>(staging);
-        Assert(rootSceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
-        Assert(rootSceneInfo.stagingId == e, "Expected supplied entity to be the root stagingId");
-        auto &liveSceneInfo = rootSceneInfo.liveId.Get<const ecs::SceneInfo>(live);
-        if (liveSceneInfo.stagingId == e) {
-            while (e.Has<ecs::SceneInfo>(staging)) {
-                // Entity is the linked-list root, which can be applied directly.
-                scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, rootSceneInfo.liveId);
-                e = e.Get<ecs::SceneInfo>(staging).nextStagingId;
-            }
-        } else {
-            RebuildComponentsByPriority(staging, live, e);
-        }
-    }
-
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
@@ -227,11 +183,7 @@ namespace sp {
                 // Sub-entities don't need to be applied
                 e.Get<ecs::SceneInfo>(staging).liveId = sceneInfo.stagingId.Get<const ecs::SceneInfo>(staging).liveId;
             } else {
-                if (resetLive) {
-                    RebuildComponentsByPriority(staging, live, e, true);
-                } else {
-                    ApplyComponentsByPriority(staging, live, e);
-                }
+                scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, e, resetLive);
             }
         }
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
@@ -262,7 +214,7 @@ namespace sp {
                     // No more staging entities, remove the live id.
                     sceneInfo.liveId.Destroy(live);
                 } else {
-                    RebuildComponentsByPriority(staging, live, liveSceneInfo.stagingId);
+                    scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, liveSceneInfo.stagingId);
                 }
             }
             e.Destroy(staging);

@@ -19,46 +19,50 @@ namespace sp::scene {
             if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
         } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
             // Ignore, this is handled by the scene
-        } else if constexpr (std::is_same<T, ecs::TransformTree>()) {
-            if (srcEnt.Has<ecs::TransformTree>(src)) {
-                auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
-                ecs::TransformTree dstTransform(srcTransform.pose.Get(), srcTransform.parent);
-                if (!srcTransform.parent) {
-                    auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
-                    if (rootTransform != ecs::Transform()) {
-                        dstTransform.pose = rootTransform * dstTransform.pose;
-                    }
-                }
-                ecs::LookupComponent<T>().ApplyComponent(dstTransform, dst, dstEnt);
-            }
         } else if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
             // Ignore, this is handled by TransformTree
-        } else if constexpr (std::is_same<T, ecs::Animation>()) {
-            if (srcEnt.Has<ecs::Animation, ecs::TransformTree>(src)) {
-                auto &srcAnimation = srcEnt.Get<ecs::Animation>(src);
-                auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
-                auto dstAnimation = srcAnimation;
-                if (!srcTransform.parent) {
+        } else if constexpr (!Tecs::is_global_component<T>()) {
+            if (!srcEnt.Has<T>(src)) return;
+
+            auto &srcComp = srcEnt.Get<T>(src);
+            T *dstComp;
+            if (!dstEnt.Has<T>(dst)) {
+                dstComp = &dstEnt.Set<T>(dst, ecs::LookupComponent<T>().GetDefault(IsLive(dst)));
+            } else {
+                dstComp = &dstEnt.Get<T>(dst);
+            }
+
+            // Apply scene root transforms
+            // TODO: Only do this when applying to the live ECS
+            if constexpr (std::is_same<T, ecs::TransformTree>()) {
+                ecs::TransformTree transform(srcComp.pose.Get(), srcComp.parent);
+                if (!srcComp.parent) {
                     auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
                     if (rootTransform != ecs::Transform()) {
-                        for (auto &state : dstAnimation.states) {
-                            state.pos = rootTransform * glm::vec4(state.pos, 1);
-                        }
+                        transform.pose = rootTransform * transform.pose;
                     }
                 }
-                ecs::LookupComponent<T>().ApplyComponent(dstAnimation, dst, dstEnt);
+                ecs::LookupComponent<T>().ApplyComponent(*dstComp, transform, IsLive(dst));
+            } else if constexpr (std::is_same<T, ecs::Animation>()) {
+                if (srcEnt.Has<ecs::TransformTree>(src)) {
+                    auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
+                    auto animation = srcComp;
+                    if (!srcTransform.parent) {
+                        auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
+                        if (rootTransform != ecs::Transform()) {
+                            for (auto &state : animation.states) {
+                                state.pos = rootTransform * glm::vec4(state.pos, 1);
+                            }
+                        }
+                    }
+                    ecs::LookupComponent<T>().ApplyComponent(*dstComp, animation, IsLive(dst));
+                } else {
+                    ecs::LookupComponent<T>().ApplyComponent(*dstComp, srcComp, IsLive(dst));
+                }
+            } else {
+                ecs::LookupComponent<T>().ApplyComponent(*dstComp, srcComp, IsLive(dst));
             }
-        } else if constexpr (!Tecs::is_global_component<T>()) {
-            ecs::LookupComponent<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
         }
-    }
-
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    inline void ApplyAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> src,
-        ecs::Entity srcEnt,
-        Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> dst,
-        ecs::Entity dstEnt) {
-        (ApplyComponent<AllComponentTypes>(src, srcEnt, dst, dstEnt), ...);
     }
 
     template<typename T>
@@ -70,11 +74,6 @@ namespace sp::scene {
         } else if constexpr (!Tecs::is_global_component<T>()) {
             if (ent.Has<T>(lock)) ent.Unset<T>(lock);
         }
-    }
-
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    inline void RemoveAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> lock, ecs::Entity ent) {
-        (RemoveComponent<AllComponentTypes>(lock, ent), ...);
     }
 
     template<typename T, typename BitsetType>
@@ -119,5 +118,47 @@ namespace sp::scene {
             stagingId = stagingInfo.nextStagingId;
         }
         (RemoveDanglingComponent<AllComponentTypes>(live, liveId, hasComponents), ...);
+    }
+
+    template<typename... AllComponentTypes, template<typename...> typename ECSType>
+    void BuildAndApplyEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> staging,
+        ecs::Lock<ecs::AddRemove> live,
+        ecs::Entity e,
+        bool resetLive = false) {
+        Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
+        auto &rootSceneInfo = e.Get<ecs::SceneInfo>(staging);
+        Assert(rootSceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
+        Assert(rootSceneInfo.stagingId == e, "Expected supplied entity to be the root stagingId");
+        auto &liveSceneInfo = rootSceneInfo.liveId.Get<const ecs::SceneInfo>(live);
+
+        std::vector<ecs::Entity> stagingIds;
+        auto stagingId = liveSceneInfo.stagingId;
+        while (stagingId.Has<ecs::SceneInfo>(staging)) {
+            stagingIds.emplace_back(stagingId);
+
+            auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+            stagingId = stagingInfo.nextStagingId;
+        }
+
+        if (resetLive) {
+            (RemoveComponent<AllComponentTypes>(live, rootSceneInfo.liveId), ...);
+        }
+
+        // TODO: Build a temporary entity before applying to the real live id
+        while (!stagingIds.empty()) {
+            (ApplyComponent<AllComponentTypes>(staging, stagingIds.back(), live, rootSceneInfo.liveId), ...);
+            stagingIds.pop_back();
+        }
+        scene::RemoveDanglingComponents(staging, live, rootSceneInfo.liveId);
+
+        // if (liveSceneInfo.stagingId == e) {
+        //     while (e.Has<ecs::SceneInfo>(staging)) {
+        //         // Entity is the linked-list root, which can be applied directly.
+        //         scene::ApplyAllComponents(ecs::Lock<ecs::ReadAll>(staging), e, live, rootSceneInfo.liveId);
+        //         e = e.Get<ecs::SceneInfo>(staging).nextStagingId;
+        //     }
+        // } else {
+        //     RebuildComponentsByPriority(staging, live, e);
+        // }
     }
 } // namespace sp::scene

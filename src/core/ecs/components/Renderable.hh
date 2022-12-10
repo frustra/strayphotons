@@ -72,5 +72,5 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<Renderable>(const EntityScope &scope, Renderable &dst, const picojson::value &src);
     template<>
-    void Component<Renderable>::Apply(const Renderable &src, Lock<AddRemove> lock, Entity dst);
+    void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget);
 } // namespace ecs

@@ -89,17 +89,16 @@ namespace ecs {
     }
 
     template<>
-    void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstBindings = dst.Get<EventBindings>(lock);
+    void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget) {
         for (auto &[source, srcList] : src.sourceToDest) {
-            auto dstList = dstBindings.sourceToDest.find(source);
-            if (dstList != dstBindings.sourceToDest.end()) {
+            auto dstList = dst.sourceToDest.find(source);
+            if (dstList != dst.sourceToDest.end()) {
                 auto &vec = dstList->second;
                 for (auto &binding : srcList) {
                     if (!sp::contains(vec, binding)) vec.emplace_back(binding);
                 }
             } else {
-                dstBindings.sourceToDest.emplace(source, srcList);
+                dst.sourceToDest.emplace(source, srcList);
             }
         }
     }

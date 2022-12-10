@@ -10,20 +10,18 @@
 
 namespace ecs {
     template<>
-    void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstOutput = dst.Get<SignalOutput>(lock);
+    void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget) {
         for (auto &signal : src.signals) {
             // Replace existing values
-            dstOutput.signals[signal.first] = signal.second;
+            dst.signals[signal.first] = signal.second;
         }
     }
 
     template<>
-    void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstBindings = dst.Get<SignalBindings>(lock);
+    void Component<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget) {
         for (auto &binding : src.bindings) {
             // Replace existing values
-            dstBindings.bindings[binding.first] = binding.second;
+            dst.bindings[binding.first] = binding.second;
         }
     }
 

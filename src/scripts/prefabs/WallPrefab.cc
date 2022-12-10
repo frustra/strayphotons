@@ -43,18 +43,17 @@ namespace ecs {
                 auto newEnt = scene->NewPrefabEntity(lock, ent, "corner" + std::to_string(segment), prefixName);
 
                 auto deltaRotation = glm::orientedAngle(lastDir, dir);
-                TransformTree transform(glm::vec3(point.x, yOffset, point.y),
+                auto &transform = newEnt.Set<TransformTree>(lock,
+                    glm::vec3(point.x, yOffset, point.y),
                     glm::quat(glm::vec3(0, rotation + deltaRotation / 2, 0)));
                 if (ent.Has<TransformTree>(lock)) transform.parent = ent;
-                LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEnt);
 
-                Script scriptComp;
-                auto &gltfState = scriptComp.AddPrefab(state.scope, "gltf");
+                auto &scripts = newEnt.Set<Script>(lock);
+                auto &gltfState = scripts.AddPrefab(state.scope, "gltf");
                 gltfState.SetParam<std::string>("model", "wall-4-corner");
                 gltfState.SetParam<std::string>("physics", "static");
                 gltfState.SetParam<bool>("render", true);
-                LookupComponent<Script>().ApplyComponent(scriptComp, lock, newEnt);
-                newEnt.Get<Script>(lock).Prefab(lock, newEnt);
+                scripts.Prefab(lock, newEnt);
             }
             lastDir = dir;
 
@@ -68,18 +67,17 @@ namespace ecs {
                     "segment" + std::to_string(segment) + "_" + std::to_string(i),
                     prefixName);
 
-                TransformTree transform(glm::vec3(point.x, yOffset, point.y), glm::quat(glm::vec3(0, rotation, 0)));
+                auto &transform = newEnt.Set<TransformTree>(lock,
+                    glm::vec3(point.x, yOffset, point.y),
+                    glm::quat(glm::vec3(0, rotation, 0)));
                 if (ent.Has<TransformTree>(lock)) transform.parent = ent;
 
-                LookupComponent<TransformTree>().ApplyComponent(transform, lock, newEnt);
-
-                Script scriptComp;
-                auto &gltfState = scriptComp.AddPrefab(state.scope, "gltf");
+                auto &scripts = newEnt.Set<Script>(lock);
+                auto &gltfState = scripts.AddPrefab(state.scope, "gltf");
                 gltfState.SetParam<std::string>("model", model);
                 gltfState.SetParam<std::string>("physics", "static");
                 gltfState.SetParam<bool>("render", true);
-                LookupComponent<Script>().ApplyComponent(scriptComp, lock, newEnt);
-                newEnt.Get<Script>(lock).Prefab(lock, newEnt);
+                scripts.Prefab(lock, newEnt);
 
                 point += dir * stride;
             }
