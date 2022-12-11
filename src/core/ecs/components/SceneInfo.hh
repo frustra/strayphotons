@@ -31,7 +31,7 @@ namespace ecs {
             if (IsLive(ent)) {
                 liveId = ent;
             } else if (IsStaging(ent)) {
-                stagingId = ent;
+                rootStagingId = ent;
             } else {
                 Abortf("Invalid SceneInfo entity: %s", std::to_string(ent));
             }
@@ -42,27 +42,26 @@ namespace ecs {
             Assertf(IsLive(liveId), "Invalid liveId in SceneInfo: %s", std::to_string(liveId));
         }
 
-        SceneInfo(Entity stagingId, Entity prefabStagingId, const SceneInfo &rootSceneInfo)
-            : stagingId(stagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
+        SceneInfo(Entity rootStagingId, Entity prefabStagingId, const SceneInfo &rootSceneInfo)
+            : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
               scene(rootSceneInfo.scene), properties(rootSceneInfo.properties) {
-            Assertf(IsStaging(stagingId), "Invalid stagingId in SceneInfo: %s", std::to_string(stagingId));
+            Assertf(IsStaging(rootStagingId), "Invalid rootStagingId in SceneInfo: %s", std::to_string(rootStagingId));
             Assertf(IsStaging(prefabStagingId),
                 "Invalid prefabStagingId in SceneInfo: %s",
                 std::to_string(prefabStagingId));
         }
 
         // Should be called on the live SceneInfo
+        // Input stagingInfo may reference multiple entities via linked-list
         void InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &stagingInfo);
 
         // Should be called on the live SceneInfo
         // Returns true if live SceneInfo should be removed
         bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId);
 
-        static const Transform &GetRootTransform(Lock<Read<SceneInfo>> lock, Entity ent);
-
         Entity liveId;
-        // Staging IDs are stored in a singly-linked list, with lowest priority first.
-        Entity stagingId, nextStagingId;
+        // Staging IDs are stored in a singly-linked list, with highest priority first.
+        Entity rootStagingId, nextStagingId;
         Entity prefabStagingId;
         Priority priority = Priority::Scene;
         std::weak_ptr<sp::Scene> scene;

@@ -51,8 +51,8 @@ namespace ecs {
         }
 
         template<typename T>
-        const T &GetDefault(bool liveEcs) const {
-            return dynamic_cast<const Component<T> *>(this)->GetDefault(liveEcs);
+        const T &GetStagingDefault() const {
+            return dynamic_cast<const Component<T> *>(this)->GetStagingDefault();
         }
 
         const char *name;
@@ -158,8 +158,8 @@ namespace ecs {
             Apply(dst, src, liveTarget);
         }
 
-        const CompType &GetDefault(bool liveEcs) const {
-            return liveEcs ? defaultLiveComponent : defaultStagingComponent;
+        const CompType &GetStagingDefault() const {
+            return defaultStagingComponent;
         }
 
         bool HasComponent(Lock<> lock, Entity ent) const override {
