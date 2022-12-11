@@ -12,16 +12,16 @@ namespace ecs {
     template<>
     void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget) {
         for (auto &signal : src.signals) {
-            // Replace existing values
-            dst.signals[signal.first] = signal.second;
+            // noop if key already exists
+            dst.signals.emplace(signal.first, signal.second);
         }
     }
 
     template<>
     void Component<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget) {
         for (auto &binding : src.bindings) {
-            // Replace existing values
-            dst.bindings[binding.first] = binding.second;
+            // noop if key already exists
+            dst.bindings.emplace(binding.first, binding.second);
         }
     }
 

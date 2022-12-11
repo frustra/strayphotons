@@ -18,10 +18,10 @@ namespace sp::scene {
         Entity e,
         bool resetLive) {
         Assert(e.Has<SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-        auto &rootSceneInfo = e.Get<SceneInfo>(staging);
+        const SceneInfo &rootSceneInfo = e.Get<SceneInfo>(staging);
         Assert(rootSceneInfo.liveId.Has<SceneInfo>(live), "Expected liveId to have valid SceneInfo");
         Assert(rootSceneInfo.rootStagingId == e, "Expected supplied entity to be the root stagingId");
-        auto &liveSceneInfo = rootSceneInfo.liveId.Get<const SceneInfo>(live);
+        const SceneInfo &liveSceneInfo = rootSceneInfo.liveId.Get<const SceneInfo>(live);
 
         // Build a flattened set of components before applying to the real live id
         std::tuple<std::optional<AllComponentTypes>...> stagingComponents;
