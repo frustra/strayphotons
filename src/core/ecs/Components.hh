@@ -41,14 +41,18 @@ namespace ecs {
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const = 0;
-        virtual void ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt) const = 0;
         virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
         virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
         virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
 
         template<typename T>
-        void ApplyComponent(const T &src, Lock<AddRemove> dstLock, Entity dst) const {
-            dynamic_cast<const Component<T> *>(this)->ApplyComponent(src, dstLock, dst);
+        void ApplyComponent(T &dst, const T &src, bool liveTarget) const {
+            dynamic_cast<const Component<T> *>(this)->ApplyComponent(dst, src, liveTarget);
+        }
+
+        template<typename T>
+        const T &GetStagingDefault() const {
+            return dynamic_cast<const Component<T> *>(this)->GetStagingDefault();
         }
 
         const char *name;
@@ -109,21 +113,11 @@ namespace ecs {
             Entity &dst,
             const picojson::value &src) const override {
             DebugAssert(IsStaging(lock), "LoadEntity should only be called with a staging lock");
-            if (dst.Has<CompType>(lock)) {
-                CompType srcComp = defaultStagingComponent;
-                if (!LoadFields(scope, srcComp, src)) return false;
-                if (!StructMetadata::Load<CompType>(scope, srcComp, src)) return false;
-                auto &comp = dst.Get<CompType>(lock);
-                for (auto &field : metadata.fields) {
-                    field.Apply(&comp, &srcComp, &defaultStagingComponent);
-                }
-                Apply(srcComp, lock, dst);
-                return true;
-            } else {
-                auto &comp = dst.Set<CompType>(lock, defaultStagingComponent);
-                if (!LoadFields(scope, comp, src)) return false;
-                return StructMetadata::Load<CompType>(scope, comp, src);
-            }
+            DebugAssert(!dst.Has<CompType>(lock), "LoadEntity should only be called on empty entities");
+
+            auto &dstComp = dst.Set<CompType>(lock, defaultStagingComponent);
+            if (!LoadFields(scope, dstComp, src)) return false;
+            return StructMetadata::Load<CompType>(scope, dstComp, src);
         }
 
         void SaveEntity(Lock<ReadAll> lock,
@@ -144,26 +138,17 @@ namespace ecs {
             StructMetadata::Save<CompType>(scope, dst, comp);
         }
 
-        void ApplyComponent(const CompType &src, Lock<AddRemove> dstLock, Entity dst) const {
-            const auto &defaultComponent = IsLive(dstLock) ? defaultLiveComponent : defaultStagingComponent;
-            CompType *dstComp;
-            if (!dst.Has<CompType>(dstLock)) {
-                dstComp = &dst.Set<CompType>(dstLock, defaultComponent);
-            } else {
-                dstComp = &dst.Get<CompType>(dstLock);
-            }
+        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {
+            const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
             // Merge existing component with a new one
             for (auto &field : metadata.fields) {
-                field.Apply(dstComp, &src, &defaultComponent);
+                field.Apply(&dst, &src, &defaultComponent);
             }
-            Apply(src, dstLock, dst);
+            Apply(dst, src, liveTarget);
         }
 
-        void ApplyComponent(Lock<ReadAll> srcLock, Entity src, Lock<AddRemove> dstLock, Entity dst) const override {
-            if (src.Has<CompType>(srcLock)) {
-                auto &srcComp = src.Get<CompType>(srcLock);
-                ApplyComponent(srcComp, dstLock, dst);
-            }
+        const CompType &GetStagingDefault() const {
+            return defaultStagingComponent;
         }
 
         bool HasComponent(Lock<> lock, Entity ent) const override {
@@ -187,7 +172,7 @@ namespace ecs {
         }
 
     protected:
-        static void Apply(const CompType &src, Lock<AddRemove> lock, Entity dst) {
+        static void Apply(CompType &dst, const CompType &src, bool liveTarget) {
             // Custom field apply is always called, default to no-op.
         }
     };

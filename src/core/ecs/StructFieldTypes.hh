@@ -90,7 +90,7 @@ namespace ecs {
         XrEye>;
 
     template<typename Func, size_t I = 0>
-    inline static const auto GetFieldType(std::type_index type, Func func) {
+    inline static auto GetFieldType(std::type_index type, Func func) {
         if (type == std::type_index(typeid(std::tuple_element_t<I, FieldTypes>))) {
             return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
         }

@@ -65,6 +65,7 @@ namespace ecs {
         void ApplyComponents(Lock<AddRemove> lock) {
             if (!componentsObj) return;
 
+            ecs::Entity rootOverride = scene->NewPrefabEntity(lock, rootEnt, "scoperoot", rootScope.prefix);
             for (auto &comp : *componentsObj) {
                 if (comp.first.empty() || comp.first[0] == '_') continue;
                 Assertf(comp.first != "name",
@@ -73,13 +74,14 @@ namespace ecs {
 
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
-                    if (!componentType->LoadEntity(lock, rootScope, rootEnt, comp.second)) {
+                    if (!componentType->LoadEntity(lock, rootScope, rootOverride, comp.second)) {
                         Errorf("Failed to load component, ignoring: %s", comp.first);
                     }
                 } else {
                     Errorf("Unknown component, ignoring: %s", comp.first);
                 }
             }
+            if (rootOverride.Has<ecs::Script>(lock)) rootOverride.Get<ecs::Script>(lock).Prefab(lock, rootOverride);
         }
 
         // Add defined entities as sub-entities of the template root
@@ -100,6 +102,10 @@ namespace ecs {
 
                 bool hasName = obj.count("name") && obj["name"].is<string>();
                 auto relativeName = hasName ? obj["name"].get<string>() : "";
+                if (relativeName == "scoperoot") {
+                    Errorf("Entity name 'scoperoot' in template not allowed, ignoring");
+                    continue;
+                }
                 ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, relativeName, scope.prefix);
 
                 for (auto comp : obj) {

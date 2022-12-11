@@ -37,11 +37,11 @@ namespace ecs {
     static StructMetadata MetadataSignalOutput(typeid(SignalOutput), StructField::New(&SignalOutput::signals));
     static Component<SignalOutput> ComponentSignalReceiver("signal_output", MetadataSignalOutput);
     template<>
-    void Component<SignalOutput>::Apply(const SignalOutput &src, Lock<AddRemove> lock, Entity dst);
+    void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget);
 
     static StructMetadata MetadataSignalBindings(typeid(SignalBindings),
         StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply));
     static Component<SignalBindings> ComponentSignalBindings("signal_bindings", MetadataSignalBindings);
     template<>
-    void Component<SignalBindings>::Apply(const SignalBindings &src, Lock<AddRemove> lock, Entity dst);
+    void Component<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget);
 } // namespace ecs

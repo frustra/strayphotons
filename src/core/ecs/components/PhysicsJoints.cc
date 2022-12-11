@@ -7,10 +7,9 @@
 
 namespace ecs {
     template<>
-    void Component<PhysicsJoints>::Apply(const PhysicsJoints &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstJoints = dst.Get<PhysicsJoints>(lock);
+    void Component<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget) {
         for (auto &joint : src.joints) {
-            if (!sp::contains(dstJoints.joints, joint)) dstJoints.joints.emplace_back(joint);
+            if (!sp::contains(dst.joints, joint)) dst.joints.emplace_back(joint);
         }
     }
 } // namespace ecs

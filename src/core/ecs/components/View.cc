@@ -16,9 +16,8 @@ namespace ecs {
     }
 
     template<>
-    void Component<View>::Apply(const View &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstView = dst.Get<View>(lock);
-        dstView.UpdateProjectionMatrix();
+    void Component<View>::Apply(View &dst, const View &src, bool liveTarget) {
+        dst.UpdateProjectionMatrix();
     }
 
     void View::UpdateProjectionMatrix() {

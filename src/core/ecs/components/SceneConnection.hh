@@ -23,5 +23,5 @@ namespace ecs {
     static Component<SceneConnection> ComponentSceneConnection("scene_connection", MetadataSceneConnection);
 
     template<>
-    void Component<SceneConnection>::Apply(const SceneConnection &src, Lock<AddRemove> lock, Entity dst);
+    void Component<SceneConnection>::Apply(SceneConnection &dst, const SceneConnection &src, bool liveTarget);
 } // namespace ecs

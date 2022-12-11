@@ -97,15 +97,14 @@ namespace ecs {
     }
 
     template<>
-    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst) {
+    void Component<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget) {
         DebugAssert(!std::isnan(src.pose.matrix[0][0]), "TransformTree::Apply source pose is NaN");
-        auto &defaultTree = IsLive(lock) ? ComponentTransformTree.defaultLiveComponent
-                                         : ComponentTransformTree.defaultStagingComponent;
+        auto &defaultTree = liveTarget ? ComponentTransformTree.defaultLiveComponent
+                                       : ComponentTransformTree.defaultStagingComponent;
 
-        auto &dstTree = dst.Get<TransformTree>(lock);
-        if (dstTree.pose == defaultTree.pose && dstTree.parent == defaultTree.parent) {
-            if (!std::isinf(src.pose.matrix[0][0])) dstTree.pose = src.pose;
-            dstTree.parent = src.parent;
+        if (dst.pose == defaultTree.pose && dst.parent == defaultTree.parent) {
+            if (!std::isinf(src.pose.matrix[0][0])) dst.pose = src.pose;
+            dst.parent = src.parent;
         }
     }
 

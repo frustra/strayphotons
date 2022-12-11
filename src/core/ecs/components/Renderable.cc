@@ -17,9 +17,8 @@ namespace ecs {
     }
 
     template<>
-    void Component<Renderable>::Apply(const Renderable &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstRenderable = dst.Get<Renderable>(lock);
-        if (!dstRenderable.model && src.model) dstRenderable.model = src.model;
+    void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget) {
+        if (!dst.model && src.model) dst.model = src.model;
     }
 
     Renderable::Renderable(const std::string &modelName, size_t meshIndex)

@@ -10,114 +10,101 @@
 #include <bitset>
 
 namespace sp::scene {
-    template<typename T>
-    inline void ApplyComponent(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if constexpr (std::is_same<T, ecs::Name>()) {
-            if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
-        } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
-            // Ignore, this is handled by the scene
-        } else if constexpr (std::is_same<T, ecs::TransformTree>()) {
-            if (srcEnt.Has<ecs::TransformTree>(src)) {
-                auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
-                ecs::TransformTree dstTransform(srcTransform.pose.Get(), srcTransform.parent);
-                if (!srcTransform.parent) {
-                    auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
-                    if (rootTransform != ecs::Transform()) {
-                        dstTransform.pose = rootTransform * dstTransform.pose;
+    using namespace ecs;
+
+    template<typename... AllComponentTypes, template<typename...> typename ECSType>
+    void BuildAndApplyEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging,
+        Lock<AddRemove> live,
+        Entity e,
+        bool resetLive) {
+        Assert(e.Has<SceneInfo>(staging), "Expected entity to have valid SceneInfo");
+        const SceneInfo &rootSceneInfo = e.Get<SceneInfo>(staging);
+        Assert(rootSceneInfo.liveId.Has<SceneInfo>(live), "Expected liveId to have valid SceneInfo");
+        Assert(rootSceneInfo.rootStagingId == e, "Expected supplied entity to be the root stagingId");
+        const SceneInfo &liveSceneInfo = rootSceneInfo.liveId.Get<const SceneInfo>(live);
+
+        // Build a flattened set of components before applying to the real live id
+        std::tuple<std::optional<AllComponentTypes>...> stagingComponents;
+        auto stagingId = liveSceneInfo.rootStagingId;
+        while (stagingId.Has<SceneInfo>(staging)) {
+            ( // For each component:
+                [&] {
+                    using T = AllComponentTypes;
+
+                    if constexpr (std::is_same_v<T, Name>) {
+                        // Ignore, this is handled below
+                    } else if constexpr (std::is_same_v<T, SceneInfo>) {
+                        // Ignore, this is handled by the scene
+                    } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
+                        // Ignore, this is handled by TransformTree
+                    } else if constexpr (!Tecs::is_global_component<T>()) {
+                        if (!stagingId.Has<T>(staging)) return;
+
+                        auto &component = std::get<std::optional<T>>(stagingComponents);
+                        if (!component) component = LookupComponent<T>().GetStagingDefault();
+
+                        auto &srcComp = stagingId.Get<T>(staging);
+                        LookupComponent<T>().ApplyComponent(component.value(), srcComp, false);
                     }
-                }
-                ecs::LookupComponent<T>().ApplyComponent(dstTransform, dst, dstEnt);
-            }
-        } else if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
-            // Ignore, this is handled by TransformTree
-        } else if constexpr (std::is_same<T, ecs::Animation>()) {
-            if (srcEnt.Has<ecs::Animation, ecs::TransformTree>(src)) {
-                auto &srcAnimation = srcEnt.Get<ecs::Animation>(src);
-                auto &srcTransform = srcEnt.Get<ecs::TransformTree>(src);
-                auto dstAnimation = srcAnimation;
-                if (!srcTransform.parent) {
-                    auto &rootTransform = ecs::SceneInfo::GetRootTransform(src, srcEnt);
-                    if (rootTransform != ecs::Transform()) {
-                        for (auto &state : dstAnimation.states) {
+                }(),
+                ...);
+
+            auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
+            stagingId = stagingInfo.nextStagingId;
+        }
+
+        // Apply scene root transforms
+        auto &transformOpt = std::get<std::optional<TransformTree>>(stagingComponents);
+        if (transformOpt) {
+            auto &transform = transformOpt.value();
+            if (!transform.parent) {
+                auto scene = rootSceneInfo.scene.lock();
+                auto &rootTransform = scene->GetRootTransform();
+                if (rootTransform != Transform()) {
+                    transform.pose = rootTransform * transform.pose.Get();
+
+                    auto &animationOpt = std::get<std::optional<Animation>>(stagingComponents);
+                    if (animationOpt) {
+                        auto &animation = animationOpt.value();
+                        for (auto &state : animation.states) {
                             state.pos = rootTransform * glm::vec4(state.pos, 1);
                         }
                     }
                 }
-                ecs::LookupComponent<T>().ApplyComponent(dstAnimation, dst, dstEnt);
-            }
-        } else if constexpr (!Tecs::is_global_component<T>()) {
-            ecs::LookupComponent<T>().ApplyComponent(src, srcEnt, dst, dstEnt);
-        }
-    }
-
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    inline void ApplyAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> src,
-        ecs::Entity srcEnt,
-        Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> dst,
-        ecs::Entity dstEnt) {
-        (ApplyComponent<AllComponentTypes>(src, srcEnt, dst, dstEnt), ...);
-    }
-
-    template<typename T>
-    inline void RemoveComponent(ecs::Lock<ecs::AddRemove> lock, Tecs::Entity ent) {
-        if constexpr (std::is_same<T, ecs::Name>()) {
-            // Ignore, scene entities should always have a Name
-        } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
-            // Ignore, scene entities should always have SceneInfo
-        } else if constexpr (!Tecs::is_global_component<T>()) {
-            if (ent.Has<T>(lock)) ent.Unset<T>(lock);
-        }
-    }
-
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    inline void RemoveAllComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> lock, ecs::Entity ent) {
-        (RemoveComponent<AllComponentTypes>(lock, ent), ...);
-    }
-
-    template<typename T, typename BitsetType>
-    inline void MarkHasComponent(ecs::Lock<> lock, ecs::Entity ent, BitsetType &hasComponents) {
-        if constexpr (!Tecs::is_global_component<T>()) {
-            if (ent.Has<T>(lock)) hasComponents[ecs::ECS::template GetComponentIndex<T>()] = true;
-        }
-    }
-
-    template<typename T, typename BitsetType>
-    inline void RemoveDanglingComponent(ecs::Lock<ecs::AddRemove> lock,
-        ecs::Entity ent,
-        const BitsetType &hasComponents) {
-        if constexpr (std::is_same<T, ecs::TransformSnapshot>()) {
-            if (ent.Has<ecs::TransformSnapshot>(lock) &&
-                !hasComponents[ecs::ECS::GetComponentIndex<ecs::TransformTree>()]) {
-                ent.Unset<ecs::TransformSnapshot>(lock);
-            }
-        } else if constexpr (std::is_same<T, ecs::SceneInfo>()) {
-            // Ignore, this should always be set
-        } else if constexpr (!Tecs::is_global_component<T>()) {
-            if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) {
-                ent.Unset<T>(lock);
             }
         }
-    }
 
-    // Remove components from a live entity that no longer exist in any staging entity
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    inline void RemoveDanglingComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> staging,
-        Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> live,
-        ecs::Entity liveId) {
-        Assert(liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
-        auto &liveSceneInfo = liveId.Get<const ecs::SceneInfo>(live);
+        // Apply flattened staging components to the live id, and remove any components that are no longer in staging
+        ( // For each component:
+            [&] {
+                using T = AllComponentTypes;
+                if constexpr (std::is_same_v<T, Name>) {
+                    if (e.Has<Name>(staging)) {
+                        rootSceneInfo.liveId.Set<Name>(live, e.Get<Name>(staging));
+                    }
+                } else if constexpr (!Tecs::is_global_component<T>()) {
+                    auto &component = std::get<std::optional<T>>(stagingComponents);
+                    if (component) {
+                        if (resetLive) {
+                            rootSceneInfo.liveId.Set<T>(live, *component);
+                        }
 
-        std::bitset<ECSType<AllComponentTypes...>::GetComponentCount()> hasComponents;
-        auto stagingId = liveSceneInfo.stagingId;
-        while (stagingId.template Has<ecs::SceneInfo>(staging)) {
-            (MarkHasComponent<AllComponentTypes>(staging, stagingId, hasComponents), ...);
-
-            auto &stagingInfo = stagingId.template Get<ecs::SceneInfo>(staging);
-            stagingId = stagingInfo.nextStagingId;
-        }
-        (RemoveDanglingComponent<AllComponentTypes>(live, liveId, hasComponents), ...);
+                        auto &dstComp = rootSceneInfo.liveId.Get<T>(live);
+                        LookupComponent<T>().ApplyComponent(dstComp, *component, true);
+                    } else if (rootSceneInfo.liveId.Has<T>(live)) {
+                        if constexpr (std::is_same_v<T, TransformSnapshot>) {
+                            auto &transformOpt = std::get<std::optional<TransformTree>>(stagingComponents);
+                            if (!transformOpt) {
+                                rootSceneInfo.liveId.Unset<TransformSnapshot>(live);
+                            }
+                        } else if constexpr (std::is_same_v<T, SceneInfo>) {
+                            // Ignore, this should always be set
+                        } else {
+                            rootSceneInfo.liveId.Unset<T>(live);
+                        }
+                    }
+                }
+            }(),
+            ...);
     }
 } // namespace sp::scene

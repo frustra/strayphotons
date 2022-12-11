@@ -153,7 +153,7 @@ namespace ecs {
     static Component<Script> ComponentScript("script", MetadataScript);
 
     template<>
-    void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst);
+    void Component<Script>::Apply(Script &dst, const Script &src, bool liveTarget);
 
     class InternalScript {
     public:

@@ -117,33 +117,24 @@ namespace sp {
                     }
                     if (inspectTarget.Has<ecs::SceneInfo>(liveLock)) {
                         auto &sceneInfo = inspectTarget.Get<ecs::SceneInfo>(liveLock);
-                        std::vector<ecs::Entity> stagingIds;
-                        auto stagingId = sceneInfo.stagingId;
+                        auto stagingId = sceneInfo.rootStagingId;
                         while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
-                            stagingIds.emplace_back(stagingId);
-
-                            auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
-                            stagingId = stagingInfo.nextStagingId;
-                        }
-                        while (!stagingIds.empty()) {
-                            auto stagingEnt = stagingIds.back();
-
-                            auto &stagingSceneInfo = stagingEnt.Get<ecs::SceneInfo>(stagingLock);
+                            auto &stagingSceneInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                             auto stagingScene = stagingSceneInfo.scene.lock();
                             if (stagingScene) {
-                                auto tabName = "Staging - " + stagingScene->name;
+                                auto tabName = "Staging - " + stagingScene->name + " - " + std::to_string(stagingId);
                                 if (ImGui::BeginTabItem(tabName.c_str())) {
                                     ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                                        if (!comp.HasComponent(stagingLock, stagingEnt)) return;
+                                        if (!comp.HasComponent(stagingLock, stagingId)) return;
                                         if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
-                                            const void *component = comp.Access(stagingLock, stagingEnt);
+                                            const void *component = comp.Access(stagingLock, stagingId);
                                             for (auto &field : comp.metadata.fields) {
                                                 ecs::GetFieldType(field.type, [&](auto *typePtr) {
                                                     using T = std::remove_pointer_t<decltype(typePtr)>;
                                                     AddFieldControls<T>(field,
                                                         comp,
                                                         stagingScene,
-                                                        stagingEnt,
+                                                        stagingId,
                                                         component);
                                                 });
                                             }
@@ -152,10 +143,11 @@ namespace sp {
                                     ImGui::EndTabItem();
                                 }
                             } else {
-                                Logf("Missing staging scene! %s", std::to_string(stagingEnt));
+                                Logf("Missing staging scene! %s", std::to_string(stagingId));
                             }
 
-                            stagingIds.pop_back();
+                            auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
+                            stagingId = stagingInfo.nextStagingId;
                         }
                     }
                     ImGui::EndTabBar();

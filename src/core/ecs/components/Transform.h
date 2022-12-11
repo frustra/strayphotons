@@ -107,7 +107,7 @@ namespace ecs {
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);
     template<>
-    void Component<TransformTree>::Apply(const TransformTree &src, Lock<AddRemove> lock, Entity dst);
+    void Component<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget);
     #endif
 } // namespace ecs
 #endif

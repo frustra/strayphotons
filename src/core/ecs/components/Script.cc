@@ -155,10 +155,9 @@ namespace ecs {
     }
 
     template<>
-    void Component<Script>::Apply(const Script &src, Lock<AddRemove> lock, Entity dst) {
-        auto &dstScript = dst.Get<Script>(lock);
+    void Component<Script>::Apply(Script &dst, const Script &src, bool liveTarget) {
         for (auto &script : src.scripts) {
-            if (!sp::contains(dstScript.scripts, script)) dstScript.scripts.emplace_back(script);
+            if (!sp::contains(dst.scripts, script)) dst.scripts.emplace_back(script);
         }
     }
 

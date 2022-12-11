@@ -67,13 +67,12 @@ namespace ecs {
     }
 
     template<>
-    void Component<LaserLine>::Apply(const LaserLine &src, Lock<AddRemove> lock, Entity dst) {
-        auto &defaultComp = IsLive(lock) ? ComponentLaserLine.defaultLiveComponent
-                                         : ComponentLaserLine.defaultStagingComponent;
+    void Component<LaserLine>::Apply(LaserLine &dst, const LaserLine &src, bool liveTarget) {
+        auto &defaultComp = liveTarget ? ComponentLaserLine.defaultLiveComponent
+                                       : ComponentLaserLine.defaultStagingComponent;
         auto *defaultLine = std::get_if<LaserLine::Line>(&defaultComp.line);
 
-        auto &dstLine = dst.Get<LaserLine>(lock);
-        auto *line = std::get_if<LaserLine::Line>(&dstLine.line);
+        auto *line = std::get_if<LaserLine::Line>(&dst.line);
         auto *srcLine = std::get_if<LaserLine::Line>(&src.line);
         auto *srcSegments = std::get_if<LaserLine::Segments>(&src.line);
         if (line && srcLine) {
@@ -82,7 +81,7 @@ namespace ecs {
             }
             if (line->points.empty()) line->points = srcLine->points;
         } else if (line && defaultLine && srcSegments) {
-            dstLine.line = *srcSegments;
+            dst.line = *srcSegments;
         }
     }
 } // namespace ecs

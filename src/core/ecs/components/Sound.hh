@@ -51,5 +51,5 @@ namespace ecs {
     static Component<Sounds> ComponentSound("sound", MetadataSounds);
 
     template<>
-    void Component<Sounds>::Apply(const Sounds &src, Lock<AddRemove> lock, Entity dst);
+    void Component<Sounds>::Apply(Sounds &dst, const Sounds &src, bool liveTarget);
 } // namespace ecs

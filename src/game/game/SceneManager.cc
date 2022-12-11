@@ -595,7 +595,7 @@ namespace sp {
                 auto scenePtr = sceneInfo.scene.lock();
                 // Skip entities that aren't part of this scene, or were created by a prefab script
                 if (scenePtr != scene || sceneInfo.prefabStagingId) continue;
-                Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
+                Assert(sceneInfo.rootStagingId == e, "Expected staging entity to be the root id");
 
                 picojson::object components;
                 if (e.Has<ecs::Name>(staging)) {

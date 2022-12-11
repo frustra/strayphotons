@@ -124,5 +124,5 @@ namespace ecs {
     static Component<EventBindings> ComponentEventBindings("event_bindings", MetadataEventBindings);
 
     template<>
-    void Component<EventBindings>::Apply(const EventBindings &src, Lock<AddRemove> lock, Entity dst);
+    void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 } // namespace ecs
