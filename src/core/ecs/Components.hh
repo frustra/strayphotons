@@ -113,22 +113,11 @@ namespace ecs {
             Entity &dst,
             const picojson::value &src) const override {
             DebugAssert(IsStaging(lock), "LoadEntity should only be called with a staging lock");
-            if (dst.Has<CompType>(lock)) {
-                Assertf(false, "Unexpected component on new entity: %s", std::to_string(dst));
-                CompType srcComp = defaultStagingComponent;
-                if (!LoadFields(scope, srcComp, src)) return false;
-                if (!StructMetadata::Load<CompType>(scope, srcComp, src)) return false;
-                auto &dstComp = dst.Get<CompType>(lock);
-                for (auto &field : metadata.fields) {
-                    field.Apply(&dstComp, &srcComp, &defaultStagingComponent);
-                }
-                Apply(dstComp, srcComp, false);
-                return true;
-            } else {
-                auto &dstComp = dst.Set<CompType>(lock, defaultStagingComponent);
-                if (!LoadFields(scope, dstComp, src)) return false;
-                return StructMetadata::Load<CompType>(scope, dstComp, src);
-            }
+            DebugAssert(!dst.Has<CompType>(lock), "LoadEntity should only be called on empty entities");
+
+            auto &dstComp = dst.Set<CompType>(lock, defaultStagingComponent);
+            if (!LoadFields(scope, dstComp, src)) return false;
+            return StructMetadata::Load<CompType>(scope, dstComp, src);
         }
 
         void SaveEntity(Lock<ReadAll> lock,
