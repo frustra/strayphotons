@@ -102,6 +102,10 @@ namespace ecs {
 
                 bool hasName = obj.count("name") && obj["name"].is<string>();
                 auto relativeName = hasName ? obj["name"].get<string>() : "";
+                if (relativeName == "scoperoot") {
+                    Errorf("Entity name 'scoperoot' in template not allowed, ignoring");
+                    continue;
+                }
                 ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, relativeName, scope.prefix);
 
                 for (auto comp : obj) {

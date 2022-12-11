@@ -56,16 +56,16 @@ namespace sp::scene {
         // Apply scene root transforms
         auto &transformOpt = std::get<std::optional<TransformTree>>(stagingComponents);
         if (transformOpt) {
-            auto &transform = *transformOpt;
+            auto &transform = transformOpt.value();
             if (!transform.parent) {
                 auto scene = rootSceneInfo.scene.lock();
                 auto &rootTransform = scene->GetRootTransform();
                 if (rootTransform != Transform()) {
-                    transform.pose = rootTransform * transform.pose;
+                    transform.pose = rootTransform * transform.pose.Get();
 
                     auto &animationOpt = std::get<std::optional<Animation>>(stagingComponents);
                     if (animationOpt) {
-                        auto &animation = *animationOpt;
+                        auto &animation = animationOpt.value();
                         for (auto &state : animation.states) {
                             state.pos = rootTransform * glm::vec4(state.pos, 1);
                         }
