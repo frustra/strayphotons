@@ -5,6 +5,19 @@
 #include "game/Scene.hh"
 
 namespace ecs {
+    SceneInfo::SceneInfo(Entity ent,
+        const std::shared_ptr<sp::Scene> &scene,
+        const std::shared_ptr<SceneProperties> &properties)
+        : priority(scene->priority), scene(scene), properties(properties) {
+        if (IsLive(ent)) {
+            liveId = ent;
+        } else if (IsStaging(ent)) {
+            rootStagingId = ent;
+        } else {
+            Abortf("Invalid SceneInfo entity: %s", std::to_string(ent));
+        }
+    }
+
     void SceneInfo::InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &newSceneInfo) {
         Assert(this->liveId, "InsertWithPriority called on an invalid SceneInfo");
         Assert(this->rootStagingId.Has<SceneInfo>(staging), "InsertWithPriority called on an invalid SceneInfo");

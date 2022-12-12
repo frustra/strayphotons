@@ -22,9 +22,10 @@ namespace sp {
 
     class Scene : public NonCopyable {
     public:
-        Scene(const string &name, SceneType type) : name(name), type(type) {}
-        Scene(const string &name, SceneType type, shared_ptr<const Asset> asset)
-            : name(name), type(type), asset(asset) {}
+        Scene(const string &name, SceneType type, ecs::ScenePriority priority)
+            : name(name), type(type), priority(priority) {}
+        Scene(const string &name, SceneType type, ecs::ScenePriority priority, shared_ptr<const Asset> asset)
+            : name(name), type(type), priority(priority), asset(asset) {}
         ~Scene();
 
         const std::string name;
@@ -42,7 +43,6 @@ namespace sp {
             ecs::Name name = ecs::Name());
         ecs::Entity NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
-            ecs::SceneInfo::Priority priority,
             std::string relativeName = "");
         ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             ecs::Entity prefabRoot,
@@ -57,6 +57,7 @@ namespace sp {
         void UpdateRootTransform();
         const ecs::Transform &GetRootTransform() const;
 
+        ecs::ScenePriority priority;
         std::shared_ptr<ecs::SceneProperties> properties;
 
     private:

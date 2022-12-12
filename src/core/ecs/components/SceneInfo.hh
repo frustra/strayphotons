@@ -11,31 +11,20 @@ namespace sp {
 namespace ecs {
     struct SceneProperties;
 
+    // Lower priority scenes will have their components overwritten with higher priority components.
+    enum class ScenePriority {
+        System, // Lowest priority
+        Scene,
+        Player,
+        Bindings,
+        Override, // Highest priority
+    };
+
     struct SceneInfo {
-        // Lower priority scenes will have their components overwritten with higher priority components.
-        enum class Priority : int {
-            System, // Lowest priority
-            Scene,
-            Player,
-            Bindings,
-            Override, // Highest priority
-        };
-
         SceneInfo() {}
-
         SceneInfo(Entity ent,
-            Priority priority,
             const std::shared_ptr<sp::Scene> &scene,
-            const std::shared_ptr<SceneProperties> &properties)
-            : priority(priority), scene(scene), properties(properties) {
-            if (IsLive(ent)) {
-                liveId = ent;
-            } else if (IsStaging(ent)) {
-                rootStagingId = ent;
-            } else {
-                Abortf("Invalid SceneInfo entity: %s", std::to_string(ent));
-            }
-        }
+            const std::shared_ptr<SceneProperties> &properties);
 
         SceneInfo(Entity liveId, const SceneInfo &sceneInfo)
             : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene), properties(sceneInfo.properties) {
@@ -63,7 +52,7 @@ namespace ecs {
         // Staging IDs are stored in a singly-linked list, with highest priority first.
         Entity rootStagingId, nextStagingId;
         Entity prefabStagingId;
-        Priority priority = Priority::Scene;
+        ScenePriority priority = ScenePriority::Scene;
         std::weak_ptr<sp::Scene> scene;
         std::shared_ptr<SceneProperties> properties;
     };

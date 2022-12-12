@@ -88,7 +88,7 @@ namespace sp::scripts {
 
                         auto lock = ecs::StartTransaction<AddRemove>();
                         if (ent.Has<SceneInfo>(lock)) {
-                            auto newEntity = scene->NewRootEntity(lock, scene, ecs::SceneInfo::Priority::Scene);
+                            auto newEntity = scene->NewRootEntity(lock, scene);
 
                             newEntity.Set<TransformTree>(lock, transform);
                             newEntity.Set<TransformSnapshot>(lock, transform);

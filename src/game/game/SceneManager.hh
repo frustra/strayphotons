@@ -73,9 +73,7 @@ namespace sp {
         void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
             ecs::Entity player);
 
-        std::shared_ptr<Scene> LoadSceneJson(const std::string &name,
-            SceneType sceneType,
-            ecs::SceneInfo::Priority priority);
+        std::shared_ptr<Scene> LoadSceneJson(const std::string &name, SceneType sceneType);
         void SaveSceneJson(const std::string &name);
 
         std::shared_ptr<Scene> LoadBindingsJson();

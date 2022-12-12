@@ -9,67 +9,69 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": { "player_gravity_spin": "1" },
+			"scene_connection": {
+				"player_gravity_spin": "1"
+			},
 			"transform": {
 				"translate": [0, 153, 0]
 			}
 		},
 		{
 			"name": "zone",
+			"scene_connection": {
+				"blackhole2": "zone/trigger_player_count"
+			},
 			"signal_output": {},
 			"transform": {
 				"scale": [24, 8, 10],
 				"translate": [0, 3, 0]
 			},
-			"trigger_area": "Box",
-			"scene_connection": {
-				"blackhole2": "zone/trigger_player_count"
-			}
+			"trigger_area": "Box"
 		},
 		{
 			"name": "segment",
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "station_segment" }
+				"parameters": {
+					"source": "station_segment"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "global:divider1-2",
-			"transform": {
-				"translate": [-12, 0, 0],
-				"rotate": [-4.5, 0, 0, 1]
-			},
 			"scene_connection": {
 				"blackhole1": "zone/trigger_player_count + blackhole3:zone/trigger_player_count"
+			},
+			"transform": {
+				"rotate": [4.5, 0, 0, -1],
+				"translate": [-12, 0, 0]
 			}
 		},
 		{
 			"name": "global:divider2-3",
-			"transform": {
-				"translate": [12, 0, 0],
-				"rotate": [4.5, 0, 0, 1]
-			},
 			"scene_connection": {
 				"blackhole3": "blackhole1:zone/trigger_player_count || zone/trigger_player_count"
+			},
+			"transform": {
+				"rotate": [4.5, 0, 0, 1],
+				"translate": [12, 0, 0]
 			}
 		},
 		{
 			"name": "global:spawn",
-			"transform": {
-				"translate": [0, 0, 0]
-			}
+			"transform": {}
 		},
 		{
 			"light": {
-				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
-				"spotAngle": 70,
+				"shadowMapClip": [0.1, 50],
 				"shadowMapSize": 10,
-				"shadowMapClip": [0.1, 50]
+				"spotAngle": 70,
+				"tint": [1, 0.5, 0.5]
 			},
 			"transform": {
-				"translate": [0, 6.2, 0],
-				"rotate": [-90, 1, 0, 0]
+				"rotate": [90, -1, 0, 0],
+				"translate": [0, 6.2, 0]
 			}
 		},
 		{
@@ -77,138 +79,154 @@
 			"renderable": {
 				"model": "box"
 			},
-			"transform": {
-				"translate": [0, 150, 0],
-				"rotate": [45, 0, 0, 1]
-			},
 			"script": {
 				"onTick": "rotate",
 				"parameters": {
 					"axis_z": 1,
 					"speed": 1.5
 				}
+			},
+			"transform": {
+				"rotate": [45, 0, 0, 1],
+				"translate": [0, 150, 0]
 			}
 		},
 		{
 			"name": "table",
-			"transform": {
-			},
 			"script": {
-				"prefab": "template",
 				"parameters": {
 					"source": "table"
-				}
-			}
+				},
+				"prefab": "template"
+			},
+			"transform": {}
 		},
 		{
 			"name": "mirror1",
-			"transform": {
-				"translate": [0.35, 0.86, 0.14],
-				"rotate": [160, 0, 1, 0]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "mirror_block" }
+				"parameters": {
+					"source": "mirror_block"
+				},
+				"prefab": "template"
+			},
+			"transform": {
+				"rotate": [160, 0, 1, 0],
+				"translate": [0.35, 0.86, 0.14]
 			}
 		},
 		{
 			"name": "spliiter1",
-			"transform": {
-				"translate": [0.35, 0.86, 0.34],
-				"rotate": [160, 0, 1, 0]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "splitter_block" }
+				"parameters": {
+					"source": "splitter_block"
+				},
+				"prefab": "template"
+			},
+			"transform": {
+				"rotate": [160, 0, 1, 0],
+				"translate": [0.35, 0.86, 0.34]
 			}
 		},
 		{
 			"name": "emitter1",
-			"transform": {
-				"translate": [0.14, 0.86, 0.14],
-				"rotate": [90, 0, 1, 0]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_emitter_block" }
+				"parameters": {
+					"source": "laser_emitter_block"
+				},
+				"prefab": "template"
 			},
 			"signal_output": {
 				"laser_color_r": 5
+			},
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.14, 0.86, 0.14]
 			}
 		},
 		{
 			"name": "sensor1",
-			"transform": {
-				"translate": [0.86, 0.86, 0.14],
-				"rotate": [90, 0, 1, 0]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_sensor_block" }
+				"parameters": {
+					"source": "laser_sensor_block"
+				},
+				"prefab": "template"
+			},
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.86, 0.86, 0.14]
 			}
 		},
 		{
 			"name": "emitter2",
-			"transform": {
-				"translate": [0.86, 0.86, 0.30],
-				"rotate": [-90, 0, 1, 0]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_emitter_block" }
+				"parameters": {
+					"source": "laser_emitter_block"
+				},
+				"prefab": "template"
 			},
 			"signal_bindings": {
-				"laser_color_r": "sensor1/light_value_r",
+				"laser_color_b": "sensor1/light_value_b",
 				"laser_color_g": "sensor1/light_value_g",
-				"laser_color_b": "sensor1/light_value_b"
+				"laser_color_r": "sensor1/light_value_r"
+			},
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.86, 0.86, 0.3]
 			}
 		},
 		{
 			"name": "gate1",
-			"transform": {
-				"translate": [0.54, 0.86, 0.30]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_gate_block" }
+				"parameters": {
+					"source": "laser_gate_block"
+				},
+				"prefab": "template"
+			},
+			"transform": {
+				"translate": [0.54, 0.86, 0.3]
 			}
 		},
 		{
 			"name": "emitter3",
-			"transform": {
-				"translate": [0.54, 0.86, 0.06]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_emitter_block" }
+				"parameters": {
+					"source": "laser_emitter_block"
+				},
+				"prefab": "template"
 			},
 			"signal_output": {
-				"laser_color_r": 20,
-				"laser_color_g": 20
+				"laser_color_g": 20,
+				"laser_color_r": 20
+			},
+			"transform": {
+				"translate": [0.54, 0.86, 0.06]
 			}
 		},
 		{
 			"name": "sensor_door",
-			"transform": {
-				"translate": [0.54, 0.86, 0.86],
-				"rotate": [0, 0, 1, 0]
-			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "laser_sensor_block" }
+				"parameters": {
+					"source": "laser_sensor_block"
+				},
+				"prefab": "template"
+			},
+			"transform": {
+				"translate": [0.54, 0.86, 0.86]
 			}
 		},
 		{
 			"name": "door1",
-			"transform": {
-				"translate": [4, 0.0, 0]
+			"script": {
+				"parameters": {
+					"source": "slide_door"
+				},
+				"prefab": "template"
 			},
 			"signal_bindings": {
 				"door_open": "sensor_door/light_value_r"
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "slide_door" }
+			"transform": {
+				"translate": [4, 0, 0]
 			}
 		}
 	]

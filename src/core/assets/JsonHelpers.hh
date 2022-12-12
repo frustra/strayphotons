@@ -258,7 +258,7 @@ namespace sp::json {
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::quat &src) {
-        glm::vec4 r(glm::degrees(glm::angle(src)), glm::axis(src));
+        glm::vec4 r(glm::degrees(glm::angle(src)), glm::normalize(glm::axis(src)));
         detail::SaveVec<4>(dst, r);
     }
     template<>

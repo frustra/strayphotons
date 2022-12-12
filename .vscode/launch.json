@@ -104,6 +104,17 @@
             ]
         },
         {
+            "name": "StrayPhotons Scene Formatter (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/scene_formatter.exe",
+            "args": ["blackhole1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
+        {
             "name": "StrayPhotons Test (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
