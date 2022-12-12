@@ -598,7 +598,11 @@ namespace sp {
                 if (scenePtr != scene || sceneInfo.prefabStagingId) continue;
                 Assert(sceneInfo.rootStagingId == e, "Expected staging entity to be the root id");
 
-                picojson::object components;
+                static auto componentOrderFunc = [](const std::string &a, const std::string &b) {
+                    // Sort component keys in the order they are defined in the ECS
+                    return ecs::GetComponentIndex(a) < ecs::GetComponentIndex(b);
+                };
+                picojson::object components(componentOrderFunc);
                 if (e.Has<ecs::Name>(staging)) {
                     auto &name = e.Get<ecs::Name>(staging);
                     if (scene->ValidateEntityName(name)) {
@@ -606,6 +610,7 @@ namespace sp {
                     }
                 }
                 ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                    if (name == "name" || name == "scene_info") return;
                     if (comp.HasComponent(staging, e)) {
                         if (comp.metadata.fields.empty()) {
                             components[comp.name].set<picojson::object>({});
@@ -616,7 +621,8 @@ namespace sp {
                 entities.emplace_back(components);
             }
 
-            static auto orderOverrideFunc = [](const std::string &a, const std::string &b) {
+            static auto sceneOrderFunc = [](const std::string &a, const std::string &b) {
+                // Force "entities" to be sorted last
                 if (b == "entities") {
                     return a < "zentities";
                 } else if (a == "entities") {
@@ -625,7 +631,7 @@ namespace sp {
                     return a < b;
                 }
             };
-            picojson::object sceneObj(orderOverrideFunc);
+            picojson::object sceneObj(sceneOrderFunc);
             if (scene->properties) {
                 static const ecs::SceneProperties defaultProperties = {};
                 picojson::object propertiesObj;

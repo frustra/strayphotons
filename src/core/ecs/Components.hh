@@ -176,4 +176,10 @@ namespace ecs {
             // Custom field apply is always called, default to no-op.
         }
     };
+
+    // Define these special components here to solve circular includes
+    static StructMetadata MetadataName(typeid(Name));
+    static Component<Name> ComponentName("name", MetadataName);
+    static StructMetadata MetadataSceneInfo(typeid(SceneInfo));
+    static Component<SceneInfo> ComponentSceneInfo("scene_info", MetadataSceneInfo);
 }; // namespace ecs

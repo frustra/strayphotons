@@ -109,6 +109,8 @@ namespace ecs {
     ECS &World();
     ECS &StagingWorld();
 
+    int GetComponentIndex(const std::string &componentName);
+
     template<typename... Permissions>
     inline auto StartTransaction() {
         return World().StartTransaction<Permissions...>();

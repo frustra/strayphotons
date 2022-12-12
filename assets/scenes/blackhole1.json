@@ -203,12 +203,12 @@
 			}
 		},
 		{
+			"name": "elevator_side_light1",
 			"light": {
 				"intensity": 300,
 				"spotAngle": 50,
 				"tint": [1, 0.5, 0.5]
 			},
-			"name": "elevator_side_light1",
 			"script": {
 				"parameters": {
 					"source": "spotlight"
@@ -221,12 +221,12 @@
 			}
 		},
 		{
+			"name": "elevator_side_light2",
 			"light": {
 				"intensity": 300,
 				"spotAngle": 50,
 				"tint": [1, 0.5, 0.5]
 			},
-			"name": "elevator_side_light2",
 			"script": {
 				"parameters": {
 					"source": "spotlight"
@@ -239,12 +239,12 @@
 			}
 		},
 		{
+			"name": "elevator_door_light",
 			"light": {
 				"intensity": 200,
 				"spotAngle": 60,
 				"tint": [0.5, 0.5, 1]
 			},
-			"name": "elevator_door_light",
 			"script": {
 				"parameters": {
 					"source": "spotlight"

@@ -257,14 +257,14 @@
 			}
 		},
 		{
+			"name": "airlock_in_button.button",
+			"event_input": {},
 			"event_bindings": {
 				"open_door": {
 					"set_value": "togglesignal global:ship_airlock.door-in/door_open",
 					"target": "console:input/action/run_command"
 				}
 			},
-			"event_input": {},
-			"name": "airlock_in_button.button",
 			"script": {
 				"onEvent": "event_gate_by_signal",
 				"parameters": {
@@ -294,10 +294,10 @@
 			}
 		},
 		{
+			"name": "airlock_in_button_sensor.Icosphere",
 			"laser_sensor": {
 				"threshold": [1, 0, 0]
 			},
-			"name": "airlock_in_button_sensor.Icosphere",
 			"signal_output": {}
 		},
 		{
@@ -321,6 +321,7 @@
 			}
 		},
 		{
+			"name": "button_highlighter",
 			"light": {
 				"intensity": 1,
 				"shadowMapClip": [0.01, 50],
@@ -328,9 +329,8 @@
 				"spotAngle": 10,
 				"tint": [0.5, 1, 0.5]
 			},
-			"name": "button_highlighter",
 			"transform": {
-				"rotate": [93.841, -0.935113, -0.250563, 0.250563],
+				"rotate": [266.159, 0.935113, 0.250563, -0.250563],
 				"translate": [4, 3, 2.5]
 			}
 		},
@@ -356,7 +356,7 @@
 			},
 			"transform": {
 				"parent": "table",
-				"rotate": [263.487, 0.0140179, 0.999779, 0.0157058],
+				"rotate": [263.487, 0.0140179, 0.999778, 0.0157058],
 				"scale": 2,
 				"translate": [0.22, 0.84, 0.22]
 			}
@@ -480,8 +480,8 @@
 			}
 		},
 		{
-			"event_input": {},
 			"name": "plug",
+			"event_input": {},
 			"physics": {
 				"density": 1000,
 				"shapes": {
@@ -572,7 +572,7 @@
 				"tint": [1, 0, 0]
 			},
 			"transform": {
-				"rotate": [104.478, -0.447214, 0.774597, 0.447214],
+				"rotate": [104.478, -0.447214, 0.774596, 0.447214],
 				"translate": [4.9, 4.5, 0]
 			}
 		},
@@ -585,7 +585,7 @@
 				"tint": [0, 1, 0]
 			},
 			"transform": {
-				"rotate": [104.478, -0.447214, -0.774597, -0.447214],
+				"rotate": [255.522, 0.447214, 0.774596, 0.447214],
 				"translate": [-4.9, 4.5, 0]
 			}
 		}

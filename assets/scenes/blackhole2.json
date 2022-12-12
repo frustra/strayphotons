@@ -1,10 +1,10 @@
 {
 	"properties": {
 		"gravity": [0, 0, 0],
+		"gravity_func": "station_spin",
 		"gravity_transform": {
 			"translate": [0, 153, 0]
-		},
-		"gravity_func": "station_spin"
+		}
 	},
 	"entities": [
 		{
