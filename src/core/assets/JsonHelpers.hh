@@ -258,7 +258,11 @@ namespace sp::json {
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::quat &src) {
-        glm::vec4 r(glm::degrees(glm::angle(src)), glm::normalize(glm::axis(src)));
+        auto in = glm::normalize(src);
+        glm::vec4 r(glm::degrees(glm::angle(in)), glm::normalize(glm::axis(in)));
+        // Always serialize rotations between 0 and 180 degrees to keep them deterministic
+        if (r[0] > 180.0f) r[0] -= 360.0f;
+        if (r[0] < 0) r = -r;
         detail::SaveVec<4>(dst, r);
     }
     template<>

@@ -9,24 +9,24 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": {
-				"player_gravity_spin": "1"
-			},
 			"transform": {
 				"translate": [0, 153, 0]
+			},
+			"scene_connection": {
+				"player_gravity_spin": "1"
 			}
 		},
 		{
 			"name": "zone",
-			"scene_connection": {
-				"blackhole1": "zone/trigger_player_count"
-			},
-			"signal_output": {},
 			"transform": {
 				"scale": [24, 8, 10],
 				"translate": [0, 3, 0]
 			},
-			"trigger_area": "Box"
+			"scene_connection": {
+				"blackhole1": "zone/trigger_player_count"
+			},
+			"trigger_area": "Box",
+			"signal_output": {}
 		},
 		{
 			"name": "segment",
@@ -39,161 +39,161 @@
 		},
 		{
 			"name": "global:divider8-1",
-			"scene_connection": {
-				"blackhole8": "zone/trigger_player_count + blackhole2:zone/trigger_player_count"
-			},
 			"transform": {
 				"rotate": [4.5, 0, 0, -1],
 				"translate": [-12, 0, 0]
+			},
+			"scene_connection": {
+				"blackhole8": "zone/trigger_player_count + blackhole2:zone/trigger_player_count"
 			}
 		},
 		{
 			"name": "global:divider1-2",
-			"scene_connection": {
-				"blackhole2": "blackhole8:zone/trigger_player_count || zone/trigger_player_count"
-			},
 			"transform": {
 				"rotate": [4.5, 0, 0, 1],
 				"translate": [12, 0, 0]
+			},
+			"scene_connection": {
+				"blackhole2": "blackhole8:zone/trigger_player_count || zone/trigger_player_count"
 			}
 		},
 		{
 			"name": "elevator-frame1",
+			"transform": {
+				"scale": [0.7, 5.8, 0.4],
+				"translate": [-2.25, 2.8, 2.4]
+			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
 				"dynamic": false,
 				"shapes": {
 					"model": "box"
 				}
-			},
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"scale": [0.7, 5.8, 0.4],
-				"translate": [-2.25, 2.8, 2.4]
 			}
 		},
 		{
 			"name": "elevator-frame2",
+			"transform": {
+				"scale": [0.7, 5.8, 0.4],
+				"translate": [2.25, 2.8, 2.4]
+			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
 				"dynamic": false,
 				"shapes": {
 					"model": "box"
 				}
-			},
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"scale": [0.7, 5.8, 0.4],
-				"translate": [2.25, 2.8, 2.4]
 			}
 		},
 		{
 			"name": "elevator-frame3",
+			"transform": {
+				"scale": [5, 2.1, 0.4],
+				"translate": [0, 4.95, 2.4]
+			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
 				"dynamic": false,
 				"shapes": {
 					"model": "box"
 				}
-			},
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"scale": [5, 2.1, 0.4],
-				"translate": [0, 4.95, 2.4]
 			}
 		},
 		{
 			"name": "elevator-frame4",
+			"transform": {
+				"scale": [4, 0.1, 0.4],
+				"translate": [0, 0.1, 2.2]
+			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
 				"dynamic": false,
 				"shapes": {
 					"model": "box"
 				}
-			},
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"scale": [4, 0.1, 0.4],
-				"translate": [0, 0.1, 2.2]
 			}
 		},
 		{
 			"name": "elevator-frame5",
-			"physics": {
-				"dynamic": false,
-				"shapes": {
-					"model": "box"
-				}
-			},
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"rotate": [10, 1, 0, 0],
 				"scale": [4, 0.1, 0.6],
 				"translate": [0, 0.04, 2.65]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"dynamic": false,
+				"shapes": {
+					"model": "box"
+				}
 			}
 		},
 		{
 			"name": "elevator-spoke-extension1",
-			"physics": {
-				"dynamic": false,
-				"shapes": {
-					"model": "box"
-				}
-			},
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"rotate": [90, 0, 0, 1],
 				"scale": [6, 0.1, 5.2],
 				"translate": [2.55, 3, 0]
-			}
-		},
-		{
-			"name": "elevator-spoke-extension2",
+			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
 				"dynamic": false,
 				"shapes": {
 					"model": "box"
 				}
-			},
-			"renderable": {
-				"model": "box"
-			},
+			}
+		},
+		{
+			"name": "elevator-spoke-extension2",
 			"transform": {
 				"rotate": [90, 0, 0, 1],
 				"scale": [6, 0.1, 5.2],
 				"translate": [-2.55, 3, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"dynamic": false,
+				"shapes": {
+					"model": "box"
+				}
 			}
 		},
 		{
 			"name": "elevator_door",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 1.5, 2.3],
+				"translate": [0, 0.1, 2.4]
+			},
 			"script": {
 				"parameters": {
 					"source": "slide_door"
 				},
 				"prefab": "template"
-			},
-			"transform": {
-				"rotate": [90, 0, 1, 0],
-				"scale": [1, 1.5, 2.3],
-				"translate": [0, 0.1, 2.4]
 			}
 		},
 		{
 			"name": "global:transition1-center",
-			"scene_connection": {
-				"station-center": "zone/trigger_player_count"
-			},
 			"transform": {
 				"rotate": [180, 0, 1, 0],
 				"translate": [0, 0, -1]
+			},
+			"scene_connection": {
+				"station-center": "zone/trigger_player_count"
 			}
 		},
 		{
@@ -204,6 +204,10 @@
 		},
 		{
 			"name": "elevator_side_light1",
+			"transform": {
+				"rotate": [90, -1, 0, 0],
+				"translate": [-7.5, 6, 0]
+			},
 			"light": {
 				"intensity": 300,
 				"spotAngle": 50,
@@ -214,14 +218,14 @@
 					"source": "spotlight"
 				},
 				"prefab": "template"
-			},
-			"transform": {
-				"rotate": [90, -1, 0, 0],
-				"translate": [-7.5, 6, 0]
 			}
 		},
 		{
 			"name": "elevator_side_light2",
+			"transform": {
+				"rotate": [90, -1, 0, 0],
+				"translate": [7.5, 6, 0]
+			},
 			"light": {
 				"intensity": 300,
 				"spotAngle": 50,
@@ -232,14 +236,14 @@
 					"source": "spotlight"
 				},
 				"prefab": "template"
-			},
-			"transform": {
-				"rotate": [90, -1, 0, 0],
-				"translate": [7.5, 6, 0]
 			}
 		},
 		{
 			"name": "elevator_door_light",
+			"transform": {
+				"rotate": [120, -0.57735, -0.57735, -0.57735],
+				"translate": [0, 5, 3.25]
+			},
 			"light": {
 				"intensity": 200,
 				"spotAngle": 60,
@@ -250,14 +254,14 @@
 					"source": "spotlight"
 				},
 				"prefab": "template"
-			},
-			"transform": {
-				"rotate": [240, 0.57735, 0.57735, 0.57735],
-				"translate": [0, 5, 3.25]
 			}
 		},
 		{
 			"name": "global:station-center",
+			"transform": {
+				"rotate": [45, 0, 0, 1],
+				"translate": [0, 150, 0]
+			},
 			"renderable": {
 				"model": "box"
 			},
@@ -267,10 +271,6 @@
 					"axis_z": 1,
 					"speed": 1.5
 				}
-			},
-			"transform": {
-				"rotate": [45, 0, 0, 1],
-				"translate": [0, 150, 0]
 			}
 		}
 	]

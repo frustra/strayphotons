@@ -52,10 +52,14 @@ namespace ecs {
     struct XRView;
 
     using ECS = Tecs::ECS<Name,
+        SceneInfo,
+        TransformSnapshot,
+        TransformTree,
+        Renderable,
+        Physics,
+
         Animation,
         CharacterController,
-        EventInput,
-        EventBindings,
         FocusLayer,
         FocusLock,
         Gui,
@@ -65,24 +69,22 @@ namespace ecs {
         Light,
         LightSensor,
         OpticalElement,
-        Physics,
         PhysicsJoints,
         PhysicsQuery,
-        Renderable,
         SceneConnection,
-        SceneInfo,
         Screen,
-        Script,
-        SignalOutput,
-        SignalBindings,
         Sounds,
-        TransformSnapshot,
-        TransformTree,
         TriggerArea,
         TriggerGroup,
         View,
         VoxelArea,
-        XRView>;
+        XRView,
+
+        EventInput,
+        EventBindings,
+        SignalOutput,
+        SignalBindings,
+        Script>;
 
     using Entity = Tecs::Entity;
     template<typename... Permissions>
