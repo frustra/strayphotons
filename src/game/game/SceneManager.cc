@@ -119,7 +119,7 @@ namespace sp {
                 } else {
                     auto scene = stagedScenes.Load(item.sceneName);
                     if (!scene) {
-                        scene = std::make_shared<Scene>(item.sceneName, SceneType::System);
+                        scene = std::make_shared<Scene>(item.sceneName, SceneType::System, ecs::ScenePriority::System);
                         stagedScenes.Register(item.sceneName, scene);
                         scenes[SceneType::System].emplace_back(scene);
                     }
@@ -300,7 +300,7 @@ namespace sp {
                     player = ecs::Entity();
                 }
 
-                playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
+                playerScene = LoadSceneJson("player", SceneType::World);
                 if (playerScene) {
                     PreloadAndApplyScene(playerScene, false, [this](auto stagingLock, auto liveLock, auto scene) {
                         auto stagingPlayer = scene->GetStagingEntity(entities::Player.Name());
@@ -479,9 +479,7 @@ namespace sp {
         }
     }
 
-    std::shared_ptr<Scene> SceneManager::LoadSceneJson(const std::string &sceneName,
-        SceneType sceneType,
-        ecs::SceneInfo::Priority priority) {
+    std::shared_ptr<Scene> SceneManager::LoadSceneJson(const std::string &sceneName, SceneType sceneType) {
         Logf("Loading scene: %s", sceneName);
 
         auto asset = Assets().Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
@@ -502,13 +500,16 @@ namespace sp {
         }
         auto &sceneObj = root.get<picojson::object>();
 
-        auto scene = make_shared<Scene>(sceneName, sceneType, asset);
+        auto scene = make_shared<Scene>(sceneName,
+            sceneType,
+            sceneType == SceneType::System ? ecs::ScenePriority::System : ecs::ScenePriority::Scene,
+            asset);
         ecs::EntityScope scope;
         scope.scene = scene;
         scope.prefix.scene = scene->name;
 
         if (sceneObj.count("priority")) {
-            json::Load(scope, priority, sceneObj["priority"]);
+            json::Load(scope, scene->priority, sceneObj["priority"]);
         }
 
         if (sceneObj.count("properties")) {
@@ -551,7 +552,7 @@ namespace sp {
 
                 bool hasName = ent.count("name") && ent["name"].is<string>();
                 auto relativeName = hasName ? ent["name"].get<string>() : "";
-                ecs::Entity entity = scene->NewRootEntity(lock, scene, priority, relativeName);
+                ecs::Entity entity = scene->NewRootEntity(lock, scene, relativeName);
 
                 for (auto comp : ent) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
@@ -597,7 +598,11 @@ namespace sp {
                 if (scenePtr != scene || sceneInfo.prefabStagingId) continue;
                 Assert(sceneInfo.rootStagingId == e, "Expected staging entity to be the root id");
 
-                picojson::object components;
+                static auto componentOrderFunc = [](const std::string &a, const std::string &b) {
+                    // Sort component keys in the order they are defined in the ECS
+                    return ecs::GetComponentIndex(a) < ecs::GetComponentIndex(b);
+                };
+                picojson::object components(componentOrderFunc);
                 if (e.Has<ecs::Name>(staging)) {
                     auto &name = e.Get<ecs::Name>(staging);
                     if (scene->ValidateEntityName(name)) {
@@ -605,6 +610,7 @@ namespace sp {
                     }
                 }
                 ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                    if (name == "name" || name == "scene_info") return;
                     if (comp.HasComponent(staging, e)) {
                         if (comp.metadata.fields.empty()) {
                             components[comp.name].set<picojson::object>({});
@@ -615,10 +621,48 @@ namespace sp {
                 entities.emplace_back(components);
             }
 
-            picojson::object sceneObj;
+            static auto sceneOrderFunc = [](const std::string &a, const std::string &b) {
+                // Force "entities" to be sorted last
+                if (b == "entities") {
+                    return a < "zentities";
+                } else if (a == "entities") {
+                    return "zentities" < b;
+                } else {
+                    return a < b;
+                }
+            };
+            picojson::object sceneObj(sceneOrderFunc);
+            if (scene->properties) {
+                static const ecs::SceneProperties defaultProperties = {};
+                picojson::object propertiesObj;
+                json::SaveIfChanged(scope,
+                    propertiesObj,
+                    "gravity",
+                    scene->properties->fixedGravity,
+                    defaultProperties.fixedGravity);
+                json::SaveIfChanged(scope,
+                    propertiesObj,
+                    "gravity_transform",
+                    scene->properties->gravityTransform,
+                    defaultProperties.gravityTransform);
+                if (scene->properties->gravityFunction) {
+                    // TODO: Define this function using a signal expression
+                    propertiesObj["gravity_func"] = picojson::value("station_spin");
+                }
+                sceneObj["properties"] = picojson::value(propertiesObj);
+            }
+            json::SaveIfChanged(scope, sceneObj, "priority", scene->priority, ecs::ScenePriority::Scene);
             sceneObj["entities"] = picojson::value(entities);
             auto val = picojson::value(sceneObj);
-            Logf("Scene %s:\n%s", scene->name, val.serialize(true));
+            auto scenePath = scene->asset->path;
+            Logf("Saving scene %s to '%s'", scene->name, scenePath.string());
+
+            std::ofstream out;
+            if (Assets().OutputStream(scenePath.string(), out)) {
+                auto outputJson = val.serialize(true);
+                out.write(outputJson.c_str(), outputJson.size());
+                out.close();
+            }
         } else {
             Errorf("SceneManager::SaveSceneJson: scene %s not found", sceneName);
         }
@@ -642,7 +686,7 @@ namespace sp {
             Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
         }
 
-        auto scene = make_shared<Scene>("bindings", SceneType::System);
+        auto scene = make_shared<Scene>("bindings", SceneType::System, ecs::ScenePriority::Bindings);
         ecs::EntityScope scope;
         scope.scene = scene;
         scope.prefix.scene = scene->name;
@@ -662,7 +706,7 @@ namespace sp {
                 if (param.first.find(':') == std::string::npos) {
                     Abortf("Binding entity does not have scene name: %s", param.first);
                 }
-                auto entity = scene->NewRootEntity(lock, scene, ecs::SceneInfo::Priority::Bindings, param.first);
+                auto entity = scene->NewRootEntity(lock, scene, param.first);
                 if (entity) {
                     for (auto &comp : param.second.get<picojson::object>()) {
                         if (comp.first[0] == '_') continue;
@@ -694,7 +738,7 @@ namespace sp {
             return loadedScene;
         }
 
-        loadedScene = LoadSceneJson(sceneName, sceneType, ecs::SceneInfo::Priority::Scene);
+        loadedScene = LoadSceneJson(sceneName, sceneType);
         if (loadedScene) {
             loadedScene->UpdateRootTransform();
             PreloadAndApplyScene(loadedScene, false, callback);

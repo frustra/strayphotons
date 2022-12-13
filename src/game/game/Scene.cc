@@ -10,6 +10,10 @@ namespace sp {
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewSystemEntity must be called with a staging lock");
+        Assertf(scene, "Scene::NewSystemEntity called with null scene: %s", entityName.String());
+        Assertf(scene->priority == ecs::ScenePriority::System,
+            "Scene::NewSystemEntity called on non-system scene: %s",
+            scene->name);
         if (entityName) {
             if (!ValidateEntityName(entityName)) {
                 Errorf("Invalid system entity name: %s", entityName.String());
@@ -33,7 +37,7 @@ namespace sp {
         }
 
         auto entity = stagingLock.NewEntity();
-        entity.Set<ecs::SceneInfo>(stagingLock, entity, ecs::SceneInfo::Priority::System, scene, scene->properties);
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene, scene->properties);
         entity.Set<ecs::Name>(stagingLock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
@@ -42,7 +46,6 @@ namespace sp {
 
     ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
-        ecs::SceneInfo::Priority priority,
         std::string relativeName) {
         if (!scene) {
             Errorf("Invalid root entity scene: %s", relativeName);
@@ -73,7 +76,7 @@ namespace sp {
         }
 
         auto entity = lock.NewEntity();
-        entity.Set<ecs::SceneInfo>(lock, entity, priority, scene, scene->properties);
+        entity.Set<ecs::SceneInfo>(lock, entity, scene, scene->properties);
         entity.Set<ecs::Name>(lock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);

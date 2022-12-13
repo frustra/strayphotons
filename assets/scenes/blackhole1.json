@@ -1,43 +1,47 @@
 {
 	"properties": {
 		"gravity": [0, 0, 0],
+		"gravity_func": "station_spin",
 		"gravity_transform": {
 			"translate": [0, 153, 0]
-		},
-		"gravity_func": "station_spin"
+		}
 	},
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": { "player_gravity_spin": "1" },
 			"transform": {
 				"translate": [0, 153, 0]
+			},
+			"scene_connection": {
+				"player_gravity_spin": "1"
 			}
 		},
 		{
 			"name": "zone",
-			"signal_output": {},
 			"transform": {
 				"scale": [24, 8, 10],
 				"translate": [0, 3, 0]
 			},
-			"trigger_area": "Box",
 			"scene_connection": {
 				"blackhole1": "zone/trigger_player_count"
-			}
+			},
+			"trigger_area": "Box",
+			"signal_output": {}
 		},
 		{
 			"name": "segment",
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "station_segment_cutout" }
+				"parameters": {
+					"source": "station_segment_cutout"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "global:divider8-1",
 			"transform": {
-				"translate": [-12, 0, 0],
-				"rotate": [-4.5, 0, 0, 1]
+				"rotate": [4.5, 0, 0, -1],
+				"translate": [-12, 0, 0]
 			},
 			"scene_connection": {
 				"blackhole8": "zone/trigger_player_count + blackhole2:zone/trigger_player_count"
@@ -46,8 +50,8 @@
 		{
 			"name": "global:divider1-2",
 			"transform": {
-				"translate": [12, 0, 0],
-				"rotate": [4.5, 0, 0, 1]
+				"rotate": [4.5, 0, 0, 1],
+				"translate": [12, 0, 0]
 			},
 			"scene_connection": {
 				"blackhole2": "blackhole8:zone/trigger_player_count || zone/trigger_player_count"
@@ -55,136 +59,138 @@
 		},
 		{
 			"name": "elevator-frame1",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [0.7, 5.8, 0.4],
 				"translate": [-2.25, 2.8, 2.4]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator-frame2",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [0.7, 5.8, 0.4],
 				"translate": [2.25, 2.8, 2.4]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator-frame3",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [5, 2.1, 0.4],
 				"translate": [0, 4.95, 2.4]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator-frame4",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [4, 0.1, 0.4],
 				"translate": [0, 0.1, 2.2]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator-frame5",
+			"transform": {
+				"rotate": [10, 1, 0, 0],
+				"scale": [4, 0.1, 0.6],
+				"translate": [0, 0.04, 2.65]
+			},
 			"renderable": {
 				"model": "box"
 			},
-			"transform": {
-				"scale": [4, 0.1, 0.6],
-				"translate": [0, 0.04, 2.65],
-				"rotate": [10, 1, 0, 0]
-			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator-spoke-extension1",
+			"transform": {
+				"rotate": [90, 0, 0, 1],
+				"scale": [6, 0.1, 5.2],
+				"translate": [2.55, 3, 0]
+			},
 			"renderable": {
 				"model": "box"
 			},
-			"transform": {
-				"scale": [6, 0.1, 5.2],
-				"translate": [2.55, 3, 0],
-				"rotate": [90, 0, 0, 1]
-			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator-spoke-extension2",
+			"transform": {
+				"rotate": [90, 0, 0, 1],
+				"scale": [6, 0.1, 5.2],
+				"translate": [-2.55, 3, 0]
+			},
 			"renderable": {
 				"model": "box"
 			},
-			"transform": {
-				"scale": [6, 0.1, 5.2],
-				"translate": [-2.55, 3, 0],
-				"rotate": [90, 0, 0, 1]
-			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "elevator_door",
 			"transform": {
-				"translate": [0, 0.1, 2.4],
 				"rotate": [90, 0, 1, 0],
-				"scale": [1, 1.5, 2.3]
+				"scale": [1, 1.5, 2.3],
+				"translate": [0, 0.1, 2.4]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "slide_door" }
+				"parameters": {
+					"source": "slide_door"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "global:transition1-center",
 			"transform": {
-				"translate": [0, 0, -1.0],
-				"rotate": [180, 0, 1, 0]
+				"rotate": [180, 0, 1, 0],
+				"translate": [0, 0, -1]
 			},
 			"scene_connection": {
 				"station-center": "zone/trigger_player_count"
@@ -199,59 +205,65 @@
 		{
 			"name": "elevator_side_light1",
 			"transform": {
-				"translate": [-7.5, 6.0, 0],
-				"rotate": [[-90, 1, 0, 0]]
+				"rotate": [90, -1, 0, 0],
+				"translate": [-7.5, 6, 0]
 			},
 			"light": {
-				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
-				"spotAngle": 50
+				"spotAngle": 50,
+				"tint": [1, 0.5, 0.5]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "spotlight" }
+				"parameters": {
+					"source": "spotlight"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "elevator_side_light2",
 			"transform": {
-				"translate": [7.5, 6.0, 0],
-				"rotate": [[-90, 1, 0, 0]]
+				"rotate": [90, -1, 0, 0],
+				"translate": [7.5, 6, 0]
 			},
 			"light": {
-				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
-				"spotAngle": 50
+				"spotAngle": 50,
+				"tint": [1, 0.5, 0.5]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "spotlight" }
+				"parameters": {
+					"source": "spotlight"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "elevator_door_light",
 			"transform": {
-				"translate": [0, 5, 3.25],
-				"rotate": [[-90, 0, 0, 1], [-90, 0, 1, 0]]
+				"rotate": [120, -0.57735, -0.57735, -0.57735],
+				"translate": [0, 5, 3.25]
 			},
 			"light": {
-				"tint": [0.5, 0.5, 1.0],
 				"intensity": 200,
-				"spotAngle": 60
+				"spotAngle": 60,
+				"tint": [0.5, 0.5, 1]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "spotlight" }
+				"parameters": {
+					"source": "spotlight"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "global:station-center",
+			"transform": {
+				"rotate": [45, 0, 0, 1],
+				"translate": [0, 150, 0]
+			},
 			"renderable": {
 				"model": "box"
-			},
-			"transform": {
-				"translate": [0, 150, 0],
-				"rotate": [45, 0, 0, 1]
 			},
 			"script": {
 				"onTick": "rotate",

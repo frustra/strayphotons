@@ -1,10 +1,11 @@
 {
+	"priority": "Player",
 	"entities": [
 		{
 			"name": "player",
 			"transform": {},
 			"character_controller": {
-				"head": "player:head"
+				"head": "head"
 			},
 			"trigger_group": "Player",
 			"event_input": {},
@@ -12,48 +13,43 @@
 		},
 		{
 			"name": "flatorigin",
-			"transform": {},
-			"_physics": {
-				"__comment": "Dummy actor for velocity calculation",
-				"__comment2": "Due to the player's instant acceleration, this may not actually be desirable",
-				"group": "NoClip",
-				"dynamic": false,
-				"shapes": {
-					"sphere": 0.1
-				}
-			}
+			"transform": {}
 		},
 		{
 			"name": "flatview",
-			"view": {
-				"clip": [0.05, 350],
-				"visibilityMask": "DirectCamera"
-			},
 			"transform": {
 				"parent": "flatorigin",
 				"translate": [0, 1.5, 0]
 			},
+			"focus": "Game",
+			"physics_query": {},
+			"view": {
+				"clip": [0.05, 350],
+				"visibilityMask": "DirectCamera"
+			},
+			"event_input": {},
+			"event_bindings": {
+				"/action/jump": "player/action/jump"
+			},
+			"signal_output": {},
 			"script": [
 				{
 					"onTick": "relative_movement",
 					"parameters": {
-						"relative_to": "player:flatview",
-						"up_reference": "player:player"
+						"relative_to": "flatview",
+						"up_reference": "player"
 					}
 				},
-				{ "onEvent": "camera_view" },
+				{
+					"onEvent": "camera_view"
+				},
 				{
 					"onTick": "interact_handler",
-					"parameters": { "grab_distance": 2.0 }
+					"parameters": {
+						"grab_distance": 2
+					}
 				}
-			],
-			"event_input": {},
-			"event_bindings": {
-				"/action/jump": "player:player/action/jump"
-			},
-			"focus": "Game",
-			"physics_query": {},
-			"signal_output": {}
+			]
 		},
 		{
 			"name": "debug-spawner",
@@ -62,8 +58,8 @@
 				"onEvent": "model_spawner",
 				"parameters": {
 					"model": "cardboard-box",
-					"relative_to": "player:flatview",
-					"position_z": -2
+					"position_z": -2,
+					"relative_to": "flatview"
 				}
 			}
 		},
@@ -73,21 +69,21 @@
 				"parent": "flatview",
 				"translate": [0, -0.3, 0]
 			},
-			"signal_output": {
-				"on": 0,
-				"angle": 30,
-				"intensity": 30
-			},
 			"focus": "Game",
-			"event_input": {},
-			"script": {
-				"onTick": "flashlight"
-			},
 			"light": {
 				"gel": "asset:textures/flashlight.png",
-				"tint": [1, 1, 1],
+				"shadowMapClip": [0.1, 64],
 				"shadowMapSize": 11,
-				"shadowMapClip": [0.1, 64]
+				"tint": [1, 1, 1]
+			},
+			"event_input": {},
+			"signal_output": {
+				"angle": 30,
+				"intensity": 30,
+				"on": 0
+			},
+			"script": {
+				"onTick": "flashlight"
 			}
 		}
 	]

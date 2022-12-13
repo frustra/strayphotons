@@ -103,6 +103,7 @@ namespace ecs {
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
         StructField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
     static Component<TransformTree> ComponentTransformTree("transform", MetadataTransformTree);
+    static Component<TransformSnapshot> ComponentTransformSnapshot("transform_snapshot", MetadataTransform);
 
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);

@@ -142,6 +142,7 @@ cmake_policy(SET CMP0076 NEW)
 add_subdirectory(shaders)
 add_subdirectory(src)
 add_subdirectory(hull_compiler)
+add_subdirectory(scene_formatter)
 add_subdirectory(assets)
 
 if(SP_PACKAGE_RELEASE)

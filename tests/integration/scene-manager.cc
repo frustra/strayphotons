@@ -59,7 +59,7 @@ namespace SceneManagerTests {
     void systemSceneCallback(ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<sp::Scene> scene) {
         auto ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "player", "player");
-        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene, scene->properties);
+        ent.Set<ecs::SceneInfo>(lock, ent, scene, scene->properties);
         ent.Set<ecs::TransformSnapshot>(lock, glm::vec3(1, 2, 3));
         ent.Set<ecs::SignalOutput>(lock);
         ent.Set<ecs::SignalBindings>(lock);
@@ -69,7 +69,7 @@ namespace SceneManagerTests {
 
         ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "", "test");
-        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene, scene->properties);
+        ent.Set<ecs::SceneInfo>(lock, ent, scene, scene->properties);
     }
 
     void TestBasicLoadAddRemove() {

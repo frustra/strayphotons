@@ -2,67 +2,71 @@
 	"entities": [
 		{
 			"name": "testroot",
+			"transform": {
+				"scale": 0.075,
+				"translate": [1, 1, 2.5]
+			},
 			"renderable": {
 				"model": "box"
 			},
 			"physics": {
+				"density": 100,
 				"shapes": {
 					"model": "box"
-				},
-				"density": 100
-			},
-			"transform": {
-				"translate": [1, 1, 2.5],
-				"scale": [0.075, 0.075, 0.075]
+				}
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "interactive" }
+				"parameters": {
+					"source": "interactive"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "test",
-			"renderable": {
-				"model": "box",
-				"emissive": 0.5
-			},
 			"transform": {
-				"translate": [1, 1, 2.5],
-				"scale": [0.5, 0.05, 0.5]
+				"scale": [0.5, 0.05, 0.5],
+				"translate": [1, 1, 2.5]
+			},
+			"renderable": {
+				"emissive": 0.5,
+				"model": "box"
 			},
 			"physics": {
+				"density": 10,
+				"group": "Interactive",
 				"shapes": {
 					"model": "box"
-				},
-				"group": "Interactive",
-				"density": 10
+				}
 			},
-			"physics_joints": [{
+			"physics_joints": {
+				"limit": [10, 0.5],
 				"target": "testroot",
-				"type": "Force",
-				"limit": [10, 0.5]
-			}]
+				"type": "Force"
+			}
 		},
 		{
-			"sound": {
-				"file": "test.ogg",
-				"volume": 0.5,
-				"loop": true,
-				"play_on_load": true
-			},
+			"name": "lobby_music",
 			"transform": {
 				"translate": [-4.9, 1, 0]
 			},
 			"physics_query": {},
+			"sound": {
+				"file": "test.ogg",
+				"loop": true,
+				"play_on_load": true,
+				"volume": 0.5
+			},
 			"script": {
 				"onTick": "sound_occlusion"
 			}
 		},
 		{
+			"name": "lobby_gui",
 			"transform": {
-				"translate": [3.8, 1.1, -2.8],
+				"rotate": [62.7994, -0.678598, -0.678598, -0.281085],
 				"scale": [0.8, 0.5, 1],
-				"rotate": [[-45, 0, 1, 0], [-45, 1, 0, 0]]
+				"translate": [3.8, 1.1, -2.8]
 			},
 			"gui": {
 				"windowName": "lobby"
@@ -71,171 +75,175 @@
 				"luminance": [3, 1, 3]
 			},
 			"script": {
-				"prefab": "template",
 				"parameters": {
 					"source": "world_gui"
-				}
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"transform": {
-				"translate": [4, 0, -3],
-				"rotate": [-45, 0, 1, 0]
+				"rotate": [45, 0, -1, 0],
+				"translate": [4, 0, -3]
 			},
 			"renderable": {
 				"model": "cardboard-box"
 			},
 			"physics": {
+				"mass": 1,
 				"shapes": {
 					"model": "cardboard-box"
-				},
-				"mass": 1
+				}
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "interactive" }
+				"parameters": {
+					"source": "interactive"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "floor",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [10, 0.5, 8],
 				"translate": [0, -0.25, 0]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "ceiling",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [10, 0.1, 8],
 				"translate": [0, 5, 0]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "projection_wall",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [10, 5, 0.1],
 				"translate": [0, 2.5, -4]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "left_wall",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [0.1, 5, 8],
 				"translate": [-5, 2.5, 0]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "back_wall",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [10, 5, 0.1],
 				"translate": [0, 2.5, 4]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "right_wall_front",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [0.1, 5, 2.1],
 				"translate": [5, 2.5, -2.95]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "right_wall_back",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [0.1, 5, 2.1],
 				"translate": [5, 2.5, 2.95]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "right_wall_top",
-			"renderable": {
-				"model": "box"
-			},
 			"transform": {
 				"scale": [0.1, 1.2, 4],
 				"translate": [5, 4.4, 0]
 			},
+			"renderable": {
+				"model": "box"
+			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "box"
-				},
-				"dynamic": false
+				}
 			}
 		},
 		{
 			"name": "global:ship_airlock",
 			"transform": {
-				"translate": [7.05, 0, 0],
-				"rotate": [90, 0, 1, 0]
+				"rotate": [90, 0, 1, 0],
+				"translate": [7.05, 0, 0]
 			},
 			"scene_connection": {
 				"station-center": "global:ship_airlock.triggerzone/trigger_player_count"
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "ship_airlock" }
+				"parameters": {
+					"source": "ship_airlock"
+				},
+				"prefab": "template"
 			}
 		},
 		{
@@ -244,21 +252,21 @@
 				"translate": [4.95, 1.1, 2.5]
 			},
 			"script": {
-				"prefab": "template",
 				"parameters": {
 					"source": "button"
-				}
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "airlock_in_button.button",
+			"event_input": {},
 			"event_bindings": {
 				"open_door": {
-					"target": "console:input/action/run_command",
-					"set_value": "togglesignal global:ship_airlock.door-in/door_open"
+					"set_value": "togglesignal global:ship_airlock.door-in/door_open",
+					"target": "console:input/action/run_command"
 				}
 			},
-			"event_input": {},
 			"signal_bindings": {
 				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
 			},
@@ -274,35 +282,35 @@
 		{
 			"name": "airlock_in_button_sensor",
 			"transform": {
-				"translate": [4.95, 1.3, 2.5],
-				"rotate": [-90, 0, 1, 0],
-				"scale": 0.5
+				"rotate": [90, 0, -1, 0],
+				"scale": 0.5,
+				"translate": [4.95, 1.3, 2.5]
 			},
 			"script": {
-				"prefab": "gltf",
 				"parameters": {
 					"model": "sensor",
-					"render": true,
-					"physics": "static"
-				}
+					"physics": "static",
+					"render": true
+				},
+				"prefab": "gltf"
 			}
 		},
 		{
 			"name": "airlock_in_button_sensor.Icosphere",
-			"signal_output": {},
 			"laser_sensor": {
 				"threshold": [1, 0, 0]
-			}
+			},
+			"signal_output": {}
 		},
 		{
 			"name": "airlock_in_button_led",
 			"transform": {
-				"translate": [4.948, 1.3, 2.43],
-				"rotate": [90, 0, 0, 1]
+				"rotate": [90, 0, 0, 1],
+				"translate": [4.948, 1.3, 2.43]
 			},
 			"renderable": {
-				"model": "red_led",
-				"emissive": 0
+				"emissive": 0,
+				"model": "red_led"
 			},
 			"signal_bindings": {
 				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
@@ -316,19 +324,16 @@
 		},
 		{
 			"name": "button_highlighter",
-			"light": {
-				"tint": [0.5, 1, 0.5],
-				"intensity": 1,
-				"spotAngle": 10,
-				"shadowMapSize": 10,
-				"shadowMapClip": [0.01, 50]
-			},
 			"transform": {
-				"translate": [4, 3, 2.5],
-				"rotate": [
-					[-90, 1, 0, 0],
-					[-30, 0, 1, 0]
-				]
+				"rotate": [93.841, -0.935113, -0.250563, 0.250563],
+				"translate": [4, 3, 2.5]
+			},
+			"light": {
+				"intensity": 1,
+				"shadowMapClip": [0.01, 50],
+				"shadowMapSize": 10,
+				"spotAngle": 10,
+				"tint": [0.5, 1, 0.5]
 			}
 		},
 		{
@@ -337,25 +342,25 @@
 				"translate": [2, 0, 2]
 			},
 			"script": {
-				"prefab": "template",
 				"parameters": {
 					"source": "table"
-				}
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "articulating_arm",
 			"transform": {
-				"translate": [0.22, 0.84, 0.22],
-				"rotate": [[-96.5, 0, 1, 0], [-1.8, 1, 0, 0]],
-				"scale": [2, 2, 2],
-				"parent": "table"
+				"parent": "table",
+				"rotate": [96.513, -0.0140179, -0.999778, -0.0157058],
+				"scale": 2,
+				"translate": [0.22, 0.84, 0.22]
 			},
 			"script": {
-				"prefab": "template",
 				"parameters": {
 					"source": "articulating_arm"
-				}
+				},
+				"prefab": "template"
 			}
 		},
 		{
@@ -365,11 +370,11 @@
 				"translate": [0, 0.037, 0]
 			},
 			"script": {
-				"prefab": "gltf",
 				"parameters": {
 					"model": "laser-plug-mount",
 					"render": true
-				}
+				},
+				"prefab": "gltf"
 			}
 		},
 		{
@@ -377,11 +382,11 @@
 				"parent": "laser_mount_1"
 			},
 			"script": {
-				"prefab": "gltf",
 				"parameters": {
 					"model": "laser-plug",
 					"render": true
-				}
+				},
+				"prefab": "gltf"
 			}
 		},
 		{
@@ -389,23 +394,23 @@
 				"parent": "laser_mount_1",
 				"translate": [0, 0, -0.01]
 			},
-			"laser_line": {},
 			"laser_emitter": {
 				"color": [1, 0, 0]
-			}
+			},
+			"laser_line": {}
 		},
 		{
 			"name": "articulating_arm_1",
 			"transform": {
-				"translate": [0.78, 0.84, 0.78],
-				"scale": [2, 2, 2],
-				"parent": "table"
+				"parent": "table",
+				"scale": 2,
+				"translate": [0.78, 0.84, 0.78]
 			},
 			"script": {
-				"prefab": "template",
 				"parameters": {
 					"source": "articulating_arm"
-				}
+				},
+				"prefab": "template"
 			}
 		},
 		{
@@ -415,59 +420,65 @@
 				"translate": [0, 0.037, 0]
 			},
 			"script": {
-				"prefab": "gltf",
 				"parameters": {
 					"model": "round-mirror-mounted",
 					"render": true
-				}
+				},
+				"prefab": "gltf"
 			}
 		},
 		{
 			"name": "mount_1.round-mirror",
-			"optic": {
-				"type": "Mirror"
-			},
 			"physics": {
+				"dynamic": false,
 				"shapes": {
 					"model": "round-mirror-mounted.convex1"
-				},
-				"dynamic": false
+				}
+			},
+			"optic": {
+				"type": "Mirror"
 			}
 		},
 		{
 			"name": "mirrorcube1",
 			"transform": {
-				"translate": [2.65, 0.89, 2.35],
 				"rotate": [110, 0, 1, 0],
-				"scale": 0.1
+				"scale": 0.1,
+				"translate": [2.65, 0.89, 2.35]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "mirrorcube" }
+				"parameters": {
+					"source": "mirrorcube"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "mirrorcube2",
 			"transform": {
-				"translate": [2.25, 0.89, 2.75],
 				"rotate": [30, 0, 1, 0],
-				"scale": 0.1
+				"scale": 0.1,
+				"translate": [2.25, 0.89, 2.75]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "mirrorcube" }
+				"parameters": {
+					"source": "mirrorcube"
+				},
+				"prefab": "template"
 			}
 		},
 		{
 			"name": "duck",
 			"transform": {
-				"translate": [2.55, 0.83, 2.65],
 				"rotate": [70, 0, 1, 0],
-				"scale": 0.1
+				"scale": 0.1,
+				"translate": [2.55, 0.83, 2.65]
 			},
 			"script": {
-				"prefab": "template",
-				"parameters": { "source": "duck" }
+				"parameters": {
+					"source": "duck"
+				},
+				"prefab": "template"
 			}
 		},
 		{
@@ -476,22 +487,24 @@
 				"translate": [2.75, 0.9, 2.65]
 			},
 			"renderable": {
-				"model": "articulating-arm",
-				"mesh_index": 2
+				"mesh_index": 2,
+				"model": "articulating-arm"
 			},
 			"physics": {
+				"density": 1000,
 				"shapes": {
 					"model": "articulating-arm.convex2"
-				},
-				"density": 1000
+				}
 			},
 			"physics_joints": [],
 			"trigger_group": "Magnetic",
 			"event_input": {},
 			"script": [
 				{
-					"prefab": "template",
-					"parameters": { "source": "interactive" }
+					"parameters": {
+						"source": "interactive"
+					},
+					"prefab": "template"
 				},
 				{
 					"onEvent": "magnetic_plug"
@@ -500,87 +513,82 @@
 		},
 		{
 			"name": "global:spawn",
-			"transform": {
-				"translate": [0, 0, 0]
-			}
+			"transform": {}
 		},
 		{
 			"transform": {
-				"translate": [-5, -0.05, -4],
-				"scale": [0.1, 0.1, 0.1]
-			},
-			"_voxel_area": {
-				"extents": [141, 51, 80]
+				"scale": 0.1,
+				"translate": [-5, -0.05, -4]
 			}
 		},
 		{
 			"transform": {},
+			"voxel_area": {
+				"extents": [256, 100, 360]
+			},
 			"script": {
 				"onTick": "voxel_controller",
 				"parameters": {
-					"follow_target": "player:player",
 					"alignment_target": "station-center:elevator",
-					"voxel_stride": 16,
-					"voxel_scale": 0.25,
+					"follow_target": "player:player",
 					"voxel_offset_x": -0.5,
 					"voxel_offset_y": -0.2,
-					"voxel_offset_z": -0.5
+					"voxel_offset_z": -0.5,
+					"voxel_scale": 0.25,
+					"voxel_stride": 16
 				}
-			},
-			"voxel_area": {
-				"extents": [256, 100, 360]
 			}
 		},
 		{
-			"light": {
-				"tint": [1, 1, 1],
-				"intensity": 300,
-				"spotAngle": 45,
-				"gel": "graph:menu_gui",
-				"shadowMapSize": 10,
-				"shadowMapClip": [0.1, 10]
-			},
 			"transform": {
 				"translate": [0, 1.8, 0]
+			},
+			"light": {
+				"gel": "graph:menu_gui",
+				"intensity": 300,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
+				"spotAngle": 45,
+				"tint": [1, 1, 1]
 			}
 		},
 		{
+			"transform": {
+				"rotate": [90, -1, 0, 0],
+				"translate": [0, 5, 0]
+			},
 			"light": {
-				"tint": [1, 1, 1],
 				"intensity": 15,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
 				"spotAngle": 60,
-				"shadowMapSize": 10,
-				"shadowMapClip": [0.1, 10]
-			},
-			"transform": {
-				"translate": [0, 5, 0],
-				"rotate": [[0, 0, 1, 0], [-90, 1, 0, 0]]
+				"tint": [1, 1, 1]
 			}
 		},
 		{
-			"light": {
-				"tint": [1, 0, 0],
-				"intensity": 50,
-				"spotAngle": 40,
-				"shadowMapSize": 10,
-				"shadowMapClip": [0.1, 10]
-			},
 			"transform": {
-				"translate": [4.9, 4.5, 0],
-				"rotate": [[90, 0, 1, 0], [-60, 1, 0, 0]]
+				"rotate": [104.478, -0.447214, 0.774596, 0.447214],
+				"translate": [4.9, 4.5, 0]
+			},
+			"light": {
+				"intensity": 50,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
+				"spotAngle": 40,
+				"tint": [1, 0, 0]
 			}
 		},
 		{
-			"light": {
-				"tint": [0, 1, 0],
-				"intensity": 50,
-				"spotAngle": 40,
-				"shadowMapSize": 10,
-				"shadowMapClip": [0.1, 10]
-			},
 			"transform": {
-				"translate": [-4.9, 4.5, 0],
-				"rotate": [[270, 0, 1, 0], [-60, 1, 0, 0]]
+				"rotate": [104.478, -0.447214, -0.774596, -0.447214],
+				"translate": [-4.9, 4.5, 0]
+			},
+			"light": {
+				"intensity": 50,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
+				"spotAngle": 40,
+				"tint": [0, 1, 0]
 			}
 		}
 	]
