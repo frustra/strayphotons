@@ -122,7 +122,14 @@ namespace sp {
                             auto &stagingSceneInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                             auto stagingScene = stagingSceneInfo.scene.lock();
                             if (stagingScene) {
-                                auto tabName = "Staging - " + stagingScene->name + " - " + std::to_string(stagingId);
+                                std::string tabName;
+                                if (!stagingSceneInfo.prefabStagingId) {
+                                    tabName = "Scene: " + stagingScene->name;
+                                } else {
+                                    tabName = "Prefab: " +
+                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                              std::to_string(stagingId);
+                                }
                                 if (ImGui::BeginTabItem(tabName.c_str())) {
                                     ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
                                         if (!comp.HasComponent(stagingLock, stagingId)) return;

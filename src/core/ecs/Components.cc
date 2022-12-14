@@ -39,6 +39,7 @@ namespace ecs {
     void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback) {
         Assertf(componentTypeMap != nullptr, "ForEachComponent called before components registered.");
         for (auto &[name, comp] : *componentNameMap) {
+            if (name == "name" || name == "scene_info") continue;
             callback(name, *comp);
         }
     }

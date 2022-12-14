@@ -62,7 +62,7 @@ namespace sp {
         std::string name;
     };
 
-    shared_ptr<GuiWindow> CreateGuiWindow(GuiContext *context, const string &name);
+    shared_ptr<GuiWindow> CreateGuiWindow(const string &name);
 
     std::span<FontDef> GetFontList();
 } // namespace sp

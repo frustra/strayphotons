@@ -61,7 +61,7 @@ namespace sp {
     }
 
     void GuiContext::Attach(const std::shared_ptr<GuiRenderable> &component) {
-        components.emplace_back(component);
+        if (!sp::contains(components, component)) components.emplace_back(component);
     }
 
     void GuiContext::Detach(const std::shared_ptr<GuiRenderable> &component) {
@@ -69,7 +69,7 @@ namespace sp {
         if (it != components.end()) components.erase(it);
     }
 
-    shared_ptr<GuiWindow> CreateGuiWindow(GuiContext *context, const string &windowName) {
+    shared_ptr<GuiWindow> CreateGuiWindow(const string &windowName) {
         shared_ptr<GuiWindow> window;
         if (windowName == "lobby") {
             window = make_shared<LobbyGui>(windowName);
@@ -79,7 +79,6 @@ namespace sp {
             Errorf("unknown gui window: %s", windowName);
             return nullptr;
         }
-        context->Attach(window);
         return window;
     }
 
