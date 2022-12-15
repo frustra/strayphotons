@@ -26,6 +26,7 @@ namespace sp {
     enum class SceneAction {
         ApplySystemScene, // Arguments: (sceneName, applyCallback)
         EditStagingScene, // Arguments: (sceneName, applyCallback)
+        ApplyStagingScene, // Arguments: (sceneName)
         SaveStagingScene, // Arguments: (sceneName)
         EditLiveECS, // Arguments: (editCallback)
         ApplyScene, // Arguments: (sceneName)

@@ -147,6 +147,19 @@ namespace sp {
                                             }
                                         }
                                     });
+                                    if (!stagingSceneInfo.prefabStagingId) {
+                                        ImGui::Separator();
+                                        if (ImGui::Button("Apply Scene")) {
+                                            GetSceneManager().QueueAction(SceneAction::ApplyStagingScene,
+                                                stagingScene->name);
+                                        }
+                                        if (ImGui::Button("Save & Apply Scene")) {
+                                            GetSceneManager().QueueAction(SceneAction::ApplyStagingScene,
+                                                stagingScene->name);
+                                            GetSceneManager().QueueAction(SceneAction::SaveStagingScene,
+                                                stagingScene->name);
+                                        }
+                                    }
                                     ImGui::EndTabItem();
                                 }
                             } else {

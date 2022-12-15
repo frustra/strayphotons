@@ -86,7 +86,7 @@ namespace sp::scene {
                     auto &component = std::get<std::optional<T>>(stagingComponents);
                     if (component) {
                         if (resetLive) {
-                            rootSceneInfo.liveId.Set<T>(live, *component);
+                            rootSceneInfo.liveId.Unset<T>(live);
                         }
 
                         auto &dstComp = rootSceneInfo.liveId.Get<T>(live);

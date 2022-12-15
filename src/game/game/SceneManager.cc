@@ -148,13 +148,29 @@ namespace sp {
                                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                                 item.applyCallback(stagingLock, scene);
                             }
-                            PreloadAndApplyScene(scene, true);
                         } else {
                             Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->name);
                         }
                     } else {
                         Errorf("SceneManager::EditStagingScene: scene %s not found", item.sceneName);
                     }
+                } else {
+                    Errorf("SceneManager::EditStagingScene called on %s without applyCallback", item.sceneName);
+                }
+                item.promise.set_value();
+            } else if (item.action == SceneAction::ApplyStagingScene) {
+                ZoneScopedN("ApplyStagingScene");
+                ZoneStr(item.sceneName);
+                auto scene = stagedScenes.Load(item.sceneName);
+                if (scene) {
+                    if (scene->type != SceneType::System) {
+                        Tracef("Applying staging scene: %s", scene->name);
+                        PreloadAndApplyScene(scene, true);
+                    } else {
+                        Errorf("SceneManager::ApplyStagingScene: Cannot apply system scene: %s", scene->name);
+                    }
+                } else {
+                    Errorf("SceneManager::ApplyStagingScene: scene %s not found", item.sceneName);
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::SaveStagingScene) {
