@@ -10,12 +10,12 @@
 
 namespace sp {
     template<typename T>
-    bool AddImGuiElement(const char *name, T &value) {
+    bool AddImGuiElement(const std::string &name, T &value) {
         bool changed = false;
         if constexpr (std::is_enum_v<T>) {
             auto items = magic_enum::enum_entries<T>();
             if constexpr (magic_enum::detail::is_flags_v<T>) {
-                if (ImGui::BeginListBox(name, ImVec2(0, 5.25 * ImGui::GetTextLineHeightWithSpacing()))) {
+                if (ImGui::BeginListBox(name.c_str(), ImVec2(0, 5.25 * ImGui::GetTextLineHeightWithSpacing()))) {
                     for (auto &item : items) {
                         if (item.second.empty()) continue;
                         const bool is_selected = (value & item.first) == item.first;
@@ -28,7 +28,7 @@ namespace sp {
                 }
             } else {
                 std::string enumName(magic_enum::enum_name(value));
-                if (ImGui::BeginCombo(name, enumName.c_str())) {
+                if (ImGui::BeginCombo(name.c_str(), enumName.c_str())) {
                     for (auto &item : items) {
                         if (item.second.empty()) continue;
                         const bool is_selected = item.first == value;
@@ -45,104 +45,115 @@ namespace sp {
         } else {
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
-            ImGui::Text("%s: %s", name, jsonValue.serialize().c_str());
+            auto separator = name.find("##");
+            Assertf(separator != std::string::npos, "ImGuiElement name invalid: %s", name);
+            ImGui::Text("%s: %s", name.substr(0, separator).c_str(), jsonValue.serialize(true).c_str());
         }
         return changed;
     }
 
     template<>
-    bool AddImGuiElement(const char *name, bool &value) {
-        return ImGui::Checkbox(name, &value);
+    bool AddImGuiElement(const std::string &name, bool &value) {
+        return ImGui::Checkbox(name.c_str(), &value);
     }
     template<>
-    bool AddImGuiElement(const char *name, int32_t &value) {
-        return ImGui::DragScalar(name, ImGuiDataType_S32, &value, 1.0f, NULL, NULL, "%d");
+    bool AddImGuiElement(const std::string &name, int32_t &value) {
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_S32, &value, 1.0f, NULL, NULL, "%d");
     }
     template<>
-    bool AddImGuiElement(const char *name, uint32_t &value) {
-        return ImGui::DragScalar(name, ImGuiDataType_U32, &value, 1.0f, NULL, NULL, "%u");
+    bool AddImGuiElement(const std::string &name, uint32_t &value) {
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U32, &value, 1.0f, NULL, NULL, "%u");
     }
     template<>
-    bool AddImGuiElement(const char *name, size_t &value) {
-        return ImGui::DragScalar(name, ImGuiDataType_U64, &value, 1.0f, NULL, NULL, "%u");
+    bool AddImGuiElement(const std::string &name, size_t &value) {
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U64, &value, 1.0f, NULL, NULL, "%u");
     }
     template<>
-    bool AddImGuiElement(const char *name, sp::angle_t &value) {
-        return ImGui::SliderAngle(name, &value.radians(), 0.0f, 360.0f);
+    bool AddImGuiElement(const std::string &name, sp::angle_t &value) {
+        return ImGui::SliderAngle(name.c_str(), &value.radians(), 0.0f, 360.0f);
     }
     template<>
-    bool AddImGuiElement(const char *name, float &value) {
-        return ImGui::DragFloat(name, &value, 0.01f);
+    bool AddImGuiElement(const std::string &name, float &value) {
+        return ImGui::DragFloat(name.c_str(), &value, 0.01f);
     }
     template<>
-    bool AddImGuiElement(const char *name, glm::vec2 &value) {
-        return ImGui::DragFloat2(name, (float *)&value, 0.01f);
+    bool AddImGuiElement(const std::string &name, glm::vec2 &value) {
+        return ImGui::DragFloat2(name.c_str(), (float *)&value, 0.01f);
     }
     template<>
-    bool AddImGuiElement(const char *name, glm::vec3 &value) {
-        return ImGui::DragFloat3(name, (float *)&value, 0.01f);
+    bool AddImGuiElement(const std::string &name, glm::vec3 &value) {
+        return ImGui::DragFloat3(name.c_str(), (float *)&value, 0.01f);
     }
     template<>
-    bool AddImGuiElement(const char *name, glm::vec4 &value) {
-        return ImGui::DragFloat4(name, (float *)&value, 0.01f);
+    bool AddImGuiElement(const std::string &name, glm::vec4 &value) {
+        return ImGui::DragFloat4(name.c_str(), (float *)&value, 0.01f);
     }
     template<>
-    bool AddImGuiElement(const char *name, color_t &value) {
-        return ImGui::ColorEdit3(name, (float *)&value);
+    bool AddImGuiElement(const std::string &name, color_t &value) {
+        return ImGui::ColorEdit3(name.c_str(), (float *)&value);
     }
     template<>
-    bool AddImGuiElement(const char *name, color_alpha_t &value) {
-        return ImGui::ColorEdit4(name, (float *)&value);
+    bool AddImGuiElement(const std::string &name, color_alpha_t &value) {
+        return ImGui::ColorEdit4(name.c_str(), (float *)&value);
     }
     template<>
-    bool AddImGuiElement(const char *name, glm::ivec2 &value) {
-        return ImGui::DragInt2(name, (int *)&value);
+    bool AddImGuiElement(const std::string &name, glm::ivec2 &value) {
+        return ImGui::DragInt2(name.c_str(), (int *)&value);
     }
     template<>
-    bool AddImGuiElement(const char *name, glm::ivec3 &value) {
-        return ImGui::DragInt3(name, (int *)&value);
+    bool AddImGuiElement(const std::string &name, glm::ivec3 &value) {
+        return ImGui::DragInt3(name.c_str(), (int *)&value);
     }
     template<>
-    bool AddImGuiElement(const char *name, glm::quat &value) {
+    bool AddImGuiElement(const std::string &name, glm::quat &value) {
         // TODO: Add grab handle for orientation
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value));
         for (glm::length_t i = 0; i < angles.length(); i++) {
             if (angles[i] < 0.0f) angles[i] += 360.0f;
         }
 
-        if (ImGui::SliderFloat3(name, (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
+        if (ImGui::SliderFloat3(name.c_str(), (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
             value = glm::quat(glm::radians(angles));
             return true;
         }
         return false;
     }
     template<>
-    bool AddImGuiElement(const char *name, std::string &value) {
-        return ImGui::InputText(name, &value);
+    bool AddImGuiElement(const std::string &name, std::string &value) {
+        return ImGui::InputText(name.c_str(), &value);
     }
     template<>
-    bool AddImGuiElement(const char *name, ecs::EntityRef &value) {
+    bool AddImGuiElement(const std::string &name, ecs::EntityRef &value) {
         // TODO: Add entity selection / entry window
-        ImGui::Text("%s: %s / %s", name, value.Name().String().c_str(), std::to_string(value.GetLive()).c_str());
+        auto separator = name.find("##");
+        Assertf(separator != std::string::npos, "ImGuiElement name invalid: %s", name);
+        ImGui::Text("%s: %s / %s",
+            name.substr(0, separator).c_str(),
+            value.Name().String().c_str(),
+            std::to_string(value.GetLive()).c_str());
         return false;
     }
     template<>
-    bool AddImGuiElement(const char *name, ecs::Transform &value) {
+    bool AddImGuiElement(const std::string &name, ecs::Transform &value) {
         // TODO: Add grab handle in view
-        auto text = std::string(name) + ".position";
+
+        auto separator = name.find("##");
+        Assertf(separator != std::string::npos, "ImGuiElement name invalid: %s", name);
+        auto text = "position" + name.substr(separator);
         bool changed = ImGui::DragFloat3(text.c_str(), (float *)&value.matrix[3], 0.01f);
 
-        text = std::string(name) + ".rotation";
+        text = "rotation" + name.substr(separator);
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value.GetRotation()));
         for (glm::length_t i = 0; i < angles.length(); i++) {
             if (angles[i] < 0.0f) angles[i] += 360.0f;
+            if (angles[i] >= 360.0f) angles[i] -= 360.0f;
         }
         if (ImGui::SliderFloat3(text.c_str(), (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
             value.SetRotation(glm::quat(glm::radians(angles)));
             changed = true;
         }
 
-        text = std::string(name) + ".scale";
+        text = "scale" + name.substr(separator);
         glm::vec3 scale = value.GetScale();
         if (ImGui::DragFloat3(text.c_str(), (float *)&scale, 0.01f)) {
             value.SetScale(scale);
@@ -151,14 +162,20 @@ namespace sp {
         return changed;
     }
     template<>
-    bool AddImGuiElement(const char *name, std::vector<ecs::AnimationState> &value) {
-        if (ImGui::TreeNode(name)) {
-            for (auto &state : value) {
-                picojson::value jsonValue;
-                json::Save({}, jsonValue, state);
-                ImGui::Text("%s", jsonValue.serialize().c_str());
-            }
-            ImGui::TreePop();
+    bool AddImGuiElement(const std::string &name, std::vector<ecs::AnimationState> &value) {
+        for (auto &state : value) {
+            picojson::value jsonValue;
+            json::Save({}, jsonValue, state);
+            ImGui::Text("%s", jsonValue.serialize(true).c_str());
+        }
+        return false;
+    }
+    template<>
+    bool AddImGuiElement(const std::string &name, std::vector<ecs::ScriptState> &value) {
+        for (auto &state : value) {
+            picojson::value jsonValue;
+            json::Save({}, jsonValue, state);
+            ImGui::Text("%s", jsonValue.serialize(true).c_str());
         }
         return false;
     }
@@ -173,7 +190,7 @@ namespace sp {
         std::string elementName = field.name ? field.name : comp.name;
         elementName += "##";
         elementName += comp.name + std::to_string(field.fieldIndex);
-        if (!AddImGuiElement(elementName.c_str(), value)) return;
+        if (!AddImGuiElement(elementName, value)) return;
 
         if (ecs::IsLive(target)) {
             GetSceneManager().QueueAction(SceneAction::EditLiveECS,

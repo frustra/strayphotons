@@ -83,13 +83,14 @@ namespace sp {
         auto &gui = inspector.Get<ecs::Gui>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
 
-        if (!target.Exists(lock)) {
+        // Close the editor if it is open and there is no target
+        if (!target.Exists(lock) && gui.target != ecs::GuiTarget::None) {
             gui.target = ecs::GuiTarget::None;
             physics.shapes.clear();
             return;
         }
 
-        ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{"/edit/target", inspector, target});
+        ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspector, target});
 
         if (flatMode) {
             gui.target = ecs::GuiTarget::Debug;

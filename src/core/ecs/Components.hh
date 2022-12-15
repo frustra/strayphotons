@@ -62,6 +62,8 @@ namespace ecs {
     void RegisterComponent(const char *name, const std::type_index &idx, ComponentBase *comp);
     const ComponentBase *LookupComponent(const std::string &name);
     const ComponentBase *LookupComponent(const std::type_index &idx);
+
+    // Calls the provided function for all components except Name and SceneInfo
     void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
 
     template<typename T>

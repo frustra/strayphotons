@@ -27,6 +27,8 @@ namespace sp::scene {
         std::tuple<std::optional<AllComponentTypes>...> stagingComponents;
         auto stagingId = liveSceneInfo.rootStagingId;
         while (stagingId.Has<SceneInfo>(staging)) {
+            auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
+
             ( // For each component:
                 [&] {
                     using T = AllComponentTypes;
@@ -43,35 +45,46 @@ namespace sp::scene {
                         auto &component = std::get<std::optional<T>>(stagingComponents);
                         if (!component) component = LookupComponent<T>().GetStagingDefault();
 
-                        auto &srcComp = stagingId.Get<T>(staging);
-                        LookupComponent<T>().ApplyComponent(component.value(), srcComp, false);
+                        if constexpr (std::is_same_v<T, TransformTree>) {
+                            auto transform = stagingId.Get<TransformTree>(staging);
+
+                            // Apply scene root transform
+                            if (!transform.parent) {
+                                auto scene = stagingInfo.scene.lock();
+                                auto &rootTransform = scene->GetRootTransform();
+                                if (rootTransform != Transform()) {
+                                    transform.pose = rootTransform * transform.pose.Get();
+                                }
+                            }
+
+                            LookupComponent<TransformTree>().ApplyComponent(component.value(), transform, false);
+                        } else if constexpr (std::is_same_v<T, Animation>) {
+                            auto animation = stagingId.Get<Animation>(staging);
+
+                            // Apply scene root transform
+                            if (stagingId.Has<TransformTree>(staging)) {
+                                auto &transform = stagingId.Get<TransformTree>(staging);
+                                if (!transform.parent) {
+                                    auto scene = stagingInfo.scene.lock();
+                                    auto &rootTransform = scene->GetRootTransform();
+                                    if (rootTransform != Transform()) {
+                                        for (auto &state : animation.states) {
+                                            state.pos = rootTransform * glm::vec4(state.pos, 1);
+                                        }
+                                    }
+                                }
+                            }
+
+                            LookupComponent<Animation>().ApplyComponent(component.value(), animation, false);
+                        } else {
+                            auto &srcComp = stagingId.Get<T>(staging);
+                            LookupComponent<T>().ApplyComponent(component.value(), srcComp, false);
+                        }
                     }
                 }(),
                 ...);
 
-            auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
             stagingId = stagingInfo.nextStagingId;
-        }
-
-        // Apply scene root transforms
-        auto &transformOpt = std::get<std::optional<TransformTree>>(stagingComponents);
-        if (transformOpt) {
-            auto &transform = transformOpt.value();
-            if (!transform.parent) {
-                auto scene = rootSceneInfo.scene.lock();
-                auto &rootTransform = scene->GetRootTransform();
-                if (rootTransform != Transform()) {
-                    transform.pose = rootTransform * transform.pose.Get();
-
-                    auto &animationOpt = std::get<std::optional<Animation>>(stagingComponents);
-                    if (animationOpt) {
-                        auto &animation = animationOpt.value();
-                        for (auto &state : animation.states) {
-                            state.pos = rootTransform * glm::vec4(state.pos, 1);
-                        }
-                    }
-                }
-            }
         }
 
         // Apply flattened staging components to the live id, and remove any components that are no longer in staging
@@ -86,7 +99,7 @@ namespace sp::scene {
                     auto &component = std::get<std::optional<T>>(stagingComponents);
                     if (component) {
                         if (resetLive) {
-                            rootSceneInfo.liveId.Set<T>(live, *component);
+                            rootSceneInfo.liveId.Unset<T>(live);
                         }
 
                         auto &dstComp = rootSceneInfo.liveId.Get<T>(live);

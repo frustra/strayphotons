@@ -148,13 +148,29 @@ namespace sp {
                                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                                 item.applyCallback(stagingLock, scene);
                             }
-                            PreloadAndApplyScene(scene, true);
                         } else {
                             Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->name);
                         }
                     } else {
                         Errorf("SceneManager::EditStagingScene: scene %s not found", item.sceneName);
                     }
+                } else {
+                    Errorf("SceneManager::EditStagingScene called on %s without applyCallback", item.sceneName);
+                }
+                item.promise.set_value();
+            } else if (item.action == SceneAction::ApplyStagingScene) {
+                ZoneScopedN("ApplyStagingScene");
+                ZoneStr(item.sceneName);
+                auto scene = stagedScenes.Load(item.sceneName);
+                if (scene) {
+                    if (scene->type != SceneType::System) {
+                        Tracef("Applying staging scene: %s", scene->name);
+                        PreloadAndApplyScene(scene, true);
+                    } else {
+                        Errorf("SceneManager::ApplyStagingScene: Cannot apply system scene: %s", scene->name);
+                    }
+                } else {
+                    Errorf("SceneManager::ApplyStagingScene: scene %s not found", item.sceneName);
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::SaveStagingScene) {
@@ -610,7 +626,6 @@ namespace sp {
                     }
                 }
                 ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                    if (name == "name" || name == "scene_info") return;
                     if (comp.HasComponent(staging, e)) {
                         if (comp.metadata.fields.empty()) {
                             components[comp.name].set<picojson::object>({});
@@ -755,7 +770,10 @@ namespace sp {
         ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
         ecs::Entity player) {
         auto spawn = entities::Spawn.Get(lock);
-        if (!spawn.Has<ecs::TransformSnapshot>(lock)) return;
+        if (!spawn.Has<ecs::TransformSnapshot>(lock)) {
+            Errorf("RespawnPlayer: Spawn point %s missing", entities::Spawn.Name().String());
+            return;
+        }
 
         auto spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
         spawnTransform.SetScale(glm::vec3(1));

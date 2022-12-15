@@ -91,13 +91,13 @@ namespace sp {
                 Assert(ctx.entity.Has<ecs::Gui>(lock), "gui entity must have a gui component");
 
                 auto &gui = ctx.entity.Get<ecs::Gui>(lock);
+                if (!ctx.window && !gui.windowName.empty()) {
+                    ctx.window = CreateGuiWindow(gui.windowName);
+                }
                 if (gui.target == ecs::GuiTarget::Debug) {
-                    if (!ctx.window && !gui.windowName.empty()) {
-                        ctx.window = CreateGuiWindow(this, gui.windowName);
-                    }
-                } else if (ctx.window) {
+                    Attach(ctx.window);
+                } else {
                     Detach(ctx.window);
-                    ctx.window.reset();
                 }
             }
         }

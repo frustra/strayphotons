@@ -193,15 +193,16 @@ namespace ecs {
         }
     }
 
-    bool EventInput::Add(const Event &event) const {
+    size_t EventInput::Add(const Event &event) const {
+        size_t eventsSent = 0;
         auto it = events.find(event.name);
         if (it != events.end()) {
             for (auto &queue : it->second) {
                 queue->Add(event);
+                eventsSent++;
             }
-            return true;
         }
-        return false;
+        return eventsSent;
     }
 
     bool EventInput::Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut) {
@@ -291,7 +292,7 @@ namespace ecs {
         size_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<EventInput>(lock);
-            if (eventInput.Add(event)) eventsSent++;
+            eventsSent += eventInput.Add(event);
         }
         if (ent.Has<EventBindings>(lock)) {
             auto &bindings = ent.Get<EventBindings>(lock);

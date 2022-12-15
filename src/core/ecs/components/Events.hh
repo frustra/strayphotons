@@ -74,7 +74,7 @@ namespace ecs {
         void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding);
         void Unregister(const EventQueueRef &queue, const std::string &binding);
 
-        bool Add(const Event &event) const;
+        size_t Add(const Event &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
         robin_hood::unordered_map<std::string, std::vector<std::shared_ptr<EventQueue>>> events;
