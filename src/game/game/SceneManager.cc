@@ -770,7 +770,10 @@ namespace sp {
         ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
         ecs::Entity player) {
         auto spawn = entities::Spawn.Get(lock);
-        if (!spawn.Has<ecs::TransformSnapshot>(lock)) return;
+        if (!spawn.Has<ecs::TransformSnapshot>(lock)) {
+            Errorf("RespawnPlayer: Spawn point %s missing", entities::Spawn.Name().String());
+            return;
+        }
 
         auto spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
         spawnTransform.SetScale(glm::vec3(1));
