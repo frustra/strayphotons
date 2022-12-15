@@ -68,9 +68,9 @@ namespace EventBindingTests {
             auto sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_BUTTON, player, 42});
             Assert(sentCount == 1, "Expected to successfully queue 1 event");
             sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'a'});
-            Assert(sentCount == 2, "Expected to successfully queue 2 events");
+            Assert(sentCount == 3, "Expected to successfully queue 3 events");
             sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'b'});
-            Assert(sentCount == 2, "Expected to successfully queue 2 events");
+            Assert(sentCount == 3, "Expected to successfully queue 3 events");
         }
         {
             Timer t("Read the test events");
