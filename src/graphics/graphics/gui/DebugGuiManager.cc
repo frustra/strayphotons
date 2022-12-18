@@ -24,6 +24,7 @@ namespace sp {
     }
 
     void DebugGuiManager::DefineWindows() {
+        ZoneScoped;
         SetGuiContext();
         ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));

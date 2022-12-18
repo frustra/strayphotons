@@ -44,6 +44,8 @@ namespace ecs {
         virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
         virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
         virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
+        virtual const void *GetLiveDefault() const = 0;
+        virtual const void *GetStagingDefault() const = 0;
 
         template<typename T>
         void ApplyComponent(T &dst, const T &src, bool liveTarget) const {
@@ -52,7 +54,7 @@ namespace ecs {
 
         template<typename T>
         const T &GetStagingDefault() const {
-            return dynamic_cast<const Component<T> *>(this)->GetStagingDefault();
+            return *static_cast<const T *>(dynamic_cast<const Component<T> *>(this)->GetStagingDefault());
         }
 
         const char *name;
@@ -149,10 +151,6 @@ namespace ecs {
             Apply(dst, src, liveTarget);
         }
 
-        const CompType &GetStagingDefault() const {
-            return defaultStagingComponent;
-        }
-
         bool HasComponent(Lock<> lock, Entity ent) const override {
             return ent.Has<CompType>(lock);
         }
@@ -163,6 +161,14 @@ namespace ecs {
 
         void *Access(Lock<WriteAll> lock, Entity ent) const override {
             return &ent.Get<CompType>(lock);
+        }
+
+        const void *GetLiveDefault() const override {
+            return &defaultLiveComponent;
+        }
+
+        const void *GetStagingDefault() const override {
+            return &defaultStagingComponent;
         }
 
         bool operator==(const Component<CompType> &other) const {

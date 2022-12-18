@@ -43,7 +43,11 @@ namespace sp::scene {
                         if (!stagingId.Has<T>(staging)) return;
 
                         auto &component = std::get<std::optional<T>>(stagingComponents);
-                        if (!component) component = LookupComponent<T>().GetStagingDefault();
+                        if (!component) {
+                            auto comp = LookupComponent(typeid(T));
+                            Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
+                            component = comp->GetStagingDefault<T>();
+                        }
 
                         if constexpr (std::is_same_v<T, TransformTree>) {
                             auto transform = stagingId.Get<TransformTree>(staging);

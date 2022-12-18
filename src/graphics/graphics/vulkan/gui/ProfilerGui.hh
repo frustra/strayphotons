@@ -26,6 +26,7 @@ namespace sp::vulkan {
         void DefineContents() {
             if (timer.lastCompleteFrame.empty()) return;
             if (!CVarProfileRender.Get()) return;
+            ZoneScoped;
 
             CollectSample();
 

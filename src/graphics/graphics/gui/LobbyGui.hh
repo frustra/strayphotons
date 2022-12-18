@@ -15,6 +15,7 @@ namespace sp {
         State state = State::Initial;
 
         void DefineContents() {
+            ZoneScoped;
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {30, 20});
             PushFont(Font::Primary, 32);
             if (state == State::Initial) {
