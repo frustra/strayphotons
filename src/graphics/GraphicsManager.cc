@@ -62,7 +62,7 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game *game) : game(game), workQueue("RenderEcsWrite") {}
+    GraphicsManager::GraphicsManager(Game *game) : game(game) {}
 
     GraphicsManager::~GraphicsManager() {
         if (context) context->WaitIdle();

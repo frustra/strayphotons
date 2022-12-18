@@ -3,7 +3,6 @@
 #ifdef SP_GRAPHICS_SUPPORT
 
     #include "core/Common.hh"
-    #include "core/DispatchQueue.hh"
     #include "ecs/Ecs.hh"
     #include "ecs/EntityRef.hh"
 
@@ -62,7 +61,6 @@ namespace sp {
         ecs::EntityRef flatviewEntity;
 
         chrono_clock::time_point previousFrameEnd, renderStart;
-        DispatchQueue workQueue;
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
