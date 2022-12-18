@@ -68,4 +68,8 @@ namespace ecs {
         if (!ptr || !other) return false;
         return ptr->liveEntity.load() == other || ptr->stagingEntity.load() == other;
     }
+
+    bool EntityRef::operator<(const EntityRef &other) const {
+        return Name() < other.Name();
+    }
 } // namespace ecs

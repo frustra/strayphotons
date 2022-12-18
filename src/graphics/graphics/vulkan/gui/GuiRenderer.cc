@@ -34,7 +34,7 @@ namespace sp::vulkan {
         };
 
         for (auto &def : GetFontList()) {
-            auto asset = Assets().Load(string("fonts/") + def.name)->Get();
+            auto asset = Assets().Load("fonts/"s + def.name)->Get();
             Assertf(asset, "Failed to load gui font %s", def.name);
 
             ImFontConfig cfg;
@@ -76,6 +76,7 @@ namespace sp::vulkan {
 
     void GuiRenderer::Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport) {
         if (!fontView->Ready()) return;
+        ZoneScoped;
 
         context.SetGuiContext();
         ImGui::GetMainViewport()->PlatformHandleRaw = cmd.Device().Win32WindowHandle();

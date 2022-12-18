@@ -145,6 +145,7 @@ namespace sp {
     }
 
     void MenuGuiManager::DefineWindows() {
+        ZoneScoped;
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 

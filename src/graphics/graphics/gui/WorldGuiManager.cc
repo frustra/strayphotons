@@ -23,6 +23,7 @@ namespace sp {
     }
 
     void WorldGuiManager::DefineWindows() {
+        ZoneScoped;
         for (auto &window : components) {
             ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
             ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);

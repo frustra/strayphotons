@@ -151,7 +151,7 @@ namespace sp::vulkan::render_graph {
                     break;
                 }
             }
-            Assert(!assertExists || result != InvalidResource, string("resource does not exist: ").append(name));
+            Assertf(!assertExists || result != InvalidResource, "resource does not exist: %s", name);
             return result;
         }
 
@@ -159,7 +159,7 @@ namespace sp::vulkan::render_graph {
             auto id = nameScopes[*scopeIt].GetID(name, getFrameIndex);
             if (id != InvalidResource) return id;
         }
-        Assert(!assertExists, string("resource does not exist: ").append(name));
+        Assertf(!assertExists, "resource does not exist: %s", name);
         return InvalidResource;
     }
 

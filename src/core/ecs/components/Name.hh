@@ -29,6 +29,9 @@ namespace ecs {
         }
 
         bool operator==(const Name &) const = default;
+        bool operator<(const Name &other) const {
+            return scene == other.scene ? entity < other.entity : scene < other.scene;
+        }
     };
 
     std::ostream &operator<<(std::ostream &out, const Name &v);

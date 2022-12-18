@@ -29,6 +29,7 @@ namespace ecs {
 
         bool operator==(const EntityRef &other) const;
         bool operator==(const Entity &other) const;
+        bool operator<(const EntityRef &other) const;
 
     private:
         std::shared_ptr<Ref> ptr;
