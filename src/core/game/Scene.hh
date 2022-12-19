@@ -46,6 +46,7 @@ namespace sp {
             std::string relativeName = "");
         ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             ecs::Entity prefabRoot,
+            size_t prefabScriptId,
             std::string relativeName = "",
             ecs::Name prefix = ecs::Name());
 

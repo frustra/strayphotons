@@ -198,4 +198,11 @@ namespace ecs {
             if (callback) (*callback)(state, lock, ent);
         }
     }
+
+    const ScriptState *Script::FindScript(size_t instanceId) const {
+        auto it = std::find_if(scripts.begin(), scripts.end(), [&](auto &arg) {
+            return arg.GetInstanceId() == instanceId;
+        });
+        return it != scripts.end() ? &*it : nullptr;
+    }
 } // namespace ecs

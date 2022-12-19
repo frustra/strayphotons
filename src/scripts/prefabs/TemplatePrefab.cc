@@ -12,6 +12,7 @@ namespace ecs {
     struct TemplateParser {
         std::shared_ptr<sp::Scene> scene;
         Entity rootEnt;
+        size_t prefabScriptId;
         std::string sourceName;
 
         ecs::EntityScope rootScope;
@@ -21,8 +22,11 @@ namespace ecs {
         picojson::object *rootObj = nullptr, *componentsObj = nullptr;
         picojson::array *entityList = nullptr;
 
-        TemplateParser(const std::shared_ptr<sp::Scene> &scene, Entity rootEnt, std::string source)
-            : scene(scene), rootEnt(rootEnt), sourceName(source) {}
+        TemplateParser(const std::shared_ptr<sp::Scene> &scene,
+            Entity rootEnt,
+            size_t prefabScriptId,
+            std::string source)
+            : scene(scene), rootEnt(rootEnt), prefabScriptId(prefabScriptId), sourceName(source) {}
 
         bool Parse(Lock<AddRemove> lock) {
             if (sourceName.empty()) return false;
@@ -65,7 +69,8 @@ namespace ecs {
         void ApplyComponents(Lock<AddRemove> lock) {
             if (!componentsObj) return;
 
-            ecs::Entity rootOverride = scene->NewPrefabEntity(lock, rootEnt, "scoperoot", rootScope.prefix);
+            ecs::Entity rootOverride =
+                scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", rootScope.prefix);
             for (auto &comp : *componentsObj) {
                 if (comp.first.empty() || comp.first[0] == '_') continue;
                 Assertf(comp.first != "name",
@@ -106,7 +111,8 @@ namespace ecs {
                     Errorf("Entity name 'scoperoot' in template not allowed, ignoring");
                     continue;
                 }
-                ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, relativeName, scope.prefix);
+                ecs::Entity newEntity =
+                    scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope.prefix);
 
                 for (auto comp : obj) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
@@ -142,7 +148,7 @@ namespace ecs {
         auto scene = state.scope.scene.lock();
         Assertf(scene, "template prefab does not have a valid scene: %s", ToString(lock, ent));
 
-        TemplateParser parser(scene, ent, state.GetParam<std::string>("source"));
+        TemplateParser parser(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("source"));
         if (!parser.Parse(lock)) return;
 
         parser.ApplyComponents(lock);
@@ -177,13 +183,13 @@ namespace ecs {
             return;
         }
 
-        TemplateParser surface(scene, ent, state.GetParam<std::string>("surface"));
+        TemplateParser surface(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("surface"));
         if (!surface.Parse(lock)) return;
 
-        TemplateParser edge(scene, ent, state.GetParam<std::string>("edge"));
+        TemplateParser edge(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("edge"));
         auto haveEdge = edge.Parse(lock);
 
-        TemplateParser corner(scene, ent, state.GetParam<std::string>("corner"));
+        TemplateParser corner(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("corner"));
         auto haveCorner = corner.Parse(lock);
 
         surface.ApplyComponents(lock);
