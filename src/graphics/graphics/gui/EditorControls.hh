@@ -240,6 +240,19 @@ namespace sp {
             json::Save({}, jsonValue, state);
             ImGui::Text("%s", jsonValue.serialize(true).c_str());
         }
+        ImGui::Button("Add Gltf");
+        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
+            ImGui::Text("Select Model:");
+            static const std::array<const char *, 4> models = {"box", "cardboard-box", "duck", "mcube"};
+            for (auto &model : models) {
+                if (ImGui::Selectable(model)) {
+                    Debugf("Adding gltf prefab: %s", model);
+                    // scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName));
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::EndPopup();
+        }
         return false;
     }
 
