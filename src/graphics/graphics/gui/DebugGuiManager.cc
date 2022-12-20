@@ -43,7 +43,10 @@ namespace sp {
                 ImGui::Begin(component->name.c_str(), nullptr, window->flags);
             }
             component->DefineContents();
-            if (window) ImGui::End();
+            if (window) {
+                ImGui::End();
+                window->PostDefine();
+            }
         }
 
         ImGui::PopStyleVar();

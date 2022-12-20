@@ -38,6 +38,7 @@ namespace sp {
         GuiWindow(const string &name, int flags = 0) : GuiRenderable(name), flags(flags) {}
 
         virtual void PreDefine() {}
+        virtual void PostDefine() {}
 
         int flags = 0;
     };

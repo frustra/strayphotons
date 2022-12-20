@@ -15,6 +15,7 @@ namespace sp {
 
         void PreDefine() override;
         void DefineContents() override;
+        void PostDefine() override;
 
     private:
         std::shared_ptr<EditorContext> context;

@@ -193,7 +193,7 @@ namespace sp {
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::EntityRef &value) {
         bool changed = false;
-        ImGui::Text("%s: ", fieldName.c_str());
+        ImGui::Text("%s:", fieldName.c_str());
         ImGui::SameLine();
         ImGui::Button(value ? value.Name().String().c_str() : "None");
         if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
