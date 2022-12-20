@@ -337,10 +337,38 @@ namespace sp {
                         if (!stagingSceneInfo.prefabStagingId) {
                             tabName = "Scene: " + stagingScene->name;
                         } else {
-                            tabName = "Prefab: " + ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) +
-                                      " - " + std::to_string(stagingId);
+                            Assertf(stagingSceneInfo.prefabStagingId.Has<ecs::Script>(stagingLock),
+                                "SceneInfo.prefabStagingId does not have a Script component");
+                            auto &prefabScript = stagingSceneInfo.prefabStagingId.Get<ecs::Script>(stagingLock);
+                            auto scriptInstance = prefabScript.FindScript(stagingSceneInfo.prefabScriptId);
+                            Assertf(scriptInstance != nullptr, "SceneInfo.prefabScriptId not found in Scripts");
+
+                            if (scriptInstance->definition.name == "gltf") {
+                                tabName = "Gltf: " + scriptInstance->GetParam<std::string>("model") + " - " +
+                                          ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                          std::to_string(stagingId);
+                            } else if (scriptInstance->definition.name == "template") {
+                                tabName = "Template: " + scriptInstance->GetParam<std::string>("source") + " - " +
+                                          ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                          std::to_string(stagingId);
+                            } else {
+                                tabName = "Prefab: " + scriptInstance->definition.name + " - " +
+                                          ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                          std::to_string(stagingId);
+                            }
                         }
                         if (ImGui::BeginTabItem(tabName.c_str())) {
+                            if (ImGui::Button("Apply Scene")) {
+                                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
+                            }
+                            if (!stagingSceneInfo.prefabStagingId) {
+                                ImGui::SameLine();
+                                if (ImGui::Button("Save & Apply Scene")) {
+                                    GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
+                                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, stagingScene->name);
+                                }
+                            }
+                            ImGui::Separator();
                             ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
                                 if (!comp.HasComponent(stagingLock, stagingId)) return;
                                 if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -353,17 +381,6 @@ namespace sp {
                                     }
                                 }
                             });
-                            if (!stagingSceneInfo.prefabStagingId) {
-                                ImGui::Separator();
-                                if (ImGui::Button("Apply Scene")) {
-                                    GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
-                                }
-                                ImGui::SameLine();
-                                if (ImGui::Button("Save & Apply Scene")) {
-                                    GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
-                                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, stagingScene->name);
-                                }
-                            }
                             ImGui::EndTabItem();
                         }
                     } else {

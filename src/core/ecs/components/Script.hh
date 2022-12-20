@@ -99,6 +99,10 @@ namespace ecs {
             return instanceId != other.instanceId;
         }
 
+        size_t GetInstanceId() const {
+            return instanceId;
+        }
+
         EntityScope scope;
         ScriptDefinition definition;
         bool filterOnEvent = false;
@@ -108,9 +112,8 @@ namespace ecs {
 
     private:
         robin_hood::unordered_flat_map<std::string, ParameterType> parameters;
-        size_t instanceId = 0;
+        size_t instanceId;
 
-        friend struct Script;
         friend class StructMetadata;
     };
 
@@ -145,6 +148,8 @@ namespace ecs {
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
         void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
         static void Prefab(Lock<AddRemove> lock, const Entity &ent);
+
+        const ScriptState *FindScript(size_t instanceId) const;
 
         std::vector<ScriptState> scripts;
     };

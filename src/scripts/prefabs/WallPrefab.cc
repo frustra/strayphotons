@@ -40,7 +40,11 @@ namespace ecs {
             auto rotation = glm::orientedAngle(dir, glm::vec2(1, 0));
 
             if (segment > 1 && dir != lastDir) {
-                auto newEnt = scene->NewPrefabEntity(lock, ent, "corner" + std::to_string(segment), prefixName);
+                auto newEnt = scene->NewPrefabEntity(lock,
+                    ent,
+                    state.GetInstanceId(),
+                    "corner" + std::to_string(segment),
+                    prefixName);
 
                 auto deltaRotation = glm::orientedAngle(lastDir, dir);
                 auto &transform = newEnt.Set<TransformTree>(lock,
@@ -64,6 +68,7 @@ namespace ecs {
             for (size_t i = 0; i < count; i++) {
                 auto newEnt = scene->NewPrefabEntity(lock,
                     ent,
+                    state.GetInstanceId(),
                     "segment" + std::to_string(segment) + "_" + std::to_string(i),
                     prefixName);
 

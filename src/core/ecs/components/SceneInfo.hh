@@ -31,13 +31,14 @@ namespace ecs {
             Assertf(IsLive(liveId), "Invalid liveId in SceneInfo: %s", std::to_string(liveId));
         }
 
-        SceneInfo(Entity rootStagingId, Entity prefabStagingId, const SceneInfo &rootSceneInfo)
-            : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
-              scene(rootSceneInfo.scene), properties(rootSceneInfo.properties) {
+        SceneInfo(Entity rootStagingId, Entity prefabStagingId, size_t prefabScriptId, const SceneInfo &rootSceneInfo)
+            : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), prefabScriptId(prefabScriptId),
+              priority(rootSceneInfo.priority), scene(rootSceneInfo.scene), properties(rootSceneInfo.properties) {
             Assertf(IsStaging(rootStagingId), "Invalid rootStagingId in SceneInfo: %s", std::to_string(rootStagingId));
             Assertf(IsStaging(prefabStagingId),
                 "Invalid prefabStagingId in SceneInfo: %s",
                 std::to_string(prefabStagingId));
+            Assertf(prefabScriptId > 0, "Invalid prefabScriptId in SceneInfo: %s", std::to_string(prefabScriptId));
         }
 
         // Should be called on the live SceneInfo
@@ -52,6 +53,7 @@ namespace ecs {
         // Staging IDs are stored in a singly-linked list, with highest priority first.
         Entity rootStagingId, nextStagingId;
         Entity prefabStagingId;
+        size_t prefabScriptId = 0;
         ScenePriority priority = ScenePriority::Scene;
         std::weak_ptr<sp::Scene> scene;
         std::shared_ptr<SceneProperties> properties;

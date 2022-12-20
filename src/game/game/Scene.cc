@@ -85,9 +85,19 @@ namespace sp {
 
     ecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         ecs::Entity prefabRoot,
+        size_t prefabScriptId,
         std::string relativeName,
         ecs::Name scope) {
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
+        Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
+            "Prefab root %s does not have SceneInfo",
+            ecs::ToString(stagingLock, prefabRoot));
+        Assertf(prefabRoot.Has<ecs::Script>(stagingLock),
+            "Prefab root %s does not have Prefab Script",
+            ecs::ToString(stagingLock, prefabRoot));
+        auto &prefabScript = prefabRoot.Get<const ecs::Script>(stagingLock);
+        Assertf(prefabScript.FindScript(prefabScriptId) != nullptr,
+            "Scene::NewPrefabEntity provided prefabScriptId not found in Scripts");
 
         ecs::Entity existing;
         ecs::Name entityName;
@@ -100,10 +110,6 @@ namespace sp {
 
             existing = GetStagingEntity(entityName);
         }
-
-        Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
-            "Prefab root %s does not have SceneInfo",
-            ecs::ToString(stagingLock, prefabRoot));
 
         if (!entityName) entityName = GenerateEntityName(scope);
         if (!entityName) {
@@ -123,7 +129,11 @@ namespace sp {
                 entityName.String());
 
             auto &existingSceneInfo = existing.Get<ecs::SceneInfo>(stagingLock);
-            entity.Set<ecs::SceneInfo>(stagingLock, existingSceneInfo.rootStagingId, prefabRoot, rootSceneInfo);
+            entity.Set<ecs::SceneInfo>(stagingLock,
+                existingSceneInfo.rootStagingId,
+                prefabRoot,
+                prefabScriptId,
+                rootSceneInfo);
             // Insert the prefab entity at the end of the linked-list (i.e. lowest priority)
             auto nextId = existingSceneInfo.rootStagingId;
             while (nextId.Has<ecs::SceneInfo>(stagingLock)) {
@@ -135,7 +145,7 @@ namespace sp {
                 nextId = sceneInfo.nextStagingId;
             }
         } else {
-            entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, rootSceneInfo);
+            entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, prefabScriptId, rootSceneInfo);
             namedEntities.emplace(entityName, entity);
             references.emplace_back(entityName, entity);
         }

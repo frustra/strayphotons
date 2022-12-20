@@ -771,7 +771,10 @@ namespace sp {
         ecs::Entity player) {
         auto spawn = entities::Spawn.Get(lock);
         if (!spawn.Has<ecs::TransformSnapshot>(lock)) {
-            Errorf("RespawnPlayer: Spawn point %s missing", entities::Spawn.Name().String());
+            if (!scenes[SceneType::Async].empty() || !scenes[SceneType::World].empty()) {
+                // If no scenes are loaded, this is expected. (Player is the first scene to load on boot)
+                Errorf("RespawnPlayer: Spawn point %s missing", entities::Spawn.Name().String());
+            }
             return;
         }
 
