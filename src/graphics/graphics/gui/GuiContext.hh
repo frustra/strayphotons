@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include <vector>
 
 struct ImGuiContext;
@@ -34,7 +35,11 @@ namespace sp {
 
     class GuiWindow : public GuiRenderable {
     public:
-        GuiWindow(const string &name) : GuiRenderable(name) {}
+        GuiWindow(const string &name, int flags = 0) : GuiRenderable(name), flags(flags) {}
+
+        virtual void PreDefine() {}
+
+        int flags = 0;
     };
 
     class GuiContext {

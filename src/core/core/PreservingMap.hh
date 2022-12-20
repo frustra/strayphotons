@@ -147,6 +147,13 @@ namespace sp {
             return count;
         }
 
+        void ForEach(std::function<void(const K &, std::shared_ptr<V> &)> callback) {
+            std::unique_lock lock(mutex);
+            for (auto &[key, tvalue] : storage) {
+                callback(key, tvalue.value);
+            }
+        }
+
         bool Contains(const K &key) {
             std::shared_lock lock(mutex);
             return storage.contains(key);

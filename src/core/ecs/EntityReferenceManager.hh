@@ -20,6 +20,7 @@ namespace ecs {
         EntityRef Get(const Name &name);
         EntityRef Get(const Entity &entity);
         EntityRef Set(const Name &name, const Entity &entity);
+        std::set<Name> GetNames(const std::string &search = "");
 
         void Tick(chrono_clock::duration maxTickInterval);
 

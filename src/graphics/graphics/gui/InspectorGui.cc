@@ -11,7 +11,8 @@
 #include <picojson/picojson.h>
 
 namespace sp {
-    InspectorGui::InspectorGui(const string &name) : GuiWindow(name) {
+    InspectorGui::InspectorGui(const string &name)
+        : GuiWindow(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
         std::thread([ctx = context]() {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
@@ -22,6 +23,14 @@ namespace sp {
             auto &eventInput = inspector.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, ctx->events, EDITOR_EVENT_EDIT_TARGET);
         }).detach();
+    }
+
+    void InspectorGui::PreDefine() {
+        auto *viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowSize(ImVec2(500, viewport->Size.y));
+        ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y),
+            ImGuiCond_None,
+            ImVec2(1, 0));
     }
 
     void InspectorGui::DefineContents() {

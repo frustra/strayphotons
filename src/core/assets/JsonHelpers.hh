@@ -294,6 +294,14 @@ namespace sp::json {
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::optional<T> &src) {
         if (src) Save(s, dst, *src);
     }
+    template<typename... Tn>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::variant<Tn...> &src) {
+        std::visit(
+            [&](auto &&value) {
+                Save(s, dst, value);
+            },
+            src);
+    }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {
         if (src.size() == 1) {

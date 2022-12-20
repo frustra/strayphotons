@@ -56,6 +56,16 @@ namespace ecs {
         return ref;
     }
 
+    std::set<Name> EntityReferenceManager::GetNames(const std::string &search) {
+        std::set<Name> results;
+        nameRefs.ForEach([&](auto &name, auto &) {
+            if (search.empty() || name.String().find(search) != std::string::npos) {
+                results.emplace(name);
+            }
+        });
+        return results;
+    }
+
     void EntityReferenceManager::Tick(chrono_clock::duration maxTickInterval) {
         nameRefs.Tick(maxTickInterval, [this](std::shared_ptr<EntityRef::Ref> &refPtr) {
             EntityRef ref(refPtr);
