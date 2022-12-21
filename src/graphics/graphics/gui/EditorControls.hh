@@ -260,20 +260,20 @@ namespace sp {
             std::string scriptLabel;
             if (isOnTick) {
                 if (state.filterOnEvent) {
-                    scriptLabel = "OnEvent: " + state.definition.name + rowId;
+                    scriptLabel = "OnEvent: " + state.definition.name;
                 } else {
-                    scriptLabel = "OnTick: " + state.definition.name + rowId;
+                    scriptLabel = "OnTick: " + state.definition.name;
                 }
             } else if (isPrefab) {
                 if (state.definition.name == "template") {
-                    scriptLabel = "Template: " + state.GetParam<std::string>("source") + rowId;
+                    scriptLabel = "Template: " + state.GetParam<std::string>("source");
                 } else if (state.definition.name == "gltf") {
-                    scriptLabel = "Gltf: " + state.GetParam<std::string>("model") + rowId;
+                    scriptLabel = "Gltf: " + state.GetParam<std::string>("model");
                 } else {
-                    scriptLabel = "Prefab: " + state.definition.name + rowId;
+                    scriptLabel = "Prefab: " + state.definition.name;
                 }
             }
-            if (ImGui::TreeNode(scriptLabel.c_str())) {
+            if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_None, "%s", scriptLabel.c_str())) {
                 if (isOnTick) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
