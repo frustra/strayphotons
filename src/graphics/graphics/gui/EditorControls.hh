@@ -252,19 +252,29 @@ namespace sp {
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptState> &value) {
         bool changed = false;
-        ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
-                                ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp;
-        if (ImGui::BeginTable(name.c_str(), 2, flags, ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() * 8))) {
-            ImGui::TableSetupColumn("Script");
-            ImGui::TableSetupColumn("Parameters");
-            ImGui::TableHeadersRow();
-
-            for (auto &state : value) {
-                ImGui::TableNextRow();
-                std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-                ImGui::TableSetColumnIndex(0);
-                if (std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
-                    std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback)) {
+        for (auto &state : value) {
+            std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
+            bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
+                            std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);
+            bool isPrefab = std::holds_alternative<ecs::PrefabFunc>(state.definition.callback);
+            std::string scriptLabel;
+            if (isOnTick) {
+                if (state.filterOnEvent) {
+                    scriptLabel = "OnEvent: " + state.definition.name + rowId;
+                } else {
+                    scriptLabel = "OnTick: " + state.definition.name + rowId;
+                }
+            } else if (isPrefab) {
+                if (state.definition.name == "template") {
+                    scriptLabel = "Template: " + state.GetParam<std::string>("source") + rowId;
+                } else if (state.definition.name == "gltf") {
+                    scriptLabel = "Gltf: " + state.GetParam<std::string>("model") + rowId;
+                } else {
+                    scriptLabel = "Prefab: " + state.definition.name + rowId;
+                }
+            }
+            if (ImGui::TreeNode(scriptLabel.c_str())) {
+                if (isOnTick) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
                         auto &scripts = ecs::GetScriptDefinitions().scripts;
@@ -278,7 +288,7 @@ namespace sp {
                         }
                         ImGui::EndCombo();
                     }
-                } else if (std::holds_alternative<ecs::PrefabFunc>(state.definition.callback)) {
+                } else if (isPrefab) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
                         auto &prefabs = ecs::GetScriptDefinitions().prefabs;
@@ -295,13 +305,39 @@ namespace sp {
                 } else {
                     ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "NULL Script");
                 }
-                ImGui::TableSetColumnIndex(1);
-                picojson::value jsonValue;
-                json::Save({}, jsonValue, state.parameters);
-                ImGui::Text("%s", jsonValue.serialize(true).c_str());
-            }
 
-            ImGui::EndTable();
+                ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
+                                        ImGuiTableFlags_SizingStretchProp;
+                if (ImGui::BeginTable(rowId.c_str(), 3, flags)) {
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 10.0f);
+                    ImGui::TableSetupColumn("Parameter");
+                    ImGui::TableSetupColumn("Value");
+                    ImGui::TableHeadersRow();
+
+                    for (auto &[key, param] : state.parameters) {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        if (ImGui::Button("-")) {
+                            Debugf("Remove: %s", key);
+                        }
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("%s", key.c_str());
+                        ImGui::TableSetColumnIndex(2);
+                        picojson::value jsonValue;
+                        json::Save({}, jsonValue, param);
+                        ImGui::Text("%s", jsonValue.serialize(true).c_str());
+                    }
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    if (ImGui::Button("+")) {
+                        state.parameters.emplace("", "");
+                        changed = true;
+                    }
+                }
+                ImGui::EndTable();
+
+                ImGui::TreePop();
+            }
         }
         if (ecs::IsStaging(target)) {
             if (ImGui::Button("Add Prefab")) {
