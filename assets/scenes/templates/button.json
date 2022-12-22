@@ -12,7 +12,7 @@
 			}],
 			"event_input": {},
 			"signal_bindings": {
-				"button_pressed": "button_body/trigger_object_enter"
+				"button_pressed": "button_body/trigger_object_count"
 			}
 		},
 		{
@@ -35,14 +35,18 @@
 			},
 			"signal_output": {},
 			"event_bindings": {
-				"/trigger/object/enter": [
-					"button/button/press",
-					"button/sound/play"
-				],
+				"/trigger/object/enter": "button/button/press",
+				"/sound/play": {
+					"target": "button/sound/play",
+					"set_value": 0
+				},
 				"/trigger/object/leave": {
 					"target": "button/sound/play",
 					"set_value": 1
 				}
+			},
+			"script": {
+				"onTick": "edge_trigger"
 			}
 		},
 		{

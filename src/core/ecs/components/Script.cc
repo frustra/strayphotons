@@ -18,16 +18,17 @@ namespace ecs {
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
-        : scope(scope), definition({"", {}, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, nullptr, {}, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback)
-        : scope(scope), definition({"", {}, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, nullptr, {}, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
-        : scope(scope), definition({"", {}, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, nullptr, {}, callback}), instanceId(++nextInstanceId) {}
 
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
         state.scope = scope;
+        picojson::value parameters;
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
                 if (param.second.is<std::string>()) {
@@ -85,7 +86,8 @@ namespace ecs {
                     return false;
                 }
             } else if (param.first == "parameters") {
-                for (auto scriptParam : param.second.get<picojson::object>()) {
+                parameters = param.second;
+                for (auto scriptParam : parameters.get<picojson::object>()) {
                     if (scriptParam.second.is<picojson::array>()) {
                         auto array = scriptParam.second.get<picojson::array>();
                         if (array.empty()) continue;
@@ -121,6 +123,19 @@ namespace ecs {
         if (std::holds_alternative<std::monostate>(state.definition.callback)) {
             Errorf("Script has no definition: %s", src.to_str());
             return false;
+        }
+        if (state.definition.metadata && state.definition.dataAccessor) {
+            void *dataPtr = state.definition.dataAccessor(state);
+            if (!dataPtr) {
+                Errorf("Script definition returned null data: %s", state.definition.name);
+                return false;
+            }
+            for (auto &field : state.definition.metadata->fields) {
+                if (!field.Load(scope, dataPtr, parameters)) {
+                    Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
+                    return false;
+                }
+            }
         }
         return true;
     }

@@ -11,37 +11,58 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    std::array miscScripts = {
-        InternalScript("edge_trigger",
-            [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                auto inputName = state.GetParam<std::string>("input_signal");
-                auto outputName = state.GetParam<std::string>("output_event");
-                auto upperThreshold = state.GetParam<double>("upper_threshold");
-                auto lowerThreshold = state.GetParam<double>("lower_threshold");
+    template<typename T, typename... Events>
+    struct FancyScript {
+        FancyScript(const std::string &name, const StructMetadata &metadata, Events... events) {
+            GetScriptDefinitions().scripts.emplace(name,
+                ScriptDefinition{name,
+                    {events...},
+                    &metadata,
+                    [](ScriptState &state) -> void * {
+                        if (!state.userData.has_value()) {
+                            state.userData.emplace<T>();
+                        }
+                        return std::any_cast<T>(&state.userData);
+                    },
+                    OnTickFunc(
+                        [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+                            T scriptData;
+                            if (state.userData.has_value()) {
+                                scriptData = std::any_cast<T>(state.userData);
+                            }
+                            scriptData.OnTick(state, lock, ent, interval);
+                            state.userData = scriptData;
+                        })});
+        }
+    };
 
-                auto oldTriggered = state.GetParam<bool>("triggered");
-                auto newTriggered = oldTriggered;
-                auto value = SignalBindings::GetSignal(lock, ent, inputName);
-                if (upperThreshold >= lowerThreshold) {
-                    if (value >= upperThreshold && !oldTriggered) {
-                        newTriggered = true;
-                    } else if (value <= lowerThreshold && oldTriggered) {
-                        newTriggered = false;
-                    }
-                } else {
-                    if (value <= upperThreshold && !oldTriggered) {
-                        newTriggered = true;
-                    } else if (value >= lowerThreshold && oldTriggered) {
-                        newTriggered = false;
-                    }
-                }
-                if (newTriggered != oldTriggered) {
-                    if (newTriggered != 0.0f) {
-                        EventBindings::SendEvent(lock, ent, Event{outputName, ent, (double)newTriggered});
-                    }
-                    state.SetParam<bool>("triggered", newTriggered);
-                }
-            }),
+    struct EdgeTrigger {
+        std::string inputExpr;
+        std::string outputName = "/script/edge_trigger";
+        SignalExpression expr;
+        double previousValue;
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (expr.expr != inputExpr) {
+                expr = SignalExpression(inputExpr, state.scope.prefix);
+                previousValue = expr.Evaluate(lock);
+            }
+
+            auto value = expr.Evaluate(lock);
+            if (value >= 0.5 && previousValue < 0.5) {
+                EventBindings::SendEvent(lock, ent, Event{outputName, ent, true});
+            } else if (value < 0.5 && previousValue >= 0.5) {
+                EventBindings::SendEvent(lock, ent, Event{outputName, ent, false});
+            }
+            previousValue = value;
+        }
+    };
+    StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
+        StructField::New("input_expr", &EdgeTrigger::inputExpr),
+        StructField::New("output_event", &EdgeTrigger::outputName));
+    FancyScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
+
+    std::array miscScripts = {
         InternalScript(
             "model_spawner",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {

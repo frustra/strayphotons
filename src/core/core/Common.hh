@@ -74,6 +74,7 @@ namespace sp {
 
     class angle_t {
     public:
+        angle_t() : radians_(0.0f) {}
         angle_t(const float &angle) : radians_(angle) {}
 
         operator float() const {

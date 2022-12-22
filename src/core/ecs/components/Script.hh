@@ -29,6 +29,8 @@ namespace ecs {
     struct ScriptDefinition {
         std::string name;
         std::vector<std::string> events;
+        const StructMetadata *metadata;
+        std::function<void *(ScriptState &)> dataAccessor;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
     };
 
@@ -164,7 +166,7 @@ namespace ecs {
     public:
         template<typename... Events>
         InternalScript(const std::string &name, OnTickFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, func});
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, {}, func});
         }
     };
 
@@ -172,14 +174,14 @@ namespace ecs {
     public:
         template<typename... Events>
         InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, func});
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, {}, func});
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, func});
+            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, nullptr, {}, func});
         }
     };
 } // namespace ecs

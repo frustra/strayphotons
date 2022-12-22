@@ -239,6 +239,20 @@ namespace sp {
             picojson::value jsonValue;
             json::Save({}, jsonValue, state);
             ImGui::Text("%s", jsonValue.serialize(true).c_str());
+            if (state.definition.metadata && state.definition.dataAccessor) {
+                void *dataPtr = state.definition.dataAccessor(state);
+                if (!dataPtr) {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1),
+                        "Script definition returned null data: %s",
+                        state.definition.name.c_str());
+                } else {
+                    picojson::value params;
+                    for (auto &field : state.definition.metadata->fields) {
+                        field.Save({}, params, dataPtr, nullptr);
+                    }
+                    ImGui::Text("%s: %s", state.definition.metadata->type.name(), params.serialize(true).c_str());
+                }
+            }
         }
         return false;
     }
