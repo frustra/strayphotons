@@ -14,7 +14,7 @@ namespace ecs {
         float startDistance = 0.0f;
     };
 
-    static const StructMetadata MetadataLaserEmitter(typeid(LaserEmitter),
+    static StructMetadata MetadataLaserEmitter(typeid(LaserEmitter),
         StructField::New("intensity", &LaserEmitter::intensity),
         StructField::New("color", &LaserEmitter::color),
         StructField::New("on", &LaserEmitter::on),

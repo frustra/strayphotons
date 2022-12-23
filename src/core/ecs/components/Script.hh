@@ -138,7 +138,7 @@ namespace ecs {
         friend class StructMetadata;
     };
 
-    static const StructMetadata MetadataScriptState(typeid(ScriptState));
+    static StructMetadata MetadataScriptState(typeid(ScriptState));
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &dst, const picojson::value &src);
     template<>
@@ -175,8 +175,7 @@ namespace ecs {
         std::vector<ScriptState> scripts;
     };
 
-    static const StructMetadata MetadataScript(typeid(Script),
-        StructField::New(&Script::scripts, ~FieldAction::AutoApply));
+    static StructMetadata MetadataScript(typeid(Script), StructField::New(&Script::scripts, ~FieldAction::AutoApply));
     static Component<Script> ComponentScript("script", MetadataScript);
 
     template<>

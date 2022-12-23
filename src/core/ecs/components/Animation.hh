@@ -30,7 +30,7 @@ namespace ecs {
         bool operator==(const AnimationState &) const = default;
     };
 
-    static const StructMetadata MetadataAnimationState(typeid(AnimationState),
+    static StructMetadata MetadataAnimationState(typeid(AnimationState),
         StructField::New("delay", &AnimationState::delay),
         StructField::New("translate", &AnimationState::pos),
         StructField::New("scale", &AnimationState::scale),
@@ -52,7 +52,7 @@ namespace ecs {
         }
     };
 
-    static const StructMetadata MetadataAnimation(typeid(Animation),
+    static StructMetadata MetadataAnimation(typeid(Animation),
         StructField::New("states", &Animation::states),
         StructField::New("defaultState", &Animation::targetState),
         StructField::New("interpolation", &Animation::interpolation),

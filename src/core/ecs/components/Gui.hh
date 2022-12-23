@@ -21,7 +21,7 @@ namespace ecs {
         Gui(std::string windowName, GuiTarget target = GuiTarget::World) : windowName(windowName), target(target) {}
     };
 
-    static const StructMetadata MetadataGui(typeid(Gui),
+    static StructMetadata MetadataGui(typeid(Gui),
         StructField::New("windowName", &Gui::windowName),
         StructField::New("target", &Gui::target));
     static Component<Gui> ComponentGui("gui", MetadataGui);

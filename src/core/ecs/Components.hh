@@ -186,8 +186,8 @@ namespace ecs {
     };
 
     // Define these special components here to solve circular includes
-    static const StructMetadata MetadataName(typeid(Name));
+    static StructMetadata MetadataName(typeid(Name));
     static Component<Name> ComponentName("name", MetadataName);
-    static const StructMetadata MetadataSceneInfo(typeid(SceneInfo));
+    static StructMetadata MetadataSceneInfo(typeid(SceneInfo));
     static Component<SceneInfo> ComponentSceneInfo("scene_info", MetadataSceneInfo);
 }; // namespace ecs

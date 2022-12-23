@@ -18,7 +18,7 @@ namespace ecs {
         }
     };
 
-    static const StructMetadata MetadataSceneConnection(typeid(SceneConnection),
+    static StructMetadata MetadataSceneConnection(typeid(SceneConnection),
         StructField::New(&SceneConnection::scenes, ~FieldAction::AutoApply));
     static Component<SceneConnection> ComponentSceneConnection("scene_connection", MetadataSceneConnection);
 

@@ -17,7 +17,7 @@ namespace ecs {
         sp::color_t tint = glm::vec3(1);
     };
 
-    static const StructMetadata MetadataOpticalElement(typeid(OpticalElement),
+    static StructMetadata MetadataOpticalElement(typeid(OpticalElement),
         StructField::New("type", &OpticalElement::type),
         StructField::New("tint", &OpticalElement::tint));
     static Component<OpticalElement> ComponentOpticalElement("optic", MetadataOpticalElement);

@@ -60,7 +60,7 @@ namespace ecs {
         }
     };
 
-    static const StructMetadata MetadataRenderable(typeid(Renderable),
+    static StructMetadata MetadataRenderable(typeid(Renderable),
         StructField::New("model", &Renderable::modelName),
         StructField::New("mesh_index", &Renderable::meshIndex),
         StructField::New("visibility", &Renderable::visibility),

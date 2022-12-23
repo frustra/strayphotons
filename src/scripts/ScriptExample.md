@@ -29,7 +29,7 @@ Script Example Definition
             }
         }
     };
-    
+
     // Script input and output parameters are defined the same as Component fields and will be saved and loaded automatically.
     // Any serializable type can be used as an input parameter, including vectors and entity references.
     StructMetadata MetadataExample(typeid(Example),

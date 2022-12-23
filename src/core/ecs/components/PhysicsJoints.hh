@@ -38,7 +38,7 @@ namespace ecs {
         bool operator==(const PhysicsJoint &) const = default;
     };
 
-    static const StructMetadata MetadataPhysicsJoint(typeid(PhysicsJoint),
+    static StructMetadata MetadataPhysicsJoint(typeid(PhysicsJoint),
         StructField::New("target", &PhysicsJoint::target),
         StructField::New("type", &PhysicsJoint::type),
         StructField::New("limit", &PhysicsJoint::limit),
@@ -53,7 +53,7 @@ namespace ecs {
         }
     };
 
-    static const StructMetadata MetadataPhysicsJoints(typeid(PhysicsJoints),
+    static StructMetadata MetadataPhysicsJoints(typeid(PhysicsJoints),
         StructField::New(&PhysicsJoints::joints, ~FieldAction::AutoApply));
     static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints", MetadataPhysicsJoints);
 

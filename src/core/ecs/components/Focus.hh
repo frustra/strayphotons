@@ -29,7 +29,7 @@ namespace ecs {
 
     std::ostream &operator<<(std::ostream &out, const FocusLock &v);
 
-    static const StructMetadata MetadataFocusLayer(typeid(FocusLayer), StructField::New<FocusLayer>());
+    static StructMetadata MetadataFocusLayer(typeid(FocusLayer), StructField::New<FocusLayer>());
     static Component<FocusLayer> ComponentFocusLayer("focus", MetadataFocusLayer);
 } // namespace ecs
 

@@ -52,7 +52,7 @@ namespace ecs {
         glm::mat4 viewMat, invViewMat;
     };
 
-    static const StructMetadata MetadataView(typeid(View),
+    static StructMetadata MetadataView(typeid(View),
         StructField::New("offset", &View::offset),
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),

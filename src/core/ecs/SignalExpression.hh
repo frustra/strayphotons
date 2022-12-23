@@ -68,7 +68,7 @@ namespace ecs {
 
     std::pair<Name, std::string> ParseSignalString(std::string_view str, const Name &scope = Name());
 
-    static const StructMetadata MetadataSignalExpression(typeid(SignalExpression));
+    static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
     template<>
     bool StructMetadata::Load<SignalExpression>(const EntityScope &scope,
         SignalExpression &dst,
