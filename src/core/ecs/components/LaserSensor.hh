@@ -14,7 +14,7 @@ namespace ecs {
         bool triggered = false;
     };
 
-    static StructMetadata MetadataLaserSensor(typeid(LaserSensor),
+    static const StructMetadata MetadataLaserSensor(typeid(LaserSensor),
         StructField::New("threshold", &LaserSensor::threshold));
     static Component<LaserSensor> ComponentLaserSensor("laser_sensor", MetadataLaserSensor);
 } // namespace ecs

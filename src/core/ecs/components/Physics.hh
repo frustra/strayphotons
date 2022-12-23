@@ -102,7 +102,7 @@ namespace ecs {
         bool operator==(const PhysicsShape &) const = default;
     };
 
-    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape));
+    static const StructMetadata MetadataPhysicsShape(typeid(PhysicsShape));
     template<>
     bool StructMetadata::Load<PhysicsShape>(const EntityScope &scope, PhysicsShape &dst, const picojson::value &src);
     template<>
@@ -126,7 +126,7 @@ namespace ecs {
         glm::vec3 constantForce;
     };
 
-    static StructMetadata MetadataPhysics(typeid(Physics),
+    static const StructMetadata MetadataPhysics(typeid(Physics),
         StructField::New("shapes", &Physics::shapes),
         StructField::New("group", &Physics::group),
         StructField::New("dynamic", &Physics::dynamic),

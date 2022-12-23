@@ -124,7 +124,7 @@ namespace ecs {
         friend class StructMetadata;
     };
 
-    static StructMetadata MetadataScriptState(typeid(ScriptState));
+    static const StructMetadata MetadataScriptState(typeid(ScriptState));
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &dst, const picojson::value &src);
     template<>
@@ -161,7 +161,8 @@ namespace ecs {
         std::vector<ScriptState> scripts;
     };
 
-    static StructMetadata MetadataScript(typeid(Script), StructField::New(&Script::scripts, ~FieldAction::AutoApply));
+    static const StructMetadata MetadataScript(typeid(Script),
+        StructField::New(&Script::scripts, ~FieldAction::AutoApply));
     static Component<Script> ComponentScript("script", MetadataScript);
 
     template<>
@@ -213,12 +214,12 @@ namespace ecs {
         }
 
         static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            T scriptData;
+            T data;
             if (state.userData.has_value()) {
-                scriptData = std::any_cast<T>(state.userData);
+                data = std::any_cast<T>(state.userData);
             }
-            scriptData.OnTick(state, lock, ent, interval);
-            state.userData = scriptData;
+            data.OnTick(state, lock, ent, interval);
+            state.userData = data;
         }
 
         InternalScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
@@ -230,6 +231,65 @@ namespace ecs {
             : InternalScriptBase(metadata) {
             GetScriptDefinitions().scripts.emplace(name,
                 ScriptDefinition{name, {events...}, filterOnEvent, this, OnTickFunc(&OnTick)});
+        }
+    };
+
+    template<typename T>
+    struct InternalPhysicsScript2 final : public InternalScriptBase {
+        void *Access(ScriptState &state) const override {
+            if (!state.userData.has_value()) {
+                state.userData.emplace<T>();
+            }
+            return std::any_cast<T>(&state.userData);
+        }
+
+        static void OnPhysicsUpdate(ScriptState &state,
+            PhysicsUpdateLock lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            T data;
+            if (state.userData.has_value()) {
+                data = std::any_cast<T>(state.userData);
+            }
+            data.OnPhysicsUpdate(state, lock, ent, interval);
+            state.userData = data;
+        }
+
+        InternalPhysicsScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
+            GetScriptDefinitions().scripts.emplace(name,
+                ScriptDefinition{name, {}, false, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
+        }
+
+        template<typename... Events>
+        InternalPhysicsScript2(const std::string &name,
+            const StructMetadata &metadata,
+            bool filterOnEvent,
+            Events... events)
+            : InternalScriptBase(metadata) {
+            GetScriptDefinitions().scripts.emplace(name,
+                ScriptDefinition{name, {events...}, filterOnEvent, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
+        }
+    };
+
+    template<typename T>
+    struct PrefabScript final : public InternalScriptBase {
+        void *Access(ScriptState &state) const override {
+            if (!state.userData.has_value()) {
+                state.userData.emplace<T>();
+            }
+            return std::any_cast<T>(&state.userData);
+        }
+
+        static void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+            T data;
+            if (state.userData.has_value()) {
+                data = std::any_cast<T>(state.userData);
+            }
+            data.Prefab(state, lock, ent);
+        }
+
+        PrefabScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
+            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, false, this, PrefabFunc(&Prefab)});
         }
     };
 } // namespace ecs

@@ -90,7 +90,7 @@ namespace ecs {
         bool operator==(const EventBinding &) const = default;
     };
 
-    static StructMetadata MetadataEventBinding(typeid(EventBinding),
+    static const StructMetadata MetadataEventBinding(typeid(EventBinding),
         StructField::New("multiply_value", &EventBinding::multiplyValue));
     template<>
     bool StructMetadata::Load<EventBinding>(const EntityScope &scope, EventBinding &dst, const picojson::value &src);
@@ -116,10 +116,10 @@ namespace ecs {
 
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope = Name());
 
-    static StructMetadata MetadataEventInput(typeid(EventInput));
+    static const StructMetadata MetadataEventInput(typeid(EventInput));
     static Component<EventInput> ComponentEventInput("event_input", MetadataEventInput);
 
-    static StructMetadata MetadataEventBindings(typeid(EventBindings),
+    static const StructMetadata MetadataEventBindings(typeid(EventBindings),
         StructField::New(&EventBindings::sourceToDest, ~FieldAction::AutoApply));
     static Component<EventBindings> ComponentEventBindings("event_bindings", MetadataEventBindings);
 

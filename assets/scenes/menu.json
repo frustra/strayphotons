@@ -531,9 +531,7 @@
 				"parameters": {
 					"alignment_target": "station-center:elevator",
 					"follow_target": "player:player",
-					"voxel_offset_x": -0.5,
-					"voxel_offset_y": -0.2,
-					"voxel_offset_z": -0.5,
+					"voxel_offset": [-0.5, -0.2, -0.5],
 					"voxel_scale": 0.25,
 					"voxel_stride": 16
 				}

@@ -30,7 +30,7 @@ namespace ecs {
         bool operator==(const Sound &) const = default;
     };
 
-    static StructMetadata MetadataSound(typeid(Sound),
+    static const StructMetadata MetadataSound(typeid(Sound),
         StructField::New("type", &Sound::type),
         StructField::New("file", &Sound::filePath),
         StructField::New("loop", &Sound::loop),
@@ -47,7 +47,8 @@ namespace ecs {
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static StructMetadata MetadataSounds(typeid(Sounds), StructField::New(&Sounds::sounds, ~FieldAction::AutoApply));
+    static const StructMetadata MetadataSounds(typeid(Sounds),
+        StructField::New(&Sounds::sounds, ~FieldAction::AutoApply));
     static Component<Sounds> ComponentSound("sound", MetadataSounds);
 
     template<>

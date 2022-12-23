@@ -18,7 +18,7 @@ namespace ecs {
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
     };
 
-    static StructMetadata MetadataLight(typeid(Light),
+    static const StructMetadata MetadataLight(typeid(Light),
         StructField::New("intensity", &Light::intensity),
         StructField::New("illuminance", &Light::illuminance),
         StructField::New("spotAngle", &Light::spotAngle),

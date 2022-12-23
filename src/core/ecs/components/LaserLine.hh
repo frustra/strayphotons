@@ -27,7 +27,7 @@ namespace ecs {
         float radius = 0.003; // in world units
     };
 
-    static StructMetadata MetadataLaserLine(typeid(LaserLine),
+    static const StructMetadata MetadataLaserLine(typeid(LaserLine),
         StructField::New("intensity", &LaserLine::intensity),
         StructField::New("media_density", &LaserLine::mediaDensityFactor),
         StructField::New("on", &LaserLine::on),

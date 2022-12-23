@@ -65,6 +65,8 @@ namespace ecs {
         std::string,
         EntityRef,
         Transform,
+        std::vector<float>,
+        std::vector<glm::vec2>,
         std::vector<std::string>,
         std::vector<AnimationState>,
         std::vector<PhysicsShape>,
