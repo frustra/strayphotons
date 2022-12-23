@@ -83,7 +83,10 @@
 				"on": 0
 			},
 			"script": {
-				"onTick": "flashlight"
+				"onTick": "flashlight",
+				"parameters": {
+					"parent": "flatview"
+				}
 			}
 		}
 	]
