@@ -76,8 +76,8 @@ namespace sp::scripts {
                         newEntity.Set<PhysicsJoints>(lock);
                         newEntity.Set<PhysicsQuery>(lock);
                         newEntity.Set<EventInput>(lock);
-                        auto &script = newEntity.Set<Script>(lock);
-                        script.AddOnTick(scope, "interactive_object");
+                        auto &scripts = newEntity.Set<Scripts>(lock);
+                        scripts.AddOnTick(scope, "interactive_object");
                     }
                 }).detach();
             }
@@ -90,13 +90,8 @@ namespace sp::scripts {
     InternalScript2<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
 
     struct Rotate {
-        // Input parameters
         glm::vec3 rotationAxis;
         float rotationSpeedRpm;
-
-        // Internal script state
-        SignalExpression expr;
-        double previousValue;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;

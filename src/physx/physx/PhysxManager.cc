@@ -228,7 +228,7 @@ namespace sp {
                     ecs::LaserLine,
                     ecs::LaserSensor,
                     ecs::SignalOutput,
-                    ecs::Script>,
+                    ecs::Scripts>,
                 ecs::PhysicsUpdateLock>();
 
             {
@@ -317,10 +317,10 @@ namespace sp {
             laserSystem.Frame(lock);
 
             {
-                ZoneScopedN("Script::OnPhysicsUpdate");
-                for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
-                    auto &script = entity.Get<ecs::Script>(lock);
-                    script.OnPhysicsUpdate(lock, entity, interval);
+                ZoneScopedN("Scripts::OnPhysicsUpdate");
+                for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
+                    auto &scripts = entity.Get<ecs::Scripts>(lock);
+                    scripts.OnPhysicsUpdate(lock, entity, interval);
                 }
             }
 

@@ -21,7 +21,7 @@
 #include "ecs/components/SceneInfo.hh"
 #include "ecs/components/SceneProperties.hh"
 #include "ecs/components/Screen.hh"
-#include "ecs/components/Script.hh"
+#include "ecs/components/Scripts.hh"
 #include "ecs/components/Signals.hh"
 #include "ecs/components/Sound.hh"
 #include "ecs/components/Transform.h"

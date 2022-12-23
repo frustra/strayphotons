@@ -65,7 +65,7 @@ namespace SceneManagerTests {
         ent.Set<ecs::SignalBindings>(lock);
         ent.Set<ecs::EventInput>(lock);
         ent.Set<ecs::EventBindings>(lock);
-        ent.Set<ecs::Script>(lock);
+        ent.Set<ecs::Scripts>(lock);
 
         ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "", "test");

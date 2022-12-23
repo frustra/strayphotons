@@ -30,6 +30,8 @@ namespace ecs {
         const StructMetadata &metadata;
         InternalScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
         virtual void *Access(ScriptState &state) const = 0;
+        // May return nullptr if state has never been accessed.
+        virtual const void *Access(const ScriptState &state) const = 0;
     };
 
     struct ScriptDefinition {
@@ -43,6 +45,9 @@ namespace ecs {
     struct ScriptDefinitions {
         robin_hood::unordered_node_map<std::string, ScriptDefinition> scripts;
         robin_hood::unordered_node_map<std::string, ScriptDefinition> prefabs;
+
+        void RegisterScript(ScriptDefinition &&definition);
+        void RegisterPrefab(ScriptDefinition &&definition);
     };
 
     ScriptDefinitions &GetScriptDefinitions();
@@ -68,7 +73,7 @@ namespace ecs {
             if (definition.context) {
                 void *dataPtr = definition.context->Access(*this);
                 if (!dataPtr) {
-                    Errorf("Script::SetParam access returned null data: %s", definition.name);
+                    Errorf("ScriptState::SetParam access returned null data: %s", definition.name);
                     return;
                 }
                 for (auto &field : definition.context->metadata.fields) {
@@ -83,29 +88,27 @@ namespace ecs {
         }
 
         template<typename T>
-        bool HasParam(std::string name) const {
-            auto itr = parameters.find(name);
-            if (itr == parameters.end()) {
-                return false;
-            } else {
-                return std::holds_alternative<T>(itr->second);
-            }
-        }
-
-        template<typename T>
-        const T &GetParamRef(std::string name) const {
-            auto itr = parameters.find(name);
-            Assertf(itr != parameters.end(), "script doesn't have parameter %s", name);
-            return std::get<T>(itr->second);
-        }
-
-        template<typename T>
         T GetParam(std::string name) const {
-            auto itr = parameters.find(name);
-            if (itr == parameters.end()) {
+            if (definition.context) {
+                const void *dataPtr = definition.context->Access(*this);
+                if (!dataPtr) {
+                    Errorf("ScriptState::GetParam access returned null data: %s", definition.name);
+                    return {};
+                }
+                for (auto &field : definition.context->metadata.fields) {
+                    if (field.name == name) {
+                        return *field.Access<T>(dataPtr);
+                    }
+                }
+                Errorf("ScriptState::GetParam field not found: %s on %s", name, definition.name);
                 return {};
             } else {
-                return std::get<T>(itr->second);
+                auto itr = parameters.find(name);
+                if (itr == parameters.end()) {
+                    return {};
+                } else {
+                    return std::get<T>(itr->second);
+                }
             }
         }
 
@@ -144,7 +147,7 @@ namespace ecs {
     template<>
     void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src);
 
-    struct Script {
+    struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
             return scripts.emplace_back(scope, callback);
         }
@@ -175,29 +178,29 @@ namespace ecs {
         std::vector<ScriptState> scripts;
     };
 
-    static StructMetadata MetadataScript(typeid(Script), StructField::New(&Script::scripts, ~FieldAction::AutoApply));
-    static Component<Script> ComponentScript("script", MetadataScript);
+    static StructMetadata MetadataScripts(typeid(Scripts),
+        StructField::New(&Scripts::scripts, ~FieldAction::AutoApply));
+    static Component<Scripts> ComponentScripts("script", MetadataScripts);
 
     template<>
-    void Component<Script>::Apply(Script &dst, const Script &src, bool liveTarget);
+    void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
 
     class InternalScript {
     public:
         InternalScript(const std::string &name, OnTickFunc &&func) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {}, false, nullptr, func});
+            GetScriptDefinitions().RegisterScript({name, {}, false, nullptr, func});
         }
 
         template<typename... Events>
         InternalScript(const std::string &name, OnTickFunc &&func, bool filterOnEvent, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name, {events...}, filterOnEvent, nullptr, func});
+            GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, nullptr, func});
         }
     };
 
     class InternalPhysicsScript {
     public:
         InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {}, false, nullptr, func});
+            GetScriptDefinitions().RegisterScript({name, {}, false, nullptr, func});
         }
 
         template<typename... Events>
@@ -205,15 +208,14 @@ namespace ecs {
             OnPhysicsUpdateFunc &&func,
             bool filterOnEvent,
             Events... events) {
-            GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name, {events...}, filterOnEvent, nullptr, func});
+            GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, nullptr, func});
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, false, nullptr, func});
+            GetScriptDefinitions().RegisterPrefab({name, {}, false, nullptr, func});
         }
     };
 
@@ -226,6 +228,15 @@ namespace ecs {
             return std::any_cast<T>(&state.userData);
         }
 
+        // May return nullptr if state has never been accessed.
+        const void *Access(const ScriptState &state) const override {
+            if (state.userData.has_value()) {
+                return std::any_cast<T>(&state.userData);
+            } else {
+                return nullptr;
+            }
+        }
+
         static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             T data;
             if (state.userData.has_value()) {
@@ -236,14 +247,13 @@ namespace ecs {
         }
 
         InternalScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {}, false, this, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name, {}, false, this, OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
         InternalScript2(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
             : InternalScriptBase(metadata) {
-            GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name, {events...}, filterOnEvent, this, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, this, OnTickFunc(&OnTick)});
         }
     };
 
@@ -254,6 +264,15 @@ namespace ecs {
                 state.userData.emplace<T>();
             }
             return std::any_cast<T>(&state.userData);
+        }
+
+        // May return nullptr if state has never been accessed.
+        const void *Access(const ScriptState &state) const override {
+            if (state.userData.has_value()) {
+                return std::any_cast<T>(&state.userData);
+            } else {
+                return nullptr;
+            }
         }
 
         static void OnPhysicsUpdate(ScriptState &state,
@@ -269,8 +288,7 @@ namespace ecs {
         }
 
         InternalPhysicsScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name, {}, false, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
+            GetScriptDefinitions().RegisterScript({name, {}, false, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
         }
 
         template<typename... Events>
@@ -279,8 +297,8 @@ namespace ecs {
             bool filterOnEvent,
             Events... events)
             : InternalScriptBase(metadata) {
-            GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name, {events...}, filterOnEvent, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
+            GetScriptDefinitions().RegisterScript(
+                {name, {events...}, filterOnEvent, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
         }
     };
 
@@ -293,6 +311,15 @@ namespace ecs {
             return std::any_cast<T>(&state.userData);
         }
 
+        // May return nullptr if state has never been accessed.
+        const void *Access(const ScriptState &state) const override {
+            if (state.userData.has_value()) {
+                return std::any_cast<T>(&state.userData);
+            } else {
+                return nullptr;
+            }
+        }
+
         static void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
             T data;
             if (state.userData.has_value()) {
@@ -302,7 +329,7 @@ namespace ecs {
         }
 
         PrefabScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, false, this, PrefabFunc(&Prefab)});
+            GetScriptDefinitions().RegisterPrefab({name, {}, false, this, PrefabFunc(&Prefab)});
         }
     };
 } // namespace ecs

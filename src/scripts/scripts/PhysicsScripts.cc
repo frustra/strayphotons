@@ -54,22 +54,22 @@ namespace sp::scripts {
         StructField::New("follow_target", &VoxelController::followEntity));
     InternalPhysicsScript2<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
 
-    // std::array physicsScripts = {
-    //     InternalPhysicsScript("rotate",
-    //         [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-    //             if (ent.Has<TransformTree>(lock)) {
-    //                 glm::vec3 rotationAxis;
-    //                 rotationAxis.x = state.GetParam<double>("axis_x");
-    //                 rotationAxis.y = state.GetParam<double>("axis_y");
-    //                 rotationAxis.z = state.GetParam<double>("axis_z");
-    //                 auto rotationSpeedRpm = state.GetParam<double>("speed");
+    struct RotatePhysics {
+        glm::vec3 rotationAxis;
+        float rotationSpeedRpm;
 
-    //                 auto &transform = ent.Get<TransformTree>(lock);
-    //                 auto currentRotation = transform.pose.GetRotation();
-    //                 transform.pose.SetRotation(glm::rotate(currentRotation,
-    //                     (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
-    //                     rotationAxis));
-    //             }
-    //         }),
-    // };
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
+
+            auto &transform = ent.Get<TransformTree>(lock);
+            auto currentRotation = transform.pose.GetRotation();
+            transform.pose.SetRotation(glm::rotate(currentRotation,
+                (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
+                rotationAxis));
+        }
+    };
+    StructMetadata MetadataRotatePhysics(typeid(RotatePhysics),
+        StructField::New("axis", &RotatePhysics::rotationAxis),
+        StructField::New("speed", &RotatePhysics::rotationSpeedRpm));
+    InternalPhysicsScript2<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
 } // namespace sp::scripts

@@ -49,7 +49,7 @@ namespace sp::scripts {
                         glm::quat(glm::vec3(0, rotation + deltaRotation / 2, 0)));
                     if (ent.Has<TransformTree>(lock)) transform.parent = ent;
 
-                    auto &scripts = newEnt.Set<Script>(lock);
+                    auto &scripts = newEnt.Set<Scripts>(lock);
                     auto &gltfState = scripts.AddPrefab(state.scope, "gltf");
                     gltfState.SetParam<std::string>("model", "wall-4-corner");
                     gltfState.SetParam<std::string>("physics", "static");
@@ -74,7 +74,7 @@ namespace sp::scripts {
                         glm::quat(glm::vec3(0, rotation, 0)));
                     if (ent.Has<TransformTree>(lock)) transform.parent = ent;
 
-                    auto &scripts = newEnt.Set<Script>(lock);
+                    auto &scripts = newEnt.Set<Scripts>(lock);
                     auto &gltfState = scripts.AddPrefab(state.scope, "gltf");
                     gltfState.SetParam<std::string>("model", model);
                     gltfState.SetParam<std::string>("physics", "static");

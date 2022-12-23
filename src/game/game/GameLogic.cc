@@ -22,17 +22,17 @@ namespace sp {
     void GameLogic::Frame() {
         ZoneScoped;
         {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::Script, ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::Scripts, ecs::EventInput>>();
 
-            for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
-                if (!entity.Has<ecs::Script, ecs::EventInput>(lock)) continue;
-                auto &readScript = entity.Get<const ecs::Script>(lock);
-                for (size_t i = 0; i < readScript.scripts.size(); i++) {
-                    auto &readState = readScript.scripts[i];
+            for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
+                if (!entity.Has<ecs::Scripts, ecs::EventInput>(lock)) continue;
+                auto &readScripts = entity.Get<const ecs::Scripts>(lock);
+                for (size_t i = 0; i < readScripts.scripts.size(); i++) {
+                    auto &readState = readScripts.scripts[i];
                     if (!readState.definition.events.empty() && !readState.eventQueue) {
                         auto &eventInput = entity.Get<ecs::EventInput>(lock);
-                        auto &writeScript = entity.Get<ecs::Script>(lock);
-                        auto &writeState = writeScript.scripts[i];
+                        auto &writeScripts = entity.Get<ecs::Scripts>(lock);
+                        auto &writeState = writeScripts.scripts[i];
                         writeState.eventQueue = ecs::NewEventQueue();
                         for (auto &event : writeState.definition.events) {
                             eventInput.Register(lock, writeState.eventQueue, event);
@@ -44,9 +44,9 @@ namespace sp {
         {
             // TODO: Change this to exclude Write<EventInput>
             auto lock = ecs::StartTransaction<ecs::WriteAll>();
-            for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
-                auto &script = entity.Get<ecs::Script>(lock);
-                script.OnTick(lock, entity, interval);
+            for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
+                auto &scripts = entity.Get<ecs::Scripts>(lock);
+                scripts.OnTick(lock, entity, interval);
             }
         }
     }

@@ -63,7 +63,16 @@ namespace sp::scripts {
         BoneProperties{"finger_pinky_#_end", BoneGroup::Pinky, 0.008f},
     };
 
-    struct ScriptData {
+    struct VrHandScript {
+        // Input parameters
+        std::string handStr;
+        float teleportDistance = 2.0f;
+        float pointDistance = 2.0f;
+        float forceLimit = 100.0f;
+        float torqueLimit = 10.0f;
+
+        // Internal state
+        bool init = false;
         std::array<EntityRef, boneDefinitions.size()> inputRefs;
         std::array<EntityRef, boneDefinitions.size()> physicsRefs;
         std::array<PhysicsQuery::Handle<PhysicsQuery::Overlap>, boneDefinitions.size()> queries;
@@ -74,10 +83,9 @@ namespace sp::scripts {
         Entity grabEntity, pointEntity, pressEntity;
         std::string actionPrefix;
 
-        PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQuery;
+        PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;
 
         bool Init(ScriptState &state, Lock<Read<ecs::Name>> lock, Entity ent) {
-            auto handStr = state.GetParam<std::string>("hand");
             to_lower(handStr);
 
             laserPointerRef = ecs::Name("vr", "laser_pointer");
@@ -180,137 +188,124 @@ namespace sp::scripts {
             shape.transform.SetRotation(glm::quat(glm::vec3(1, 0, 0), boneVector));
             return shape;
         };
-    };
 
-    static void handlePointing(ScriptState &state,
-        ScriptData &scriptData,
-        PhysicsUpdateLock lock,
-        Entity ent,
-        bool isPointing,
-        double pointDistance) {
+        void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, Entity ent, bool isPointing) {
 
-        glm::vec3 pointOrigin, pointDir, pointPos;
-        Entity pointTarget;
+            glm::vec3 pointOrigin, pointDir, pointPos;
+            Entity pointTarget;
 
-        auto &query = ent.Get<PhysicsQuery>(lock);
-        if (isPointing) {
-            if (scriptData.physicsRefs[6] && scriptData.physicsRefs[7]) {
-                auto indexBone0 = scriptData.physicsRefs[6].Get(lock);
-                auto indexBone1 = scriptData.physicsRefs[7].Get(lock);
+            auto &query = ent.Get<PhysicsQuery>(lock);
+            if (isPointing) {
+                if (physicsRefs[6] && physicsRefs[7]) {
+                    auto indexBone0 = physicsRefs[6].Get(lock);
+                    auto indexBone1 = physicsRefs[7].Get(lock);
 
-                if (indexBone0.Has<TransformSnapshot>(lock) && indexBone1.Has<TransformSnapshot>(lock)) {
-                    auto &tr0 = indexBone0.Get<TransformSnapshot>(lock);
-                    auto &tr1 = indexBone1.Get<TransformSnapshot>(lock);
+                    if (indexBone0.Has<TransformSnapshot>(lock) && indexBone1.Has<TransformSnapshot>(lock)) {
+                        auto &tr0 = indexBone0.Get<TransformSnapshot>(lock);
+                        auto &tr1 = indexBone1.Get<TransformSnapshot>(lock);
 
-                    pointOrigin = tr1.GetPosition();
-                    pointDir = glm::normalize(pointOrigin - tr0.GetPosition());
+                        pointOrigin = tr1.GetPosition();
+                        pointDir = glm::normalize(pointOrigin - tr0.GetPosition());
+                    }
+                }
+
+                if (!pointQueryHandle) {
+                    pointQueryHandle = query.NewQuery(
+                        PhysicsQuery::Raycast(pointDistance, PhysicsGroupMask(PHYSICS_GROUP_USER_INTERFACE)));
+                }
+
+                auto &pointQuery = query.Lookup(pointQueryHandle);
+
+                if (glm::length(pointDir) > 0) {
+                    pointQuery.direction = pointDir;
+                    pointQuery.relativeDirection = false;
+                    pointQuery.position = pointOrigin;
+                    pointQuery.relativePosition = false;
+                }
+
+                if (pointQuery.result) {
+                    auto pointResult = pointQuery.result.value();
+                    pointTarget = pointResult.target;
+                    pointPos = pointResult.position;
                 }
             }
 
-            if (!scriptData.pointQuery) {
-                scriptData.pointQuery = query.NewQuery(
-                    PhysicsQuery::Raycast(pointDistance, PhysicsGroupMask(PHYSICS_GROUP_USER_INTERFACE)));
+            if (pointEntity && pointEntity != pointTarget) {
+                EventBindings::SendEvent(lock, pointEntity, Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
             }
-
-            auto &pointQuery = query.Lookup(scriptData.pointQuery);
-
-            if (glm::length(pointDir) > 0) {
-                pointQuery.direction = pointDir;
-                pointQuery.relativeDirection = false;
-                pointQuery.position = pointOrigin;
-                pointQuery.relativePosition = false;
+            if (pointTarget) {
+                Transform pointTransform;
+                pointTransform.SetPosition(pointPos);
+                EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransform});
             }
+            pointEntity = pointTarget;
 
-            if (pointQuery.result) {
-                auto pointResult = pointQuery.result.value();
-                pointTarget = pointResult.target;
-                pointPos = pointResult.position;
-            }
-        }
-
-        if (scriptData.pointEntity && scriptData.pointEntity != pointTarget) {
-            EventBindings::SendEvent(lock, scriptData.pointEntity, Event{INTERACT_EVENT_INTERACT_POINT, ent, false});
-        }
-        if (pointTarget) {
-            Transform pointTransform;
-            pointTransform.SetPosition(pointPos);
-            EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_POINT, ent, pointTransform});
-        }
-        scriptData.pointEntity = pointTarget;
-
-        auto laser = scriptData.laserPointerRef.Get(lock);
-        if (laser && laser.Has<LaserLine>(lock)) {
-            auto &laserLine = laser.Get<LaserLine>(lock);
-            if (pointTarget && std::holds_alternative<LaserLine::Line>(laserLine.line)) {
-                auto &line = std::get<LaserLine::Line>(laserLine.line);
-                if (line.points.size() != 2) line.points.resize(2);
-                line.points[0] = pointOrigin;
-                line.points[1] = pointPos;
-                laserLine.on = true;
-            } else {
-                laserLine.on = false;
-            }
-        }
-
-        Event event;
-        while (EventInput::Poll(lock, state.eventQueue, event)) {
-            if (event.name != INTERACT_EVENT_INTERACT_PRESS) continue;
-
-            if (std::holds_alternative<bool>(event.data)) {
-                if (scriptData.pressEntity) {
-                    // Unpress the currently pressed entity
-                    EventBindings::SendEvent(lock,
-                        scriptData.pressEntity,
-                        Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
-                    scriptData.pressEntity = {};
+            auto laser = laserPointerRef.Get(lock);
+            if (laser && laser.Has<LaserLine>(lock)) {
+                auto &laserLine = laser.Get<LaserLine>(lock);
+                if (pointTarget && std::holds_alternative<LaserLine::Line>(laserLine.line)) {
+                    auto &line = std::get<LaserLine::Line>(laserLine.line);
+                    if (line.points.size() != 2) line.points.resize(2);
+                    line.points[0] = pointOrigin;
+                    line.points[1] = pointPos;
+                    laserLine.on = true;
+                } else {
+                    laserLine.on = false;
                 }
-                if (std::get<bool>(event.data) && pointTarget) {
-                    // Press the entity being looked at
-                    EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
-                    scriptData.pressEntity = pointTarget;
+            }
+
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                if (event.name != INTERACT_EVENT_INTERACT_PRESS) continue;
+
+                if (std::holds_alternative<bool>(event.data)) {
+                    if (pressEntity) {
+                        // Unpress the currently pressed entity
+                        EventBindings::SendEvent(lock, pressEntity, Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
+                        pressEntity = {};
+                    }
+                    if (std::get<bool>(event.data) && pointTarget) {
+                        // Press the entity being looked at
+                        EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
+                        pressEntity = pointTarget;
+                    }
                 }
             }
         }
-    }
 
-    InternalPhysicsScript vrHandScript(
-        "vr_hand",
-        [](ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
 
             auto scene = state.scope.scene.lock();
             Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
 
-            ScriptData scriptData = {};
-            if (state.userData.has_value()) {
-                scriptData = std::any_cast<ScriptData>(state.userData);
-            } else {
-                if (!scriptData.Init(state, lock, ent)) return;
+            if (!init) {
+                if (!Init(state, lock, ent)) return;
+                init = true;
             }
 
             auto &ph = ent.Get<Physics>(lock);
             auto &joints = ent.Get<PhysicsJoints>(lock).joints;
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
-            auto inputRoot = scriptData.inputRootRef.Get(lock);
-            auto controllerEnt = scriptData.controllerRef.Get(lock);
+            auto inputRoot = inputRootRef.Get(lock);
+            auto controllerEnt = controllerRef.Get(lock);
 
             // Read and update overlap queries
             EnumArray<Entity, BoneGroup> groupOverlaps = {};
             for (size_t i = 0; i < boneDefinitions.size(); i++) {
-                if (!scriptData.inputRefs[i] || !scriptData.physicsRefs[i]) continue;
+                if (!inputRefs[i] || !physicsRefs[i]) continue;
 
-                auto inputEnt = scriptData.inputRefs[i].Get(lock);
+                auto inputEnt = inputRefs[i].Get(lock);
                 if (inputEnt.Has<TransformTree>(lock)) {
-                    auto boneShape = scriptData.ShapeForBone(lock, inputRoot, i);
-                    if (!scriptData.queries[i]) {
-                        scriptData.queries[i] = query.NewQuery(
-                            PhysicsQuery::Overlap{boneShape, scriptData.collisionMask});
+                    auto boneShape = ShapeForBone(lock, inputRoot, i);
+                    if (!queries[i]) {
+                        queries[i] = query.NewQuery(PhysicsQuery::Overlap{boneShape, collisionMask});
                     } else {
-                        auto &overlapQuery = query.Lookup(scriptData.queries[i]);
+                        auto &overlapQuery = query.Lookup(queries[i]);
                         overlapQuery.shape = boneShape;
-                        overlapQuery.filterGroup = scriptData.collisionMask;
+                        overlapQuery.filterGroup = collisionMask;
 
                         if (overlapQuery.result && *overlapQuery.result) {
                             auto group = CVarHandOverlapTest.Get() == 2 ? BoneGroup::Wrist : boneDefinitions[i].group;
@@ -319,29 +314,27 @@ namespace sp::scripts {
                     }
 
                     auto &inputTransform = inputEnt.Get<TransformTree>(lock);
-                    scriptData.queryTransforms[i] = inputTransform.GetRelativeTransform(lock, inputRoot);
+                    queryTransforms[i] = inputTransform.GetRelativeTransform(lock, inputRoot);
                 }
             }
 
             bool forceTeleport = false;
-            auto constraintTarget = scriptData.inputRootRef.Get(lock);
+            auto constraintTarget = inputRootRef.Get(lock);
             if (constraintTarget.Has<TransformTree>(lock)) {
                 auto &inputTransform = constraintTarget.Get<TransformTree>(lock);
                 // Don't set the hand constraint target until the controller is valid
                 if (inputTransform.parent) {
                     if (joints.empty()) joints.resize(1);
                     if (joints[0].target != constraintTarget || joints[0].type != PhysicsJointType::Force) {
-                        joints[0].target = scriptData.inputRootRef;
+                        joints[0].target = inputRootRef;
                         joints[0].type = PhysicsJointType::Force;
-                        joints[0].limit = glm::vec2(state.GetParam<double>("force_limit"),
-                            state.GetParam<double>("torque_limit"));
+                        joints[0].limit = glm::vec2(forceLimit, torqueLimit);
                         forceTeleport = true;
                     }
                 }
             }
 
             // Teleport the hands back to the player if they get too far away
-            auto teleportDistance = state.GetParam<double>("teleport_distance");
             bool teleported = false;
             if (teleportDistance > 0 || forceTeleport) {
                 if (constraintTarget.Has<TransformTree>(lock)) {
@@ -357,58 +350,65 @@ namespace sp::scripts {
             }
 
             // Handle interaction events
-            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_index");
+            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_index");
             auto grabSignal = indexCurl;
-            auto grabTarget = scriptData.grabEntity;
+            auto grabTarget = grabEntity;
             if (teleported || grabSignal < 0.18) {
                 grabTarget = {};
             } else if (grabSignal > 0.2 && !grabTarget) {
                 grabTarget = groupOverlaps[BoneGroup::Index];
             }
-            if (scriptData.grabEntity && scriptData.grabEntity != grabTarget) {
+            if (grabEntity && grabEntity != grabTarget) {
                 // Drop the currently held entity
-                EventBindings::SendEvent(lock, scriptData.grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
-                scriptData.grabEntity = {};
+                EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                grabEntity = {};
             }
-            if (grabTarget && grabTarget != scriptData.grabEntity) {
+            if (grabTarget && grabTarget != grabEntity) {
                 // Grab the entity being overlapped
                 auto globalTransform = transform.GetGlobalTransform(lock);
                 if (EventBindings::SendEvent(lock,
                         grabTarget,
                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, globalTransform}) > 0) {
-                    scriptData.grabEntity = grabTarget;
+                    grabEntity = grabTarget;
                 }
             }
 
-            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, scriptData.actionPrefix + "_curl_middle");
+            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_middle");
             bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
-            handlePointing(state, scriptData, lock, ent, isPointing, state.GetParam<double>("point_distance"));
+            HandlePointing(state, lock, ent, isPointing);
 
             // Update the hand's physics shape
             ph.shapes.clear();
             for (size_t i = 0; i < boneDefinitions.size(); i++) {
-                if (!scriptData.inputRefs[i] || !scriptData.physicsRefs[i] || !scriptData.queries[i]) continue;
+                if (!inputRefs[i] || !physicsRefs[i] || !queries[i]) continue;
 
-                auto physicsEnt = scriptData.physicsRefs[i].Get(lock);
+                auto physicsEnt = physicsRefs[i].Get(lock);
                 if (physicsEnt.Has<TransformTree>(lock)) {
                     auto group = CVarHandOverlapTest.Get() == 2 ? BoneGroup::Wrist : boneDefinitions[i].group;
                     if (!groupOverlaps[group] || CVarHandOverlapTest.Get() == 0) {
-                        if (!scriptData.grabEntity) {
+                        if (!grabEntity) {
                             // This group doesn't overlap, so update the current pose and shape
-                            auto &overlapQuery = query.Lookup(scriptData.queries[i]);
-                            scriptData.currentShapes[i] = overlapQuery.shape;
+                            auto &overlapQuery = query.Lookup(queries[i]);
+                            currentShapes[i] = overlapQuery.shape;
 
                             auto &physicsTransform = physicsEnt.Get<TransformTree>(lock);
-                            physicsTransform.parent = scriptData.physicsRootRef;
-                            physicsTransform.pose = scriptData.queryTransforms[i];
+                            physicsTransform.parent = physicsRootRef;
+                            physicsTransform.pose = queryTransforms[i];
                         }
                     }
-                    if (scriptData.currentShapes[i]) ph.shapes.push_back(scriptData.currentShapes[i]);
+                    if (currentShapes[i]) ph.shapes.push_back(currentShapes[i]);
                 }
             }
-
-            state.userData = scriptData;
-        },
+        }
+    };
+    StructMetadata MetadataVrHandScript(typeid(VrHandScript),
+        StructField::New("hand", &VrHandScript::handStr),
+        StructField::New("teleport_distance", &VrHandScript::teleportDistance),
+        StructField::New("point_distance", &VrHandScript::pointDistance),
+        StructField::New("force_limit", &VrHandScript::forceLimit),
+        StructField::New("torque_limit", &VrHandScript::torqueLimit));
+    InternalPhysicsScript2<VrHandScript> vrHandScript("vr_hand",
+        MetadataVrHandScript,
         false,
         INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts
