@@ -65,7 +65,21 @@ namespace ecs {
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
-            parameters[name] = value;
+            if (definition.context) {
+                void *dataPtr = definition.context->Access(*this);
+                if (!dataPtr) {
+                    Errorf("Script::SetParam access returned null data: %s", definition.name);
+                    return;
+                }
+                for (auto &field : definition.context->metadata.fields) {
+                    if (field.name == name) {
+                        *field.Access<T>(dataPtr) = value;
+                        break;
+                    }
+                }
+            } else {
+                parameters[name] = value;
+            }
         }
 
         template<typename T>

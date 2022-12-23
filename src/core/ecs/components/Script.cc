@@ -77,26 +77,26 @@ namespace ecs {
                             for (auto arrayParam : array) {
                                 list.emplace_back(arrayParam.get<std::string>());
                             }
-                            state.SetParam(scriptParam.first, list);
+                            state.parameters[scriptParam.first] = list;
                         } else if (array.front().is<bool>()) {
                             std::vector<bool> list;
                             for (auto arrayParam : array) {
                                 list.emplace_back(arrayParam.get<bool>());
                             }
-                            state.SetParam(scriptParam.first, list);
+                            state.parameters[scriptParam.first] = list;
                         } else if (array.front().is<double>()) {
                             std::vector<double> list;
                             for (auto arrayParam : array) {
                                 list.emplace_back(arrayParam.get<double>());
                             }
-                            state.SetParam(scriptParam.first, list);
+                            state.parameters[scriptParam.first] = list;
                         }
                     } else if (scriptParam.second.is<std::string>()) {
-                        state.SetParam(scriptParam.first, scriptParam.second.get<std::string>());
+                        state.parameters[scriptParam.first] = scriptParam.second.get<std::string>();
                     } else if (scriptParam.second.is<bool>()) {
-                        state.SetParam(scriptParam.first, scriptParam.second.get<bool>());
+                        state.parameters[scriptParam.first] = scriptParam.second.get<bool>();
                     } else {
-                        state.SetParam(scriptParam.first, scriptParam.second.get<double>());
+                        state.parameters[scriptParam.first] = scriptParam.second.get<double>();
                     }
                 }
             }

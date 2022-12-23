@@ -10,7 +10,7 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    struct Wall {
+    struct WallPrefab {
         float yOffset = 0.0f;
         float stride = 1.0f;
         std::vector<glm::vec2> segmentPoints;
@@ -18,12 +18,12 @@ namespace sp::scripts {
 
         void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
             auto scene = state.scope.scene.lock();
-            Assertf(scene, "wall prefab does not have a valid scene: %s", ToString(lock, ent));
-            Assertf(ent.Has<Name>(lock), "Wall prefab root has no name: %s", ToString(lock, ent));
+            Assertf(scene, "WallPrefab does not have a valid scene: %s", ToString(lock, ent));
+            Assertf(ent.Has<Name>(lock), "WallPrefab root has no name: %s", ToString(lock, ent));
             auto prefixName = ent.Get<Name>(lock);
 
             Assertf(segmentPoints.size() == segmentTypes.size() + 1,
-                "wall prefab does not have equal length segment lists: %s, (%u, %u)",
+                "WallPrefab does not have equal length segment lists: %s, (%u, %u)",
                 ToString(lock, ent),
                 segmentPoints.size(),
                 segmentTypes.size());
@@ -86,10 +86,10 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataWall(typeid(Wall),
-        StructField::New("y_offset", &Wall::yOffset),
-        StructField::New("stride", &Wall::stride),
-        StructField::New("segments", &Wall::segmentPoints),
-        StructField::New("segment_types", &Wall::segmentTypes));
-    PrefabScript<Wall> wall("wall", MetadataWall);
+    StructMetadata MetadataWallPrefab(typeid(WallPrefab),
+        StructField::New("y_offset", &WallPrefab::yOffset),
+        StructField::New("stride", &WallPrefab::stride),
+        StructField::New("segments", &WallPrefab::segmentPoints),
+        StructField::New("segment_types", &WallPrefab::segmentTypes));
+    PrefabScript<WallPrefab> wallPrefab("wall", MetadataWallPrefab);
 } // namespace sp::scripts
