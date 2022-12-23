@@ -65,6 +65,7 @@ namespace ecs {
         std::string,
         EntityRef,
         Transform,
+        SignalExpression,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
