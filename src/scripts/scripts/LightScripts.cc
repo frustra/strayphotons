@@ -44,7 +44,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataFlashlight(typeid(Flashlight), StructField::New("parent", &Flashlight::parentEntity));
-    InternalScript2<Flashlight> flashlight("flashlight",
+    InternalScript<Flashlight> flashlight("flashlight",
         MetadataFlashlight,
         false,
         "/action/flashlight/toggle",
@@ -72,7 +72,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSunScript(typeid(SunScript));
-    InternalScript2<SunScript> sun("sun", MetadataSunScript);
+    InternalScript<SunScript> sun("sun", MetadataSunScript);
 
     struct LightSensorScript {
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -87,5 +87,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataLightSensorScript(typeid(LightSensorScript));
-    InternalScript2<LightSensorScript> lightSensor("light_sensor", MetadataLightSensorScript);
+    InternalScript<LightSensorScript> lightSensor("light_sensor", MetadataLightSensorScript);
 } // namespace sp::scripts

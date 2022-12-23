@@ -38,7 +38,7 @@ namespace sp::scripts {
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
         StructField::New("output_event", &EdgeTrigger::outputName));
-    InternalScript2<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
+    InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
 
     struct ModelSpawner {
         EntityRef targetEntity;
@@ -87,7 +87,7 @@ namespace sp::scripts {
         StructField::New("relative_to", &ModelSpawner::targetEntity),
         StructField::New("position", &ModelSpawner::position),
         StructField::New("model", &ModelSpawner::modelName));
-    InternalScript2<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
+    InternalScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
 
     struct Rotate {
         glm::vec3 rotationAxis;
@@ -106,7 +106,7 @@ namespace sp::scripts {
     StructMetadata MetadataRotate(typeid(Rotate),
         StructField::New("axis", &Rotate::rotationAxis),
         StructField::New("speed", &Rotate::rotationSpeedRpm));
-    InternalScript2<Rotate> rotate("rotate", MetadataRotate);
+    InternalScript<Rotate> rotate("rotate", MetadataRotate);
 
     struct EmissiveFromSignal {
         std::string signalName;
@@ -120,5 +120,5 @@ namespace sp::scripts {
     };
     StructMetadata MetadataEmissiveFromSignal(typeid(EmissiveFromSignal),
         StructField::New("signal_name", &EmissiveFromSignal::signalName));
-    InternalScript2<EmissiveFromSignal> emissiveFromSignal("emissive_from_signal", MetadataEmissiveFromSignal);
+    InternalScript<EmissiveFromSignal> emissiveFromSignal("emissive_from_signal", MetadataEmissiveFromSignal);
 } // namespace sp::scripts

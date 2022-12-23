@@ -52,7 +52,7 @@ namespace sp::scripts {
         StructField::New("voxel_offset", &VoxelController::voxelOffset),
         StructField::New("alignment_target", &VoxelController::alignmentEntity),
         StructField::New("follow_target", &VoxelController::followEntity));
-    InternalPhysicsScript2<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
+    InternalPhysicsScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
 
     struct RotatePhysics {
         glm::vec3 rotationAxis;
@@ -71,5 +71,5 @@ namespace sp::scripts {
     StructMetadata MetadataRotatePhysics(typeid(RotatePhysics),
         StructField::New("axis", &RotatePhysics::rotationAxis),
         StructField::New("speed", &RotatePhysics::rotationSpeedRpm));
-    InternalPhysicsScript2<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
+    InternalPhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
 } // namespace sp::scripts

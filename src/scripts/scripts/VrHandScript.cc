@@ -407,7 +407,7 @@ namespace sp::scripts {
         StructField::New("point_distance", &VrHandScript::pointDistance),
         StructField::New("force_limit", &VrHandScript::forceLimit),
         StructField::New("torque_limit", &VrHandScript::torqueLimit));
-    InternalPhysicsScript2<VrHandScript> vrHandScript("vr_hand",
+    InternalPhysicsScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
         false,
         INTERACT_EVENT_INTERACT_PRESS);

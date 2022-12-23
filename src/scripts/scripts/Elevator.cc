@@ -47,5 +47,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataElevator(typeid(Elevator));
-    InternalScript2<Elevator> elevator("elevator", MetadataElevator);
+    InternalScript<Elevator> elevator("elevator", MetadataElevator);
 } // namespace sp::scripts

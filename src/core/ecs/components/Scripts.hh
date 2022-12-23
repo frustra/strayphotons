@@ -185,42 +185,8 @@ namespace ecs {
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
 
-    class InternalScript {
-    public:
-        InternalScript(const std::string &name, OnTickFunc &&func) {
-            GetScriptDefinitions().RegisterScript({name, {}, false, nullptr, func});
-        }
-
-        template<typename... Events>
-        InternalScript(const std::string &name, OnTickFunc &&func, bool filterOnEvent, Events... events) {
-            GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, nullptr, func});
-        }
-    };
-
-    class InternalPhysicsScript {
-    public:
-        InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func) {
-            GetScriptDefinitions().RegisterScript({name, {}, false, nullptr, func});
-        }
-
-        template<typename... Events>
-        InternalPhysicsScript(const std::string &name,
-            OnPhysicsUpdateFunc &&func,
-            bool filterOnEvent,
-            Events... events) {
-            GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, nullptr, func});
-        }
-    };
-
-    class InternalPrefab {
-    public:
-        InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().RegisterPrefab({name, {}, false, nullptr, func});
-        }
-    };
-
     template<typename T>
-    struct InternalScript2 final : public InternalScriptBase {
+    struct InternalScript final : public InternalScriptBase {
         void *Access(ScriptState &state) const override {
             if (!state.userData.has_value()) {
                 state.userData.emplace<T>();
@@ -246,19 +212,19 @@ namespace ecs {
             state.userData = data;
         }
 
-        InternalScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
+        InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript({name, {}, false, this, OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
-        InternalScript2(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
+        InternalScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
             : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, this, OnTickFunc(&OnTick)});
         }
     };
 
     template<typename T>
-    struct InternalPhysicsScript2 final : public InternalScriptBase {
+    struct InternalPhysicsScript final : public InternalScriptBase {
         void *Access(ScriptState &state) const override {
             if (!state.userData.has_value()) {
                 state.userData.emplace<T>();
@@ -287,12 +253,12 @@ namespace ecs {
             state.userData = data;
         }
 
-        InternalPhysicsScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
+        InternalPhysicsScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript({name, {}, false, this, OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
         }
 
         template<typename... Events>
-        InternalPhysicsScript2(const std::string &name,
+        InternalPhysicsScript(const std::string &name,
             const StructMetadata &metadata,
             bool filterOnEvent,
             Events... events)

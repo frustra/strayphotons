@@ -38,7 +38,7 @@ Script Example Definition
         StructField::New("field_c", &Example::c),
         StructField::New("input_expression", &Example::expr));
 
-    // Scripts self-registered using an instance of the InternalScript2 template.
+    // Scripts self-registered using an instance of the InternalScript template.
     // A script's input events are defined here, as well as if OnTick should be called every logic frame, or only if events are available.
-    InternalScript2<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
+    InternalScript<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
 ```

@@ -127,7 +127,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractiveObject(typeid(InteractiveObject));
-    InternalScript2<InteractiveObject> interactiveObject("interactive_object",
+    InternalScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
         true,
         INTERACT_EVENT_INTERACT_POINT,
@@ -222,7 +222,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataInteractHandler(typeid(InteractHandler),
         StructField::New("grab_distance", &InteractHandler::grabDistance));
-    InternalScript2<InteractHandler> interactHandler("interact_handler",
+    InternalScript<InteractHandler> interactHandler("interact_handler",
         MetadataInteractHandler,
         false,
         INTERACT_EVENT_INTERACT_GRAB,

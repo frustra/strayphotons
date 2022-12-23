@@ -30,7 +30,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataJoystickCalibration(typeid(JoystickCalibration),
         StructField::New("scale", &JoystickCalibration::scaleFactor));
-    InternalScript2<JoystickCalibration> joystickCalibration("joystick_calibration",
+    InternalScript<JoystickCalibration> joystickCalibration("joystick_calibration",
         MetadataJoystickCalibration,
         true,
         "/action/joystick_in");
@@ -88,7 +88,7 @@ namespace sp::scripts {
     StructMetadata MetadataRelativeMovement(typeid(RelativeMovement),
         StructField::New("relative_to", &RelativeMovement::targetEntity),
         StructField::New("up_reference", &RelativeMovement::referenceEntity));
-    InternalScript2<RelativeMovement> relativeMovement("relative_movement", MetadataRelativeMovement);
+    InternalScript<RelativeMovement> relativeMovement("relative_movement", MetadataRelativeMovement);
 
     struct PlayerRotation {
         EntityRef targetEntity;
@@ -136,7 +136,7 @@ namespace sp::scripts {
     StructMetadata MetadataPlayerRotation(typeid(PlayerRotation),
         StructField::New("relative_to", &PlayerRotation::targetEntity),
         StructField::New("smooth_rotation", &PlayerRotation::enableSmoothRotation));
-    InternalScript2<PlayerRotation> playerRotation("player_rotation",
+    InternalScript<PlayerRotation> playerRotation("player_rotation",
         MetadataPlayerRotation,
         false,
         "/action/snap_rotate");
@@ -172,5 +172,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataCameraView(typeid(CameraView));
-    InternalScript2<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
+    InternalScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
 } // namespace sp::scripts

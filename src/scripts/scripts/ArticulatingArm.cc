@@ -61,5 +61,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataArticulatingArm(typeid(ArticulatingArm));
-    InternalScript2<ArticulatingArm> articulatingArm("articulating_arm", MetadataArticulatingArm);
+    InternalScript<ArticulatingArm> articulatingArm("articulating_arm", MetadataArticulatingArm);
 } // namespace sp::scripts

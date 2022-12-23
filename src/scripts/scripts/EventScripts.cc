@@ -30,5 +30,5 @@ namespace sp::scripts {
         StructField::New("output_event", &EventGateBySignal::outputEvent),
         StructField::New("gate_signal", &EventGateBySignal::gateExpression),
         StructField::New("signal_threshold", &EventGateBySignal::signalThreshold));
-    InternalScript2<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
+    InternalScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 } // namespace sp::scripts

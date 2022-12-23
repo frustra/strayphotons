@@ -103,7 +103,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticPlug(typeid(MagneticPlug));
-    InternalScript2<MagneticPlug> magneticPlug("magnetic_plug",
+    InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,
         "/magnet/nearby",
@@ -139,7 +139,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticSocket(typeid(MagneticSocket));
-    InternalScript2<MagneticSocket> magneticSocket("magnetic_socket",
+    InternalScript<MagneticSocket> magneticSocket("magnetic_socket",
         MetadataMagneticSocket,
         true,
         "/trigger/magnetic/enter",
