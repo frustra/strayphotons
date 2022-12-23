@@ -26,11 +26,16 @@ namespace ecs {
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, Lock<AddRemove>, Entity)>;
 
+    struct InternalScriptBase {
+        const StructMetadata &metadata;
+        InternalScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
+        virtual void *Access(ScriptState &state) const = 0;
+    };
+
     struct ScriptDefinition {
         std::string name;
         std::vector<std::string> events;
-        const StructMetadata *metadata;
-        std::function<void *(ScriptState &)> dataAccessor;
+        const InternalScriptBase *context;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
     };
 
@@ -166,7 +171,7 @@ namespace ecs {
     public:
         template<typename... Events>
         InternalScript(const std::string &name, OnTickFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, {}, func});
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, func});
         }
     };
 
@@ -174,14 +179,40 @@ namespace ecs {
     public:
         template<typename... Events>
         InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, {}, func});
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, func});
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, nullptr, {}, func});
+            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, nullptr, func});
+        }
+    };
+
+    template<typename T>
+    struct InternalScript2 final : public InternalScriptBase {
+        void *Access(ScriptState &state) const override {
+            if (!state.userData.has_value()) {
+                state.userData.emplace<T>();
+            }
+            return std::any_cast<T>(&state.userData);
+        }
+
+        static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            T scriptData;
+            if (state.userData.has_value()) {
+                scriptData = std::any_cast<T>(state.userData);
+            }
+            scriptData.OnTick(state, lock, ent, interval);
+            state.userData = scriptData;
+        }
+
+        template<typename... Events>
+        InternalScript2(const std::string &name, const StructMetadata &metadata, Events... events)
+            : InternalScriptBase(metadata) {
+            GetScriptDefinitions().scripts.emplace(name,
+                ScriptDefinition{name, {events...}, this, OnTickFunc(&OnTick)});
         }
     };
 } // namespace ecs

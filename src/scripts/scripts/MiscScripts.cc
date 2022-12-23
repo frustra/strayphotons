@@ -11,34 +11,12 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    template<typename T, typename... Events>
-    struct FancyScript {
-        FancyScript(const std::string &name, const StructMetadata &metadata, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name,
-                    {events...},
-                    &metadata,
-                    [](ScriptState &state) -> void * {
-                        if (!state.userData.has_value()) {
-                            state.userData.emplace<T>();
-                        }
-                        return std::any_cast<T>(&state.userData);
-                    },
-                    OnTickFunc(
-                        [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-                            T scriptData;
-                            if (state.userData.has_value()) {
-                                scriptData = std::any_cast<T>(state.userData);
-                            }
-                            scriptData.OnTick(state, lock, ent, interval);
-                            state.userData = scriptData;
-                        })});
-        }
-    };
-
     struct EdgeTrigger {
+        // Input parameters
         std::string inputExpr;
         std::string outputName = "/script/edge_trigger";
+
+        // Internal script state
         SignalExpression expr;
         double previousValue;
 
@@ -60,7 +38,7 @@ namespace sp::scripts {
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
         StructField::New("output_event", &EdgeTrigger::outputName));
-    FancyScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
+    InternalScript2<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
 
     std::array miscScripts = {
         InternalScript(

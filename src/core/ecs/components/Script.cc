@@ -18,11 +18,11 @@ namespace ecs {
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
-        : scope(scope), definition({"", {}, nullptr, {}, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, nullptr, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback)
-        : scope(scope), definition({"", {}, nullptr, {}, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, nullptr, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
-        : scope(scope), definition({"", {}, nullptr, {}, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, nullptr, callback}), instanceId(++nextInstanceId) {}
 
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
@@ -124,13 +124,13 @@ namespace ecs {
             Errorf("Script has no definition: %s", src.to_str());
             return false;
         }
-        if (state.definition.metadata && state.definition.dataAccessor) {
-            void *dataPtr = state.definition.dataAccessor(state);
+        if (state.definition.context) {
+            void *dataPtr = state.definition.context->Access(state);
             if (!dataPtr) {
                 Errorf("Script definition returned null data: %s", state.definition.name);
                 return false;
             }
-            for (auto &field : state.definition.metadata->fields) {
+            for (auto &field : state.definition.context->metadata.fields) {
                 if (!field.Load(scope, dataPtr, parameters)) {
                     Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
                     return false;
