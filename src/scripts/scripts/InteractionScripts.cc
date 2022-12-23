@@ -137,6 +137,7 @@ namespace sp::scripts {
                     state.userData = scriptData;
                 }
             },
+            true,
             INTERACT_EVENT_INTERACT_POINT,
             INTERACT_EVENT_INTERACT_GRAB,
             INTERACT_EVENT_INTERACT_ROTATE),
@@ -235,6 +236,7 @@ namespace sp::scripts {
                     state.userData = scriptData;
                 }
             },
+            false,
             INTERACT_EVENT_INTERACT_GRAB,
             INTERACT_EVENT_INTERACT_PRESS,
             INTERACT_EVENT_INTERACT_ROTATE),

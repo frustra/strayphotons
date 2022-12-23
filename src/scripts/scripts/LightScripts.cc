@@ -47,6 +47,7 @@ namespace sp::scripts {
                     }
                 }
             },
+            false,
             "/action/flashlight/toggle",
             "/action/flashlight/grab"),
 

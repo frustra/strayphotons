@@ -17,7 +17,7 @@
 					"parameters": { "source": "interactive" }
 				},
 				{
-					"onEvent": "magnetic_plug"
+					"onTick": "magnetic_plug"
 				}
 			],
 			"physics_joints": [],

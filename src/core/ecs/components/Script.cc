@@ -18,11 +18,11 @@ namespace ecs {
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
-        : scope(scope), definition({"", {}, nullptr, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, false, nullptr, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback)
-        : scope(scope), definition({"", {}, nullptr, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, false, nullptr, callback}), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
-        : scope(scope), definition({"", {}, nullptr, callback}), instanceId(++nextInstanceId) {}
+        : scope(scope), definition({"", {}, false, nullptr, callback}), instanceId(++nextInstanceId) {}
 
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
@@ -46,25 +46,6 @@ namespace ecs {
                     }
                 } else {
                     Errorf("Script onTick has invalid definition: %s", param.second.to_str());
-                    return false;
-                }
-            } else if (param.first == "onEvent") {
-                if (param.second.is<std::string>()) {
-                    auto scriptName = param.second.get<std::string>();
-                    auto it = definitions.scripts.find(scriptName);
-                    if (it != definitions.scripts.end()) {
-                        if (state) {
-                            Errorf("Script has multiple definitions: %s", scriptName);
-                            return false;
-                        }
-                        state.definition = it->second;
-                        state.filterOnEvent = true;
-                    } else {
-                        Errorf("Script has unknown onEvent definition: %s", scriptName);
-                        return false;
-                    }
-                } else {
-                    Errorf("Script onEvent has invalid definition: %s", param.second.to_str());
                     return false;
                 }
             } else if (param.first == "prefab") {
@@ -149,8 +130,6 @@ namespace ecs {
             auto &obj = dst.get<picojson::object>();
             if (std::holds_alternative<PrefabFunc>(src.definition.callback)) {
                 obj["prefab"] = picojson::value(src.definition.name);
-            } else if (src.filterOnEvent) {
-                obj["onEvent"] = picojson::value(src.definition.name);
             } else {
                 obj["onTick"] = picojson::value(src.definition.name);
             }
@@ -180,7 +159,7 @@ namespace ecs {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback) {
-                if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
+                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnTick");
                 ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
@@ -192,7 +171,7 @@ namespace ecs {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback) {
-                if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
+                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnPhysicsUpdate");
                 ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);

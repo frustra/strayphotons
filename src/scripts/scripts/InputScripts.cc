@@ -37,6 +37,7 @@ namespace sp::scripts {
                     }
                 }
             },
+            true,
             "/action/joystick_in"),
         InternalScript("relative_movement",
             [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -170,6 +171,7 @@ namespace sp::scripts {
 
                 state.userData = scriptData;
             },
+            false,
             "/action/snap_rotate"),
         InternalScript(
             "camera_view",
@@ -201,6 +203,7 @@ namespace sp::scripts {
                     }
                 }
             },
+            true,
             "/script/camera_rotate"),
     };
 } // namespace sp::scripts

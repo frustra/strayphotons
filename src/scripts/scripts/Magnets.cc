@@ -104,6 +104,7 @@ namespace sp::scripts {
 
                 state.userData = scriptData;
             },
+            true,
             "/magnet/nearby",
             INTERACT_EVENT_INTERACT_GRAB),
         InternalScript(
@@ -141,6 +142,7 @@ namespace sp::scripts {
 
                 state.userData = scriptData;
             },
+            true,
             "/trigger/magnetic/enter",
             "/trigger/magnetic/leave"),
     };

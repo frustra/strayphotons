@@ -271,7 +271,7 @@
 				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
 			},
 			"script": {
-				"onEvent": "event_gate_by_signal",
+				"onTick": "event_gate_by_signal",
 				"parameters": {
 					"input_event": "/button/press",
 					"output_event": "open_door",
@@ -507,7 +507,7 @@
 					"prefab": "template"
 				},
 				{
-					"onEvent": "magnetic_plug"
+					"onTick": "magnetic_plug"
 				}
 			]
 		},

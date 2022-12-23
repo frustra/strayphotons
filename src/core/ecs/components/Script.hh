@@ -35,6 +35,7 @@ namespace ecs {
     struct ScriptDefinition {
         std::string name;
         std::vector<std::string> events;
+        bool filterOnEvent = false;
         const InternalScriptBase *context;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
     };
@@ -112,7 +113,6 @@ namespace ecs {
 
         EntityScope scope;
         ScriptDefinition definition;
-        bool filterOnEvent = false;
         ecs::EventQueueRef eventQueue;
 
         std::any userData;
@@ -169,24 +169,37 @@ namespace ecs {
 
     class InternalScript {
     public:
+        InternalScript(const std::string &name, OnTickFunc &&func) {
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {}, false, nullptr, func});
+        }
+
         template<typename... Events>
-        InternalScript(const std::string &name, OnTickFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, func});
+        InternalScript(const std::string &name, OnTickFunc &&func, bool filterOnEvent, Events... events) {
+            GetScriptDefinitions().scripts.emplace(name,
+                ScriptDefinition{name, {events...}, filterOnEvent, nullptr, func});
         }
     };
 
     class InternalPhysicsScript {
     public:
+        InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func) {
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {}, false, nullptr, func});
+        }
+
         template<typename... Events>
-        InternalPhysicsScript(const std::string &name, OnPhysicsUpdateFunc &&func, Events... events) {
-            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {events...}, nullptr, func});
+        InternalPhysicsScript(const std::string &name,
+            OnPhysicsUpdateFunc &&func,
+            bool filterOnEvent,
+            Events... events) {
+            GetScriptDefinitions().scripts.emplace(name,
+                ScriptDefinition{name, {events...}, filterOnEvent, nullptr, func});
         }
     };
 
     class InternalPrefab {
     public:
         InternalPrefab(const std::string &name, PrefabFunc &&func) {
-            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, nullptr, func});
+            GetScriptDefinitions().prefabs.emplace(name, ScriptDefinition{name, {}, false, nullptr, func});
         }
     };
 
@@ -208,11 +221,15 @@ namespace ecs {
             state.userData = scriptData;
         }
 
+        InternalScript2(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
+            GetScriptDefinitions().scripts.emplace(name, ScriptDefinition{name, {}, false, this, OnTickFunc(&OnTick)});
+        }
+
         template<typename... Events>
-        InternalScript2(const std::string &name, const StructMetadata &metadata, Events... events)
+        InternalScript2(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
             : InternalScriptBase(metadata) {
             GetScriptDefinitions().scripts.emplace(name,
-                ScriptDefinition{name, {events...}, this, OnTickFunc(&OnTick)});
+                ScriptDefinition{name, {events...}, filterOnEvent, this, OnTickFunc(&OnTick)});
         }
     };
 } // namespace ecs

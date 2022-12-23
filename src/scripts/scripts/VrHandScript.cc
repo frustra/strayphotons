@@ -409,5 +409,6 @@ namespace sp::scripts {
 
             state.userData = scriptData;
         },
+        false,
         INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts
