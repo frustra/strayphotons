@@ -38,8 +38,8 @@ namespace ecs {
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
         state.scope = scope;
-        picojson::value parameters;
-        for (auto param : src.get<picojson::object>()) {
+        auto &srcObj = src.get<picojson::object>();
+        for (auto param : srcObj) {
             if (param.first == "onTick") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
@@ -76,39 +76,6 @@ namespace ecs {
                     Errorf("Script prefab has invalid definition: %s", param.second.to_str());
                     return false;
                 }
-            } else if (param.first == "parameters") {
-                parameters = param.second;
-                for (auto scriptParam : parameters.get<picojson::object>()) {
-                    if (scriptParam.second.is<picojson::array>()) {
-                        auto array = scriptParam.second.get<picojson::array>();
-                        if (array.empty()) continue;
-                        if (array.front().is<std::string>()) {
-                            std::vector<std::string> list;
-                            for (auto arrayParam : array) {
-                                list.emplace_back(arrayParam.get<std::string>());
-                            }
-                            state.parameters[scriptParam.first] = list;
-                        } else if (array.front().is<bool>()) {
-                            std::vector<bool> list;
-                            for (auto arrayParam : array) {
-                                list.emplace_back(arrayParam.get<bool>());
-                            }
-                            state.parameters[scriptParam.first] = list;
-                        } else if (array.front().is<double>()) {
-                            std::vector<double> list;
-                            for (auto arrayParam : array) {
-                                list.emplace_back(arrayParam.get<double>());
-                            }
-                            state.parameters[scriptParam.first] = list;
-                        }
-                    } else if (scriptParam.second.is<std::string>()) {
-                        state.parameters[scriptParam.first] = scriptParam.second.get<std::string>();
-                    } else if (scriptParam.second.is<bool>()) {
-                        state.parameters[scriptParam.first] = scriptParam.second.get<bool>();
-                    } else {
-                        state.parameters[scriptParam.first] = scriptParam.second.get<double>();
-                    }
-                }
             }
         }
         if (std::holds_alternative<std::monostate>(state.definition.callback)) {
@@ -116,15 +83,17 @@ namespace ecs {
             return false;
         }
         if (state.definition.context) {
+            // Access will initialize default parameters
             void *dataPtr = state.definition.context->Access(state);
-            if (!dataPtr) {
-                Errorf("Script definition returned null data: %s", state.definition.name);
-                return false;
-            }
-            for (auto &field : state.definition.context->metadata.fields) {
-                if (!field.Load(scope, dataPtr, parameters)) {
-                    Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
-                    return false;
+            Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
+
+            auto it = srcObj.find("parameters");
+            if (it != srcObj.end()) {
+                for (auto &field : state.definition.context->metadata.fields) {
+                    if (!field.Load(scope, dataPtr, it->second)) {
+                        Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
+                        return false;
+                    }
                 }
             }
         }
@@ -143,16 +112,13 @@ namespace ecs {
             } else {
                 obj["onTick"] = picojson::value(src.definition.name);
             }
-            if (!src.parameters.empty()) {
-                auto &paramValue = obj["parameters"];
-                paramValue.set<picojson::object>({});
-                auto &paramObj = paramValue.get<picojson::object>();
-                for (auto &[name, param] : src.parameters) {
-                    std::visit(
-                        [&](auto &&arg) {
-                            sp::json::Save(scope, paramObj[name], arg);
-                        },
-                        param);
+
+            if (src.definition.context) {
+                const void *dataPtr = src.definition.context->Access(src);
+                const void *defaultPtr = src.definition.context->GetDefault();
+                Assertf(dataPtr, "Script definition returned null data: %s", src.definition.name);
+                for (auto &field : src.definition.context->metadata.fields) {
+                    field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
                 }
             }
         }

@@ -108,6 +108,7 @@ namespace ecs {
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
         bool Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const;
+        // If defaultStruct is nullptr, the field value is always saved
         void Save(const EntityScope &scope,
             picojson::value &dst,
             const void *srcStruct,

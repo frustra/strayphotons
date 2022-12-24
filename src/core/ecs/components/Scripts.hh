@@ -29,8 +29,8 @@ namespace ecs {
     struct InternalScriptBase {
         const StructMetadata &metadata;
         InternalScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
+        virtual const void *GetDefault() const = 0;
         virtual void *Access(ScriptState &state) const = 0;
-        // May return nullptr if state has never been accessed.
         virtual const void *Access(const ScriptState &state) const = 0;
     };
 
@@ -72,10 +72,7 @@ namespace ecs {
         void SetParam(std::string name, const T &value) {
             if (definition.context) {
                 void *dataPtr = definition.context->Access(*this);
-                if (!dataPtr) {
-                    Errorf("ScriptState::SetParam access returned null data: %s", definition.name);
-                    return;
-                }
+                Assertf(dataPtr, "ScriptState::SetParam access returned null data: %s", definition.name);
                 for (auto &field : definition.context->metadata.fields) {
                     if (field.name == name) {
                         *field.Access<T>(dataPtr) = value;
@@ -83,7 +80,7 @@ namespace ecs {
                     }
                 }
             } else {
-                parameters[name] = value;
+                Errorf("ScriptState::SetParam called on definition without context: %s", definition.name);
             }
         }
 
@@ -91,10 +88,7 @@ namespace ecs {
         T GetParam(std::string name) const {
             if (definition.context) {
                 const void *dataPtr = definition.context->Access(*this);
-                if (!dataPtr) {
-                    Errorf("ScriptState::GetParam access returned null data: %s", definition.name);
-                    return {};
-                }
+                Assertf(dataPtr, "ScriptState::GetParam access returned null data: %s", definition.name);
                 for (auto &field : definition.context->metadata.fields) {
                     if (field.name == name) {
                         return *field.Access<T>(dataPtr);
@@ -103,12 +97,8 @@ namespace ecs {
                 Errorf("ScriptState::GetParam field not found: %s on %s", name, definition.name);
                 return {};
             } else {
-                auto itr = parameters.find(name);
-                if (itr == parameters.end()) {
-                    return {};
-                } else {
-                    return std::get<T>(itr->second);
-                }
+                Errorf("ScriptState::GetParam called on definition without context: %s", definition.name);
+                return {};
             }
         }
 
@@ -135,7 +125,6 @@ namespace ecs {
         std::any userData;
 
     private:
-        robin_hood::unordered_flat_map<std::string, ParameterType> parameters;
         size_t instanceId;
 
         friend class StructMetadata;
@@ -187,6 +176,12 @@ namespace ecs {
 
     template<typename T>
     struct InternalScript final : public InternalScriptBase {
+        const T defaultValue = {};
+
+        const void *GetDefault() const override {
+            return &defaultValue;
+        }
+
         void *Access(ScriptState &state) const override {
             if (!state.userData.has_value()) {
                 state.userData.emplace<T>();
@@ -194,12 +189,11 @@ namespace ecs {
             return std::any_cast<T>(&state.userData);
         }
 
-        // May return nullptr if state has never been accessed.
         const void *Access(const ScriptState &state) const override {
             if (state.userData.has_value()) {
                 return std::any_cast<T>(&state.userData);
             } else {
-                return nullptr;
+                return &defaultValue;
             }
         }
 
@@ -225,6 +219,12 @@ namespace ecs {
 
     template<typename T>
     struct InternalPhysicsScript final : public InternalScriptBase {
+        const T defaultValue = {};
+
+        const void *GetDefault() const override {
+            return &defaultValue;
+        }
+
         void *Access(ScriptState &state) const override {
             if (!state.userData.has_value()) {
                 state.userData.emplace<T>();
@@ -232,12 +232,11 @@ namespace ecs {
             return std::any_cast<T>(&state.userData);
         }
 
-        // May return nullptr if state has never been accessed.
         const void *Access(const ScriptState &state) const override {
             if (state.userData.has_value()) {
                 return std::any_cast<T>(&state.userData);
             } else {
-                return nullptr;
+                return &defaultValue;
             }
         }
 
@@ -270,6 +269,12 @@ namespace ecs {
 
     template<typename T>
     struct PrefabScript final : public InternalScriptBase {
+        const T defaultValue = {};
+
+        const void *GetDefault() const override {
+            return &defaultValue;
+        }
+
         void *Access(ScriptState &state) const override {
             if (!state.userData.has_value()) {
                 state.userData.emplace<T>();
@@ -277,12 +282,11 @@ namespace ecs {
             return std::any_cast<T>(&state.userData);
         }
 
-        // May return nullptr if state has never been accessed.
         const void *Access(const ScriptState &state) const override {
             if (state.userData.has_value()) {
                 return std::any_cast<T>(&state.userData);
             } else {
-                return nullptr;
+                return &defaultValue;
             }
         }
 

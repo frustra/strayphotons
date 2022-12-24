@@ -109,16 +109,16 @@ namespace sp::scripts {
     InternalScript<Rotate> rotate("rotate", MetadataRotate);
 
     struct EmissiveFromSignal {
-        std::string signalName;
+        SignalExpression signalExpr;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<Renderable>(lock)) return;
 
-            auto signalValue = SignalBindings::GetSignal(lock, ent, signalName);
+            auto signalValue = signalExpr.Evaluate(lock);
             ent.Get<Renderable>(lock).emissiveScale = signalValue;
         }
     };
     StructMetadata MetadataEmissiveFromSignal(typeid(EmissiveFromSignal),
-        StructField::New("signal_name", &EmissiveFromSignal::signalName));
+        StructField::New("signal_expr", &EmissiveFromSignal::signalExpr));
     InternalScript<EmissiveFromSignal> emissiveFromSignal("emissive_from_signal", MetadataEmissiveFromSignal);
 } // namespace sp::scripts
