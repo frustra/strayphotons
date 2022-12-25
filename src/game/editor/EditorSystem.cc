@@ -33,7 +33,8 @@ namespace sp {
                 inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
                 inspector.Set<ecs::Screen>(lock);
                 inspector.Set<ecs::EventInput>(lock);
-                inspector.Set<ecs::TransformTree>(lock);
+                auto &transform = inspector.Set<ecs::TransformTree>(lock);
+                transform.pose.SetScale(glm::vec3(0.8, 1, 1));
 
                 auto &ph = inspector.Set<ecs::Physics>(lock);
                 ph.group = ecs::PhysicsGroup::UserInterface;

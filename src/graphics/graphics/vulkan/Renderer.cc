@@ -486,10 +486,12 @@ namespace sp::vulkan {
                 .Build([&](rg::PassBuilder &builder) {
                     rg::ImageDesc desc;
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-                    desc.extent = vk::Extent3D(1024, 1024, 1);
 
-                    auto tf = gui.entity.Get<ecs::TransformSnapshot>(lock);
-                    desc.extent.height *= tf.GetScale().y / tf.GetScale().x;
+                    // 1000 pixels per meter world-scale (~25 dpi)
+                    desc.extent = vk::Extent3D(1000, 1000, 1);
+                    auto guiScale = gui.entity.Get<ecs::TransformSnapshot>(lock).GetScale();
+                    desc.extent.width *= guiScale.x;
+                    desc.extent.height *= guiScale.y;
 
                     desc.mipLevels = CalculateMipmapLevels(desc.extent);
                     desc.sampler = SamplerType::TrilinearClampEdge;
