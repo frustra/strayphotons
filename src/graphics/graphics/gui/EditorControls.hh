@@ -331,7 +331,7 @@ namespace sp {
                     auto &fields = state.definition.context->metadata.fields;
                     if (!fields.empty()) {
                         ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
-                                                ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp;
+                                                ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
                         if (ImGui::BeginTable(rowId.c_str(), 2, flags)) {
                             ImGui::TableSetupColumn("Parameter");
                             ImGui::TableSetupColumn("Value");

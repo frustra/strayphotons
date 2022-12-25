@@ -1,0 +1,7 @@
+screenshot empty-state.png
+stepgraphics
+editinworld player:flatview
+screenshot editor1.png inspector_gui
+stepgraphics
+screenshot editor2.png inspector_gui
+stepgraphics
