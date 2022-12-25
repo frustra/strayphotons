@@ -523,18 +523,19 @@ namespace sp {
                             }
                         }
                         if (ImGui::BeginTabItem(tabName.c_str())) {
-                            if (ImGui::Button("Refresh Scene Prefabs")) {
-                                GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
-                            }
-                            ImGui::SameLine();
+                            // if (ImGui::Button("Refresh Scene Prefabs")) {
+                            //     GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
+                            // }
+                            // ImGui::SameLine();
                             if (ImGui::Button("Apply Scene")) {
-                                GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
+                                // GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
                                 GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
                             }
                             if (!stagingSceneInfo.prefabStagingId) {
                                 ImGui::SameLine();
                                 if (ImGui::Button("Save & Apply Scene")) {
-                                    GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
+                                    // GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs,
+                                    // stagingScene->name);
                                     GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
                                     GetSceneManager().QueueAction(SceneAction::SaveStagingScene, stagingScene->name);
                                 }
