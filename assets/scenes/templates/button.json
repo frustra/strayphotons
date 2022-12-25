@@ -12,7 +12,7 @@
 			}],
 			"event_input": {},
 			"signal_bindings": {
-				"button_pressed": "button_body/trigger_object_enter"
+				"button_pressed": "button_body/trigger_object_count > 0"
 			}
 		},
 		{

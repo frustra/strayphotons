@@ -11,42 +11,41 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    InternalScript elevatorScript("elevator",
-        [](ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+    struct Elevator {
+        bool init = false;
+        Transform lastTransform;
+        bool playing = false;
+        int frames = 0;
+        float avgSpeed = 0.0f;
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformSnapshot, Sounds>(lock)) return;
             auto &transform = ent.Get<TransformSnapshot>(lock);
             auto &sounds = ent.Get<Sounds>(lock);
 
-            struct Elevator {
-                Transform lastTransform;
-                bool playing = false;
-                int frames = 0;
-                float avgSpeed = 0.0f;
-            };
-
-            Elevator elevator;
-            if (state.userData.has_value()) {
-                elevator = std::any_cast<Elevator>(state.userData);
-            } else {
-                elevator.lastTransform = transform;
+            if (!init) {
+                lastTransform = transform;
+                init = true;
             }
 
-            float delta = transform.GetPosition().y - elevator.lastTransform.GetPosition().y;
+            float delta = transform.GetPosition().y - lastTransform.GetPosition().y;
             bool shouldPlay = abs(delta) > 1e-8;
-            if (shouldPlay || elevator.frames++ > 69) {
-                if (shouldPlay != elevator.playing) {
+            if (shouldPlay || frames++ > 69) {
+                if (shouldPlay != playing) {
                     if (shouldPlay) {
                         EventBindings::SendEvent(lock, ent, Event{"/sound/play", ent, 0});
                     } else {
                         EventBindings::SendEvent(lock, ent, Event{"/sound/stop", ent, 0});
                     }
-                    elevator.playing = shouldPlay;
+                    playing = shouldPlay;
                 }
-                elevator.lastTransform = transform;
-                elevator.frames = 0;
-                elevator.avgSpeed = 0.9 * elevator.avgSpeed + 0.1 * delta;
-                sounds.sounds[0].volume = std::min(1.0f, abs(elevator.avgSpeed) / 0.5f);
+                lastTransform = transform;
+                frames = 0;
+                avgSpeed = 0.9 * avgSpeed + 0.1 * delta;
+                sounds.sounds[0].volume = std::min(1.0f, abs(avgSpeed) / 0.5f);
             }
-            state.userData = elevator;
-        });
+        }
+    };
+    StructMetadata MetadataElevator(typeid(Elevator));
+    InternalScript<Elevator> elevator("elevator", MetadataElevator);
 } // namespace sp::scripts

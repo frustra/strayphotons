@@ -337,10 +337,10 @@ namespace sp {
                         if (!stagingSceneInfo.prefabStagingId) {
                             tabName = "Scene: " + stagingScene->name;
                         } else {
-                            Assertf(stagingSceneInfo.prefabStagingId.Has<ecs::Script>(stagingLock),
-                                "SceneInfo.prefabStagingId does not have a Script component");
-                            auto &prefabScript = stagingSceneInfo.prefabStagingId.Get<ecs::Script>(stagingLock);
-                            auto scriptInstance = prefabScript.FindScript(stagingSceneInfo.prefabScriptId);
+                            Assertf(stagingSceneInfo.prefabStagingId.Has<ecs::Scripts>(stagingLock),
+                                "SceneInfo.prefabStagingId does not have a Scripts component");
+                            auto &prefabScripts = stagingSceneInfo.prefabStagingId.Get<ecs::Scripts>(stagingLock);
+                            auto scriptInstance = prefabScripts.FindScript(stagingSceneInfo.prefabScriptId);
                             Assertf(scriptInstance != nullptr, "SceneInfo.prefabScriptId not found in Scripts");
 
                             if (scriptInstance->definition.name == "gltf") {

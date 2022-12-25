@@ -203,8 +203,7 @@
 			"script": {
 				"onTick": "rotate",
 				"parameters": {
-					"axis_y": 1,
-					"axis_z": 1,
+					"axis": [0, 1, 1],
 					"speed": 0
 				}
 			}

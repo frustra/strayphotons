@@ -16,8 +16,8 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::Game);
                 ent.Set<ecs::EventInput>(lock);
-                auto &script = ent.Set<ecs::Script>(lock);
-                auto &scriptState = script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
+                auto &scripts = ent.Set<ecs::Scripts>(lock);
+                auto &scriptState = scripts.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,
@@ -33,7 +33,7 @@ namespace sp {
                         }
                     });
                 scriptState.definition.events = {ACTION_EVENT_RUN_COMMAND};
-                scriptState.filterOnEvent = true;
+                scriptState.definition.filterOnEvent = true;
             });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);

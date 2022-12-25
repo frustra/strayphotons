@@ -4,7 +4,10 @@
 			"name": "origin",
 			"script": {
 				"onTick": "player_rotation",
-				"parameters": { "relative_to": "vr:hmd" }
+				"parameters": {
+					"relative_to": "vr:hmd",
+					"smooth_rotation": false
+				}
 			},
 			"physics": {
 				"__comment": "Dummy actor for velocity calculation",

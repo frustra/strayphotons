@@ -38,7 +38,7 @@ namespace ecs {
     struct SceneConnection;
     struct SceneInfo;
     struct Screen;
-    struct Script;
+    struct Scripts;
     struct SignalOutput;
     struct SignalBindings;
     struct Sounds;
@@ -84,7 +84,7 @@ namespace ecs {
         EventBindings,
         SignalOutput,
         SignalBindings,
-        Script>;
+        Scripts>;
 
     using Entity = Tecs::Entity;
     template<typename... Permissions>
@@ -161,7 +161,7 @@ TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");
 TECS_NAME_COMPONENT(ecs::SceneConnection, "SceneConnection");
 TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
 TECS_NAME_COMPONENT(ecs::Screen, "Screen");
-TECS_NAME_COMPONENT(ecs::Script, "Script");
+TECS_NAME_COMPONENT(ecs::Scripts, "Scripts");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
 TECS_NAME_COMPONENT(ecs::Sounds, "Sound");

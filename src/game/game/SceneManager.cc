@@ -587,8 +587,8 @@ namespace sp {
             }
 
             for (auto &e : entities) {
-                if (e.Has<ecs::Script>(lock)) {
-                    e.Get<ecs::Script>(lock).Prefab(lock, e);
+                if (e.Has<ecs::Scripts>(lock)) {
+                    e.Get<ecs::Scripts>(lock).Prefab(lock, e);
                 }
             }
         }

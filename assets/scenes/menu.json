@@ -267,15 +267,12 @@
 					"target": "console:input/action/run_command"
 				}
 			},
-			"signal_bindings": {
-				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
-			},
 			"script": {
-				"onEvent": "event_gate_by_signal",
+				"onTick": "event_gate_by_signal",
 				"parameters": {
+					"gate_signal": "airlock_in_button_sensor.Icosphere/value",
 					"input_event": "/button/press",
-					"output_event": "open_door",
-					"signal_name": "sensor_value"
+					"output_event": "open_door"
 				}
 			}
 		},
@@ -289,8 +286,7 @@
 			"script": {
 				"parameters": {
 					"model": "sensor",
-					"physics": "static",
-					"render": true
+					"physics": "static"
 				},
 				"prefab": "gltf"
 			}
@@ -312,13 +308,10 @@
 				"emissive": 0,
 				"model": "red_led"
 			},
-			"signal_bindings": {
-				"sensor_value": "airlock_in_button_sensor.Icosphere/value"
-			},
 			"script": {
 				"onTick": "emissive_from_signal",
 				"parameters": {
-					"signal_name": "sensor_value"
+					"signal_expr": "airlock_in_button_sensor.Icosphere/value"
 				}
 			}
 		},
@@ -371,8 +364,7 @@
 			},
 			"script": {
 				"parameters": {
-					"model": "laser-plug-mount",
-					"render": true
+					"model": "laser-plug-mount"
 				},
 				"prefab": "gltf"
 			}
@@ -383,8 +375,7 @@
 			},
 			"script": {
 				"parameters": {
-					"model": "laser-plug",
-					"render": true
+					"model": "laser-plug"
 				},
 				"prefab": "gltf"
 			}
@@ -421,8 +412,7 @@
 			},
 			"script": {
 				"parameters": {
-					"model": "round-mirror-mounted",
-					"render": true
+					"model": "round-mirror-mounted"
 				},
 				"prefab": "gltf"
 			}
@@ -507,7 +497,7 @@
 					"prefab": "template"
 				},
 				{
-					"onEvent": "magnetic_plug"
+					"onTick": "magnetic_plug"
 				}
 			]
 		},
@@ -531,9 +521,7 @@
 				"parameters": {
 					"alignment_target": "station-center:elevator",
 					"follow_target": "player:player",
-					"voxel_offset_x": -0.5,
-					"voxel_offset_y": -0.2,
-					"voxel_offset_z": -0.5,
+					"voxel_offset": [-0.5, -0.2, -0.5],
 					"voxel_scale": 0.25,
 					"voxel_stride": 16
 				}

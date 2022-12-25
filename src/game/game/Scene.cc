@@ -92,11 +92,11 @@ namespace sp {
         Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
             "Prefab root %s does not have SceneInfo",
             ecs::ToString(stagingLock, prefabRoot));
-        Assertf(prefabRoot.Has<ecs::Script>(stagingLock),
-            "Prefab root %s does not have Prefab Script",
+        Assertf(prefabRoot.Has<ecs::Scripts>(stagingLock),
+            "Prefab root %s does not have Scripts component",
             ecs::ToString(stagingLock, prefabRoot));
-        auto &prefabScript = prefabRoot.Get<const ecs::Script>(stagingLock);
-        Assertf(prefabScript.FindScript(prefabScriptId) != nullptr,
+        auto &prefabScripts = prefabRoot.Get<const ecs::Scripts>(stagingLock);
+        Assertf(prefabScripts.FindScript(prefabScriptId) != nullptr,
             "Scene::NewPrefabEntity provided prefabScriptId not found in Scripts");
 
         ecs::Entity existing;

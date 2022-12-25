@@ -53,8 +53,8 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, entities::Head.Name());
                 auto &tree = ent.Set<ecs::TransformTree>(lock);
                 tree.parent = entities::Flatview;
-                auto &script = ent.Set<ecs::Script>(lock);
-                script.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
+                auto &scripts = ent.Set<ecs::Scripts>(lock);
+                scripts.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,

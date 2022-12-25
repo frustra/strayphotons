@@ -109,7 +109,7 @@ namespace ecs {
         if (!(actions & FieldAction::AutoSave)) return;
 
         auto *field = static_cast<const char *>(srcStruct) + offset;
-        auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
+        auto *defaultField = defaultStruct ? static_cast<const char *>(defaultStruct) + offset : nullptr;
 
         if (name != nullptr) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
@@ -119,8 +119,12 @@ namespace ecs {
                 using T = std::remove_pointer_t<decltype(typePtr)>;
 
                 auto &value = *reinterpret_cast<const T *>(field);
-                auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-                sp::json::SaveIfChanged(scope, obj, name, value, defaultValue);
+                if (defaultField) {
+                    auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
+                    sp::json::SaveIfChanged(scope, obj, name, value, defaultValue);
+                } else {
+                    sp::json::Save(scope, obj[name], value);
+                }
             });
         } else {
             GetFieldType(type, [&](auto *typePtr) {

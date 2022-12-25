@@ -41,7 +41,7 @@
 					}
 				},
 				{
-					"onEvent": "camera_view"
+					"onTick": "camera_view"
 				},
 				{
 					"onTick": "interact_handler",
@@ -55,10 +55,10 @@
 			"name": "debug-spawner",
 			"event_input": {},
 			"script": {
-				"onEvent": "model_spawner",
+				"onTick": "model_spawner",
 				"parameters": {
 					"model": "cardboard-box",
-					"position_z": -2,
+					"position": [0, 0, -2],
 					"relative_to": "flatview"
 				}
 			}
@@ -83,7 +83,10 @@
 				"on": 0
 			},
 			"script": {
-				"onTick": "flashlight"
+				"onTick": "flashlight",
+				"parameters": {
+					"parent": "flatview"
+				}
 			}
 		}
 	]

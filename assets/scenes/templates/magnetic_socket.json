@@ -4,10 +4,10 @@
 		"transform": {},
 		"event_input": {},
 		"signal_output": {
-			"snap_enable": 0
+			"snap_angle": 45
 		},
 		"script": {
-			"onEvent": "magnetic_socket"
+			"onTick": "magnetic_socket"
 		}
 	},
 	"entities": [

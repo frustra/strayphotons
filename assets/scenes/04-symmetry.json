@@ -79,8 +79,7 @@
 				"prefab": "wall",
 				"parameters": {
 					"stride": 3,
-					"segments_x": [0, 0, 0, 3, 6, 12, 12, 6, 6, 12, 12, 6, 3, 0],
-					"segments_y": [9, 6, 0, 0, 0,  0,  3, 3, 6,  6,  9, 9, 9, 9],
+					"segments": [[0, 9], [0, 6], [0, 0], [3, 0], [6, 0], [12, 0], [12, 3], [6, 3], [6, 6], [12, 6], [12, 9], [6, 9], [3, 9], [0, 9]],
 					"segment_types": ["wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3-door", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3", "wall-4x3-door", "wall-4x3"]
 				}
 			}

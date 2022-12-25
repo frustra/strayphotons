@@ -111,6 +111,11 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
             inline_image "artifact://$output_path/${file##*/}" "$output_path/${file##*/}"
         done
         [ -n "$BUILDKITE_BRANCH" ] && [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
+        if [ -n "$BUILDKITE_BRANCH" ] && [[ -f ./core ]]; then
+            echo -e "\033[31mUploading core dump\033[0m"
+            buildkite-agent artifact upload ./core
+            buildkite-agent artifact upload ./sp-test
+        fi
     done
 fi
 

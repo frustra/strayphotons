@@ -2,7 +2,7 @@
 	"components": {
 		"event_input": {},
 		"script": {
-			"onEvent": "interactive_object"
+			"onTick": "interactive_object"
 		},
 		"physics_joints": [],
 		"physics_query": {}

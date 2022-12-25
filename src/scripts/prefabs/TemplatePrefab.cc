@@ -86,7 +86,7 @@ namespace ecs {
                     Errorf("Unknown component, ignoring: %s", comp.first);
                 }
             }
-            if (rootOverride.Has<ecs::Script>(lock)) rootOverride.Get<ecs::Script>(lock).Prefab(lock, rootOverride);
+            if (rootOverride.Has<ecs::Scripts>(lock)) rootOverride.Get<ecs::Scripts>(lock).Prefab(lock, rootOverride);
         }
 
         // Add defined entities as sub-entities of the template root
@@ -139,116 +139,117 @@ namespace ecs {
             }
 
             for (auto &e : entities) {
-                if (e.Has<ecs::Script>(lock)) e.Get<ecs::Script>(lock).Prefab(lock, e);
+                if (e.Has<ecs::Scripts>(lock)) e.Get<ecs::Scripts>(lock).Prefab(lock, e);
             }
         }
     };
 
-    InternalPrefab templatePrefab("template", [](const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
-        auto scene = state.scope.scene.lock();
-        Assertf(scene, "template prefab does not have a valid scene: %s", ToString(lock, ent));
+    struct TemplatePrefab {
+        std::string source;
 
-        TemplateParser parser(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("source"));
-        if (!parser.Parse(lock)) return;
+        void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+            auto scene = state.scope.scene.lock();
+            Assertf(scene, "TemplatePrefab does not have a valid scene: %s", ToString(lock, ent));
 
-        parser.ApplyComponents(lock);
-        parser.AddEntities(lock);
-    });
+            TemplateParser parser(scene, ent, state.GetInstanceId(), source);
+            if (!parser.Parse(lock)) return;
 
-    InternalPrefab tilePrefab("tile", [](const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
-        auto scene = state.scope.scene.lock();
-        Assertf(scene, "tile prefab does not have a valid scene: %s", ToString(lock, ent));
+            parser.ApplyComponents(lock);
+            parser.AddEntities(lock);
+        }
+    };
+    StructMetadata MetadataTemplatePrefab(typeid(TemplatePrefab), StructField::New("source", &TemplatePrefab::source));
+    PrefabScript<TemplatePrefab> templatePrefab("template", MetadataTemplatePrefab);
 
+    struct TilePrefab {
         glm::ivec2 count = {1, 1};
         glm::vec2 stride = {1, 1};
+        std::string axes = "xy";
+        std::string surfaceTemplate, edgeTemplate, cornerTemplate;
 
-        if (state.HasParam<vector<double>>("count")) {
-            auto &source = state.GetParamRef<vector<double>>("count");
-            for (size_t i = 0; i < (size_t)count.length() && i < source.size(); i++) {
-                count[i] = source[i];
+        void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+            auto scene = state.scope.scene.lock();
+            Assertf(scene, "TilePrefab does not have a valid scene: %s", ToString(lock, ent));
+
+            if (axes.size() != 2) {
+                Errorf("'%s' axes are invalid, must tile on 2 unique axes: %s", axes, ToString(lock, ent));
+                return;
             }
-        }
-        if (state.HasParam<vector<double>>("stride")) {
-            auto &source = state.GetParamRef<vector<double>>("stride");
-            for (size_t i = 0; i < (size_t)count.length() && i < source.size(); i++) {
-                stride[i] = source[i];
+            std::pair<int, int> axesIndex = {axes[0] - 'x', axes[1] - 'x'};
+            if (axesIndex.first < 0 || axesIndex.second < 0 || axesIndex.first > 2 || axesIndex.second > 2) {
+                Errorf("'%s' axes are invalid, must tile on x, y, or z: %s", axes, ToString(lock, ent));
+                return;
+            } else if (axesIndex.first == axesIndex.second) {
+                Errorf("'%s' axes are invalid, must tile on 2 unique axes: %s", axes, ToString(lock, ent));
+                return;
             }
-        }
 
-        string axes = state.GetParam<string>("axes");
-        if (axes.empty()) axes = "xy";
+            TemplateParser surface(scene, ent, state.GetInstanceId(), surfaceTemplate);
+            if (!surface.Parse(lock)) return;
 
-        if (axes.size() != 2) {
-            Errorf("'%s' axes are invalid, must tile on 2 axes: %s", axes, ToString(lock, ent));
-            return;
-        }
+            TemplateParser edge(scene, ent, state.GetInstanceId(), edgeTemplate);
+            auto haveEdge = edge.Parse(lock);
 
-        TemplateParser surface(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("surface"));
-        if (!surface.Parse(lock)) return;
+            TemplateParser corner(scene, ent, state.GetInstanceId(), cornerTemplate);
+            auto haveCorner = corner.Parse(lock);
 
-        TemplateParser edge(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("edge"));
-        auto haveEdge = edge.Parse(lock);
+            surface.ApplyComponents(lock);
 
-        TemplateParser corner(scene, ent, state.GetInstanceId(), state.GetParam<std::string>("corner"));
-        auto haveCorner = corner.Parse(lock);
+            glm::vec3 normal{1, 1, 1};
+            normal[axesIndex.first] = 0;
+            normal[axesIndex.second] = 0;
 
-        surface.ApplyComponents(lock);
+            for (int x = 0; x < count.x; x++) {
+                for (int y = 0; y < count.y; y++) {
+                    auto offset2D = (glm::vec2{float(x), float(y)} + glm::vec2(0.5)) * stride;
 
-        auto axisFromLetter = [](char letter) {
-            if (letter == 'x') return 0;
-            if (letter == 'y') return 1;
-            if (letter == 'z') return 2;
-            return -1;
-        };
+                    glm::vec3 offset3D;
+                    offset3D[axesIndex.first] = offset2D.x;
+                    offset3D[axesIndex.second] = offset2D.y;
 
-        std::pair<int, int> axesIndex = {axisFromLetter(axes[0]), axisFromLetter(axes[1])};
+                    auto scope = std::to_string(x) + "_" + std::to_string(y);
+                    surface.AddEntities(lock, scope, offset3D);
 
-        glm::vec3 normal{1, 1, 1};
-        normal[axesIndex.first] = 0;
-        normal[axesIndex.second] = 0;
+                    auto xEdge = x == 0 || x == (count.x - 1);
+                    auto yEdge = y == 0 || y == (count.y - 1);
 
-        for (int x = 0; x < count.x; x++) {
-            for (int y = 0; y < count.y; y++) {
-                auto offset2D = (glm::vec2{float(x), float(y)} + glm::vec2(0.5)) * stride;
-
-                glm::vec3 offset3D;
-                offset3D[axesIndex.first] = offset2D.x;
-                offset3D[axesIndex.second] = offset2D.y;
-
-                auto scope = std::to_string(x) + "_" + std::to_string(y);
-                surface.AddEntities(lock, scope, offset3D);
-
-                auto xEdge = x == 0 || x == (count.x - 1);
-                auto yEdge = y == 0 || y == (count.y - 1);
-
-                if (xEdge && yEdge) {
-                    if (haveCorner) {
-                        Transform transform;
-                        if (x != 0 && y != 0) {
-                            transform.Rotate(M_PI, normal);
-                        } else if (x != 0) {
-                            transform.Rotate(-M_PI / 2, normal);
-                        } else if (y != 0) {
-                            transform.Rotate(M_PI / 2, normal);
+                    if (xEdge && yEdge) {
+                        if (haveCorner) {
+                            Transform transform;
+                            if (x != 0 && y != 0) {
+                                transform.Rotate(M_PI, normal);
+                            } else if (x != 0) {
+                                transform.Rotate(-M_PI / 2, normal);
+                            } else if (y != 0) {
+                                transform.Rotate(M_PI / 2, normal);
+                            }
+                            transform.Translate(offset3D);
+                            corner.AddEntities(lock, scope, transform);
                         }
-                        transform.Translate(offset3D);
-                        corner.AddEntities(lock, scope, transform);
-                    }
-                } else if (xEdge || yEdge) {
-                    if (haveEdge) {
-                        Transform transform;
-                        if (x == (count.x - 1)) {
-                            transform.Rotate(-M_PI / 2, normal);
-                        } else if (y == (count.y - 1)) {
-                            transform.Rotate(M_PI, normal);
-                        } else if (x == 0) {
-                            transform.Rotate(M_PI / 2, normal);
+                    } else if (xEdge || yEdge) {
+                        if (haveEdge) {
+                            Transform transform;
+                            if (x == (count.x - 1)) {
+                                transform.Rotate(-M_PI / 2, normal);
+                            } else if (y == (count.y - 1)) {
+                                transform.Rotate(M_PI, normal);
+                            } else if (x == 0) {
+                                transform.Rotate(M_PI / 2, normal);
+                            }
+                            transform.Translate(offset3D);
+                            edge.AddEntities(lock, scope, transform);
                         }
-                        transform.Translate(offset3D);
-                        edge.AddEntities(lock, scope, transform);
                     }
                 }
             }
         }
-    });
+    };
+    StructMetadata MetadataTilePrefab(typeid(TilePrefab),
+        StructField::New("count", &TilePrefab::count),
+        StructField::New("stride", &TilePrefab::stride),
+        StructField::New("axes", &TilePrefab::axes),
+        StructField::New("surface", &TilePrefab::surfaceTemplate),
+        StructField::New("edge", &TilePrefab::edgeTemplate),
+        StructField::New("corner", &TilePrefab::cornerTemplate));
+    PrefabScript<TilePrefab> tilePrefab("tile", MetadataTilePrefab);
 } // namespace ecs
