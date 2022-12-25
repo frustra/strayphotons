@@ -26,10 +26,10 @@ namespace sp {
     enum class SceneAction {
         ApplySystemScene, // Arguments: (sceneName, applyCallback)
         EditStagingScene, // Arguments: (sceneName, applyCallback)
+        RefreshScenePrefabs, // Arguments: (sceneName)
         ApplyStagingScene, // Arguments: (sceneName)
         SaveStagingScene, // Arguments: (sceneName)
         EditLiveECS, // Arguments: (editCallback)
-        ApplyScene, // Arguments: (sceneName)
         LoadScene, // Arguments: (sceneName)
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
@@ -67,6 +67,7 @@ namespace sp {
         void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene,
             bool resetLive = false,
             OnApplySceneCallback callback = nullptr);
+        void RefreshPrefabs(const std::shared_ptr<Scene> &scene);
 
         void Frame() override;
 

@@ -153,6 +153,32 @@ namespace sp {
         return entity;
     }
 
+    void Scene::RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent) {
+        Assertf(ecs::IsStaging(stagingLock), "Scene::RemovePrefabEntity must be called with a staging lock");
+        Assertf(ecs::IsStaging(ent), "Scene::RemovePrefabEntity must be called with a staging entity");
+        if (!ent.Has<ecs::SceneInfo>(stagingLock)) return;
+        auto &stagingInfo = ent.Get<ecs::SceneInfo>(stagingLock);
+        Assertf(stagingInfo.prefabStagingId, "Scene::RemovePrefabEntity must be called with a prefab entity");
+
+        if (!stagingInfo.rootStagingId.Has<ecs::SceneInfo>(stagingLock)) {
+            ent.Destroy(stagingLock);
+            return;
+        }
+
+        auto &rootSceneInfo = stagingInfo.rootStagingId.Get<ecs::SceneInfo>(stagingLock);
+        auto tmpLiveInfo = rootSceneInfo;
+        if (tmpLiveInfo.Remove(stagingLock, ent)) {
+            if (ent.Has<ecs::Name>(stagingLock)) {
+                auto &name = ent.Get<ecs::Name>(stagingLock);
+                namedEntities.erase(name);
+                sp::erase_if(references, [&](auto &&ref) {
+                    return ref.Name() == name;
+                });
+            }
+            ent.Destroy(stagingLock);
+        }
+    }
+
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live,
         bool resetLive) {

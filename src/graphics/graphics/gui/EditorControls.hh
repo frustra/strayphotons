@@ -5,6 +5,7 @@
 #include "core/Defer.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/SignalExpression.hh"
 #include "game/SceneManager.hh"
 
 #include <imgui/imgui.h>
@@ -115,7 +116,11 @@ namespace sp {
         } else {
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
-            ImGui::Text("%s: %s", fieldName.c_str(), jsonValue.serialize(true).c_str());
+            if (fieldName.empty()) {
+                ImGui::Text("%s", jsonValue.serialize(true).c_str());
+            } else {
+                ImGui::Text("%s: %s", fieldName.c_str(), jsonValue.serialize(true).c_str());
+            }
         }
         return changed;
     }
@@ -191,10 +196,17 @@ namespace sp {
         return ImGui::InputText(name.c_str(), &value);
     }
     template<>
+    bool EditorContext::AddImGuiElement(const std::string &name, ecs::SignalExpression &value) {
+        // TODO: figure out how to re-parse the expression
+        return ImGui::InputText(name.c_str(), &value.expr);
+    }
+    template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::EntityRef &value) {
         bool changed = false;
-        ImGui::Text("%s:", fieldName.c_str());
-        ImGui::SameLine();
+        if (!fieldName.empty()) {
+            ImGui::Text("%s:", fieldName.c_str());
+            ImGui::SameLine();
+        }
         ImGui::Button(value ? value.Name().String().c_str() : "None");
         if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
             ImGui::SetNextItemWidth(-FLT_MIN);
@@ -252,6 +264,7 @@ namespace sp {
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptState> &value) {
         bool changed = false;
+        std::vector<size_t> removeList;
         for (auto &state : value) {
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
             bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
@@ -259,7 +272,7 @@ namespace sp {
             bool isPrefab = std::holds_alternative<ecs::PrefabFunc>(state.definition.callback);
             std::string scriptLabel;
             if (isOnTick) {
-                if (state.filterOnEvent) {
+                if (state.definition.filterOnEvent) {
                     scriptLabel = "OnEvent: " + state.definition.name;
                 } else {
                     scriptLabel = "OnTick: " + state.definition.name;
@@ -273,7 +286,13 @@ namespace sp {
                     scriptLabel = "Prefab: " + state.definition.name;
                 }
             }
-            if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_None, "%s", scriptLabel.c_str())) {
+            if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_DefaultOpen, "%s", scriptLabel.c_str())) {
+                if (ecs::IsStaging(target)) {
+                    if (ImGui::Button("-", ImVec2(20, 0))) {
+                        removeList.emplace_back(state.GetInstanceId());
+                    }
+                    ImGui::SameLine();
+                }
                 if (isOnTick) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
@@ -306,40 +325,52 @@ namespace sp {
                     ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "NULL Script");
                 }
 
-                ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
-                                        ImGuiTableFlags_SizingStretchProp;
-                if (ImGui::BeginTable(rowId.c_str(), 3, flags)) {
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 10.0f);
-                    ImGui::TableSetupColumn("Parameter");
-                    ImGui::TableSetupColumn("Value");
-                    ImGui::TableHeadersRow();
+                if (state.definition.context) {
+                    void *dataPtr = state.definition.context->Access(state);
+                    Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
+                    auto &fields = state.definition.context->metadata.fields;
+                    if (!fields.empty()) {
+                        ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
+                                                ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp;
+                        if (ImGui::BeginTable(rowId.c_str(), 2, flags)) {
+                            ImGui::TableSetupColumn("Parameter");
+                            ImGui::TableSetupColumn("Value");
+                            ImGui::TableHeadersRow();
 
-                    for (auto &[key, param] : state.parameters) {
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        if (ImGui::Button("-")) {
-                            Debugf("Remove: %s", key);
+                            for (auto &field : fields) {
+                                if (field.name) {
+                                    ImGui::TableNextRow();
+                                    ImGui::TableSetColumnIndex(0);
+                                    ImGui::Text("%s", field.name);
+                                    ImGui::TableSetColumnIndex(1);
+                                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                                        using T = std::remove_pointer_t<decltype(typePtr)>;
+
+                                        auto fieldValue = field.Access<T>(dataPtr);
+                                        auto parentFieldName = fieldName;
+                                        fieldName = "";
+                                        if (AddImGuiElement(rowId + "."s + field.name, *fieldValue)) {
+                                            changed = true;
+                                        }
+                                        fieldName = parentFieldName;
+                                    });
+                                }
+                            }
                         }
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::Text("%s", key.c_str());
-                        ImGui::TableSetColumnIndex(2);
-                        picojson::value jsonValue;
-                        json::Save({}, jsonValue, param);
-                        ImGui::Text("%s", jsonValue.serialize(true).c_str());
-                    }
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    if (ImGui::Button("+")) {
-                        state.parameters.emplace("", "");
-                        changed = true;
+                        ImGui::EndTable();
                     }
                 }
-                ImGui::EndTable();
 
                 ImGui::TreePop();
             }
         }
         if (ecs::IsStaging(target)) {
+            for (auto &instanceId : removeList) {
+                sp::erase_if(value, [&](auto &&state) {
+                    return state.GetInstanceId() == instanceId;
+                });
+                changed = true;
+            }
             if (ImGui::Button("Add Prefab")) {
                 auto &state = value.emplace_back();
                 state.scope.scene = scene;
@@ -471,29 +502,39 @@ namespace sp {
                                 "SceneInfo.prefabStagingId does not have a Scripts component");
                             auto &prefabScripts = stagingSceneInfo.prefabStagingId.Get<ecs::Scripts>(stagingLock);
                             auto scriptInstance = prefabScripts.FindScript(stagingSceneInfo.prefabScriptId);
-                            Assertf(scriptInstance != nullptr, "SceneInfo.prefabScriptId not found in Scripts");
-
-                            if (scriptInstance->definition.name == "gltf") {
-                                tabName = "Gltf: " + scriptInstance->GetParam<std::string>("model") + " - " +
-                                          ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
-                                          std::to_string(stagingId);
-                            } else if (scriptInstance->definition.name == "template") {
-                                tabName = "Template: " + scriptInstance->GetParam<std::string>("source") + " - " +
-                                          ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
-                                          std::to_string(stagingId);
+                            if (scriptInstance) {
+                                if (scriptInstance->definition.name == "gltf") {
+                                    tabName = "Gltf: " + scriptInstance->GetParam<std::string>("model") + " - " +
+                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                              std::to_string(stagingId);
+                                } else if (scriptInstance->definition.name == "template") {
+                                    tabName = "Template: " + scriptInstance->GetParam<std::string>("source") + " - " +
+                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                              std::to_string(stagingId);
+                                } else {
+                                    tabName = "Prefab: " + scriptInstance->definition.name + " - " +
+                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
+                                              std::to_string(stagingId);
+                                }
                             } else {
-                                tabName = "Prefab: " + scriptInstance->definition.name + " - " +
+                                tabName = "Prefab: null - " +
                                           ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
                                           std::to_string(stagingId);
                             }
                         }
                         if (ImGui::BeginTabItem(tabName.c_str())) {
+                            if (ImGui::Button("Refresh Scene Prefabs")) {
+                                GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
+                            }
+                            ImGui::SameLine();
                             if (ImGui::Button("Apply Scene")) {
+                                GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
                                 GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
                             }
                             if (!stagingSceneInfo.prefabStagingId) {
                                 ImGui::SameLine();
                                 if (ImGui::Button("Save & Apply Scene")) {
+                                    GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
                                     GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
                                     GetSceneManager().QueueAction(SceneAction::SaveStagingScene, stagingScene->name);
                                 }

@@ -134,13 +134,8 @@ namespace ecs {
     void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
-<<<<<<< HEAD:src/core/ecs/components/Scripts.cc
-            if (callback) {
-                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-=======
             if (callback && *callback) {
-                if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
->>>>>>> b05f0606 (Add entity selector popup):src/core/ecs/components/Script.cc
+                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnTick");
                 ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
@@ -151,13 +146,8 @@ namespace ecs {
     void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
-<<<<<<< HEAD:src/core/ecs/components/Scripts.cc
-            if (callback) {
-                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-=======
             if (callback && *callback) {
-                if (state.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
->>>>>>> b05f0606 (Add entity selector popup):src/core/ecs/components/Script.cc
+                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnPhysicsUpdate");
                 ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
@@ -165,7 +155,7 @@ namespace ecs {
         }
     }
 
-    void Scripts::Prefab(Lock<AddRemove> lock, const Entity &ent) {
+    void Scripts::Prefab(Lock<AddRemove> lock, Entity ent) {
         ZoneScopedN("Prefab");
         ZoneStr(ecs::ToString(lock, ent));
         // Prefab scripts may add additional scripts while iterating.

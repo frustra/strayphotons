@@ -9,8 +9,7 @@
 
 #include <any>
 #include <functional>
-#include <robin_hood.h>
-#include <unordered_map>
+#include <map>
 #include <variant>
 #include <vector>
 
@@ -38,13 +37,13 @@ namespace ecs {
         std::string name;
         std::vector<std::string> events;
         bool filterOnEvent = false;
-        const InternalScriptBase *context;
+        const InternalScriptBase *context = nullptr;
         std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
     };
 
     struct ScriptDefinitions {
-        robin_hood::unordered_node_map<std::string, ScriptDefinition> scripts;
-        robin_hood::unordered_node_map<std::string, ScriptDefinition> prefabs;
+        std::map<std::string, ScriptDefinition> scripts;
+        std::map<std::string, ScriptDefinition> prefabs;
 
         void RegisterScript(ScriptDefinition &&definition);
         void RegisterPrefab(ScriptDefinition &&definition);
@@ -160,7 +159,7 @@ namespace ecs {
 
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
         void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
-        static void Prefab(Lock<AddRemove> lock, const Entity &ent);
+        static void Prefab(Lock<AddRemove> lock, Entity ent);
 
         const ScriptState *FindScript(size_t instanceId) const;
 
@@ -183,27 +182,20 @@ namespace ecs {
         }
 
         void *Access(ScriptState &state) const override {
-            if (!state.userData.has_value()) {
-                state.userData.emplace<T>();
-            }
-            return std::any_cast<T>(&state.userData);
+            void *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            if (state.userData.has_value()) {
-                return std::any_cast<T>(&state.userData);
-            } else {
-                return &defaultValue;
-            }
+            const void *ptr = std::any_cast<T>(&state.userData);
+            return ptr ? ptr : &defaultValue;
         }
 
         static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            T data;
-            if (state.userData.has_value()) {
-                data = std::any_cast<T>(state.userData);
-            }
-            data.OnTick(state, lock, ent, interval);
-            state.userData = data;
+            T *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            ptr->OnTick(state, lock, ent, interval);
         }
 
         InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
@@ -226,30 +218,23 @@ namespace ecs {
         }
 
         void *Access(ScriptState &state) const override {
-            if (!state.userData.has_value()) {
-                state.userData.emplace<T>();
-            }
-            return std::any_cast<T>(&state.userData);
+            void *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            if (state.userData.has_value()) {
-                return std::any_cast<T>(&state.userData);
-            } else {
-                return &defaultValue;
-            }
+            const void *ptr = std::any_cast<T>(&state.userData);
+            return ptr ? ptr : &defaultValue;
         }
 
         static void OnPhysicsUpdate(ScriptState &state,
             PhysicsUpdateLock lock,
             Entity ent,
             chrono_clock::duration interval) {
-            T data;
-            if (state.userData.has_value()) {
-                data = std::any_cast<T>(state.userData);
-            }
-            data.OnPhysicsUpdate(state, lock, ent, interval);
-            state.userData = data;
+            T *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            ptr->OnPhysicsUpdate(state, lock, ent, interval);
         }
 
         InternalPhysicsScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
@@ -276,25 +261,20 @@ namespace ecs {
         }
 
         void *Access(ScriptState &state) const override {
-            if (!state.userData.has_value()) {
-                state.userData.emplace<T>();
-            }
-            return std::any_cast<T>(&state.userData);
+            void *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            if (state.userData.has_value()) {
-                return std::any_cast<T>(&state.userData);
-            } else {
-                return &defaultValue;
-            }
+            const void *ptr = std::any_cast<T>(&state.userData);
+            return ptr ? ptr : &defaultValue;
         }
 
         static void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+            const T *ptr = std::any_cast<T>(&state.userData);
             T data;
-            if (state.userData.has_value()) {
-                data = std::any_cast<T>(state.userData);
-            }
+            if (ptr) data = *ptr;
             data.Prefab(state, lock, ent);
         }
 
