@@ -34,7 +34,12 @@ namespace sp {
 
     class GuiWindow : public GuiRenderable {
     public:
-        GuiWindow(const string &name) : GuiRenderable(name) {}
+        GuiWindow(const string &name, int flags = 0) : GuiRenderable(name), flags(flags) {}
+
+        virtual void PreDefine() {}
+        virtual void PostDefine() {}
+
+        int flags = 0;
     };
 
     class GuiContext {

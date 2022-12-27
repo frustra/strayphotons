@@ -11,7 +11,8 @@
 #include <picojson/picojson.h>
 
 namespace sp {
-    InspectorGui::InspectorGui(const string &name) : GuiWindow(name) {
+    InspectorGui::InspectorGui(const string &name)
+        : GuiWindow(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
         std::thread([ctx = context]() {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
@@ -22,6 +23,23 @@ namespace sp {
             auto &eventInput = inspector.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, ctx->events, EDITOR_EVENT_EDIT_TARGET);
         }).detach();
+    }
+
+    void InspectorGui::PreDefine() {
+        auto *viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowSize(ImVec2(500, viewport->Size.y));
+        ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y),
+            ImGuiCond_None,
+            ImVec2(1, 0));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.96f));
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.01f, 0.01f, 0.01f, 0.96f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.10f, 0.15f, 0.40f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
+    }
+
+    void InspectorGui::PostDefine() {
+        ImGui::PopStyleColor(5);
     }
 
     void InspectorGui::DefineContents() {

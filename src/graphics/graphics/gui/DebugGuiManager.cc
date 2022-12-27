@@ -36,11 +36,17 @@ namespace sp {
         if (consoleOpen) console.Add();
 
         for (auto &component : components) {
-            bool isWindow = dynamic_cast<GuiWindow *>(component.get()) != nullptr;
+            auto *window = dynamic_cast<GuiWindow *>(component.get());
 
-            if (isWindow) ImGui::Begin(component->name.c_str(), nullptr, {});
+            if (window) {
+                window->PreDefine();
+                ImGui::Begin(component->name.c_str(), nullptr, window->flags);
+            }
             component->DefineContents();
-            if (isWindow) ImGui::End();
+            if (window) {
+                ImGui::End();
+                window->PostDefine();
+            }
         }
 
         ImGui::PopStyleVar();

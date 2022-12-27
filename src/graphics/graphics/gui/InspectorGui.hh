@@ -13,7 +13,9 @@ namespace sp {
         InspectorGui(const std::string &name);
         virtual ~InspectorGui() {}
 
-        void DefineContents();
+        void PreDefine() override;
+        void DefineContents() override;
+        void PostDefine() override;
 
     private:
         std::shared_ptr<EditorContext> context;

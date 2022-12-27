@@ -134,7 +134,7 @@ namespace ecs {
     void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
-            if (callback) {
+            if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnTick");
                 ZoneStr(ecs::ToString(lock, ent));
@@ -146,7 +146,7 @@ namespace ecs {
     void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
-            if (callback) {
+            if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnPhysicsUpdate");
                 ZoneStr(ecs::ToString(lock, ent));
@@ -155,7 +155,7 @@ namespace ecs {
         }
     }
 
-    void Scripts::Prefab(Lock<AddRemove> lock, const Entity &ent) {
+    void Scripts::Prefab(Lock<AddRemove> lock, Entity ent) {
         ZoneScopedN("Prefab");
         ZoneStr(ecs::ToString(lock, ent));
         // Prefab scripts may add additional scripts while iterating.
@@ -165,7 +165,7 @@ namespace ecs {
             // Create a read-only copy of the script state so the passed reference is stable.
             auto state = ent.Get<const Scripts>(lock).scripts[i];
             auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
-            if (callback) (*callback)(state, lock, ent);
+            if (callback && *callback) (*callback)(state, lock, ent);
         }
     }
 

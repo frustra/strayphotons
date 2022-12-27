@@ -33,7 +33,8 @@ namespace sp {
                 inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
                 inspector.Set<ecs::Screen>(lock);
                 inspector.Set<ecs::EventInput>(lock);
-                inspector.Set<ecs::TransformTree>(lock);
+                auto &transform = inspector.Set<ecs::TransformTree>(lock);
+                transform.pose.SetScale(glm::vec3(0.8, 1, 1));
 
                 auto &ph = inspector.Set<ecs::Physics>(lock);
                 ph.group = ecs::PhysicsGroup::UserInterface;
@@ -107,11 +108,16 @@ namespace sp {
             if (target.Has<ecs::TransformSnapshot>(lock)) {
                 auto targetPos = target.Get<const ecs::TransformSnapshot>(lock).GetPosition();
                 auto playerPos = player.Get<const ecs::TransformSnapshot>(lock).GetPosition();
-                auto targetDir = glm::normalize(glm::vec3(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z));
-                transform.pose.SetPosition(
-                    playerPos + targetDir * CVarEditorDistance.Get() + glm::vec3(0, CVarEditorOffset.Get(), 0));
-                transform.pose.SetRotation(glm::quat(
-                    glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(-targetDir.x, -targetDir.z), 0)));
+                auto targetDelta = glm::vec3(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z);
+                if (targetDelta != glm::vec3(0)) {
+                    auto targetDir = glm::normalize(targetDelta);
+                    transform.pose.SetPosition(
+                        playerPos + targetDir * CVarEditorDistance.Get() + glm::vec3(0, CVarEditorOffset.Get(), 0));
+                    transform.pose.SetRotation(glm::quat(
+                        glm::vec3(glm::radians(CVarEditorAngle.Get()), glm::atan(-targetDir.x, -targetDir.z), 0)));
+                } else {
+                    transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
+                }
                 transform.parent = {};
             } else {
                 transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
