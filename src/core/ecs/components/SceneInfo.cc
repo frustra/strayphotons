@@ -104,12 +104,14 @@ namespace ecs {
         }
     }
 
-    bool SceneInfo::Remove(Lock<Write<SceneInfo>> staging, const Entity &removeId) const {
+    Entity SceneInfo::Remove(Lock<Write<SceneInfo>> staging, const Entity &removeId) const {
         Assert(this->rootStagingId.Has<SceneInfo>(staging), "Remove called on an invalid SceneInfo");
-        auto &stagingInfo = this->rootStagingId.Get<const SceneInfo>(staging);
+        auto &stagingInfo = this->rootStagingId.Get<SceneInfo>(staging);
 
-        const SceneInfo *removedEntry = nullptr;
-        if (this->rootStagingId == removeId) {
+        Entity remainingId;
+        if (stagingInfo.rootStagingId == removeId) {
+            remainingId = stagingInfo.nextStagingId;
+
             // Remove the linked-list root node
             auto nextId = stagingInfo.nextStagingId;
             while (nextId.Has<ecs::SceneInfo>(staging)) {
@@ -117,24 +119,23 @@ namespace ecs {
                 nextSceneInfo.rootStagingId = stagingInfo.nextStagingId;
                 nextId = nextSceneInfo.nextStagingId;
             }
-            // Check if we removed the only entity
-            if (!stagingInfo.nextStagingId) return true;
-            removedEntry = &stagingInfo;
-        } else if (this->nextStagingId.Has<SceneInfo>(staging)) {
+            stagingInfo.nextStagingId = {};
+        } else if (stagingInfo.nextStagingId.Has<SceneInfo>(staging)) {
+            remainingId = stagingInfo.rootStagingId; // Linked list root stays the same
+
             // Search the linked-list for the id to remove
-            SceneInfo *prevSceneInfo = &this->rootStagingId.Get<SceneInfo>(staging);
+            SceneInfo *prevSceneInfo = &stagingInfo;
             auto nextId = prevSceneInfo->nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
                 auto &sceneInfo = nextId.Get<SceneInfo>(staging);
                 if (nextId == removeId) {
                     prevSceneInfo->nextStagingId = sceneInfo.nextStagingId;
-                    removedEntry = &sceneInfo;
                     break;
                 }
                 nextId = sceneInfo.nextStagingId;
                 prevSceneInfo = &sceneInfo;
             }
         }
-        return false;
+        return remainingId;
     }
 } // namespace ecs

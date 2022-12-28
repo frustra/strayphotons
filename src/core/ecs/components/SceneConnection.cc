@@ -8,9 +8,13 @@
 namespace ecs {
     template<>
     void Component<SceneConnection>::Apply(SceneConnection &dst, const SceneConnection &src, bool liveTarget) {
-        for (auto &[scene, signals] : src.scenes) {
-            auto &scenes = dst.scenes[scene];
-            scenes.insert(scenes.end(), signals.begin(), signals.end());
+        if (liveTarget) {
+            dst = src;
+        } else {
+            for (auto &[scene, signals] : src.scenes) {
+                auto &scenes = dst.scenes[scene];
+                scenes.insert(scenes.end(), signals.begin(), signals.end());
+            }
         }
     }
 } // namespace ecs

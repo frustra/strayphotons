@@ -153,7 +153,7 @@ namespace sp {
         }
 
         auto &rootSceneInfo = stagingInfo.rootStagingId.Get<ecs::SceneInfo>(stagingLock);
-        if (rootSceneInfo.Remove(stagingLock, ent)) {
+        if (!rootSceneInfo.Remove(stagingLock, ent)) {
             if (ent.Has<ecs::Name>(stagingLock)) {
                 auto &name = ent.Get<ecs::Name>(stagingLock);
                 namedEntities.erase(name);
@@ -170,6 +170,7 @@ namespace sp {
         bool resetLive) {
         ZoneScoped;
         ZoneStr(name);
+        Tracef("Applying scene: %s", name);
         for (auto e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
@@ -192,11 +193,8 @@ namespace sp {
             }
             auto &entityName = e.Get<const ecs::Name>(staging);
 
-            if (sceneInfo.liveId.Exists(live)) {
-                sceneInfo.SetLiveId(staging, sceneInfo.liveId);
-                sceneInfo.liveId.Set<ecs::SceneInfo>(live, sceneInfo.FlattenInfo(staging));
-                continue;
-            }
+            // Skip any entities that have already been added.
+            if (sceneInfo.liveId.Exists(live)) continue;
 
             // Find matching named entity in live scene
             sceneInfo.liveId = ecs::EntityRef(entityName).Get(live);
@@ -206,7 +204,11 @@ namespace sp {
                 auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
                 liveSceneInfo.InsertWithPriority(staging, sceneInfo);
                 sceneInfo.SetLiveId(staging, sceneInfo.liveId);
-                liveSceneInfo = liveSceneInfo.FlattenInfo(staging);
+                liveSceneInfo = sceneInfo.FlattenInfo(staging);
+                scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging),
+                    live,
+                    liveSceneInfo.rootStagingId,
+                    resetLive);
             } else {
                 // No entity exists in the live scene
                 sceneInfo.liveId = live.NewEntity();
@@ -215,13 +217,6 @@ namespace sp {
                 sceneInfo.liveId.Set<ecs::SceneInfo>(live, sceneInfo.FlattenInfo(staging));
                 ecs::GetEntityRefs().Set(entityName, e);
                 ecs::GetEntityRefs().Set(entityName, sceneInfo.liveId);
-            }
-        }
-        for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
-            auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.lock().get() != this) continue;
-            if (sceneInfo.rootStagingId == e) {
-                // Apply the entity if it is the root staging-id
                 scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, e, resetLive);
             }
         }
@@ -240,30 +235,29 @@ namespace sp {
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
         ZoneScoped;
         ZoneStr(name);
+        Tracef("Removing scene: %s", name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
             if (sceneInfo.scene.lock().get() != this) continue;
 
+            auto remainingId = sceneInfo.Remove(staging, e);
             if (sceneInfo.liveId) {
                 Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
-                if (sceneInfo.Remove(staging, e)) {
+                if (!remainingId.Has<ecs::SceneInfo>(staging)) {
                     // No more staging entities, remove the live id.
                     sceneInfo.liveId.Destroy(live);
                 } else {
-                    sceneInfo.liveId.Set<ecs::SceneInfo>(live, sceneInfo.FlattenInfo(staging));
-                    scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, sceneInfo.rootStagingId, false);
+                    auto &remainingInfo = remainingId.Get<ecs::SceneInfo>(staging);
+                    Assert(remainingInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
+                    remainingInfo.liveId.Set<ecs::SceneInfo>(live, remainingInfo.FlattenInfo(staging));
+                    scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging),
+                        live,
+                        remainingInfo.rootStagingId,
+                        false);
                 }
             }
             e.Destroy(staging);
-        }
-        for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
-            if (!e.Has<ecs::SceneInfo>(live)) continue;
-            auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
-            if (sceneInfo.scene.lock().get() != this) continue;
-            Assert(sceneInfo.liveId == e, "Expected live entity to match SceneInfo.liveId");
-
-            if (!sceneInfo.rootStagingId) e.Destroy(live);
         }
         active = false;
     }

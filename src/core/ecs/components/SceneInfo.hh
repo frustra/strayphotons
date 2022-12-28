@@ -49,8 +49,8 @@ namespace ecs {
 
         void SetLiveId(Lock<Write<SceneInfo>> staging, Entity liveId) const;
 
-        // Returns true if the removed entity was the only one in the list
-        bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId) const;
+        // Returns the remaining rootStagingId, or a null entity if the removed entity was the only one in the list
+        Entity Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId) const;
 
         Entity liveId;
         // Staging IDs are stored in a singly-linked list, with highest priority first.
