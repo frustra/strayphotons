@@ -506,7 +506,7 @@ namespace sp {
 
                 if (sceneInfo.prefabStagingId) scene->RemovePrefabEntity(lock, e);
             }
-            for (auto &e : lock.EntitiesWith<ecs::SceneInfo>()) {
+            for (auto &e : lock.EntitiesWith<ecs::Scripts>()) {
                 if (!e.Has<ecs::Scripts, ecs::SceneInfo>(lock)) continue;
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                 if (sceneInfo.scene.lock() != scene) continue;

@@ -41,13 +41,16 @@ namespace ecs {
             Assertf(prefabScriptId > 0, "Invalid prefabScriptId in SceneInfo: %s", std::to_string(prefabScriptId));
         }
 
-        // Should be called on the live SceneInfo
-        // Input stagingInfo may reference multiple entities via linked-list
-        void InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &stagingInfo);
+        // Input rootSceneInfo may reference multiple entities via linked-list
+        void InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &rootSceneInfo) const;
 
-        // Should be called on the live SceneInfo
-        // Returns true if live SceneInfo should be removed
-        bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId);
+        // Generate a merged SceneInfo instance for applying to the live ECS
+        SceneInfo FlattenInfo(Lock<Read<SceneInfo>> staging) const;
+
+        void SetLiveId(Lock<Write<SceneInfo>> staging, Entity liveId) const;
+
+        // Returns true if the removed entity was the only one in the list
+        bool Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId) const;
 
         Entity liveId;
         // Staging IDs are stored in a singly-linked list, with highest priority first.

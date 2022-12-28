@@ -25,6 +25,9 @@ namespace ecs {
     static std::atomic_size_t nextInstanceId;
 
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState(const ScriptState &state)
+        : scope(state.scope), definition(state.definition), eventQueue(state.eventQueue), userData(state.userData),
+          instanceId(state.instanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)

@@ -287,7 +287,9 @@ namespace sp {
                 }
             }
             if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_DefaultOpen, "%s", scriptLabel.c_str())) {
-                if (ecs::IsStaging(target)) {
+                if (ecs::IsLive(target) && isPrefab) {
+                    ImGui::BeginDisabled();
+                } else if (ecs::IsStaging(target)) {
                     if (ImGui::Button("-", ImVec2(20, 0))) {
                         removeList.emplace_back(state.GetInstanceId());
                     }
@@ -359,6 +361,9 @@ namespace sp {
                         }
                         ImGui::EndTable();
                     }
+                }
+                if (ecs::IsLive(target) && isPrefab) {
+                    ImGui::EndDisabled();
                 }
 
                 ImGui::TreePop();
@@ -498,10 +503,11 @@ namespace sp {
                         if (!stagingSceneInfo.prefabStagingId) {
                             tabName = "Scene: " + stagingScene->name;
                         } else {
-                            Assertf(stagingSceneInfo.prefabStagingId.Has<ecs::Scripts>(stagingLock),
-                                "SceneInfo.prefabStagingId does not have a Scripts component");
-                            auto &prefabScripts = stagingSceneInfo.prefabStagingId.Get<ecs::Scripts>(stagingLock);
-                            auto scriptInstance = prefabScripts.FindScript(stagingSceneInfo.prefabScriptId);
+                            const ecs::ScriptState *scriptInstance = nullptr;
+                            if (stagingSceneInfo.prefabStagingId.Has<ecs::Scripts>(stagingLock)) {
+                                auto &prefabScripts = stagingSceneInfo.prefabStagingId.Get<ecs::Scripts>(stagingLock);
+                                scriptInstance = prefabScripts.FindScript(stagingSceneInfo.prefabScriptId);
+                            }
                             if (scriptInstance) {
                                 if (scriptInstance->definition.name == "gltf") {
                                     tabName = "Gltf: " + scriptInstance->GetParam<std::string>("model") + " - " +
@@ -523,19 +529,14 @@ namespace sp {
                             }
                         }
                         if (ImGui::BeginTabItem(tabName.c_str())) {
-                            // if (ImGui::Button("Refresh Scene Prefabs")) {
-                            //     GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
-                            // }
-                            // ImGui::SameLine();
                             if (ImGui::Button("Apply Scene")) {
-                                // GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
+                                GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
                                 GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
                             }
                             if (!stagingSceneInfo.prefabStagingId) {
                                 ImGui::SameLine();
                                 if (ImGui::Button("Save & Apply Scene")) {
-                                    // GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs,
-                                    // stagingScene->name);
+                                    GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
                                     GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
                                     GetSceneManager().QueueAction(SceneAction::SaveStagingScene, stagingScene->name);
                                 }

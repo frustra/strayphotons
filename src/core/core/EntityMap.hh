@@ -64,7 +64,7 @@ namespace sp {
         void erase(const Tecs::Entity &e) {
             if (!e || e.index >= VectorT::size()) return;
             auto &entry = VectorT::operator[](e.index);
-            if (entry.first == e.generation) entry.second = {};
+            if (entry.first == e.generation) entry = {};
         }
 
         using VectorT::clear;

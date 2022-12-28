@@ -21,11 +21,10 @@ namespace sp::scene {
         const SceneInfo &rootSceneInfo = e.Get<SceneInfo>(staging);
         Assert(rootSceneInfo.liveId.Has<SceneInfo>(live), "Expected liveId to have valid SceneInfo");
         Assert(rootSceneInfo.rootStagingId == e, "Expected supplied entity to be the root stagingId");
-        const SceneInfo &liveSceneInfo = rootSceneInfo.liveId.Get<const SceneInfo>(live);
 
         // Build a flattened set of components before applying to the real live id
         std::tuple<std::optional<AllComponentTypes>...> stagingComponents;
-        auto stagingId = liveSceneInfo.rootStagingId;
+        auto stagingId = e;
         while (stagingId.Has<SceneInfo>(staging)) {
             auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
 

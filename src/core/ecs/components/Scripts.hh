@@ -62,6 +62,7 @@ namespace ecs {
             std::vector<std::string>>;
 
         ScriptState();
+        ScriptState(const ScriptState &state);
         ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
         ScriptState(const EntityScope &scope, OnTickFunc callback);
         ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback);
