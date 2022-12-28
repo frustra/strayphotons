@@ -47,7 +47,9 @@ namespace SceneManagerTests {
             Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected %s to have SceneInfo", std::to_string(ent));
             auto &sceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
             AssertEqual(sceneInfo.liveId, liveEnt, "Staging SceneInfo.liveId does not match");
-            AssertEqual(sceneInfo.rootStagingId, ent, "Staging SceneInfo.rootStagingId does not match");
+            AssertEqual(sceneInfo.rootStagingId,
+                rootSceneInfo.rootStagingId,
+                "Staging SceneInfo.rootStagingId does not match");
             auto scene = sceneInfo.scene.lock();
             Assert(scene != nullptr, "Expected entity to have valid Scene");
             AssertEqual(scene->name, name, "Entity scene does not match expected");

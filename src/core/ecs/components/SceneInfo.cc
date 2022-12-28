@@ -18,13 +18,16 @@ namespace ecs {
         }
     }
 
-    void SceneInfo::InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &newSceneInfo) {
-        Assert(this->liveId, "InsertWithPriority called on an invalid SceneInfo");
+    void SceneInfo::InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &newSceneInfo) const {
         Assert(this->rootStagingId.Has<SceneInfo>(staging), "InsertWithPriority called on an invalid SceneInfo");
         Assert(newSceneInfo.rootStagingId.Has<SceneInfo>(staging),
             "InsertWithPriority called with an invalid new SceneInfo");
+        Assert(newSceneInfo.rootStagingId != this->rootStagingId,
+            "InsertWithPriority called with same scene info list");
 
+        auto &rootStagingInfo = this->rootStagingId.Get<SceneInfo>(staging);
         auto &newStagingInfo = newSceneInfo.rootStagingId.Get<SceneInfo>(staging);
+
         auto lastStagingInfo = &newStagingInfo;
         while (lastStagingInfo->nextStagingId.Has<SceneInfo>(staging)) {
             auto &sceneInfo = lastStagingInfo->nextStagingId.Get<SceneInfo>(staging);
@@ -33,98 +36,106 @@ namespace ecs {
             lastStagingInfo = &sceneInfo;
         }
 
-        if (newSceneInfo.priority > this->priority) {
+        if (newSceneInfo.priority > rootStagingInfo.priority) {
             // Insert into the root of the linked-list
             lastStagingInfo->nextStagingId = this->rootStagingId;
-            this->rootStagingId = newSceneInfo.rootStagingId;
-            this->nextStagingId = newSceneInfo.nextStagingId;
-            this->priority = newSceneInfo.priority;
-            this->scene = newSceneInfo.scene;
-            if (newSceneInfo.properties) this->properties = newSceneInfo.properties;
+
+            // Update the root staging id in each entry
+            auto nextId = lastStagingInfo->nextStagingId;
+            while (nextId.Has<ecs::SceneInfo>(staging)) {
+                auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+                nextSceneInfo.rootStagingId = newStagingInfo.rootStagingId;
+                nextId = nextSceneInfo.nextStagingId;
+            }
         } else {
             // Search the linked-list for a place to insert
-            auto &rootStagingInfo = this->rootStagingId.Get<SceneInfo>(staging);
-            bool propertiesSet = false;
             SceneInfo *prevSceneInfo = &rootStagingInfo;
             auto nextId = rootStagingInfo.nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
-                if (prevSceneInfo->properties) propertiesSet = true;
-
                 auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
                 if (newSceneInfo.priority > nextSceneInfo.priority) break;
                 nextId = nextSceneInfo.nextStagingId;
                 prevSceneInfo = &nextSceneInfo;
             }
-            if (prevSceneInfo->nextStagingId == newSceneInfo.rootStagingId) {
-                // SceneInfo is already inserted
-                return;
-            }
-
-            if (!propertiesSet && newSceneInfo.properties) this->properties = newSceneInfo.properties;
-            lastStagingInfo->nextStagingId = prevSceneInfo->nextStagingId;
+            auto tmpId = prevSceneInfo->nextStagingId;
             prevSceneInfo->nextStagingId = newSceneInfo.rootStagingId;
-            this->nextStagingId = rootStagingInfo.nextStagingId;
+
+            // Update the root staging id in the new entries
+            nextId = newSceneInfo.rootStagingId;
+            while (nextId.Has<ecs::SceneInfo>(staging)) {
+                auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+                nextSceneInfo.rootStagingId = this->rootStagingId;
+                nextId = nextSceneInfo.nextStagingId;
+            }
+            lastStagingInfo->nextStagingId = tmpId;
         }
     }
 
-    // Should be called on the live SceneInfo
-    // Returns true if live SceneInfo should be removed
-    bool SceneInfo::Remove(Lock<Write<SceneInfo>> staging, const Entity &removeId) {
-        Assert(this->liveId, "Remove called on an invalid SceneInfo");
-        Assert(this->rootStagingId.Has<SceneInfo>(staging), "Remove called on an invalid SceneInfo");
-        auto &stagingInfo = this->rootStagingId.Get<const SceneInfo>(staging);
+    SceneInfo SceneInfo::FlattenInfo(Lock<Read<SceneInfo>> staging) const {
+        Assert(IsStaging(staging), "SceneInfo::FlattenInfo() must be called with staging lock");
+        Assert(this->rootStagingId.Has<SceneInfo>(staging), "SceneInfo::FlattenInfo called on an invalid SceneInfo");
 
-        const SceneInfo *removedEntry = nullptr;
-        if (this->rootStagingId == removeId) {
-            // Remove the linked-list root node
-            this->rootStagingId = this->nextStagingId;
-            if (this->nextStagingId.Has<SceneInfo>(staging)) {
-                auto &nextStagingInfo = this->nextStagingId.Get<SceneInfo>(staging);
-                nextStagingInfo.rootStagingId = this->rootStagingId;
-                this->nextStagingId = nextStagingInfo.nextStagingId;
-                this->priority = nextStagingInfo.priority;
-                this->scene = nextStagingInfo.scene;
-
-                auto nextId = nextStagingInfo.nextStagingId;
-                while (nextId.Has<ecs::SceneInfo>(staging)) {
-                    auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
-                    nextSceneInfo.rootStagingId = this->rootStagingId;
-                    nextId = nextSceneInfo.nextStagingId;
+        SceneInfo merged = this->rootStagingId.Get<SceneInfo>(staging);
+        if (!merged.properties) {
+            // Find highest priority properties
+            auto nextId = merged.nextStagingId;
+            while (nextId.Has<ecs::SceneInfo>(staging)) {
+                auto &sceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+                if (sceneInfo.properties) {
+                    merged.properties = sceneInfo.properties;
+                    break;
                 }
+                nextId = sceneInfo.nextStagingId;
             }
-            removedEntry = &stagingInfo;
-        } else if (this->nextStagingId.Has<SceneInfo>(staging)) {
+        }
+        return merged;
+    }
+
+    void SceneInfo::SetLiveId(Lock<Write<SceneInfo>> staging, Entity liveId) const {
+        Assert(IsStaging(staging), "SceneInfo::SetLiveId() must be called with staging lock");
+        Assert(!liveId || IsLive(liveId), "SceneInfo::SetLiveId() must be called with a live entity");
+        Assert(this->rootStagingId.Has<SceneInfo>(staging), "SceneInfo::SetLiveId called on an invalid SceneInfo");
+
+        auto nextId = this->rootStagingId;
+        while (nextId.Has<ecs::SceneInfo>(staging)) {
+            auto &sceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+            sceneInfo.liveId = liveId;
+            nextId = sceneInfo.nextStagingId;
+        }
+    }
+
+    Entity SceneInfo::Remove(Lock<Write<SceneInfo>> staging, const Entity &removeId) const {
+        Assert(this->rootStagingId.Has<SceneInfo>(staging), "Remove called on an invalid SceneInfo");
+        auto &stagingInfo = this->rootStagingId.Get<SceneInfo>(staging);
+
+        Entity remainingId;
+        if (stagingInfo.rootStagingId == removeId) {
+            remainingId = stagingInfo.nextStagingId;
+
+            // Remove the linked-list root node
+            auto nextId = stagingInfo.nextStagingId;
+            while (nextId.Has<ecs::SceneInfo>(staging)) {
+                auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+                nextSceneInfo.rootStagingId = stagingInfo.nextStagingId;
+                nextId = nextSceneInfo.nextStagingId;
+            }
+            stagingInfo.nextStagingId = {};
+        } else if (stagingInfo.nextStagingId.Has<SceneInfo>(staging)) {
+            remainingId = stagingInfo.rootStagingId; // Linked list root stays the same
+
             // Search the linked-list for the id to remove
-            SceneInfo *prevSceneInfo = &this->rootStagingId.Get<SceneInfo>(staging);
-            auto nextId = this->nextStagingId;
+            SceneInfo *prevSceneInfo = &stagingInfo;
+            auto nextId = prevSceneInfo->nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
                 auto &sceneInfo = nextId.Get<SceneInfo>(staging);
                 if (nextId == removeId) {
                     prevSceneInfo->nextStagingId = sceneInfo.nextStagingId;
-                    removedEntry = &sceneInfo;
                     break;
                 }
                 nextId = sceneInfo.nextStagingId;
                 prevSceneInfo = &sceneInfo;
             }
-            this->nextStagingId = stagingInfo.nextStagingId;
-            Assertf(removedEntry, "Expected to find removal id %s in SceneInfo tree", std::to_string(removeId));
         }
-        if (!this->rootStagingId) return true;
-
-        if (this->properties && this->properties == removedEntry->properties) {
-            this->properties.reset();
-            // Find next highest priority scene properties
-            auto nextId = removedEntry->nextStagingId;
-            while (nextId.Has<SceneInfo>(staging)) {
-                auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
-                if (nextSceneInfo.properties) {
-                    this->properties = nextSceneInfo.properties;
-                    break;
-                }
-                nextId = nextSceneInfo.nextStagingId;
-            }
-        }
-        return false;
+        return remainingId;
     }
 } // namespace ecs
