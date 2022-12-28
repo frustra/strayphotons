@@ -193,8 +193,18 @@ namespace sp {
             }
             auto &entityName = e.Get<const ecs::Name>(staging);
 
-            // Skip any entities that have already been added.
-            if (sceneInfo.liveId.Exists(live)) continue;
+            if (sceneInfo.liveId.Exists(live)) {
+                // Entity has already been added, just rebuild it.
+                Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
+                auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
+                sceneInfo.SetLiveId(staging, sceneInfo.liveId);
+                liveSceneInfo = sceneInfo.FlattenInfo(staging);
+                scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging),
+                    live,
+                    liveSceneInfo.rootStagingId,
+                    resetLive);
+                continue;
+            }
 
             // Find matching named entity in live scene
             sceneInfo.liveId = ecs::EntityRef(entityName).Get(live);
@@ -220,14 +230,11 @@ namespace sp {
                 scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, e, resetLive);
             }
         }
-        for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
-            if (!e.Has<ecs::SceneInfo>(staging)) continue;
-            auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.lock().get() != this) continue;
-            if (!sceneInfo.liveId.Has<ecs::TransformTree>(live)) continue;
+        for (auto e : live.EntitiesWith<ecs::TransformTree>()) {
+            if (!e.Has<ecs::TransformTree>(live)) continue;
 
-            auto transform = sceneInfo.liveId.Get<ecs::TransformTree>(live).GetGlobalTransform(live);
-            sceneInfo.liveId.Set<ecs::TransformSnapshot>(live, transform);
+            auto transform = e.Get<ecs::TransformTree>(live).GetGlobalTransform(live);
+            e.Set<ecs::TransformSnapshot>(live, transform);
         }
         active = true;
     }
