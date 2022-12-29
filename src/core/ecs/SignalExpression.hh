@@ -2,6 +2,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/StructMetadata.hh"
+#include "ecs/components/Focus.hh"
 
 #include <functional>
 #include <memory>
@@ -9,7 +10,7 @@
 #include <variant>
 
 namespace ecs {
-    using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>>;
+    using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLock>>;
 
     struct SignalExpression {
         SignalExpression() {}
@@ -27,6 +28,10 @@ namespace ecs {
             EntityRef entity;
             std::string signalName = "value";
         };
+        struct FocusCondition {
+            FocusLayer ifFocused;
+            int inputIndex = -1;
+        };
         struct OneInputOperation {
             int inputIndex = -1;
             std::function<double(double)> evaluate;
@@ -42,14 +47,15 @@ namespace ecs {
             int falseIndex = -1;
         };
 
-        using NodeVariant =
-            std::variant<ConstantNode, SignalNode, OneInputOperation, TwoInputOperation, DeciderOperation>;
+        using NodeVariant = std::
+            variant<ConstantNode, SignalNode, FocusCondition, OneInputOperation, TwoInputOperation, DeciderOperation>;
         struct Node : public NodeVariant {
             size_t startToken = 0;
             size_t endToken = 0;
 
             template<typename T>
-            Node(T &&arg, size_t startToken, size_t endToken) : NodeVariant(arg), startToken(startToken) {}
+            Node(T &&arg, size_t startToken, size_t endToken)
+                : NodeVariant(arg), startToken(startToken), endToken(endToken) {}
         };
 
         double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;

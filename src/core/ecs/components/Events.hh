@@ -46,7 +46,7 @@ namespace ecs {
         std::string toString() const;
     };
 
-    using SendEventsLock = Lock<Read<Name, FocusLayer, FocusLock, EventBindings, EventInput>>;
+    using SendEventsLock = Lock<Read<Name, FocusLock, EventBindings, EventInput>>;
 
     std::ostream &operator<<(std::ostream &out, const Event::EventData &v);
 
@@ -84,6 +84,7 @@ namespace ecs {
         EntityRef target;
         std::string destQueue;
 
+        FocusLayer ifFocused = FocusLayer::Always;
         std::optional<Event::EventData> setValue;
         std::optional<double> multiplyValue;
 
@@ -91,6 +92,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataEventBinding(typeid(EventBinding),
+        StructField::New("if_focused", &EventBinding::ifFocused),
         StructField::New("multiply_value", &EventBinding::multiplyValue));
     template<>
     bool StructMetadata::Load<EventBinding>(const EntityScope &scope, EventBinding &dst, const picojson::value &src);

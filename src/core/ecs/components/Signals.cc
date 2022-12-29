@@ -76,15 +76,6 @@ namespace ecs {
             return 0.0f;
         }
 
-        if (depth == 0) {
-            const FocusLock *focusLock = nullptr;
-            if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
-            if (focusLock && ent.Has<FocusLayer>(lock)) {
-                auto &layer = ent.Get<FocusLayer>(lock);
-                if (!focusLock->HasPrimaryFocus(layer)) return 0.0;
-            }
-        }
-
         if (ent.Has<SignalOutput>(lock)) {
             auto &signalOutput = ent.Get<SignalOutput>(lock);
             if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);

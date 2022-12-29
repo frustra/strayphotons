@@ -5,7 +5,7 @@
 #include <bitset>
 
 namespace ecs {
-    enum class FocusLayer : uint8_t {
+    enum class FocusLayer {
         Never = 0,
         Game,
         Menu,
@@ -28,9 +28,6 @@ namespace ecs {
     };
 
     std::ostream &operator<<(std::ostream &out, const FocusLock &v);
-
-    static StructMetadata MetadataFocusLayer(typeid(FocusLayer), StructField::New<FocusLayer>());
-    static Component<FocusLayer> ComponentFocusLayer("focus", MetadataFocusLayer);
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::FocusLock);

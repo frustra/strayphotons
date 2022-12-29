@@ -63,7 +63,7 @@ namespace ecs {
 
     std::string joinTokens(const SignalExpression &expr, size_t startToken, size_t endToken) {
         if (endToken >= expr.tokens.size()) endToken = expr.tokens.size() - 1;
-        if (endToken <= startToken) return "";
+        if (endToken < startToken) return "";
 
         auto startPtr = expr.tokens[startToken].data();
         auto endPtr = expr.tokens[endToken].data() + expr.tokens[endToken].size();
@@ -230,7 +230,7 @@ namespace ecs {
                 }
 
                 expr.nodeDebug.emplace_back(std::string(token) + "( " + expr.nodeDebug[inputIndex] + " )");
-            } else if (token == "min" || token == "max") {
+            } else if (token == "if_focused" || token == "min" || token == "max") {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),
@@ -277,7 +277,21 @@ namespace ecs {
                 tokenIndex++;
 
                 index = expr.nodes.size();
-                if (token == "min") {
+                if (token == "if_focused") {
+                    auto focusStr = expr.tokens[expr.nodes[aIndex].startToken];
+                    FocusLayer focus = FocusLayer::Always;
+                    if (!focusStr.empty()) {
+                        auto opt = magic_enum::enum_cast<FocusLayer>(focusStr);
+                        if (opt) {
+                            focus = *opt;
+                        } else {
+                            Errorf("Unknown enum value specified for if_focused: %s", std::string(focusStr));
+                        }
+                    } else {
+                        Errorf("Blank focus layer specified for if_focused: %s", std::string(focusStr));
+                    }
+                    expr.nodes.emplace_back(SignalExpression::FocusCondition{focus, bIndex}, startToken, tokenIndex);
+                } else if (token == "min") {
                     expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                                 bIndex,
                                                 [](double a, double b) {
@@ -525,6 +539,12 @@ namespace ecs {
                     return node.value;
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
+                } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
+                    if (!lock.Has<FocusLock>() || !lock.Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
+                        return 0.0;
+                    } else {
+                        return evaluateNode(lock, depth, expr, node.inputIndex);
+                    }
                 } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
                     return node.evaluate(evaluateNode(lock, depth, expr, node.inputIndex));
                 } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {

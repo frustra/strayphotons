@@ -151,25 +151,10 @@ namespace sp {
         });
 
     CFunc<void> CFuncPrintEvents("printevents", "Print out the current state of event queues", []() {
-        auto lock = ecs::StartTransaction<
-            ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings>>();
 
-        auto &focusLock = lock.Get<ecs::FocusLock>();
         for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
-            if (ent.Has<ecs::FocusLayer>(lock)) {
-                auto &layer = ent.Get<ecs::FocusLayer>(lock);
-                std::stringstream ss;
-                ss << layer;
-                if (focusLock.HasPrimaryFocus(layer)) {
-                    Logf("Event input %s: (has primary focus: %s)", ecs::ToString(lock, ent), ss.str());
-                } else if (focusLock.HasFocus(layer)) {
-                    Logf("Event input %s: (has focus: %s)", ecs::ToString(lock, ent), ss.str());
-                } else {
-                    Logf("Event input %s: (no focus: %s)", ecs::ToString(lock, ent), ss.str());
-                }
-            } else {
-                Logf("Event input %s: (no focus layer)", ecs::ToString(lock, ent));
-            }
+            Logf("Event input %s:", ecs::ToString(lock, ent));
 
             auto &input = ent.Get<ecs::EventInput>(lock);
             for (auto &[eventName, queues] : input.events) {
@@ -184,20 +169,7 @@ namespace sp {
         }
 
         for (auto ent : lock.EntitiesWith<ecs::EventBindings>()) {
-            if (ent.Has<ecs::FocusLayer>(lock)) {
-                auto &layer = ent.Get<ecs::FocusLayer>(lock);
-                std::stringstream ss;
-                ss << layer;
-                if (focusLock.HasPrimaryFocus(layer)) {
-                    Logf("Event binding %s: (has primary focus: %s)", ecs::ToString(lock, ent), ss.str());
-                } else if (focusLock.HasFocus(layer)) {
-                    Logf("Event binding %s: (has focus: %s)", ecs::ToString(lock, ent), ss.str());
-                } else {
-                    Logf("Event binding %s: (no focus: %s)", ecs::ToString(lock, ent), ss.str());
-                }
-            } else {
-                Logf("Event binding %s: (no focus layer)", ecs::ToString(lock, ent));
-            }
+            Logf("Event binding %s:", ecs::ToString(lock, ent));
 
             auto &bindings = ent.Get<ecs::EventBindings>(lock);
             for (auto &[bindingName, list] : bindings.sourceToDest) {

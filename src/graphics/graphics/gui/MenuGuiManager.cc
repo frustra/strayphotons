@@ -22,7 +22,7 @@ namespace sp {
         "Scaling factor for menu cursor position");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
-        : SystemGuiManager("menu", MenuOpen() ? ecs::FocusLayer::Menu : ecs::FocusLayer::Game), graphics(graphics) {
+        : SystemGuiManager("menu", ecs::FocusLayer::Menu), graphics(graphics) {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
@@ -32,12 +32,9 @@ namespace sp {
                 guiEntity.Name().String());
 
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
-            if (MenuOpen()) {
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
-            } else {
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
-            }
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
         }
     }
 
@@ -68,16 +65,10 @@ namespace sp {
                 }
             }
 
-            auto newFocusLayer = MenuOpen() ? ecs::FocusLayer::Menu : ecs::FocusLayer::Game;
-            focusChanged = focusLayer != newFocusLayer;
-            focusLayer = newFocusLayer;
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            focusChanged = MenuOpen() != focusLock.HasFocus(ecs::FocusLayer::Menu);
 
-            bool hasFocus = false;
-            if (MenuOpen() && lock.Has<ecs::FocusLock>()) {
-                auto &focusLock = lock.Get<ecs::FocusLock>();
-                hasFocus = focusLock.HasPrimaryFocus(ecs::FocusLayer::Menu);
-            }
-            if (hasFocus && RenderMode() == MenuRenderMode::Gel) {
+            if (focusLock.HasPrimaryFocus(ecs::FocusLayer::Menu) && RenderMode() == MenuRenderMode::Gel) {
                 auto windowSize = CVarWindowSize.Get();
                 auto cursorScaling = CVarMenuCursorScaling.Get();
                 io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;
@@ -93,25 +84,12 @@ namespace sp {
         io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
 
         if (focusChanged) {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>,
-                ecs::Write<ecs::FocusLayer, ecs::FocusLock, ecs::EventInput>>();
-
-            auto gui = guiEntity.Get(lock);
-            if (gui.Has<ecs::FocusLayer>(lock)) gui.Set<ecs::FocusLayer>(lock, focusLayer);
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
             auto &focusLock = lock.Get<ecs::FocusLock>();
-            auto &eventInput = gui.Get<ecs::EventInput>(lock);
             if (MenuOpen()) {
                 focusLock.AcquireFocus(ecs::FocusLayer::Menu);
-
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
-                eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
-
-                eventInput.Unregister(events, INPUT_EVENT_MENU_BACK);
-                eventInput.Unregister(events, INPUT_EVENT_MENU_ENTER);
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
             }
         }
     }
