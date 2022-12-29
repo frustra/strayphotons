@@ -24,22 +24,25 @@ namespace FocusLockTests {
             player = lock.NewEntity();
             keyboard = lock.NewEntity();
             mouse = lock.NewEntity();
-            ecs::EntityRef playerRef(ecs::Name("", "player"), player);
-            ecs::EntityRef keyboardRef(ecs::Name("", "keyboard"), keyboard);
-            ecs::EntityRef mouseRef(ecs::Name("", "mouse"), mouse);
+            ecs::EntityRef playerRef(ecs::Name("player", "player"), player);
+            ecs::EntityRef keyboardRef(ecs::Name("input", "keyboard"), keyboard);
+            ecs::EntityRef mouseRef(ecs::Name("input", "mouse"), mouse);
 
-            player.Set<ecs::Name>(lock, "", "player");
-            player.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::Game);
+            player.Set<ecs::Name>(lock, "player", "player");
             auto &eventInput = player.Set<ecs::EventInput>(lock);
             eventInput.Register(lock, playerQueue, TEST_EVENT_ACTION);
             auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
-            signalBindings.SetBinding(TEST_SIGNAL_ACTION, mouse, TEST_SIGNAL_BUTTON);
+            signalBindings.SetBinding(TEST_SIGNAL_ACTION, "if_focused(Game, input:mouse/device1_button)");
 
-            keyboard.Set<ecs::Name>(lock, "", "keyboard");
+            keyboard.Set<ecs::Name>(lock, "input", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
-            eventBindings.Bind(TEST_EVENT_KEY, player, TEST_EVENT_ACTION);
+            ecs::EventBinding binding;
+            binding.target = player;
+            binding.destQueue = TEST_EVENT_ACTION;
+            binding.ifFocused = ecs::FocusLayer::Game;
+            eventBindings.Bind(TEST_EVENT_KEY, binding);
 
-            mouse.Set<ecs::Name>(lock, "", "mouse");
+            mouse.Set<ecs::Name>(lock, "input", "mouse");
             auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);
             signalOutput.SetSignal(TEST_SIGNAL_BUTTON, 42.0);
         }

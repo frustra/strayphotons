@@ -22,7 +22,6 @@ namespace ecs {
     struct CharacterController;
     struct EventInput;
     class EventBindings;
-    enum class FocusLayer : uint8_t;
     class FocusLock;
     struct Gui;
     struct LaserEmitter;
@@ -60,7 +59,6 @@ namespace ecs {
 
         Animation,
         CharacterController,
-        FocusLayer,
         FocusLock,
         Gui,
         LaserEmitter,
@@ -145,7 +143,6 @@ TECS_NAME_COMPONENT(ecs::Animation, "Animation");
 TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
-TECS_NAME_COMPONENT(ecs::FocusLayer, "FocusLayer");
 TECS_NAME_COMPONENT(ecs::FocusLock, "FocusLock");
 TECS_NAME_COMPONENT(ecs::Gui, "Gui");
 TECS_NAME_COMPONENT(ecs::LaserEmitter, "LaserEmitter");

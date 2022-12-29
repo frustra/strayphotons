@@ -7,7 +7,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::Always) {
+    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::Overlay) {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);
@@ -109,18 +109,12 @@ namespace sp {
             }
         }
         if (focusChanged) {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock, ecs::EventInput>>();
-            auto gui = guiEntity.Get(lock);
-
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
             auto &focusLock = lock.Get<ecs::FocusLock>();
-            auto &eventInput = gui.Get<ecs::EventInput>(lock);
-
             if (consoleOpen) {
                 focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
-                eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
-                eventInput.Unregister(events, INPUT_EVENT_MENU_TEXT_INPUT);
             }
         }
     }

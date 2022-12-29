@@ -72,7 +72,7 @@ namespace ecs {
     template<>
     void StructMetadata::Save<EventBinding>(const EntityScope &scope, picojson::value &dst, const EventBinding &src) {
         std::string bindingStr = src.target.Name().String() + src.destQueue;
-        if (!src.setValue && !src.multiplyValue) {
+        if (!src.setValue && !src.multiplyValue && src.ifFocused == FocusLayer::Always) {
             dst = picojson::value(bindingStr);
         } else {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
@@ -282,13 +282,6 @@ namespace ecs {
             return 0;
         }
 
-        const FocusLock *focusLock = nullptr;
-        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
-        if (focusLock && ent.Has<FocusLayer>(lock)) {
-            auto &layer = ent.Get<FocusLayer>(lock);
-            if (!focusLock->HasPrimaryFocus(layer)) return 0;
-        }
-
         size_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<EventInput>(lock);
@@ -302,6 +295,11 @@ namespace ecs {
                     // Execute event modifiers before submitting to the destination queue
                     Event modifiedEvent = event;
                     modifiedEvent.name = binding.destQueue;
+                    if (binding.ifFocused != FocusLayer::Always) {
+                        if (!lock.Has<FocusLock>() || !lock.Get<FocusLock>().HasPrimaryFocus(binding.ifFocused)) {
+                            continue;
+                        }
+                    }
                     if (binding.setValue) {
                         modifiedEvent.data = *binding.setValue;
                     } else if (binding.multiplyValue) {

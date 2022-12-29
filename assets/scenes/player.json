@@ -21,16 +21,12 @@
 				"parent": "flatorigin",
 				"translate": [0, 1.5, 0]
 			},
-			"focus": "Game",
 			"physics_query": {},
 			"view": {
 				"clip": [0.05, 350],
 				"visibilityMask": "DirectCamera"
 			},
 			"event_input": {},
-			"event_bindings": {
-				"/action/jump": "player/action/jump"
-			},
 			"signal_output": {},
 			"script": [
 				{
@@ -69,7 +65,6 @@
 				"parent": "flatview",
 				"translate": [0, -0.3, 0]
 			},
-			"focus": "Game",
 			"light": {
 				"gel": "asset:textures/flashlight.png",
 				"shadowMapClip": [0.1, 64],

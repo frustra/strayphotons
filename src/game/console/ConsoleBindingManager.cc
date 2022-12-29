@@ -14,7 +14,6 @@ namespace sp {
             "console",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
-                ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::Game);
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
                 auto &scriptState = scripts.AddOnTick(ecs::EntityScope{scene, ecs::Name(scene->name, "")},

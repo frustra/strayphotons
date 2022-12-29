@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 #ifdef SP_GRAPHICS_SUPPORT_VK
         ("with-validation-layers", "Enable Vulkan validation layers")
 #endif
-        ("cvar", "Set cvar to initial value", value<vector<string>>());
+        ("c,cvar", "Set cvar to initial value", value<vector<string>>());
     // clang-format on
 
 #ifdef SP_TEST_MODE

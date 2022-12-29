@@ -64,12 +64,6 @@ namespace sp {
             exitTriggered.notify_all();
         });
 
-        if (options.count("cvar")) {
-            for (auto cvarline : options["cvar"].as<vector<string>>()) {
-                GetConsoleManager().ParseAndExecute(cvarline);
-            }
-        }
-
         Debugf("Bytes of memory used per entity: %u", ecs::World().GetBytesPerEntity());
 
         {
@@ -80,6 +74,12 @@ namespace sp {
 #if RUST_CXX
         sp::rust::print_hello();
 #endif
+
+        if (options.count("cvar")) {
+            for (auto cvarline : options["cvar"].as<vector<string>>()) {
+                GetConsoleManager().ParseAndExecute(cvarline);
+            }
+        }
 
 #ifdef SP_GRAPHICS_SUPPORT
         if (options["headless"].count() == 0) {

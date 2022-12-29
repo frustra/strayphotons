@@ -1,31 +1,36 @@
 {
     "input:mouse": {
         "event_bindings": {
-            "/mouse/scroll": [ "gui:menu/action/menu/scroll", "gui:debug/action/menu/scroll" ],
+            "/mouse/scroll": [
+                {
+                    "target": "gui:menu/action/menu/scroll",
+                    "if_focused": "Game"
+                },
+                {
+                    "target": "gui:debug/action/menu/scroll",
+                    "if_focused": "Overlay"
+                }
+            ],
             "/mouse/move": [
                 {
                     "target": "player:flatview/script/camera_rotate",
+                    "if_focused": "Game",
                     "multiply_value": 0.001
                 },
                 {
                     "target": "player:flatview/interact/rotate",
+                    "if_focused": "Game",
                     "multiply_value": 0.01
                 }
             ],
-            "/mouse/click": "player:flatview/interact/press"
+            "/mouse/click": {
+                "target": "player:flatview/interact/press",
+                "if_focused": "Game"
+            }
         }
     },
     "input:keyboard": {
         "event_bindings": {
-            "/keyboard/key/backtick": "gui:debug/action/console/toggle",
-            "/keyboard/characters": "gui:debug/action/menu/text_input",
-            "/keyboard/key/escape": [ "gui:menu/action/menu/open", "gui:menu/action/menu/back" ],
-            "/keyboard/key/enter": "gui:menu/action/menu/enter",
-            "/keyboard/key/space": "player:flatview/action/jump",
-            "/keyboard/key/e": "player:flatview/interact/grab",
-            "/keyboard/key/q": "player:debug-spawner/script/spawn",
-            "/keyboard/key/f": "player:flashlight/action/flashlight/toggle",
-            "/keyboard/key/p": "player:flashlight/action/flashlight/grab",
             "/keyboard/key/f1": {
                 "target": "console:input/action/run_command",
                 "set_value": "tracy"
@@ -42,22 +47,81 @@
                 "target": "console:input/action/run_command",
                 "set_value": "reloadshaders"
             },
+            "/keyboard/key/backtick": "gui:debug/action/console/toggle",
+            "/keyboard/characters": {
+                "target": "gui:debug/action/menu/text_input",
+                "if_focused": "Overlay"
+            },
+            "/keyboard/key/escape": [
+                {
+                    "target": "gui:menu/action/menu/open",
+                    "if_focused": "Game"
+                },
+                {
+                    "target": "gui:menu/action/menu/back",
+                    "if_focused": "Menu"
+                }
+            ],
+            "/keyboard/key/enter": {
+                "target": "gui:menu/action/menu/enter",
+                "if_focused": "Menu"
+            },
+            "/keyboard/key/space": {
+                "target": "player:player/action/jump",
+                "if_focused": "Game"
+            },
+            "/keyboard/key/e": {
+                "target": "player:flatview/interact/grab",
+                "if_focused": "Game"
+            },
+            "/keyboard/key/q": {
+                "target": "player:debug-spawner/script/spawn",
+                "if_focused": "Game"
+            },
+            "/keyboard/key/f": {
+                "target": "player:flashlight/action/flashlight/toggle",
+                "if_focused": "Game"
+            },
+            "/keyboard/key/p": {
+                "target": "player:flashlight/action/flashlight/grab",
+                "if_focused": "Game"
+            },
             "/keyboard/key/v": {
                 "target": "console:input/action/run_command",
+                "if_focused": "Game",
                 "set_value": "togglesignal player:player/move_noclip"
             },
             "/keyboard/key/g": {
                 "target": "console:input/action/run_command",
+                "if_focused": "Game",
                 "set_value": "toggle r.VoxelDebug 0 1 2 3"
             },
             "/keyboard/key/z": {
                 "target": "console:input/action/run_command",
+                "if_focused": "Game",
                 "set_value": "togglesignal menu:articulating_arm.arm.Knob 0.5 1"
             },
             "/keyboard/key/b": {
                 "target": "console:input/action/run_command",
+                "if_focused": "Game",
                 "set_value": "togglesignal menu:articulating_arm_1.arm.Knob 0.5 1"
             }
+        }
+    },
+    "gui:menu": {
+        "signal_bindings": {
+            "menu_primary_trigger": "if_focused(Menu, input:mouse/mouse_button_left)",
+            "menu_secondary_trigger": "if_focused(Menu, input:mouse/mouse_button_right)",
+            "menu_cursor_x": "if_focused(Menu, input:mouse/mouse_cursor_x)",
+            "menu_cursor_y": "if_focused(Menu, input:mouse/mouse_cursor_y)"
+        }
+    },
+    "gui:debug": {
+        "signal_bindings": {
+            "menu_primary_trigger": "if_focused(Overlay, input:mouse/mouse_button_left)",
+            "menu_secondary_trigger": "if_focused(Overlay, input:mouse/mouse_button_right)",
+            "menu_cursor_x": "if_focused(Overlay, input:mouse/mouse_cursor_x)",
+            "menu_cursor_y": "if_focused(Overlay, input:mouse/mouse_cursor_y)"
         }
     },
     "vr:origin": {
@@ -110,10 +174,6 @@
     },
     "player:player": {
         "signal_bindings": {
-            "menu_primary_trigger": "input:mouse/mouse_button_left",
-            "menu_secondary_trigger": "input:mouse/mouse_button_right",
-            "menu_cursor_x": "input:mouse/mouse_cursor_x",
-            "menu_cursor_y": "input:mouse/mouse_cursor_y",
             "move_relative_x": "player:flatview/move_relative_x + vr:left_hand/move_relative_x + vr:right_hand/move_relative_x",
             "move_relative_y": "player:flatview/move_relative_y",
             "move_relative_z": "player:flatview/move_relative_z + vr:left_hand/move_relative_z + vr:right_hand/move_relative_z",
@@ -122,13 +182,13 @@
     },
     "player:flatview": {
         "signal_bindings": {
-            "move_forward": "input:keyboard/key_w",
-            "move_right": "input:keyboard/key_d",
-            "move_left": "input:keyboard/key_a",
-            "move_back": "input:keyboard/key_s",
-            "move_up": "input:keyboard/key_space",
-            "move_down": "input:keyboard/key_left_control",
-            "interact_rotate": "input:keyboard/key_r"
+            "move_forward": "if_focused(Game, input:keyboard/key_w)",
+            "move_right": "if_focused(Game, input:keyboard/key_d)",
+            "move_left": "if_focused(Game, input:keyboard/key_a)",
+            "move_back": "if_focused(Game, input:keyboard/key_s)",
+            "move_up": "if_focused(Game, input:keyboard/key_space)",
+            "move_down": "if_focused(Game, input:keyboard/key_left_control)",
+            "interact_rotate": "if_focused(Game, input:keyboard/key_r)"
         }
     }
 }

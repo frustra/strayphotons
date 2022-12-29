@@ -18,20 +18,9 @@ namespace sp {
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "gui",
-            [this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
-                ent.Set<ecs::FocusLayer>(lock, layer);
                 ent.Set<ecs::EventInput>(lock);
-
-                auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
-                signalBindings.SetBinding(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
-                    entities::Player,
-                    INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
-                signalBindings.SetBinding(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                    entities::Player,
-                    INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
-                signalBindings.SetBinding(INPUT_SIGNAL_MENU_CURSOR_X, entities::Player, INPUT_SIGNAL_MENU_CURSOR_X);
-                signalBindings.SetBinding(INPUT_SIGNAL_MENU_CURSOR_Y, entities::Player, INPUT_SIGNAL_MENU_CURSOR_Y);
             });
 
         {

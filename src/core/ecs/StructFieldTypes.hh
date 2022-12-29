@@ -24,7 +24,7 @@ namespace ecs {
     struct EntityScope;
     struct AnimationState;
     struct EventBinding;
-    enum class FocusLayer : uint8_t;
+    enum class FocusLayer;
     enum class GuiTarget;
     enum class InterpolationMode;
     enum class OpticType;

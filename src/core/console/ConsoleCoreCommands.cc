@@ -86,9 +86,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
 
             if (lock.Has<ecs::FocusLock>()) {
                 if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
-                    std::stringstream ss;
-                    ss << layer;
-                    Logf("Failed to acquire focus layer: %s", ss.str());
+                    Logf("Failed to acquire focus layer: %s", layer);
                 }
             } else {
                 Errorf("World does not have a FocusLock");
