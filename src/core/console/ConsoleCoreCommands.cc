@@ -22,7 +22,7 @@ void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
 
 void sp::ConsoleManager::RegisterCoreCommands() {
     funcs.Register("list", "Lists all CVar names, values, and descriptions", [this]() {
-        std::shared_lock lock(cvarLock);
+        std::shared_lock lock(cvarReadLock);
 
         for (auto &kv : cvars) {
             auto cvar = kv.second;
@@ -46,7 +46,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
     funcs.Register<string, string>("toggle",
         "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",
         [this](string cvarName, string args) {
-            std::shared_lock lock(cvarLock);
+            std::shared_lock lock(cvarReadLock);
 
             auto cvarit = cvars.find(to_lower_copy(cvarName));
             if (cvarit != cvars.end()) {

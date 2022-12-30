@@ -58,6 +58,7 @@ namespace sp {
 
     public:
 #ifdef SP_GRAPHICS_SUPPORT
+        std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
         GraphicsManager graphics;
 
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;

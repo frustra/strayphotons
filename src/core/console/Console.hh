@@ -73,7 +73,7 @@ namespace sp {
         void RegisterCoreCommands();
         void RegisterTracyCommands();
 
-        LockFreeMutex cvarLock;
+        LockFreeMutex cvarReadLock, cvarExecLock;
         std::map<string, CVarBase *> cvars;
         CFuncCollection funcs;
         std::thread cliInputThread;

@@ -40,23 +40,14 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game *game, bool stepMode)
-        : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game), stepMode(stepMode) {
-        if (stepMode) {
-            funcs.Register<unsigned int>("stepgraphics",
-                "Renders N frames in a row, saving any queued screenshots, default is 1",
-                [this](unsigned int arg) {
-                    this->Step(std::max(1u, arg));
-                });
-        }
-    }
+    GraphicsManager::GraphicsManager(Game *game) : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game) {}
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
         if (context) context->WaitIdle();
     }
 
-    void GraphicsManager::Init() {
+    void GraphicsManager::Init(bool stepMode) {
         ZoneScoped;
         Assert(!context, "already have a graphics context");
 
@@ -74,9 +65,8 @@ namespace sp {
         context.reset(vkContext);
 
         GLFWwindow *window = vkContext->GetWindow();
-    #endif
-
         if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(*window);
+    #endif
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -113,6 +103,7 @@ namespace sp {
         renderer->SetDebugGui(game->debugGui.get());
         renderer->SetMenuGui(game->menuGui.get());
     #endif
+
         return true;
     }
 
@@ -148,23 +139,16 @@ namespace sp {
     }
 
     void GraphicsManager::PreFrame() {
-        auto maxFPS = CVarMaxFPS.Get();
-        if (maxFPS > 0) {
-            interval = std::chrono::nanoseconds((int64_t)(1e9 / maxFPS));
-        } else {
-            interval = std::chrono::nanoseconds(0);
-        }
+        if (!context) return;
+        if (game->debugGui) game->debugGui->BeforeFrame();
+        if (game->menuGui) game->menuGui->BeforeFrame();
+
+        context->BeginFrame();
     }
 
     void GraphicsManager::Frame() {
         ZoneScoped;
-        if (!context) return;
-    #ifdef SP_GRAPHICS_SUPPORT_VK
         if (!HasActiveContext()) return;
-    #endif
-
-        if (game->debugGui) game->debugGui->BeforeFrame();
-        if (game->menuGui) game->menuGui->BeforeFrame();
 
     #ifdef SP_XR_SUPPORT
         auto xrSystem = game->xr.GetXrSystem();
@@ -178,19 +162,11 @@ namespace sp {
         renderer->SetXRSystem(xrSystem);
         #endif
 
-        context->BeginFrame();
-
         #ifdef SP_TEST_MODE
         renderer->RenderFrame(interval * stepCount.load());
         #else
         renderer->RenderFrame(chrono_clock::now() - renderStart);
         #endif
-
-        #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-        context->SwapBuffers();
-        #endif
-        renderer->EndFrame();
-        context->EndFrame();
 
         #ifdef SP_XR_SUPPORT
         renderer->SetXRSystem(nullptr);
@@ -198,6 +174,25 @@ namespace sp {
     #endif
 
         FrameMark;
+    }
+
+    void GraphicsManager::PostFrame() {
+        auto maxFPS = CVarMaxFPS.Get();
+        if (maxFPS > 0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / maxFPS));
+        } else {
+            interval = std::chrono::nanoseconds(0);
+        }
+
+        if (!context) return;
+    #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+        context->SwapBuffers();
+    #endif
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        Assert(renderer, "missing renderer");
+        renderer->EndFrame();
+    #endif
+        context->EndFrame();
     }
 
     GraphicsContext *GraphicsManager::GetContext() {

@@ -31,7 +31,7 @@ namespace sp {
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this, startupScript != nullptr),
+          graphics(this),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(startupScript != nullptr),
@@ -84,7 +84,7 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         if (options["headless"].count() == 0) {
             debugGui = std::make_unique<DebugGuiManager>();
-            graphics.Init();
+            graphics.Init(startupScript != nullptr);
 
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
         }
@@ -105,6 +105,22 @@ namespace sp {
             funcs.Register("syncscene", "Pause script until all scenes are loaded", []() {
                 GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
             });
+            funcs.Register<unsigned int>("stepgraphics",
+                "Renders N frames in a row, saving any queued screenshots, default is 1",
+                [this](unsigned int arg) {
+                    auto count = std::max(1u, arg);
+                    for (auto i = 0u; i < count; i++) {
+                        // Step main thread glfw input first
+                        graphicsMaxStepCount++;
+                        auto step = graphicsStepCount.load();
+                        while (step < graphicsMaxStepCount) {
+                            graphicsStepCount.wait(step);
+                            step = graphicsStepCount.load();
+                        }
+
+                        graphics.Step(1);
+                    }
+                });
 
             GetConsoleManager().QueueParseAndExecute("syncscene");
 
@@ -125,7 +141,13 @@ namespace sp {
         while (!exitTriggered.test()) {
             static const char *frameName = "WindowInput";
             FrameMarkStart(frameName);
-            if (!graphics.InputFrame()) {
+            if (startupScript) {
+                while (graphicsStepCount < graphicsMaxStepCount) {
+                    graphics.InputFrame();
+                    graphicsStepCount++;
+                }
+                graphicsStepCount.notify_all();
+            } else if (!graphics.InputFrame()) {
                 Tracef("Exit triggered via window manager");
                 break;
             }

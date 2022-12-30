@@ -55,6 +55,7 @@ namespace sp {
                         this->Frame();
                         if (traceFrames) FrameMarkEnd(threadName.c_str());
                     }
+                    this->PostFrame();
 
                     auto realFrameEnd = chrono_clock::now();
 
