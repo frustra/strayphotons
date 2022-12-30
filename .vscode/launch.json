@@ -104,6 +104,17 @@
             ]
         },
         {
+            "name": "StrayPhotons Hull Compiler (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/hull_compiler.exe",
+            "args": ["sponza2"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
+        {
             "name": "StrayPhotons Scene Formatter (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",

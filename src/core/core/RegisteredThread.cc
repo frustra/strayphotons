@@ -1,6 +1,7 @@
 #include "RegisteredThread.hh"
 
 #include "core/Common.hh"
+#include "core/Defer.hh"
 #include "core/Tracing.hh"
 
 #include <array>
@@ -9,11 +10,14 @@
 
 namespace sp {
     RegisteredThread::RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames)
-        : threadName(threadName), interval(interval), traceFrames(traceFrames), exiting(false) {}
+        : threadName(threadName), interval(interval), traceFrames(traceFrames), exiting(false), exited(false) {}
 
     RegisteredThread::RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames)
-        : threadName(threadName), interval(std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond))),
-          traceFrames(traceFrames), exiting(false) {}
+        : threadName(threadName), interval(0), traceFrames(traceFrames), exiting(false), exited(false) {
+        if (framesPerSecond > 0.0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond));
+        }
+    }
 
     RegisteredThread::~RegisteredThread() {
         StopThread();
@@ -22,8 +26,14 @@ namespace sp {
     void RegisteredThread::StartThread(bool stepMode) {
         Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
         exiting = false;
+        exited = false;
         thread = std::thread([this, stepMode] {
             tracy::SetThreadName(threadName.c_str());
+            Defer exit([this] {
+                exited = true;
+                exited.notify_all();
+            });
+
             if (!ThreadInit()) return;
 
             auto frameEnd = chrono_clock::now();
@@ -69,6 +79,7 @@ namespace sp {
             }
 #endif
         });
+        thread.detach();
     }
 
     void RegisteredThread::Step(unsigned int count) {
@@ -82,7 +93,11 @@ namespace sp {
 
     void RegisteredThread::StopThread(bool waitForExit) {
         exiting = true;
-        if (waitForExit && thread.joinable()) thread.join();
+        if (waitForExit) {
+            while (!exited.load()) {
+                exited.wait(false);
+            }
+        }
     }
 
     std::thread::id RegisteredThread::GetThreadId() const {

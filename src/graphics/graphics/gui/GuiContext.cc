@@ -1,8 +1,8 @@
 #include "GuiContext.hh"
 
-#include "ConsoleGui.hh"
-#include "InspectorGui.hh"
-#include "LobbyGui.hh"
+#include "graphics/gui/definitions/ConsoleGui.hh"
+#include "graphics/gui/definitions/InspectorGui.hh"
+#include "graphics/gui/definitions/LobbyGui.hh"
 #include "input/KeyCodes.hh"
 
 #include <imgui/imgui.h>

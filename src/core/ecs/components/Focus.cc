@@ -6,19 +6,6 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
-    std::ostream &operator<<(std::ostream &out, const FocusLock &v) {
-        bool first = true;
-        for (size_t i = static_cast<size_t>(FocusLayer::Never); i < static_cast<size_t>(FocusLayer::Always); i++) {
-            auto layer = static_cast<FocusLayer>(i);
-            if (v.HasFocus(layer)) {
-                if (!first) out << " ";
-                out << layer;
-                first = false;
-            }
-        }
-        return out;
-    }
-
     FocusLock::FocusLock(FocusLayer layer) {
         if (layer != FocusLayer::Never && layer != FocusLayer::Always) {
             AcquireFocus(layer);
@@ -77,5 +64,22 @@ namespace ecs {
             if (layers.test(i)) return static_cast<FocusLayer>(i + 1);
         }
         return FocusLayer::Never;
+    }
+
+    std::string FocusLock::String() const {
+        std::string result;
+        bool first = true;
+        for (auto &layer : magic_enum::enum_values<FocusLayer>()) {
+            if (layer == FocusLayer::Always) continue;
+            if (HasFocus(layer)) {
+                if (first) {
+                    first = false;
+                } else {
+                    result += " ";
+                }
+                result += magic_enum::enum_name(layer);
+            }
+        }
+        return result;
     }
 } // namespace ecs

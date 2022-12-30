@@ -636,8 +636,8 @@ namespace sp::vulkan {
         scene.Flush();
     }
 
-    void Renderer::SetDebugGui(GuiContext &gui) {
-        debugGui = &gui;
+    void Renderer::SetDebugGui(GuiContext *gui) {
+        debugGui = gui;
     }
 
     void Renderer::SetMenuGui(GuiContext *gui) {

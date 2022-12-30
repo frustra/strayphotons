@@ -42,6 +42,7 @@ namespace sp {
         }
 
         virtual void PrepareWindowView(ecs::View &view) = 0;
+        virtual void UpdateInputModeFromFocus() = 0;
 
         // These functions are acceptable in the base GraphicsContext class,
         // but really shouldn't needed. They should be replaced with a generic "Settings" API
@@ -58,6 +59,11 @@ namespace sp {
         virtual void *Win32WindowHandle() {
             return nullptr;
         }
+
+        virtual uint32_t GetMeasuredFPS() const {
+            return 0;
+        }
+        virtual void SetTitle(std::string title) {}
 
     protected:
         ecs::Entity activeView;

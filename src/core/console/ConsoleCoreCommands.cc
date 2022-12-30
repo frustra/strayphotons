@@ -71,10 +71,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
 
         if (lock.Has<ecs::FocusLock>()) {
-            auto &focusLock = lock.Get<ecs::FocusLock>();
-            std::stringstream ss;
-            ss << "Active focus layers: " << focusLock;
-            Logf(ss.str());
+            Logf("Active focus layers: %s", lock.Get<ecs::FocusLock>().String());
         } else {
             Errorf("World does not have a FocusLock");
         }

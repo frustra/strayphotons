@@ -3,7 +3,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/StructFieldTypes.hh"
 #include "editor/EditorSystem.hh"
-#include "graphics/gui/EditorControls.hh"
+#include "graphics/gui/definitions/EditorControls.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>

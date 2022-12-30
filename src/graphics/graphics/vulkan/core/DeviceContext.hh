@@ -73,8 +73,7 @@ namespace sp::vulkan {
         void WaitIdle() override {
             device->waitIdle();
         }
-
-        void UpdateInputModeFromFocus();
+        void UpdateInputModeFromFocus() override;
 
         // These functions are acceptable in the base GraphicsContext class,
         // but really shouldn't needed. They should be replaced with a generic "Settings" API
@@ -235,9 +234,13 @@ namespace sp::vulkan {
             return perfTimer.get();
         }
 
-    private:
-        void SetTitle(string title);
+        uint32_t GetMeasuredFPS() const override {
+            return measuredFrameRate.load();
+        }
 
+        void SetTitle(std::string title) override;
+
+    private:
         void CreateSwapchain();
         void CreateTestPipeline();
         void RecreateSwapchain();
@@ -247,6 +250,7 @@ namespace sp::vulkan {
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
         std::thread::id mainThread;
+        std::thread::id renderThread;
         vk::UniqueInstance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
@@ -364,6 +368,7 @@ namespace sp::vulkan {
         std::vector<glm::ivec2> monitorModes;
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
+        std::atomic_uint32_t measuredFrameRate;
         GLFWwindow *window = nullptr;
 
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;

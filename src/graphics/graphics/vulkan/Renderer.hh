@@ -42,7 +42,7 @@ namespace sp::vulkan {
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        void SetDebugGui(GuiContext &gui);
+        void SetDebugGui(GuiContext *gui);
         void SetMenuGui(GuiContext *gui);
 
 #ifdef SP_XR_SUPPORT

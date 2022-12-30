@@ -582,6 +582,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SetTitle(string title) {
+        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::SetTitle must be called from main thread");
         if (window) glfwSetWindowTitle(window, title.c_str());
     }
 
@@ -590,6 +591,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
+        Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
         if (window) {
             glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
 
@@ -621,6 +623,7 @@ namespace sp::vulkan {
     }
 
     const vector<glm::ivec2> &DeviceContext::MonitorModes() {
+        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::MonitorModes must be called from main thread");
         if (!monitorModes.empty()) return monitorModes;
 
         int count;
@@ -639,6 +642,7 @@ namespace sp::vulkan {
     }
 
     const glm::ivec2 DeviceContext::CurrentMode() {
+        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::CurrentMode must be called from main thread");
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         if (mode != NULL) {
             return glm::ivec2(mode->width, mode->height);
@@ -647,6 +651,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::UpdateInputModeFromFocus() {
+        Assert(std::this_thread::get_id() == mainThread, "UpdateInputModeFromFocus must be called from main thread");
         ZoneScoped;
         if (!window) return;
 
@@ -664,7 +669,6 @@ namespace sp::vulkan {
     void DeviceContext::BeginFrame() {
         ZoneScoped;
         if (perfTimer) perfTimer->StartFrame();
-        UpdateInputModeFromFocus();
 
         if (reloadShaders.exchange(false)) {
             for (size_t i = 0; i < shaders.size(); i++) {
@@ -778,7 +782,7 @@ namespace sp::vulkan {
         frameCounterThisSecond++;
 
         if (fpsTimer > 1.0) {
-            SetTitle("STRAY PHOTONS (" + std::to_string(frameCounterThisSecond) + " FPS)");
+            measuredFrameRate = frameCounterThisSecond;
             frameCounterThisSecond = 0;
             fpsTimer = 0;
         }
@@ -788,8 +792,11 @@ namespace sp::vulkan {
     }
 
     CommandContextPtr DeviceContext::GetFrameCommandContext(CommandContextType type) {
-        Assert(std::this_thread::get_id() == mainThread,
-            "must use a fenced command context outside the main renderer thread");
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "must use a fenced command context in a single thread");
+        }
 
         CommandContextPtr cmd;
         auto &pool = Frame().commandContexts[QueueType(type)];
@@ -839,7 +846,11 @@ namespace sp::vulkan {
         vk::Fence fence,
         bool lastSubmit) {
         ZoneScoped;
-        Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread (for now)");
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "must call Submit from a single thread");
+        }
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
         InlineVector<vk::Semaphore, 8> signalSemArray;

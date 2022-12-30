@@ -31,7 +31,7 @@ namespace sp {
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this),
+          graphics(this, startupScript != nullptr),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(startupScript != nullptr),
@@ -121,13 +121,32 @@ namespace sp {
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT
+        auto frameEnd = chrono_clock::now();
         while (!exitTriggered.test()) {
-            if (!graphics.Frame()) {
+            static const char *frameName = "WindowInput";
+            FrameMarkStart(frameName);
+            if (!graphics.InputFrame()) {
                 Tracef("Exit triggered via window manager");
                 break;
             }
-            FrameMark;
+
+            auto realFrameEnd = chrono_clock::now();
+            auto interval = graphics.interval;
+            if (interval.count() > 0) {
+                frameEnd += interval;
+
+                if (realFrameEnd >= frameEnd) {
+                    // Falling behind, reset target frame end time.
+                    frameEnd = realFrameEnd;
+                }
+
+                std::this_thread::sleep_until(frameEnd);
+            } else {
+                std::this_thread::yield();
+            }
+            FrameMarkEnd(frameName);
         }
+        graphics.StopThread();
 #else
         while (!exitTriggered.test()) {
             exitTriggered.wait(false);

@@ -16,7 +16,7 @@ namespace sp {
         std::thread::id GetThreadId() const;
 
         const std::string threadName;
-        const chrono_clock::duration interval;
+        chrono_clock::duration interval;
         const bool traceFrames = false;
 
     protected:
@@ -36,10 +36,11 @@ namespace sp {
         }
 
         std::atomic_bool exiting;
+        std::atomic_bool exited;
+        std::atomic_uint64_t stepCount;
 
     private:
         std::thread thread;
-
-        std::atomic_uint64_t stepCount, maxStepCount;
+        std::atomic_uint64_t maxStepCount;
     };
 } // namespace sp
