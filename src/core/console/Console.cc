@@ -43,11 +43,13 @@ namespace sp {
     } // namespace logging
 
     CVarBase::CVarBase(const string &name, const string &description)
-        : name(name), nameLower(to_lower_copy(name)), description(description) {
+        : name(name), nameLower(to_lower_copy(name)), description(description) {}
+
+    void CVarBase::Register() {
         GetConsoleManager().AddCVar(this);
     }
 
-    CVarBase::~CVarBase() {
+    void CVarBase::UnRegister() {
         GetConsoleManager().RemoveCVar(this);
     }
 
