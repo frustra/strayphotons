@@ -38,8 +38,12 @@ namespace sp {
             return true;
         }
 
-        std::atomic_bool exiting;
-        std::atomic_bool exited;
+        enum class ThreadState : uint32_t {
+            Stopped = 0,
+            Started,
+            Stopping,
+        };
+        std::atomic<ThreadState> state;
 
     private:
         std::thread thread;
