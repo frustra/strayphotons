@@ -40,14 +40,15 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game *game) : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game) {}
+    GraphicsManager::GraphicsManager(Game *game, bool stepMode)
+        : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game), stepMode(stepMode) {}
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
         if (context) context->WaitIdle();
     }
 
-    void GraphicsManager::Init(bool stepMode) {
+    void GraphicsManager::Init() {
         ZoneScoped;
         Assert(!context, "already have a graphics context");
 
@@ -77,7 +78,9 @@ namespace sp {
                 CVarWindowSize.Set(size);
             }
         }
+    }
 
+    void GraphicsManager::StartThread() {
         RegisteredThread::StartThread(stepMode);
     }
 

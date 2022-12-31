@@ -31,7 +31,7 @@ namespace sp {
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this),
+          graphics(this, startupScript != nullptr),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(startupScript != nullptr),
@@ -83,10 +83,12 @@ namespace sp {
 
 #ifdef SP_GRAPHICS_SUPPORT
         if (options["headless"].count() == 0) {
-            debugGui = std::make_unique<DebugGuiManager>();
-            graphics.Init(startupScript != nullptr);
+            graphics.Init();
 
+            debugGui = std::make_unique<DebugGuiManager>();
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
+
+            graphics.StartThread();
         }
 #endif
 
