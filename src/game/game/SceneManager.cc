@@ -62,7 +62,7 @@ namespace sp {
     }
 
     SceneManager::~SceneManager() {
-        if (!exiting.load()) Shutdown();
+        Shutdown();
     }
 
     void SceneManager::Shutdown() {
@@ -406,13 +406,13 @@ namespace sp {
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
         std::lock_guard lock(actionMutex);
-        if (exiting.load()) return;
+        if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, sceneName, callback);
     }
 
     void SceneManager::QueueAction(SceneAction action, EditSceneCallback callback) {
         std::lock_guard lock(actionMutex);
-        if (exiting.load()) return;
+        if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, callback);
     }
 
@@ -420,7 +420,7 @@ namespace sp {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);
-            if (exiting.load()) return;
+            if (state != ThreadState::Started) return;
             auto &entry = actionQueue.emplace_back(action, sceneName, callback);
             future = entry.promise.get_future();
         }
@@ -461,7 +461,7 @@ namespace sp {
         {
             std::lock_guard lock(preloadMutex);
             Assertf(!preloadScene, "Already preloading %s when trying to preload %s", preloadScene->name, scene->name);
-            if (exiting.load()) return;
+            if (state != ThreadState::Started) return;
             preloadScene = scene;
             graphicsPreload.clear();
             physicsPreload.clear();

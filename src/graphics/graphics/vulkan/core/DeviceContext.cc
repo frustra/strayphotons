@@ -497,6 +497,20 @@ namespace sp::vulkan {
 
         perfTimer.reset(new PerfTimer(*this));
 
+        int modeCount;
+        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
+        if (modes && modeCount > 0) {
+            monitorModes.resize(modeCount);
+            for (int i = 0; i < modeCount; i++) {
+                monitorModes[i] = {modes[i].width, modes[i].height};
+            }
+            std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
+                return a.x > b.x || (a.x == b.x && a.y > b.y);
+            });
+        } else {
+            Warnf("Failed to read Glfw monitor modes");
+        }
+
         if (enableSwapchain) CreateSwapchain();
     }
 
@@ -564,12 +578,13 @@ namespace sp::vulkan {
         swapchain.swap(newSwapchain);
 
         auto swapchainImages = device->getSwapchainImagesKHR(*swapchain);
-        swapchainExtent = swapchainInfo.imageExtent;
         swapchainImageContexts.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
             ImageViewCreateInfo imageViewInfo;
-            imageViewInfo.image = make_shared<Image>(swapchainImages[i], swapchainInfo.imageFormat, swapchainExtent);
+            imageViewInfo.image = make_shared<Image>(swapchainImages[i],
+                swapchainInfo.imageFormat,
+                swapchainInfo.imageExtent);
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
@@ -582,6 +597,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SetTitle(string title) {
+        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::SetTitle must be called from main thread");
         if (window) glfwSetWindowTitle(window, title.c_str());
     }
 
@@ -590,29 +606,47 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
+        Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
         if (window) {
-            glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
+            bool fullscreen = CVarWindowFullscreen.Get();
+            if (glfwFullscreen != fullscreen) {
+                if (fullscreen) {
+                    glfwGetWindowPos(window, &storedWindowRect.x, &storedWindowRect.y);
+                    storedWindowRect.z = glfwWindowSize.x;
+                    storedWindowRect.w = glfwWindowSize.y;
 
-            if (glfwFullscreen != CVarWindowFullscreen.Get()) {
-                if (CVarWindowFullscreen.Get() == 0) {
-                    glfwSetWindowMonitor(window, nullptr, storedWindowPos.x, storedWindowPos.y, scaled.x, scaled.y, 0);
-                    glfwFullscreen = 0;
-                } else if (CVarWindowFullscreen.Get() == 1) {
-                    glfwGetWindowPos(window, &storedWindowPos.x, &storedWindowPos.y);
-                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
-                    glfwFullscreen = 1;
-                }
-            } else if (glfwWindowSize != scaled) {
-                if (CVarWindowFullscreen.Get()) {
-                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
+                    auto *monitor = glfwGetPrimaryMonitor();
+                    if (monitor) {
+                        auto *mode = glfwGetVideoMode(monitor);
+                        glfwWindowSize = {mode->width, mode->height};
+                    }
+                    glfwSetWindowMonitor(window, monitor, 0, 0, glfwWindowSize.x, glfwWindowSize.y, 60);
                 } else {
-                    glfwSetWindowSize(window, scaled.x, scaled.y);
+                    glfwWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                    glfwSetWindowMonitor(window,
+                        nullptr,
+                        storedWindowRect.x,
+                        storedWindowRect.y,
+                        storedWindowRect.z,
+                        storedWindowRect.w,
+                        0);
                 }
-
-                glfwWindowSize = scaled;
+                CVarWindowSize.Set(glfwWindowSize);
+                glfwFullscreen = fullscreen;
             }
 
-            view.extents = {swapchainExtent.width, swapchainExtent.height};
+            glm::ivec2 windowSize = CVarWindowSize.Get();
+            if (glfwWindowSize != windowSize) {
+                if (CVarWindowFullscreen.Get()) {
+                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
+                } else {
+                    glfwSetWindowSize(window, windowSize.x, windowSize.y);
+                }
+
+                glfwWindowSize = windowSize;
+            }
+
+            glfwGetFramebufferSize(window, &view.extents.x, &view.extents.y);
         } else {
             view.extents = CVarWindowSize.Get();
         }
@@ -620,33 +654,8 @@ namespace sp::vulkan {
         view.UpdateProjectionMatrix();
     }
 
-    const vector<glm::ivec2> &DeviceContext::MonitorModes() {
-        if (!monitorModes.empty()) return monitorModes;
-
-        int count;
-        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &count);
-
-        for (int i = 0; i < count; i++) {
-            glm::ivec2 size(modes[i].width, modes[i].height);
-            if (!contains(monitorModes, size)) monitorModes.push_back(size);
-        }
-
-        std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-            return a.x > b.x || (a.x == b.x && a.y > b.y);
-        });
-
-        return monitorModes;
-    }
-
-    const glm::ivec2 DeviceContext::CurrentMode() {
-        const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        if (mode != NULL) {
-            return glm::ivec2(mode->width, mode->height);
-        }
-        return glm::ivec2(0);
-    }
-
     void DeviceContext::UpdateInputModeFromFocus() {
+        Assert(std::this_thread::get_id() == mainThread, "UpdateInputModeFromFocus must be called from main thread");
         ZoneScoped;
         if (!window) return;
 
@@ -664,7 +673,6 @@ namespace sp::vulkan {
     void DeviceContext::BeginFrame() {
         ZoneScoped;
         if (perfTimer) perfTimer->StartFrame();
-        UpdateInputModeFromFocus();
 
         if (reloadShaders.exchange(false)) {
             for (size_t i = 0; i < shaders.size(); i++) {
@@ -778,7 +786,7 @@ namespace sp::vulkan {
         frameCounterThisSecond++;
 
         if (fpsTimer > 1.0) {
-            SetTitle("STRAY PHOTONS (" + std::to_string(frameCounterThisSecond) + " FPS)");
+            measuredFrameRate = frameCounterThisSecond;
             frameCounterThisSecond = 0;
             fpsTimer = 0;
         }
@@ -788,8 +796,11 @@ namespace sp::vulkan {
     }
 
     CommandContextPtr DeviceContext::GetFrameCommandContext(CommandContextType type) {
-        Assert(std::this_thread::get_id() == mainThread,
-            "must use a fenced command context outside the main renderer thread");
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "must use a fenced command context in a single thread");
+        }
 
         CommandContextPtr cmd;
         auto &pool = Frame().commandContexts[QueueType(type)];
@@ -839,7 +850,11 @@ namespace sp::vulkan {
         vk::Fence fence,
         bool lastSubmit) {
         ZoneScoped;
-        Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread (for now)");
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "must call Submit from a single thread");
+        }
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
         InlineVector<vk::Semaphore, 8> signalSemArray;

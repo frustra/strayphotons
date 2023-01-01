@@ -31,7 +31,7 @@ namespace sp {
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this),
+          graphics(this, startupScript != nullptr),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(startupScript != nullptr),
@@ -83,10 +83,12 @@ namespace sp {
 
 #ifdef SP_GRAPHICS_SUPPORT
         if (options["headless"].count() == 0) {
-            debugGui = std::make_unique<DebugGuiManager>();
             graphics.Init();
 
+            debugGui = std::make_unique<DebugGuiManager>();
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
+
+            graphics.StartThread();
         }
 #endif
 
@@ -105,6 +107,22 @@ namespace sp {
             funcs.Register("syncscene", "Pause script until all scenes are loaded", []() {
                 GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
             });
+            funcs.Register<unsigned int>("stepgraphics",
+                "Renders N frames in a row, saving any queued screenshots, default is 1",
+                [this](unsigned int arg) {
+                    auto count = std::max(1u, arg);
+                    for (auto i = 0u; i < count; i++) {
+                        // Step main thread glfw input first
+                        graphicsMaxStepCount++;
+                        auto step = graphicsStepCount.load();
+                        while (step < graphicsMaxStepCount) {
+                            graphicsStepCount.wait(step);
+                            step = graphicsStepCount.load();
+                        }
+
+                        graphics.Step(1);
+                    }
+                });
 
             GetConsoleManager().QueueParseAndExecute("syncscene");
 
@@ -121,13 +139,38 @@ namespace sp {
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT
+        auto frameEnd = chrono_clock::now();
         while (!exitTriggered.test()) {
-            if (!graphics.Frame()) {
+            static const char *frameName = "WindowInput";
+            FrameMarkStart(frameName);
+            if (startupScript) {
+                while (graphicsStepCount < graphicsMaxStepCount) {
+                    graphics.InputFrame();
+                    graphicsStepCount++;
+                }
+                graphicsStepCount.notify_all();
+            } else if (!graphics.InputFrame()) {
                 Tracef("Exit triggered via window manager");
                 break;
             }
-            FrameMark;
+
+            auto realFrameEnd = chrono_clock::now();
+            auto interval = graphics.interval;
+            if (interval.count() > 0) {
+                frameEnd += interval;
+
+                if (realFrameEnd >= frameEnd) {
+                    // Falling behind, reset target frame end time.
+                    frameEnd = realFrameEnd;
+                }
+
+                std::this_thread::sleep_until(frameEnd);
+            } else {
+                std::this_thread::yield();
+            }
+            FrameMarkEnd(frameName);
         }
+        graphics.StopThread();
 #else
         while (!exitTriggered.test()) {
             exitTriggered.wait(false);

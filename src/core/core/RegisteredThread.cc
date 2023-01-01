@@ -1,36 +1,55 @@
 #include "RegisteredThread.hh"
 
 #include "core/Common.hh"
+#include "core/Defer.hh"
 #include "core/Tracing.hh"
 
 #include <array>
+#include <iostream>
 #include <numeric>
 #include <thread>
 
 namespace sp {
     RegisteredThread::RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames)
-        : threadName(threadName), interval(interval), traceFrames(traceFrames), exiting(false) {}
+        : threadName(threadName), interval(interval), traceFrames(traceFrames), state(ThreadState::Stopped) {}
 
     RegisteredThread::RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames)
-        : threadName(threadName), interval(std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond))),
-          traceFrames(traceFrames), exiting(false) {}
+        : threadName(threadName), interval(0), traceFrames(traceFrames), state(ThreadState::Stopped) {
+        if (framesPerSecond > 0.0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond));
+        }
+    }
 
     RegisteredThread::~RegisteredThread() {
         StopThread();
+        if (thread.joinable()) thread.join();
     }
 
     void RegisteredThread::StartThread(bool stepMode) {
-        Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
-        exiting = false;
+        ThreadState current = state;
+        if (current != ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Started)) {
+            Errorf("RegisteredThread %s already started: %s", threadName, current);
+            return;
+        }
+        state.notify_all();
+
         thread = std::thread([this, stepMode] {
             tracy::SetThreadName(threadName.c_str());
+            Defer exit([this] {
+                ThreadState current = state;
+                if (current == ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Stopped)) {
+                    Errorf("RegisteredThread %s state already Stopped", threadName);
+                }
+                state.notify_all();
+            });
+
             if (!ThreadInit()) return;
 
             auto frameEnd = chrono_clock::now();
 #ifdef CATCH_GLOBAL_EXCEPTIONS
             try {
 #endif
-                while (!this->exiting) {
+                while (state == ThreadState::Started) {
                     this->PreFrame();
                     if (stepMode) {
                         while (stepCount < maxStepCount) {
@@ -45,6 +64,7 @@ namespace sp {
                         this->Frame();
                         if (traceFrames) FrameMarkEnd(threadName.c_str());
                     }
+                    this->PostFrame();
 
                     auto realFrameEnd = chrono_clock::now();
 
@@ -81,8 +101,19 @@ namespace sp {
     }
 
     void RegisteredThread::StopThread(bool waitForExit) {
-        exiting = true;
-        if (waitForExit && thread.joinable()) thread.join();
+        ThreadState current = state;
+        if (current == ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Stopping)) {
+            // Thread already in a stopped state
+            return;
+        }
+        state.notify_all();
+
+        if (waitForExit) {
+            while (current != ThreadState::Stopped) {
+                state.wait(current);
+                current = state;
+            }
+        }
     }
 
     std::thread::id RegisteredThread::GetThreadId() const {

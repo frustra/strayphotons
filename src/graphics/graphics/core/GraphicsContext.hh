@@ -17,10 +17,9 @@ namespace sp {
     class GpuTexture;
     class Image;
 
-    extern CVar<glm::ivec2> CVarWindowSize;
-    extern CVar<float> CVarWindowScale;
     extern CVar<float> CVarFieldOfView;
-    extern CVar<int> CVarWindowFullscreen;
+    extern CVar<glm::ivec2> CVarWindowSize;
+    extern CVar<bool> CVarWindowFullscreen;
 
     class GraphicsContext {
     public:
@@ -42,15 +41,11 @@ namespace sp {
         }
 
         virtual void PrepareWindowView(ecs::View &view) = 0;
+        virtual void UpdateInputModeFromFocus() = 0;
 
-        // These functions are acceptable in the base GraphicsContext class,
-        // but really shouldn't needed. They should be replaced with a generic "Settings" API
-        // that allows modules to populate a Settings / Options menu entry
-        //
-        // TODO: default implementation for these functions for graphics contexts that don't support
-        // monitor modes
-        virtual const std::vector<glm::ivec2> &MonitorModes() = 0;
-        virtual const glm::ivec2 CurrentMode() = 0;
+        virtual const std::vector<glm::ivec2> &MonitorModes() {
+            return monitorModes;
+        }
 
         virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<const Image> image, bool genMipmap = true) = 0;
 
@@ -59,7 +54,13 @@ namespace sp {
             return nullptr;
         }
 
+        virtual uint32_t GetMeasuredFPS() const {
+            return 0;
+        }
+        virtual void SetTitle(std::string title) {}
+
     protected:
         ecs::Entity activeView;
+        std::vector<glm::ivec2> monitorModes;
     };
 } // namespace sp

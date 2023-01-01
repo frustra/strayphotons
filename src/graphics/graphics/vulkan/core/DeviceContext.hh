@@ -73,14 +73,7 @@ namespace sp::vulkan {
         void WaitIdle() override {
             device->waitIdle();
         }
-
-        void UpdateInputModeFromFocus();
-
-        // These functions are acceptable in the base GraphicsContext class,
-        // but really shouldn't needed. They should be replaced with a generic "Settings" API
-        // that allows modules to populate a Settings / Options menu entry
-        const std::vector<glm::ivec2> &MonitorModes() override;
-        const glm::ivec2 CurrentMode() override;
+        void UpdateInputModeFromFocus() override;
 
         void PrepareWindowView(ecs::View &view) override;
 
@@ -235,9 +228,13 @@ namespace sp::vulkan {
             return perfTimer.get();
         }
 
-    private:
-        void SetTitle(string title);
+        uint32_t GetMeasuredFPS() const override {
+            return measuredFrameRate.load();
+        }
 
+        void SetTitle(std::string title) override;
+
+    private:
         void CreateSwapchain();
         void CreateTestPipeline();
         void RecreateSwapchain();
@@ -247,6 +244,7 @@ namespace sp::vulkan {
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
         std::thread::id mainThread;
+        std::thread::id renderThread;
         vk::UniqueInstance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
@@ -280,7 +278,6 @@ namespace sp::vulkan {
         vk::Extent3D imageTransferGranularity;
 
         vk::UniqueSwapchainKHR swapchain;
-        vk::Extent2D swapchainExtent;
 
         struct SwapchainImageContext {
             vk::Fence inFlightFence; // points at a fence owned by FrameContext
@@ -358,12 +355,12 @@ namespace sp::vulkan {
         using SamplerKey = HashKey<VkSamplerCreateInfo>;
         robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
 
+        bool glfwFullscreen = false;
         glm::ivec2 glfwWindowSize;
-        glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen
-        int glfwFullscreen = 0;
-        std::vector<glm::ivec2> monitorModes;
+        glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
+        std::atomic_uint32_t measuredFrameRate;
         GLFWwindow *window = nullptr;
 
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;

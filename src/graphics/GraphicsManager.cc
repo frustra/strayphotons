@@ -9,13 +9,6 @@
     #include "graphics/core/GraphicsContext.hh"
     #include "main/Game.hh"
 
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        #include "graphics/opengl/GlfwGraphicsContext.hh"
-        #include "graphics/opengl/RenderTargetPool.hh"
-        #include "graphics/opengl/gui/ProfilerGui.hh"
-        #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
-        #include "input/glfw/GlfwInputHandler.hh"
-    #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
         #include "graphics/vulkan/Renderer.hh"
         #include "graphics/vulkan/core/DeviceContext.hh"
@@ -35,21 +28,6 @@ namespace sp {
         "player:flatview",
         "The entity with a View component to display");
 
-    #ifdef SP_TEST_MODE
-    static std::atomic_uint64_t stepCount, maxStepCount;
-
-    static CFunc<int> CFuncStepGraphics("stepgraphics",
-        "Renders N frames in a row, saving any queued screenshots, default is 1",
-        [](int arg) {
-            maxStepCount += std::max(1, arg);
-            auto step = stepCount.load();
-            while (step < maxStepCount) {
-                stepCount.wait(step);
-                step = stepCount.load();
-            }
-        });
-    #endif
-
     #if defined(SP_GRAPHICS_SUPPORT_HEADLESS) || defined(SP_TEST_MODE)
     const uint32 DefaultMaxFPS = 90;
     #elif defined(SP_DEBUG)
@@ -62,9 +40,11 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game *game) : game(game) {}
+    GraphicsManager::GraphicsManager(Game *game, bool stepMode)
+        : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game), stepMode(stepMode) {}
 
     GraphicsManager::~GraphicsManager() {
+        StopThread();
         if (context) context->WaitIdle();
     }
 
@@ -72,21 +52,9 @@ namespace sp {
         ZoneScoped;
         Assert(!context, "already have a graphics context");
 
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        Logf("Graphics starting up (OpenGL)");
-    #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
         Logf("Graphics starting up (Vulkan)");
-    #endif
 
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        auto glfwContext = new GlfwGraphicsContext();
-        context.reset(glfwContext);
-
-        GLFWwindow *window = glfwContext->GetWindow();
-    #endif
-
-    #ifdef SP_GRAPHICS_SUPPORT_VK
         bool enableValidationLayers = game->options.count("with-validation-layers") > 0;
 
         #ifdef SP_GRAPHICS_SUPPORT_HEADLESS
@@ -98,9 +66,8 @@ namespace sp {
         context.reset(vkContext);
 
         GLFWwindow *window = vkContext->GetWindow();
-    #endif
-
         if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(*window);
+    #endif
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -111,62 +78,54 @@ namespace sp {
                 CVarWindowSize.Set(size);
             }
         }
+    }
 
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        Assert(!renderer, "already have a renderer");
+    void GraphicsManager::StartThread() {
+        RegisteredThread::StartThread(stepMode);
+    }
 
-        renderer = make_unique<VoxelRenderer>(*glfwContext, timer);
-
-        profilerGui = make_shared<ProfilerGui>(timer);
-        if (game->debugGui) {
-            game->debugGui->Attach(profilerGui);
-        }
-
-        renderer->Prepare();
-    #endif
-
-    #ifdef SP_GRAPHICS_SUPPORT_VK
-        Assert(!renderer, "already have an active renderer");
-
-        game->debugGui->Attach(make_shared<vulkan::ProfilerGui>(*vkContext->GetPerfTimer()));
-
-        renderer = make_unique<vulkan::Renderer>(*vkContext);
-        renderer->SetDebugGui(*game->debugGui.get());
-    #endif
-
-        renderStart = chrono_clock::now();
-        previousFrameEnd = renderStart;
+    void GraphicsManager::StopThread() {
+        RegisteredThread::StopThread();
     }
 
     bool GraphicsManager::HasActiveContext() {
         return context && !context->ShouldClose();
     }
 
-    bool GraphicsManager::Frame() {
-        ZoneScoped;
-        if (!context) return true;
-    #if defined(SP_GRAPHICS_SUPPORT_GL) || defined(SP_GRAPHICS_SUPPORT_VK)
+    bool GraphicsManager::ThreadInit() {
+        renderStart = chrono_clock::now();
+
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        Assert(!renderer, "already have an active renderer");
+        auto *vkContext = dynamic_cast<vulkan::DeviceContext *>(context.get());
+        Assert(vkContext, "Invalid vulkan context on init");
+
+        game->debugGui->Attach(make_shared<vulkan::ProfilerGui>(*vkContext->GetPerfTimer()));
+
+        renderer = make_unique<vulkan::Renderer>(*vkContext);
+        renderer->SetDebugGui(game->debugGui.get());
+        renderer->SetMenuGui(game->menuGui.get());
+    #endif
+
+        return true;
+    }
+
+    bool GraphicsManager::InputFrame() {
+    #ifdef SP_GRAPHICS_SUPPORT_VK
         if (!HasActiveContext()) return false;
-        Assert(renderer, "missing renderer");
     #endif
 
     #ifdef SP_INPUT_SUPPORT_GLFW
         if (glfwInputHandler) glfwInputHandler->Frame();
     #endif
 
-    #if defined(SP_GRAPHICS_SUPPORT_GL)
-        renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
-    #elif defined(SP_GRAPHICS_SUPPORT_VK)
-        renderer->SetMenuGui(game->menuGui.get());
-    #endif
-
-        if (game->debugGui) game->debugGui->BeforeFrame();
-        if (game->menuGui) game->menuGui->BeforeFrame();
-
         if (!flatviewEntity || CVarFlatviewEntity.Changed()) {
             ecs::Name flatviewName(CVarFlatviewEntity.Get(true), ecs::Name());
             if (flatviewName) flatviewEntity = flatviewName;
         }
+
+        context->SetTitle("STRAY PHOTONS (" + std::to_string(context->GetMeasuredFPS()) + " FPS)");
+        context->UpdateInputModeFromFocus();
 
         {
             ZoneScopedN("SyncWindowView");
@@ -179,6 +138,20 @@ namespace sp {
             }
             context->AttachView(flatview);
         }
+        return true;
+    }
+
+    void GraphicsManager::PreFrame() {
+        if (!context) return;
+        if (game->debugGui) game->debugGui->BeforeFrame();
+        if (game->menuGui) game->menuGui->BeforeFrame();
+
+        context->BeginFrame();
+    }
+
+    void GraphicsManager::Frame() {
+        ZoneScoped;
+        if (!HasActiveContext()) return;
 
     #ifdef SP_XR_SUPPORT
         auto xrSystem = game->xr.GetXrSystem();
@@ -186,116 +159,43 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
+        Assert(renderer, "missing renderer");
+
         #ifdef SP_XR_SUPPORT
         renderer->SetXRSystem(xrSystem);
         #endif
 
-        context->BeginFrame();
-
-        chrono_clock::duration frameInterval = std::chrono::microseconds(0);
-        auto maxFPS = CVarMaxFPS.Get();
-        if (maxFPS > 0) frameInterval = std::chrono::microseconds(1000000 / maxFPS);
-
         #ifdef SP_TEST_MODE
-        if (stepCount < maxStepCount) {
-            renderer->RenderFrame(frameInterval * stepCount.load());
-            stepCount++;
-            stepCount.notify_all();
-        }
+        renderer->RenderFrame(interval * stepCount.load());
         #else
         renderer->RenderFrame(chrono_clock::now() - renderStart);
         #endif
 
-        #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-        context->SwapBuffers();
-        #endif
-        renderer->EndFrame();
-        context->EndFrame();
-
-        auto realFrameEnd = chrono_clock::now();
-        auto frameEnd = previousFrameEnd + frameInterval;
-
-        if (frameEnd > realFrameEnd) {
-            ZoneScopedN("SleepUntilFrameEnd");
-            std::this_thread::sleep_until(frameEnd);
-            previousFrameEnd = frameEnd;
-        } else {
-            previousFrameEnd = realFrameEnd;
-        }
-
         #ifdef SP_XR_SUPPORT
         renderer->SetXRSystem(nullptr);
         #endif
-        return true;
     #endif
 
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        timer.StartFrame();
-        context->BeginFrame();
+        FrameMark;
+    }
 
-        GlfwGraphicsContext *glContext = dynamic_cast<GlfwGraphicsContext *>(context.get());
-        Assert(glContext, "GraphicsManager::Frame(): GraphicsContext is not a GlfwGraphicsContext");
-
-        {
-            RenderPhase phase("Frame", timer);
-
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::XRView>,
-                ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
-            renderer->BeginFrame(lock);
-
-            auto flatview = flatviewEntity.Get();
-            if (flatview.Has<ecs::View>(lock)) {
-                auto &view = flatview.Get<ecs::View>(lock);
-                view.UpdateViewMatrix(lock, flatview);
-                renderer->RenderPass(view, lock);
-            }
-
-        #ifdef SP_XR_SUPPORT
-            if (xrSystem) {
-                RenderPhase xrPhase("XrViews", timer);
-
-                auto xrViews = lock.EntitiesWith<ecs::XRView>();
-                xrRenderTargets.resize(xrViews.size());
-                xrRenderPoses.resize(xrViews.size());
-                for (size_t i = 0; i < xrViews.size(); i++) {
-                    if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
-                    auto &view = xrViews[i].Get<ecs::View>(lock);
-                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-
-                    RenderPhase xrSubPhase("XrView", timer);
-
-                    RenderTargetDesc desc = {PF_SRGB8_A8, view.extents};
-                    if (!xrRenderTargets[i] || xrRenderTargets[i]->GetDesc() != desc) {
-                        xrRenderTargets[i] = glContext->GetRenderTarget(desc);
-                    }
-
-                    view.UpdateViewMatrix(lock, xrViews[i]);
-                    if (xrSystem->GetPredictedViewPose(eye, xrRenderPoses[i])) {
-                        view.viewMat = glm::inverse(xrRenderPoses[i]) * view.viewMat;
-                        view.invViewMat = view.invViewMat * xrRenderPoses[i];
-                    }
-
-                    renderer->RenderPass(view, lock, xrRenderTargets[i].get());
-                }
-
-                for (size_t i = 0; i < xrViews.size(); i++) {
-                    if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
-                    RenderPhase xrSubPhase("XrViewSubmit", timer);
-
-                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-                    xrSystem->SubmitView(eye, xrRenderPoses[i], xrRenderTargets[i]->GetTexture());
-                }
-            }
-        #endif
+    void GraphicsManager::PostFrame() {
+        auto maxFPS = CVarMaxFPS.Get();
+        if (maxFPS > 0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / maxFPS));
+        } else {
+            interval = std::chrono::nanoseconds(0);
         }
 
+        if (!context) return;
+    #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         context->SwapBuffers();
-
-        renderer->EndFrame();
-        timer.EndFrame();
-        context->EndFrame();
-        return true;
     #endif
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        Assert(renderer, "missing renderer");
+        renderer->EndFrame();
+    #endif
+        context->EndFrame();
     }
 
     GraphicsContext *GraphicsManager::GetContext() {

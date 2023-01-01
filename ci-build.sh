@@ -88,8 +88,9 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     rm -rf traces
     mkdir -p traces/tests/
 
-    for file in ../assets/scripts/tests/*.txt; do
-        testscript=`realpath --relative-to=../assets/scripts $file`
+    core_dumped=0
+    for testfile in ../assets/scripts/tests/*.txt; do
+        testscript=`realpath --relative-to=../assets/scripts $testfile`
         trace_path=traces/${testscript%.txt}.tracy
         ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" 1>/dev/null &
 
@@ -113,10 +114,16 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
         [ -n "$BUILDKITE_BRANCH" ] && [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
         if [ -n "$BUILDKITE_BRANCH" ] && [[ -f ./core ]]; then
             echo -e "\033[31mUploading core dump\033[0m"
-            buildkite-agent artifact upload ./core
-            buildkite-agent artifact upload ./sp-test
+            core_dumped=1
+            testname="${testfile##*/}"
+            testname="${testname%.*}"
+            mv ./core "./core-$testname"
+            buildkite-agent artifact upload "./core-$testname"
         fi
     done
+    if [ $core_dumped -ne 0 ]; then
+        buildkite-agent artifact upload ./sp-test
+    fi
 fi
 
 if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then

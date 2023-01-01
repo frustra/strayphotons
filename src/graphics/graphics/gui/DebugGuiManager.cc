@@ -1,7 +1,7 @@
 #include "DebugGuiManager.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "graphics/gui/ConsoleGui.hh"
+#include "graphics/gui/definitions/ConsoleGui.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>

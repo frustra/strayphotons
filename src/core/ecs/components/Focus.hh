@@ -15,13 +15,16 @@ namespace ecs {
 
     class FocusLock {
     public:
-        FocusLock(FocusLayer layer = FocusLayer::Game);
+        FocusLock() : FocusLock(FocusLayer::Game) {}
+        explicit FocusLock(FocusLayer layer);
 
         bool AcquireFocus(FocusLayer layer);
         void ReleaseFocus(FocusLayer layer);
         bool HasPrimaryFocus(FocusLayer layer) const;
         bool HasFocus(FocusLayer layer) const;
         FocusLayer PrimaryFocus() const;
+
+        std::string String() const;
 
     private:
         std::bitset<static_cast<size_t>(FocusLayer::Always) - 1> layers;

@@ -15,7 +15,10 @@ namespace sp {
     class CVarBase {
     public:
         CVarBase(const string &name, const string &description);
-        virtual ~CVarBase();
+        virtual ~CVarBase() {}
+
+        void Register();
+        void UnRegister();
 
         const string &GetName() const {
             return name;
@@ -79,7 +82,13 @@ namespace sp {
     class CVar : public CVarBase {
     public:
         CVar(const string &name, const VarType &initial, const string &description)
-            : CVarBase(name, description), value(initial) {}
+            : CVarBase(name, description), value(initial) {
+            this->Register();
+        }
+
+        virtual ~CVar() {
+            this->UnRegister();
+        }
 
         inline const VarType &Get() const {
             return value;

@@ -15,11 +15,15 @@ namespace sp {
         typedef std::function<void(ParamTypes...)> Callback;
 
         CFunc(const string &name, const string &description, Callback callback)
-            : CVarBase(name, description), callback(callback) {}
+            : CVarBase(name, description), callback(callback) {
+            this->Register();
+        }
 
         CFunc(const string &name, Callback callback) : CFunc(name, "", callback) {}
 
-        virtual ~CFunc(){};
+        virtual ~CFunc() {
+            this->UnRegister();
+        };
 
         string StringValue() {
             return "CFunc:" + GetName();
@@ -92,11 +96,15 @@ namespace sp {
         typedef std::function<void(string)> Callback;
 
         CFunc(const string &name, const string &description, Callback callback)
-            : CVarBase(name, description), callback(callback) {}
+            : CVarBase(name, description), callback(callback) {
+            this->Register();
+        }
 
         CFunc(const string &name, Callback callback) : CFunc(name, "", callback) {}
 
-        virtual ~CFunc(){};
+        virtual ~CFunc() {
+            this->UnRegister();
+        };
 
         string StringValue() {
             return "CFunc:" + GetName();
@@ -120,11 +128,15 @@ namespace sp {
         typedef std::function<void()> Callback;
 
         CFunc(const string &name, const string &description, Callback callback)
-            : CVarBase(name, description), callback(callback) {}
+            : CVarBase(name, description), callback(callback) {
+            this->Register();
+        }
 
         CFunc(const string &name, Callback callback) : CFunc(name, "", callback) {}
 
-        virtual ~CFunc(){};
+        virtual ~CFunc() {
+            this->UnRegister();
+        };
 
         string StringValue() {
             return "CFunc:" + GetName();

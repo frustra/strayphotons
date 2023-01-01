@@ -43,11 +43,13 @@ namespace sp {
     } // namespace logging
 
     CVarBase::CVarBase(const string &name, const string &description)
-        : name(name), nameLower(to_lower_copy(name)), description(description) {
+        : name(name), nameLower(to_lower_copy(name)), description(description) {}
+
+    void CVarBase::Register() {
         GetConsoleManager().AddCVar(this);
     }
 
-    CVarBase::~CVarBase() {
+    void CVarBase::UnRegister() {
         GetConsoleManager().RemoveCVar(this);
     }
 
@@ -65,12 +67,13 @@ namespace sp {
     }
 
     void ConsoleManager::AddCVar(CVarBase *cvar) {
-        std::lock_guard lock(cvarLock);
+        std::lock_guard lock(cvarReadLock);
         cvars[cvar->GetNameLower()] = cvar;
     }
 
     void ConsoleManager::RemoveCVar(CVarBase *cvar) {
-        std::lock_guard lock(cvarLock);
+        std::lock_guard execLock(cvarExecLock);
+        std::lock_guard readLock(cvarReadLock);
         cvars.erase(cvar->GetNameLower());
     }
 
@@ -193,10 +196,16 @@ namespace sp {
 
     void ConsoleManager::Execute(const string cmd, const string &args) {
         Debugf("Executing console command: %s %s", cmd, args);
-        std::shared_lock lock(cvarLock);
-        auto cvarit = cvars.find(to_lower_copy(cmd));
-        if (cvarit != cvars.end()) {
-            auto cvar = cvarit->second;
+        std::lock_guard execLock(cvarExecLock);
+        CVarBase *cvar = nullptr;
+        {
+            std::shared_lock readLock(cvarReadLock);
+            auto cvarit = cvars.find(to_lower_copy(cmd));
+            if (cvarit != cvars.end()) {
+                cvar = cvarit->second;
+            }
+        }
+        if (cvar) {
             cvar->SetFromString(args);
 
             if (cvar->IsValueType()) {
@@ -235,7 +244,7 @@ namespace sp {
     }
 
     ConsoleManager::Completions ConsoleManager::AllCompletions(const string &rawInput, bool requestNewCompletions) {
-        std::shared_lock lock(cvarLock);
+        std::shared_lock lock(cvarReadLock);
 
         Completions result;
         result.pending = false;
