@@ -149,8 +149,8 @@ namespace sp::vulkan {
                 if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
             }
         }
-        AddWindowOutput();
         screenshots.AddPass(graph);
+        AddWindowOutput();
 
         Assert(lock.UseCount() == 1, "something held onto the renderer lock");
     }

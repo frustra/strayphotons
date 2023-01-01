@@ -497,6 +497,20 @@ namespace sp::vulkan {
 
         perfTimer.reset(new PerfTimer(*this));
 
+        int modeCount;
+        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
+        if (modes && modeCount > 0) {
+            monitorModes.resize(modeCount);
+            for (int i = 0; i < modeCount; i++) {
+                monitorModes[i] = {modes[i].width, modes[i].height};
+            }
+            std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
+                return a.x > b.x || (a.x == b.x && a.y > b.y);
+            });
+        } else {
+            Warnf("Failed to read Glfw monitor modes");
+        }
+
         if (enableSwapchain) CreateSwapchain();
     }
 
@@ -564,12 +578,13 @@ namespace sp::vulkan {
         swapchain.swap(newSwapchain);
 
         auto swapchainImages = device->getSwapchainImagesKHR(*swapchain);
-        swapchainExtent = swapchainInfo.imageExtent;
         swapchainImageContexts.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
             ImageViewCreateInfo imageViewInfo;
-            imageViewInfo.image = make_shared<Image>(swapchainImages[i], swapchainInfo.imageFormat, swapchainExtent);
+            imageViewInfo.image = make_shared<Image>(swapchainImages[i],
+                swapchainInfo.imageFormat,
+                swapchainInfo.imageExtent);
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
@@ -593,61 +608,50 @@ namespace sp::vulkan {
     void DeviceContext::PrepareWindowView(ecs::View &view) {
         Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
         if (window) {
-            glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
+            bool fullscreen = CVarWindowFullscreen.Get();
+            if (glfwFullscreen != fullscreen) {
+                if (fullscreen) {
+                    glfwGetWindowPos(window, &storedWindowRect.x, &storedWindowRect.y);
+                    storedWindowRect.z = glfwWindowSize.x;
+                    storedWindowRect.w = glfwWindowSize.y;
 
-            if (glfwFullscreen != CVarWindowFullscreen.Get()) {
-                if (CVarWindowFullscreen.Get() == 0) {
-                    glfwSetWindowMonitor(window, nullptr, storedWindowPos.x, storedWindowPos.y, scaled.x, scaled.y, 0);
-                    glfwFullscreen = 0;
-                } else if (CVarWindowFullscreen.Get() == 1) {
-                    glfwGetWindowPos(window, &storedWindowPos.x, &storedWindowPos.y);
-                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
-                    glfwFullscreen = 1;
-                }
-            } else if (glfwWindowSize != scaled) {
-                if (CVarWindowFullscreen.Get()) {
-                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
+                    auto *monitor = glfwGetPrimaryMonitor();
+                    if (monitor) {
+                        auto *mode = glfwGetVideoMode(monitor);
+                        glfwWindowSize = {mode->width, mode->height};
+                    }
+                    glfwSetWindowMonitor(window, monitor, 0, 0, glfwWindowSize.x, glfwWindowSize.y, 60);
                 } else {
-                    glfwSetWindowSize(window, scaled.x, scaled.y);
+                    glfwWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                    glfwSetWindowMonitor(window,
+                        nullptr,
+                        storedWindowRect.x,
+                        storedWindowRect.y,
+                        storedWindowRect.z,
+                        storedWindowRect.w,
+                        0);
                 }
-
-                glfwWindowSize = scaled;
+                CVarWindowSize.Set(glfwWindowSize);
+                glfwFullscreen = fullscreen;
             }
 
-            view.extents = {swapchainExtent.width, swapchainExtent.height};
+            glm::ivec2 windowSize = CVarWindowSize.Get();
+            if (glfwWindowSize != windowSize) {
+                if (CVarWindowFullscreen.Get()) {
+                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
+                } else {
+                    glfwSetWindowSize(window, windowSize.x, windowSize.y);
+                }
+
+                glfwWindowSize = windowSize;
+            }
+
+            glfwGetFramebufferSize(window, &view.extents.x, &view.extents.y);
         } else {
             view.extents = CVarWindowSize.Get();
         }
         view.fov = glm::radians(CVarFieldOfView.Get());
         view.UpdateProjectionMatrix();
-    }
-
-    const vector<glm::ivec2> &DeviceContext::MonitorModes() {
-        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::MonitorModes must be called from main thread");
-        if (!monitorModes.empty()) return monitorModes;
-
-        int count;
-        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &count);
-
-        for (int i = 0; i < count; i++) {
-            glm::ivec2 size(modes[i].width, modes[i].height);
-            if (!contains(monitorModes, size)) monitorModes.push_back(size);
-        }
-
-        std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-            return a.x > b.x || (a.x == b.x && a.y > b.y);
-        });
-
-        return monitorModes;
-    }
-
-    const glm::ivec2 DeviceContext::CurrentMode() {
-        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::CurrentMode must be called from main thread");
-        const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        if (mode != NULL) {
-            return glm::ivec2(mode->width, mode->height);
-        }
-        return glm::ivec2(0);
     }
 
     void DeviceContext::UpdateInputModeFromFocus() {

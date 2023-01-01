@@ -75,12 +75,6 @@ namespace sp::vulkan {
         }
         void UpdateInputModeFromFocus() override;
 
-        // These functions are acceptable in the base GraphicsContext class,
-        // but really shouldn't needed. They should be replaced with a generic "Settings" API
-        // that allows modules to populate a Settings / Options menu entry
-        const std::vector<glm::ivec2> &MonitorModes() override;
-        const glm::ivec2 CurrentMode() override;
-
         void PrepareWindowView(ecs::View &view) override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
@@ -284,7 +278,6 @@ namespace sp::vulkan {
         vk::Extent3D imageTransferGranularity;
 
         vk::UniqueSwapchainKHR swapchain;
-        vk::Extent2D swapchainExtent;
 
         struct SwapchainImageContext {
             vk::Fence inFlightFence; // points at a fence owned by FrameContext
@@ -362,10 +355,9 @@ namespace sp::vulkan {
         using SamplerKey = HashKey<VkSamplerCreateInfo>;
         robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
 
+        bool glfwFullscreen = false;
         glm::ivec2 glfwWindowSize;
-        glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen
-        int glfwFullscreen = 0;
-        std::vector<glm::ivec2> monitorModes;
+        glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;

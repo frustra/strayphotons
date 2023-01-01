@@ -254,55 +254,27 @@ namespace sp {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0);
 
             {
-                static std::vector<glm::ivec2> modes;
+                auto modes = graphics.GetContext()->MonitorModes();
                 auto size = CVarWindowSize.Get();
-                static auto prevSize = size;
+                // If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if
+                // not found.
                 int resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
-                // Check for valid resIndex.  Note: An invalid index may occur if the default window size is not a
-                // supported graphics mode for the monitor.
                 if (resIndex < 0 || resIndex >= (int)modes.size()) {
-                    // If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if
-                    // not found.
-                    modes = graphics.GetContext()->MonitorModes();
-                    resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
-                    if (resIndex < 0 || resIndex >= (int)modes.size()) {
-                        resIndex = modes.size();
-                        modes.push_back(size);
-                    }
+                    resIndex = modes.size();
+                    modes.push_back(size);
                 }
 
-                {
-                    static vector<string> resLabels = MakeResolutionLabels(modes);
+                vector<string> resLabels = MakeResolutionLabels(modes);
 
-                    ImGui::PushItemWidth(250.0f);
-                    ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
-                    ImGui::PopItemWidth();
+                ImGui::PushItemWidth(300.0f);
+                if (ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size())) {
+                    CVarWindowSize.Set(modes[resIndex]);
                 }
+                ImGui::PopItemWidth();
 
                 bool fullscreen = CVarWindowFullscreen.Get();
-                static bool prevFullscreen = fullscreen;
-                ImGui::Checkbox("##fullscreencheck", &fullscreen);
-
-                // If fullscreen is toggeled from the Menu GUI.
-                if (prevFullscreen != fullscreen) {
-                    if (fullscreen) {
-                        // Store windowed mode resolution for returning from fullscreen.
-                        prevSize = size;
-                        // Resize the window to the current screen resolution.
-                        size = graphics.GetContext()->CurrentMode();
-                        if (size != glm::ivec2(0)) {
-                            CVarWindowSize.Set(size);
-                        }
-                        CVarWindowFullscreen.Set(1);
-                    } else {
-                        CVarWindowFullscreen.Set(0);
-                        CVarWindowSize.Set(prevSize);
-                    }
-
-                    prevFullscreen = fullscreen;
-                } else if (size != modes[resIndex]) {
-                    size = modes[resIndex];
-                    CVarWindowSize.Set(size);
+                if (ImGui::Checkbox("##fullscreencheck", &fullscreen)) {
+                    CVarWindowFullscreen.Set(fullscreen);
                 }
             }
 

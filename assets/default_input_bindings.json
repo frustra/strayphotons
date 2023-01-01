@@ -4,7 +4,7 @@
             "/mouse/scroll": [
                 {
                     "target": "gui:menu/action/menu/scroll",
-                    "if_focused": "Game"
+                    "if_focused": "Menu"
                 },
                 {
                     "target": "gui:debug/action/menu/scroll",
