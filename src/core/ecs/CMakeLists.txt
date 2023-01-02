@@ -4,6 +4,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Ecs.cc
     EntityRef.cc
     EntityReferenceManager.cc
+    EventQueue.cc
     SignalExpression.cc
     StructMetadata.cc
 )
