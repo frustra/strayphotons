@@ -127,7 +127,7 @@ namespace sp {
         KEY_CONTEXT_MENU = 348,
     };
 
-    static robin_hood::unordered_flat_map<int, std::string> KeycodeNameLookup = {
+    static const robin_hood::unordered_flat_map<KeyCode, std::string> KeycodeNameLookup = {
         {KEY_SPACE, "space"},
         {KEY_APOSTROPHE, "apostrophe"},
         {KEY_COMMA, "comma"},
@@ -248,8 +248,16 @@ namespace sp {
         {KEY_CONTEXT_MENU, "context_menu"},
     };
 
+    static const robin_hood::unordered_flat_map<std::string, KeyCode> NameKeycodeLookup = [] {
+        robin_hood::unordered_flat_map<std::string, KeyCode> map;
+        for (auto &[keyCode, name] : KeycodeNameLookup) {
+            map[name] = keyCode;
+        }
+        return map;
+    }();
+
     // All inputs in lowercase to allow for case-insensitivity
-    static robin_hood::unordered_flat_map<std::string, std::string> UserBindingAliases = {
+    static const robin_hood::unordered_flat_map<std::string, std::string> UserBindingAliases = {
         {" ", "space"},
         {"'", "apostrophe"},
         {",", "comma"},

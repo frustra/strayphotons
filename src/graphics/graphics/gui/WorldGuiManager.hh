@@ -20,6 +20,7 @@ namespace sp {
         struct PointingState {
             ecs::Entity sourceEntity;
             glm::vec2 mousePos;
+            bool mouseDown = false;
         };
 
         vector<PointingState> pointingStack;

@@ -42,7 +42,7 @@ namespace sp {
                     ImGui::PopStyleColor();
                 }
 
-                if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f && io.MouseWheel == 0.0f) {
+                if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f) {
                     ImGui::SetScrollHereY();
                 }
 

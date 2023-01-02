@@ -17,12 +17,8 @@
 namespace sp {
     static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
-    static CVar<glm::vec2> CVarMenuCursorScaling("g.MenuCursorScaling",
-        glm::vec2(1.026f, 0.578f),
-        "Scaling factor for menu cursor position");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
-        : SystemGuiManager("menu", ecs::FocusLayer::Menu), graphics(graphics) {
+    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : SystemGuiManager("menu"), graphics(graphics) {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
@@ -67,17 +63,6 @@ namespace sp {
 
             auto &focusLock = lock.Get<ecs::FocusLock>();
             focusChanged = MenuOpen() != focusLock.HasFocus(ecs::FocusLayer::Menu);
-
-            if (focusLock.HasPrimaryFocus(ecs::FocusLayer::Menu) && RenderMode() == MenuRenderMode::Gel) {
-                auto windowSize = CVarWindowSize.Get();
-                auto cursorScaling = CVarMenuCursorScaling.Get();
-                io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;
-                io.MousePos.y = io.MousePos.y / (float)windowSize.y * io.DisplaySize.y;
-                io.MousePos.x = io.MousePos.x * cursorScaling.x - io.DisplaySize.x * (cursorScaling.x - 1.0f) * 0.5f;
-                io.MousePos.y = io.MousePos.y * cursorScaling.y - io.DisplaySize.y * (cursorScaling.y - 1.0f) * 0.5f;
-                io.MousePos.x = std::max(std::min(io.MousePos.x, io.DisplaySize.x), 0.0f);
-                io.MousePos.y = std::max(std::min(io.MousePos.y, io.DisplaySize.y), 0.0f);
-            }
         }
 
         io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;

@@ -21,29 +21,7 @@ namespace sp {
 
     GuiContext::GuiContext(const std::string &name) : name(name) {
         imCtx = ImGui::CreateContext();
-
         SetGuiContext();
-        ImGuiIO &io = ImGui::GetIO();
-
-        io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
-        io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT_ARROW;
-        io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT_ARROW;
-        io.KeyMap[ImGuiKey_UpArrow] = KEY_UP_ARROW;
-        io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN_ARROW;
-        io.KeyMap[ImGuiKey_PageUp] = KEY_PAGE_UP;
-        io.KeyMap[ImGuiKey_PageDown] = KEY_PAGE_DOWN;
-        io.KeyMap[ImGuiKey_Home] = KEY_HOME;
-        io.KeyMap[ImGuiKey_End] = KEY_END;
-        io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
-        io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
-        io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
-        io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
-        io.KeyMap[ImGuiKey_A] = KEY_A;
-        io.KeyMap[ImGuiKey_C] = KEY_C;
-        io.KeyMap[ImGuiKey_V] = KEY_V;
-        io.KeyMap[ImGuiKey_X] = KEY_X;
-        io.KeyMap[ImGuiKey_Y] = KEY_Y;
-        io.KeyMap[ImGuiKey_Z] = KEY_Z;
     }
 
     GuiContext::~GuiContext() {

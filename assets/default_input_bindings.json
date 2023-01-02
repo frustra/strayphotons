@@ -23,10 +23,40 @@
                     "multiply_value": 0.01
                 }
             ],
-            "/mouse/click": {
-                "target": "player:flatview/interact/press",
-                "if_focused": "Game"
-            }
+            "/mouse/pos": [
+                {
+                    "target": "gui:menu/action/menu/cursor",
+                    "if_focused": "Menu"
+                },
+                {
+                    "target": "gui:debug/action/menu/cursor",
+                    "if_focused": "Overlay"
+                }
+            ],
+            "/mouse/left_click": [
+                {
+                    "target": "player:flatview/interact/press",
+                    "if_focused": "Game"
+                },
+                {
+                    "target": "gui:menu/action/menu/primary_trigger",
+                    "if_focused": "Menu"
+                },
+                {
+                    "target": "gui:debug/action/menu/primary_trigger",
+                    "if_focused": "Overlay"
+                }
+            ],
+            "/mouse/right_click": [
+                {
+                    "target": "gui:menu/action/menu/secondary_trigger",
+                    "if_focused": "Menu"
+                },
+                {
+                    "target": "gui:debug/action/menu/secondary_trigger",
+                    "if_focused": "Overlay"
+                }
+            ]
         }
     },
     "input:keyboard": {
@@ -52,6 +82,26 @@
                 "target": "gui:debug/action/menu/text_input",
                 "if_focused": "Overlay"
             },
+            "/keyboard/key_down": [
+                {
+                    "target": "gui:menu/action/menu/key_down",
+                    "if_focused": "Menu"
+                },
+                {
+                    "target": "gui:debug/action/menu/key_down",
+                    "if_focused": "Overlay"
+                }
+            ],
+            "/keyboard/key_up": [
+                {
+                    "target": "gui:menu/action/menu/key_up",
+                    "if_focused": "Menu"
+                },
+                {
+                    "target": "gui:debug/action/menu/key_up",
+                    "if_focused": "Overlay"
+                }
+            ],
             "/keyboard/key/escape": [
                 {
                     "target": "gui:menu/action/menu/open",
@@ -106,22 +156,6 @@
                 "if_focused": "Game",
                 "set_value": "togglesignal menu:articulating_arm_1.arm.Knob 0.5 1"
             }
-        }
-    },
-    "gui:menu": {
-        "signal_bindings": {
-            "menu_primary_trigger": "if_focused(Menu, input:mouse/mouse_button_left)",
-            "menu_secondary_trigger": "if_focused(Menu, input:mouse/mouse_button_right)",
-            "menu_cursor_x": "if_focused(Menu, input:mouse/mouse_cursor_x)",
-            "menu_cursor_y": "if_focused(Menu, input:mouse/mouse_cursor_y)"
-        }
-    },
-    "gui:debug": {
-        "signal_bindings": {
-            "menu_primary_trigger": "if_focused(Overlay, input:mouse/mouse_button_left)",
-            "menu_secondary_trigger": "if_focused(Overlay, input:mouse/mouse_button_right)",
-            "menu_cursor_x": "if_focused(Overlay, input:mouse/mouse_cursor_x)",
-            "menu_cursor_y": "if_focused(Overlay, input:mouse/mouse_cursor_y)"
         }
     },
     "vr:origin": {

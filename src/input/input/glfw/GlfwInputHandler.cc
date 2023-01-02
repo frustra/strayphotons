@@ -83,18 +83,25 @@ namespace sp {
 
         auto keyCode = GlfwKeyMapping.find(key);
         Assertf(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping %d", key);
+        auto keyName = KeycodeNameLookup.at(keyCode->second);
 
         auto keyboard = ctx->keyboardEntity.Get(lock);
-        std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
+        std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
         if (action == GLFW_PRESS) {
             ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard, true});
+            ecs::EventBindings::SendEvent(lock,
+                ctx->keyboardEntity,
+                ecs::Event{INPUT_EVENT_KEYBOARD_KEY_DOWN, keyboard, keyName});
         } else if (action == GLFW_RELEASE) {
             // TODO: Set up event filters so we can support key-up events
             // ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard, false});
+            ecs::EventBindings::SendEvent(lock,
+                ctx->keyboardEntity,
+                ecs::Event{INPUT_EVENT_KEYBOARD_KEY_UP, keyboard, keyName});
         }
 
         if (keyboard.Has<ecs::SignalOutput>(lock)) {
-            std::string signalName = INPUT_SIGNAL_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
+            std::string signalName = INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName;
             auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
             switch (action) {
             case GLFW_PRESS:
@@ -127,6 +134,7 @@ namespace sp {
 
         auto mouse = ctx->mouseEntity.Get(lock);
         glm::vec2 mousePos(xPos, yPos);
+        ecs::EventBindings::SendEvent(lock, ctx->mouseEntity, ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, mousePos});
         ecs::EventBindings::SendEvent(lock,
             ctx->mouseEntity,
             ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
@@ -146,9 +154,19 @@ namespace sp {
 
         auto mouse = ctx->mouseEntity.Get(lock);
 
-        ecs::EventBindings::SendEvent(lock,
-            ctx->mouseEntity,
-            ecs::Event{INPUT_EVENT_MOUSE_CLICK, mouse, action == GLFW_PRESS});
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+            ecs::EventBindings::SendEvent(lock,
+                ctx->mouseEntity,
+                ecs::Event{INPUT_EVENT_MOUSE_LEFT_CLICK, mouse, action == GLFW_PRESS});
+        } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+            ecs::EventBindings::SendEvent(lock,
+                ctx->mouseEntity,
+                ecs::Event{INPUT_EVENT_MOUSE_MIDDLE_CLICK, mouse, action == GLFW_PRESS});
+        } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+            ecs::EventBindings::SendEvent(lock,
+                ctx->mouseEntity,
+                ecs::Event{INPUT_EVENT_MOUSE_RIGHT_CLICK, mouse, action == GLFW_PRESS});
+        }
 
         if (mouse.Has<ecs::SignalOutput>(lock)) {
             std::string signalName;
