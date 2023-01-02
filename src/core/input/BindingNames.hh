@@ -6,10 +6,15 @@
 namespace sp {
     // Global Mouse + Keyboard
     static const std::string INPUT_EVENT_KEYBOARD_KEY_BASE = "/keyboard/key/"; // bool
+    static const std::string INPUT_EVENT_KEYBOARD_KEY_DOWN = "/keyboard/key_down"; // string
+    static const std::string INPUT_EVENT_KEYBOARD_KEY_UP = "/keyboard/key_up"; // string
     static const std::string INPUT_EVENT_KEYBOARD_CHARACTERS = "/keyboard/characters"; // char
-    static const std::string INPUT_EVENT_MOUSE_CLICK = "/mouse/click"; // glm::vec2
+    static const std::string INPUT_EVENT_MOUSE_LEFT_CLICK = "/mouse/left_click"; // bool
+    static const std::string INPUT_EVENT_MOUSE_MIDDLE_CLICK = "/mouse/middle_click"; // bool
+    static const std::string INPUT_EVENT_MOUSE_RIGHT_CLICK = "/mouse/right_click"; // bool
     static const std::string INPUT_EVENT_MOUSE_SCROLL = "/mouse/scroll"; // glm::vec2
     static const std::string INPUT_EVENT_MOUSE_MOVE = "/mouse/move"; // glm::vec2
+    static const std::string INPUT_EVENT_MOUSE_POSITION = "/mouse/pos"; // glm::vec2
 
     static const std::string INPUT_SIGNAL_KEYBOARD_KEY_BASE = "key_";
     static const std::string INPUT_SIGNAL_MOUSE_BUTTON_LEFT = "mouse_button_left";
@@ -24,12 +29,12 @@ namespace sp {
     static const std::string INPUT_EVENT_MENU_BACK = "/action/menu/back"; // bool
     static const std::string INPUT_EVENT_MENU_ENTER = "/action/menu/enter"; // bool
     static const std::string INPUT_EVENT_MENU_SCROLL = "/action/menu/scroll"; // glm::vec2
+    static const std::string INPUT_EVENT_MENU_CURSOR = "/action/menu/cursor"; // glm::vec2
+    static const std::string INPUT_EVENT_MENU_PRIMARY_TRIGGER = "/action/menu/primary_trigger"; // bool
+    static const std::string INPUT_EVENT_MENU_SECONDARY_TRIGGER = "/action/menu/secondary_trigger"; // bool
     static const std::string INPUT_EVENT_MENU_TEXT_INPUT = "/action/menu/text_input"; // char
-
-    static const std::string INPUT_SIGNAL_MENU_PRIMARY_TRIGGER = "menu_primary_trigger";
-    static const std::string INPUT_SIGNAL_MENU_SECONDARY_TRIGGER = "menu_secondary_trigger";
-    static const std::string INPUT_SIGNAL_MENU_CURSOR_X = "menu_cursor_x";
-    static const std::string INPUT_SIGNAL_MENU_CURSOR_Y = "menu_cursor_y";
+    static const std::string INPUT_EVENT_MENU_KEY_DOWN = "/action/menu/key_down"; // string
+    static const std::string INPUT_EVENT_MENU_KEY_UP = "/action/menu/key_up"; // string
 
     // CharacterController
     static const std::string INPUT_SIGNAL_MOVE_RELATIVE_X = "move_relative_x";

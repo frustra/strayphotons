@@ -7,7 +7,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug", ecs::FocusLayer::Overlay) {
+    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug") {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);

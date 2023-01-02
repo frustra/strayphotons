@@ -6,14 +6,13 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "graphics/gui/ImGuiKeyCodes.hh"
 #include "input/BindingNames.hh"
-#include "input/KeyCodes.hh"
 
 #include <imgui/imgui.h>
 
 namespace sp {
-    SystemGuiManager::SystemGuiManager(const std::string &name, ecs::FocusLayer layer)
-        : GuiContext(name), focusLayer(layer) {
+    SystemGuiManager::SystemGuiManager(const std::string &name) : GuiContext(name) {
         guiEntity = ecs::Name("gui", name);
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
@@ -31,7 +30,12 @@ namespace sp {
                 guiEntity.Name().String());
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_CURSOR);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_SECONDARY_TRIGGER);
             eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_DOWN);
+            eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_UP);
         }
     }
 
@@ -41,58 +45,61 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
         {
-            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput>>();
 
-            bool hasFocus = true;
-            if (lock.Has<ecs::FocusLock>()) {
-                auto &focusLock = lock.Get<ecs::FocusLock>();
-                hasFocus = focusLock.HasPrimaryFocus(focusLayer);
-            }
-
-            auto keyboard = keyboardEntity.Get(lock);
-            if (keyboard.Has<ecs::SignalOutput>(lock)) {
-                auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
-                for (int keyCode = KEY_SPACE; keyCode < KEY_BACKTICK; keyCode++) {
-                    auto keyName = KeycodeNameLookup.find(keyCode);
-                    if (keyName != KeycodeNameLookup.end()) {
-                        io.KeysDown[keyCode] = hasFocus &&
-                                               signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+            ecs::Event event;
+            while (ecs::EventInput::Poll(lock, events, event)) {
+                if (event.name == INPUT_EVENT_MENU_SCROLL) {
+                    auto &scroll = std::get<glm::vec2>(event.data);
+                    io.AddMouseWheelEvent(scroll.x, scroll.y);
+                } else if (event.name == INPUT_EVENT_MENU_CURSOR) {
+                    auto &pos = std::get<glm::vec2>(event.data);
+                    io.AddMousePosEvent(pos.x, pos.y);
+                } else if (event.name == INPUT_EVENT_MENU_PRIMARY_TRIGGER) {
+                    auto &down = std::get<bool>(event.data);
+                    io.AddMouseButtonEvent(ImGuiMouseButton_Left, down);
+                } else if (event.name == INPUT_EVENT_MENU_SECONDARY_TRIGGER) {
+                    auto &down = std::get<bool>(event.data);
+                    io.AddMouseButtonEvent(ImGuiMouseButton_Right, down);
+                } else if (event.name == INPUT_EVENT_MENU_TEXT_INPUT) {
+                    io.AddInputCharacter(std::get<char>(event.data));
+                } else if (event.name == INPUT_EVENT_MENU_KEY_DOWN) {
+                    auto &keyName = std::get<std::string>(event.data);
+                    auto keyCode = NameKeycodeLookup.find(keyName);
+                    if (keyCode != NameKeycodeLookup.end()) {
+                        if (keyCode->second == KEY_LEFT_CONTROL || keyCode->second == KEY_RIGHT_CONTROL) {
+                            io.AddKeyEvent(ImGuiMod_Ctrl, true);
+                        } else if (keyCode->second == KEY_LEFT_SHIFT || keyCode->second == KEY_RIGHT_SHIFT) {
+                            io.AddKeyEvent(ImGuiMod_Shift, true);
+                        } else if (keyCode->second == KEY_LEFT_ALT || keyCode->second == KEY_RIGHT_ALT) {
+                            io.AddKeyEvent(ImGuiMod_Alt, true);
+                        } else if (keyCode->second == KEY_LEFT_SUPER || keyCode->second == KEY_RIGHT_SUPER) {
+                            io.AddKeyEvent(ImGuiMod_Super, true);
+                        }
+                        auto imguiKey = ImGuiKeyMapping.find(keyCode->second);
+                        if (imguiKey != ImGuiKeyMapping.end()) {
+                            io.AddKeyEvent(imguiKey->second, true);
+                        }
+                    }
+                } else if (event.name == INPUT_EVENT_MENU_KEY_UP) {
+                    auto &keyName = std::get<std::string>(event.data);
+                    auto keyCode = NameKeycodeLookup.find(keyName);
+                    if (keyCode != NameKeycodeLookup.end()) {
+                        if (keyCode->second == KEY_LEFT_CONTROL || keyCode->second == KEY_RIGHT_CONTROL) {
+                            io.AddKeyEvent(ImGuiMod_Ctrl, false);
+                        } else if (keyCode->second == KEY_LEFT_SHIFT || keyCode->second == KEY_RIGHT_SHIFT) {
+                            io.AddKeyEvent(ImGuiMod_Shift, false);
+                        } else if (keyCode->second == KEY_LEFT_ALT || keyCode->second == KEY_RIGHT_ALT) {
+                            io.AddKeyEvent(ImGuiMod_Alt, false);
+                        } else if (keyCode->second == KEY_LEFT_SUPER || keyCode->second == KEY_RIGHT_SUPER) {
+                            io.AddKeyEvent(ImGuiMod_Super, false);
+                        }
+                        auto imguiKey = ImGuiKeyMapping.find(keyCode->second);
+                        if (imguiKey != ImGuiKeyMapping.end()) {
+                            io.AddKeyEvent(imguiKey->second, false);
+                        }
                     }
                 }
-                for (int keyCode = KEY_ESCAPE; keyCode < KEY_RIGHT_SUPER; keyCode++) {
-                    auto keyName = KeycodeNameLookup.find(keyCode);
-                    if (keyName != KeycodeNameLookup.end()) {
-                        io.KeysDown[keyCode] = hasFocus &&
-                                               signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
-                    }
-                }
-
-                io.KeyCtrl = io.KeysDown[KEY_LEFT_CONTROL] || io.KeysDown[KEY_RIGHT_CONTROL];
-                io.KeyShift = io.KeysDown[KEY_LEFT_SHIFT] || io.KeysDown[KEY_RIGHT_SHIFT];
-                io.KeyAlt = io.KeysDown[KEY_LEFT_ALT] || io.KeysDown[KEY_RIGHT_ALT];
-                io.KeySuper = io.KeysDown[KEY_LEFT_SUPER] || io.KeysDown[KEY_RIGHT_SUPER];
-            }
-
-            io.MouseWheel = 0.0f;
-            io.MouseWheelH = 0.0f;
-            if (hasFocus) {
-                auto gui = guiEntity.Get(lock);
-                ecs::Event event;
-                while (ecs::EventInput::Poll(lock, events, event)) {
-                    if (event.name == INPUT_EVENT_MENU_SCROLL) {
-                        auto &scroll = std::get<glm::vec2>(event.data);
-                        io.MouseWheel += scroll.y;
-                        io.MouseWheelH += scroll.x;
-                    } else if (event.name == INPUT_EVENT_MENU_TEXT_INPUT) {
-                        io.AddInputCharacter(std::get<char>(event.data));
-                    }
-                }
-
-                io.MouseDown[0] = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER) >= 0.5;
-                io.MouseDown[1] = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_SECONDARY_TRIGGER) >= 0.5;
-
-                io.MousePos.x = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_CURSOR_X);
-                io.MousePos.y = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_CURSOR_Y);
             }
         }
     }
