@@ -24,6 +24,7 @@ namespace sp {
         ecs::EventQueueRef events = ecs::NewEventQueue();
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         ecs::EntityRef targetEntity;
+        ecs::Entity activeEntity;
         std::string entitySearch;
 
         // Temporary context
@@ -470,6 +471,40 @@ namespace sp {
             this->fieldId = "";
         });
 
+        ecs::Entity liveId, rootStagingId;
+        if (ecs::IsLive(activeEntity) && activeEntity.Has<ecs::SceneInfo>(liveLock)) {
+            auto &sceneInfo = activeEntity.Get<ecs::SceneInfo>(liveLock);
+            liveId = sceneInfo.liveId;
+            rootStagingId = sceneInfo.rootStagingId;
+        } else if (ecs::IsStaging(activeEntity) && activeEntity.Has<ecs::SceneInfo>(stagingLock)) {
+            auto &sceneInfo = activeEntity.Get<ecs::SceneInfo>(stagingLock);
+            liveId = sceneInfo.liveId;
+            rootStagingId = sceneInfo.rootStagingId;
+        }
+
+        if (ImGui::BeginTabBar("EditMode2", ImGuiTabBarFlags_None)) {
+            bool isLive = ecs::IsLive(activeEntity);
+            if (ImGui::BeginTabItem("Live", nullptr, isLive ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+                if (ImGui::IsItemEdited()) {
+                    activeEntity = liveId;
+                } else if (isLive) {
+                    ImGui::Text("Live: %s", std::to_string(activeEntity).c_str());
+                }
+                ImGui::EndTabItem();
+            }
+            bool isStaging = ecs::IsStaging(activeEntity);
+            if (ImGui::BeginTabItem("Staging",
+                    nullptr,
+                    isStaging ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+                if (ImGui::IsItemEdited()) {
+                    activeEntity = rootStagingId;
+                } else if (!isStaging) {
+                    ImGui::Text("Staging: %s", std::to_string(activeEntity).c_str());
+                }
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
         auto inspectTarget = targetEntity.Get(liveLock);
         if (inspectTarget.Has<ecs::SceneInfo>(liveLock)) {
             ImGui::Text("Entity: %s", ecs::ToString(liveLock, inspectTarget).c_str());
@@ -479,6 +514,7 @@ namespace sp {
 
             if (ImGui::BeginTabBar("EditMode", ImGuiTabBarFlags_None)) {
                 if (ImGui::BeginTabItem("Live")) {
+                    if (!activeEntity) activeEntity = inspectTarget;
                     ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
                         if (!comp.HasComponent(liveLock, inspectTarget)) return;
                         if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -531,6 +567,7 @@ namespace sp {
                             }
                         }
                         if (ImGui::BeginTabItem(tabName.c_str())) {
+                            if (!activeEntity) activeEntity = stagingId;
                             if (ImGui::Button("Apply Scene")) {
                                 GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
                                 GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
