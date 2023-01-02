@@ -13,8 +13,6 @@ namespace sp {
         GlfwInputHandler(GLFWwindow &window);
         ~GlfwInputHandler();
 
-        void UpdateEntities();
-
         void Frame();
 
         glm::vec2 ImmediateCursor() const;
@@ -31,8 +29,7 @@ namespace sp {
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
 
+        ecs::EventQueue glfwEventQueue;
         glm::vec2 prevMousePos;
-
-        ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock> *frameLock = nullptr;
     };
 } // namespace sp

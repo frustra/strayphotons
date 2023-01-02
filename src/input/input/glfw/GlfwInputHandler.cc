@@ -52,12 +52,82 @@ namespace sp {
 
     void GlfwInputHandler::Frame() {
         ZoneScoped;
-        {
-            auto lock =
-                ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::SignalOutput>, ecs::SendEventsLock>();
-            frameLock = &lock;
-            glfwPollEvents();
-            frameLock = nullptr;
+        glfwPollEvents();
+        if (!glfwEventQueue.Empty()) {
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::SignalOutput>>();
+
+            auto keyboard = keyboardEntity.Get(lock);
+            auto mouse = mouseEntity.Get(lock);
+
+            ecs::Event event;
+            while (glfwEventQueue.Poll(event)) {
+                if (event.source == keyboard) {
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
+                } else if (event.source == mouse) {
+                    ecs::EventBindings::SendEvent(lock, mouseEntity, event);
+                }
+
+                if (event.name == INPUT_EVENT_KEYBOARD_KEY_DOWN) {
+                    auto &keyName = std::get<std::string>(event.data);
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, true});
+
+                    if (keyboard.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
+                        signalOutput.SetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName, 1.0);
+                    }
+                } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
+                    auto &keyName = std::get<std::string>(event.data);
+                    // TODO: Set up event filters so we can support key-up events
+                    // std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
+                    // ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard,
+                    // false});
+
+                    if (keyboard.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
+                        signalOutput.ClearSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
+                    }
+                } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
+                    auto &mousePos = std::get<glm::vec2>(event.data);
+                    ecs::EventBindings::SendEvent(lock,
+                        mouseEntity,
+                        ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - prevMousePos});
+                    prevMousePos = mousePos;
+
+                    if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
+                        signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_X, mousePos.x);
+                        signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_Y, mousePos.y);
+                    }
+                } else if (event.name == INPUT_EVENT_MOUSE_LEFT_CLICK) {
+                    if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
+                        if (std::get<bool>(event.data)) {
+                            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_BUTTON_LEFT, 1.0);
+                        } else {
+                            signalOutput.ClearSignal(INPUT_SIGNAL_MOUSE_BUTTON_LEFT);
+                        }
+                    }
+                } else if (event.name == INPUT_EVENT_MOUSE_MIDDLE_CLICK) {
+                    if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
+                        if (std::get<bool>(event.data)) {
+                            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE, 1.0);
+                        } else {
+                            signalOutput.ClearSignal(INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE);
+                        }
+                    }
+                } else if (event.name == INPUT_EVENT_MOUSE_RIGHT_CLICK) {
+                    if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
+                        if (std::get<bool>(event.data)) {
+                            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_BUTTON_RIGHT, 1.0);
+                        } else {
+                            signalOutput.ClearSignal(INPUT_SIGNAL_MOUSE_BUTTON_RIGHT);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -78,123 +148,57 @@ namespace sp {
         if (key == GLFW_KEY_UNKNOWN) return;
 
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock, "KeyInputCallback occured without an ECS lock");
-        auto &lock = *ctx->frameLock;
+        Assert(ctx, "KeyInputCallback occured without valid context");
 
         auto keyCode = GlfwKeyMapping.find(key);
         Assertf(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping %d", key);
         auto keyName = KeycodeNameLookup.at(keyCode->second);
 
-        auto keyboard = ctx->keyboardEntity.Get(lock);
+        auto keyboard = ctx->keyboardEntity.GetLive();
         std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
         if (action == GLFW_PRESS) {
-            ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard, true});
-            ecs::EventBindings::SendEvent(lock,
-                ctx->keyboardEntity,
-                ecs::Event{INPUT_EVENT_KEYBOARD_KEY_DOWN, keyboard, keyName});
+            ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_KEYBOARD_KEY_DOWN, keyboard, keyName});
         } else if (action == GLFW_RELEASE) {
-            // TODO: Set up event filters so we can support key-up events
-            // ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard, false});
-            ecs::EventBindings::SendEvent(lock,
-                ctx->keyboardEntity,
-                ecs::Event{INPUT_EVENT_KEYBOARD_KEY_UP, keyboard, keyName});
-        }
-
-        if (keyboard.Has<ecs::SignalOutput>(lock)) {
-            std::string signalName = INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName;
-            auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                signalOutput.SetSignal(signalName, 1.0);
-                break;
-            case GLFW_RELEASE:
-                signalOutput.ClearSignal(signalName);
-                break;
-            }
+            ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_KEYBOARD_KEY_UP, keyboard, keyName});
         }
     }
 
     void GlfwInputHandler::CharInputCallback(GLFWwindow *window, unsigned int ch) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock, "CharInputCallback occured without an ECS lock");
-        auto &lock = *ctx->frameLock;
+        Assert(ctx, "CharInputCallback occured without valid context");
 
-        auto keyboard = ctx->keyboardEntity.Get(lock);
+        auto keyboard = ctx->keyboardEntity.GetLive();
         // TODO: Handle unicode somehow?
-        ecs::EventBindings::SendEvent(lock,
-            ctx->keyboardEntity,
-            ecs::Event{INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch});
+        ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch});
     }
 
     void GlfwInputHandler::MouseMoveCallback(GLFWwindow *window, double xPos, double yPos) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock, "MouseMoveCallback occured without an ECS lock");
-        auto &lock = *ctx->frameLock;
+        Assert(ctx, "MouseMoveCallback occured without valid context");
 
-        auto mouse = ctx->mouseEntity.Get(lock);
-        glm::vec2 mousePos(xPos, yPos);
-        ecs::EventBindings::SendEvent(lock, ctx->mouseEntity, ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, mousePos});
-        ecs::EventBindings::SendEvent(lock,
-            ctx->mouseEntity,
-            ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
-        ctx->prevMousePos = mousePos;
-
-        if (mouse.Has<ecs::SignalOutput>(lock)) {
-            auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_X, xPos);
-            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_Y, yPos);
-        }
+        auto mouse = ctx->mouseEntity.GetLive();
+        ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, glm::vec2(xPos, yPos)});
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock, "MouseButtonCallback occured without an ECS lock");
-        auto &lock = *ctx->frameLock;
+        Assert(ctx, "MouseButtonCallback occured without valid context");
 
-        auto mouse = ctx->mouseEntity.Get(lock);
-
+        auto mouse = ctx->mouseEntity.GetLive();
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
-            ecs::EventBindings::SendEvent(lock,
-                ctx->mouseEntity,
-                ecs::Event{INPUT_EVENT_MOUSE_LEFT_CLICK, mouse, action == GLFW_PRESS});
+            ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_LEFT_CLICK, mouse, action == GLFW_PRESS});
         } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-            ecs::EventBindings::SendEvent(lock,
-                ctx->mouseEntity,
-                ecs::Event{INPUT_EVENT_MOUSE_MIDDLE_CLICK, mouse, action == GLFW_PRESS});
+            ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_MIDDLE_CLICK, mouse, action == GLFW_PRESS});
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-            ecs::EventBindings::SendEvent(lock,
-                ctx->mouseEntity,
-                ecs::Event{INPUT_EVENT_MOUSE_RIGHT_CLICK, mouse, action == GLFW_PRESS});
-        }
-
-        if (mouse.Has<ecs::SignalOutput>(lock)) {
-            std::string signalName;
-            if (button == GLFW_MOUSE_BUTTON_LEFT) {
-                signalName = INPUT_SIGNAL_MOUSE_BUTTON_LEFT;
-            } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-                signalName = INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE;
-            } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-                signalName = INPUT_SIGNAL_MOUSE_BUTTON_RIGHT;
-            }
-
-            auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-            if (action == GLFW_PRESS) {
-                signalOutput.SetSignal(signalName, 1.0);
-            } else {
-                signalOutput.ClearSignal(signalName);
-            }
+            ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_RIGHT_CLICK, mouse, action == GLFW_PRESS});
         }
     }
 
     void GlfwInputHandler::MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock, "MouseScrollCallback occured without an ECS lock");
-        auto &lock = *ctx->frameLock;
+        Assert(ctx, "MouseScrollCallback occured without valid context");
 
-        auto mouse = ctx->mouseEntity.Get(lock);
-        ecs::EventBindings::SendEvent(lock,
-            ctx->mouseEntity,
-            ecs::Event{INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset)});
+        auto mouse = ctx->mouseEntity.GetLive();
+        ctx->glfwEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset)});
     }
 } // namespace sp

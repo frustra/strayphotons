@@ -175,8 +175,6 @@ namespace sp {
         renderer->SetXRSystem(nullptr);
         #endif
     #endif
-
-        FrameMark;
     }
 
     void GraphicsManager::PostFrame() {
@@ -188,9 +186,12 @@ namespace sp {
         }
 
         if (!context) return;
+
     #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         context->SwapBuffers();
     #endif
+
+        FrameMark;
     #ifdef SP_GRAPHICS_SUPPORT_VK
         Assert(renderer, "missing renderer");
         renderer->EndFrame();

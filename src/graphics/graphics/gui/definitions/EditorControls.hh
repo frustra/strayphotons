@@ -247,8 +247,10 @@ namespace sp {
         text = "scale" + fieldId;
         glm::vec3 scale = value.GetScale();
         if (ImGui::DragFloat3(text.c_str(), (float *)&scale, 0.01f)) {
-            value.SetScale(scale);
-            changed = true;
+            if (glm::all(glm::notEqual(scale, glm::vec3(0.0f)))) {
+                value.SetScale(scale);
+                changed = true;
+            }
         }
         return changed;
     }
