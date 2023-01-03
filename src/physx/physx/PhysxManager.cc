@@ -144,7 +144,7 @@ namespace sp {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
                 if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
-                if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
+                if (!ent.template Get<ecs::SceneInfo>(lock).FromScene(scene)) continue;
 
                 auto &ph = ent.template Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {

@@ -34,6 +34,7 @@ namespace sp {
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
         RemoveScene, // Arguments: (sceneName)
+        RespawnPlayer, // Arguemnts: ()
         ReloadPlayer, // Arguments: ()
         ReloadBindings, // Arguments: ()
         SyncScene, // Arguments: ()
@@ -46,7 +47,7 @@ namespace sp {
         void Shutdown();
 
         using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
-        using EditSceneCallback = std::function<void(ecs::Lock<ecs::WriteAll>)>;
+        using EditSceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>)>;
         void QueueAction(SceneAction action, std::string sceneName = "", PreApplySceneCallback callback = nullptr);
         void QueueAction(SceneAction action, EditSceneCallback callback);
         void QueueActionAndBlock(SceneAction action,
@@ -60,6 +61,7 @@ namespace sp {
     private:
         void RunSceneActions();
         void UpdateSceneConnections();
+        void RunPrefabs(ecs::Lock<ecs::AddRemove> lock, ecs::Entity ent);
 
         using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
             ecs::Lock<ecs::AddRemove>,
@@ -72,8 +74,8 @@ namespace sp {
         void Frame() override;
 
         void PrintScene(std::string sceneName);
-        void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
-            ecs::Entity player);
+        void RespawnPlayer(
+            ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock);
 
         std::shared_ptr<Scene> LoadSceneJson(const std::string &name, SceneType sceneType);
         void SaveSceneJson(const std::string &name);
@@ -96,8 +98,6 @@ namespace sp {
             QueuedAction(SceneAction action, EditSceneCallback editCallback)
                 : action(action), editCallback(editCallback) {}
         };
-
-        ecs::Entity player;
 
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;

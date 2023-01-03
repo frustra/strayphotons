@@ -64,7 +64,7 @@ namespace ecs {
             return expr == other.expr && scope == other.scope;
         }
 
-        Name scope;
+        EntityScope scope;
         std::string expr;
         std::vector<std::string_view> tokens; // string_views into expr
         std::vector<Node> nodes;
@@ -72,7 +72,7 @@ namespace ecs {
         int rootIndex = 0;
     };
 
-    std::pair<Name, std::string> ParseSignalString(std::string_view str, const Name &scope = Name());
+    std::pair<Name, std::string> ParseSignalString(std::string_view str, const EntityScope &scope = Name());
 
     static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
     template<>

@@ -9,6 +9,8 @@ namespace sp {
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::shared_ptr<Scene> &scene,
         ecs::Name entityName) {
+        Assertf(std::this_thread::get_id() == GetSceneManager().GetThreadId(),
+            "New entities must only be created by the SceneManager thread");
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewSystemEntity must be called with a staging lock");
         Assertf(scene, "Scene::NewSystemEntity called with null scene: %s", entityName.String());
         Assertf(scene->priority == ecs::ScenePriority::System,
@@ -47,6 +49,8 @@ namespace sp {
     ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
         std::string relativeName) {
+        Assertf(std::this_thread::get_id() == GetSceneManager().GetThreadId(),
+            "New entities must only be created by the SceneManager thread");
         if (!scene) {
             Errorf("Invalid root entity scene: %s", relativeName);
             return ecs::Entity();
@@ -87,7 +91,9 @@ namespace sp {
         ecs::Entity prefabRoot,
         size_t prefabScriptId,
         std::string relativeName,
-        ecs::Name scope) {
+        ecs::EntityScope scope) {
+        Assertf(std::this_thread::get_id() == GetSceneManager().GetThreadId(),
+            "New entities must only be created by the SceneManager thread");
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
         Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
             "Prefab root %s does not have SceneInfo",
@@ -141,6 +147,8 @@ namespace sp {
     }
 
     void Scene::RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent) {
+        Assertf(std::this_thread::get_id() == GetSceneManager().GetThreadId(),
+            "Entities must only be removed by the SceneManager thread");
         Assertf(ecs::IsStaging(stagingLock), "Scene::RemovePrefabEntity must be called with a staging lock");
         Assertf(ecs::IsStaging(ent), "Scene::RemovePrefabEntity must be called with a staging entity");
         if (!ent.Has<ecs::SceneInfo>(stagingLock)) return;
@@ -170,6 +178,8 @@ namespace sp {
         bool resetLive) {
         ZoneScoped;
         ZoneStr(name);
+        Assertf(std::this_thread::get_id() == GetSceneManager().GetThreadId(),
+            "Scenes must only be applied by the SceneManager thread");
         Tracef("Applying scene: %s", name);
         for (auto e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;
@@ -242,6 +252,12 @@ namespace sp {
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
         ZoneScoped;
         ZoneStr(name);
+        auto &sceneManager = GetSceneManager();
+        if (sceneManager.state != sp::RegisteredThread::ThreadState::Stopped) {
+            // RemoveScene is allowed in the main thread during shutdown
+            Assertf(std::this_thread::get_id() == sceneManager.GetThreadId(),
+                "Scenes must only be removed by the SceneManager thread");
+        }
         Tracef("Removing scene: %s", name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
@@ -278,8 +294,7 @@ namespace sp {
         for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
             if (!e.Has<ecs::SceneConnection, ecs::SceneInfo, ecs::Name>(stagingLock)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
-            auto scenePtr = sceneInfo.scene.lock();
-            if (scenePtr.get() != this) continue;
+            if (sceneInfo.scene.lock().get() != this) continue;
 
             auto &name = e.Get<ecs::Name>(stagingLock);
             liveConnection = ecs::EntityRef(name).Get(liveLock);
@@ -308,8 +323,7 @@ namespace sp {
                 auto propertiesPtr = make_shared<ecs::SceneProperties>(properties);
                 for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
                     auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
-                    auto scenePtr = sceneInfo.scene.lock();
-                    if (scenePtr.get() != this) continue;
+                    if (sceneInfo.scene.lock().get() != this) continue;
 
                     sceneInfo.properties = propertiesPtr;
                 }

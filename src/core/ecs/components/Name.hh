@@ -10,14 +10,17 @@ namespace sp {
 }
 
 namespace ecs {
+    struct Name;
+    using EntityScope = typename Name;
+
     struct Name {
         std::string scene, entity;
 
         Name() {}
         Name(std::string_view scene, std::string_view entity);
-        Name(std::string_view relativeName, const Name &scope);
+        Name(std::string_view relativeName, const EntityScope &scope);
 
-        bool Parse(std::string_view relativeName, const Name &scope);
+        bool Parse(std::string_view relativeName, const EntityScope &scope);
 
         std::string String() const {
             if (scene.empty()) return entity;

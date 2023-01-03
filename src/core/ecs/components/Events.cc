@@ -28,7 +28,7 @@ namespace ecs {
         EventBinding &binding,
         const picojson::value &src) {
         if (src.is<std::string>()) {
-            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope.prefix);
+            auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope);
             if (targetName) {
                 binding.target = targetName;
                 binding.destQueue = eventName;
@@ -40,7 +40,7 @@ namespace ecs {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "target") {
                     if (param.second.is<std::string>()) {
-                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope.prefix);
+                        auto [targetName, eventName] = ParseEventString(param.second.get<std::string>(), scope);
                         if (targetName) {
                             binding.target = targetName;
                             binding.destQueue = eventName;
@@ -103,7 +103,7 @@ namespace ecs {
         }
     }
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope) {
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope) {
         size_t delimiter = str.find('/');
         ecs::Name entityName(str.substr(0, delimiter), scope);
         if (entityName && delimiter != std::string::npos) {

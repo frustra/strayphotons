@@ -21,7 +21,6 @@ namespace sp {
 
 namespace ecs {
     enum class FieldAction;
-    struct EntityScope;
     struct AnimationState;
     struct EventBinding;
     enum class FocusLayer;

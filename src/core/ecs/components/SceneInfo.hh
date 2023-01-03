@@ -52,6 +52,12 @@ namespace ecs {
         // Returns the remaining rootStagingId, or a null entity if the removed entity was the only one in the list
         Entity Remove(Lock<Write<SceneInfo>> staging, const Entity &stagingId) const;
 
+        // Checks if this SceneInfo points to the provided scene
+        // Uses a thread-safe implementation without weak_ptr::lock()
+        bool FromScene(const std::shared_ptr<sp::Scene> &scene) const {
+            return !this->scene.owner_before(scene) && !scene.owner_before(this->scene);
+        }
+
         Entity liveId;
         // Staging IDs are stored in a singly-linked list, with highest priority first.
         Entity rootStagingId, nextStagingId;

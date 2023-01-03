@@ -13,7 +13,10 @@ namespace ecs {
         bool render = true;
         std::string physicsParam;
 
-        void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
+        void Prefab(const ScriptState &state,
+            const std::shared_ptr<sp::Scene> &scene,
+            Lock<AddRemove> lock,
+            Entity ent) {
             auto asyncGltf = sp::Assets().LoadGltf(modelName);
             auto model = asyncGltf->Get();
             if (!model) {
@@ -21,8 +24,6 @@ namespace ecs {
                 return;
             }
 
-            auto scene = state.scope.scene.lock();
-            Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
             Assertf(ent.Has<Name>(lock), "Gltf prefab root has no name: %s", ToString(lock, ent));
             auto prefixName = ent.Get<Name>(lock);
 

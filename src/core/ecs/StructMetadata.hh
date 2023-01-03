@@ -5,6 +5,7 @@
 #include "core/EnumTypes.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/components/Name.hh"
 
 #include <type_traits>
 #include <typeindex>
@@ -19,7 +20,6 @@ namespace sp {
 
 namespace ecs {
     enum class FieldAction;
-    struct EntityScope;
 }; // namespace ecs
 
 template<>

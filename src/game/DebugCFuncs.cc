@@ -122,9 +122,8 @@ namespace sp {
         ecs::EntityScope scope;
         if (entity.Has<ecs::SceneInfo>(lock)) {
             auto &sceneInfo = entity.Get<ecs::SceneInfo>(lock);
-            scope.scene = sceneInfo.scene;
             auto scene = sceneInfo.scene.lock();
-            if (scene) scope.prefix.scene = scene->name;
+            if (scene) scope.scene = scene->name;
         }
 
         picojson::object components;

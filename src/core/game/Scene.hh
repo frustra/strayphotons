@@ -48,7 +48,7 @@ namespace sp {
             ecs::Entity prefabRoot,
             size_t prefabScriptId,
             std::string relativeName = "",
-            ecs::Name prefix = ecs::Name());
+            ecs::EntityScope scope = ecs::Name());
         void RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,

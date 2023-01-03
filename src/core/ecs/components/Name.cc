@@ -11,11 +11,11 @@ namespace ecs {
         Assertf(entity.find('-') != 0, "Entity name must not start with '-': '%s'", entity);
     }
 
-    Name::Name(std::string_view relativeName, const Name &scope) {
+    Name::Name(std::string_view relativeName, const EntityScope &scope) {
         Parse(relativeName, scope);
     }
 
-    bool Name::Parse(std::string_view relativeName, const Name &scope) {
+    bool Name::Parse(std::string_view relativeName, const EntityScope &scope) {
         size_t i = relativeName.find(':');
         if (i != std::string::npos) {
             scene = relativeName.substr(0, i);

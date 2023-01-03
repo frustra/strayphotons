@@ -136,14 +136,14 @@ namespace sp::json {
     inline bool Load(const ecs::EntityScope &s, ecs::Name &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         auto name = src.get<std::string>();
-        dst = ecs::Name(name, s.prefix);
+        dst = ecs::Name(name, s);
         return name.empty() == !dst;
     }
     template<>
     inline bool Load(const ecs::EntityScope &s, ecs::EntityRef &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         auto name = src.get<std::string>();
-        dst = ecs::Name(name, s.prefix);
+        dst = ecs::Name(name, s);
         return name.empty() == !dst;
     }
     template<typename T>
@@ -272,7 +272,7 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::Name &src) {
         auto strName = src.String();
-        auto prefix = s.prefix.String();
+        auto prefix = s.String();
         size_t prefixLen = 0;
         for (; prefixLen < strName.length() && prefixLen < prefix.length(); prefixLen++) {
             if (strName[prefixLen] != prefix[prefixLen]) break;

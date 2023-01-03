@@ -31,11 +31,13 @@ namespace ecs {
         bool Parse(Lock<AddRemove> lock) {
             if (sourceName.empty()) return false;
 
-            rootScope.scene = scene;
-            rootScope.prefix = {scene->name, ""};
-            if (rootEnt.Has<Name>(lock)) rootScope.prefix = rootEnt.Get<Name>(lock);
+            if (rootEnt.Has<Name>(lock)) {
+                rootScope = rootEnt.Get<Name>(lock);
+            } else {
+                rootScope = ecs::Name(scene->name, "");
+            }
 
-            Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.prefix.String());
+            Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.String());
 
             asset = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
             if (!asset) {
@@ -69,8 +71,7 @@ namespace ecs {
         void ApplyComponents(Lock<AddRemove> lock) {
             if (!componentsObj) return;
 
-            ecs::Entity rootOverride =
-                scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", rootScope.prefix);
+            ecs::Entity rootOverride = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", rootScope);
             for (auto &comp : *componentsObj) {
                 if (comp.first.empty() || comp.first[0] == '_') continue;
                 Assertf(comp.first != "name",
@@ -86,7 +87,9 @@ namespace ecs {
                     Errorf("Unknown component, ignoring: %s", comp.first);
                 }
             }
-            if (rootOverride.Has<ecs::Scripts>(lock)) rootOverride.Get<ecs::Scripts>(lock).Prefab(lock, rootOverride);
+            if (rootOverride.Has<ecs::Scripts>(lock)) {
+                ecs::Scripts::RunPrefabs(lock, rootOverride);
+            }
         }
 
         // Add defined entities as sub-entities of the template root
@@ -97,8 +100,7 @@ namespace ecs {
             if (nestedScope.empty()) {
                 scope = rootScope;
             } else {
-                scope.scene = rootScope.scene;
-                scope.prefix = ecs::Name(nestedScope, rootScope.prefix);
+                scope = ecs::Name(nestedScope, rootScope);
             }
 
             std::vector<ecs::Entity> entities;
@@ -111,8 +113,7 @@ namespace ecs {
                     Errorf("Entity name 'scoperoot' in template not allowed, ignoring");
                     continue;
                 }
-                ecs::Entity newEntity =
-                    scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope.prefix);
+                ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope);
 
                 for (auto comp : obj) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
@@ -139,7 +140,9 @@ namespace ecs {
             }
 
             for (auto &e : entities) {
-                if (e.Has<ecs::Scripts>(lock)) e.Get<ecs::Scripts>(lock).Prefab(lock, e);
+                if (e.Has<ecs::Scripts>(lock)) {
+                    ecs::Scripts::RunPrefabs(lock, e);
+                }
             }
         }
     };
@@ -147,10 +150,10 @@ namespace ecs {
     struct TemplatePrefab {
         std::string source;
 
-        void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
-            auto scene = state.scope.scene.lock();
-            Assertf(scene, "TemplatePrefab does not have a valid scene: %s", ToString(lock, ent));
-
+        void Prefab(const ScriptState &state,
+            const std::shared_ptr<sp::Scene> &scene,
+            Lock<AddRemove> lock,
+            Entity ent) {
             TemplateParser parser(scene, ent, state.GetInstanceId(), source);
             if (!parser.Parse(lock)) return;
 
@@ -167,10 +170,10 @@ namespace ecs {
         std::string axes = "xy";
         std::string surfaceTemplate, edgeTemplate, cornerTemplate;
 
-        void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
-            auto scene = state.scope.scene.lock();
-            Assertf(scene, "TilePrefab does not have a valid scene: %s", ToString(lock, ent));
-
+        void Prefab(const ScriptState &state,
+            const std::shared_ptr<sp::Scene> &scene,
+            Lock<AddRemove> lock,
+            Entity ent) {
             if (axes.size() != 2) {
                 Errorf("'%s' axes are invalid, must tile on 2 unique axes: %s", axes, ToString(lock, ent));
                 return;
