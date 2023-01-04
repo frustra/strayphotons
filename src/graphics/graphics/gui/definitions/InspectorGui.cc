@@ -63,12 +63,14 @@ namespace sp {
         }
 
         if (ImGui::BeginTabBar("EditMode")) {
-            if (ImGui::BeginTabItem("Live View")) {
-                if (ImGui::IsItemActivated()) {
-                    context->RefreshEntityTree();
-                }
+            bool liveTabOpen = ImGui::BeginTabItem("Live View");
+            if (!targetEntity && ImGui::IsItemActivated()) {
+                context->RefreshEntityTree();
+            }
+            if (liveTabOpen) {
                 if (targetEntity) {
                     if (ImGui::Button("Show Entity Tree")) {
+                        context->RefreshEntityTree();
                         targetEntity = {};
                     }
 

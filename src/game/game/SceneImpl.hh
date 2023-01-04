@@ -53,7 +53,11 @@ namespace sp::scene {
 
                             // Apply scene root transform
                             if (!transform.parent) {
-                                auto scene = stagingInfo.scene.lock();
+                                auto scene = stagingInfo.scene.ptr.lock();
+                                Assertf(scene,
+                                    "Staging entity %s has null scene: %s",
+                                    ToString(staging, stagingId),
+                                    stagingInfo.scene.name);
                                 auto &rootTransform = scene->GetRootTransform();
                                 if (rootTransform != Transform()) {
                                     transform.pose = rootTransform * transform.pose.Get();
@@ -68,7 +72,11 @@ namespace sp::scene {
                             if (stagingId.Has<TransformTree>(staging)) {
                                 auto &transform = stagingId.Get<TransformTree>(staging);
                                 if (!transform.parent) {
-                                    auto scene = stagingInfo.scene.lock();
+                                    auto scene = stagingInfo.scene.ptr.lock();
+                                    Assertf(scene,
+                                        "Staging entity %s has null scene: %s",
+                                        ToString(staging, stagingId),
+                                        stagingInfo.scene.name);
                                     auto &rootTransform = scene->GetRootTransform();
                                     if (rootTransform != Transform()) {
                                         for (auto &state : animation.states) {

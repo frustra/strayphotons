@@ -7,6 +7,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "game/SceneManager.hh"
+#include "game/SceneRef.hh"
 
 #include <imgui/imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
@@ -18,11 +19,11 @@ namespace sp {
         // Persistent context
         struct TreeNode {
             bool hasParent = false;
-            std::vector<ecs::EntityRef> children;
+            std::vector<ecs::Name> children;
         };
         std::string entitySearch;
-        std::map<ecs::EntityRef, TreeNode> entityTree;
-        std::shared_ptr<Scene> scene;
+        std::map<ecs::Name, TreeNode> entityTree;
+        SceneRef scene;
         ecs::Entity target;
 
         // Temporary context
@@ -34,15 +35,16 @@ namespace sp {
 
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
             for (auto &ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                auto &name = ent.Get<ecs::Name>(lock);
                 auto &tree = ent.Get<ecs::TransformTree>(lock);
-                entityTree[ent].hasParent = (bool)tree.parent;
+                entityTree[name].hasParent = (bool)tree.parent;
                 if (tree.parent) {
-                    entityTree[tree.parent].children.emplace_back(ent);
+                    entityTree[tree.parent.Name()].children.emplace_back(name);
                 }
             }
         }
 
-        ecs::EntityRef ShowEntityTree(ecs::EntityRef root = ecs::EntityRef()) {
+        ecs::EntityRef ShowEntityTree(ecs::Name root = ecs::Name()) {
             ecs::EntityRef selected;
             if (!root) {
                 if (ImGui::Button("Refresh List") || entityTree.empty()) {
@@ -58,7 +60,7 @@ namespace sp {
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
                 if (entityTree[root].children.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
 
-                bool open = ImGui::TreeNodeEx(root.Name().String().c_str(), flags);
+                bool open = ImGui::TreeNodeEx(root.String().c_str(), flags);
                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                     selected = root;
                 }
@@ -394,14 +396,14 @@ namespace sp {
             }
             if (ImGui::Button("Add Prefab")) {
                 auto &state = value.emplace_back();
-                state.scope = ecs::Name(scene->name, "");
+                state.scope = ecs::Name(scene.name, "");
                 state.definition.callback = ecs::PrefabFunc();
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Script")) {
                 auto &state = value.emplace_back();
-                state.scope = ecs::Name(scene->name, "");
+                state.scope = ecs::Name(scene.name, "");
                 state.definition.callback = ecs::OnTickFunc();
                 changed = true;
             }
@@ -452,7 +454,7 @@ namespace sp {
                     });
             } else if (scene) {
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
-                    scene->name,
+                    scene.name,
                     [target = this->target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
                         void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
@@ -494,8 +496,6 @@ namespace sp {
                 lock.GetInstance().GetInstanceId());
         }
 
-        ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
-
         if (!this->target.Has<ecs::SceneInfo>(lock)) {
             ImGui::Text("Missing Entity: %s", ecs::ToString(lock, this->target).c_str());
             return;
@@ -503,10 +503,34 @@ namespace sp {
 
         if (ecs::IsLive(this->target)) {
             auto &sceneInfo = this->target.Get<ecs::SceneInfo>(lock);
-            this->scene = sceneInfo.scene.lock();
+            this->scene = sceneInfo.scene;
+
+            ImGui::Separator();
+            ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
         } else {
             if (this->target.Has<ecs::SceneInfo>(lock)) {
                 auto &targetSceneInfo = this->target.Get<ecs::SceneInfo>(lock);
+                this->scene = targetSceneInfo.scene;
+
+                if (this->scene) {
+                    ImGui::SameLine();
+                    if (ImGui::Button("Apply Scene")) {
+                        GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.name);
+                        GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.name);
+                    }
+                    if (!targetSceneInfo.prefabStagingId) {
+                        ImGui::SameLine();
+                        if (ImGui::Button("Save & Apply Scene")) {
+                            GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.name);
+                            GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.name);
+                            GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.name);
+                        }
+                    }
+                }
+
+                ImGui::Separator();
+                ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
+
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Entity Definitions:");
                 if (targetSceneInfo.prefabStagingId) {
@@ -520,12 +544,10 @@ namespace sp {
                     auto stagingId = targetSceneInfo.rootStagingId;
                     while (stagingId.Has<ecs::SceneInfo>(lock)) {
                         auto &sceneInfo = stagingId.Get<ecs::SceneInfo>(lock);
-                        auto stagingScene = sceneInfo.scene.lock();
-
-                        if (stagingScene) {
+                        if (sceneInfo.scene) {
                             std::string sourceName;
                             if (!sceneInfo.prefabStagingId) {
-                                sourceName = stagingScene->name + " - Scene Root";
+                                sourceName = sceneInfo.scene.name + " - Scene Root";
                             } else {
                                 const ecs::ScriptState *scriptInstance = nullptr;
                                 if (sceneInfo.prefabStagingId.Has<ecs::Scripts>(lock)) {
@@ -561,26 +583,9 @@ namespace sp {
                     ImGui::EndListBox();
                 }
             }
-
-            if (this->target.Has<ecs::SceneInfo>(lock)) {
-                auto &sceneInfo = this->target.Get<ecs::SceneInfo>(lock);
-                this->scene = sceneInfo.scene.lock();
-
-                if (ImGui::Button("Apply Scene")) {
-                    GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene->name);
-                    GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene->name);
-                }
-                if (!sceneInfo.prefabStagingId) {
-                    ImGui::SameLine();
-                    if (ImGui::Button("Save & Apply Scene")) {
-                        GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene->name);
-                        GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene->name);
-                        GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene->name);
-                    }
-                }
-                ImGui::Separator();
-            }
         }
+
+        ImGui::Separator();
 
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (!comp.HasComponent(lock, this->target)) return;
@@ -598,7 +603,7 @@ namespace sp {
 
     void EditorContext::ShowSceneControls(ecs::Lock<ecs::ReadAll> lock) {
         if (this->scene) {
-            ImGui::Text("Current Scene: %s", this->scene->name.c_str());
+            ImGui::Text("Current Scene: %s", this->scene.name.c_str());
         }
     }
 } // namespace sp

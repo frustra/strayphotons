@@ -602,7 +602,7 @@ namespace sp::vulkan {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Renderable>()) {
                 if (!ent.template Has<ecs::SceneInfo>(lock)) continue;
-                if (!ent.template Get<ecs::SceneInfo>(lock).FromScene(scene)) continue;
+                if (ent.template Get<ecs::SceneInfo>(lock).scene != scene) continue;
 
                 auto &renderable = ent.template Get<ecs::Renderable>(lock);
                 if (!renderable.model) continue;

@@ -26,7 +26,7 @@ namespace ecs {
 
     private:
         sp::LockFreeMutex mutex;
-        sp::PreservingMap<Name, EntityRef::Ref> nameRefs;
+        sp::PreservingMap<Name, EntityRef::Ref, 1000> nameRefs;
         sp::EntityMap<std::weak_ptr<EntityRef::Ref>> stagingRefs;
         sp::EntityMap<std::weak_ptr<EntityRef::Ref>> liveRefs;
     };

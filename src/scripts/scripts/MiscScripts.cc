@@ -64,7 +64,7 @@ namespace sp::scripts {
                     [ent, transform, modelName = modelName, scope = state.scope](ecs::Lock<ecs::AddRemove> lock) {
                         if (!ent.Has<ecs::SceneInfo>(lock)) return;
                         auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
-                        auto scene = sceneInfo.scene.lock();
+                        auto scene = sceneInfo.scene.ptr.lock();
                         if (!scene) return;
 
                         auto newEntity = scene->NewRootEntity(lock, scene);
