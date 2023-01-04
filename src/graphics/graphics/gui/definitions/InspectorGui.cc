@@ -14,14 +14,15 @@ namespace sp {
     InspectorGui::InspectorGui(const string &name)
         : GuiWindow(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
-        std::thread([ctx = context]() {
+
+        std::thread([this]() {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
 
-            auto inspector = ctx->inspectorEntity.Get(lock);
+            auto inspector = inspectorEntity.Get(lock);
             if (!inspector.Has<ecs::EventInput>(lock)) return;
 
             auto &eventInput = inspector.Get<ecs::EventInput>(lock);
-            eventInput.Register(lock, ctx->events, EDITOR_EVENT_EDIT_TARGET);
+            eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
         }).detach();
     }
 
@@ -49,30 +50,56 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput>>();
 
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, context->events, event)) {
+            while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
 
                 auto newTarget = std::get_if<ecs::Entity>(&event.data);
                 if (!newTarget) {
                     Errorf("Invalid editor event: %s", event.toString());
                 } else {
-                    context->targetEntity = *newTarget;
+                    targetEntity = *newTarget;
                 }
             }
         }
-        if (context->targetEntity) {
-            if (ImGui::Button("Entity Selector")) {
-                context->targetEntity = {};
-                context->RefreshEntityTree();
-            } else {
-                auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
-                auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
 
-                context->ShowEntityEditControls(liveLock, stagingLock);
+        if (ImGui::BeginTabBar("EditMode")) {
+            if (ImGui::BeginTabItem("Live View")) {
+                if (ImGui::IsItemActivated()) {
+                    context->RefreshEntityTree();
+                }
+                if (targetEntity) {
+                    if (ImGui::Button("Show Entity Tree")) {
+                        targetEntity = {};
+                    }
+
+                    auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
+                    context->ShowEntityControls(liveLock, targetEntity);
+                } else {
+                    targetEntity = context->ShowEntityTree();
+                }
+                ImGui::EndTabItem();
             }
-        }
-        if (!context->targetEntity) {
-            context->ShowEntityTree();
+            if (ImGui::BeginTabItem("Entity View")) {
+                if (!targetEntity) {
+                    targetEntity = context->ShowAllEntities("##EntityList");
+                } else {
+                    if (ImGui::Button("Show All Entities")) {
+                        targetEntity = {};
+                    } else {
+                        auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
+
+                        context->ShowEntityControls(stagingLock, targetEntity);
+                        targetEntity = context->target;
+                    }
+                }
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Scene View")) {
+                auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
+                context->ShowSceneControls(stagingLock);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
         }
     }
 } // namespace sp

@@ -134,8 +134,8 @@ namespace sp {
             existingSceneInfo.InsertWithPriority(stagingLock, newSceneInfo);
         } else {
             namedEntities.emplace(entityName, entity);
-            references.emplace_back(entityName, entity);
         }
+        references.emplace_back(entityName, entity);
 
         return entity;
     }

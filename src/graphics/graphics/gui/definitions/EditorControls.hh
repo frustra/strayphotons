@@ -20,18 +20,13 @@ namespace sp {
             bool hasParent = false;
             std::vector<ecs::EntityRef> children;
         };
-        std::map<ecs::EntityRef, TreeNode> entityTree;
-        ecs::EventQueueRef events = ecs::NewEventQueue();
-        ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
-        ecs::EntityRef targetEntity;
-        std::shared_ptr<Scene> activeScene;
         std::string entitySearch;
-
-        // Temporary context
-        ecs::Lock<ecs::ReadAll> *liveLock = nullptr;
-        ecs::Lock<ecs::ReadAll> *stagingLock = nullptr;
+        std::map<ecs::EntityRef, TreeNode> entityTree;
         std::shared_ptr<Scene> scene;
         ecs::Entity target;
+
+        // Temporary context
+        ecs::Lock<ecs::ReadAll> *lock = nullptr;
         std::string fieldName, fieldId;
 
         void RefreshEntityTree() {
@@ -47,13 +42,17 @@ namespace sp {
             }
         }
 
-        void ShowEntityTree(ecs::EntityRef root = ecs::EntityRef()) {
+        ecs::EntityRef ShowEntityTree(ecs::EntityRef root = ecs::EntityRef()) {
+            ecs::EntityRef selected;
             if (!root) {
                 if (ImGui::Button("Refresh List") || entityTree.empty()) {
                     RefreshEntityTree();
                 }
                 for (auto &pair : entityTree) {
-                    if (!pair.second.hasParent) ShowEntityTree(pair.first);
+                    if (!pair.second.hasParent) {
+                        auto tmp = ShowEntityTree(pair.first);
+                        if (tmp) selected = tmp;
+                    }
                 }
             } else {
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
@@ -61,19 +60,40 @@ namespace sp {
 
                 bool open = ImGui::TreeNodeEx(root.Name().String().c_str(), flags);
                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-                    targetEntity = root;
+                    selected = root;
                 }
-                if (!open) return;
+                if (!open) return selected;
 
                 for (auto &child : entityTree[root].children) {
-                    if (child) ShowEntityTree(child);
+                    if (child) {
+                        auto tmp = ShowEntityTree(child);
+                        if (tmp) selected = tmp;
+                    }
                 }
 
                 ImGui::TreePop();
             }
+            return selected;
         }
 
-        void ShowEntityEditControls(ecs::Lock<ecs::ReadAll> liveLock, ecs::Lock<ecs::ReadAll> stagingLock);
+        ecs::EntityRef ShowAllEntities(std::string listLabel, float listWidth = -FLT_MIN, float listHeight = -FLT_MIN) {
+            ecs::EntityRef selected;
+            ImGui::SetNextItemWidth(listWidth);
+            ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
+            if (ImGui::BeginListBox(listLabel.c_str(), ImVec2(listWidth, listHeight))) {
+                auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
+                for (auto &entName : entityNames) {
+                    if (ImGui::Selectable(entName.String().c_str())) {
+                        selected = entName;
+                    }
+                }
+                ImGui::EndListBox();
+            }
+            return selected;
+        }
+
+        void ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity);
+        void ShowSceneControls(ecs::Lock<ecs::ReadAll> lock);
 
         template<typename T>
         bool AddImGuiElement(const std::string &name, T &value);
@@ -210,18 +230,11 @@ namespace sp {
         }
         ImGui::Button(value ? value.Name().String().c_str() : "None");
         if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
-            if (ImGui::BeginListBox(fieldId.c_str(), ImVec2(400, ImGui::GetTextLineHeightWithSpacing() * 25))) {
-                auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
-                for (auto &entName : entityNames) {
-                    if (ImGui::Selectable(entName.String().c_str())) {
-                        value = entName;
-                        changed = true;
-                        ImGui::CloseCurrentPopup();
-                    }
-                }
-                ImGui::EndListBox();
+            auto selected = ShowAllEntities(fieldId, 400, ImGui::GetTextLineHeightWithSpacing() * 25);
+            if (selected) {
+                value = selected;
+                changed = true;
+                ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
@@ -451,182 +464,141 @@ namespace sp {
         }
     }
 
-    void EditorContext::ShowEntityEditControls(ecs::Lock<ecs::ReadAll> liveLock, ecs::Lock<ecs::ReadAll> stagingLock) {
-        DebugAssert(ecs::IsLive(liveLock), "Expected live lock to point to correct ECS instance");
-        DebugAssert(ecs::IsStaging(stagingLock), "Expected staging lock to point to correct ECS instance");
+    void EditorContext::ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity) {
+        if (!targetEntity) {
+            this->target = {};
+            return;
+        }
 
-        if (!targetEntity) return;
-
-        this->liveLock = &liveLock;
-        this->stagingLock = &stagingLock;
+        this->lock = &lock;
         Defer defer([this] {
             // Clear temporary context
-            this->liveLock = nullptr;
-            this->stagingLock = nullptr;
-            this->scene = nullptr;
-            this->target = {};
+            this->lock = nullptr;
             this->fieldName = "";
             this->fieldId = "";
         });
 
-        // ecs::Entity liveId, rootStagingId;
-        // if (ecs::IsLive(activeEntity) && activeEntity.Has<ecs::SceneInfo>(liveLock)) {
-        //     auto &sceneInfo = activeEntity.Get<ecs::SceneInfo>(liveLock);
-        //     liveId = sceneInfo.liveId;
-        //     rootStagingId = sceneInfo.rootStagingId;
-        // } else if (ecs::IsStaging(activeEntity) && activeEntity.Has<ecs::SceneInfo>(stagingLock)) {
-        //     auto &sceneInfo = activeEntity.Get<ecs::SceneInfo>(stagingLock);
-        //     liveId = sceneInfo.liveId;
-        //     rootStagingId = sceneInfo.rootStagingId;
-        // }
-
-        // std::vector<std::string> sceneNames = {""};
-        // GetSceneManager().
-        // if (ImGui::BeginListBox("Active Scene"), ImVec2(0, 4.25 * ImGui::GetTextLineHeightWithSpacing())) {
-        //     for (auto &item : sceneNames) {
-        //         if (item.empty()) {}
-        //         const bool is_selected = (value & item.first) == item.first;
-        //         if (ImGui::Selectable(item.second.data(), is_selected)) {
-        //             value ^= item.first;
-        //             changed = true;
-        //         }
-        //     }
-        //     ImGui::EndListBox();
-        // }
-
-        // if (ImGui::BeginTabBar("EditMode2", ImGuiTabBarFlags_None)) {
-        //     bool isLive = ecs::IsLive(activeEntity);
-        //     if (ImGui::BeginTabItem("Live", nullptr, isLive ? ImGuiTabItemFlags_SetSelected :
-        //     ImGuiTabItemFlags_None)) {
-        //         if (ImGui::IsItemEdited()) {
-        //             activeEntity = liveId;
-        //         } else if (isLive) {
-        //             ImGui::Text("Live: %s", std::to_string(activeEntity).c_str());
-        //         }
-        //         ImGui::EndTabItem();
-        //     }
-        //     bool isStaging = ecs::IsStaging(activeEntity);
-        //     if (ImGui::BeginTabItem("Staging",
-        //             nullptr,
-        //             isStaging ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
-        //         if (ImGui::IsItemEdited()) {
-        //             activeEntity = rootStagingId;
-        //         } else if (!isStaging) {
-        //             ImGui::Text("Staging: %s", std::to_string(activeEntity).c_str());
-        //         }
-        //         ImGui::EndTabItem();
-        //     }
-        //     ImGui::EndTabBar();
-        // }
-        auto inspectTarget = targetEntity.Get(liveLock);
-        if (inspectTarget.Has<ecs::SceneInfo>(liveLock)) {
-            ImGui::Text("Entity: %s", ecs::ToString(liveLock, inspectTarget).c_str());
-
-            auto &sceneInfo = inspectTarget.Get<ecs::SceneInfo>(liveLock);
-            auto liveScene = sceneInfo.scene.lock();
-
-            if (ImGui::BeginTabBar("EditMode", ImGuiTabBarFlags_None)) {
-                if (ImGui::BeginTabItem("Live")) {
-                    // if (!activeEntity) activeEntity = inspectTarget;
-                    ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                        if (!comp.HasComponent(liveLock, inspectTarget)) return;
-                        if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
-                            const void *component = comp.Access(liveLock, inspectTarget);
-                            for (auto &field : comp.metadata.fields) {
-                                ecs::GetFieldType(field.type, [&](auto *typePtr) {
-                                    using T = std::remove_pointer_t<decltype(typePtr)>;
-                                    // Set temp context for field controls
-                                    this->scene = liveScene;
-                                    this->target = inspectTarget;
-                                    AddFieldControls<T>(field, comp, component);
-                                });
-                            }
-                        }
-                    });
-                    ImGui::EndTabItem();
+        if (ecs::IsLive(lock)) {
+            this->target = targetEntity.GetLive();
+        } else if (ecs::IsStaging(lock)) {
+            if (ecs::IsStaging(this->target) && this->target.Has<ecs::Name>(lock)) {
+                auto &currentName = this->target.Get<ecs::Name>(lock);
+                if (currentName != targetEntity.Name()) {
+                    this->target = targetEntity.GetStaging();
                 }
-                auto stagingId = sceneInfo.rootStagingId;
-                while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
-                    auto &stagingSceneInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
-                    auto stagingScene = stagingSceneInfo.scene.lock();
-                    if (stagingScene) {
-                        std::string tabName;
-                        if (!stagingSceneInfo.prefabStagingId) {
-                            tabName = "Scene: " + stagingScene->name;
-                        } else {
-                            const ecs::ScriptState *scriptInstance = nullptr;
-                            if (stagingSceneInfo.prefabStagingId.Has<ecs::Scripts>(stagingLock)) {
-                                auto &prefabScripts = stagingSceneInfo.prefabStagingId.Get<ecs::Scripts>(stagingLock);
-                                scriptInstance = prefabScripts.FindScript(stagingSceneInfo.prefabScriptId);
-                            }
-                            if (scriptInstance) {
-                                if (scriptInstance->definition.name == "gltf") {
-                                    tabName = "Gltf: " + scriptInstance->GetParam<std::string>("model") + " - " +
-                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
-                                              std::to_string(stagingId);
-                                } else if (scriptInstance->definition.name == "template") {
-                                    tabName = "Template: " + scriptInstance->GetParam<std::string>("source") + " - " +
-                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
-                                              std::to_string(stagingId);
-                                } else {
-                                    tabName = "Prefab: " + scriptInstance->definition.name + " - " +
-                                              ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
-                                              std::to_string(stagingId);
-                                }
-                            } else {
-                                tabName = "Prefab: null - " +
-                                          ecs::ToString(stagingLock, stagingSceneInfo.prefabStagingId) + " - " +
-                                          std::to_string(stagingId);
-                            }
-                        }
-                        if (ImGui::BeginTabItem(tabName.c_str())) {
-                            // if (!activeEntity) activeEntity = stagingId;
-                            if (ImGui::Button("Apply Scene")) {
-                                GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
-                                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
-                            }
-                            if (!stagingSceneInfo.prefabStagingId) {
-                                ImGui::SameLine();
-                                if (ImGui::Button("Save & Apply Scene")) {
-                                    GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, stagingScene->name);
-                                    GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, stagingScene->name);
-                                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, stagingScene->name);
-                                }
-                            } else {
-                                ImGui::SameLine();
-                                if (ImGui::Button("Prefab Source")) {
-                                    targetEntity = stagingSceneInfo.prefabStagingId;
-                                }
-                            }
-                            ImGui::Separator();
-                            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                                if (!comp.HasComponent(stagingLock, stagingId)) return;
-                                if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
-                                    const void *component = comp.Access(stagingLock, stagingId);
-                                    for (auto &field : comp.metadata.fields) {
-                                        ecs::GetFieldType(field.type, [&](auto *typePtr) {
-                                            using T = std::remove_pointer_t<decltype(typePtr)>;
-                                            // Set temp context for field controls
-                                            this->scene = stagingScene;
-                                            this->target = stagingId;
-                                            AddFieldControls<T>(field, comp, component);
-                                        });
-                                    }
-                                }
-                            });
-                            ImGui::EndTabItem();
-                        }
-                    } else {
-                        Logf("Missing staging scene! %s", std::to_string(stagingId));
-                    }
-
-                    auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
-                    stagingId = stagingInfo.nextStagingId;
-                }
-                ImGui::EndTabBar();
+            } else {
+                this->target = targetEntity.GetStaging();
             }
         } else {
-            ImGui::Text("Missing Entity: %s", ecs::ToString(liveLock, inspectTarget).c_str());
+            Abortf("Unexpected lock passed to EditorContext::ShowEntityControls: instance id%u",
+                lock.GetInstance().GetInstanceId());
+        }
+
+        ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
+
+        if (!this->target.Has<ecs::SceneInfo>(lock)) {
+            ImGui::Text("Missing Entity: %s", ecs::ToString(lock, this->target).c_str());
+            return;
+        }
+
+        if (ecs::IsLive(this->target)) {
+            auto &sceneInfo = this->target.Get<ecs::SceneInfo>(lock);
+            this->scene = sceneInfo.scene.lock();
+        } else {
+            if (this->target.Has<ecs::SceneInfo>(lock)) {
+                auto &targetSceneInfo = this->target.Get<ecs::SceneInfo>(lock);
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Entity Definitions:");
+                if (targetSceneInfo.prefabStagingId) {
+                    ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().ItemSpacing.x - 200.0f);
+                    if (ImGui::Button("Goto Prefab Source", ImVec2(200, 0))) {
+                        this->target = targetSceneInfo.prefabStagingId;
+                    }
+                }
+                if (ImGui::BeginListBox("##EntitySource",
+                        ImVec2(-FLT_MIN, 4.25 * ImGui::GetTextLineHeightWithSpacing()))) {
+                    auto stagingId = targetSceneInfo.rootStagingId;
+                    while (stagingId.Has<ecs::SceneInfo>(lock)) {
+                        auto &sceneInfo = stagingId.Get<ecs::SceneInfo>(lock);
+                        auto stagingScene = sceneInfo.scene.lock();
+
+                        if (stagingScene) {
+                            std::string sourceName;
+                            if (!sceneInfo.prefabStagingId) {
+                                sourceName = stagingScene->name + " - Scene Root";
+                            } else {
+                                const ecs::ScriptState *scriptInstance = nullptr;
+                                if (sceneInfo.prefabStagingId.Has<ecs::Scripts>(lock)) {
+                                    auto &prefabScripts = sceneInfo.prefabStagingId.Get<ecs::Scripts>(lock);
+                                    scriptInstance = prefabScripts.FindScript(sceneInfo.prefabScriptId);
+                                }
+                                if (scriptInstance) {
+                                    if (scriptInstance->definition.name == "gltf") {
+                                        sourceName = scriptInstance->GetParam<std::string>("model") + " - Gltf Model";
+                                    } else if (scriptInstance->definition.name == "template") {
+                                        sourceName = scriptInstance->GetParam<std::string>("source") + " - Template";
+                                    } else {
+                                        sourceName = scriptInstance->definition.name + " - Prefab";
+                                    }
+                                } else {
+                                    sourceName = "Null Prefab";
+                                }
+                            }
+
+                            const bool is_selected = this->target == stagingId;
+                            if (ImGui::Selectable(sourceName.c_str(), is_selected)) {
+                                this->target = stagingId;
+                            }
+                        } else {
+                            ImGui::TextColored({1, 0, 0, 1},
+                                "Missing staging scene! %s",
+                                std::to_string(stagingId).c_str());
+                        }
+
+                        auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(lock);
+                        stagingId = stagingInfo.nextStagingId;
+                    }
+                    ImGui::EndListBox();
+                }
+            }
+
+            if (this->target.Has<ecs::SceneInfo>(lock)) {
+                auto &sceneInfo = this->target.Get<ecs::SceneInfo>(lock);
+                this->scene = sceneInfo.scene.lock();
+
+                if (ImGui::Button("Apply Scene")) {
+                    GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene->name);
+                    GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene->name);
+                }
+                if (!sceneInfo.prefabStagingId) {
+                    ImGui::SameLine();
+                    if (ImGui::Button("Save & Apply Scene")) {
+                        GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene->name);
+                        GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene->name);
+                        GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene->name);
+                    }
+                }
+                ImGui::Separator();
+            }
+        }
+
+        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+            if (!comp.HasComponent(lock, this->target)) return;
+            if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
+                const void *component = comp.Access(lock, this->target);
+                for (auto &field : comp.metadata.fields) {
+                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                        using T = std::remove_pointer_t<decltype(typePtr)>;
+                        AddFieldControls<T>(field, comp, component);
+                    });
+                }
+            }
+        });
+    }
+
+    void EditorContext::ShowSceneControls(ecs::Lock<ecs::ReadAll> lock) {
+        if (this->scene) {
+            ImGui::Text("Current Scene: %s", this->scene->name.c_str());
         }
     }
 } // namespace sp
