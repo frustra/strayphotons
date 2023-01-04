@@ -11,7 +11,7 @@ namespace sp {
 
 namespace ecs {
     struct Name;
-    using EntityScope = typename Name;
+    using EntityScope = Name;
 
     struct Name {
         std::string scene, entity;

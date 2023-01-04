@@ -28,41 +28,17 @@ namespace sp {
             : name(name), type(type), priority(priority), asset(asset) {}
         ~Scene();
 
+        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const;
+
         const std::string name;
         const SceneType type;
-
-        ecs::Entity GetStagingEntity(const ecs::Name &entityName) const {
-            auto it = namedEntities.find(entityName);
-            if (it != namedEntities.end()) return it->second;
-            return {};
-        }
-
-        // Defined in game module: game/game/Scene.cc
-        ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
-            const std::shared_ptr<Scene> &scene,
-            ecs::Name name = ecs::Name());
-        ecs::Entity NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
-            const std::shared_ptr<Scene> &scene,
-            std::string relativeName = "");
-        ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
-            ecs::Entity prefabRoot,
-            size_t prefabScriptId,
-            std::string relativeName = "",
-            ecs::EntityScope scope = ecs::Name());
-        void RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);
-
-        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
-            ecs::Lock<ecs::AddRemove> live,
-            bool resetLive = false);
-        void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
-
-        void UpdateRootTransform();
-        const ecs::Transform &GetRootTransform() const;
 
         ecs::ScenePriority priority;
         std::shared_ptr<ecs::SceneProperties> properties;
 
     private:
+        friend class SceneManager;
+
         ecs::Name GenerateEntityName(const ecs::Name &prefix);
         bool ValidateEntityName(const ecs::Name &name) const;
 
@@ -75,6 +51,37 @@ namespace sp {
 
         ecs::Transform rootTransform;
 
-        friend class SceneManager;
+    public:
+        // ==== Below functions are defined in game module: game/game/Scene.cc
+        // Should only be called from SceneManager thread
+        ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+            const std::shared_ptr<Scene> &scene,
+            ecs::Name name = ecs::Name());
+
+        // Should only be called from SceneManager thread
+        ecs::Entity NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+            const std::shared_ptr<Scene> &scene,
+            std::string relativeName = "");
+
+        // Should only be called from SceneManager thread
+        ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+            ecs::Entity prefabRoot,
+            size_t prefabScriptId,
+            std::string relativeName = "",
+            ecs::EntityScope scope = ecs::Name());
+
+        // Should only be called from SceneManager thread
+        void RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);
+
+        // Should only be called from SceneManager thread
+        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
+            ecs::Lock<ecs::AddRemove> live,
+            bool resetLive = false);
+
+        // Should only be called from SceneManager thread
+        void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
+
+        void UpdateRootTransform();
+        const ecs::Transform &GetRootTransform() const;
     };
 } // namespace sp

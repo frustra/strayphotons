@@ -9,11 +9,11 @@ fi
 
 mkdir -p build
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
-    echo -e "--- Restoring assets cache"
+    echo -e "~~~ Restoring assets cache"
     ./assets/cache-assets.py --restore
     
     if [ -d "$CI_CACHE_DIRECTORY/sp-physics-cache" ]; then
-        echo -e "--- Restoring physics collision cache"
+        echo -e "~~~ Restoring physics collision cache"
         mkdir -p ./assets/cache
         cp -r "$CI_CACHE_DIRECTORY/sp-physics-cache/collision" ./assets/cache/
     fi
@@ -35,7 +35,7 @@ else
 fi
 
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
-    echo -e "--- Saving assets cache"
+    echo -e "~~~ Saving assets cache"
     ./assets/cache-assets.py --save
 fi
 
@@ -127,7 +127,7 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
 fi
 
 if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
-    echo -e "--- Saving physics collision cache"
+    echo -e "~~~ Saving physics collision cache"
     mkdir -p "$CI_CACHE_DIRECTORY/sp-physics-cache"
 
     # Delete cache files older than 30 days so any removed models don't stick around forever
@@ -136,7 +136,7 @@ if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
 fi
 
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
-    echo -e "+++ Uploading package release :arrow_up:"
+    echo -e "--- Uploading package release :arrow_up:"
     buildkite-agent artifact upload "assets.spdata"
     buildkite-agent artifact upload "openvr_api.dll"
     buildkite-agent artifact upload "actions.json"
@@ -144,18 +144,18 @@ if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     buildkite-agent artifact upload "sp-vk.pdb"
     buildkite-agent artifact upload "scripts/*"
 elif [ -n "$BUILDKITE_API_TOKEN" ]; then
-    echo -e "+++ Comparing screenshots :camera_with_flash:"
+    echo -e "--- Comparing screenshots :camera_with_flash:"
     ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
 fi
 
 if [ $success -ne 0 ]; then
-    echo -e "\033[31mTest failures detected\033[0m"
+    echo -e "\n+++ \033[31mTest failures detected\033[0m"
     exit $success
 fi
 if [ $format_valid -ne 0 ]; then
-    echo -e "\033[31mclang-format errors detected\033[0m"
+    echo -e "\n+++ \033[31mclang-format errors detected\033[0m"
     echo -e "Run clang-format with ./extra/validate_format.py --fix"
     exit $format_valid
 fi
 
-echo -e "\033[92mTests succeeded\033[0m"
+echo -e "\n+++ \033[92mTests succeeded\033[0m"
