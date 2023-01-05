@@ -213,14 +213,14 @@ namespace sp::xr {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformTree>>();
 
             for (auto entityRef : trackedDevices) {
-                if (entityRef != nullptr && !entityRef->Get(lock).Exists(lock)) {
+                if (entityRef && !entityRef->Get(lock).Exists(lock)) {
                     missingEntities = true;
                     break;
                 }
             }
 
             for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                if (trackedDevices[i] != nullptr) {
+                if (trackedDevices[i]) {
                     ecs::Entity ent = trackedDevices[i]->Get(lock);
                     if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
                         auto &transform = ent.Get<ecs::TransformTree>(lock);
@@ -236,8 +236,8 @@ namespace sp::xr {
             GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
                 "vr_system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                    for (auto entityRef : trackedDevices) {
-                        if (entityRef != nullptr && !entityRef->Get(lock).Exists(lock)) {
+                    for (auto *entityRef : trackedDevices) {
+                        if (entityRef && !scene->GetStagingEntity(entityRef->Name())) {
                             auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);

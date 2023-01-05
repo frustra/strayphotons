@@ -451,6 +451,7 @@ namespace sp::xr {
                         for (auto &action : actionSet.actions) {
                             if (action.type == Action::DataType::Skeleton) {
                                 for (auto &boneEnt : action.boneEntities) {
+                                    if (scene->GetStagingEntity(boneEnt.Name())) continue;
                                     auto ent = scene->NewSystemEntity(lock, scene, boneEnt.Name());
                                     ent.Set<ecs::TransformTree>(lock);
                                     ent.Set<ecs::SignalOutput>(lock);

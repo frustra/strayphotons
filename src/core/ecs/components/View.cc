@@ -10,14 +10,13 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<View>(const EntityScope &scope, View &view, const picojson::value &src) {
-        view.UpdateProjectionMatrix();
-        return true;
-    }
-
-    template<>
     void Component<View>::Apply(View &dst, const View &src, bool liveTarget) {
-        dst.UpdateProjectionMatrix();
+        if (src.projMat != glm::identity<glm::mat4>()) {
+            dst.projMat = src.projMat;
+            dst.invProjMat = src.invProjMat;
+        } else {
+            dst.UpdateProjectionMatrix();
+        }
     }
 
     void View::UpdateProjectionMatrix() {

@@ -19,6 +19,7 @@ namespace ecs {
     template<>
     void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget) {
         if (!dst.model && src.model) dst.model = src.model;
+        if (dst.joints.empty()) dst.joints = src.joints;
     }
 
     Renderable::Renderable(const std::string &modelName, size_t meshIndex)
