@@ -61,7 +61,5 @@ namespace ecs {
     static Component<View> ComponentView("view", MetadataView);
 
     template<>
-    bool StructMetadata::Load<View>(const EntityScope &scope, View &dst, const picojson::value &src);
-    template<>
     void Component<View>::Apply(View &dst, const View &src, bool liveTarget);
 } // namespace ecs
