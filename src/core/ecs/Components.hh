@@ -21,11 +21,6 @@ namespace sp {
 } // namespace sp
 
 namespace ecs {
-    struct EntityScope {
-        std::weak_ptr<sp::Scene> scene;
-        Name prefix;
-    };
-
     template<typename>
     class Component;
 

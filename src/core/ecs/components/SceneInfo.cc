@@ -3,11 +3,12 @@
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
+#include "game/SceneProperties.hh"
 
 namespace ecs {
     SceneInfo::SceneInfo(Entity ent,
         const std::shared_ptr<sp::Scene> &scene,
-        const std::shared_ptr<SceneProperties> &properties)
+        const std::shared_ptr<sp::SceneProperties> &properties)
         : priority(scene->priority), scene(scene), properties(properties) {
         if (IsLive(ent)) {
             liveId = ent;

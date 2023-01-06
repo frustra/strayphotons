@@ -155,9 +155,15 @@ namespace ecs {
         }
     }
 
-    void Scripts::Prefab(Lock<AddRemove> lock, Entity ent) {
-        ZoneScopedN("Prefab");
+    void Scripts::RunPrefabs(Lock<AddRemove> lock, Entity ent) {
+        if (!ent.Has<Scripts, SceneInfo>(lock)) return;
+
+        ZoneScopedN("RunPrefabs");
         ZoneStr(ecs::ToString(lock, ent));
+
+        auto scene = ent.Get<const SceneInfo>(lock).scene.ptr.lock();
+        Assertf(scene, "RunPrefabs entity has null scene: %s", ecs::ToString(lock, ent));
+
         // Prefab scripts may add additional scripts while iterating.
         // Script state references may not be valid if storage is resized,
         // so we need to reference the lock every loop iteration.
@@ -165,7 +171,7 @@ namespace ecs {
             // Create a read-only copy of the script state so the passed reference is stable.
             auto state = ent.Get<const Scripts>(lock).scripts[i];
             auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
-            if (callback && *callback) (*callback)(state, lock, ent);
+            if (callback && *callback) (*callback)(state, scene, lock, ent);
         }
     }
 

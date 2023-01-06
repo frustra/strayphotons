@@ -63,6 +63,10 @@
         "event_bindings": {
             "/keyboard/key/f1": {
                 "target": "console:input/action/run_command",
+                "set_value": "edit"
+            },
+            "/keyboard/key/f2": {
+                "target": "console:input/action/run_command",
                 "set_value": "tracy"
             },
             "/keyboard/key/f5": {

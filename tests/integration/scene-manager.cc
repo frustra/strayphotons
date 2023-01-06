@@ -38,9 +38,8 @@ namespace SceneManagerTests {
         AssertEqual(liveSceneInfo.nextStagingId,
             rootSceneInfo.nextStagingId,
             "Live SceneInfo.nextStagingId does not match");
-        auto rootScene = rootSceneInfo.scene.lock();
-        Assert(rootScene != nullptr, "Expected entity to have valid Scene");
-        AssertEqual(rootScene->name, *sceneNames.begin(), "Entity scene does not match expected");
+        Assert((bool)rootSceneInfo.scene, "Expected entity to have valid Scene");
+        AssertEqual(rootSceneInfo.scene.name, *sceneNames.begin(), "Entity scene does not match expected");
 
         for (auto &name : sceneNames) {
             Assertf(!!ent, "Expected entity to exist: %s", std::to_string(ent));
@@ -50,9 +49,8 @@ namespace SceneManagerTests {
             AssertEqual(sceneInfo.rootStagingId,
                 rootSceneInfo.rootStagingId,
                 "Staging SceneInfo.rootStagingId does not match");
-            auto scene = sceneInfo.scene.lock();
-            Assert(scene != nullptr, "Expected entity to have valid Scene");
-            AssertEqual(scene->name, name, "Entity scene does not match expected");
+            Assert((bool)sceneInfo.scene, "Expected entity to have valid Scene");
+            AssertEqual(sceneInfo.scene.name, name, "Entity scene does not match expected");
             ent = sceneInfo.nextStagingId;
         }
         Assert(!ent, "Expected no more entity scenes");
@@ -107,7 +105,7 @@ namespace SceneManagerTests {
                     ecs::Name("player", "player"),
                     "Expected player to be named correctly");
                 auto &playerSceneInfo = player.Get<ecs::SceneInfo>(liveLock);
-                auto playerScene = playerSceneInfo.scene.lock();
+                auto playerScene = playerSceneInfo.scene.ptr.lock();
                 Assert(playerScene != nullptr, "Expected player to have a scene");
                 AssertEqual(playerScene->name, "player", "Expected player scene to be named correctly");
                 playerScene->RemoveScene(stagingLock, liveLock);

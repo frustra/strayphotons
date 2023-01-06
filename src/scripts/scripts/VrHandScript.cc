@@ -277,9 +277,6 @@ namespace sp::scripts {
             ZoneScopedN("VrHandScript");
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
 
-            auto scene = state.scope.scene.lock();
-            Assertf(scene, "VrHand script does not have a valid scene: %s", ToString(lock, ent));
-
             if (!init) {
                 if (!Init(state, lock, ent)) return;
                 init = true;

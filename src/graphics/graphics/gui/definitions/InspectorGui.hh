@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecs/EntityRef.hh"
 #include "graphics/gui/GuiContext.hh"
 
 #include <memory>
@@ -7,6 +8,7 @@
 
 namespace sp {
     struct EditorContext;
+    class Scene;
 
     class InspectorGui : public GuiWindow {
     public:
@@ -18,6 +20,11 @@ namespace sp {
         void PostDefine() override;
 
     private:
+        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
+        ecs::EntityRef targetEntity;
+        std::shared_ptr<Scene> targetScene;
+
         std::shared_ptr<EditorContext> context;
     };
 } // namespace sp

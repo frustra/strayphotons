@@ -14,8 +14,7 @@ namespace sp {
 
     private:
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
-
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::Entity previousTarget;
 
         CFuncCollection funcs;
     };

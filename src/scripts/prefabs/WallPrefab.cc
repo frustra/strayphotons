@@ -16,9 +16,10 @@ namespace sp::scripts {
         std::vector<glm::vec2> segmentPoints;
         std::vector<std::string> segmentTypes;
 
-        void Prefab(const ScriptState &state, Lock<AddRemove> lock, Entity ent) {
-            auto scene = state.scope.scene.lock();
-            Assertf(scene, "WallPrefab does not have a valid scene: %s", ToString(lock, ent));
+        void Prefab(const ScriptState &state,
+            const std::shared_ptr<sp::Scene> &scene,
+            Lock<AddRemove> lock,
+            Entity ent) {
             Assertf(ent.Has<Name>(lock), "WallPrefab root has no name: %s", ToString(lock, ent));
             auto prefixName = ent.Get<Name>(lock);
 
@@ -54,7 +55,7 @@ namespace sp::scripts {
                     gltfState.SetParam<std::string>("model", "wall-4-corner");
                     gltfState.SetParam<std::string>("physics", "static");
                     gltfState.SetParam<bool>("render", true);
-                    scripts.Prefab(lock, newEnt);
+                    ecs::Scripts::RunPrefabs(lock, newEnt);
                 }
                 lastDir = dir;
 
@@ -79,7 +80,7 @@ namespace sp::scripts {
                     gltfState.SetParam<std::string>("model", model);
                     gltfState.SetParam<std::string>("physics", "static");
                     gltfState.SetParam<bool>("render", true);
-                    scripts.Prefab(lock, newEnt);
+                    ecs::Scripts::RunPrefabs(lock, newEnt);
 
                     point += dir * stride;
                 }

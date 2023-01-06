@@ -2,16 +2,19 @@
 	"priority": "Override",
 	"properties": {
 		"gravity": [0, 0, 0],
-		"gravity_transform": {},
 		"gravity_func": "station_spin"
 	},
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": {},
-			"transform": {}
+			"transform": {},
+			"scene_connection": {}
 		},
-		{ "name": "player:player" },
-		{ "name": "player:debug-spawner" }
+		{
+			"name": "player:player"
+		},
+		{
+			"name": "player:debug-spawner"
+		}
 	]
 }

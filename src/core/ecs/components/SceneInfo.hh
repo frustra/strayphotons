@@ -1,16 +1,15 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "game/SceneRef.hh"
 
 #include <memory>
 
 namespace sp {
-    class Scene;
-} // namespace sp
+    struct SceneProperties;
+}
 
 namespace ecs {
-    struct SceneProperties;
-
     // Lower priority scenes will have their components overwritten with higher priority components.
     enum class ScenePriority {
         System, // Lowest priority
@@ -24,7 +23,7 @@ namespace ecs {
         SceneInfo() {}
         SceneInfo(Entity ent,
             const std::shared_ptr<sp::Scene> &scene,
-            const std::shared_ptr<SceneProperties> &properties);
+            const std::shared_ptr<sp::SceneProperties> &properties);
 
         SceneInfo(Entity liveId, const SceneInfo &sceneInfo)
             : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene), properties(sceneInfo.properties) {
@@ -58,7 +57,7 @@ namespace ecs {
         Entity prefabStagingId;
         size_t prefabScriptId = 0;
         ScenePriority priority = ScenePriority::Scene;
-        std::weak_ptr<sp::Scene> scene;
-        std::shared_ptr<SceneProperties> properties;
+        sp::SceneRef scene;
+        std::shared_ptr<sp::SceneProperties> properties;
     };
 } // namespace ecs

@@ -8,6 +8,12 @@ namespace sp {
         Assertf(!active, "%s scene destroyed while active: %s", type, name);
     }
 
+    ecs::Entity Scene::GetStagingEntity(const ecs::Name &entityName) const {
+        auto it = namedEntities.find(entityName);
+        if (it != namedEntities.end()) return it->second;
+        return {};
+    }
+
     ecs::Name Scene::GenerateEntityName(const ecs::Name &prefix) {
         unnamedEntityCount++;
         if (!prefix.entity.empty()) {

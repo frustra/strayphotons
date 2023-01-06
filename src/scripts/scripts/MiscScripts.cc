@@ -4,6 +4,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
+#include "game/SceneManager.hh"
 
 #include <cmath>
 #include <glm/glm.hpp>
@@ -22,7 +23,7 @@ namespace sp::scripts {
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (expr.expr != inputExpr) {
-                expr = SignalExpression(inputExpr, state.scope.prefix);
+                expr = SignalExpression(inputExpr, state.scope);
                 previousValue = expr.Evaluate(lock);
             }
 
@@ -59,27 +60,25 @@ namespace sp::scripts {
                 Transform transform(position);
                 transform = relativeTransform * transform;
 
-                auto scene = state.scope.scene.lock();
-                Assert(scene, "Model spawner script must have valid scene");
+                GetSceneManager().QueueAction(SceneAction::EditLiveECS,
+                    [ent, transform, modelName = modelName, scope = state.scope](ecs::Lock<ecs::AddRemove> lock) {
+                        if (!ent.Has<ecs::SceneInfo>(lock)) return;
+                        auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
+                        auto scene = sceneInfo.scene.ptr.lock();
+                        if (!scene) return;
 
-                std::thread([ent, transform, modelName = modelName, scene, scope = state.scope]() {
-                    auto model = sp::Assets().LoadGltf(modelName);
-
-                    auto lock = ecs::StartTransaction<AddRemove>();
-                    if (ent.Has<SceneInfo>(lock)) {
                         auto newEntity = scene->NewRootEntity(lock, scene);
 
                         newEntity.Set<TransformTree>(lock, transform);
                         newEntity.Set<TransformSnapshot>(lock, transform);
-                        newEntity.Set<Renderable>(lock, modelName, model);
+                        newEntity.Set<Renderable>(lock, modelName, sp::Assets().LoadGltf(modelName));
                         newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, true, 1.0f);
                         newEntity.Set<PhysicsJoints>(lock);
                         newEntity.Set<PhysicsQuery>(lock);
                         newEntity.Set<EventInput>(lock);
                         auto &scripts = newEntity.Set<Scripts>(lock);
                         scripts.AddOnTick(scope, "interactive_object");
-                    }
-                }).detach();
+                    });
             }
         }
     };

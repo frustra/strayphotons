@@ -14,6 +14,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "game/SceneProperties.hh"
 #include "physx/ForceConstraint.hh"
 
 #include <PxScene.h>
@@ -144,7 +145,7 @@ namespace sp {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
                 if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
-                if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
+                if (ent.template Get<ecs::SceneInfo>(lock).scene != scene) continue;
 
                 auto &ph = ent.template Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {
@@ -582,7 +583,7 @@ namespace sp {
         auto scale = transform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
 
-        ecs::SceneProperties sceneProperties = {};
+        SceneProperties sceneProperties = {};
         if (e.Has<ecs::SceneInfo>(lock)) {
             auto &properties = e.Get<ecs::SceneInfo>(lock).properties;
             if (properties) sceneProperties = *properties;

@@ -5,6 +5,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneProperties.hh"
 #include "input/BindingNames.hh"
 #include "physx/ForceConstraint.hh"
 #include "physx/PhysxManager.hh"
@@ -195,7 +196,7 @@ namespace sp {
             return true;
         });
 
-        ecs::SceneProperties sceneProperties = {};
+        SceneProperties sceneProperties = {};
         if (entity.Has<ecs::SceneInfo>(lock)) {
             auto &properties = entity.Get<ecs::SceneInfo>(lock).properties;
             if (properties) sceneProperties = *properties;

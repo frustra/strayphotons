@@ -115,7 +115,7 @@ namespace sp::scripts {
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TriggerArea>(lock)) return;
 
-            EntityRef enableTriggerEntity = ecs::Name("enable_trigger", state.scope.prefix);
+            EntityRef enableTriggerEntity = ecs::Name("enable_trigger", state.scope);
             auto enableTrigger = enableTriggerEntity.Get(lock);
             if (!enableTrigger.Has<TriggerArea>(lock)) return;
 

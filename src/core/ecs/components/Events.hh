@@ -64,7 +64,7 @@ namespace ecs {
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const Name &scope = Name());
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
 
     static StructMetadata MetadataEventInput(typeid(EventInput));
     static Component<EventInput> ComponentEventInput("event_input", MetadataEventInput);

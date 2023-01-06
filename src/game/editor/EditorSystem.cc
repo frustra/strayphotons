@@ -40,24 +40,12 @@ namespace sp {
                 ph.group = ecs::PhysicsGroup::UserInterface;
                 ph.dynamic = false;
             });
-
-        {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
-            auto inspector = inspectorEntity.Get(lock);
-            Assertf(inspector.Has<ecs::EventInput>(lock),
-                "Inspector entity has no EventInput: %s",
-                inspectorEntity.Name().String());
-            auto &eventInput = inspector.Get<ecs::EventInput>(lock);
-            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
-            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
-            eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
-        }
     }
 
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {
         auto lock = ecs::StartTransaction<ecs::ReadAll,
             ecs::SendEventsLock,
-            ecs::Write<ecs::Gui, ecs::TransformTree, ecs::Physics>>();
+            ecs::Write<ecs::Gui, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
 
         auto inspector = inspectorEntity.Get(lock);
 
@@ -83,9 +71,12 @@ namespace sp {
 
         auto &gui = inspector.Get<ecs::Gui>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
+        auto &focusLock = lock.Get<ecs::FocusLock>();
 
-        // Close the editor if it is open and there is no target
-        if (!target.Exists(lock) && gui.target != ecs::GuiTarget::None) {
+        bool shouldClose = gui.target != ecs::GuiTarget::None && (!target || target == previousTarget);
+        previousTarget = target;
+        if (shouldClose) {
+            if (gui.target == ecs::GuiTarget::Debug) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
             gui.target = ecs::GuiTarget::None;
             physics.shapes.clear();
             return;
@@ -94,9 +85,11 @@ namespace sp {
         ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspector, target});
 
         if (flatMode) {
+            if (gui.target != ecs::GuiTarget::Debug) focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
             gui.target = ecs::GuiTarget::Debug;
             physics.shapes.clear();
         } else {
+            if (gui.target == ecs::GuiTarget::Debug) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
             gui.target = ecs::GuiTarget::World;
             physics.shapes = {ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01))};
 
