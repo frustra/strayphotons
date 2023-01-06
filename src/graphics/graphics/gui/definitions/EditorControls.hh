@@ -630,6 +630,7 @@ namespace sp {
             ImGui::SameLine();
             if (ImGui::Button("Load") || submit) {
                 GetSceneManager().QueueAction(SceneAction::LoadScene, sceneEntry);
+                sceneEntry.clear();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -646,6 +647,7 @@ namespace sp {
             ImGui::SameLine();
             if (ImGui::Button("Add") || submit) {
                 GetSceneManager().QueueAction(SceneAction::AddScene, sceneEntry);
+                sceneEntry.clear();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
