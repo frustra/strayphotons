@@ -279,6 +279,7 @@ namespace ecs {
                 index = expr.nodes.size();
                 if (token == "if_focused") {
                     auto focusStr = expr.tokens[expr.nodes[aIndex].startToken];
+                    expr.nodeDebug[aIndex] = focusStr;
                     FocusLayer focus = FocusLayer::Always;
                     if (!focusStr.empty()) {
                         auto opt = magic_enum::enum_cast<FocusLayer>(focusStr);
