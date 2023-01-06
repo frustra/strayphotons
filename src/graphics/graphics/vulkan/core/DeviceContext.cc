@@ -534,6 +534,11 @@ namespace sp::vulkan {
     void DeviceContext::CreateSwapchain() {
         ZoneScoped;
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+
+        if (surfaceCapabilities.currentExtent.width == 0 || surfaceCapabilities.currentExtent.height == 0) {
+            return;
+        }
+
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
 
@@ -646,7 +651,11 @@ namespace sp::vulkan {
                 glfwWindowSize = windowSize;
             }
 
-            glfwGetFramebufferSize(window, &view.extents.x, &view.extents.y);
+            glm::ivec2 fbExtents;
+            glfwGetFramebufferSize(window, &fbExtents.x, &fbExtents.y);
+            if (fbExtents.x > 0 && fbExtents.y > 0) {
+                view.extents = fbExtents;
+            }
         } else {
             view.extents = CVarWindowSize.Get();
         }
@@ -751,6 +760,7 @@ namespace sp::vulkan {
 
     void DeviceContext::SwapBuffers() {
         ZoneScoped;
+
         vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;

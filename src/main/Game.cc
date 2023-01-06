@@ -28,6 +28,16 @@
 #endif
 
 namespace sp {
+    std::atomic_int gameExitCode;
+    std::atomic_flag gameExitTriggered;
+
+    CFunc<int> cfExit("exit", "Quits the game", [](int arg) {
+        Tracef("Exit triggered via console command");
+        gameExitCode = arg;
+        gameExitTriggered.test_and_set();
+        gameExitTriggered.notify_all();
+    });
+
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
@@ -45,6 +55,8 @@ namespace sp {
           logic(startupScript != nullptr) {
     }
 
+    const int64 MaxInputPollRate = 144;
+
     Game::~Game() {}
 
     Game::ShutdownManagers::~ShutdownManagers() {
@@ -54,15 +66,6 @@ namespace sp {
 
     int Game::Start() {
         tracy::SetThreadName("Main");
-        int exitCode;
-        std::atomic_flag exitTriggered;
-
-        CFunc<int> cfExit("exit", "Quits the game", [&exitCode, &exitTriggered](int arg) {
-            Tracef("Exit triggered via console command");
-            exitCode = arg;
-            exitTriggered.test_and_set();
-            exitTriggered.notify_all();
-        });
 
         Debugf("Bytes of memory used per entity: %u", ecs::World().GetBytesPerEntity());
 
@@ -140,7 +143,7 @@ namespace sp {
 
 #ifdef SP_GRAPHICS_SUPPORT
         auto frameEnd = chrono_clock::now();
-        while (!exitTriggered.test()) {
+        while (!gameExitTriggered.test()) {
             static const char *frameName = "WindowInput";
             FrameMarkStart(frameName);
             if (startupScript) {
@@ -156,18 +159,18 @@ namespace sp {
 
             auto realFrameEnd = chrono_clock::now();
             auto interval = graphics.interval;
-            if (interval.count() > 0) {
-                frameEnd += interval;
-
-                if (realFrameEnd >= frameEnd) {
-                    // Falling behind, reset target frame end time.
-                    frameEnd = realFrameEnd;
-                }
-
-                std::this_thread::sleep_until(frameEnd);
-            } else {
-                std::this_thread::yield();
+            if (interval.count() == 0) {
+                interval = std::chrono::nanoseconds((int64)(1e9 / MaxInputPollRate));
             }
+
+            frameEnd += interval;
+
+            if (realFrameEnd >= frameEnd) {
+                // Falling behind, reset target frame end time.
+                frameEnd = realFrameEnd;
+            }
+
+            std::this_thread::sleep_until(frameEnd);
             FrameMarkEnd(frameName);
         }
         graphics.StopThread();
@@ -176,6 +179,6 @@ namespace sp {
             exitTriggered.wait(false);
         }
 #endif
-        return exitCode;
+        return gameExitCode;
     }
 } // namespace sp
