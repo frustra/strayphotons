@@ -696,6 +696,22 @@ namespace sp {
                 }
                 ImGui::EndDisabled();
             }
+            if (ImGui::CollapsingHeader("Scene Entities", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::BeginListBox("##scene_entities", ImVec2(-FLT_MIN, -FLT_MIN))) {
+                    auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
+                    for (auto &ent : lock.EntitiesWith<ecs::SceneInfo>()) {
+                        if (!ent.Has<ecs::SceneInfo, ecs::Name>(lock)) continue;
+                        auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
+                        if (sceneInfo.scene != this->scene) continue;
+
+                        auto &name = ent.Get<ecs::Name>(lock);
+                        if (ImGui::Selectable(name.String().c_str(), ent == this->target)) {
+                            this->target = ent;
+                        }
+                    }
+                    ImGui::EndListBox();
+                }
+            }
         }
     }
 } // namespace sp
