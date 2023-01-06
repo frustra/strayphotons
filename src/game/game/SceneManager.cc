@@ -11,6 +11,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
+#include "game/SceneProperties.hh"
 
 #include <algorithm>
 #include <filesystem>
@@ -99,6 +100,11 @@ namespace sp {
         }
 
         LogOnExit logOnExit = "SceneManager shut down ================================================";
+    }
+
+    std::vector<SceneRef> SceneManager::GetActiveScenes() {
+        std::lock_guard lock(activeSceneMutex);
+        return activeSceneCache;
     }
 
     void SceneManager::RunSceneActions() {
@@ -396,6 +402,17 @@ namespace sp {
         RunSceneActions();
         UpdateSceneConnections();
 
+        {
+            // Update active scene list
+            std::lock_guard lock(activeSceneMutex);
+            activeSceneCache.clear();
+            for (auto &sceneList : scenes) {
+                for (auto &scene : sceneList) {
+                    activeSceneCache.emplace_back(scene);
+                }
+            }
+        }
+
         stagedScenes.Tick(this->interval, [](std::shared_ptr<Scene> &scene) {
             ZoneScopedN("RemoveExpiredScene");
             ZoneStr(scene->name);
@@ -552,32 +569,10 @@ namespace sp {
         }
 
         if (sceneObj.count("properties")) {
-            scene->properties = make_shared<ecs::SceneProperties>();
+            scene->properties = make_shared<SceneProperties>();
             auto &properties = *scene->properties;
-            auto &propertiesValue = sceneObj["properties"];
-            if (propertiesValue.is<picojson::object>()) {
-                for (auto &property : propertiesValue.get<picojson::object>()) {
-                    if (property.first == "gravity") {
-                        json::Load(scope, properties.fixedGravity, property.second);
-                    } else if (property.first == "gravity_transform") {
-                        json::Load(scope, properties.gravityTransform, property.second);
-                    } else if (property.first == "gravity_func") {
-                        if (property.second.is<std::string>()) {
-                            auto gravityFunc = property.second.get<std::string>();
-                            if (gravityFunc == "station_spin") {
-                                properties.gravityFunction = [](glm::vec3 position) {
-                                    position.z = 0;
-                                    // Derived from centripetal acceleration formula, rotating around the origin
-                                    const float spinRpm = 2.42f; // Calculated for ~1G at 153m radius
-                                    float spinTerm = M_PI * spinRpm / 30;
-                                    return spinTerm * spinTerm * position;
-                                };
-                            }
-                        }
-                    }
-                }
-            } else {
-                Errorf("Scene contains invalid properties (%s): %s", sceneName, propertiesValue.to_str());
+            if (!json::Load(scope, properties, sceneObj["properties"])) {
+                Errorf("Scene contains invalid properties: %s", sceneName);
             }
         }
 
@@ -632,7 +627,6 @@ namespace sp {
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
                 // Skip entities that aren't part of this scene, or were created by a prefab script
                 if (sceneInfo.scene != scene || sceneInfo.prefabStagingId) continue;
-                Assert(sceneInfo.rootStagingId == e, "Expected staging entity to be the root id");
 
                 static auto componentOrderFunc = [](const std::string &a, const std::string &b) {
                     // Sort component keys in the order they are defined in the ECS
@@ -668,23 +662,8 @@ namespace sp {
             };
             picojson::object sceneObj(sceneOrderFunc);
             if (scene->properties) {
-                static const ecs::SceneProperties defaultProperties = {};
-                picojson::object propertiesObj;
-                json::SaveIfChanged(scope,
-                    propertiesObj,
-                    "gravity",
-                    scene->properties->fixedGravity,
-                    defaultProperties.fixedGravity);
-                json::SaveIfChanged(scope,
-                    propertiesObj,
-                    "gravity_transform",
-                    scene->properties->gravityTransform,
-                    defaultProperties.gravityTransform);
-                if (scene->properties->gravityFunction) {
-                    // TODO: Define this function using a signal expression
-                    propertiesObj["gravity_func"] = picojson::value("station_spin");
-                }
-                sceneObj["properties"] = picojson::value(propertiesObj);
+                static const SceneProperties defaultProperties = {};
+                json::SaveIfChanged(scope, sceneObj, "properties", *scene->properties, defaultProperties);
             }
             json::SaveIfChanged(scope, sceneObj, "priority", scene->priority, ecs::ScenePriority::Scene);
             sceneObj["entities"] = picojson::value(entities);
@@ -875,7 +854,7 @@ namespace sp {
                             while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                 auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                                 Assert(stagingInfo.scene, "Missing SceneInfo scene on entity");
-                                Logf("  -> %s scene", stagingInfo.scene.name);
+                                Logf(" -> %s scene (%s type)", stagingInfo.scene.name, stagingInfo.scene.type);
                                 stagingId = stagingInfo.nextStagingId;
                             }
                         }

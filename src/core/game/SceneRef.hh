@@ -6,8 +6,15 @@
 namespace sp {
     class Scene;
 
+    enum class SceneType {
+        Async = 0,
+        World,
+        System,
+    };
+
     struct SceneRef {
         std::string name;
+        SceneType type;
         std::weak_ptr<Scene> ptr;
 
         SceneRef() {}

@@ -277,7 +277,11 @@ namespace sp::json {
         for (; prefixLen < strName.length() && prefixLen < prefix.length(); prefixLen++) {
             if (strName[prefixLen] != prefix[prefixLen]) break;
         }
-        dst = picojson::value(prefixLen >= strName.length() ? strName : strName.substr(prefixLen));
+        if (prefixLen != prefix.length() || prefixLen >= strName.length()) {
+            dst = picojson::value(strName);
+        } else {
+            dst = picojson::value(strName.substr(prefixLen));
+        }
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {

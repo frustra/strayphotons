@@ -6,19 +6,11 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
-
-namespace ecs {
-    struct SceneProperties;
-}
+#include "game/SceneRef.hh"
 
 namespace sp {
     class Asset;
-
-    enum class SceneType {
-        Async = 0,
-        World,
-        System,
-    };
+    struct SceneProperties;
 
     class Scene : public NonCopyable {
     public:
@@ -34,7 +26,7 @@ namespace sp {
         const SceneType type;
 
         ecs::ScenePriority priority;
-        std::shared_ptr<ecs::SceneProperties> properties;
+        std::shared_ptr<SceneProperties> properties;
 
     private:
         friend class SceneManager;

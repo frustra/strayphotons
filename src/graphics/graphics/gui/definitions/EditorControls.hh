@@ -7,6 +7,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "game/SceneManager.hh"
+#include "game/SceneProperties.hh"
 #include "game/SceneRef.hh"
 
 #include <imgui/imgui.h>
@@ -21,7 +22,7 @@ namespace sp {
             bool hasParent = false;
             std::vector<ecs::Name> children;
         };
-        std::string entitySearch;
+        std::string entitySearch, sceneEntry;
         std::map<ecs::Name, TreeNode> entityTree;
         SceneRef scene;
         ecs::Entity target;
@@ -567,8 +568,7 @@ namespace sp {
                                 }
                             }
 
-                            const bool is_selected = this->target == stagingId;
-                            if (ImGui::Selectable(sourceName.c_str(), is_selected)) {
+                            if (ImGui::Selectable(sourceName.c_str(), this->target == stagingId)) {
                                 this->target = stagingId;
                             }
                         } else {
@@ -602,8 +602,78 @@ namespace sp {
     }
 
     void EditorContext::ShowSceneControls(ecs::Lock<ecs::ReadAll> lock) {
+        ImGui::Text("Active Scene List:");
+        if (ImGui::BeginListBox("##ActiveScenes", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
+            auto sceneList = GetSceneManager().GetActiveScenes();
+            std::sort(sceneList.begin(), sceneList.end());
+            for (auto &entry : sceneList) {
+                if (!entry || entry.type == SceneType::System) continue;
+                std::string entryText = entry.name + " (" + std::string(magic_enum::enum_name(entry.type)) + ")";
+                if (ImGui::Selectable(entryText.c_str(), entry == this->scene)) {
+                    this->scene = entry;
+                }
+            }
+            ImGui::EndListBox();
+        }
+        if (ImGui::Button("Reload All")) {
+            GetSceneManager().QueueAction(SceneAction::ReloadScene);
+        }
+        ImGui::SameLine();
+        ImGui::Button("Add Scene");
+        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
+            ImGui::SetNextItemWidth(300);
+            ImGui::InputTextWithHint("##scene_name", "Scene Name", &sceneEntry);
+            ImGui::SameLine();
+            if (ImGui::Button("Add")) {
+                GetSceneManager().QueueAction(SceneAction::AddScene, sceneEntry);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
         if (this->scene) {
-            ImGui::Text("Current Scene: %s", this->scene.name.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("Remove Scene")) {
+                GetSceneManager().QueueAction(SceneAction::RemoveScene, this->scene.name);
+            }
+        }
+        ImGui::Separator();
+        if (this->scene) {
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Scene Name: %s", this->scene.name.c_str());
+            if (this->scene.type != SceneType::System) {
+                ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().ItemSpacing.x * 2.0f - 120.0f);
+                if (ImGui::Button("Reload", ImVec2(60, 0))) {
+                    GetSceneManager().QueueAction(SceneAction::ReloadScene, this->scene.name);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Save", ImVec2(60, 0))) {
+                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.name);
+                }
+            }
+            if (ImGui::CollapsingHeader("Scene Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::BeginDisabled();
+                auto &metadata = ecs::StructMetadata::Get<SceneProperties>();
+                SceneProperties properties = {};
+                {
+                    // TODO: Holding this shared_ptr is unsafe and may crash on scene load
+                    auto scene = this->scene.ptr.lock();
+                    if (scene && scene->properties) {
+                        properties = *scene->properties;
+                    }
+                }
+                bool changed = false;
+                for (auto &field : metadata.fields) {
+                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                        using T = std::remove_pointer_t<decltype(typePtr)>;
+                        auto value = *field.Access<T>(&properties);
+                        if (AddImGuiElement(field.name, value)) changed = true;
+                    });
+                }
+                if (changed) {
+                    // TODO
+                }
+                ImGui::EndDisabled();
+            }
         }
     }
 } // namespace sp

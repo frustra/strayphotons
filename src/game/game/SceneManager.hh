@@ -10,6 +10,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "game/Scene.hh"
+#include "game/SceneRef.hh"
 
 #include <deque>
 #include <functional>
@@ -45,6 +46,8 @@ namespace sp {
         SceneManager(bool skipPreload = false);
         ~SceneManager();
         void Shutdown();
+
+        std::vector<SceneRef> GetActiveScenes();
 
         using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
         using EditSceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>)>;
@@ -104,6 +107,9 @@ namespace sp {
         std::shared_ptr<Scene> preloadScene;
         std::atomic_flag physicsPreload, graphicsPreload;
         bool skipPreload;
+
+        LockFreeMutex activeSceneMutex;
+        std::vector<SceneRef> activeSceneCache;
 
         PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;

@@ -5,6 +5,7 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "game/SceneProperties.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
@@ -23,7 +24,7 @@ namespace sp {
         auto player = entities::Player.Get(lock);
         auto head = entities::Head.Get(lock);
 
-        ecs::SceneProperties sceneProperties = {};
+        SceneProperties sceneProperties = {};
         if (player.Has<ecs::SceneInfo>(lock)) {
             auto &properties = player.Get<ecs::SceneInfo>(lock).properties;
             if (properties) sceneProperties = *properties;

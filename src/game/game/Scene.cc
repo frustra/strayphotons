@@ -4,6 +4,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
+#include "game/SceneProperties.hh"
 
 namespace sp {
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
@@ -304,7 +305,7 @@ namespace sp {
                 properties.fixedGravity = this->rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
                 properties.gravityTransform = this->rootTransform * properties.gravityTransform;
 
-                auto propertiesPtr = make_shared<ecs::SceneProperties>(properties);
+                auto propertiesPtr = make_shared<SceneProperties>(properties);
                 for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
                     auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
                     if (sceneInfo.scene != *this) continue;
