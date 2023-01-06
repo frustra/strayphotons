@@ -2,8 +2,8 @@
 
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/SceneProperties.hh"
 #include "game/Scene.hh"
+#include "game/SceneProperties.hh"
 
 namespace ecs {
     SceneInfo::SceneInfo(Entity ent,
