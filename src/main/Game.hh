@@ -37,6 +37,9 @@ namespace sp {
     class AudioManager;
 #endif
 
+    extern std::atomic_int gameExitCode;
+    extern std::atomic_flag gameExitTriggered;
+
     class Game {
         LogOnExit logOnExit = "Game shut down ========================================================";
 

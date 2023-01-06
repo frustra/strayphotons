@@ -13,12 +13,22 @@ using namespace std;
     #include "assets/ConsoleScript.hh"
 #endif
 
+#include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
 #include <filesystem>
 #include <memory>
 
 using cxxopts::value;
+
+namespace sp {
+    void handleSignals(int signal) {
+        if (signal == SIGINT) {
+            gameExitTriggered.test_and_set();
+            gameExitTriggered.notify_all();
+        }
+    }
+} // namespace sp
 
 // TODO: Commented until package release saves a log file
 // #if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
@@ -69,6 +79,14 @@ int main(int argc, char **argv)
         timeEndPeriod(*period);
         delete period;
     });
+
+    signal(SIGINT, sp::handleSignals);
+#else
+    struct sigaction act;
+    act.sa_handler = sp::handleSignals;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(SIGINT, &act, 0);
 #endif
 
 #ifdef CATCH_GLOBAL_EXCEPTIONS

@@ -142,7 +142,7 @@ namespace sp {
     }
 
     void GraphicsManager::PreFrame() {
-        if (!context) return;
+        if (!HasActiveContext()) return;
         if (game->debugGui) game->debugGui->BeforeFrame();
         if (game->menuGui) game->menuGui->BeforeFrame();
 
@@ -185,7 +185,7 @@ namespace sp {
             interval = std::chrono::nanoseconds(0);
         }
 
-        if (!context) return;
+        if (!HasActiveContext()) return;
 
     #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         context->SwapBuffers();
