@@ -46,6 +46,8 @@ namespace sp {
     void InspectorGui::DefineContents() {
         if (!context) return;
         ZoneScoped;
+
+        bool selectEntityView = false;
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput>>();
 
@@ -58,6 +60,7 @@ namespace sp {
                     Errorf("Invalid editor event: %s", event.toString());
                 } else {
                     targetEntity = *newTarget;
+                    if (targetEntity) selectEntityView = true;
                 }
             }
         }
@@ -81,7 +84,9 @@ namespace sp {
                 }
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Entity View")) {
+            if (ImGui::BeginTabItem("Entity View",
+                    nullptr,
+                    selectEntityView ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
                 if (!targetEntity) {
                     targetEntity = context->ShowAllEntities("##EntityList");
                 } else {

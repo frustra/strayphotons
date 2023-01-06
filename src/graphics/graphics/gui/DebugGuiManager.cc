@@ -69,12 +69,12 @@ namespace sp {
             while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name == INPUT_EVENT_TOGGLE_CONSOLE) {
                     consoleOpen = !consoleOpen;
-                }
-            }
 
-            if (lock.Has<ecs::FocusLock>()) {
-                auto &focusLock = lock.Get<ecs::FocusLock>();
-                focusChanged = focusLock.HasFocus(ecs::FocusLayer::Overlay) != consoleOpen;
+                    if (lock.Has<ecs::FocusLock>()) {
+                        auto &focusLock = lock.Get<ecs::FocusLock>();
+                        focusChanged = focusLock.HasFocus(ecs::FocusLayer::Overlay) != consoleOpen;
+                    }
+                }
             }
 
             ecs::ComponentEvent<ecs::Gui> guiEvent;
