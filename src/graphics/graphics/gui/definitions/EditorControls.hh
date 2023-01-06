@@ -619,12 +619,32 @@ namespace sp {
             GetSceneManager().QueueAction(SceneAction::ReloadScene);
         }
         ImGui::SameLine();
-        ImGui::Button("Add Scene");
+        bool openLoadScene = ImGui::Button("Load Scene");
         if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
             ImGui::SetNextItemWidth(300);
-            ImGui::InputTextWithHint("##scene_name", "Scene Name", &sceneEntry);
+            if (openLoadScene) ImGui::SetKeyboardFocusHere();
+            bool submit = ImGui::InputTextWithHint("##scene_name",
+                "Scene Name",
+                &sceneEntry,
+                ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SameLine();
-            if (ImGui::Button("Add")) {
+            if (ImGui::Button("Load") || submit) {
+                GetSceneManager().QueueAction(SceneAction::LoadScene, sceneEntry);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        ImGui::SameLine();
+        bool openAddScene = ImGui::Button("Add Scene");
+        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
+            ImGui::SetNextItemWidth(300);
+            if (openAddScene) ImGui::SetKeyboardFocusHere();
+            bool submit = ImGui::InputTextWithHint("##scene_name",
+                "Scene Name",
+                &sceneEntry,
+                ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::SameLine();
+            if (ImGui::Button("Add") || submit) {
                 GetSceneManager().QueueAction(SceneAction::AddScene, sceneEntry);
                 ImGui::CloseCurrentPopup();
             }
