@@ -1,0 +1,80 @@
+{
+	"entities": [
+		{
+			"name": "root",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [1.9, 0.8, 2]
+			}
+		},
+		{
+			"name": "tray",
+			"transform": {
+				"parent": "root",
+				"scale": [1, 0.05, 0.4],
+				"translate": [0.5, -0.025, 0.2]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"dynamic": false,
+				"group": "UserInterface",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "emitter",
+			"transform": {
+				"parent": "root",
+				"translate": [0.1, 0, 0.1]
+			},
+			"physics": {
+				"group": "UserInterface",
+				"dynamic": false
+			},
+			"signal_output": {
+				"laser_color_r": 10
+			},
+			"script": [{
+				"parameters": {
+					"source": "laser_emitter_block"
+				},
+				"prefab": "template"
+			},
+			{
+				"parameters": {
+					"source": "laser_emitter_block"
+				},
+				"onTick": "tray_spawner"
+			}
+		]
+		},
+		{
+			"name": "sensor",
+			"transform": {
+				"parent": "root",
+				"translate": [0.1, 0, 0.2]
+			},
+			"physics": {
+				"group": "UserInterface",
+				"dynamic": false
+			},
+			"script": [{
+				"parameters": {
+					"source": "laser_sensor_block"
+				},
+				"prefab": "template"
+			},
+			{
+				"parameters": {
+					"source": "laser_sensor_block"
+				},
+				"onTick": "tray_spawner"
+			}
+		]
+		}
+	]
+}

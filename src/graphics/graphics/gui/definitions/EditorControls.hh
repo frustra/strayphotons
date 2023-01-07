@@ -522,13 +522,13 @@ namespace sp {
                     ImGui::SameLine();
                     if (ImGui::Button("Apply Scene")) {
                         GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.data->name);
-                        GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.data->name);
+                        GetSceneManager().QueueAction(SceneAction::ApplyResetStagingScene, this->scene.data->name);
                     }
                     if (!targetSceneInfo.prefabStagingId) {
                         ImGui::SameLine();
                         if (ImGui::Button("Save & Apply Scene")) {
                             GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.data->name);
-                            GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.data->name);
+                            GetSceneManager().QueueAction(SceneAction::ApplyResetStagingScene, this->scene.data->name);
                             GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.data->name);
                         }
                     }

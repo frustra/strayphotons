@@ -1,6 +1,7 @@
 target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     ArticulatingArm.cc
     AudioScripts.cc
+    EditorScripts.cc
     Elevator.cc
     EventScripts.cc
     InputScripts.cc

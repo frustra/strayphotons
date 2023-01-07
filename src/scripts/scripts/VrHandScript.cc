@@ -190,7 +190,6 @@ namespace sp::scripts {
         };
 
         void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, Entity ent, bool isPointing) {
-
             glm::vec3 pointOrigin, pointDir, pointPos;
             Entity pointTarget;
 
@@ -251,24 +250,6 @@ namespace sp::scripts {
                     laserLine.on = true;
                 } else {
                     laserLine.on = false;
-                }
-            }
-
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name != INTERACT_EVENT_INTERACT_PRESS) continue;
-
-                if (std::holds_alternative<bool>(event.data)) {
-                    if (pressEntity) {
-                        // Unpress the currently pressed entity
-                        EventBindings::SendEvent(lock, pressEntity, Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
-                        pressEntity = {};
-                    }
-                    if (std::get<bool>(event.data) && pointTarget) {
-                        // Press the entity being looked at
-                        EventBindings::SendEvent(lock, pointTarget, Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
-                        pressEntity = pointTarget;
-                    }
                 }
             }
         }
@@ -355,6 +336,36 @@ namespace sp::scripts {
             } else if (grabSignal > 0.2 && !grabTarget) {
                 grabTarget = groupOverlaps[BoneGroup::Index];
             }
+
+            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_middle");
+            bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
+            HandlePointing(state, lock, ent, isPointing);
+
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
+                    if (std::holds_alternative<bool>(event.data)) {
+                        if (pressEntity) {
+                            // Unpress the currently pressed entity
+                            EventBindings::SendEvent(lock,
+                                pressEntity,
+                                Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
+                            pressEntity = {};
+                        }
+                        if (std::get<bool>(event.data) && pointEntity) {
+                            // Press the entity being looked at
+                            EventBindings::SendEvent(lock,
+                                pointEntity,
+                                Event{INTERACT_EVENT_INTERACT_PRESS, ent, true});
+                            pressEntity = pointEntity;
+                        }
+                    }
+                } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                    if (!std::holds_alternative<Entity>(event.data)) continue;
+                    grabTarget = std::get<Entity>(event.data);
+                }
+            }
+
             if (grabEntity && grabEntity != grabTarget) {
                 // Drop the currently held entity
                 EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
@@ -369,10 +380,6 @@ namespace sp::scripts {
                     grabEntity = grabTarget;
                 }
             }
-
-            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_middle");
-            bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
-            HandlePointing(state, lock, ent, isPointing);
 
             // Update the hand's physics shape
             ph.shapes.clear();
@@ -407,5 +414,6 @@ namespace sp::scripts {
     InternalPhysicsScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
         false,
+        INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

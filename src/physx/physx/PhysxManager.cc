@@ -577,9 +577,19 @@ namespace sp {
             return;
         }
         auto &actor = actors[e];
-        auto dynamic = actor->is<PxRigidDynamic>();
-
         auto &ph = e.Get<ecs::Physics>(lock);
+        auto dynamic = actor->is<PxRigidDynamic>();
+        if (ph.dynamic != !!dynamic) {
+            RemoveActor(actor);
+            auto replacementActor = CreateActor(lock, e);
+            if (replacementActor) {
+                actors[e] = replacementActor;
+            } else {
+                actors.erase(e);
+            }
+            return;
+        }
+
         auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto scale = transform.GetScale();
         auto userData = (ActorUserData *)actor->userData;

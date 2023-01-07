@@ -7,11 +7,14 @@
 				{
 					"box": [0.065, 0.01, 0.065],
 					"transform": {
-						"translate": [0, -0.015, 0]
+						"translate": [0, 0.005, 0]
 					}
 				},
 				{
-					"box": [0.03, 0.03, 0.03]
+					"box": [0.03, 0.03, 0.03],
+					"transform": {
+						"translate": [0, 0.02, 0]
+					}
 				}
 			],
 			"dynamic": true
@@ -39,7 +42,7 @@
 			"name": "mount",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, -0.015, 0],
+				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
 			"script": {
@@ -54,7 +57,7 @@
 			"name": "block-gizmo",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0],
+				"translate": [0, 0.02, 0],
 				"scale": [0.03, 0.03, 0.03]
 			},
 			"script": {
@@ -69,7 +72,7 @@
 			"name": "output",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0.0029],
+				"translate": [0, 0.02, 0.0029],
 				"rotate": [180, 0, 1, 0],
 				"scale": 1.25
 			},

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Ecs.hh"
+#include "ecs/components/ActiveScene.hh"
 #include "ecs/components/Animation.hh"
 #include "ecs/components/Controller.hh"
 #include "ecs/components/Events.hh"

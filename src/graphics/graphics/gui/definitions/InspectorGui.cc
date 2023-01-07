@@ -47,7 +47,7 @@ namespace sp {
 
         bool selectEntityView = false;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::ActiveScene>>();
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
@@ -59,6 +59,18 @@ namespace sp {
                 } else {
                     targetEntity = *newTarget;
                     if (targetEntity) selectEntityView = true;
+                }
+            }
+
+            if (lock.Has<ecs::ActiveScene>()) {
+                auto &active = lock.Get<ecs::ActiveScene>();
+                if (context->scene != active.scene) {
+                    std::thread([scene = context->scene]() {
+                        auto lock = ecs::StartTransaction<ecs::Write<ecs::ActiveScene>>();
+                        if (lock.Has<ecs::ActiveScene>()) {
+                            lock.Set<ecs::ActiveScene>(scene);
+                        }
+                    }).detach();
                 }
             }
         }
