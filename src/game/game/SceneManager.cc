@@ -31,7 +31,18 @@ namespace sp {
         return sceneManager;
     }
 
+    static std::atomic<std::thread::id> activeSceneManagerThread;
+
+    std::shared_ptr<Scene> SceneRef::Lock() const {
+        Assertf(std::this_thread::get_id() == activeSceneManagerThread,
+            "SceneRef::Lock() must only be called in SceneManaager thread");
+        auto result = ptr.lock();
+        Assertf(result, "SceneRef points to null scene: %s (%s)", name, type);
+        return result;
+    }
+
     SceneManager::SceneManager(bool skipPreload) : RegisteredThread("SceneManager", 30.0), skipPreload(skipPreload) {
+        activeSceneManagerThread = std::this_thread::get_id();
         funcs.Register<std::string>("loadscene",
             "Load a scene and replace current scenes",
             [this](std::string sceneName) {
@@ -79,6 +90,7 @@ namespace sp {
             actionQueue.clear();
         }
         StopThread(true);
+        activeSceneManagerThread = std::this_thread::get_id();
 
         auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
         auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
@@ -102,6 +114,11 @@ namespace sp {
         LogOnExit logOnExit = "SceneManager shut down ================================================";
     }
 
+    bool SceneManager::ThreadInit() {
+        activeSceneManagerThread = std::this_thread::get_id();
+        return true;
+    }
+
     std::vector<SceneRef> SceneManager::GetActiveScenes() {
         std::lock_guard lock(activeSceneMutex);
         return activeSceneCache;
@@ -117,7 +134,7 @@ namespace sp {
             if (item.action == SceneAction::ApplySystemScene) {
                 ZoneScopedN("ApplySystemScene");
                 ZoneStr(item.sceneName);
-                if (!item.applyCallback) {
+                if (!item.editSceneCallback) {
                     // Load the System scene from json
                     AddScene(item.sceneName, SceneType::System);
                 } else {
@@ -130,7 +147,7 @@ namespace sp {
 
                     {
                         auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
-                        item.applyCallback(stagingLock, scene);
+                        item.editSceneCallback(stagingLock, scene);
                     }
                     {
                         Tracef("Applying system scene: %s", scene->name);
@@ -143,14 +160,14 @@ namespace sp {
             } else if (item.action == SceneAction::EditStagingScene) {
                 ZoneScopedN("EditStagingScene");
                 ZoneStr(item.sceneName);
-                if (item.applyCallback) {
+                if (item.editSceneCallback) {
                     auto scene = stagedScenes.Load(item.sceneName);
                     if (scene) {
                         if (scene->type != SceneType::System) {
                             Tracef("Editing staging scene: %s", scene->name);
                             {
                                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
-                                item.applyCallback(stagingLock, scene);
+                                item.editSceneCallback(stagingLock, scene);
                             }
                         } else {
                             Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->name);
@@ -159,7 +176,7 @@ namespace sp {
                         Errorf("SceneManager::EditStagingScene: scene %s not found", item.sceneName);
                     }
                 } else {
-                    Errorf("SceneManager::EditStagingScene called on %s without applyCallback", item.sceneName);
+                    Errorf("SceneManager::EditStagingScene called on %s without editSceneCallback", item.sceneName);
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::RefreshScenePrefabs) {
@@ -191,13 +208,6 @@ namespace sp {
                 ZoneScopedN("SaveStagingScene");
                 ZoneStr(item.sceneName);
                 SaveSceneJson(item.sceneName);
-                item.promise.set_value();
-            } else if (item.action == SceneAction::EditLiveECS) {
-                ZoneScopedN("EditLiveECS");
-                if (item.editCallback) {
-                    auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
-                    item.editCallback(liveLock);
-                }
                 item.promise.set_value();
             } else if (item.action == SceneAction::LoadScene) {
                 ZoneScopedN("LoadScene");
@@ -360,6 +370,10 @@ namespace sp {
                 ZoneScopedN("SyncScene");
                 UpdateSceneConnections();
                 item.promise.set_value();
+            } else if (item.action == SceneAction::RunCallback) {
+                ZoneScopedN("RunCallback");
+                if (item.voidCallback) item.voidCallback();
+                item.promise.set_value();
             } else {
                 Abortf("Unsupported SceneAction: %s", item.action);
             }
@@ -424,19 +438,25 @@ namespace sp {
         ecs::GetEntityRefs().Tick(this->interval);
     }
 
-    void SceneManager::QueueAction(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
+    void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditSceneCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, sceneName, callback);
     }
 
-    void SceneManager::QueueAction(SceneAction action, EditSceneCallback callback) {
+    void SceneManager::QueueAction(SceneAction action, EditCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, callback);
     }
 
-    void SceneManager::QueueActionAndBlock(SceneAction action, std::string sceneName, PreApplySceneCallback callback) {
+    void SceneManager::QueueAction(SceneAction action, VoidCallback callback) {
+        std::lock_guard lock(actionMutex);
+        if (state != ThreadState::Started) return;
+        actionQueue.emplace_back(action, callback);
+    }
+
+    void SceneManager::QueueActionAndBlock(SceneAction action, std::string sceneName, EditSceneCallback callback) {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);
@@ -448,6 +468,21 @@ namespace sp {
             future.get();
         } catch (const std::future_error &) {
             Abortf("SceneManager action did not complete: %s(%s)", action, sceneName);
+        }
+    }
+
+    void SceneManager::QueueActionAndBlock(SceneAction action, VoidCallback callback) {
+        std::future<void> future;
+        {
+            std::lock_guard lock(actionMutex);
+            if (state != ThreadState::Started) return;
+            auto &entry = actionQueue.emplace_back(action, callback);
+            future = entry.promise.get_future();
+        }
+        try {
+            future.get();
+        } catch (const std::future_error &) {
+            Abortf("SceneManager action did not complete: %s", action);
         }
     }
 

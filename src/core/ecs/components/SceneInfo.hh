@@ -21,18 +21,16 @@ namespace ecs {
 
     struct SceneInfo {
         SceneInfo() {}
-        SceneInfo(Entity ent,
-            const std::shared_ptr<sp::Scene> &scene,
-            const std::shared_ptr<sp::SceneProperties> &properties);
+        SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene);
 
         SceneInfo(Entity liveId, const SceneInfo &sceneInfo)
-            : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene), properties(sceneInfo.properties) {
+            : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene) {
             Assertf(IsLive(liveId), "Invalid liveId in SceneInfo: %s", std::to_string(liveId));
         }
 
         SceneInfo(Entity rootStagingId, Entity prefabStagingId, size_t prefabScriptId, const SceneInfo &rootSceneInfo)
             : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), prefabScriptId(prefabScriptId),
-              priority(rootSceneInfo.priority), scene(rootSceneInfo.scene), properties(rootSceneInfo.properties) {
+              priority(rootSceneInfo.priority), scene(rootSceneInfo.scene) {
             Assertf(IsStaging(rootStagingId), "Invalid rootStagingId in SceneInfo: %s", std::to_string(rootStagingId));
             Assertf(IsStaging(prefabStagingId),
                 "Invalid prefabStagingId in SceneInfo: %s",

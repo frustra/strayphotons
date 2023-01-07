@@ -3,8 +3,14 @@
 #include <memory>
 #include <string>
 
+namespace ecs {
+    struct Scripts;
+}
+
 namespace sp {
     class Scene;
+    class SceneManager;
+    struct SceneProperties;
 
     enum class SceneType {
         Async = 0,
@@ -12,11 +18,8 @@ namespace sp {
         System,
     };
 
-    struct SceneRef {
-        std::string name;
-        SceneType type;
-        std::weak_ptr<Scene> ptr;
-
+    class SceneRef {
+    public:
         SceneRef() {}
         SceneRef(const std::shared_ptr<Scene> &scene);
 
@@ -30,5 +33,16 @@ namespace sp {
         // Thread-safe equality check without weak_ptr::lock()
         bool operator==(const std::weak_ptr<Scene> &scene) const;
         bool operator<(const SceneRef &other) const;
+
+        std::string name;
+        SceneType type;
+        std::shared_ptr<SceneProperties> properties;
+
+        // Must only be called by SceneManager.
+        // Defined in game/SceneManager.cc
+        std::shared_ptr<Scene> Lock() const;
+
+    private:
+        std::weak_ptr<Scene> ptr;
     };
 } // namespace sp

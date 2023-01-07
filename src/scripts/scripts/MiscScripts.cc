@@ -60,11 +60,12 @@ namespace sp::scripts {
                 Transform transform(position);
                 transform = relativeTransform * transform;
 
-                GetSceneManager().QueueAction(SceneAction::EditLiveECS,
-                    [ent, transform, modelName = modelName, scope = state.scope](ecs::Lock<ecs::AddRemove> lock) {
+                GetSceneManager().QueueAction(SceneAction::RunCallback,
+                    [ent, transform, modelName = modelName, scope = state.scope]() {
+                        auto lock = ecs::StartTransaction<ecs::AddRemove>();
                         if (!ent.Has<ecs::SceneInfo>(lock)) return;
                         auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
-                        auto scene = sceneInfo.scene.ptr.lock();
+                        auto scene = sceneInfo.scene.Lock();
                         if (!scene) return;
 
                         auto newEntity = scene->NewRootEntity(lock, scene);

@@ -448,11 +448,10 @@ namespace sp {
 
         if (valueChanged) {
             if (ecs::IsLive(target)) {
-                GetSceneManager().QueueAction(SceneAction::EditLiveECS,
-                    [target = this->target, value, &comp, &field](ecs::Lock<ecs::WriteAll> lock) {
-                        void *component = comp.Access(lock, target);
-                        *field.Access<T>(component) = value;
-                    });
+                ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto lock) {
+                    void *component = comp.Access(lock, target);
+                    *field.Access<T>(component) = value;
+                });
             } else if (scene) {
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
                     scene.name,
@@ -676,12 +675,8 @@ namespace sp {
                 ImGui::BeginDisabled();
                 auto &metadata = ecs::StructMetadata::Get<SceneProperties>();
                 SceneProperties properties = {};
-                {
-                    // TODO: Holding this shared_ptr is unsafe and may crash on scene load
-                    auto scene = this->scene.ptr.lock();
-                    if (scene && scene->properties) {
-                        properties = *scene->properties;
-                    }
+                if (this->scene.properties) {
+                    properties = *this->scene.properties;
                 }
                 bool changed = false;
                 for (auto &field : metadata.fields) {
