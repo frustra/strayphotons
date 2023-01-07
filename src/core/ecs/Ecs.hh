@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/DispatchQueue.hh"
 #include "core/Tracing.hh"
 
 #include <Tecs.hh>
@@ -10,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <type_traits>
 #include <typeindex>
 
 namespace picojson {
@@ -108,6 +110,7 @@ namespace ecs {
 
     ECS &World();
     ECS &StagingWorld();
+    sp::DispatchQueue &TransactionQueue();
 
     int GetComponentIndex(const std::string &componentName);
 
@@ -119,6 +122,33 @@ namespace ecs {
     template<typename... Permissions>
     inline auto StartStagingTransaction() {
         return StagingWorld().StartTransaction<Permissions...>();
+    }
+
+    /**
+     * Queues a transaction in a globally serialized queue. Ideal for non-blocking write transactions.
+     *
+     * Returns a future that will be resolved with the return value of the callback.
+     * The function will be called from the ECSTransactionQueue thread with the acquired transaction lock.
+     *
+     * If the return value of the callback is itself a future, the future returned
+     * from QueueTransaction will be set to its value once it is ready.
+     *
+     * Usage: QueueTransaction<Permissions...>([](auto lock) { return value; });
+     * Example:
+     *  AsyncPtr<Entity> ent = QueueTransaction<AddRemove>([](auto lock) { return lock.NewEntity(); });
+     *  QueueTransaction<Write<FocusLock>>([ent](auto lock) { Assert(ent.Ready()); lock.Set<FocusLock>(); });
+     */
+    template<typename... Permissions, typename Fn>
+    inline auto QueueTransaction(Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, Lock<Permissions...>>> {
+        using ReturnType = std::invoke_result_t<Fn, Lock<Permissions...>>;
+        return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
+            Lock<Permissions...> lock = World().StartTransaction<Permissions...>();
+            if constexpr (std::is_void_v<ReturnType>) {
+                callback(lock);
+            } else {
+                return std::make_shared<ReturnType>(callback(lock));
+            }
+        });
     }
 
     static inline bool IsLive(const Entity &e) {

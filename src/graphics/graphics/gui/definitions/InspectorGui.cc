@@ -15,15 +15,13 @@ namespace sp {
         : GuiWindow(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
-        std::thread([this]() {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
-
-            auto inspector = inspectorEntity.Get(lock);
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto lock) {
+            ecs::Entity inspector = inspectorEntity.Get(lock);
             if (!inspector.Has<ecs::EventInput>(lock)) return;
 
             auto &eventInput = inspector.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
-        }).detach();
+        });
     }
 
     void InspectorGui::PreDefine() {

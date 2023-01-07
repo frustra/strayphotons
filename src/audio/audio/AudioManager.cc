@@ -139,18 +139,18 @@ namespace sp {
         while (soundObserver.Poll(lock, compEvent)) {
             if (compEvent.type == Tecs::EventType::ADDED) {
                 if (!compEvent.entity.Has<ecs::EventInput, ecs::Sounds>(lock)) continue;
-                std::thread([this, ent = compEvent.entity]() {
-                    auto lock = ecs::StartTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>();
-                    if (!ent.Has<ecs::EventInput, ecs::Sounds>(lock)) return;
+                ecs::QueueTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>(
+                    [this, ent = compEvent.entity](auto lock) {
+                        if (!ent.Has<ecs::EventInput, ecs::Sounds>(lock)) return;
 
-                    auto &sounds = ent.Get<ecs::Sounds>(lock);
-                    if (!sounds.eventQueue) sounds.eventQueue = ecs::NewEventQueue();
-                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                    eventInput.Register(lock, sounds.eventQueue, "/sound/play");
-                    eventInput.Register(lock, sounds.eventQueue, "/sound/resume");
-                    eventInput.Register(lock, sounds.eventQueue, "/sound/pause");
-                    eventInput.Register(lock, sounds.eventQueue, "/sound/stop");
-                }).detach();
+                        auto &sounds = ent.Get<ecs::Sounds>(lock);
+                        if (!sounds.eventQueue) sounds.eventQueue = ecs::NewEventQueue();
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Register(lock, sounds.eventQueue, "/sound/play");
+                        eventInput.Register(lock, sounds.eventQueue, "/sound/resume");
+                        eventInput.Register(lock, sounds.eventQueue, "/sound/pause");
+                        eventInput.Register(lock, sounds.eventQueue, "/sound/stop");
+                    });
             } else if (compEvent.type == Tecs::EventType::REMOVED) {
 
                 auto *entSound = soundEntityMap.find(compEvent.entity);

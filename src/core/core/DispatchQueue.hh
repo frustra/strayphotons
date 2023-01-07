@@ -175,7 +175,6 @@ namespace sp {
             }
         }
 
-    private:
         template<typename ReturnType, typename Fn, typename... Futures>
         AsyncPtr<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
@@ -189,6 +188,7 @@ namespace sp {
             return item->returnValue;
         }
 
+    private:
         size_t FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady);
         void ThreadMain();
 
