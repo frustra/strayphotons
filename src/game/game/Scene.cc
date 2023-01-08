@@ -38,7 +38,7 @@ namespace sp {
         }
 
         auto entity = stagingLock.NewEntity();
-        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene, scene->properties);
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene);
         entity.Set<ecs::Name>(stagingLock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
@@ -77,7 +77,7 @@ namespace sp {
         }
 
         auto entity = lock.NewEntity();
-        entity.Set<ecs::SceneInfo>(lock, entity, scene, scene->properties);
+        entity.Set<ecs::SceneInfo>(lock, entity, scene);
         entity.Set<ecs::Name>(lock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);

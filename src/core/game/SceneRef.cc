@@ -3,7 +3,8 @@
 #include "game/Scene.hh"
 
 namespace sp {
-    SceneRef::SceneRef(const std::shared_ptr<Scene> &scene) : name(scene->name), type(scene->type), ptr(scene) {}
+    SceneRef::SceneRef(const std::shared_ptr<Scene> &scene)
+        : name(scene->name), type(scene->type), properties(scene->properties), ptr(scene) {}
 
     bool SceneRef::operator==(const SceneRef &other) const {
         return !name.empty() && name == other.name;

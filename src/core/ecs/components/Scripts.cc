@@ -161,7 +161,7 @@ namespace ecs {
         ZoneScopedN("RunPrefabs");
         ZoneStr(ecs::ToString(lock, ent));
 
-        auto scene = ent.Get<const SceneInfo>(lock).scene.ptr.lock();
+        auto scene = ent.Get<const SceneInfo>(lock).scene;
         Assertf(scene, "RunPrefabs entity has null scene: %s", ecs::ToString(lock, ent));
 
         // Prefab scripts may add additional scripts while iterating.

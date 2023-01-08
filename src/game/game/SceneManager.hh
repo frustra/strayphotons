@@ -25,12 +25,11 @@ namespace sp {
     static const char *const InputBindingConfigPath = "input_bindings.json";
 
     enum class SceneAction {
-        ApplySystemScene, // Arguments: (sceneName, applyCallback)
-        EditStagingScene, // Arguments: (sceneName, applyCallback)
+        ApplySystemScene, // Arguments: (sceneName, EditSceneCallback)
+        EditStagingScene, // Arguments: (sceneName, EditSceneCallback)
         RefreshScenePrefabs, // Arguments: (sceneName)
         ApplyStagingScene, // Arguments: (sceneName)
         SaveStagingScene, // Arguments: (sceneName)
-        EditLiveECS, // Arguments: (editCallback)
         LoadScene, // Arguments: (sceneName)
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
@@ -39,6 +38,7 @@ namespace sp {
         ReloadPlayer, // Arguments: ()
         ReloadBindings, // Arguments: ()
         SyncScene, // Arguments: ()
+        RunCallback, // Arguments: (VoidCallback)
     };
 
     class SceneManager : public RegisteredThread {
@@ -49,13 +49,14 @@ namespace sp {
 
         std::vector<SceneRef> GetActiveScenes();
 
-        using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
-        using EditSceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>)>;
-        void QueueAction(SceneAction action, std::string sceneName = "", PreApplySceneCallback callback = nullptr);
-        void QueueAction(SceneAction action, EditSceneCallback callback);
-        void QueueActionAndBlock(SceneAction action,
-            std::string sceneName = "",
-            PreApplySceneCallback callback = nullptr);
+        using EditSceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
+        using EditCallback = std::function<void(ecs::Lock<ecs::AddRemove>)>;
+        using VoidCallback = std::function<void()>;
+        void QueueAction(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
+        void QueueAction(SceneAction action, EditCallback callback);
+        void QueueAction(SceneAction action, VoidCallback callback);
+        void QueueActionAndBlock(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
+        void QueueActionAndBlock(SceneAction action, VoidCallback callback);
 
         using ScenePreloadCallback = std::function<bool(ecs::Lock<ecs::ReadAll>, std::shared_ptr<Scene>)>;
         void PreloadSceneGraphics(ScenePreloadCallback callback);
@@ -74,6 +75,7 @@ namespace sp {
             OnApplySceneCallback callback = nullptr);
         void RefreshPrefabs(const std::shared_ptr<Scene> &scene);
 
+        bool ThreadInit() override;
         void Frame() override;
 
         void PrintScene(std::string sceneName);
@@ -92,14 +94,15 @@ namespace sp {
             SceneAction action;
 
             std::string sceneName;
-            PreApplySceneCallback applyCallback;
-            EditSceneCallback editCallback;
+            EditSceneCallback editSceneCallback;
+            EditCallback editCallback;
+            VoidCallback voidCallback;
             std::promise<void> promise;
 
-            QueuedAction(SceneAction action, std::string sceneName, PreApplySceneCallback applyCallback = nullptr)
-                : action(action), sceneName(sceneName), applyCallback(applyCallback) {}
-            QueuedAction(SceneAction action, EditSceneCallback editCallback)
-                : action(action), editCallback(editCallback) {}
+            QueuedAction(SceneAction action, std::string sceneName, EditSceneCallback editSceneCallback = nullptr)
+                : action(action), sceneName(sceneName), editSceneCallback(editSceneCallback) {}
+            QueuedAction(SceneAction action, EditCallback editCallback) : action(action), editCallback(editCallback) {}
+            QueuedAction(SceneAction action, VoidCallback voidCallback) : action(action), voidCallback(voidCallback) {}
         };
 
         LockFreeMutex actionMutex, preloadMutex;

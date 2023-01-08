@@ -53,7 +53,7 @@ namespace sp::scene {
 
                             // Apply scene root transform
                             if (!transform.parent) {
-                                auto scene = stagingInfo.scene.ptr.lock();
+                                auto scene = stagingInfo.scene.Lock();
                                 Assertf(scene,
                                     "Staging entity %s has null scene: %s",
                                     ToString(staging, stagingId),
@@ -72,7 +72,7 @@ namespace sp::scene {
                             if (stagingId.Has<TransformTree>(staging)) {
                                 auto &transform = stagingId.Get<TransformTree>(staging);
                                 if (!transform.parent) {
-                                    auto scene = stagingInfo.scene.ptr.lock();
+                                    auto scene = stagingInfo.scene.Lock();
                                     Assertf(scene,
                                         "Staging entity %s has null scene: %s",
                                         ToString(staging, stagingId),

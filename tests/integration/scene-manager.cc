@@ -8,7 +8,10 @@
 namespace SceneManagerTests {
     using namespace testing;
 
-    sp::SceneManager Scenes(true);
+    sp::SceneManager &Scenes() {
+        static sp::SceneManager scenes(true);
+        return scenes;
+    }
 
     template<typename T>
     ecs::Entity EntityWith(ecs::Lock<ecs::Read<T>> lock, const T &value) {
@@ -59,7 +62,7 @@ namespace SceneManagerTests {
     void systemSceneCallback(ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<sp::Scene> scene) {
         auto ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "player", "player");
-        ent.Set<ecs::SceneInfo>(lock, ent, scene, scene->properties);
+        ent.Set<ecs::SceneInfo>(lock, ent, scene);
         ent.Set<ecs::TransformSnapshot>(lock, glm::vec3(1, 2, 3));
         ent.Set<ecs::SignalOutput>(lock);
         ent.Set<ecs::SignalBindings>(lock);
@@ -69,13 +72,13 @@ namespace SceneManagerTests {
 
         ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "", "test");
-        ent.Set<ecs::SceneInfo>(lock, ent, scene, scene->properties);
+        ent.Set<ecs::SceneInfo>(lock, ent, scene);
     }
 
     void TestBasicLoadAddRemove() {
         {
             Timer t("Add system scene first");
-            Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
+            Scenes().QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -85,7 +88,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add player scene second");
-            Scenes.QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
+            Scenes().QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -95,7 +98,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload player scene (primary player entity)");
-            {
+            Scenes().QueueActionAndBlock(sp::SceneAction::RunCallback, [] {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                 auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
@@ -105,11 +108,11 @@ namespace SceneManagerTests {
                     ecs::Name("player", "player"),
                     "Expected player to be named correctly");
                 auto &playerSceneInfo = player.Get<ecs::SceneInfo>(liveLock);
-                auto playerScene = playerSceneInfo.scene.ptr.lock();
+                auto playerScene = playerSceneInfo.scene.Lock();
                 Assert(playerScene != nullptr, "Expected player to have a scene");
                 AssertEqual(playerScene->name, "player", "Expected player scene to be named correctly");
                 playerScene->RemoveScene(stagingLock, liveLock);
-            }
+            });
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -119,7 +122,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload player scene");
-            Scenes.QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
+            Scenes().QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -129,7 +132,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reset ECS");
-            Scenes.QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
+            Scenes().QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
 
             auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
             auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
@@ -143,7 +146,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add player scene first");
-            Scenes.QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
+            Scenes().QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -153,7 +156,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add system scene second");
-            Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
+            Scenes().QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -163,7 +166,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload system scene (secondary player entity)");
-            Scenes.QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
+            Scenes().QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -173,7 +176,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload system scene");
-            Scenes.QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
+            Scenes().QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();

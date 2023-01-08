@@ -6,6 +6,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Events.hh"
 #include "ecs/components/Signals.hh"
+#include "game/SceneRef.hh"
 
 #include <any>
 #include <functional>
@@ -23,8 +24,7 @@ namespace ecs {
 
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
-    using PrefabFunc =
-        std::function<void(const ScriptState &, const std::shared_ptr<sp::Scene> &, Lock<AddRemove>, Entity)>;
+    using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
 
     struct InternalScriptBase {
         const StructMetadata &metadata;
@@ -274,14 +274,11 @@ namespace ecs {
             return ptr ? ptr : &defaultValue;
         }
 
-        static void Prefab(const ScriptState &state,
-            const std::shared_ptr<sp::Scene> &scene,
-            Lock<AddRemove> lock,
-            Entity ent) {
+        static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
             const T *ptr = std::any_cast<T>(&state.userData);
             T data;
             if (ptr) data = *ptr;
-            data.Prefab(state, scene, lock, ent);
+            data.Prefab(state, scene.Lock(), lock, ent);
         }
 
         PrefabScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
