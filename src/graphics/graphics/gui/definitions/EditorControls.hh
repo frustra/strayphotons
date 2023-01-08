@@ -250,7 +250,7 @@ namespace sp {
             float frameHeight = ImGui::GetStyle().FramePadding.y * 2;
             frameHeight += ImGui::GetFrameHeightWithSpacing() * 4; // 4 rows of controls
             ImGui::BeginChild(name.c_str(), ImVec2(-FLT_MIN, frameHeight), true);
-            ImGui::Text(fieldName.c_str());
+            ImGui::Text("%s:", fieldName.c_str());
         }
         auto text = "position" + fieldId;
         bool changed = ImGui::DragFloat3(text.c_str(), (float *)&value.matrix[3], 0.01f);
