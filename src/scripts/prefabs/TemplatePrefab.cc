@@ -34,7 +34,7 @@ namespace ecs {
             if (rootEnt.Has<Name>(lock)) {
                 rootScope = rootEnt.Get<Name>(lock);
             } else {
-                rootScope = ecs::Name(scene->name, "");
+                rootScope = ecs::Name(scene->data->name, "");
             }
 
             Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.String());

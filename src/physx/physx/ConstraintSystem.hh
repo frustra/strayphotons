@@ -15,9 +15,11 @@ namespace sp {
         ConstraintSystem(PhysxManager &manager);
         ~ConstraintSystem() {}
 
-        void Frame(ecs::Lock<
-            ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints, ecs::SceneInfo>>
-                lock);
+        void Frame(ecs::Lock<ecs::Read<ecs::TransformTree,
+                ecs::CharacterController,
+                ecs::Physics,
+                ecs::PhysicsJoints,
+                ecs::SceneProperties>> lock);
 
     private:
         bool UpdateForceConstraint(physx::PxRigidActor *actor,
@@ -27,7 +29,7 @@ namespace sp {
             glm::vec3 targetVelocity,
             glm::vec3 gravity);
 
-        void UpdateJoints(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints, ecs::SceneInfo>> lock,
+        void UpdateJoints(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints, ecs::SceneProperties>> lock,
             ecs::Entity entity,
             physx::PxRigidActor *actor,
             ecs::Transform transform);

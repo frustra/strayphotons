@@ -53,14 +53,12 @@ namespace sp::scene {
 
                             // Apply scene root transform
                             if (!transform.parent) {
-                                auto scene = stagingInfo.scene.Lock();
-                                Assertf(scene,
-                                    "Staging entity %s has null scene: %s",
-                                    ToString(staging, stagingId),
-                                    stagingInfo.scene.name);
-                                auto &rootTransform = scene->GetRootTransform();
-                                if (rootTransform != Transform()) {
-                                    transform.pose = rootTransform * transform.pose.Get();
+                                Assertf(stagingInfo.scene,
+                                    "Staging entity %s has null scene",
+                                    ToString(staging, stagingId));
+                                auto &properties = stagingInfo.scene.data->GetProperties(staging);
+                                if (properties.rootTransform != Transform()) {
+                                    transform.pose = properties.rootTransform * transform.pose.Get();
                                 }
                             }
 
@@ -72,15 +70,13 @@ namespace sp::scene {
                             if (stagingId.Has<TransformTree>(staging)) {
                                 auto &transform = stagingId.Get<TransformTree>(staging);
                                 if (!transform.parent) {
-                                    auto scene = stagingInfo.scene.Lock();
-                                    Assertf(scene,
-                                        "Staging entity %s has null scene: %s",
-                                        ToString(staging, stagingId),
-                                        stagingInfo.scene.name);
-                                    auto &rootTransform = scene->GetRootTransform();
-                                    if (rootTransform != Transform()) {
+                                    Assertf(stagingInfo.scene,
+                                        "Staging entity %s has null scene",
+                                        ToString(staging, stagingId));
+                                    auto &properties = stagingInfo.scene.data->GetProperties(staging);
+                                    if (properties.rootTransform != Transform()) {
                                         for (auto &state : animation.states) {
-                                            state.pos = rootTransform * glm::vec4(state.pos, 1);
+                                            state.pos = properties.rootTransform * glm::vec4(state.pos, 1);
                                         }
                                     }
                                 }

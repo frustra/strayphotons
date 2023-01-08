@@ -5,7 +5,6 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "game/SceneProperties.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
@@ -17,18 +16,13 @@ namespace sp {
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Name,
             ecs::SceneInfo,
+            ecs::SceneProperties,
             ecs::TransformTree,
             ecs::TransformSnapshot,
             ecs::CharacterController,
             ecs::PhysicsQuery>>();
         auto player = entities::Player.Get(lock);
         auto head = entities::Head.Get(lock);
-
-        SceneProperties sceneProperties = {};
-        if (player.Has<ecs::SceneInfo>(lock)) {
-            auto &properties = player.Get<ecs::SceneInfo>(lock).properties;
-            if (properties) sceneProperties = *properties;
-        }
 
         if (head.Has<ecs::TransformTree>(lock)) {
             auto &transform = head.Get<ecs::TransformTree>(lock);
@@ -40,6 +34,7 @@ namespace sp {
             auto position = transform.GetPosition();
             Logf("Head position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
 
+            auto &sceneProperties = ecs::SceneProperties::Get(lock, player);
             glm::vec3 gravityForce = sceneProperties.GetGravity(position);
             Logf("Gravity force: [%f, %f, %f]", gravityForce.x, gravityForce.y, gravityForce.z);
         }
@@ -123,7 +118,7 @@ namespace sp {
         ecs::EntityScope scope;
         if (entity.Has<ecs::SceneInfo>(lock)) {
             auto &sceneInfo = entity.Get<ecs::SceneInfo>(lock);
-            if (sceneInfo.scene) scope.scene = sceneInfo.scene.name;
+            if (sceneInfo.scene) scope.scene = sceneInfo.scene.data->name;
         }
 
         picojson::object components;

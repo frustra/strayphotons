@@ -17,7 +17,8 @@ namespace picojson {
 
 namespace sp {
     class Gltf;
-}
+    enum class ScenePriority;
+} // namespace sp
 
 namespace ecs {
     enum class FieldAction;
@@ -29,7 +30,6 @@ namespace ecs {
     enum class OpticType;
     enum class PhysicsGroup : uint16_t;
     enum class PhysicsJointType;
-    enum class ScenePriority;
     struct PhysicsShape;
     struct PhysicsJoint;
     class ScriptState;
@@ -86,7 +86,7 @@ namespace ecs {
         OpticType,
         PhysicsGroup,
         PhysicsJointType,
-        ScenePriority,
+        sp::ScenePriority,
         SoundType,
         TriggerGroup,
         TriggerShape,

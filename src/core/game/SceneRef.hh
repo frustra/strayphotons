@@ -1,16 +1,14 @@
 #pragma once
 
+#include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
+
 #include <memory>
 #include <string>
-
-namespace ecs {
-    struct Scripts;
-}
 
 namespace sp {
     class Scene;
     class SceneManager;
-    struct SceneProperties;
 
     enum class SceneType {
         Async = 0,
@@ -18,13 +16,36 @@ namespace sp {
         System,
     };
 
+    // Lower priority scenes will have their components overwritten with higher priority components.
+    enum class ScenePriority {
+        System, // Lowest priority
+        Scene,
+        Player,
+        Bindings,
+        Override, // Highest priority
+    };
+
+    struct SceneMetadata {
+        std::string name;
+        SceneType type;
+        ScenePriority priority;
+        ecs::EntityRef sceneEntity;
+
+        const ecs::SceneProperties &GetProperties(ecs::Lock<ecs::Read<ecs::SceneProperties>> lock) const;
+
+        SceneMetadata(const string &name, SceneType type, ScenePriority priority, ecs::Entity sceneId)
+            : name(name), type(type), priority(priority), sceneEntity(ecs::Name("scene", name), sceneId) {}
+
+        bool operator<(const SceneMetadata &other) const;
+    };
+
     class SceneRef {
     public:
         SceneRef() {}
         SceneRef(const std::shared_ptr<Scene> &scene);
 
-        explicit operator bool() const {
-            return !name.empty();
+        operator bool() const {
+            return !!data;
         }
 
         bool operator==(const SceneRef &other) const;
@@ -34,9 +55,7 @@ namespace sp {
         bool operator==(const std::weak_ptr<Scene> &scene) const;
         bool operator<(const SceneRef &other) const;
 
-        std::string name;
-        SceneType type;
-        std::shared_ptr<SceneProperties> properties;
+        std::shared_ptr<const SceneMetadata> data;
 
         // Must only be called by SceneManager.
         // Defined in game/SceneManager.cc
