@@ -1,11 +1,10 @@
 #include "game/Scene.hh"
 
+#include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
-
-#include <glm/gtx/string_cast.hpp>
 
 namespace sp {
     std::shared_ptr<Scene> Scene::New(ecs::Lock<ecs::AddRemove> stagingLock,

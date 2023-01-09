@@ -4,8 +4,6 @@
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
-#include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <limits>
 
 bool floatEqual(float a, float b) {

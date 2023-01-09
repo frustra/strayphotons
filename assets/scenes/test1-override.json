@@ -1,5 +1,8 @@
 {
 	"priority": "Override",
+	"properties": {
+		"gravity": [0, 0, -9.81]
+	},
 	"entities": [
 		{
 			"transform": {
@@ -68,24 +71,30 @@
 			}
 		},
 		{
-			"name": "test1:duck",
-			"transform": {
-				"parent": "test1:mcube",
-				"translate": [1.5, 0, -2.5]
+			"name": "test1:mova-mirror.mirrorcube",
+			"physics_joints": {
+				"target": "test1:mova-mirror",
+				"type": "Fixed"
 			}
+		},
+		{
+			"name": "test1:dodecahedron"
 		},
 		{
 			"name": "test1:duck.duck.gltf2",
 			"renderable": {
 				"visibility": "Transparent|LightingVoxel",
 				"emissive": 2.0
+			},
+			"physics": {
+				"linear_damping": 15
 			}
 		},
 		{
 			"name": "test1:mcube",
 			"transform": {
-				"translate": [-2.0, 2.5, 3],
-				"rotate": [25, 0, 1, 0]
+				"parent": "test1:pbr-cube",
+				"translate": [6, 0, -2]
 			}
 		},
 		{

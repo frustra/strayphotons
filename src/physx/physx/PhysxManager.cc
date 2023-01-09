@@ -140,6 +140,7 @@ namespace sp {
     }
 
     void PhysxManager::PreFrame() {
+        ZoneScoped;
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
@@ -163,6 +164,7 @@ namespace sp {
     }
 
     void PhysxManager::Frame() {
+        ZoneScoped;
         if (CVarPhysxDebugCollision.Changed() || CVarPhysxDebugJoints.Changed()) {
             bool collision = CVarPhysxDebugCollision.Get(true);
             bool joints = CVarPhysxDebugJoints.Get(true);
