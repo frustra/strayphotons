@@ -26,7 +26,7 @@
 			}
 		},
 		{
-			"name": "emitter",
+			"name": "laser_emitter",
 			"transform": {
 				"parent": "root",
 				"translate": [0.1, 0, 0.1]
@@ -40,20 +40,20 @@
 			},
 			"script": [{
 				"parameters": {
-					"source": "laser_emitter_block"
+					"source": "blocks/laser_emitter"
 				},
 				"prefab": "template"
 			},
 			{
 				"parameters": {
-					"source": "laser_emitter_block"
+					"source": "blocks/laser_emitter"
 				},
 				"onTick": "tray_spawner"
 			}
 		]
 		},
 		{
-			"name": "sensor",
+			"name": "laser_sensor",
 			"transform": {
 				"parent": "root",
 				"translate": [0.1, 0, 0.2]
@@ -64,13 +64,13 @@
 			},
 			"script": [{
 				"parameters": {
-					"source": "laser_sensor_block"
+					"source": "blocks/laser_sensor"
 				},
 				"prefab": "template"
 			},
 			{
 				"parameters": {
-					"source": "laser_sensor_block"
+					"source": "blocks/laser_sensor"
 				},
 				"onTick": "tray_spawner"
 			}

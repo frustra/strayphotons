@@ -96,7 +96,7 @@
 		{
 			"name": "mirrorcube1",
 			"transform": {
-				"translate": [-0.2, 3.5, -4.5]
+				"translate": [-0.2, 3, -4.5]
 			},
 			"script": {
 				"prefab": "template",
@@ -106,7 +106,7 @@
 		{
 			"name": "mirrorcube2",
 			"transform": {
-				"translate": [0.5, 5.5, -4.5]
+				"translate": [0.5, 5, -4.5]
 			},
 			"script": {
 				"prefab": "template",
@@ -116,7 +116,7 @@
 		{
 			"name": "mirrorcube2.mirrorface2",
 			"transform": {
-				"parent": "mirrorcube2.mirrorcube",
+				"parent": "mirrorcube2",
 				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
@@ -127,7 +127,7 @@
 		{
 			"name": "mirrorcube2.mirrorface3",
 			"transform": {
-				"parent": "mirrorcube2.mirrorcube",
+				"parent": "mirrorcube2",
 				"rotate": [90, 0, 1, 0]
 			},
 			"script": {
@@ -138,7 +138,7 @@
 		{
 			"name": "mirrorcube2.mirrorface4",
 			"transform": {
-				"parent": "mirrorcube2.mirrorcube",
+				"parent": "mirrorcube2",
 				"rotate": [180, 0, 1, 0]
 			},
 			"script": {

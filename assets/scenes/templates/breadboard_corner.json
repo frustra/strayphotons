@@ -1,6 +1,7 @@
 {
 	"entities": [
 		{
+			"name": "corner",
 			"transform": {
 				"rotate": [-90, 0, 1, 0]
 			},

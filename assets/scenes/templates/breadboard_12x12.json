@@ -1,27 +1,25 @@
 {
-	"entities": [
-		{
-			"transform": {},
-			"physics": {
-				"shapes": {
-					"box": [0.96, 0.2, 0.96],
-					"transform": {
-						"translate": [0.48, -0.1, 0.48]
-					}
-				},
-				"dynamic": false
-			},
-			"script": {
-				"prefab": "tile",
-				"parameters": {
-					"surface": "breadboard_surface",
-					"edge": "breadboard_edge",
-					"corner": "breadboard_corner",
-					"axes": "xz",
-					"count": [12, 12],
-					"stride": [0.08, 0.08]
+	"components": {
+		"transform": {},
+		"physics": {
+			"shapes": {
+				"box": [0.96, 0.04, 0.96],
+				"transform": {
+					"translate": [0.48, -0.02, 0.48]
 				}
+			},
+			"dynamic": false
+		},
+		"script": {
+			"prefab": "tile",
+			"parameters": {
+				"surface": "breadboard_surface",
+				"edge": "breadboard_edge",
+				"corner": "breadboard_corner",
+				"axes": "xz",
+				"count": [12, 12],
+				"stride": [0.08, 0.08]
 			}
 		}
-	]
+	}
 }

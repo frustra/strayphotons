@@ -2,8 +2,8 @@
 	"entities": [
 		{
 			"transform": {
-				"translate": [0.02, 0, 0.02],
-				"scale": [1, 4, 1]
+				"translate": [0.04, 0, 0.04],
+				"scale": [1, 4.3, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -21,8 +21,8 @@
 		},
 		{
 			"transform": {
-				"translate": [0.98, 0, 0.02],
-				"scale": [1, 4, 1]
+				"translate": [0.96, 0, 0.04],
+				"scale": [1, 4.3, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -40,8 +40,8 @@
 		},
 		{
 			"transform": {
-				"translate": [0.98, 0, 0.98],
-				"scale": [1, 4, 1]
+				"translate": [0.96, 0, 0.96],
+				"scale": [1, 4.3, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -59,8 +59,8 @@
 		},
 		{
 			"transform": {
-				"translate": [0.02, 0, 0.98],
-				"scale": [1, 4, 1]
+				"translate": [0.04, 0, 0.96],
+				"scale": [1, 4.3, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -78,9 +78,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.02, 0.78, 0.04],
+				"translate": [0.04, 0.78, 0.06],
 				"rotate": [90, 1, 0, 0],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -98,9 +98,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.98, 0.78, 0.04],
+				"translate": [0.96, 0.78, 0.06],
 				"rotate": [90, 1, 0, 0],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -118,9 +118,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.04, 0.78, 0.02],
+				"translate": [0.06, 0.78, 0.04],
 				"rotate": [-90, 0, 0, 1],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -138,9 +138,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.04, 0.78, 0.98],
+				"translate": [0.06, 0.78, 0.96],
 				"rotate": [-90, 0, 0, 1],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -158,9 +158,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.02, 0.38, 0.04],
+				"translate": [0.04, 0.38, 0.06],
 				"rotate": [90, 1, 0, 0],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -178,9 +178,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.98, 0.38, 0.04],
+				"translate": [0.96, 0.38, 0.06],
 				"rotate": [90, 1, 0, 0],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -198,9 +198,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.04, 0.38, 0.02],
+				"translate": [0.06, 0.38, 0.04],
 				"rotate": [-90, 0, 0, 1],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -218,9 +218,9 @@
 		},
 		{
 			"transform": {
-				"translate": [0.04, 0.38, 0.98],
+				"translate": [0.06, 0.38, 0.96],
 				"rotate": [-90, 0, 0, 1],
-				"scale": [1, 4.6, 1]
+				"scale": [1, 4.4, 1]
 			},
 			"physics": {
 				"shapes": {
@@ -237,8 +237,10 @@
 			}
 		},
 		{
+			"name": "surface",
 			"transform": {
-				"translate": [0.02, 0.84, 0.02]
+				"parent": "scoperoot",
+				"translate": [0.02, 0.9, 0.02]
 			},
 			"script": {
 				"prefab": "template",

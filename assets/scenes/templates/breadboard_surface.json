@@ -2,10 +2,7 @@
 	"entities": [
 		{
 			"name": "surface",
-			"transform": {
-				"translate": [0, 0, 0],
-				"scale": [1, 1, 1]
-			},
+			"transform": {},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
@@ -17,8 +14,6 @@
 		{
 			"name": "socket",
 			"transform": {
-				"parent": "surface",
-				"translate": [0, 0.02, 0],
 				"scale": [0.1, 0.1, 0.1]
 			},
 			"script": {

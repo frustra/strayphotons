@@ -2,7 +2,9 @@
 	"entities": [
 		{
 			"name": "duck",
-			"transform": {},
+			"transform": {
+				"translate": [0, -0.001, 0]
+			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
