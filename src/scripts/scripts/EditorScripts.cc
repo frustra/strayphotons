@@ -39,11 +39,11 @@ namespace sp::scripts {
 
                 auto sharedEntity = make_shared<EntityRef>();
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
-                    scene.name,
+                    scene.data->name,
                     [source = templateSource, transform, baseName = sourceName.entity, sharedEntity](
                         ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
-                        Name name(scene->name, "");
+                        Name name(scene->data->name, "");
                         for (size_t i = 0;; i++) {
                             name.entity = baseName + "_" + std::to_string(i);
                             if (!scene->GetStagingEntity(name)) break;
@@ -53,14 +53,14 @@ namespace sp::scripts {
                         auto newEntity = scene->NewRootEntity(lock, scene, name.entity);
                         newEntity.Set<TransformTree>(lock, transform);
                         auto &scripts = newEntity.Set<Scripts>(lock);
-                        auto &prefab = scripts.AddPrefab(Name(scene->name, ""), "template");
+                        auto &prefab = scripts.AddPrefab(Name(scene->data->name, ""), "template");
                         prefab.SetParam("source", source);
                         ecs::Scripts::RunPrefabs(lock, newEntity);
 
                         *sharedEntity = newEntity;
                     });
                 GetSceneManager().QueueAction(SceneAction::ApplyStagingScene,
-                    scene.name,
+                    scene.data->name,
                     [ent, target = event.source, sharedEntity](auto lock) {
                         ecs::EventBindings::SendEvent(lock,
                             target,

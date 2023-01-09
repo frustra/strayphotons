@@ -203,7 +203,10 @@ namespace sp {
             liveSceneId.Set<ecs::Name>(live, data->sceneEntity.Name());
             ecs::GetEntityRefs().Set(data->sceneEntity.Name(), liveSceneId);
         }
-        liveSceneId.Set<ecs::SceneProperties>(live, ecs::SceneProperties::Get(staging, stagingSceneId));
+        auto &properties = liveSceneId.Set<ecs::SceneProperties>(live,
+            ecs::SceneProperties::Get(staging, stagingSceneId));
+        properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
+        properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
 
         for (auto e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;

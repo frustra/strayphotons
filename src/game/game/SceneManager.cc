@@ -457,7 +457,7 @@ namespace sp {
         actionQueue.emplace_back(action, sceneName, callback);
     }
 
-    void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditSceneCallback callback) {
+    void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, sceneName, callback);
