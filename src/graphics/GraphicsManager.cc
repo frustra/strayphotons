@@ -93,6 +93,7 @@ namespace sp {
     }
 
     bool GraphicsManager::ThreadInit() {
+        ZoneScoped;
         renderStart = chrono_clock::now();
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
@@ -111,6 +112,7 @@ namespace sp {
     }
 
     bool GraphicsManager::InputFrame() {
+        ZoneScoped;
     #ifdef SP_GRAPHICS_SUPPORT_VK
         if (!HasActiveContext()) return false;
     #endif
@@ -128,7 +130,6 @@ namespace sp {
         context->UpdateInputModeFromFocus();
 
         {
-            ZoneScopedN("SyncWindowView");
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
 
             auto flatview = flatviewEntity.Get(lock);
@@ -142,6 +143,7 @@ namespace sp {
     }
 
     void GraphicsManager::PreFrame() {
+        ZoneScoped;
         if (!HasActiveContext()) return;
         if (game->debugGui) game->debugGui->BeforeFrame();
         if (game->menuGui) game->menuGui->BeforeFrame();

@@ -14,7 +14,6 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "game/SceneProperties.hh"
 #include "physx/ForceConstraint.hh"
 
 #include <PxScene.h>
@@ -141,6 +140,7 @@ namespace sp {
     }
 
     void PhysxManager::PreFrame() {
+        ZoneScoped;
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
@@ -164,6 +164,7 @@ namespace sp {
     }
 
     void PhysxManager::Frame() {
+        ZoneScoped;
         if (CVarPhysxDebugCollision.Changed() || CVarPhysxDebugJoints.Changed()) {
             bool collision = CVarPhysxDebugCollision.Get(true);
             bool joints = CVarPhysxDebugJoints.Get(true);
@@ -178,7 +179,7 @@ namespace sp {
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput, ecs::SceneInfo>,
+                ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput, ecs::SceneProperties>,
                 ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController>>();
 
             // Delete actors for removed entities
@@ -566,7 +567,7 @@ namespace sp {
     }
 
     void PhysxManager::UpdateActor(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneInfo>> lock,
+        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
         ecs::Entity &e) {
         // ZoneScoped;
         // ZoneStr(ecs::ToString(lock, e));
@@ -582,12 +583,6 @@ namespace sp {
         auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto scale = transform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
-
-        SceneProperties sceneProperties = {};
-        if (e.Has<ecs::SceneInfo>(lock)) {
-            auto &properties = e.Get<ecs::SceneInfo>(lock).properties;
-            if (properties) sceneProperties = *properties;
-        }
 
         const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
         for (auto &shape : ph.shapes) {
@@ -723,6 +718,7 @@ namespace sp {
             }
 
             if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
+                auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
                 glm::vec3 gravityForce = sceneProperties.GetGravity(transform.GetPosition());
                 // Force will accumulate on sleeping objects causing jitter
                 if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {

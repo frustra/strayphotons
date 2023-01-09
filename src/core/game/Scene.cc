@@ -3,9 +3,15 @@
 #include "core/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
 
+#include <memory>
+
 namespace sp {
+    Scene::Scene(SceneMetadata &&metadata, std::shared_ptr<const Asset> asset)
+        : data(std::make_shared<const SceneMetadata>(std::move(metadata))), asset(asset) {}
+
     Scene::~Scene() {
-        Assertf(!active, "%s scene destroyed while active: %s", type, name);
+        Assertf(data, "Scene destroyed with null data");
+        Assertf(!active, "%s scene destroyed while active: %s", data->type, data->name);
     }
 
     ecs::Entity Scene::GetStagingEntity(const ecs::Name &entityName) const {

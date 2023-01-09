@@ -38,6 +38,7 @@ namespace ecs {
     struct Renderable;
     struct SceneConnection;
     struct SceneInfo;
+    struct SceneProperties;
     struct Screen;
     struct Scripts;
     struct SignalOutput;
@@ -72,6 +73,7 @@ namespace ecs {
         PhysicsJoints,
         PhysicsQuery,
         SceneConnection,
+        SceneProperties,
         Screen,
         Sounds,
         TriggerArea,
@@ -187,6 +189,7 @@ TECS_NAME_COMPONENT(ecs::PhysicsQuery, "PhysicsQuery");
 TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");
 TECS_NAME_COMPONENT(ecs::SceneConnection, "SceneConnection");
 TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
+TECS_NAME_COMPONENT(ecs::SceneProperties, "SceneProperties");
 TECS_NAME_COMPONENT(ecs::Screen, "Screen");
 TECS_NAME_COMPONENT(ecs::Scripts, "Scripts");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");

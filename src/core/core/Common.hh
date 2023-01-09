@@ -22,6 +22,7 @@ typedef std::chrono::steady_clock chrono_clock;
 
 #include <algorithm>
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 typedef unsigned char uint8;
 typedef signed char int8;

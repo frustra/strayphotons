@@ -8,7 +8,10 @@ steplogic 2700
 stepphysics
 screenshot test-scene2.png
 stepgraphics
-stepphysics 240
+assert_position test1:animbox 0 1.5 -4.875
+stepphysics 120
+assert_position test1:animbox 0 2 -4.875
+stepphysics 120
 assert_position test1:animbox 0 5 -4.875
 screenshot test-scene3.png
 stepgraphics

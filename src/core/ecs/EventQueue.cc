@@ -1,10 +1,10 @@
 #include "EventQueue.hh"
 
 #include "assets/JsonHelpers.hh"
+#include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityReferenceManager.hh"
 
-#include <glm/gtx/string_cast.hpp>
 #include <optional>
 #include <picojson/picojson.h>
 #include <sstream>

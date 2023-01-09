@@ -7,7 +7,6 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "game/SceneManager.hh"
-#include "game/SceneProperties.hh"
 #include "game/SceneRef.hh"
 
 #include <imgui/imgui.h>
@@ -246,7 +245,13 @@ namespace sp {
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::Transform &value) {
         // TODO: Add grab handle in view
-
+        bool groupTransformControls = !fieldName.empty();
+        if (groupTransformControls) {
+            float frameHeight = ImGui::GetStyle().FramePadding.y * 2;
+            frameHeight += ImGui::GetFrameHeightWithSpacing() * 4; // 4 rows of controls
+            ImGui::BeginChild(name.c_str(), ImVec2(-FLT_MIN, frameHeight), true);
+            ImGui::Text("%s:", fieldName.c_str());
+        }
         auto text = "position" + fieldId;
         bool changed = ImGui::DragFloat3(text.c_str(), (float *)&value.matrix[3], 0.01f);
 
@@ -269,6 +274,7 @@ namespace sp {
                 changed = true;
             }
         }
+        if (groupTransformControls) ImGui::EndChild();
         return changed;
     }
     template<>
@@ -397,14 +403,14 @@ namespace sp {
             }
             if (ImGui::Button("Add Prefab")) {
                 auto &state = value.emplace_back();
-                state.scope = ecs::Name(scene.name, "");
+                state.scope = ecs::Name(scene.data->name, "");
                 state.definition.callback = ecs::PrefabFunc();
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Script")) {
                 auto &state = value.emplace_back();
-                state.scope = ecs::Name(scene.name, "");
+                state.scope = ecs::Name(scene.data->name, "");
                 state.definition.callback = ecs::OnTickFunc();
                 changed = true;
             }
@@ -417,7 +423,7 @@ namespace sp {
         const ecs::ComponentBase &comp,
         const void *component) {
         auto value = *field.Access<T>(component);
-        fieldName = field.name ? field.name : comp.name;
+        fieldName = field.name ? field.name : "";
         fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
         std::string elementName = fieldName + fieldId;
 
@@ -454,7 +460,7 @@ namespace sp {
                 });
             } else if (scene) {
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
-                    scene.name,
+                    scene.data->name,
                     [target = this->target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
                         void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
@@ -515,15 +521,15 @@ namespace sp {
                 if (this->scene) {
                     ImGui::SameLine();
                     if (ImGui::Button("Apply Scene")) {
-                        GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.name);
-                        GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.name);
+                        GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.data->name);
+                        GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.data->name);
                     }
                     if (!targetSceneInfo.prefabStagingId) {
                         ImGui::SameLine();
                         if (ImGui::Button("Save & Apply Scene")) {
-                            GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.name);
-                            GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.name);
-                            GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.name);
+                            GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.data->name);
+                            GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, this->scene.data->name);
+                            GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.data->name);
                         }
                     }
                 }
@@ -534,7 +540,7 @@ namespace sp {
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Entity Definitions:");
                 if (targetSceneInfo.prefabStagingId) {
-                    ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().ItemSpacing.x - 200.0f);
+                    ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().FramePadding.x - 200.0f);
                     if (ImGui::Button("Goto Prefab Source", ImVec2(200, 0))) {
                         this->target = targetSceneInfo.prefabStagingId;
                     }
@@ -547,7 +553,7 @@ namespace sp {
                         if (sceneInfo.scene) {
                             std::string sourceName;
                             if (!sceneInfo.prefabStagingId) {
-                                sourceName = sceneInfo.scene.name + " - Scene Root";
+                                sourceName = sceneInfo.scene.data->name + " - Scene Root";
                             } else {
                                 const ecs::ScriptState *scriptInstance = nullptr;
                                 if (sceneInfo.prefabStagingId.Has<ecs::Scripts>(lock)) {
@@ -588,7 +594,7 @@ namespace sp {
 
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (!comp.HasComponent(lock, this->target)) return;
-            if (ImGui::CollapsingHeader(comp.name, ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
                 const void *component = comp.Access(lock, this->target);
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
@@ -606,9 +612,9 @@ namespace sp {
             auto sceneList = GetSceneManager().GetActiveScenes();
             std::sort(sceneList.begin(), sceneList.end());
             for (auto &entry : sceneList) {
-                if (!entry || entry.type == SceneType::System) continue;
-                std::string entryText = entry.name + " (" + std::string(magic_enum::enum_name(entry.type)) + ")";
-                if (ImGui::Selectable(entryText.c_str(), entry == this->scene)) {
+                if (!entry || entry.data->type == SceneType::System) continue;
+                std::string text = entry.data->name + " (" + std::string(magic_enum::enum_name(entry.data->type)) + ")";
+                if (ImGui::Selectable(text.c_str(), entry == this->scene)) {
                     this->scene = entry;
                 }
             }
@@ -654,42 +660,48 @@ namespace sp {
         if (this->scene) {
             ImGui::SameLine();
             if (ImGui::Button("Remove Scene")) {
-                GetSceneManager().QueueAction(SceneAction::RemoveScene, this->scene.name);
+                GetSceneManager().QueueAction(SceneAction::RemoveScene, this->scene.data->name);
             }
         }
         ImGui::Separator();
         if (this->scene) {
             ImGui::AlignTextToFramePadding();
-            ImGui::Text("Scene Name: %s", this->scene.name.c_str());
-            if (this->scene.type != SceneType::System) {
+            ImGui::Text("Scene Name: %s", this->scene.data->name.c_str());
+            if (this->scene.data->type != SceneType::System) {
                 ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().ItemSpacing.x * 2.0f - 120.0f);
                 if (ImGui::Button("Reload", ImVec2(60, 0))) {
-                    GetSceneManager().QueueAction(SceneAction::ReloadScene, this->scene.name);
+                    GetSceneManager().QueueAction(SceneAction::ReloadScene, this->scene.data->name);
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Save", ImVec2(60, 0))) {
-                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.name);
+                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.data->name);
                 }
             }
             if (ImGui::CollapsingHeader("Scene Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::BeginDisabled();
-                auto &metadata = ecs::StructMetadata::Get<SceneProperties>();
-                SceneProperties properties = {};
-                if (this->scene.properties) {
-                    properties = *this->scene.properties;
-                }
+                auto &metadata = ecs::StructMetadata::Get<ecs::SceneProperties>();
+
+                ecs::SceneProperties properties = this->scene.data->GetProperties(lock);
                 bool changed = false;
                 for (auto &field : metadata.fields) {
+                    fieldName = field.name;
+                    fieldId = "##scene_properties" + std::to_string(field.fieldIndex);
+                    std::string elementName = fieldName + fieldId;
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;
-                        auto value = *field.Access<T>(&properties);
-                        if (AddImGuiElement(field.name, value)) changed = true;
+                        auto &value = *field.Access<T>(&properties);
+                        if (AddImGuiElement(elementName, value)) changed = true;
                     });
                 }
                 if (changed) {
-                    // TODO
+                    GetSceneManager().QueueAction(SceneAction::EditStagingScene,
+                        this->scene.data->name,
+                        [properties](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                            auto sceneId = scene->data->sceneEntity.Get(lock);
+                            if (sceneId.Exists(lock)) {
+                                sceneId.Set<ecs::SceneProperties>(lock, properties);
+                            }
+                        });
                 }
-                ImGui::EndDisabled();
             }
             if (ImGui::CollapsingHeader("Scene Entities", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginListBox("##scene_entities", ImVec2(-FLT_MIN, -FLT_MIN))) {

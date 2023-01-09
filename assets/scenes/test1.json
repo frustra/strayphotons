@@ -285,6 +285,7 @@
 			}
 		},
 		{
+			"name": "pbr-cube",
 			"renderable": {
 				"model": "pbr-cube"
 			},
@@ -299,6 +300,7 @@
 			}
 		},
 		{
+			"name": "box1",
 			"renderable": {
 				"model": "box"
 			},
@@ -316,6 +318,7 @@
 			}
 		},
 		{
+			"name": "box2",
 			"renderable": {
 				"model": "box"
 			},
@@ -333,6 +336,7 @@
 			}
 		},
 		{
+			"name": "dodecahedron",
 			"renderable": {
 				"model": "dodecahedron"
 			},

@@ -8,7 +8,6 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "game/SceneProperties.hh"
 #include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
@@ -55,7 +54,7 @@ namespace sp {
                 auto &tree = ent.Set<ecs::TransformTree>(lock);
                 tree.parent = entities::Flatview;
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
-                scripts.AddOnTick(ecs::Name(scene->name, ""),
+                scripts.AddOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,
@@ -121,7 +120,7 @@ namespace sp {
     }
 
     void CharacterControlSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
-        ecs::Read<ecs::EventInput, ecs::SceneInfo>,
+        ecs::Read<ecs::EventInput, ecs::SceneProperties>,
         ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
@@ -202,12 +201,6 @@ namespace sp {
 
             auto head = controller.head.Get(lock);
             if (!head.Has<ecs::TransformTree>(lock)) continue;
-
-            SceneProperties sceneProperties = {};
-            if (entity.Has<ecs::SceneInfo>(lock)) {
-                auto &properties = entity.Get<ecs::SceneInfo>(lock).properties;
-                if (properties) sceneProperties = *properties;
-            }
 
             auto actor = controller.pxController->getActor();
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
@@ -303,6 +296,7 @@ namespace sp {
             }
 
             // Update the capsule orientation
+            auto &sceneProperties = ecs::SceneProperties::Get(lock, entity);
             glm::vec3 gravityForce = sceneProperties.GetGravity(getHeadPosition(controller.pxController));
             auto gravityStrength = glm::length(gravityForce);
             if (gravityStrength > 0 && gravityStrength > CVarCharacterMinFlipGravity.Get()) {

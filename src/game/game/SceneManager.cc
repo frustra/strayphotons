@@ -11,7 +11,6 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
-#include "game/SceneProperties.hh"
 
 #include <algorithm>
 #include <filesystem>
@@ -36,8 +35,9 @@ namespace sp {
     std::shared_ptr<Scene> SceneRef::Lock() const {
         Assertf(std::this_thread::get_id() == activeSceneManagerThread,
             "SceneRef::Lock() must only be called in SceneManaager thread");
+        Assertf(data, "SceneRef points to null SceneData");
         auto result = ptr.lock();
-        Assertf(result, "SceneRef points to null scene: %s (%s)", name, type);
+        Assertf(result, "SceneRef points to null Scene: %s (%s)", data->name, data->type);
         return result;
     }
 
@@ -140,7 +140,10 @@ namespace sp {
                 } else {
                     auto scene = stagedScenes.Load(item.sceneName);
                     if (!scene) {
-                        scene = std::make_shared<Scene>(item.sceneName, SceneType::System, ecs::ScenePriority::System);
+                        {
+                            auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                            scene = Scene::New(stagingLock, item.sceneName, SceneType::System, ScenePriority::System);
+                        }
                         stagedScenes.Register(item.sceneName, scene);
                         scenes[SceneType::System].emplace_back(scene);
                     }
@@ -150,7 +153,7 @@ namespace sp {
                         item.editSceneCallback(stagingLock, scene);
                     }
                     {
-                        Tracef("Applying system scene: %s", scene->name);
+                        Tracef("Applying system scene: %s", scene->data->name);
                         auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
                         auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
                         scene->ApplyScene(stagingLock, liveLock);
@@ -163,14 +166,14 @@ namespace sp {
                 if (item.editSceneCallback) {
                     auto scene = stagedScenes.Load(item.sceneName);
                     if (scene) {
-                        if (scene->type != SceneType::System) {
-                            Tracef("Editing staging scene: %s", scene->name);
+                        if (scene->data->type != SceneType::System) {
+                            Tracef("Editing staging scene: %s", scene->data->name);
                             {
                                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                                 item.editSceneCallback(stagingLock, scene);
                             }
                         } else {
-                            Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->name);
+                            Errorf("SceneManager::EditStagingScene: Cannot edit system scene: %s", scene->data->name);
                         }
                     } else {
                         Errorf("SceneManager::EditStagingScene: scene %s not found", item.sceneName);
@@ -194,11 +197,11 @@ namespace sp {
                 ZoneStr(item.sceneName);
                 auto scene = stagedScenes.Load(item.sceneName);
                 if (scene) {
-                    if (scene->type != SceneType::System) {
-                        Tracef("Applying staging scene: %s", scene->name);
+                    if (scene->data->type != SceneType::System) {
+                        Tracef("Applying staging scene: %s", scene->data->name);
                         PreloadAndApplyScene(scene, true);
                     } else {
-                        Errorf("SceneManager::ApplyStagingScene: Cannot apply system scene: %s", scene->name);
+                        Errorf("SceneManager::ApplyStagingScene: Cannot apply system scene: %s", scene->data->name);
                     }
                 } else {
                     Errorf("SceneManager::ApplyStagingScene: scene %s not found", item.sceneName);
@@ -249,10 +252,10 @@ namespace sp {
                         auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
                         for (auto &scene : scenes[SceneType::World]) {
-                            reloadScenes.emplace_back(scene->name, SceneType::World);
+                            reloadScenes.emplace_back(scene->data->name, SceneType::World);
                         }
                         for (auto &scene : scenes[SceneType::Async]) {
-                            reloadScenes.emplace_back(scene->name, SceneType::Async);
+                            reloadScenes.emplace_back(scene->data->name, SceneType::Async);
                         }
                         scenes[SceneType::World].clear();
                         scenes[SceneType::Async].clear();
@@ -274,7 +277,7 @@ namespace sp {
                 } else {
                     auto loadedScene = stagedScenes.Load(item.sceneName);
                     if (loadedScene != nullptr) {
-                        auto sceneType = loadedScene->type;
+                        auto sceneType = loadedScene->data->type;
                         auto &sceneList = scenes[sceneType];
                         sceneList.erase(std::remove(sceneList.begin(), sceneList.end(), loadedScene));
 
@@ -303,7 +306,7 @@ namespace sp {
                 ZoneStr(item.sceneName);
                 auto loadedScene = stagedScenes.Load(item.sceneName);
                 if (loadedScene != nullptr) {
-                    auto &sceneList = scenes[loadedScene->type];
+                    auto &sceneList = scenes[loadedScene->data->type];
                     sceneList.erase(std::remove(sceneList.begin(), sceneList.end(), loadedScene));
 
                     {
@@ -405,7 +408,7 @@ namespace sp {
         for (auto &sceneName : requiredSceneList) {
             auto loadedScene = stagedScenes.Load(sceneName);
             if (loadedScene) {
-                if (loadedScene->type == SceneType::Async) scenes[SceneType::Async].push_back(loadedScene);
+                if (loadedScene->data->type == SceneType::Async) scenes[SceneType::Async].push_back(loadedScene);
             } else {
                 AddScene(sceneName, SceneType::Async);
             }
@@ -429,7 +432,7 @@ namespace sp {
 
         stagedScenes.Tick(this->interval, [](std::shared_ptr<Scene> &scene) {
             ZoneScopedN("RemoveExpiredScene");
-            ZoneStr(scene->name);
+            ZoneStr(scene->data->name);
             auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
             auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
             scene->RemoveScene(stagingLock, liveLock);
@@ -512,10 +515,13 @@ namespace sp {
         bool resetLive,
         OnApplySceneCallback callback) {
         ZoneScopedN("ScenePreload");
-        ZoneStr(scene->name);
+        ZoneStr(scene->data->name);
         {
             std::lock_guard lock(preloadMutex);
-            Assertf(!preloadScene, "Already preloading %s when trying to preload %s", preloadScene->name, scene->name);
+            Assertf(!preloadScene,
+                "Already preloading %s when trying to preload %s",
+                preloadScene->data->name,
+                scene->data->name);
             if (state != ThreadState::Started) return;
             preloadScene = scene;
             graphicsPreload.clear();
@@ -532,7 +538,7 @@ namespace sp {
         }
 
         {
-            Tracef("Applying scene: %s", scene->name);
+            Tracef("Applying scene: %s", scene->data->name);
             auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
             auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
@@ -549,9 +555,9 @@ namespace sp {
 
     void SceneManager::RefreshPrefabs(const std::shared_ptr<Scene> &scene) {
         ZoneScopedN("RefreshPrefabs");
-        ZoneStr(scene->name);
+        ZoneStr(scene->data->name);
         {
-            Tracef("Refreshing scene prefabs: %s", scene->name);
+            Tracef("Refreshing scene prefabs: %s", scene->data->name);
             auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
 
             // Remove all entities generated by a prefab
@@ -593,27 +599,23 @@ namespace sp {
         }
         auto &sceneObj = root.get<picojson::object>();
 
-        auto scene = make_shared<Scene>(sceneName,
-            sceneType,
-            sceneType == SceneType::System ? ecs::ScenePriority::System : ecs::ScenePriority::Scene,
-            asset);
-
-        ecs::EntityScope scope(scene->name, "");
+        ScenePriority priority = sceneType == SceneType::System ? ScenePriority::System : ScenePriority::Scene;
+        ecs::EntityScope scope(sceneName, "");
         if (sceneObj.count("priority")) {
-            json::Load(scope, scene->priority, sceneObj["priority"]);
+            json::Load(scope, priority, sceneObj["priority"]);
         }
 
+        auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
+        auto scene = Scene::New(lock, sceneName, sceneType, priority, asset);
+
+        auto &sceneProperties = scene->data->sceneEntity.Get(lock).Get<ecs::SceneProperties>(lock);
         if (sceneObj.count("properties")) {
-            scene->properties = make_shared<SceneProperties>();
-            auto &properties = *scene->properties;
-            if (!json::Load(scope, properties, sceneObj["properties"])) {
+            if (!json::Load(scope, sceneProperties, sceneObj["properties"])) {
                 Errorf("Scene contains invalid properties: %s", sceneName);
             }
         }
 
         if (sceneObj.count("entities")) {
-            auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
-
             auto &entityList = sceneObj["entities"];
             std::vector<ecs::Entity> entities;
             for (auto &value : entityList.get<picojson::array>()) {
@@ -651,10 +653,10 @@ namespace sp {
     void SceneManager::SaveSceneJson(const std::string &sceneName) {
         auto scene = stagedScenes.Load(sceneName);
         if (scene) {
-            Tracef("Saving staging scene: %s", scene->name);
+            Tracef("Saving staging scene: %s", scene->data->name);
             auto staging = ecs::StartStagingTransaction<ecs::ReadAll>();
 
-            ecs::EntityScope scope(scene->name, "");
+            ecs::EntityScope scope(scene->data->name, "");
 
             picojson::array entities;
             for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
@@ -696,15 +698,13 @@ namespace sp {
                 }
             };
             picojson::object sceneObj(sceneOrderFunc);
-            if (scene->properties) {
-                static const SceneProperties defaultProperties = {};
-                json::SaveIfChanged(scope, sceneObj, "properties", *scene->properties, defaultProperties);
-            }
-            json::SaveIfChanged(scope, sceneObj, "priority", scene->priority, ecs::ScenePriority::Scene);
+            static const ecs::SceneProperties defaultProperties = {};
+            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), defaultProperties);
+            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, ScenePriority::Scene);
             sceneObj["entities"] = picojson::value(entities);
             auto val = picojson::value(sceneObj);
             auto scenePath = scene->asset->path;
-            Logf("Saving scene %s to '%s'", scene->name, scenePath.string());
+            Logf("Saving scene %s to '%s'", scene->data->name, scenePath.string());
 
             std::ofstream out;
             if (Assets().OutputStream(scenePath.string(), out)) {
@@ -735,9 +735,6 @@ namespace sp {
             Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
         }
 
-        auto scene = make_shared<Scene>("bindings", SceneType::System, ecs::ScenePriority::Bindings);
-        ecs::EntityScope scope(scene->name, "");
-
         picojson::value root;
         string err = picojson::parse(root, bindingConfig->String());
         if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
@@ -745,30 +742,30 @@ namespace sp {
             Abortf("Failed to parse input binding json: %s", root.to_str());
         }
 
-        {
-            auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
+        auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
+        auto scene = Scene::New(lock, "bindings", SceneType::System, ScenePriority::Bindings, bindingConfig);
+        ecs::EntityScope scope(scene->data->name, "");
 
-            for (auto &param : root.get<picojson::object>()) {
-                Tracef("Loading input for: %s", param.first);
-                if (param.first.find(':') == std::string::npos) {
-                    Abortf("Binding entity does not have scene name: %s", param.first);
-                }
-                auto entity = scene->NewRootEntity(lock, scene, param.first);
-                if (entity) {
-                    for (auto &comp : param.second.get<picojson::object>()) {
-                        if (comp.first[0] == '_') continue;
+        for (auto &param : root.get<picojson::object>()) {
+            Tracef("Loading input for: %s", param.first);
+            if (param.first.find(':') == std::string::npos) {
+                Abortf("Binding entity does not have scene name: %s", param.first);
+            }
+            auto entity = scene->NewRootEntity(lock, scene, param.first);
+            if (entity) {
+                for (auto &comp : param.second.get<picojson::object>()) {
+                    if (comp.first[0] == '_') continue;
 
-                        auto componentType = ecs::LookupComponent(comp.first);
-                        if (componentType != nullptr) {
-                            bool result = componentType->LoadEntity(lock, scope, entity, comp.second);
-                            Assertf(result, "Failed to load component type: %s", comp.first);
-                        } else {
-                            Errorf("Unknown component, ignoring: %s", comp.first);
-                        }
+                    auto componentType = ecs::LookupComponent(comp.first);
+                    if (componentType != nullptr) {
+                        bool result = componentType->LoadEntity(lock, scope, entity, comp.second);
+                        Assertf(result, "Failed to load component type: %s", comp.first);
+                    } else {
+                        Errorf("Unknown component, ignoring: %s", comp.first);
                     }
-                } else {
-                    Errorf("Invalid binding entity name: %s", param.first);
                 }
+            } else {
+                Errorf("Invalid binding entity name: %s", param.first);
             }
         }
         return scene;
@@ -787,7 +784,7 @@ namespace sp {
 
         loadedScene = LoadSceneJson(sceneName, sceneType);
         if (loadedScene) {
-            loadedScene->UpdateRootTransform();
+            loadedScene->UpdateSceneProperties();
             PreloadAndApplyScene(loadedScene, false, callback);
 
             stagedScenes.Register(sceneName, loadedScene);
@@ -847,7 +844,7 @@ namespace sp {
                     while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                         Assert(stagingInfo.scene, "Missing SceneInfo scene on player entity");
-                        Logf("  -> %s scene", stagingInfo.scene.name);
+                        Logf("  -> %s scene", stagingInfo.scene.data->name);
                         stagingId = stagingInfo.nextStagingId;
                     }
                 }
@@ -865,7 +862,7 @@ namespace sp {
                     while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                         Assert(stagingInfo.scene, "Missing SceneInfo scene on binding entity");
-                        Logf("  -> %s scene", stagingInfo.scene.name);
+                        Logf("  -> %s scene", stagingInfo.scene.data->name);
                         stagingId = stagingInfo.nextStagingId;
                     }
                 }
@@ -878,7 +875,7 @@ namespace sp {
 
                 if (filterName.empty() || filterName == typeName) {
                     for (auto scene : scenes[sceneType]) {
-                        Logf("Entities from %s scene: %s", typeName, scene->name);
+                        Logf("Entities from %s scene: %s", typeName, scene->data->name);
                         for (auto &e : liveLock.EntitiesWith<ecs::Name>()) {
                             if (!e.Has<ecs::Name, ecs::SceneInfo>(liveLock)) continue;
                             auto &sceneInfo = e.Get<ecs::SceneInfo>(liveLock);
@@ -889,7 +886,9 @@ namespace sp {
                             while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                 auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                                 Assert(stagingInfo.scene, "Missing SceneInfo scene on entity");
-                                Logf(" -> %s scene (%s type)", stagingInfo.scene.name, stagingInfo.scene.type);
+                                Logf(" -> %s scene (%s type)",
+                                    stagingInfo.scene.data->name,
+                                    stagingInfo.scene.data->type);
                                 stagingId = stagingInfo.nextStagingId;
                             }
                         }

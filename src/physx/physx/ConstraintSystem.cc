@@ -3,9 +3,7 @@
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
-#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/SceneProperties.hh"
 #include "input/BindingNames.hh"
 #include "physx/ForceConstraint.hh"
 #include "physx/PhysxManager.hh"
@@ -130,7 +128,7 @@ namespace sp {
     }
 
     void ConstraintSystem::Frame(ecs::Lock<
-        ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints, ecs::SceneInfo>>
+        ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints, ecs::SceneProperties>>
             lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
@@ -166,7 +164,7 @@ namespace sp {
     }
 
     void ConstraintSystem::UpdateJoints(
-        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints, ecs::SceneInfo>> lock,
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints, ecs::SceneProperties>> lock,
         ecs::Entity entity,
         physx::PxRigidActor *actor,
         ecs::Transform transform) {
@@ -196,11 +194,7 @@ namespace sp {
             return true;
         });
 
-        SceneProperties sceneProperties = {};
-        if (entity.Has<ecs::SceneInfo>(lock)) {
-            auto &properties = entity.Get<ecs::SceneInfo>(lock).properties;
-            if (properties) sceneProperties = *properties;
-        }
+        auto &sceneProperties = ecs::SceneProperties::Get(lock, entity);
         auto gravity = sceneProperties.GetGravity(transform.GetPosition());
 
         for (auto &ecsJoint : ecsJoints) {

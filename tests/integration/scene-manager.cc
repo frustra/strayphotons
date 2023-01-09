@@ -41,8 +41,8 @@ namespace SceneManagerTests {
         AssertEqual(liveSceneInfo.nextStagingId,
             rootSceneInfo.nextStagingId,
             "Live SceneInfo.nextStagingId does not match");
-        Assert((bool)rootSceneInfo.scene, "Expected entity to have valid Scene");
-        AssertEqual(rootSceneInfo.scene.name, *sceneNames.begin(), "Entity scene does not match expected");
+        Assert(!!rootSceneInfo.scene, "Expected entity to have valid Scene");
+        AssertEqual(rootSceneInfo.scene.data->name, *sceneNames.begin(), "Entity scene does not match expected");
 
         for (auto &name : sceneNames) {
             Assertf(!!ent, "Expected entity to exist: %s", std::to_string(ent));
@@ -52,8 +52,8 @@ namespace SceneManagerTests {
             AssertEqual(sceneInfo.rootStagingId,
                 rootSceneInfo.rootStagingId,
                 "Staging SceneInfo.rootStagingId does not match");
-            Assert((bool)sceneInfo.scene, "Expected entity to have valid Scene");
-            AssertEqual(sceneInfo.scene.name, name, "Entity scene does not match expected");
+            Assert(sceneInfo.scene, "Expected entity to have valid Scene");
+            AssertEqual(sceneInfo.scene.data->name, name, "Entity scene does not match expected");
             ent = sceneInfo.nextStagingId;
         }
         Assert(!ent, "Expected no more entity scenes");
@@ -109,8 +109,9 @@ namespace SceneManagerTests {
                     "Expected player to be named correctly");
                 auto &playerSceneInfo = player.Get<ecs::SceneInfo>(liveLock);
                 auto playerScene = playerSceneInfo.scene.Lock();
-                Assert(playerScene != nullptr, "Expected player to have a scene");
-                AssertEqual(playerScene->name, "player", "Expected player scene to be named correctly");
+                Assert(!!playerScene, "Expected player to have a scene");
+                Assert(!!playerScene->data, "Expected player scene to have valid data");
+                AssertEqual(playerScene->data->name, "player", "Expected player scene to be named correctly");
                 playerScene->RemoveScene(stagingLock, liveLock);
             });
 

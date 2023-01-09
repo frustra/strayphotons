@@ -3,11 +3,10 @@
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
-#include "game/SceneProperties.hh"
 
 namespace ecs {
     SceneInfo::SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene)
-        : priority(scene->priority), scene(scene), properties(scene->properties) {
+        : priority(scene->data->priority), scene(scene) {
         if (IsLive(ent)) {
             liveId = ent;
         } else if (IsStaging(ent)) {
@@ -68,26 +67,6 @@ namespace ecs {
             }
             lastStagingInfo->nextStagingId = tmpId;
         }
-    }
-
-    SceneInfo SceneInfo::FlattenInfo(Lock<Read<SceneInfo>> staging) const {
-        Assert(IsStaging(staging), "SceneInfo::FlattenInfo() must be called with staging lock");
-        Assert(this->rootStagingId.Has<SceneInfo>(staging), "SceneInfo::FlattenInfo called on an invalid SceneInfo");
-
-        SceneInfo merged = this->rootStagingId.Get<SceneInfo>(staging);
-        if (!merged.properties) {
-            // Find highest priority properties
-            auto nextId = merged.nextStagingId;
-            while (nextId.Has<ecs::SceneInfo>(staging)) {
-                auto &sceneInfo = nextId.Get<ecs::SceneInfo>(staging);
-                if (sceneInfo.properties) {
-                    merged.properties = sceneInfo.properties;
-                    break;
-                }
-                nextId = sceneInfo.nextStagingId;
-            }
-        }
-        return merged;
     }
 
     void SceneInfo::SetLiveId(Lock<Write<SceneInfo>> staging, Entity liveId) const {

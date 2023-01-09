@@ -16,7 +16,7 @@ namespace sp {
 
         void RegisterEvents();
         void Frame(ecs::Lock<ecs::ReadSignalsLock,
-            ecs::Read<ecs::EventInput, ecs::SceneInfo>,
+            ecs::Read<ecs::EventInput, ecs::SceneProperties>,
             ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock);
 
     private:

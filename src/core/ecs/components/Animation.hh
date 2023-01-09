@@ -53,7 +53,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataAnimation(typeid(Animation),
-        StructField::New("states", &Animation::states),
+        StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
         StructField::New("defaultState", &Animation::targetState),
         StructField::New("interpolation", &Animation::interpolation),
         StructField::New("tension", &Animation::tension));
@@ -61,4 +61,6 @@ namespace ecs {
 
     template<>
     bool StructMetadata::Load<Animation>(const EntityScope &scope, Animation &dst, const picojson::value &src);
+    template<>
+    void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget);
 } // namespace ecs

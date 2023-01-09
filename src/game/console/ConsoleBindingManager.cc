@@ -16,7 +16,7 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
-                auto &scriptState = scripts.AddOnTick(ecs::Name(scene->name, ""),
+                auto &scriptState = scripts.AddOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,

@@ -9,26 +9,16 @@
 #include "game/SceneRef.hh"
 
 namespace sp {
-    class Asset;
-    struct SceneProperties;
-
-    class Scene : public NonCopyable {
+    class Scene {
     public:
-        Scene(const string &name, SceneType type, ecs::ScenePriority priority)
-            : name(name), type(type), priority(priority) {}
-        Scene(const string &name, SceneType type, ecs::ScenePriority priority, shared_ptr<const Asset> asset)
-            : name(name), type(type), priority(priority), asset(asset) {}
         ~Scene();
 
         ecs::Entity GetStagingEntity(const ecs::Name &entityName) const;
 
-        const std::string name;
-        const SceneType type;
-
-        ecs::ScenePriority priority;
-        std::shared_ptr<SceneProperties> properties;
+        std::shared_ptr<const SceneMetadata> data;
 
     private:
+        Scene(SceneMetadata &&metadata, std::shared_ptr<const Asset> asset = nullptr);
         friend class SceneManager;
 
         ecs::Name GenerateEntityName(const ecs::Name &prefix);
@@ -41,10 +31,15 @@ namespace sp {
         std::unordered_map<ecs::Name, ecs::Entity> namedEntities;
         std::vector<ecs::EntityRef> references;
 
-        ecs::Transform rootTransform;
-
     public:
         // ==== Below functions are defined in game module: game/game/Scene.cc
+
+        static std::shared_ptr<Scene> New(ecs::Lock<ecs::AddRemove> stagingLock,
+            const std::string &name,
+            SceneType type,
+            ScenePriority priority,
+            std::shared_ptr<const Asset> asset = nullptr);
+
         // Should only be called from SceneManager thread
         ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
@@ -73,7 +68,7 @@ namespace sp {
         // Should only be called from SceneManager thread
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
-        void UpdateRootTransform();
-        const ecs::Transform &GetRootTransform() const;
+        // Should only be called from SceneManager thread
+        void UpdateSceneProperties();
     };
 } // namespace sp

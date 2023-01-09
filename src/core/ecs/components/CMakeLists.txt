@@ -10,6 +10,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc
+    SceneProperties.cc
     Scripts.cc
     Sound.cc
     Signals.cc
