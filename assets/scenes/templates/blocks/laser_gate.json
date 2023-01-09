@@ -55,12 +55,8 @@
 				"translate": [0, 0.02, 0],
 				"scale": [0.03, 0.03, 0.03]
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "box",
-					"render": true
-				}
+			"renderable": {
+				"model": "box"
 			}
 		},
 		{
