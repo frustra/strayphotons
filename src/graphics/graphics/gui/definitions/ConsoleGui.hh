@@ -110,7 +110,7 @@ namespace sp {
             if (completionPopupVisible) {
                 ImGuiWindowFlags popupFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                               ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar |
-                                              ImGuiWindowFlags_NoSavedSettings;
+                                              ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing;
 
                 ImVec2 size = {400, 200};
                 size.y = std::min(size.y, 12 + completionEntries.size() * ImGui::GetTextLineHeightWithSpacing());
