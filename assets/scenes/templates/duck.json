@@ -3,7 +3,7 @@
 		{
 			"name": "duck",
 			"transform": {
-				"translate": [0, -0.001, 0]
+				"translate": [0, -0.114, 0]
 			},
 			"script": {
 				"prefab": "gltf",
