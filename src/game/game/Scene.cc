@@ -279,7 +279,7 @@ namespace sp {
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
         ZoneScoped;
         ZoneStr(data->name);
-        Tracef("Removing scene: %s", data->name);
+        Debugf("Removing scene: %s", data->name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
