@@ -1,47 +1,41 @@
 {
-	"entities": [
-		{
-			"name": "mirrorcube",
-			"transform": {
-				"parent": "scoperoot"
-			},
-			"physics": {
-				"shapes": {
-					"model": "box"
-				},
-				"mass": 1
-			},
-			"script": [
-				{
-					"prefab": "template",
-					"parameters": { "source": "interactive" }
-				},
-				{
-					"onTick": "magnetic_plug"
-				}
-			],
-			"physics_joints": [],
-			"trigger_group": "Magnetic",
-			"event_input": {}
+	"components": {
+		"transform": {
 		},
-		{
-			"name": "model",
-			"transform": {
-				"parent": "mirrorcube",
-				"translate": [0, -0.5, 0]
+		"physics": {
+			"shapes": {
+				"model": "box",
+				"transform": {
+					"translate": [0, 0.5, 0]
+				}
 			},
-			"script": {
+			"mass": 1
+		},
+		"script": [
+			{
 				"prefab": "gltf",
 				"parameters": {
 					"model": "mcube",
 					"render": true
 				}
+			},
+			{
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			},
+			{
+				"onTick": "magnetic_plug"
 			}
-		},
+		],
+		"physics_joints": [],
+		"trigger_group": "Magnetic",
+		"event_input": {}
+	},
+	"entities": [
 		{
 			"name": "mirrorface",
 			"transform": {
-				"parent": "mirrorcube"
+				"parent": "scoperoot"
 			},
 			"script": {
 				"prefab": "template",

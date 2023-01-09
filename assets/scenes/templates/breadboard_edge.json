@@ -1,6 +1,7 @@
 {
 	"entities": [
 		{
+			"name": "edge",
 			"transform": {
 				"rotate": [180, 0, 1, 0]
 			},

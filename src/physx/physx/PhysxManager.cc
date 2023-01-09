@@ -482,9 +482,11 @@ namespace sp {
         if (ph.shapes.empty()) return nullptr;
 
         const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
+        ecs::Transform meshTransform;
         for (auto &shape : ph.shapes) {
             if (mesh) Abortf("Physics actor can't have multiple meshes: %s", std::to_string(e));
             mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
+            if (mesh) meshTransform = shape.transform;
             if (mesh && (!mesh->model || !mesh->hullSettings)) return nullptr;
         }
 
@@ -524,9 +526,15 @@ namespace sp {
 
             if (userData->shapeCache) {
                 for (auto &hull : userData->shapeCache->hulls) {
-                    PxRigidActorExt::createExclusiveShape(*actor,
-                        PxConvexMeshGeometry(hull.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
+                    PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
+                        PxConvexMeshGeometry(hull.get(),
+                            PxMeshScale(GlmVec3ToPxVec3(meshTransform.GetScale() * scale))),
                         *userData->material);
+                    Assertf(pxShape, "Failed to create physx shape");
+
+                    PxTransform shapeTransform(GlmVec3ToPxVec3(meshTransform.GetPosition() * scale),
+                        GlmQuatToPxQuat(meshTransform.GetRotation()));
+                    pxShape->setLocalPose(shapeTransform);
                 }
             } else {
                 Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
@@ -539,7 +547,7 @@ namespace sp {
                     *userData->material);
                 Assertf(pxShape, "Failed to create physx shape");
 
-                PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
+                PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition() * scale),
                     GlmQuatToPxQuat(shape.transform.GetRotation()));
                 pxShape->setLocalPose(shapeTransform);
 
@@ -577,17 +585,29 @@ namespace sp {
             return;
         }
         auto &actor = actors[e];
-        auto dynamic = actor->is<PxRigidDynamic>();
-
         auto &ph = e.Get<ecs::Physics>(lock);
+        auto dynamic = actor->is<PxRigidDynamic>();
+        if (ph.dynamic != !!dynamic) {
+            RemoveActor(actor);
+            auto replacementActor = CreateActor(lock, e);
+            if (replacementActor) {
+                actors[e] = replacementActor;
+            } else {
+                actors.erase(e);
+            }
+            return;
+        }
+
         auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto scale = transform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
 
         const ecs::PhysicsShape::ConvexMesh *mesh = nullptr;
+        ecs::Transform meshTransform;
         for (auto &shape : ph.shapes) {
             if (mesh) Abortf("Physics actor can't have multiple meshes: %s", ecs::ToString(lock, e));
             mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
+            if (mesh) meshTransform = shape.transform;
             if (mesh && !mesh->model) return;
         }
 
@@ -601,7 +621,10 @@ namespace sp {
                 PxConvexMeshGeometry meshGeom;
                 for (auto *pxShape : pxShapes) {
                     if (pxShape->getConvexMeshGeometry(meshGeom)) {
-                        meshGeom.scale = PxMeshScale(GlmVec3ToPxVec3(scale));
+                        meshGeom.scale = PxMeshScale(GlmVec3ToPxVec3(meshTransform.GetScale() * scale));
+                        PxTransform shapeTransform(GlmVec3ToPxVec3(meshTransform.GetPosition() * scale),
+                            GlmQuatToPxQuat(meshTransform.GetRotation()));
+                        pxShape->setLocalPose(shapeTransform);
                         pxShape->setGeometry(meshGeom);
                     } else {
                         actor->detachShape(*pxShape);
@@ -643,7 +666,7 @@ namespace sp {
                     auto *pxShape = PxRigidActorExt::createExclusiveShape(*actor, geometry.any(), *userData->material);
                     Assertf(pxShape, "Failed to create physx shape");
 
-                    PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition()),
+                    PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition() * scale),
                         GlmQuatToPxQuat(shape.transform.GetRotation()));
                     pxShape->setLocalPose(shapeTransform);
 

@@ -20,6 +20,7 @@ namespace picojson {
 
 namespace ecs {
     struct Name;
+    struct ActiveScene;
     class Animation;
     struct CharacterController;
     struct EventInput;
@@ -60,6 +61,7 @@ namespace ecs {
         Renderable,
         Physics,
 
+        ActiveScene,
         Animation,
         CharacterController,
         FocusLock,
@@ -171,6 +173,7 @@ namespace ecs {
 }; // namespace ecs
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");
+TECS_NAME_COMPONENT(ecs::ActiveScene, "ActiveScene");
 TECS_NAME_COMPONENT(ecs::Animation, "Animation");
 TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");

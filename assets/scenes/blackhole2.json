@@ -105,11 +105,11 @@
 			"name": "mirror1",
 			"transform": {
 				"rotate": [160, 0, 1, 0],
-				"translate": [0.35, 0.86, 0.14]
+				"translate": [0.35, 0.9, 0.14]
 			},
 			"script": {
 				"parameters": {
-					"source": "mirror_block"
+					"source": "blocks/mirror"
 				},
 				"prefab": "template"
 			}
@@ -118,11 +118,11 @@
 			"name": "spliiter1",
 			"transform": {
 				"rotate": [160, 0, 1, 0],
-				"translate": [0.35, 0.86, 0.34]
+				"translate": [0.35, 0.9, 0.34]
 			},
 			"script": {
 				"parameters": {
-					"source": "splitter_block"
+					"source": "blocks/splitter"
 				},
 				"prefab": "template"
 			}
@@ -131,14 +131,14 @@
 			"name": "emitter1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"translate": [0.14, 0.86, 0.14]
+				"translate": [0.14, 0.9, 0.14]
 			},
 			"signal_output": {
 				"laser_color_r": 5
 			},
 			"script": {
 				"parameters": {
-					"source": "laser_emitter_block"
+					"source": "blocks/laser_emitter"
 				},
 				"prefab": "template"
 			}
@@ -147,11 +147,11 @@
 			"name": "sensor1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"translate": [0.86, 0.86, 0.14]
+				"translate": [0.86, 0.9, 0.14]
 			},
 			"script": {
 				"parameters": {
-					"source": "laser_sensor_block"
+					"source": "blocks/laser_sensor"
 				},
 				"prefab": "template"
 			}
@@ -160,7 +160,7 @@
 			"name": "emitter2",
 			"transform": {
 				"rotate": [90, 0, -1, 0],
-				"translate": [0.86, 0.86, 0.3]
+				"translate": [0.86, 0.9, 0.3]
 			},
 			"signal_bindings": {
 				"laser_color_b": "sensor1/light_value_b",
@@ -169,7 +169,7 @@
 			},
 			"script": {
 				"parameters": {
-					"source": "laser_emitter_block"
+					"source": "blocks/laser_emitter"
 				},
 				"prefab": "template"
 			}
@@ -177,11 +177,11 @@
 		{
 			"name": "gate1",
 			"transform": {
-				"translate": [0.54, 0.86, 0.3]
+				"translate": [0.54, 0.9, 0.3]
 			},
 			"script": {
 				"parameters": {
-					"source": "laser_gate_block"
+					"source": "blocks/laser_gate"
 				},
 				"prefab": "template"
 			}
@@ -189,7 +189,7 @@
 		{
 			"name": "emitter3",
 			"transform": {
-				"translate": [0.54, 0.86, 0.06]
+				"translate": [0.54, 0.9, 0.06]
 			},
 			"signal_output": {
 				"laser_color_g": 20,
@@ -197,7 +197,7 @@
 			},
 			"script": {
 				"parameters": {
-					"source": "laser_emitter_block"
+					"source": "blocks/laser_emitter"
 				},
 				"prefab": "template"
 			}
@@ -205,11 +205,11 @@
 		{
 			"name": "sensor_door",
 			"transform": {
-				"translate": [0.54, 0.86, 0.86]
+				"translate": [0.54, 0.9, 0.86]
 			},
 			"script": {
 				"parameters": {
-					"source": "laser_sensor_block"
+					"source": "blocks/laser_sensor"
 				},
 				"prefab": "template"
 			}

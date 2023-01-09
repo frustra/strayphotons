@@ -203,7 +203,10 @@ namespace sp {
             liveSceneId.Set<ecs::Name>(live, data->sceneEntity.Name());
             ecs::GetEntityRefs().Set(data->sceneEntity.Name(), liveSceneId);
         }
-        liveSceneId.Set<ecs::SceneProperties>(live, ecs::SceneProperties::Get(staging, stagingSceneId));
+        auto &properties = liveSceneId.Set<ecs::SceneProperties>(live,
+            ecs::SceneProperties::Get(staging, stagingSceneId));
+        properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
+        properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
 
         for (auto e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;
@@ -276,7 +279,7 @@ namespace sp {
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
         ZoneScoped;
         ZoneStr(data->name);
-        Tracef("Removing scene: %s", data->name);
+        Debugf("Removing scene: %s", data->name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);

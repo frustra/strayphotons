@@ -7,19 +7,17 @@
 				{
 					"box": [0.065, 0.01, 0.065],
 					"transform": {
-						"translate": [0, -0.015, 0]
+						"translate": [0, 0.005, 0]
 					}
 				},
 				{
-					"box": [0.03, 0.03, 0.03]
+					"box": [0.03, 0.03, 0.03],
+					"transform": {
+						"translate": [0, 0.02, 0]
+					}
 				}
 			],
 			"dynamic": true
-		},
-		"signal_bindings": {
-			"laser_color_r": "0.0",
-			"laser_color_g": "0.0",
-			"laser_color_b": "0.0"
 		},
 		"physics_joints": [],
 		"trigger_group": "Magnetic",
@@ -32,14 +30,20 @@
 			{
 				"onTick": "magnetic_plug"
 			}
-		]
+		],
+		"signal_bindings": {
+			"light_value_r": "source.Icosphere/light_value_r",
+			"light_value_g": "source.Icosphere/light_value_g",
+			"light_value_b": "source.Icosphere/light_value_b",
+			"value": "source.Icosphere/light_value_r && source.Icosphere/light_value_g && source.Icosphere/light_value_b"
+		}
 	},
 	"entities": [
 		{
 			"name": "mount",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, -0.015, 0],
+				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
 			"script": {
@@ -54,7 +58,7 @@
 			"name": "block-gizmo",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0],
+				"translate": [0, 0.02, 0],
 				"scale": [0.03, 0.03, 0.03]
 			},
 			"script": {
@@ -66,29 +70,43 @@
 			}
 		},
 		{
-			"name": "output",
+			"name": "source-socket",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0, 0.0029],
+				"translate": [0, 0.02, -0.05],
 				"rotate": [180, 0, 1, 0],
 				"scale": 1.25
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "laser-plug",
+					"model": "laser-socket",
 					"render": true
 				}
-			},
-			"signal_bindings": {
-				"laser_color_r": "scoperoot/laser_color_r",
-				"laser_color_g": "scoperoot/laser_color_g",
-				"laser_color_b": "scoperoot/laser_color_b"
-			},
-			"laser_line": {},
-			"laser_emitter": {
-				"start_distance": 0.01
 			}
+		},
+		{
+			"name": "source",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.02, -0.025],
+				"rotate": [180, 0, 1, 0],
+				"scale": 0.1
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "sensor",
+					"render": true,
+					"physics": "static",
+					"physics_group": "WorldOverlap"
+				}
+			}
+		},
+		{
+			"name": "source.Icosphere",
+			"signal_output": {},
+			"laser_sensor": {}
 		}
 	]
 }

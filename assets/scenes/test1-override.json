@@ -71,9 +71,11 @@
 			}
 		},
 		{
-			"name": "test1:mova-mirror.mirrorcube",
+			"name": "test1:mova-mirror",
 			"physics_joints": {
-				"target": "test1:mova-mirror",
+				"remote_offset": {
+					"translate": [-1.5, 0, -2.5]
+				},
 				"type": "Fixed"
 			}
 		},

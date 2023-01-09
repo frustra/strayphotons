@@ -23,13 +23,10 @@ namespace sp::scripts {
 
             auto &ph = ent.Get<Physics>(lock);
             auto &joints = ent.Get<PhysicsJoints>(lock);
-            if (!ph.dynamic || ph.kinematic) {
-                Errorf("Interactive object must have dynamic physics: %s", ToString(lock, ent));
-                return;
-            }
+            bool enableInteraction = ph.dynamic && !ph.kinematic;
 
             glm::vec3 centerOfMass;
-            if (ent.Has<PhysicsQuery>(lock)) {
+            if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
                 if (massQuery) {
                     auto &result = query.Lookup(massQuery).result;
@@ -58,6 +55,8 @@ namespace sp::scripts {
                         });
                         sp::erase(grabEntities, event.source);
                     } else if (std::holds_alternative<Transform>(event.data)) {
+                        if (!enableInteraction) continue;
+
                         auto &parentTransform = std::get<Transform>(event.data);
                         auto &transform = ent.Get<TransformSnapshot>(lock);
                         auto invParentRotate = glm::inverse(parentTransform.GetRotation());
@@ -82,6 +81,7 @@ namespace sp::scripts {
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
                     if (std::holds_alternative<glm::vec2>(event.data)) {
+                        if (!enableInteraction) continue;
                         if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
                         auto &input = std::get<glm::vec2>(event.data);
@@ -159,22 +159,30 @@ namespace sp::scripts {
                 Event event;
                 while (EventInput::Poll(lock, state.eventQueue, event)) {
                     if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                        auto justDropped = grabEntity;
+                        if (grabEntity) {
+                            // Drop the currently held entity
+                            EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                            grabEntity = {};
+                        }
                         if (std::holds_alternative<bool>(event.data)) {
                             auto &grabEvent = std::get<bool>(event.data);
-                            auto justDropped = grabEntity;
-                            if (grabEntity) {
-                                // Drop the currently held entity
-                                EventBindings::SendEvent(lock,
-                                    grabEntity,
-                                    Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
-                                grabEntity = {};
-                            }
                             if (grabEvent && raycastResult.target && raycastResult.target != justDropped) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
                                         raycastResult.target,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
                                     grabEntity = raycastResult.target;
+                                }
+                            }
+                        } else if (std::holds_alternative<Entity>(event.data)) {
+                            auto &targetEnt = std::get<Entity>(event.data);
+                            if (targetEnt) {
+                                // Grab the entity requested by the event
+                                if (EventBindings::SendEvent(lock,
+                                        targetEnt,
+                                        Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
+                                    grabEntity = targetEnt;
                                 }
                             }
                         } else {

@@ -192,14 +192,24 @@ namespace sp {
                     Errorf("SceneManager::RefreshScenePrefabs: scene %s not found", item.sceneName);
                 }
                 item.promise.set_value();
-            } else if (item.action == SceneAction::ApplyStagingScene) {
+            } else if (item.action == SceneAction::ApplyStagingScene ||
+                       item.action == SceneAction::ApplyResetStagingScene) {
                 ZoneScopedN("ApplyStagingScene");
                 ZoneStr(item.sceneName);
                 auto scene = stagedScenes.Load(item.sceneName);
                 if (scene) {
                     if (scene->data->type != SceneType::System) {
                         Tracef("Applying staging scene: %s", scene->data->name);
-                        PreloadAndApplyScene(scene, true);
+                        bool resetLive = item.action == SceneAction::ApplyResetStagingScene;
+                        if (item.editCallback) {
+                            PreloadAndApplyScene(scene,
+                                resetLive,
+                                [callback = item.editCallback](auto stagingLock, auto liveLock, auto scene) {
+                                    callback(liveLock);
+                                });
+                        } else {
+                            PreloadAndApplyScene(scene, resetLive);
+                        }
                     } else {
                         Errorf("SceneManager::ApplyStagingScene: Cannot apply system scene: %s", scene->data->name);
                     }
@@ -442,6 +452,12 @@ namespace sp {
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditSceneCallback callback) {
+        std::lock_guard lock(actionMutex);
+        if (state != ThreadState::Started) return;
+        actionQueue.emplace_back(action, sceneName, callback);
+    }
+
+    void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, sceneName, callback);

@@ -28,7 +28,8 @@ namespace sp {
         ApplySystemScene, // Arguments: (sceneName, EditSceneCallback)
         EditStagingScene, // Arguments: (sceneName, EditSceneCallback)
         RefreshScenePrefabs, // Arguments: (sceneName)
-        ApplyStagingScene, // Arguments: (sceneName)
+        ApplyResetStagingScene, // Arguments: (sceneName, [EditCallback])
+        ApplyStagingScene, // Arguments: (sceneName, [EditCallback])
         SaveStagingScene, // Arguments: (sceneName)
         LoadScene, // Arguments: (sceneName)
         ReloadScene, // Arguments: (sceneName)
@@ -53,6 +54,7 @@ namespace sp {
         using EditCallback = std::function<void(ecs::Lock<ecs::AddRemove>)>;
         using VoidCallback = std::function<void()>;
         void QueueAction(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
+        void QueueAction(SceneAction action, std::string sceneName, EditCallback callback);
         void QueueAction(SceneAction action, EditCallback callback);
         void QueueAction(SceneAction action, VoidCallback callback);
         void QueueActionAndBlock(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
@@ -101,6 +103,8 @@ namespace sp {
 
             QueuedAction(SceneAction action, std::string sceneName, EditSceneCallback editSceneCallback = nullptr)
                 : action(action), sceneName(sceneName), editSceneCallback(editSceneCallback) {}
+            QueuedAction(SceneAction action, std::string sceneName, EditCallback editCallback)
+                : action(action), sceneName(sceneName), editCallback(editCallback) {}
             QueuedAction(SceneAction action, EditCallback editCallback) : action(action), editCallback(editCallback) {}
             QueuedAction(SceneAction action, VoidCallback voidCallback) : action(action), voidCallback(voidCallback) {}
         };
