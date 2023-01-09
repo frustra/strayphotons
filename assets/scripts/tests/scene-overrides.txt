@@ -26,6 +26,6 @@ stepphysics
 screenshot load-override-after2.png
 stepgraphics
 stepphysics 240
-assert_position test1:animbox 0 5 -4.875
+assert_position test1:animbox 1 5 -4.875
 screenshot load-override-after3.png
 stepgraphics

@@ -14,4 +14,11 @@ namespace ecs {
         animation.currentState = animation.targetState;
         return true;
     }
+
+    template<>
+    void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget) {
+        if (liveTarget || dst.states.empty()) {
+            dst.states = src.states;
+        }
+    }
 } // namespace ecs
