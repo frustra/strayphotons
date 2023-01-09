@@ -224,8 +224,10 @@ namespace sp {
                 targetTransform = ecs::Transform(PxVec3ToGlmVec3(targetPose.p), PxQuatToGlmQuat(targetPose.q));
                 targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset.GetPosition());
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
-            } else if (targetEntity.Has<ecs::TransformTree>(lock)) {
-                targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+            } else {
+                if (targetEntity.Has<ecs::TransformTree>(lock)) {
+                    targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                } // else Target is scene root
                 targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset.GetPosition());
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
                 remoteTransform.p = GlmVec3ToPxVec3(targetTransform.GetPosition());

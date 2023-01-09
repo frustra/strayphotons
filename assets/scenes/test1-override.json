@@ -73,7 +73,9 @@
 		{
 			"name": "test1:mova-mirror",
 			"physics_joints": {
-				"remote_offset": [-1.5, 0, -2.5],
+				"remote_offset": {
+					"translate": [-1.5, 0, -2.5]
+				},
 				"type": "Fixed"
 			}
 		},
