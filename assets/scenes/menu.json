@@ -395,7 +395,7 @@
 			"transform": {
 				"parent": "table.surface",
 				"scale": 2,
-				"translate": [0.78, 0, 0.78]
+				"translate": [0.76, 0, 0.76]
 			},
 			"script": {
 				"parameters": {
