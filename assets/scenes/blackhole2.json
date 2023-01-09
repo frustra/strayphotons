@@ -62,19 +62,6 @@
 			"transform": {}
 		},
 		{
-			"transform": {
-				"rotate": [90, -1, 0, 0],
-				"translate": [0, 6.2, 0]
-			},
-			"light": {
-				"intensity": 300,
-				"shadowMapClip": [0.1, 50],
-				"shadowMapSize": 10,
-				"spotAngle": 70,
-				"tint": [1, 0.5, 0.5]
-			}
-		},
-		{
 			"name": "global:station-center",
 			"transform": {
 				"rotate": [45, 0, 0, 1],

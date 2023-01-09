@@ -1,4 +1,12 @@
 {
+	"components": {
+		"script": {
+			"parameters": {
+				"source": "station_segment_interior"
+			},
+			"prefab": "template"
+		}
+	},
 	"entities": [
 		{
 			"name": "segment",
