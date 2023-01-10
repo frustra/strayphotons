@@ -2,6 +2,7 @@
 
 #include "ecs/EcsImpl.hh"
 
+#include <format>
 #include <imgui/imgui.h>
 
 namespace sp {
