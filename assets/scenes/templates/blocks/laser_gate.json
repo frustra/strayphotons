@@ -11,9 +11,37 @@
 					}
 				},
 				{
-					"box": [0.03, 0.03, 0.03],
+					"box": [0.025, 0.003, 0.036],
 					"transform": {
-						"translate": [0, 0.02, 0]
+						"translate": [0.004, 0.0385, 0]
+					}
+				},
+				{
+					"box": [0.012, 0.003, 0.036],
+					"transform": {
+						"translate": [-0.01, 0.034, 0],
+						"rotate": [45, 0, 0, 1]
+					}
+				},
+				{
+					"box": [0.012, 0.003, 0.036],
+					"transform": {
+						"translate": [0.01, 0.034, 0],
+						"rotate": [-45, 0, 0, 1]
+					}
+				},
+				{
+					"box": [0.02, 0.003, 0.036],
+					"transform": {
+						"translate": [-0.014, 0.02, 0],
+						"rotate": [90, 0, 0, 1]
+					}
+				},
+				{
+					"box": [0.02, 0.003, 0.036],
+					"transform": {
+						"translate": [0.014, 0.02, 0],
+						"rotate": [90, 0, 0, 1]
 					}
 				}
 			],
@@ -52,25 +80,26 @@
 			"name": "block-gizmo",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, 0],
-				"scale": [0.03, 0.03, 0.03]
+				"translate": [0, 0.025, 0]
 			},
-			"renderable": {
-				"model": "box"
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-tube-3mm-flat-one-side",
+					"render": true
+				}
 			}
 		},
 		{
 			"name": "source-socket",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, -0.05],
-				"rotate": [180, 0, 1, 0],
-				"scale": 1.25
+				"translate": [0, 0.025, -0.0165]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "laser-socket",
+					"model": "optic-socket",
 					"render": true
 				}
 			}
@@ -79,7 +108,7 @@
 			"name": "source",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, -0.025],
+				"translate": [0, 0.025, -0.01],
 				"rotate": [180, 0, 1, 0],
 				"scale": 0.1
 			},
@@ -102,14 +131,27 @@
 			"name": "gate-socket",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0.05, 0.02, 0],
-				"rotate": [90, 0, 1, 0],
-				"scale": 1.25
+				"translate": [0.0215, 0.025, 0],
+				"rotate": [270, 0, 1, 0]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "laser-socket",
+					"model": "optic-socket",
+					"render": true
+				}
+			}
+		},
+		{
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, 0],
+				"rotate": [-90, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-tube-end-5mm",
 					"render": true
 				}
 			}
@@ -118,7 +160,7 @@
 			"name": "gate",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0.025, 0.02, 0],
+				"translate": [0.015, 0.025, 0],
 				"rotate": [90, 0, 1, 0],
 				"scale": 0.1
 			},
@@ -141,14 +183,13 @@
 			"name": "output",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, 0.0029],
-				"rotate": [180, 0, 1, 0],
-				"scale": 1.25
+				"translate": [0, 0.025, 0.0165],
+				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "laser-plug",
+					"model": "optic-socket",
 					"render": true
 				}
 			},
@@ -162,7 +203,7 @@
 			},
 			"laser_line": {},
 			"laser_emitter": {
-				"start_distance": 0.01
+				"start_distance": -0.01
 			}
 		}
 	]
