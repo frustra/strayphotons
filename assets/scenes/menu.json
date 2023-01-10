@@ -306,7 +306,8 @@
 				"translate": [4.94, 1.35, 2.35]
 			},
 			"signal_bindings": {
-				"threshold": "1",
+				"text_color_r": "airlock_in_signal_display/value < 1",
+				"text_color_g": "airlock_in_signal_display/value >= 1",
 				"value": "airlock_in_button_sensor.Icosphere/light_value_r"
 			},
 			"gui": {

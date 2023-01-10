@@ -2,8 +2,9 @@
 
 #include "ecs/EcsImpl.hh"
 
-#include <format>
 #include <imgui/imgui.h>
+#include <iomanip>
+#include <sstream>
 
 namespace sp {
     SignalDisplayGui::SignalDisplayGui(const string &name, const ecs::Entity &ent)
@@ -28,13 +29,14 @@ namespace sp {
         std::string text = "error";
         if (ent.Exists(lock)) {
             auto value = ecs::SignalBindings::GetSignal(lock, ent, "value");
-            auto threshold = ecs::SignalBindings::GetSignal(lock, ent, "threshold");
-            text = std::format("{:.2f}mW", value);
-            if (value >= threshold) {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-            } else {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-            }
+            ImVec4 textColor(0, 0, 0, 1);
+            textColor.x = ecs::SignalBindings::GetSignal(lock, ent, "text_color_r");
+            textColor.y = ecs::SignalBindings::GetSignal(lock, ent, "text_color_g");
+            textColor.z = ecs::SignalBindings::GetSignal(lock, ent, "text_color_b");
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(2) << value << "mW";
+            text = ss.str();
+            ImGui::PushStyleColor(ImGuiCol_Text, textColor);
         } else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
         }
