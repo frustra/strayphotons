@@ -452,7 +452,7 @@ namespace sp::vulkan {
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
         if (!gui.windowName.empty()) {
             auto context = make_shared<WorldGuiManager>(ent, gui.windowName);
-            auto window = CreateGuiWindow(gui.windowName);
+            auto window = CreateGuiWindow(gui.windowName, ent);
             if (window) {
                 context->Attach(window);
                 guis.emplace_back(RenderableGui{ent, context.get(), context});

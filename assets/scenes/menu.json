@@ -299,6 +299,30 @@
 			"signal_output": {}
 		},
 		{
+			"name": "airlock_in_signal_display",
+			"transform": {
+				"scale": [0.12, 0.05, 1],
+				"rotate": [-90, 0, 1, 0],
+				"translate": [4.94, 1.35, 2.35]
+			},
+			"signal_bindings": {
+				"threshold": "1",
+				"value": "airlock_in_button_sensor.Icosphere/light_value_r"
+			},
+			"gui": {
+				"windowName": "signal_display"
+			},
+			"screen": {
+				"luminance": [3, 3, 3]
+			},
+			"script": {
+				"parameters": {
+					"source": "world_gui"
+				},
+				"prefab": "template"
+			}
+		},
+		{
 			"name": "airlock_in_button_led",
 			"transform": {
 				"rotate": [90, 0, 0, 1],

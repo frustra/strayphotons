@@ -23,14 +23,20 @@ namespace sp {
 
     void WorldGuiManager::DefineWindows() {
         ZoneScoped;
-        for (auto &window : components) {
+        for (auto &component : components) {
+            auto *window = dynamic_cast<GuiWindow *>(component.get());
+
+            int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+            if (window) {
+                window->PreDefine();
+                flags ^= window->flags;
+            }
             ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
             ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-            ImGui::Begin(window->name.c_str(),
-                nullptr,
-                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-            window->DefineContents();
+            ImGui::Begin(component->name.c_str(), nullptr, flags);
+            component->DefineContents();
             ImGui::End();
+            if (window) window->PostDefine();
         }
     }
 

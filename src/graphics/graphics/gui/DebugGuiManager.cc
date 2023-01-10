@@ -99,7 +99,7 @@ namespace sp {
 
                 auto &gui = ctx.entity.Get<ecs::Gui>(lock);
                 if (!ctx.window && !gui.windowName.empty()) {
-                    ctx.window = CreateGuiWindow(gui.windowName);
+                    ctx.window = CreateGuiWindow(gui.windowName, ctx.entity);
                 }
                 if (gui.target == ecs::GuiTarget::Debug) {
                     Attach(ctx.window);
