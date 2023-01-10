@@ -11,9 +11,9 @@
 					}
 				},
 				{
-					"box": [0.03, 0.03, 0.03],
+					"box": [0.036, 0.003, 0.036],
 					"transform": {
-						"translate": [0, 0.02, 0]
+						"translate": [0, 0.0385, 0]
 					}
 				}
 			],
@@ -58,25 +58,27 @@
 			"name": "block-gizmo",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, 0],
-				"scale": [0.03, 0.03, 0.03]
+				"translate": [0, 0.025, 0],
+				"rotate": [-90, 0, 0, 1]
 			},
-			"renderable": {
-				"model": "box"
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-tube-3mm-flat-one-side",
+					"render": true
+				}
 			}
 		},
 		{
 			"name": "source-socket",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, -0.05],
-				"rotate": [180, 0, 1, 0],
-				"scale": 1.25
+				"translate": [0, 0.025, -0.0165]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
-					"model": "laser-socket",
+					"model": "optic-socket",
 					"render": true
 				}
 			}
@@ -85,7 +87,7 @@
 			"name": "source",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.02, -0.025],
+				"translate": [0, 0.025, -0.005],
 				"rotate": [180, 0, 1, 0],
 				"scale": 0.1
 			},
