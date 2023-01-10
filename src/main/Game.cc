@@ -108,8 +108,11 @@ namespace sp {
             funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(ms));
             });
-            funcs.Register("syncscene", "Pause script until all scenes are loaded", []() {
-                GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
+            funcs.Register<int>("syncscene", "Pause script until all scenes are loaded", [](int count) {
+                if (count < 1) count = 1;
+                for (int i = 0; i < count; i++) {
+                    GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
+                }
             });
             funcs.Register<unsigned int>("stepgraphics",
                 "Renders N frames in a row, saving any queued screenshots, default is 1",

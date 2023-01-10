@@ -1,4 +1,5 @@
 loadscene force-joints
+syncscene
 r.Exposure 1
 steplogic
 #screenshot force-joints-frame0.png
