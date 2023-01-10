@@ -5,7 +5,7 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
-    GameLogic::GameLogic(bool stepMode) : RegisteredThread("GameLogic", 120.0), stepMode(stepMode) {
+    GameLogic::GameLogic(bool stepMode) : RegisteredThread("GameLogic", 120.0, true), stepMode(stepMode) {
         if (stepMode) {
             funcs.Register<unsigned int>("steplogic",
                 "Advance the game logic by N frames, default is 1",

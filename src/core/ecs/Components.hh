@@ -166,6 +166,10 @@ namespace ecs {
             return &defaultStagingComponent;
         }
 
+        const CompType &StagingDefault() const {
+            return defaultStagingComponent;
+        }
+
         bool operator==(const Component<CompType> &other) const {
             return strcmp(name, other.name) == 0;
         }

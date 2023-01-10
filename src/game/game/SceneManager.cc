@@ -693,6 +693,7 @@ namespace sp {
                     }
                 }
                 ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                    if (name == "scene_properties") return;
                     if (comp.HasComponent(staging, e)) {
                         if (comp.metadata.fields.empty()) {
                             components[comp.name].set<picojson::object>({});

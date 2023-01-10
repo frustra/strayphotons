@@ -55,7 +55,6 @@ namespace sp {
         auto entity = stagingLock.NewEntity();
         entity.Set<ecs::SceneInfo>(stagingLock, entity, scene);
         entity.Set<ecs::Name>(stagingLock, entityName);
-        entity.Set<ecs::SceneProperties>(stagingLock, scene->data->GetProperties(stagingLock));
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
         return entity;
@@ -93,7 +92,7 @@ namespace sp {
         auto entity = lock.NewEntity();
         entity.Set<ecs::SceneInfo>(lock, entity, scene);
         entity.Set<ecs::Name>(lock, entityName);
-        entity.Set<ecs::SceneProperties>(lock, scene->data->GetProperties(lock));
+        if (ecs::IsLive(lock)) entity.Set<ecs::SceneProperties>(lock, scene->data->GetProperties(lock));
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
         return entity;
@@ -139,7 +138,6 @@ namespace sp {
         auto entity = stagingLock.NewEntity();
         auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
         entity.Set<ecs::Name>(stagingLock, entityName);
-        entity.Set<ecs::SceneProperties>(stagingLock, rootSceneInfo.scene.data->GetProperties(stagingLock));
         auto &newSceneInfo = entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, prefabScriptId, rootSceneInfo);
         if (existing) {
             Assertf(existing.Has<ecs::SceneInfo>(stagingLock),
@@ -302,6 +300,10 @@ namespace sp {
                         false);
                 }
             }
+            ecs::EntityRef ref = e;
+            if (ref.GetStaging() == e && remainingId) {
+                ecs::GetEntityRefs().Set(ref.Name(), remainingId);
+            }
             e.Destroy(staging);
         }
 
@@ -342,25 +344,14 @@ namespace sp {
             auto stagingTransform = stagingTree.GetGlobalTransform(stagingLock);
             glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
             glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
-
-            ecs::SceneProperties properties = data->GetProperties(stagingLock);
-            properties.rootTransform = ecs::Transform(deltaPos, deltaRotation);
-            properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
-            properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
+            auto rootTransform = ecs::Transform(deltaPos, deltaRotation);
 
             auto stagingSceneId = data->sceneEntity.Get(stagingLock);
             Assertf(stagingSceneId,
                 "Scene::UpdateSceneProperties scene missing staging scene entity: %s / %s",
                 data->name,
                 data->sceneEntity.Name().String());
-            stagingSceneId.Get<ecs::SceneProperties>(stagingLock).rootTransform = properties.rootTransform;
-
-            for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
-                auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
-                if (sceneInfo.scene != *this) continue;
-
-                e.Set<ecs::SceneProperties>(stagingLock, properties);
-            }
+            stagingSceneId.Get<ecs::SceneProperties>(stagingLock).rootTransform = rootTransform;
         }
     }
 } // namespace sp
