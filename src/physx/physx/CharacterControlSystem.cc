@@ -50,11 +50,11 @@ namespace sp {
             "character",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 // Create Head entity which automatically points to the active player mode
-                auto ent = scene->NewSystemEntity(lock, scene, entities::Head.Name());
-                auto &tree = ent.Set<ecs::TransformTree>(lock);
-                tree.parent = entities::Flatview;
-                auto &scripts = ent.Set<ecs::Scripts>(lock);
-                scripts.AddOnTick(ecs::Name(scene->data->name, ""),
+                auto headEnt = scene->NewSystemEntity(lock, scene, entities::Head.Name());
+                auto &headTree = headEnt.Set<ecs::TransformTree>(lock);
+                headTree.parent = entities::Flatview;
+                auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
+                headScripts.AddOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
                         ecs::Lock<ecs::WriteAll> lock,
                         ecs::Entity ent,
@@ -69,6 +69,39 @@ namespace sp {
                         } else {
                             tree.parent = flatview;
                         }
+                    });
+
+                // Create Direction entity which automatically points to the active player mode
+                auto dirEnt = scene->NewSystemEntity(lock, scene, entities::Direction.Name());
+                auto &dirTree = dirEnt.Set<ecs::TransformTree>(lock);
+                dirTree.parent = entities::Player;
+                auto &dirScripts = dirEnt.Set<ecs::Scripts>(lock);
+                dirScripts.AddOnPhysicsUpdate(ecs::Name(scene->data->name, ""),
+                    [](ecs::ScriptState &state,
+                        ecs::PhysicsUpdateLock lock,
+                        ecs::Entity ent,
+                        chrono_clock::duration interval) {
+                        if (!ent.Has<ecs::TransformTree>(lock)) return;
+                        auto &dirTree = ent.Get<ecs::TransformTree>(lock);
+
+                        ecs::Entity head = entities::Head.Get(lock);
+                        if (!head.Has<ecs::TransformTree>(lock)) return;
+
+                        ecs::Entity player = entities::Player.Get(lock);
+                        if (!player.Has<ecs::TransformTree>(lock)) return;
+
+                        auto &headTree = head.Get<ecs::TransformTree>(lock);
+                        auto headToPlayer = headTree.GetRelativeTransform(lock, player);
+
+                        auto forward = headToPlayer.GetForward();
+                        if (std::abs(forward.y) > 0.999) {
+                            forward = headToPlayer.GetRotation() * glm::vec3(0, -forward.y, 0);
+                        }
+                        forward.y = 0;
+                        forward = glm::normalize(forward);
+
+                        dirTree.pose.matrix[0] = glm::vec3(-forward.z, 0, forward.x);
+                        dirTree.pose.matrix[2] = -forward;
                     });
             });
 

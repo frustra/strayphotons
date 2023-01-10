@@ -26,6 +26,10 @@ namespace sp {
                 OpenEditor(targetName, false);
             });
 
+        funcs.Register<void>("tray", "Open or close the model tray", [this]() {
+            ToggleTray();
+        });
+
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "editor",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
@@ -116,6 +120,21 @@ namespace sp {
                 transform.pose = ecs::Transform(glm::vec3(0, 1, -1));
                 transform.parent = entities::Player;
             }
+        }
+    }
+
+    void EditorSystem::ToggleTray() {
+        bool trayOpen = false;
+        {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::TransformSnapshot>>();
+            ecs::EntityRef trayRef = ecs::Name("tray", "root");
+            if (trayRef.Get(lock).Exists(lock)) trayOpen = true;
+        }
+
+        if (trayOpen) {
+            GetSceneManager().QueueAction(SceneAction::RemoveScene, "tray");
+        } else {
+            GetSceneManager().QueueAction(SceneAction::AddScene, "tray");
         }
     }
 } // namespace sp

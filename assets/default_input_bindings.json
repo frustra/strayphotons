@@ -129,7 +129,8 @@
                 "if_focused": "Game"
             },
             "/keyboard/key/q": {
-                "target": "player:debug-spawner/script/spawn",
+                "target": "console:input/action/run_command",
+                "set_value": "tray",
                 "if_focused": "Game"
             },
             "/keyboard/key/f": {

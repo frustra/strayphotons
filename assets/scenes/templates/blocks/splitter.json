@@ -81,7 +81,7 @@
 				"parent": "scoperoot",
 				"rotate": [-45, 0, 1, 0],
 				"translate": [0.0002, 0.025, -0.0002],
-				"scale": 0.03
+				"scale": 0.04
 			}
 		}
 	]
