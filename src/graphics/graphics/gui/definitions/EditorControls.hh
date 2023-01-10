@@ -594,7 +594,8 @@ namespace sp {
 
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (!comp.HasComponent(lock, this->target)) return;
-            if (ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            auto flags = (name == "scene_properties") ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_DefaultOpen;
+            if (ImGui::CollapsingHeader(name.c_str(), flags)) {
                 const void *component = comp.Access(lock, this->target);
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {

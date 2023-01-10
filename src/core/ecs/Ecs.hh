@@ -56,6 +56,7 @@ namespace ecs {
 
     using ECS = Tecs::ECS<Name,
         SceneInfo,
+        SceneProperties,
         TransformSnapshot,
         TransformTree,
         Renderable,
@@ -75,7 +76,6 @@ namespace ecs {
         PhysicsJoints,
         PhysicsQuery,
         SceneConnection,
-        SceneProperties,
         Screen,
         Sounds,
         TriggerArea,

@@ -38,6 +38,17 @@ namespace sp::scene {
                         // Ignore, this is handled by the scene
                     } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
                         // Ignore, this is handled by TransformTree
+                    } else if constexpr (std::is_same_v<T, SceneProperties>) {
+                        auto &component = std::get<std::optional<SceneProperties>>(stagingComponents);
+                        if (!component) {
+                            component = LookupComponent<SceneProperties>().StagingDefault();
+                        }
+
+                        Assertf(stagingInfo.scene, "Staging entity %s has null scene", ToString(staging, stagingId));
+                        auto properties = stagingInfo.scene.data->GetProperties(staging);
+                        properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
+                        properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
+                        LookupComponent<SceneProperties>().ApplyComponent(component.value(), properties, false);
                     } else if constexpr (!Tecs::is_global_component<T>()) {
                         if (!stagingId.Has<T>(staging)) return;
 
