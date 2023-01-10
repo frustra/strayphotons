@@ -11,6 +11,7 @@ namespace sp {
         EditorSystem();
 
         void OpenEditor(std::string targetName, bool flatMode = true);
+        void ToggleTray();
 
     private:
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");

@@ -1,10 +1,14 @@
 {
 	"entities": [
 		{
+			"name": "player:tray_attachment",
+			"scene_connection": {},
+			"transform": {}
+		},
+		{
 			"name": "root",
 			"transform": {
-				"rotate": [90, 0, -1, 0],
-				"translate": [1.9, 0.8, 2]
+				"translate": [-0.5, 0, 0]
 			}
 		},
 		{
@@ -32,25 +36,26 @@
 				"translate": [0.1, 0, 0.1]
 			},
 			"physics": {
-				"group": "UserInterface",
-				"dynamic": false
+				"dynamic": false,
+				"group": "UserInterface"
 			},
 			"signal_output": {
 				"laser_color_r": 10
 			},
-			"script": [{
-				"parameters": {
-					"source": "blocks/laser_emitter"
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
 				},
-				"prefab": "template"
-			},
-			{
-				"parameters": {
-					"source": "blocks/laser_emitter"
-				},
-				"onTick": "tray_spawner"
-			}
-		]
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					}
+				}
+			]
 		},
 		{
 			"name": "laser_sensor",
@@ -59,22 +64,98 @@
 				"translate": [0.1, 0, 0.2]
 			},
 			"physics": {
-				"group": "UserInterface",
-				"dynamic": false
+				"dynamic": false,
+				"group": "UserInterface"
 			},
-			"script": [{
-				"parameters": {
-					"source": "blocks/laser_sensor"
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
 				},
-				"prefab": "template"
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate",
+			"transform": {
+				"parent": "root",
+				"translate": [0.1, 0, 0.3]
 			},
-			{
-				"parameters": {
-					"source": "blocks/laser_sensor"
+			"physics": {
+				"dynamic": false,
+				"group": "UserInterface"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
 				},
-				"onTick": "tray_spawner"
-			}
-		]
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/laser_gate"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror",
+			"transform": {
+				"parent": "root",
+				"translate": [0.2, 0, 0.1]
+			},
+			"physics": {
+				"dynamic": false,
+				"group": "UserInterface"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/mirror"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter",
+			"transform": {
+				"parent": "root",
+				"translate": [0.2, 0, 0.2]
+			},
+			"physics": {
+				"dynamic": false,
+				"group": "UserInterface"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/splitter"
+					}
+				}
+			]
 		}
 	]
 }
