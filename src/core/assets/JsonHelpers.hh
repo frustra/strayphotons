@@ -340,15 +340,40 @@ namespace sp::json {
     }
 
     template<typename T>
+    inline bool Compare(const T &a, const T &b) {
+        if constexpr (std::equality_comparable<T>) {
+            return a == b;
+        } else {
+            auto &metadata = ecs::StructMetadata::Get<T>();
+            for (auto &f : metadata.fields) {
+                if (!f.Compare(&a, &b)) return false;
+            }
+            return true;
+        }
+    }
+
+    template<typename T>
     inline bool SaveIfChanged(const ecs::EntityScope &s,
-        picojson::object &dst,
+        picojson::value &dst,
         const char *field,
         const T &src,
         const T &def) {
-        if (src != def) {
-            Save(s, dst[field], src);
-            return true;
-        }
-        return false;
+        if (Compare(src, def)) return false;
+
+        if (field && !dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &fieldDst = field ? dst.get<picojson::object>()[field] : dst;
+        Save(s, fieldDst, src);
+        return true;
+    }
+
+    template<typename T>
+    inline bool SaveIfChanged(const ecs::EntityScope &s,
+        picojson::object &obj,
+        const char *field,
+        const T &src,
+        const T &def) {
+        if (Compare(src, def)) return false;
+        Assertf(field != nullptr, "json::SaveIfChanged provided object with no field");
+        return SaveIfChanged(s, obj[field], nullptr, src, def);
     }
 } // namespace sp::json

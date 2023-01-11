@@ -117,17 +117,44 @@ namespace ecs {
                 const void *dataPtr = src.definition.context->Access(src);
                 const void *defaultPtr = src.definition.context->GetDefault();
                 Assertf(dataPtr, "Script definition returned null data: %s", src.definition.name);
+                bool changed = false;
                 for (auto &field : src.definition.context->metadata.fields) {
-                    field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                    if (!field.Compare(dataPtr, defaultPtr)) {
+                        changed = true;
+                        break;
+                    }
+                }
+                if (changed) {
+                    for (auto &field : src.definition.context->metadata.fields) {
+                        field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                    }
                 }
             }
         }
     }
 
+    bool ScriptState::operator==(const ScriptState &other) const {
+        if (instanceId != other.instanceId) return false;
+        if (!definition.context || definition.context != other.definition.context) {
+            return definition.context == other.definition.context;
+        }
+
+        const void *aPtr = definition.context->Access(*this);
+        const void *bPtr = definition.context->Access(other);
+        Assertf(aPtr && bPtr, "Script definition returned null data: %s", definition.name);
+        for (auto &field : definition.context->metadata.fields) {
+            if (!field.Compare(aPtr, bPtr)) return false;
+        }
+        return true;
+    }
+
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &script : src.scripts) {
-            if (!sp::contains(dst.scripts, script)) dst.scripts.emplace_back(script);
+            auto found = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
+                return script.GetInstanceId() == arg.GetInstanceId();
+            });
+            if (found == dst.scripts.end()) dst.scripts.emplace_back(script);
         }
     }
 

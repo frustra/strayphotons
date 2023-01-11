@@ -12,18 +12,19 @@
 namespace sp::scene {
     using namespace ecs;
 
+    // Build a flattened set of components from the staging ECS.
+    // The result includes staging components from the provided entity and all lower priority entities.
+    // Transform components will have their scene root transforms applied to their poses.
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    void BuildAndApplyEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging,
-        Lock<AddRemove> live,
-        Entity e,
-        bool resetLive) {
+    auto BuildEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging, Entity e) {
         Assert(e.Has<SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-        const SceneInfo &rootSceneInfo = e.Get<SceneInfo>(staging);
-        Assert(rootSceneInfo.liveId.Has<SceneInfo>(live), "Expected liveId to have valid SceneInfo");
-        Assert(rootSceneInfo.rootStagingId == e, "Expected supplied entity to be the root stagingId");
 
-        // Build a flattened set of components before applying to the real live id
-        std::tuple<std::optional<AllComponentTypes>...> stagingComponents;
+        std::tuple<std::optional<AllComponentTypes>...> flatEntity;
+        if (e.Has<Name>(staging)) {
+            auto &name = std::get<std::optional<Name>>(flatEntity);
+            name = e.Get<Name>(staging);
+        }
+
         auto stagingId = e;
         while (stagingId.Has<SceneInfo>(staging)) {
             auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
@@ -33,13 +34,13 @@ namespace sp::scene {
                     using T = AllComponentTypes;
 
                     if constexpr (std::is_same_v<T, Name>) {
-                        // Ignore, this is handled below
+                        // Ignore, this is handled above
                     } else if constexpr (std::is_same_v<T, SceneInfo>) {
                         // Ignore, this is handled by the scene
                     } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
                         // Ignore, this is handled by TransformTree
                     } else if constexpr (std::is_same_v<T, SceneProperties>) {
-                        auto &component = std::get<std::optional<SceneProperties>>(stagingComponents);
+                        auto &component = std::get<std::optional<SceneProperties>>(flatEntity);
                         if (!component) {
                             component = LookupComponent<SceneProperties>().StagingDefault();
                         }
@@ -52,7 +53,7 @@ namespace sp::scene {
                     } else if constexpr (!Tecs::is_global_component<T>()) {
                         if (!stagingId.Has<T>(staging)) return;
 
-                        auto &component = std::get<std::optional<T>>(stagingComponents);
+                        auto &component = std::get<std::optional<T>>(flatEntity);
                         if (!component) {
                             auto comp = LookupComponent(typeid(T));
                             Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
@@ -104,6 +105,21 @@ namespace sp::scene {
 
             stagingId = stagingInfo.nextStagingId;
         }
+        return flatEntity;
+    }
+
+    template<typename... AllComponentTypes, template<typename...> typename ECSType>
+    void BuildAndApplyEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging,
+        Lock<AddRemove> live,
+        Entity e,
+        bool resetLive) {
+        Assert(e.Has<SceneInfo>(staging), "Expected entity to have valid SceneInfo");
+        const SceneInfo &rootSceneInfo = e.Get<SceneInfo>(staging);
+        Assert(rootSceneInfo.liveId.Has<SceneInfo>(live), "Expected liveId to have valid SceneInfo");
+        Assert(rootSceneInfo.rootStagingId == e, "Expected supplied entity to be the root stagingId");
+
+        // Build a flattened set of components before applying to the real live id
+        auto flatEntity = BuildEntity(staging, e);
 
         // Apply flattened staging components to the live id, and remove any components that are no longer in staging
         ( // For each component:
@@ -113,8 +129,10 @@ namespace sp::scene {
                     if (e.Has<Name>(staging)) {
                         rootSceneInfo.liveId.Set<Name>(live, e.Get<Name>(staging));
                     }
+                } else if constexpr (std::is_same_v<T, SceneInfo>) {
+                    // Ignore, this should always be set
                 } else if constexpr (!Tecs::is_global_component<T>()) {
-                    auto &component = std::get<std::optional<T>>(stagingComponents);
+                    auto &component = std::get<std::optional<T>>(flatEntity);
                     if (component) {
                         if (resetLive) {
                             rootSceneInfo.liveId.Unset<T>(live);
@@ -124,12 +142,10 @@ namespace sp::scene {
                         LookupComponent<T>().ApplyComponent(dstComp, *component, true);
                     } else if (rootSceneInfo.liveId.Has<T>(live)) {
                         if constexpr (std::is_same_v<T, TransformSnapshot>) {
-                            auto &transformOpt = std::get<std::optional<TransformTree>>(stagingComponents);
+                            auto &transformOpt = std::get<std::optional<TransformTree>>(flatEntity);
                             if (!transformOpt) {
                                 rootSceneInfo.liveId.Unset<TransformSnapshot>(live);
                             }
-                        } else if constexpr (std::is_same_v<T, SceneInfo>) {
-                            // Ignore, this should always be set
                         } else {
                             rootSceneInfo.liveId.Unset<T>(live);
                         }

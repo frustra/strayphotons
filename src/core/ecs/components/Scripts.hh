@@ -106,13 +106,7 @@ namespace ecs {
             return !std::holds_alternative<std::monostate>(definition.callback);
         }
 
-        bool operator==(const ScriptState &other) const {
-            return instanceId == other.instanceId;
-        }
-
-        bool operator!=(const ScriptState &other) const {
-            return instanceId != other.instanceId;
-        }
+        bool operator==(const ScriptState &other) const;
 
         size_t GetInstanceId() const {
             return instanceId;

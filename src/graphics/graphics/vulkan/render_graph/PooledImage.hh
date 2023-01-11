@@ -15,7 +15,7 @@ namespace sp::vulkan::render_graph {
 
         vk::ImageUsageFlags usage; // set by the render graph
 
-        bool operator==(const ImageDesc &other) const = default;
+        bool operator==(const ImageDesc &) const = default;
 
         vk::ImageViewType DeriveViewType() const {
             switch (imageType) {
