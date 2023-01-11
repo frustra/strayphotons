@@ -67,7 +67,7 @@ namespace sp {
         std::string name;
     };
 
-    shared_ptr<GuiWindow> CreateGuiWindow(const string &name);
+    shared_ptr<GuiWindow> CreateGuiWindow(const string &name, const ecs::Entity &ent);
 
     std::span<FontDef> GetFontList();
 } // namespace sp

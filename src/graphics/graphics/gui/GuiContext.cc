@@ -3,6 +3,7 @@
 #include "graphics/gui/definitions/ConsoleGui.hh"
 #include "graphics/gui/definitions/InspectorGui.hh"
 #include "graphics/gui/definitions/LobbyGui.hh"
+#include "graphics/gui/definitions/SignalDisplayGui.hh"
 #include "input/KeyCodes.hh"
 
 #include <imgui/imgui.h>
@@ -47,12 +48,14 @@ namespace sp {
         if (it != components.end()) components.erase(it);
     }
 
-    shared_ptr<GuiWindow> CreateGuiWindow(const string &windowName) {
+    shared_ptr<GuiWindow> CreateGuiWindow(const string &windowName, const ecs::Entity &ent) {
         shared_ptr<GuiWindow> window;
         if (windowName == "lobby") {
             window = make_shared<LobbyGui>(windowName);
         } else if (windowName == "inspector") {
             window = make_shared<InspectorGui>(windowName);
+        } else if (windowName == "signal_display") {
+            window = make_shared<SignalDisplayGui>(windowName, ent);
         } else {
             Errorf("unknown gui window: %s", windowName);
             return nullptr;
