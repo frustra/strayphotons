@@ -29,7 +29,7 @@ namespace sp {
             int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
             if (window) {
                 window->PreDefine();
-                flags ^= window->flags;
+                flags |= window->flags;
             }
             ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
             ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
