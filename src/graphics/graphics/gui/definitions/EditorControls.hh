@@ -511,6 +511,56 @@ namespace sp {
             auto &sceneInfo = this->target.Get<ecs::SceneInfo>(lock);
             this->scene = sceneInfo.scene;
 
+            if (this->scene) {
+                if (!sceneInfo.prefabStagingId) {
+                    ImGui::SameLine();
+                    if (ImGui::Button("Copy to Staging")) {
+                        GetSceneManager().QueueAction([target = this->target] {
+                            auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                            auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
+
+                            Assertf(target.Has<ecs::SceneInfo>(liveLock),
+                                "CopyToStaging target has no SceneInfo: %s",
+                                ecs::ToString(liveLock, target));
+
+                            auto &liveSceneInfo = target.Get<ecs::SceneInfo>(liveLock);
+                            auto stagingId = liveSceneInfo.rootStagingId;
+                            SceneRef targetScene;
+                            while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
+                                auto &sceneInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
+                                if (sceneInfo.priority == ScenePriority::Scene) {
+                                    targetScene = sceneInfo.scene;
+                                    break;
+                                }
+                                stagingId = sceneInfo.nextStagingId;
+                            }
+
+                            Assertf(targetScene,
+                                "CopyToStaging can't find suitable target scene: %s",
+                                liveSceneInfo.scene.data->name);
+                            Assertf(stagingId.Has<ecs::SceneInfo>(stagingLock),
+                                "CopyToStaging can't find suitable target: %s / %s",
+                                ecs::ToString(liveLock, target),
+                                liveSceneInfo.scene.data->name);
+
+                            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                                if (name == "scene_properties" || name == "transform_snapshot") return;
+                                if (!comp.HasComponent(liveLock, target)) return;
+
+                                picojson::value tmp;
+                                ecs::EntityScope scope(targetScene.data->name, "");
+                                comp.SaveEntity(liveLock, scope, tmp, target);
+                                if (!comp.LoadEntity(stagingLock, scope, stagingId, tmp)) {
+                                    Errorf("Failed to save %s component on entity: %s",
+                                        comp.name,
+                                        ecs::ToString(stagingLock, stagingId));
+                                }
+                            });
+                        });
+                    }
+                }
+            }
+
             ImGui::Separator();
             ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
         } else {

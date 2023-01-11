@@ -56,9 +56,9 @@ namespace sp {
         void QueueAction(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
         void QueueAction(SceneAction action, std::string sceneName, EditCallback callback);
         void QueueAction(SceneAction action, EditCallback callback);
-        void QueueAction(SceneAction action, VoidCallback callback);
+        void QueueAction(VoidCallback callback);
         void QueueActionAndBlock(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
-        void QueueActionAndBlock(SceneAction action, VoidCallback callback);
+        void QueueActionAndBlock(VoidCallback callback);
 
         using ScenePreloadCallback = std::function<bool(ecs::Lock<ecs::ReadAll>, std::shared_ptr<Scene>)>;
         void PreloadSceneGraphics(ScenePreloadCallback callback);
