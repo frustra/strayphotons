@@ -45,7 +45,10 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<EventBinding>(const EntityScope &scope, EventBinding &dst, const picojson::value &src);
     template<>
-    void StructMetadata::Save<EventBinding>(const EntityScope &scope, picojson::value &dst, const EventBinding &src);
+    void StructMetadata::Save<EventBinding>(const EntityScope &scope,
+        picojson::value &dst,
+        const EventBinding &src,
+        const EventBinding &def);
 
     class EventBindings {
     public:

@@ -17,9 +17,9 @@ namespace sp::scene {
     // Transform components will have their scene root transforms applied to their poses.
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     auto BuildEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging, Entity e) {
-        Assert(e.Has<SceneInfo>(staging), "Expected entity to have valid SceneInfo");
-
         std::tuple<std::optional<AllComponentTypes>...> flatEntity;
+        if (!e.Has<SceneInfo>(staging)) return flatEntity;
+
         if (e.Has<Name>(staging)) {
             auto &name = std::get<std::optional<Name>>(flatEntity);
             name = e.Get<Name>(staging);

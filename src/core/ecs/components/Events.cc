@@ -70,7 +70,10 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<EventBinding>(const EntityScope &scope, picojson::value &dst, const EventBinding &src) {
+    void StructMetadata::Save<EventBinding>(const EntityScope &scope,
+        picojson::value &dst,
+        const EventBinding &src,
+        const EventBinding &def) {
         std::string bindingStr = src.target.Name().String() + src.destQueue;
         if (!src.setValue && !src.multiplyValue && src.ifFocused == FocusLayer::Always) {
             dst = picojson::value(bindingStr);

@@ -35,7 +35,10 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<LaserLine>(const EntityScope &scope, picojson::value &dst, const LaserLine &src) {
+    void StructMetadata::Save<LaserLine>(const EntityScope &scope,
+        picojson::value &dst,
+        const LaserLine &src,
+        const LaserLine &def) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 

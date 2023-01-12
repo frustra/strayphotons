@@ -499,8 +499,9 @@ namespace sp {
             "CopyToStaging can't find suitable target: %s / %s",
             ecs::ToString(live, target),
             liveSceneInfo.scene.data->name);
+        auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
 
-        auto flatStagingEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId);
+        auto flatParentEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
 
         ( // For each component:
             [&] {
@@ -518,25 +519,25 @@ namespace sp {
                     auto &liveComp = target.Get<T>(live);
                     auto comp = ecs::LookupComponent<T>();
 
-                    auto &stagingComp = std::get<std::optional<T>>(flatStagingEntity);
-                    if (!stagingComp) {
-                        Errorf("New live component not supported: %s / %s", comp.name, ecs::ToString(live, target));
-                        return;
-                    }
                     T compareComp = {};
-                    comp.ApplyComponent(compareComp, *stagingComp, true);
+                    auto existingComp = std::get<std::optional<T>>(flatParentEntity);
+                    if (existingComp) {
+                        comp.ApplyComponent(compareComp, *existingComp, true);
+                    }
 
                     picojson::value tmp;
                     ecs::EntityScope scope(targetScene.data->name, "");
-                    bool changed = json::SaveIfChanged(scope, tmp, nullptr, liveComp, compareComp);
+                    auto changed = json::SaveIfChanged(scope, tmp, nullptr, liveComp, compareComp);
                     if (changed) {
-                        Logf("Saving changed %s: %s", comp.name, tmp.serialize(true));
-
                         if (!comp.LoadEntity(staging, scope, stagingId, tmp)) {
                             Errorf("Failed to save %s component on entity: %s",
                                 comp.name,
                                 ecs::ToString(staging, stagingId));
                         }
+                    } else if (existingComp) {
+                        if (stagingId.Has<T>(staging)) stagingId.Unset<T>(staging);
+                    } else {
+                        stagingId.Set<T>(staging, comp.StagingDefault());
                     }
                 }
             }(),

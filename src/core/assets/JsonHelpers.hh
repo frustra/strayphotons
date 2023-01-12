@@ -215,7 +215,7 @@ namespace sp::json {
             for (auto &field : metadata.fields) {
                 field.Save(s, dst, &src, &defaultValue);
             }
-            ecs::StructMetadata::Save(s, dst, src);
+            ecs::StructMetadata::Save(s, dst, src, defaultValue);
         }
     }
 
@@ -360,10 +360,27 @@ namespace sp::json {
         const T &def) {
         if (Compare(src, def)) return false;
 
-        if (field && !dst.is<picojson::object>()) dst.set<picojson::object>({});
-        auto &fieldDst = field ? dst.get<picojson::object>()[field] : dst;
-        Save(s, fieldDst, src);
-        return true;
+        picojson::value value;
+        auto *metadata = ecs::StructMetadata::Get(typeid(T));
+        if (metadata) {
+            for (auto &f : metadata->fields) {
+                f.Save(s, value, &src, &def);
+            }
+            ecs::StructMetadata::Save(s, value, src, def);
+        } else {
+            Save(s, value, src);
+        }
+
+        if (!value.is<picojson::null>()) {
+            if (field) {
+                if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+                dst.get<picojson::object>()[field] = value;
+            } else {
+                dst = value;
+            }
+            return true;
+        }
+        return false;
     }
 
     template<typename T>

@@ -34,7 +34,8 @@ namespace ecs {
     template<>
     void StructMetadata::Save<SceneProperties>(const EntityScope &scope,
         picojson::value &dst,
-        const SceneProperties &src);
+        const SceneProperties &src,
+        const SceneProperties &def);
 
     template<>
     void Component<SceneProperties>::Apply(SceneProperties &dst, const SceneProperties &src, bool liveTarget);

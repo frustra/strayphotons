@@ -101,7 +101,10 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src) {
+    void StructMetadata::Save<ScriptState>(const EntityScope &scope,
+        picojson::value &dst,
+        const ScriptState &src,
+        const ScriptState &def) {
         if (src.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
         } else if (!std::holds_alternative<std::monostate>(src.definition.callback)) {
@@ -130,6 +133,26 @@ namespace ecs {
                     }
                 }
             }
+        }
+    }
+
+    template<>
+    void StructMetadata::Save<Scripts>(const EntityScope &scope,
+        picojson::value &dst,
+        const Scripts &src,
+        const Scripts &def) {
+        picojson::array arrayOut;
+        for (auto &script : src.scripts) {
+            if (sp::contains(def.scripts, script)) continue;
+
+            picojson::value val;
+            sp::json::Save(scope, val, script);
+            arrayOut.emplace_back(val);
+        }
+        if (arrayOut.size() > 1) {
+            dst = picojson::value(arrayOut);
+        } else if (arrayOut.size() == 1) {
+            dst = arrayOut.front();
         }
     }
 
