@@ -134,10 +134,9 @@ namespace ecs {
     }
 
     bool ScriptState::operator==(const ScriptState &other) const {
-        if (instanceId != other.instanceId) return false;
-        if (!definition.context || definition.context != other.definition.context) {
-            return definition.context == other.definition.context;
-        }
+        if (definition.name.empty() || !definition.context) return instanceId == other.instanceId;
+        if (definition.name != other.definition.name) return false;
+        if (definition.context != other.definition.context) return false;
 
         const void *aPtr = definition.context->Access(*this);
         const void *bPtr = definition.context->Access(other);
@@ -148,13 +147,30 @@ namespace ecs {
         return true;
     }
 
+    bool ScriptState::CompareOverride(const ScriptState &other) const {
+        if (instanceId == other.instanceId) return true;
+        if (definition.name != other.definition.name) return false;
+        if (std::get_if<PrefabFunc>(&definition.callback)) {
+            if (definition.name == "gltf") {
+                return GetParam<string>("model") == other.GetParam<string>("model");
+            } else if (definition.name == "template") {
+                return GetParam<string>("source") == other.GetParam<string>("source");
+            }
+        }
+        return !definition.name.empty();
+    }
+
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &script : src.scripts) {
-            auto found = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
-                return script.GetInstanceId() == arg.GetInstanceId();
+            auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
+                return script.CompareOverride(arg);
             });
-            if (found == dst.scripts.end()) dst.scripts.emplace_back(script);
+            if (existing == dst.scripts.end()) {
+                dst.scripts.emplace_back(script);
+            } else if (liveTarget) {
+                *existing = script;
+            }
         }
     }
 

@@ -106,7 +106,11 @@ namespace ecs {
             return !std::holds_alternative<std::monostate>(definition.callback);
         }
 
+        // Compare script definition and parameters
         bool operator==(const ScriptState &other) const;
+
+        // Returns true if the two scripts should represent the same instance
+        bool CompareOverride(const ScriptState &other) const;
 
         size_t GetInstanceId() const {
             return instanceId;
