@@ -3,7 +3,7 @@
 #include <core/Tracing.hh>
 #include <tracy/TracyVulkan.hpp>
 
-#ifndef TRACY_ENABLE
+#ifndef TRACY_ENABLE_GRAPHICS
 
     #define GPUZone(device, commandContext, name)
     #define GPUZoneNamed(device, commandContext, varname, name)

@@ -1,0 +1,197 @@
+{
+	"components": {
+		"transform": {
+		},
+		"physics": {
+			"shapes": [
+				{
+					"box": [0.065, 0.01, 0.065],
+					"transform": {
+						"translate": [0, 0.005, 0]
+					}
+				},
+				{
+					"box": [0.049, 0.049, 0.049],
+					"transform": {
+						"translate": [0, 0.035, 0]
+					}
+				}
+			],
+			"dynamic": true
+		},
+		"signal_output": {
+			"charge_level": 0,
+			"cell_output_r": 0,
+			"cell_output_g": 0,
+			"cell_output_b": 0
+		},
+		"physics_joints": [],
+		"trigger_group": "Magnetic",
+		"event_input": {},
+		"script": [
+			{
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			},
+			{
+				"onTick": "magnetic_plug"
+			},
+			{
+				"onTick": "charge_cell",
+				"parameters": {
+					"charge_signal": "charge-panel/light_value_r + charge-panel/light_value_g + charge-panel/light_value_b",
+					"output_power": "2",
+					"discharge_signal_r": "input-sensor.Icosphere/light_value_r",
+					"discharge_signal_g": "input-sensor.Icosphere/light_value_g",
+					"discharge_signal_b": "input-sensor.Icosphere/light_value_b"
+				}
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "mount",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.005, 0],
+				"scale": [0.07, 0.01, 0.07]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "octagon",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "block-body",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.035, 0],
+				"scale": 0.049
+			},
+			"renderable": {
+				"color_override": [0.03, 0.03, 0.04, 1],
+				"metallic_roughness_override": [1, 0.6],
+				"model": "box"
+			}
+		},
+		{
+			"name": "output",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, -0.0335]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-socket",
+					"render": true
+				}
+			},
+			"signal_bindings": {
+				"laser_color_r": "scoperoot/cell_output_r",
+				"laser_color_g": "scoperoot/cell_output_g",
+				"laser_color_b": "scoperoot/cell_output_b"
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"start_distance": -0.009
+			}
+		},
+		{
+			"name": "output-tube",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, -0.002],
+				"scale": [1, 1, 1.5]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-tube-end-5mm",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "charge-panel",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [-0.026, 0.035, 0],
+				"scale": [0.002, 0.04, 0.04]
+			},
+			"renderable": {
+				"emissive": -0.05,
+				"color_override": [0.01, 0.01, 0.02, 1],
+				"metallic_roughness_override": [1, 0.05],
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"dynamic": false,
+				"group": "WorldOverlap"
+			},
+			"signal_output": {},
+			"laser_sensor": {}
+		},
+		{
+			"name": "input",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, 0.0335],
+				"rotate": [180, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-socket",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "input-tube",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, 0.0545],
+				"scale": [1, 1, 1.5]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-tube-end-5mm",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "input-sensor",
+			"transform": {
+				"parent": "input",
+				"translate": [0, 0, 0.009],
+				"rotate": [180, 0, 1, 0],
+				"scale": 0.1
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "sensor",
+					"render": true,
+					"physics": "static",
+					"physics_group": "WorldOverlap"
+				}
+			}
+		},
+		{
+			"name": "input-sensor.Icosphere",
+			"signal_output": {},
+			"laser_sensor": {
+				"threshold": [0.5, 0.5, 0.5]
+			}
+		}
+	]
+}

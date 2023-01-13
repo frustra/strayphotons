@@ -54,7 +54,7 @@ namespace sp::vulkan::render_graph {
 
         auto timer = device.GetPerfTimer();
 
-#ifdef TRACY_ENABLE
+#ifdef TRACY_ENABLE_GRAPHICS
         std::stack<tracy::ScopedZone> traceScopes;
 #endif
         std::stack<RenderPhase> phaseScopes;
@@ -119,7 +119,7 @@ namespace sp::vulkan::render_graph {
                 uint8 resScope = i < (int)frameScopeStack.size() ? frameScopeStack[i] : 255;
                 if (resScope != passScope) {
                     if (resScope != 255) {
-#ifdef TRACY_ENABLE
+#ifdef TRACY_ENABLE_GRAPHICS
                         if (!traceScopes.empty()) traceScopes.pop();
 #endif
                         phaseScopes.pop();
@@ -133,7 +133,7 @@ namespace sp::vulkan::render_graph {
                         phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
                         if (timer) phaseScopes.top().StartTimer(*timer);
 
-#ifdef TRACY_ENABLE
+#ifdef TRACY_ENABLE_GRAPHICS
                         if (!name.empty()) {
                             traceScopes.emplace(__LINE__,
                                 __FILE__,
@@ -150,7 +150,7 @@ namespace sp::vulkan::render_graph {
             }
             frameScopeStack = pass.scopes;
 
-#ifdef TRACY_ENABLE
+#ifdef TRACY_ENABLE_GRAPHICS
             tracy::ScopedZone traceZone(__LINE__,
                 __FILE__,
                 strlen(__FILE__),

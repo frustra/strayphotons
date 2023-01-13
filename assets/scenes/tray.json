@@ -156,6 +156,31 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "charge_cell",
+			"transform": {
+				"parent": "root",
+				"translate": [0.3, 0, 0.2]
+			},
+			"physics": {
+				"dynamic": false,
+				"group": "UserInterface"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/charge_cell"
+					}
+				}
+			]
 		}
 	]
 }

@@ -191,7 +191,7 @@ namespace ecs {
             });
             if (existing == dst.scripts.end()) {
                 dst.scripts.emplace_back(script);
-            } else if (liveTarget) {
+            } else if (liveTarget && existing->GetInstanceId() != script.GetInstanceId()) {
                 *existing = script;
             }
         }
