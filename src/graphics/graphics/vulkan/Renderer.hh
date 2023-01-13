@@ -65,7 +65,7 @@ namespace sp::vulkan {
 #endif
 
         void AddGui(ecs::Entity ent, const ecs::Gui &gui);
-        void AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock);
+        void AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock);
         void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
             const ecs::View &view,

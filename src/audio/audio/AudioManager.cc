@@ -2,7 +2,6 @@
 
 #include "assets/AssetManager.hh"
 #include "core/Tracing.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/GameEntities.hh"
 
 #include <resonance-audio/resonance_audio/base/constants_and_types.h>
