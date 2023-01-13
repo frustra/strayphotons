@@ -107,6 +107,7 @@ namespace ecs {
         }
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        bool Compare(const void *a, const void *b) const;
         bool Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const;
         // If defaultStruct is nullptr, the field value is always saved
         void Save(const EntityScope &scope,
@@ -139,6 +140,8 @@ namespace ecs {
         const std::type_index type;
         std::vector<StructField> fields;
 
+        // === The following functions are meant to specialized by individual structs
+
         template<typename T>
         static void InitUndefined(T &dst) {
             // Custom field init is always called, default to no-op.
@@ -151,7 +154,7 @@ namespace ecs {
         }
 
         template<typename T>
-        static void Save(const EntityScope &scope, picojson::value &dst, const T &src) {
+        static void Save(const EntityScope &scope, picojson::value &dst, const T &src, const T &def) {
             // Custom field serialization is always called, default to no-op.
         }
 

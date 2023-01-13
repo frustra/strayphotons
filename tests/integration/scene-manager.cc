@@ -98,7 +98,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload player scene (primary player entity)");
-            Scenes().QueueActionAndBlock(sp::SceneAction::RunCallback, [] {
+            Scenes().QueueActionAndBlock([] {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                 auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 

@@ -38,7 +38,7 @@ namespace sp::vulkan {
 
         size_t size = 0, arrayStride = 0, arrayCount = 0;
 
-        bool operator==(const BufferLayout &other) const = default;
+        bool operator==(const BufferLayout &) const = default;
     };
 
     struct BufferDesc {
@@ -46,7 +46,7 @@ namespace sp::vulkan {
         vk::BufferUsageFlags usage;
         Residency residency = Residency::UNKNOWN;
 
-        bool operator==(const BufferDesc &other) const = default;
+        bool operator==(const BufferDesc &) const = default;
     };
 
     struct InitialData {

@@ -469,10 +469,10 @@ namespace sp {
         actionQueue.emplace_back(action, callback);
     }
 
-    void SceneManager::QueueAction(SceneAction action, VoidCallback callback) {
+    void SceneManager::QueueAction(VoidCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
-        actionQueue.emplace_back(action, callback);
+        actionQueue.emplace_back(SceneAction::RunCallback, callback);
     }
 
     void SceneManager::QueueActionAndBlock(SceneAction action, std::string sceneName, EditSceneCallback callback) {
@@ -490,18 +490,18 @@ namespace sp {
         }
     }
 
-    void SceneManager::QueueActionAndBlock(SceneAction action, VoidCallback callback) {
+    void SceneManager::QueueActionAndBlock(VoidCallback callback) {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);
             if (state != ThreadState::Started) return;
-            auto &entry = actionQueue.emplace_back(action, callback);
+            auto &entry = actionQueue.emplace_back(SceneAction::RunCallback, callback);
             future = entry.promise.get_future();
         }
         try {
             future.get();
         } catch (const std::future_error &) {
-            Abortf("SceneManager action did not complete: %s", action);
+            Abortf("SceneManager action did not complete");
         }
     }
 

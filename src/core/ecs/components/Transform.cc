@@ -69,7 +69,10 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<Transform>(const EntityScope &scope, picojson::value &dst, const Transform &src) {
+    void StructMetadata::Save<Transform>(const EntityScope &scope,
+        picojson::value &dst,
+        const Transform &src,
+        const Transform &def) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 

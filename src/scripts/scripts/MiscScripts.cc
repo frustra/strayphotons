@@ -60,26 +60,25 @@ namespace sp::scripts {
                 Transform transform(position);
                 transform = relativeTransform * transform;
 
-                GetSceneManager().QueueAction(SceneAction::RunCallback,
-                    [ent, transform, modelName = modelName, scope = state.scope]() {
-                        auto lock = ecs::StartTransaction<ecs::AddRemove>();
-                        if (!ent.Has<ecs::SceneInfo>(lock)) return;
-                        auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
-                        auto scene = sceneInfo.scene.Lock();
-                        if (!scene) return;
+                GetSceneManager().QueueAction([ent, transform, modelName = modelName, scope = state.scope]() {
+                    auto lock = ecs::StartTransaction<ecs::AddRemove>();
+                    if (!ent.Has<ecs::SceneInfo>(lock)) return;
+                    auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
+                    auto scene = sceneInfo.scene.Lock();
+                    if (!scene) return;
 
-                        auto newEntity = scene->NewRootEntity(lock, scene);
+                    auto newEntity = scene->NewRootEntity(lock, scene);
 
-                        newEntity.Set<TransformTree>(lock, transform);
-                        newEntity.Set<TransformSnapshot>(lock, transform);
-                        newEntity.Set<Renderable>(lock, modelName, sp::Assets().LoadGltf(modelName));
-                        newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, true, 1.0f);
-                        newEntity.Set<PhysicsJoints>(lock);
-                        newEntity.Set<PhysicsQuery>(lock);
-                        newEntity.Set<EventInput>(lock);
-                        auto &scripts = newEntity.Set<Scripts>(lock);
-                        scripts.AddOnTick(scope, "interactive_object");
-                    });
+                    newEntity.Set<TransformTree>(lock, transform);
+                    newEntity.Set<TransformSnapshot>(lock, transform);
+                    newEntity.Set<Renderable>(lock, modelName, sp::Assets().LoadGltf(modelName));
+                    newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, true, 1.0f);
+                    newEntity.Set<PhysicsJoints>(lock);
+                    newEntity.Set<PhysicsQuery>(lock);
+                    newEntity.Set<EventInput>(lock);
+                    auto &scripts = newEntity.Set<Scripts>(lock);
+                    scripts.AddOnTick(scope, "interactive_object");
+                });
             }
         }
     };

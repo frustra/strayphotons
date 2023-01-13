@@ -101,7 +101,10 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src) {
+    void StructMetadata::Save<ScriptState>(const EntityScope &scope,
+        picojson::value &dst,
+        const ScriptState &src,
+        const ScriptState &def) {
         if (src.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
         } else if (!std::holds_alternative<std::monostate>(src.definition.callback)) {
@@ -117,17 +120,80 @@ namespace ecs {
                 const void *dataPtr = src.definition.context->Access(src);
                 const void *defaultPtr = src.definition.context->GetDefault();
                 Assertf(dataPtr, "Script definition returned null data: %s", src.definition.name);
+                bool changed = false;
                 for (auto &field : src.definition.context->metadata.fields) {
-                    field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                    if (!field.Compare(dataPtr, defaultPtr)) {
+                        changed = true;
+                        break;
+                    }
+                }
+                if (changed) {
+                    for (auto &field : src.definition.context->metadata.fields) {
+                        field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                    }
                 }
             }
         }
     }
 
     template<>
+    void StructMetadata::Save<Scripts>(const EntityScope &scope,
+        picojson::value &dst,
+        const Scripts &src,
+        const Scripts &def) {
+        picojson::array arrayOut;
+        for (auto &script : src.scripts) {
+            if (sp::contains(def.scripts, script)) continue;
+
+            picojson::value val;
+            sp::json::Save(scope, val, script);
+            arrayOut.emplace_back(val);
+        }
+        if (arrayOut.size() > 1) {
+            dst = picojson::value(arrayOut);
+        } else if (arrayOut.size() == 1) {
+            dst = arrayOut.front();
+        }
+    }
+
+    bool ScriptState::operator==(const ScriptState &other) const {
+        if (definition.name.empty() || !definition.context) return instanceId == other.instanceId;
+        if (definition.name != other.definition.name) return false;
+        if (definition.context != other.definition.context) return false;
+
+        const void *aPtr = definition.context->Access(*this);
+        const void *bPtr = definition.context->Access(other);
+        Assertf(aPtr && bPtr, "Script definition returned null data: %s", definition.name);
+        for (auto &field : definition.context->metadata.fields) {
+            if (!field.Compare(aPtr, bPtr)) return false;
+        }
+        return true;
+    }
+
+    bool ScriptState::CompareOverride(const ScriptState &other) const {
+        if (instanceId == other.instanceId) return true;
+        if (definition.name != other.definition.name) return false;
+        if (std::get_if<PrefabFunc>(&definition.callback)) {
+            if (definition.name == "gltf") {
+                return GetParam<string>("model") == other.GetParam<string>("model");
+            } else if (definition.name == "template") {
+                return GetParam<string>("source") == other.GetParam<string>("source");
+            }
+        }
+        return !definition.name.empty();
+    }
+
+    template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &script : src.scripts) {
-            if (!sp::contains(dst.scripts, script)) dst.scripts.emplace_back(script);
+            auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
+                return script.CompareOverride(arg);
+            });
+            if (existing == dst.scripts.end()) {
+                dst.scripts.emplace_back(script);
+            } else if (liveTarget) {
+                *existing = script;
+            }
         }
     }
 

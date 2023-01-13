@@ -112,7 +112,6 @@ namespace ecs {
             Entity &dst,
             const picojson::value &src) const override {
             DebugAssert(IsStaging(lock), "LoadEntity should only be called with a staging lock");
-            DebugAssert(!dst.Has<CompType>(lock), "LoadEntity should only be called on empty entities");
 
             auto &dstComp = dst.Set<CompType>(lock, defaultStagingComponent);
             if (!LoadFields(scope, dstComp, src)) return false;
@@ -129,12 +128,13 @@ namespace ecs {
                 for (auto &field : metadata.fields) {
                     field.Save(scope, dst, &comp, &defaultLiveComponent);
                 }
+                StructMetadata::Save<CompType>(scope, dst, comp, defaultLiveComponent);
             } else {
                 for (auto &field : metadata.fields) {
                     field.Save(scope, dst, &comp, &defaultStagingComponent);
                 }
+                StructMetadata::Save<CompType>(scope, dst, comp, defaultStagingComponent);
             }
-            StructMetadata::Save<CompType>(scope, dst, comp);
         }
 
         void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {

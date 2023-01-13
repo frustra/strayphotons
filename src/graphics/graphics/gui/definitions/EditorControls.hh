@@ -6,6 +6,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
+#include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
 
@@ -472,6 +473,77 @@ namespace sp {
         }
     }
 
+    template<typename... AllComponentTypes, template<typename...> typename ECSType>
+    void CopyToStaging(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> staging,
+        ecs::Lock<ecs::ReadAll> live,
+        ecs::Entity target) {
+
+        Assertf(target.Has<ecs::SceneInfo>(live),
+            "CopyToStaging target has no SceneInfo: %s",
+            ecs::ToString(live, target));
+
+        auto &liveSceneInfo = target.Get<ecs::SceneInfo>(live);
+        auto stagingId = liveSceneInfo.rootStagingId;
+        SceneRef targetScene;
+        while (stagingId.Has<ecs::SceneInfo>(staging)) {
+            auto &sceneInfo = stagingId.Get<ecs::SceneInfo>(staging);
+            if (sceneInfo.priority == ScenePriority::Scene) {
+                targetScene = sceneInfo.scene;
+                break;
+            }
+            stagingId = sceneInfo.nextStagingId;
+        }
+
+        Assertf(targetScene, "CopyToStaging can't find suitable target scene: %s", liveSceneInfo.scene.data->name);
+        Assertf(stagingId.Has<ecs::SceneInfo>(staging),
+            "CopyToStaging can't find suitable target: %s / %s",
+            ecs::ToString(live, target),
+            liveSceneInfo.scene.data->name);
+        auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+
+        auto flatParentEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
+
+        ( // For each component:
+            [&] {
+                using T = AllComponentTypes;
+                if constexpr (std::is_same_v<T, ecs::Name>) {
+                    // Skip
+                } else if constexpr (std::is_same_v<T, ecs::SceneInfo>) {
+                    // Skip, this is handled by the scene
+                } else if constexpr (std::is_same_v<T, ecs::SceneProperties>) {
+                    // Skip, this is handled by scene
+                } else if constexpr (std::is_same_v<T, ecs::TransformSnapshot>) {
+                    // Skip, this is handled by TransformTree
+                } else if constexpr (!Tecs::is_global_component<T>()) {
+                    if (!target.Has<T>(live)) return;
+                    auto &liveComp = target.Get<T>(live);
+                    auto comp = ecs::LookupComponent<T>();
+
+                    T compareComp = {};
+                    auto existingComp = std::get<std::optional<T>>(flatParentEntity);
+                    if (existingComp) {
+                        comp.ApplyComponent(compareComp, *existingComp, true);
+                    }
+
+                    picojson::value tmp;
+                    ecs::EntityScope scope(targetScene.data->name, "");
+                    auto changed = json::SaveIfChanged(scope, tmp, nullptr, liveComp, compareComp);
+                    if (changed) {
+                        if (!comp.LoadEntity(staging, scope, stagingId, tmp)) {
+                            Errorf("Failed to save %s component on entity: %s",
+                                comp.name,
+                                ecs::ToString(staging, stagingId));
+                        }
+                    } else if (existingComp) {
+                        if (stagingId.Has<T>(staging)) stagingId.Unset<T>(staging);
+                    } else {
+                        stagingId.Set<T>(staging, comp.StagingDefault());
+                    }
+                }
+            }(),
+            ...);
+    }
+
     void EditorContext::ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity) {
         if (!targetEntity) {
             this->target = {};
@@ -510,6 +582,20 @@ namespace sp {
         if (ecs::IsLive(this->target)) {
             auto &sceneInfo = this->target.Get<ecs::SceneInfo>(lock);
             this->scene = sceneInfo.scene;
+
+            if (this->scene) {
+                if (!sceneInfo.prefabStagingId) {
+                    ImGui::SameLine();
+                    if (ImGui::Button("Copy to Staging")) {
+                        GetSceneManager().QueueAction([target = this->target] {
+                            auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                            auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
+
+                            CopyToStaging(stagingLock, liveLock, target);
+                        });
+                    }
+                }
+            }
 
             ImGui::Separator();
             ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());

@@ -40,7 +40,10 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<LaserLine>(const EntityScope &scope, LaserLine &dst, const picojson::value &src);
     template<>
-    void StructMetadata::Save<LaserLine>(const EntityScope &scope, picojson::value &dst, const LaserLine &src);
+    void StructMetadata::Save<LaserLine>(const EntityScope &scope,
+        picojson::value &dst,
+        const LaserLine &src,
+        const LaserLine &def);
     template<>
     void Component<LaserLine>::Apply(LaserLine &dst, const LaserLine &src, bool liveTarget);
 } // namespace ecs

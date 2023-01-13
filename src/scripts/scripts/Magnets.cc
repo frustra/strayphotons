@@ -9,7 +9,7 @@ namespace sp::scripts {
     using namespace ecs;
 
     struct MagneticPlug {
-        Entity attachedSocketEntity;
+        EntityRef attachedSocketEntity;
         robin_hood::unordered_flat_set<Entity> grabEntities;
         robin_hood::unordered_flat_set<Entity> socketEntities;
 
@@ -85,7 +85,7 @@ namespace sp::scripts {
                         if (attachedSocketEntity) {
                             Debugf("Detaching: %s from %s",
                                 ecs::ToString(lock, ent),
-                                ecs::ToString(lock, attachedSocketEntity));
+                                attachedSocketEntity.Name().String());
 
                             sp::erase_if(joints.joints, [&](auto &&joint) {
                                 return joint.target == attachedSocketEntity;
@@ -102,7 +102,8 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataMagneticPlug(typeid(MagneticPlug));
+    StructMetadata MetadataMagneticPlug(typeid(MagneticPlug),
+        StructField::New("attach", &MagneticPlug::attachedSocketEntity));
     InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,

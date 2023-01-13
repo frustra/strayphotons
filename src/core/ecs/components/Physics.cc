@@ -107,7 +107,10 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<PhysicsShape>(const EntityScope &scope, picojson::value &dst, const PhysicsShape &src) {
+    void StructMetadata::Save<PhysicsShape>(const EntityScope &scope,
+        picojson::value &dst,
+        const PhysicsShape &src,
+        const PhysicsShape &def) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 

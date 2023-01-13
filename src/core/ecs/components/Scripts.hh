@@ -106,13 +106,11 @@ namespace ecs {
             return !std::holds_alternative<std::monostate>(definition.callback);
         }
 
-        bool operator==(const ScriptState &other) const {
-            return instanceId == other.instanceId;
-        }
+        // Compare script definition and parameters
+        bool operator==(const ScriptState &other) const;
 
-        bool operator!=(const ScriptState &other) const {
-            return instanceId != other.instanceId;
-        }
+        // Returns true if the two scripts should represent the same instance
+        bool CompareOverride(const ScriptState &other) const;
 
         size_t GetInstanceId() const {
             return instanceId;
@@ -134,7 +132,10 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &dst, const picojson::value &src);
     template<>
-    void StructMetadata::Save<ScriptState>(const EntityScope &scope, picojson::value &dst, const ScriptState &src);
+    void StructMetadata::Save<ScriptState>(const EntityScope &scope,
+        picojson::value &dst,
+        const ScriptState &src,
+        const ScriptState &def);
 
     struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
@@ -169,10 +170,14 @@ namespace ecs {
         std::vector<ScriptState> scripts;
     };
 
-    static StructMetadata MetadataScripts(typeid(Scripts),
-        StructField::New(&Scripts::scripts, ~FieldAction::AutoApply));
+    static StructMetadata MetadataScripts(typeid(Scripts), StructField::New(&Scripts::scripts, FieldAction::AutoLoad));
     static Component<Scripts> ComponentScripts("script", MetadataScripts);
 
+    template<>
+    void StructMetadata::Save<Scripts>(const EntityScope &scope,
+        picojson::value &dst,
+        const Scripts &src,
+        const Scripts &def);
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
 

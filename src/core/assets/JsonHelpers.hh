@@ -215,7 +215,7 @@ namespace sp::json {
             for (auto &field : metadata.fields) {
                 field.Save(s, dst, &src, &defaultValue);
             }
-            ecs::StructMetadata::Save(s, dst, src);
+            ecs::StructMetadata::Save(s, dst, src, defaultValue);
         }
     }
 
@@ -340,15 +340,57 @@ namespace sp::json {
     }
 
     template<typename T>
+    inline bool Compare(const T &a, const T &b) {
+        if constexpr (std::equality_comparable<T>) {
+            return a == b;
+        } else {
+            auto &metadata = ecs::StructMetadata::Get<T>();
+            for (auto &f : metadata.fields) {
+                if (!f.Compare(&a, &b)) return false;
+            }
+            return true;
+        }
+    }
+
+    template<typename T>
     inline bool SaveIfChanged(const ecs::EntityScope &s,
-        picojson::object &dst,
+        picojson::value &dst,
         const char *field,
         const T &src,
         const T &def) {
-        if (src != def) {
-            Save(s, dst[field], src);
+        if (Compare(src, def)) return false;
+
+        picojson::value value;
+        auto *metadata = ecs::StructMetadata::Get(typeid(T));
+        if (metadata) {
+            for (auto &f : metadata->fields) {
+                f.Save(s, value, &src, &def);
+            }
+            ecs::StructMetadata::Save(s, value, src, def);
+        } else {
+            Save(s, value, src);
+        }
+
+        if (!value.is<picojson::null>()) {
+            if (field) {
+                if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+                dst.get<picojson::object>()[field] = value;
+            } else {
+                dst = value;
+            }
             return true;
         }
         return false;
+    }
+
+    template<typename T>
+    inline bool SaveIfChanged(const ecs::EntityScope &s,
+        picojson::object &obj,
+        const char *field,
+        const T &src,
+        const T &def) {
+        if (Compare(src, def)) return false;
+        Assertf(field != nullptr, "json::SaveIfChanged provided object with no field");
+        return SaveIfChanged(s, obj[field], nullptr, src, def);
     }
 } // namespace sp::json

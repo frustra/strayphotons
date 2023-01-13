@@ -70,6 +70,20 @@ namespace ecs {
         });
     }
 
+    bool StructField::Compare(const void *a, const void *b) const {
+        auto *fieldA = static_cast<const char *>(a) + offset;
+        auto *fieldB = static_cast<const char *>(b) + offset;
+
+        return GetFieldType(type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+
+            auto &valueA = *reinterpret_cast<const T *>(fieldA);
+            auto &valueB = *reinterpret_cast<const T *>(fieldB);
+
+            return valueA == valueB;
+        });
+    }
+
     bool StructField::Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const {
         if (!(actions & FieldAction::AutoLoad)) return true;
 
@@ -112,17 +126,16 @@ namespace ecs {
         auto *defaultField = defaultStruct ? static_cast<const char *>(defaultStruct) + offset : nullptr;
 
         if (name != nullptr) {
-            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
-            auto &obj = dst.get<picojson::object>();
-
             GetFieldType(type, [&](auto *typePtr) {
                 using T = std::remove_pointer_t<decltype(typePtr)>;
 
                 auto &value = *reinterpret_cast<const T *>(field);
                 if (defaultField) {
                     auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-                    sp::json::SaveIfChanged(scope, obj, name, value, defaultValue);
+                    sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
                 } else {
+                    if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+                    auto &obj = dst.get<picojson::object>();
                     sp::json::Save(scope, obj[name], value);
                 }
             });
