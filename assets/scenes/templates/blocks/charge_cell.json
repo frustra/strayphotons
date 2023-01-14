@@ -39,11 +39,11 @@
 			{
 				"onTick": "charge_cell",
 				"parameters": {
-					"charge_signal": "charge-panel/light_value_r + charge-panel/light_value_g + charge-panel/light_value_b",
+					"max_charge_level": 10,
 					"output_power": "2",
-					"discharge_signal_r": "input-sensor.Icosphere/light_value_r",
-					"discharge_signal_g": "input-sensor.Icosphere/light_value_g",
-					"discharge_signal_b": "input-sensor.Icosphere/light_value_b"
+					"charge_signal_r": "input-sensor.Icosphere/light_value_r",
+					"charge_signal_g": "input-sensor.Icosphere/light_value_g",
+					"charge_signal_b": "input-sensor.Icosphere/light_value_b"
 				}
 			}
 		]
