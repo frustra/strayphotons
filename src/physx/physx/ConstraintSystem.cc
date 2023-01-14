@@ -34,7 +34,7 @@ namespace sp {
         JointState *joint,
         ecs::Transform transform,
         ecs::Transform targetTransform,
-        glm::vec3 targetEndVelocity,
+        glm::vec3 targetLinearVelocity,
         glm::vec3 gravity) {
         if (!actor || !joint || !joint->forceConstraint) return false;
         auto dynamic = actor->is<PxRigidDynamic>();
@@ -46,6 +46,8 @@ namespace sp {
         auto targetRotate = targetTransform.GetRotation();
         targetTransform.Translate(targetRotate * centerOfMass);
         auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
+        auto currentLinearVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+        auto deltaVelocity = targetLinearVelocity - currentLinearVelocity;
 
         float intervalSeconds = manager.interval.count() / 1e9;
         float tickFrequency = 1e9 / manager.interval.count();
@@ -67,21 +69,20 @@ namespace sp {
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
                 std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
 
-            glm::vec3 targetVelocity(0);
+            glm::vec3 targetAngularVelocity(0);
             for (int i = 0; i < 3; i++) {
                 if (maxVelocity[i] > deltaTick[i]) {
-                    targetVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
+                    targetAngularVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
                 } else {
                     // Divide remaining velocity delta by 2 to keep things stable.
                     // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
-                    targetVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
+                    targetAngularVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
                 }
             }
 
             auto currentAngularVelocity = glm::inverse(currentRotate) * PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-            auto deltaVelocity = targetVelocity - currentAngularVelocity;
 
-            glm::vec3 accel = deltaVelocity * tickFrequency;
+            glm::vec3 accel = (targetAngularVelocity - currentAngularVelocity) * tickFrequency;
             glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
             auto clampRatio = glm::min(maxAcceleration, accelAbs) / accelAbs;
             wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio);
@@ -90,90 +91,124 @@ namespace sp {
         }
 
         // Update Linear Force
-        if (maxForce > 0 && deltaPos != glm::vec3(0)) {
-            // Calculations done using the target as the frame of reference (i.e. the target is always stationary)
+        if (maxForce > 0) {
             auto maxAcceleration = maxForce / dynamic->getMass();
-            auto currentDeltaVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity()) - targetEndVelocity;
-            // TODO: This direction does not account for any initial velocity perpendicular to this axis.
-            // The solution might need to apply a velocity-matching force separate from the below linear solution.
-            auto linearDirection = glm::normalize(deltaPos);
-            auto accelVector = linearDirection * maxAcceleration * intervalSeconds;
-
-            // Maximum velocity achievable over deltaPos distance
-            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
-            // Number of frames required to decelerate from maxVelocity to 0
-            auto maxVelocityFrames = maxVelocity / maxAcceleration * tickFrequency;
-            // Number of frames required to decelerate from currentVelocity to 0
-            auto decelFrames = glm::length(currentDeltaVelocity) / maxAcceleration * tickFrequency;
-
-            auto clampedVelocity = glm::sign(accelVector) *
-                                   glm::max(glm::abs(currentDeltaVelocity) - glm::abs(accelVector), 0.0f);
-
-            auto calcGeometricSeries = [&](float frames, float startVelocity) {
-                auto deltaV = maxAcceleration * intervalSeconds;
-                return intervalSeconds * frames * 0.5f * (startVelocity + startVelocity - deltaV * (frames - 1.0f));
-            };
-
-            float availableStopDist = glm::length(deltaPos);
-            float stopDistDecel = calcGeometricSeries(decelFrames, glm::length(clampedVelocity));
-            float stopDistNeutral = calcGeometricSeries(decelFrames, glm::length(currentDeltaVelocity));
-            float stopDistAccel = calcGeometricSeries(decelFrames + 1.0f,
-                glm::length(currentDeltaVelocity + accelVector));
-
-            Logf("StopDist Decel: %f Neutral: %f Accel: %f", stopDistDecel, stopDistNeutral, stopDistAccel);
-
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto subFrameMovement = deltaTick * intervalSeconds;
-
+            auto maxDeltaVelocity = maxAcceleration * intervalSeconds;
             glm::vec3 accel;
-            if (availableStopDist < subFrameMovement && glm::length(currentDeltaVelocity) < deltaTick) {
-                accel = -currentDeltaVelocity * tickFrequency;
-                Logf("FinalFrame: %s + %s",
-                    glm::to_string(accel),
-                    glm::to_string(deltaPos * tickFrequency * tickFrequency));
-
-                // TODO: This causes deltaPos == vec3(0) on the next frame, but with non-zero velocity.
-                // Currently the frame is skipped over, but should be applying a force to stop.
-                accel += deltaPos * tickFrequency * tickFrequency;
-            } else if (stopDistDecel > availableStopDist) {
-                Logf("DecelDistance: %f > %f", stopDistDecel, availableStopDist);
-                accel = -currentDeltaVelocity * tickFrequency;
-            } else if (stopDistNeutral > availableStopDist) {
-                float clampRatio = (availableStopDist - stopDistNeutral) / (stopDistNeutral - stopDistDecel);
-                Logf("NeutralDistance: %f > %f = %f", stopDistNeutral, availableStopDist, clampRatio);
-                accel = linearDirection * maxAcceleration * clampRatio;
-            } else if (stopDistAccel > availableStopDist) {
-                float clampRatio = (availableStopDist - stopDistNeutral) / (stopDistAccel - stopDistNeutral);
-                Logf("AccelDistance: %f > %f = %f", stopDistAccel, availableStopDist, clampRatio);
-                accel = linearDirection * maxAcceleration * clampRatio;
-            } else {
-                accel = linearDirection * maxAcceleration;
-            }
-            // Vf = Vi + a * t
-            // d = (Vi + Vf) * t / 2
-            // d = Vi * t + 0.5 * a * t^2
-            // Vf^2 = Vi^2 + 2 * a * d
-
-            float accelAbs = glm::length(accel);
-            float clampRatio = 1.0f;
-            if (accelAbs > maxAcceleration) {
-                if (maxAcceleration > 0.0001f) {
-                    clampRatio = maxAcceleration / accelAbs;
+            if (glm::all(glm::epsilonEqual(deltaPos, glm::vec3(0), std::numeric_limits<float>::epsilon()))) {
+                if (glm::length(deltaVelocity) < maxDeltaVelocity) {
+                    accel = deltaVelocity * tickFrequency;
                 } else {
-                    clampRatio = 0.0f;
+                    accel = glm::normalize(deltaVelocity) * maxAcceleration;
                 }
-            }
+            } else {
+                auto targetDist = glm::length(deltaPos);
+                // Maximum velocity achievable over deltaPos distance (also max velocity we can decelerate from)
+                auto maxVelocity = std::sqrt(2 * maxAcceleration * targetDist) - maxDeltaVelocity;
+                if (maxVelocity < 0) {
+                    maxVelocity = 0;
+                }
+                // Number of frames required to decelerate from maxVelocity to 0
+                // auto maxVelocityFrames = maxVelocity / maxAcceleration * tickFrequency;
+                // Number of frames required to decelerate from currentVelocity to 0
+                // auto decelFrames = glm::length(deltaVelocity) / maxAcceleration * tickFrequency;
 
-            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio);
-            Logf("%s: DeltaPos %s VCurr %s VCurrF %f VMaxF %f VDelta %s Force %s Ratio %f",
-                std::to_string(((ActorUserData *)actor->userData)->entity),
-                glm::to_string(deltaPos),
-                glm::to_string(currentDeltaVelocity),
-                decelFrames,
-                maxVelocityFrames,
-                glm::to_string(accel * intervalSeconds),
-                glm::to_string(accel * clampRatio),
-                clampRatio);
+                auto deltaAccelVelocity = deltaVelocity + glm::normalize(deltaPos) * maxVelocity;
+                if (glm::length(deltaAccelVelocity) < maxDeltaVelocity) {
+                    // Logf("Direct accel: %s + %s = %s < %f",
+                    //     glm::to_string(deltaVelocity),
+                    //     glm::to_string(glm::normalize(deltaPos) * maxVelocity),
+                    //     glm::to_string(deltaAccelVelocity),
+                    //     maxDeltaVelocity);
+                    accel = deltaAccelVelocity * tickFrequency;
+                } else {
+                    // Logf("Clamped accel: %s + %s = %s < %f",
+                    //     glm::to_string(deltaVelocity),
+                    //     glm::to_string(glm::normalize(deltaPos) * maxVelocity),
+                    //     glm::to_string(deltaAccelVelocity),
+                    //     maxDeltaVelocity);
+                    accel = glm::normalize(deltaAccelVelocity) * maxAcceleration;
+                }
+                /* auto linearDirection = glm::normalize(deltaAccelVelocity);
+                 glm::vec3 accelVector = linearDirection * maxAcceleration * intervalSeconds;
+
+                 auto clampedVelocity = glm::sign(accelVector) *
+                                        glm::max(glm::abs(deltaVelocity) - glm::abs(accelVector), 0.0f);
+
+                 auto calcGeometricSeries = [&](float frames, float startVelocity) {
+                     auto deltaV = maxAcceleration * intervalSeconds;
+                     return intervalSeconds * frames * 0.5f * (startVelocity + startVelocity - deltaV * (frames
+                 - 1.0f));
+                 };
+
+                 float availableStopDist = glm::length(deltaPos);
+                 float stopDistDecel = calcGeometricSeries(decelFrames, glm::length(clampedVelocity));
+                 float stopDistNeutral = calcGeometricSeries(decelFrames, glm::length(deltaVelocity));
+                 float stopDistAccel = calcGeometricSeries(decelFrames + 1.0f, glm::length(deltaVelocity +
+                 accelVector));
+
+                 Logf("StopDist Decel: %f Neutral: %f Accel: %f", stopDistDecel, stopDistNeutral, stopDistAccel);
+
+                 auto deltaTick = maxAcceleration * intervalSeconds;
+                 auto subFrameMovement = deltaTick * intervalSeconds;
+
+                 glm::vec3 accel;
+                 if (availableStopDist < subFrameMovement && glm::length(deltaVelocity) < deltaTick) {
+                     accel = -deltaVelocity * tickFrequency;
+                     Logf("FinalFrame: %s + %s",
+                         glm::to_string(accel),
+                         glm::to_string(deltaPos * tickFrequency * tickFrequency));
+
+                     // TODO: This causes deltaPos == vec3(0) on the next frame, but with non-zero velocity.
+                     // Currently the frame is skipped over, but should be applying a force to stop.
+                     accel += deltaPos * tickFrequency * tickFrequency;
+                 } else if (stopDistDecel > availableStopDist) {
+                     Logf("DecelDistance: %f > %f", stopDistDecel, availableStopDist);
+                     accel = -deltaVelocity * tickFrequency;
+                 } else if (stopDistNeutral > availableStopDist) {
+                     float clampRatio = (availableStopDist - stopDistNeutral) / (stopDistNeutral - stopDistDecel);
+                     Logf("NeutralDistance: %f > %f = %f", stopDistNeutral, availableStopDist, clampRatio);
+                     accel = linearDirection * maxAcceleration * clampRatio;
+                 } else if (stopDistAccel > availableStopDist) {
+                     float clampRatio = (availableStopDist - stopDistNeutral) / (stopDistAccel - stopDistNeutral);
+                     Logf("AccelDistance: %f > %f = %f", stopDistAccel, availableStopDist, clampRatio);
+                     accel = linearDirection * maxAcceleration * clampRatio;
+                 } else {
+                     accel = linearDirection * maxAcceleration;
+                 }
+                // Vf = Vi + a * t
+                // d = (Vi + Vf) * t / 2
+                // d = Vi * t + 0.5 * a * t^2
+                // Vf^2 = Vi^2 + 2 * a * d
+
+                float accelAbs = glm::length(accel);
+                float clampRatio = 1.0f;
+                if (accelAbs > maxAcceleration) {
+                    if (maxAcceleration > 0.0001f) {
+                        clampRatio = maxAcceleration / accelAbs;
+                    } else {
+                        clampRatio = 0.0f;
+                    }
+                }
+
+                wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio);
+                Logf("%s: DeltaPos %s VCurr %s VCurrF %f VMaxF %f VDelta %s Force %s Ratio %f",
+                    std::to_string(((ActorUserData *)actor->userData)->entity),
+                    glm::to_string(deltaPos),
+                    glm::to_string(deltaVelocity),
+                    decelFrames,
+                    maxVelocityFrames,
+                    glm::to_string(accel * intervalSeconds),
+                    glm::to_string(accel * clampRatio),
+                    clampRatio);*/
+                // Logf("%s: DeltaPos %s Vel %s VelT %s Accel %s",
+                //     ecs::EntityRef(((ActorUserData *)actor->userData)->entity).Name().String(),
+                //     glm::to_string(deltaPos),
+                //     glm::to_string(currentLinearVelocity),
+                //     glm::to_string(targetLinearVelocity),
+                //     glm::to_string(accel));
+            }
+            wakeUp |= joint->forceConstraint->setLinearAccel(accel);
         } else {
             wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
         }
