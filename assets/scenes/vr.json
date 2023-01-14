@@ -90,7 +90,7 @@
 						"hand": "left",
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
-						"force_limit": 100.0,
+						"force_limit": 1000.0,
 						"torque_limit": 10.0
 					}
 				}
@@ -124,7 +124,7 @@
 						"hand": "right",
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
-						"force_limit": 100.0,
+						"force_limit": 1000.0,
 						"torque_limit": 10.0
 					}
 				}

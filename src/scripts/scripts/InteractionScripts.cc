@@ -10,7 +10,7 @@ namespace sp::scripts {
     static CVar<float> CVarMaxGrabForce("i.MaxGrabForce", 20.0f, "Maximum force applied to held objects");
     static CVar<float> CVarMaxGrabTorque("i.MaxGrabTorque", 10.0f, "Maximum torque applied to held objects");
     static CVar<bool> CVarFixedJointGrab("i.FixedJointGrab",
-        false,
+        true,
         "Toggle to use a fixed joint instead of force limited joint");
 
     struct InteractiveObject {
