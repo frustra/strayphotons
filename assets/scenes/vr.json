@@ -70,7 +70,7 @@
 			"physics": {
 				"group": "PlayerLeftHand",
 				"density": 1000,
-				"_linear_damping": 1,
+				"linear_damping": 10,
 				"angular_damping": 100
 			},
 			"physics_joints": [],
@@ -90,8 +90,8 @@
 						"hand": "left",
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
-						"force_limit": 1000.0,
-						"torque_limit": 10.0
+						"force_limit": 100.0,
+						"torque_limit": 15.0
 					}
 				}
 			]
@@ -104,7 +104,7 @@
 			"physics": {
 				"group": "PlayerRightHand",
 				"density": 1000,
-				"_linear_damping": 1,
+				"linear_damping": 10,
 				"angular_damping": 100
 			},
 			"physics_joints": [],
@@ -124,8 +124,8 @@
 						"hand": "right",
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
-						"force_limit": 1000.0,
-						"torque_limit": 10.0
+						"force_limit": 100.0,
+						"torque_limit": 15.0
 					}
 				}
 			]
