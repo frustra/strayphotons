@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <glm/glm.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 namespace sp::scripts {
     using namespace ecs;
@@ -106,6 +107,43 @@ namespace sp::scripts {
         StructField::New("axis", &Rotate::rotationAxis),
         StructField::New("speed", &Rotate::rotationSpeedRpm));
     InternalScript<Rotate> rotate("rotate", MetadataRotate);
+
+    struct RotateToEntity {
+        EntityRef targetEntityRef, upEntityRef;
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree>(lock)) return;
+
+            auto targetEnt = targetEntityRef.Get(lock);
+            if (!targetEnt.Has<TransformTree>(lock)) return;
+
+            auto &transform = ent.Get<TransformTree>(lock);
+            auto parent = transform.parent.Get(lock);
+
+            auto targetTF = targetEnt.Get<TransformTree>(lock);
+            auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
+
+            auto targetForward = transform.pose.GetPosition() - relativeTF.GetPosition();
+
+            auto currentUp = glm::vec3(0, 1, 0);
+            auto upEnt = upEntityRef.Get(lock);
+            if (upEnt.Has<TransformTree>(lock)) {
+                currentUp = upEnt.Get<TransformTree>(lock).GetRelativeTransform(lock, parent).GetUp();
+            }
+
+            auto currentScale = transform.pose.GetScale();
+            auto targetRight = glm::normalize(glm::cross(targetForward, currentUp));
+            auto targetUp = glm::normalize(glm::cross(targetRight, targetForward));
+
+            transform.pose.matrix[0] = targetRight * currentScale.x;
+            transform.pose.matrix[1] = targetUp * currentScale.y;
+            transform.pose.matrix[2] = targetForward * currentScale.z;
+        }
+    };
+    StructMetadata MetadataRotateToEntity(typeid(RotateToEntity),
+        StructField::New("up", &RotateToEntity::upEntityRef),
+        StructField::New("target", &RotateToEntity::targetEntityRef));
+    InternalScript<RotateToEntity> rotateToEntity("rotate_to_entity", MetadataRotateToEntity);
 
     struct ChargeCell {
         // Charge level is light units * ticks

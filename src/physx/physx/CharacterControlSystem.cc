@@ -377,7 +377,7 @@ namespace sp {
                         PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
                 }
 
-                // Only  the capsule in there is room to do so
+                // Only rotate the capsule if there is room to do so
                 if (shouldRotate) {
                     auto headPosition = getHeadPosition(controller.pxController);
                     controller.pxController->setUpDirection(GlmVec3ToPxVec3(targetUp));

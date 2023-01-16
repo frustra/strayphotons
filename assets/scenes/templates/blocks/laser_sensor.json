@@ -105,6 +105,39 @@
 			"name": "source.Icosphere",
 			"signal_output": {},
 			"laser_sensor": {}
+		},
+		{
+			"name": "signal_display",
+			"transform": {
+				"parent": "scoperoot",
+				"scale": [0.13, 0.05, 1],
+				"translate": [0, 0.08, 0]
+			},
+			"gui": {
+				"windowName": "signal_display"
+			},
+			"screen": {
+				"luminance": [3, 3, 3]
+			},
+			"signal_bindings": {
+				"text_color_g": "0",
+				"text_color_r": "1",
+				"value": "source.Icosphere/light_value_r + source.Icosphere/light_value_g + source.Icosphere/light_value_b"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "world_gui"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "rotate_to_entity",
+					"parameters": {
+						"target": "player:head"
+					}
+				}
+			]
 		}
 	]
 }
