@@ -154,7 +154,7 @@ namespace sp::scripts {
         SignalExpression chargeSignalGreen;
         SignalExpression chargeSignalBlue;
 
-        double tmpChargePower;
+        bool discharging = false;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
@@ -167,24 +167,35 @@ namespace sp::scripts {
                 chargeLevel += chargeColor;
 
                 double chargePower = chargeLevel.r + chargeLevel.g + chargeLevel.b;
+
+                if (discharging || chargeColor == glm::dvec3(0)) {
+                    auto targetPower = std::max(0.0, outputPower.Evaluate(lock));
+                    if (targetPower < chargePower) {
+                        outputColor = chargeLevel * targetPower / chargePower;
+                        chargeLevel -= outputColor;
+                        chargePower -= targetPower;
+                    } else {
+                        outputColor = chargeLevel;
+                        chargeLevel = {};
+                        chargePower = 0;
+                        if (discharging) {
+                            discharging = false;
+                            Logf("Recharging: %f, %s",
+                                chargeLevel.r + chargeLevel.g + chargeLevel.b,
+                                glm::to_string(chargeLevel));
+                        }
+                    }
+                }
+
                 if (chargePower > maxChargePower) {
-                    Logf("%f > %f -> %s * %f",
-                        chargePower,
-                        maxChargePower,
-                        glm::to_string(chargeLevel),
-                        maxChargePower / chargePower);
                     chargeLevel *= (maxChargePower / chargePower);
                     chargePower = maxChargePower;
-                }
-                tmpChargePower = chargePower;
-
-                auto targetPower = std::max(0.0, outputPower.Evaluate(lock));
-                if (targetPower >= chargePower) {
-                    outputColor = chargeLevel;
-                    chargeLevel = {};
-                } else {
-                    outputColor = chargeLevel * chargePower / targetPower;
-                    chargeLevel -= outputColor;
+                    if (!discharging) {
+                        discharging = true;
+                        Logf("Discharging: %f, %s",
+                            chargeLevel.r + chargeLevel.g + chargeLevel.b,
+                            glm::to_string(chargeLevel));
+                    }
                 }
             }
 
@@ -199,7 +210,6 @@ namespace sp::scripts {
         StructField::New("charge_level", &ChargeCell::chargeLevel),
         StructField::New("max_charge_level", &ChargeCell::maxChargePower),
         StructField::New("output_power", &ChargeCell::outputPower),
-        StructField::New("tmp_power", &ChargeCell::tmpChargePower),
         StructField::New("charge_signal_r", &ChargeCell::chargeSignalRed),
         StructField::New("charge_signal_g", &ChargeCell::chargeSignalGreen),
         StructField::New("charge_signal_b", &ChargeCell::chargeSignalBlue));
