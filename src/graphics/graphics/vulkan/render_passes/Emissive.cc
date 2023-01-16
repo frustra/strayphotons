@@ -1,5 +1,6 @@
 #include "Emissive.hh"
 
+#include "ecs/EntityRef.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -67,7 +68,8 @@ namespace sp::vulkan::renderer {
                     } else if (ent.Has<ecs::Gui>(lock)) {
                         auto &gui = ent.Get<ecs::Gui>(lock);
                         if (gui.windowName.empty() || gui.target != ecs::GuiTarget::World) continue;
-                        textureName = gui.windowName + "_gui";
+                        ecs::EntityRef ref(ent);
+                        textureName = "gui:" + ref.Name().String();
                     } else {
                         continue;
                     }

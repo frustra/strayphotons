@@ -460,7 +460,7 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen>> lock) {
+    void Renderer::AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock) {
         ecs::ComponentEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
@@ -479,7 +479,7 @@ namespace sp::vulkan {
         }
 
         for (auto &gui : guis) {
-            if (!gui.entity.Has<ecs::Gui, ecs::Screen, ecs::TransformSnapshot>(lock)) continue;
+            if (!gui.entity.Has<ecs::Gui, ecs::Screen, ecs::TransformSnapshot, ecs::Name>(lock)) continue;
             if (gui.entity.Get<ecs::Gui>(lock).target != ecs::GuiTarget::World) continue;
 
             graph.AddPass("Gui")
@@ -496,7 +496,7 @@ namespace sp::vulkan {
                     desc.mipLevels = CalculateMipmapLevels(desc.extent);
                     desc.sampler = SamplerType::TrilinearClampEdge;
 
-                    auto name = gui.context->Name() + "_gui";
+                    auto name = "gui:" + gui.entity.Get<ecs::Name>(lock).String();
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
                     gui.renderGraphID = target.id;
                 })
