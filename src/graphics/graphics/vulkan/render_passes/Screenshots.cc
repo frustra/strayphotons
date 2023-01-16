@@ -165,8 +165,18 @@ namespace sp::vulkan::renderer {
 
         uint8 *data;
         outputImage->Map((void **)&data);
+
+        size_t fpngInputRowPitch = extent.width * components;
+        std::vector<uint8> fpngInput(extent.height * fpngInputRowPitch);
+
+        data += subResourceLayout.offset;
+        for (size_t row = 0; row < extent.height; row++) {
+            std::copy(data, data + fpngInputRowPitch, &fpngInput[row * fpngInputRowPitch]);
+            data += subResourceLayout.rowPitch;
+        }
+
         fpng::fpng_encode_image_to_file(fullPath.string().c_str(),
-            data + subResourceLayout.offset,
+            fpngInput.data(),
             extent.width,
             extent.height,
             components,
