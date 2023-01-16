@@ -2,7 +2,7 @@ loadscene force-joints
 syncscene
 r.Exposure 1
 steplogic
-screenshot force-joints-frame0.png
+#screenshot force-joints-frame0.png
 stepgraphics
 assert_position force-joints:test_linear -1.5 2 -1.9
 assert_position force-joints:test_linear_offset_joint -1.5 2.25 -2
@@ -17,42 +17,42 @@ assert_position force-joints:test_linear_offset_shape -1.430556 2 -1.95
 assert_velocity force-joints:test_linear 8.333331 0 0
 assert_velocity force-joints:test_linear_offset_joint 8.333331 0 0
 assert_velocity force-joints:test_linear_offset_shape 8.333331 0 0
-set_velocity force-joints:test_linear 8.333331 -10 0
-screenshot force-joints-frame1.png
+#set_velocity force-joints:test_linear 8.333331 -10 0
+#screenshot force-joints-frame1.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame2.png
+#screenshot force-joints-frame2.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame3.png
+#screenshot force-joints-frame3.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame4.png
+#screenshot force-joints-frame4.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame5.png
+#screenshot force-joints-frame5.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame6.png
+#screenshot force-joints-frame6.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame7.png
+#screenshot force-joints-frame7.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame8.png
+#screenshot force-joints-frame8.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame9.png
+#screenshot force-joints-frame9.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame10.png
+#screenshot force-joints-frame10.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame11.png
+#screenshot force-joints-frame11.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame12.png
+#screenshot force-joints-frame12.png
 stepgraphics
 stepphysics
-screenshot force-joints-frame13.png
+#screenshot force-joints-frame13.png
 stepgraphics
