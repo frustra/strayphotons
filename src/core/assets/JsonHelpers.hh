@@ -14,12 +14,12 @@
 
 namespace sp::json {
     namespace detail {
-        template<size_t N, typename T, glm::precision P>
-        inline bool LoadVec(glm::vec<N, T, P> &dst, const picojson::value &src) {
+        template<glm::length_t L, typename T, glm::qualifier Q>
+        inline bool LoadVec(glm::vec<L, T, Q> &dst, const picojson::value &src) {
             if (!src.is<picojson::array>()) return false;
             auto &values = src.get<picojson::array>();
-            if (values.size() != N) {
-                Errorf("Incorrect array size: %u, expected %u", values.size(), N);
+            if (values.size() != L) {
+                Errorf("Incorrect array size: %u, expected %u", values.size(), L);
                 return false;
             }
 
@@ -34,10 +34,10 @@ namespace sp::json {
             return true;
         }
 
-        template<size_t N, typename T, glm::precision P>
-        inline void SaveVec(picojson::value &dst, const glm::vec<N, T, P> &src) {
-            picojson::array vec(N);
-            for (size_t i = 0; i < N; i++) {
+        template<glm::length_t L, typename T, glm::qualifier Q>
+        inline void SaveVec(picojson::value &dst, const glm::vec<L, T, Q> &src) {
+            picojson::array vec(L);
+            for (size_t i = 0; i < L; i++) {
                 vec[i] = picojson::value((double)src[i]);
             }
             dst = picojson::value(vec);
@@ -91,17 +91,9 @@ namespace sp::json {
         dst = glm::radians(src.get<double>());
         return true;
     }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, glm::vec2 &dst, const picojson::value &src) {
-        return detail::LoadVec<2>(dst, src);
-    }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, glm::vec3 &dst, const picojson::value &src) {
-        return detail::LoadVec<3>(dst, src);
-    }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, glm::vec4 &dst, const picojson::value &src) {
-        return detail::LoadVec<4>(dst, src);
+    template<glm::length_t L, typename T, glm::qualifier Q>
+    inline bool Load(const ecs::EntityScope &s, glm::vec<L, T, Q> &dst, const picojson::value &src) {
+        return detail::LoadVec<L, T, Q>(dst, src);
     }
     template<>
     inline bool Load(const ecs::EntityScope &s, color_t &dst, const picojson::value &src) {
@@ -110,14 +102,6 @@ namespace sp::json {
     template<>
     inline bool Load(const ecs::EntityScope &s, color_alpha_t &dst, const picojson::value &src) {
         return detail::LoadVec<4>(dst.color, src);
-    }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, glm::ivec2 &dst, const picojson::value &src) {
-        return detail::LoadVec<2>(dst, src);
-    }
-    template<>
-    inline bool Load(const ecs::EntityScope &s, glm::ivec3 &dst, const picojson::value &src) {
-        return detail::LoadVec<3>(dst, src);
     }
     template<>
     inline bool Load(const ecs::EntityScope &s, glm::quat &dst, const picojson::value &src) {
@@ -228,17 +212,9 @@ namespace sp::json {
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const angle_t &src) {
         dst = picojson::value((double)src.degrees());
     }
-    template<>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec2 &src) {
-        detail::SaveVec<2>(dst, src);
-    }
-    template<>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec3 &src) {
-        detail::SaveVec<3>(dst, src);
-    }
-    template<>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec4 &src) {
-        detail::SaveVec<4>(dst, src);
+    template<glm::length_t L, typename T, glm::qualifier Q>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::vec<L, T, Q> &src) {
+        detail::SaveVec<L, T, Q>(dst, src);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const color_t &src) {
@@ -247,14 +223,6 @@ namespace sp::json {
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const color_alpha_t &src) {
         detail::SaveVec<4>(dst, src.color);
-    }
-    template<>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec2 &src) {
-        detail::SaveVec<2>(dst, src);
-    }
-    template<>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::ivec3 &src) {
-        detail::SaveVec<3>(dst, src);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::quat &src) {

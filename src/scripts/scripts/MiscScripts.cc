@@ -147,55 +147,72 @@ namespace sp::scripts {
 
     struct ChargeCell {
         // Charge level is light units * ticks
-        double chargeLevel = 0.0;
-        SignalExpression chargeSignal;
-        SignalExpression outputMultiplier;
-        SignalExpression dischargeSignalRed;
-        SignalExpression dischargeSignalGreen;
-        SignalExpression dischargeSignalBlue;
+        glm::dvec3 chargeLevel;
+        double maxChargePower = 1.0;
+        SignalExpression outputPower;
+        SignalExpression chargeSignalRed;
+        SignalExpression chargeSignalGreen;
+        SignalExpression chargeSignalBlue;
+
+        bool discharging = false;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
 
-            chargeLevel += chargeSignal.Evaluate(lock);
+            glm::dvec3 outputColor;
+            if (maxChargePower > 0) {
+                glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
+                    std::max(0.0, chargeSignalGreen.Evaluate(lock)),
+                    std::max(0.0, chargeSignalBlue.Evaluate(lock))};
+                chargeLevel += chargeColor;
 
-            glm::dvec3 signalColor = {std::max(0.0, dischargeSignalRed.Evaluate(lock)),
-                std::max(0.0, dischargeSignalGreen.Evaluate(lock)),
-                std::max(0.0, dischargeSignalBlue.Evaluate(lock))};
-            auto signalPower = signalColor.r + signalColor.g + signalColor.b;
+                double chargePower = chargeLevel.r + chargeLevel.g + chargeLevel.b;
 
-            auto powerMultiplier = outputMultiplier.Evaluate(lock);
-            if (powerMultiplier <= 0) return;
-
-            if (chargeLevel > 0 && signalPower > 0) {
-                if (powerMultiplier <= 1) {
-                    signalColor *= powerMultiplier;
-                } else {
-                    auto powerDraw = signalPower * (powerMultiplier - 1);
-                    if (powerDraw > chargeLevel) {
-                        signalColor += signalColor * (chargeLevel / signalPower);
-                        chargeLevel = 0;
+                if (discharging || chargeColor == glm::dvec3(0)) {
+                    auto targetPower = std::max(0.0, outputPower.Evaluate(lock));
+                    if (targetPower < chargePower) {
+                        outputColor = chargeLevel * targetPower / chargePower;
+                        chargeLevel -= outputColor;
+                        chargePower -= targetPower;
                     } else {
-                        signalColor *= powerMultiplier;
-                        chargeLevel -= powerDraw;
+                        outputColor = chargeLevel;
+                        chargeLevel = {};
+                        chargePower = 0;
+                        if (discharging) {
+                            discharging = false;
+                            Logf("Recharging: %f, %s",
+                                chargeLevel.r + chargeLevel.g + chargeLevel.b,
+                                glm::to_string(chargeLevel));
+                        }
+                    }
+                }
+
+                if (chargePower > maxChargePower) {
+                    chargeLevel *= (maxChargePower / chargePower);
+                    chargePower = maxChargePower;
+                    if (!discharging) {
+                        discharging = true;
+                        Logf("Discharging: %f, %s",
+                            chargeLevel.r + chargeLevel.g + chargeLevel.b,
+                            glm::to_string(chargeLevel));
                     }
                 }
             }
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            signalOutput.SetSignal("charge_level", chargeLevel);
-            signalOutput.SetSignal("cell_output_r", signalColor.r);
-            signalOutput.SetSignal("cell_output_g", signalColor.g);
-            signalOutput.SetSignal("cell_output_b", signalColor.b);
+            signalOutput.SetSignal("charge_level", chargeLevel.r + chargeLevel.g + chargeLevel.b);
+            signalOutput.SetSignal("cell_output_r", outputColor.r);
+            signalOutput.SetSignal("cell_output_g", outputColor.g);
+            signalOutput.SetSignal("cell_output_b", outputColor.b);
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
         StructField::New("charge_level", &ChargeCell::chargeLevel),
-        StructField::New("charge_signal", &ChargeCell::chargeSignal),
-        StructField::New("output_power", &ChargeCell::outputMultiplier),
-        StructField::New("discharge_signal_r", &ChargeCell::dischargeSignalRed),
-        StructField::New("discharge_signal_g", &ChargeCell::dischargeSignalGreen),
-        StructField::New("discharge_signal_b", &ChargeCell::dischargeSignalBlue));
+        StructField::New("max_charge_level", &ChargeCell::maxChargePower),
+        StructField::New("output_power", &ChargeCell::outputPower),
+        StructField::New("charge_signal_r", &ChargeCell::chargeSignalRed),
+        StructField::New("charge_signal_g", &ChargeCell::chargeSignalGreen),
+        StructField::New("charge_signal_b", &ChargeCell::chargeSignalBlue));
     InternalScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
 
     struct EmissiveFromSignal {

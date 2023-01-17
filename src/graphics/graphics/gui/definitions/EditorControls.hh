@@ -10,6 +10,7 @@
 #include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
 
+#include <glm/glm.hpp>
 #include <imgui/imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
 #include <magic_enum.hpp>
@@ -137,6 +138,38 @@ namespace sp {
                     ImGui::EndCombo();
                 }
             }
+        } else if constexpr (is_glm_vec<T>()) {
+            using U = typename T::value_type;
+            if constexpr (std::is_same_v<U, float>) {
+                changed = ImGui::DragScalarN(name.c_str(),
+                    ImGuiDataType_Float,
+                    &value,
+                    T::length(),
+                    0.01f,
+                    nullptr,
+                    nullptr,
+                    "%.4f");
+            } else if constexpr (std::is_same_v<U, double>) {
+                changed = ImGui::DragScalarN(name.c_str(),
+                    ImGuiDataType_Double,
+                    &value,
+                    T::length(),
+                    0.01f,
+                    nullptr,
+                    nullptr,
+                    "%.4f");
+            } else if constexpr (std::is_same_v<U, int>) {
+                changed = ImGui::DragScalarN(name.c_str(),
+                    ImGuiDataType_S32,
+                    &value,
+                    T::length(),
+                    1.0f,
+                    nullptr,
+                    nullptr,
+                    "%d");
+            } else {
+                Abortf("AddImGuiElement unsupported vector type: %s", typeid(T).name());
+            }
         } else {
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
@@ -174,32 +207,12 @@ namespace sp {
         return ImGui::DragFloat(name.c_str(), &value, 0.01f);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, glm::vec2 &value) {
-        return ImGui::DragFloat2(name.c_str(), (float *)&value, 0.01f);
-    }
-    template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, glm::vec3 &value) {
-        return ImGui::DragFloat3(name.c_str(), (float *)&value, 0.01f);
-    }
-    template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, glm::vec4 &value) {
-        return ImGui::DragFloat4(name.c_str(), (float *)&value, 0.01f);
-    }
-    template<>
     bool EditorContext::AddImGuiElement(const std::string &name, color_t &value) {
         return ImGui::ColorEdit3(name.c_str(), (float *)&value);
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, color_alpha_t &value) {
         return ImGui::ColorEdit4(name.c_str(), (float *)&value);
-    }
-    template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, glm::ivec2 &value) {
-        return ImGui::DragInt2(name.c_str(), (int *)&value);
-    }
-    template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, glm::ivec3 &value) {
-        return ImGui::DragInt3(name.c_str(), (int *)&value);
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, glm::quat &value) {
@@ -377,6 +390,7 @@ namespace sp {
                                         auto fieldValue = field.Access<T>(dataPtr);
                                         auto parentFieldName = fieldName;
                                         fieldName = "";
+                                        ImGui::SetNextItemWidth(-FLT_MIN);
                                         if (AddImGuiElement(rowId + "."s + field.name, *fieldValue)) {
                                             changed = true;
                                         }

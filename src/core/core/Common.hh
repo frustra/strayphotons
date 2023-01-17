@@ -172,6 +172,12 @@ namespace sp {
         return std::find(vec.begin(), vec.end(), val) != vec.end();
     }
 
+    template<typename T>
+    struct is_glm_vec : std::false_type {};
+
+    template<glm::length_t L, typename T, glm::qualifier Q>
+    struct is_glm_vec<glm::vec<L, T, Q>> : std::true_type {};
+
     bool is_float(string_view str);
 
     struct float16_t {

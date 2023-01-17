@@ -54,10 +54,14 @@ namespace ecs {
         glm::vec2,
         glm::vec3,
         glm::vec4,
-        sp::color_t,
-        sp::color_alpha_t,
+        glm::dvec2,
+        glm::dvec3,
+        glm::dvec4,
         glm::ivec2,
         glm::ivec3,
+        glm::ivec4,
+        sp::color_t,
+        sp::color_alpha_t,
         glm::quat,
 
         // Structs

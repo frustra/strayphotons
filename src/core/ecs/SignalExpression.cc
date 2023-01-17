@@ -604,7 +604,7 @@ namespace ecs {
             //     src.expr,
             //     src.scope.String(),
             //     scope.String());
-            DebugAssertf(src.rootIndex >= 0 && src.rootIndex < src.nodeDebug.size(),
+            DebugAssertf(src.rootIndex >= 0 && (size_t)src.rootIndex < src.nodeDebug.size(),
                 "Saving invalid signal expression");
             dst = picojson::value(src.nodeDebug[src.rootIndex]);
         } else {
