@@ -139,7 +139,8 @@ namespace sp {
                 }
             }
         } else if constexpr (is_glm_vec<T>()) {
-            if constexpr (std::is_same_v<T::value_type, float>) {
+            using U = typename T::value_type;
+            if constexpr (std::is_same_v<U, float>) {
                 changed = ImGui::DragScalarN(name.c_str(),
                     ImGuiDataType_Float,
                     &value,
@@ -148,7 +149,7 @@ namespace sp {
                     nullptr,
                     nullptr,
                     "%.4f");
-            } else if constexpr (std::is_same_v<T::value_type, double>) {
+            } else if constexpr (std::is_same_v<U, double>) {
                 changed = ImGui::DragScalarN(name.c_str(),
                     ImGuiDataType_Double,
                     &value,
@@ -157,7 +158,7 @@ namespace sp {
                     nullptr,
                     nullptr,
                     "%.4f");
-            } else if constexpr (std::is_same_v<T::value_type, int>) {
+            } else if constexpr (std::is_same_v<U, int>) {
                 changed = ImGui::DragScalarN(name.c_str(),
                     ImGuiDataType_S32,
                     &value,
