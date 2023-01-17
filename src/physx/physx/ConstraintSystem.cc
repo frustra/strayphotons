@@ -34,7 +34,7 @@ namespace sp {
         JointState *joint,
         ecs::Transform transform,
         ecs::Transform targetTransform,
-        glm::vec3 targetEndVelocity,
+        glm::vec3 targetLinearVelocity,
         glm::vec3 gravity) {
         if (!actor || !joint || !joint->forceConstraint) return false;
         auto dynamic = actor->is<PxRigidDynamic>();
@@ -45,7 +45,6 @@ namespace sp {
         transform.Translate(currentRotate * centerOfMass);
         auto targetRotate = targetTransform.GetRotation();
         targetTransform.Translate(targetRotate * centerOfMass);
-        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
 
         float intervalSeconds = manager.interval.count() / 1e9;
         float tickFrequency = 1e9 / manager.interval.count();
@@ -61,55 +60,73 @@ namespace sp {
                 targetRotate = -targetRotate;
             }
             auto deltaRotation = glm::eulerAngles(glm::inverse(currentRotate) * targetRotate);
-            auto maxAcceleration = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor()) * maxTorque;
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
-                std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
-                std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
 
-            glm::vec3 targetVelocity(0);
+            // PhysX applies damping and clamps velocity before applying forces, so we need to account for this.
+            auto currentAngularVelocity = PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+            currentAngularVelocity *= glm::max(0.0f, 1.0f - intervalSeconds * dynamic->getAngularDamping());
+            auto maxAngularVelocity = dynamic->getMaxAngularVelocity();
+            if (glm::length(currentAngularVelocity) > maxAngularVelocity) {
+                currentAngularVelocity *= maxAngularVelocity / glm::length(currentAngularVelocity);
+            }
+            currentAngularVelocity = glm::inverse(currentRotate) * currentAngularVelocity;
+
+            auto maxAcceleration = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor()) * maxTorque;
+            auto maxDeltaVelocity = maxAcceleration * intervalSeconds;
+            glm::vec3 accel;
             for (int i = 0; i < 3; i++) {
-                if (maxVelocity[i] > deltaTick[i]) {
-                    targetVelocity[i] = glm::sign(deltaRotation[i]) * (maxVelocity[i] - deltaTick[i]);
+                auto targetDist = std::abs(deltaRotation[i]);
+                // Maximum velocity achievable over deltaPos distance (also max velocity we can decelerate from)
+                auto maxVelocity = std::sqrt(2 * maxAcceleration[i] * targetDist);
+                if (maxVelocity > maxAngularVelocity) {
+                    maxVelocity = maxAngularVelocity;
+                }
+                if (targetDist < maxVelocity * intervalSeconds) {
+                    maxVelocity = targetDist * tickFrequency;
+                }
+
+                auto deltaAccelVelocity = (glm::sign(deltaRotation[i]) * maxVelocity) - currentAngularVelocity[i];
+                if (std::abs(deltaAccelVelocity) < maxDeltaVelocity[i]) {
+                    accel[i] = deltaAccelVelocity * tickFrequency;
                 } else {
-                    // Divide remaining velocity delta by 2 to keep things stable.
-                    // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
-                    targetVelocity[i] = deltaRotation[i] * tickFrequency * 0.5f;
+                    accel[i] = glm::sign(deltaAccelVelocity) * maxAcceleration[i];
                 }
             }
-
-            auto currentAngularVelocity = glm::inverse(currentRotate) * PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-            auto deltaVelocity = targetVelocity - currentAngularVelocity;
-
-            glm::vec3 accel = deltaVelocity * tickFrequency;
-            glm::vec3 accelAbs = glm::abs(accel) + 0.00001f;
-            auto clampRatio = glm::min(maxAcceleration, accelAbs) / accelAbs;
-            wakeUp |= joint->forceConstraint->setAngularAccel(accel * clampRatio);
+            wakeUp |= joint->forceConstraint->setAngularAccel(accel);
         } else {
             wakeUp |= joint->forceConstraint->setAngularAccel(glm::vec3(0));
         }
 
         // Update Linear Force
         if (maxForce > 0) {
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
+            auto currentLinearVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+            auto deltaVelocity = targetLinearVelocity - currentLinearVelocity;
+
             auto maxAcceleration = maxForce / dynamic->getMass();
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(deltaPos));
-
-            auto targetVelocity = deltaPos;
-            if (maxVelocity > deltaTick) {
-                targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
+            auto maxDeltaVelocity = maxAcceleration * intervalSeconds;
+            glm::vec3 accel;
+            if (deltaPos == glm::vec3(0)) {
+                if (glm::length(deltaVelocity) < maxDeltaVelocity) {
+                    accel = deltaVelocity * tickFrequency;
+                } else {
+                    accel = glm::normalize(deltaVelocity) * maxAcceleration;
+                }
             } else {
-                // Divide remaining velocity delta by 2 to keep things stable.
-                // This is hack to prevent overshooting from numerical errors, or incorrect inertia.
-                targetVelocity *= tickFrequency * 0.5f;
-            }
-            targetVelocity += targetEndVelocity;
-            auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+                auto targetDist = glm::length(deltaPos);
+                // Maximum velocity achievable over deltaPos distance (also max velocity we can decelerate from)
+                auto maxVelocity = std::sqrt(2 * maxAcceleration * targetDist);
+                if (targetDist < maxVelocity * intervalSeconds) {
+                    maxVelocity = targetDist * tickFrequency;
+                }
 
-            glm::vec3 accel = deltaVelocity * tickFrequency;
-            float accelAbs = glm::length(accel) + 0.00001f;
-            auto clampRatio = std::min(maxAcceleration, accelAbs) / accelAbs;
-            wakeUp |= joint->forceConstraint->setLinearAccel(accel * clampRatio);
+                auto deltaAccelVelocity = deltaVelocity + glm::normalize(deltaPos) * maxVelocity;
+                if (glm::length(deltaAccelVelocity) < maxDeltaVelocity) {
+                    accel = deltaAccelVelocity * tickFrequency;
+                } else {
+                    accel = glm::normalize(deltaAccelVelocity) * maxAcceleration;
+                }
+            }
+            wakeUp |= joint->forceConstraint->setLinearAccel(accel);
         } else {
             wakeUp |= joint->forceConstraint->setLinearAccel(glm::vec3(0));
         }
