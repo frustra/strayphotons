@@ -303,11 +303,16 @@ namespace sp {
                             if (transform != userData->pose) {
                                 PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()),
                                     GlmQuatToPxQuat(transform.GetRotation()));
-                                auto dynamic = actor->is<PxRigidDynamic>();
-                                if (dynamic && ph.kinematic) {
-                                    dynamic->setKinematicTarget(pxTransform);
+                                if (pxTransform.isSane()) {
+                                    auto dynamic = actor->is<PxRigidDynamic>();
+                                    if (dynamic && ph.kinematic) {
+                                        dynamic->setKinematicTarget(pxTransform);
+                                    } else {
+                                        actor->setGlobalPose(pxTransform);
+                                    }
                                 } else {
-                                    actor->setGlobalPose(pxTransform);
+                                    Errorf("Physics Transform Snapshot is not valid for entity: %s",
+                                        ecs::ToString(lock, ent));
                                 }
                             }
                         }
@@ -717,10 +722,14 @@ namespace sp {
         if (glm::any(glm::notEqual(transform.matrix, userData->pose.matrix, 1e-5f))) {
             // Logf("Updating actor position: %s", ecs::ToString(lock, e));
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
-            if (dynamic && ph.kinematic) {
-                dynamic->setKinematicTarget(pxTransform);
+            if (pxTransform.isSane()) {
+                if (dynamic && ph.kinematic) {
+                    dynamic->setKinematicTarget(pxTransform);
+                } else {
+                    actor->setGlobalPose(pxTransform);
+                }
             } else {
-                actor->setGlobalPose(pxTransform);
+                Errorf("Actor transform pose is not valid for entity: %s", ecs::ToString(lock, e));
             }
 
             userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
