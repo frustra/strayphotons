@@ -59,13 +59,13 @@ namespace sp::scripts {
 
                         *sharedEntity = newEntity;
                     });
-                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene,
-                    scene.data->name,
-                    [ent, target = event.source, sharedEntity](auto lock) {
-                        ecs::EventBindings::SendEvent(lock,
-                            target,
-                            ecs::Event{INTERACT_EVENT_INTERACT_GRAB, ent, sharedEntity->Get(lock)});
-                    });
+                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, scene.data->name);
+                GetSceneManager().QueueAction([ent, target = event.source, sharedEntity] {
+                    auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
+                    ecs::EventBindings::SendEvent(lock,
+                        target,
+                        ecs::Event{INTERACT_EVENT_INTERACT_GRAB, ent, sharedEntity->Get(lock)});
+                });
             }
         }
     };
