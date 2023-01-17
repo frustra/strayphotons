@@ -14,7 +14,8 @@ namespace sp::scripts {
         "Toggle to use a fixed joint instead of force limited joint");
 
     struct InteractiveObject {
-        std::vector<Entity> grabEntities, pointEntities;
+        std::vector<std::pair<Entity, Entity>> grabEntities;
+        std::vector<Entity> pointEntities;
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
 
@@ -50,10 +51,19 @@ namespace sp::scripts {
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
                     if (std::holds_alternative<bool>(event.data)) {
                         // Grab(false) = Drop
+                        Entity secondary;
+                        for (auto &[a, b] : grabEntities) {
+                            if (a == event.source) {
+                                secondary = b;
+                                break;
+                            }
+                        }
                         sp::erase_if(joints.joints, [&](auto &&joint) {
-                            return joint.target == event.source;
+                            return joint.target == event.source || (secondary && joint.target == secondary);
                         });
-                        sp::erase(grabEntities, event.source);
+                        sp::erase_if(grabEntities, [&](auto &arg) {
+                            return arg.first == event.source;
+                        });
                     } else if (std::holds_alternative<Transform>(event.data)) {
                         if (!enableInteraction) continue;
 
@@ -61,11 +71,33 @@ namespace sp::scripts {
                         auto &transform = ent.Get<TransformSnapshot>(lock);
                         auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
-                        grabEntities.emplace_back(event.source);
+                        Entity secondary;
+                        if (event.source.Has<PhysicsJoints>(lock)) {
+                            auto &targetJoints = event.source.Get<PhysicsJoints>(lock);
+                            for (auto &joint : targetJoints.joints) {
+                                if (joint.type != PhysicsJointType::Force) continue;
+                                auto target = joint.target.Get(lock);
+                                if (target.Has<TransformSnapshot>(lock) && !target.Has<Physics>(lock)) {
+                                    secondary = target;
+
+                                    PhysicsJoint newJoint = joint;
+                                    newJoint.remoteOffset.Translate(
+                                        invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
+                                    newJoint.remoteOffset.Rotate(invParentRotate * transform.GetRotation());
+                                    Logf("Adding secondary joint: %s / %s",
+                                        newJoint.type,
+                                        newJoint.target.Name().String());
+                                    joints.Add(newJoint);
+
+                                    break;
+                                }
+                            }
+                        }
+                        grabEntities.emplace_back(event.source, secondary);
 
                         PhysicsJoint joint;
                         joint.target = event.source;
-                        if (CVarFixedJointGrab.Get()) {
+                        if (secondary) {
                             joint.type = PhysicsJointType::Fixed;
                         } else {
                             joint.type = PhysicsJointType::Force;
@@ -75,6 +107,7 @@ namespace sp::scripts {
                         joint.remoteOffset.SetPosition(
                             invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
                         joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
+                        Logf("Adding joint: %s / %s", joint.type, joint.target.Name().String());
                         joints.Add(joint);
                     } else {
                         Errorf("Unsupported grab event type: %s", event.toString());
