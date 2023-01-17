@@ -55,8 +55,6 @@ namespace sp {
                                              ImGuiInputTextFlags_CallbackCompletion |
                                              ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackAlways;
 
-                reclaimInputFocus |= ImGui::IsWindowAppearing();
-
                 if (ImGui::InputText("##CommandInput",
                         inputBuf,
                         sizeof(inputBuf),
@@ -95,6 +93,7 @@ namespace sp {
                     reclaimInputFocus = false;
                 }
 
+                reclaimInputFocus |= ImGui::IsWindowAppearing();
                 popupPos = ImGui::GetItemRectMin();
             }
             ImGui::End();
@@ -110,7 +109,7 @@ namespace sp {
             if (completionPopupVisible) {
                 ImGuiWindowFlags popupFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                               ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar |
-                                              ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing;
+                                              ImGuiWindowFlags_NoSavedSettings;
 
                 ImVec2 size = {400, 200};
                 size.y = std::min(size.y, 12 + completionEntries.size() * ImGui::GetTextLineHeightWithSpacing());
