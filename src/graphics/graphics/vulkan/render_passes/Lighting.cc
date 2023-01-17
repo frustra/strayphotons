@@ -502,7 +502,7 @@ namespace sp::vulkan::renderer {
                     }
 
                     // Check if any optics are visible from the end of the current light path.
-                    for (uint32_t opticIndex = 0; opticIndex < optics.size(); opticIndex++) {
+                    for (uint32_t opticIndex = 0; opticIndex < optics.size() && opticIndex < MAX_OPTICS; opticIndex++) {
                         if (readbackLights.size() >= MAX_LIGHTS) break;
                         if (vLight.opticIndex && opticIndex == *vLight.opticIndex) continue;
                         if (visibility[lightIndex][opticIndex] == 1) {

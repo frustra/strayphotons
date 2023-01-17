@@ -139,7 +139,7 @@ namespace sp::vulkan::render_graph {
         ResourceID result = InvalidResource;
         uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
-        if (name.find('.') != string_view::npos) {
+        if (name.find(':') == string_view::npos && name.find('.') != string_view::npos) {
             // Any resource name with a dot is assumed to be fully qualified.
             auto lastDot = name.rfind('.');
             auto scopeName = name.substr(0, lastDot);

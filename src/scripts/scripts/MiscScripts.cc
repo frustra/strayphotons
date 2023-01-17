@@ -124,6 +124,8 @@ namespace sp::scripts {
             auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
 
             auto targetForward = transform.pose.GetPosition() - relativeTF.GetPosition();
+            if (targetForward == glm::vec3(0)) return;
+            targetForward = glm::normalize(targetForward);
 
             auto currentUp = glm::vec3(0, 1, 0);
             auto upEnt = upEntityRef.Get(lock);
@@ -147,69 +149,64 @@ namespace sp::scripts {
 
     struct ChargeCell {
         // Charge level is light units * ticks
-        glm::dvec3 chargeLevel;
-        double maxChargePower = 1.0;
-        SignalExpression outputPower;
+        double chargeLevel = 0.0;
+        double maxChargeLevel = 1.0;
+        SignalExpression outputPowerRed;
+        SignalExpression outputPowerGreen;
+        SignalExpression outputPowerBlue;
         SignalExpression chargeSignalRed;
         SignalExpression chargeSignalGreen;
         SignalExpression chargeSignalBlue;
-
         bool discharging = false;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
 
+            glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
+                std::max(0.0, chargeSignalGreen.Evaluate(lock)),
+                std::max(0.0, chargeSignalBlue.Evaluate(lock))};
+            double chargePower = chargeColor.r + chargeColor.g + chargeColor.b;
+            chargeLevel += chargePower;
+
+            if (chargePower <= 0.0 || chargeLevel > maxChargeLevel) {
+                discharging = true;
+            }
+
             glm::dvec3 outputColor;
-            if (maxChargePower > 0) {
-                glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
-                    std::max(0.0, chargeSignalGreen.Evaluate(lock)),
-                    std::max(0.0, chargeSignalBlue.Evaluate(lock))};
-                chargeLevel += chargeColor;
-
-                double chargePower = chargeLevel.r + chargeLevel.g + chargeLevel.b;
-
-                if (discharging || chargeColor == glm::dvec3(0)) {
-                    auto targetPower = std::max(0.0, outputPower.Evaluate(lock));
-                    if (targetPower < chargePower) {
-                        outputColor = chargeLevel * targetPower / chargePower;
-                        chargeLevel -= outputColor;
-                        chargePower -= targetPower;
+            if (discharging) {
+                outputColor = {std::max(0.0, outputPowerRed.Evaluate(lock)),
+                    std::max(0.0, outputPowerGreen.Evaluate(lock)),
+                    std::max(0.0, outputPowerBlue.Evaluate(lock))};
+                double outputPower = outputColor.r + outputColor.g + outputColor.b;
+                if (outputPower > 0 && discharging) {
+                    if (outputPower > chargeLevel) {
+                        outputColor *= chargeLevel / outputPower;
+                        chargeLevel = 0;
+                        discharging = false;
                     } else {
-                        outputColor = chargeLevel;
-                        chargeLevel = {};
-                        chargePower = 0;
-                        if (discharging) {
-                            discharging = false;
-                            Logf("Recharging: %f, %s",
-                                chargeLevel.r + chargeLevel.g + chargeLevel.b,
-                                glm::to_string(chargeLevel));
-                        }
-                    }
-                }
-
-                if (chargePower > maxChargePower) {
-                    chargeLevel *= (maxChargePower / chargePower);
-                    chargePower = maxChargePower;
-                    if (!discharging) {
-                        discharging = true;
-                        Logf("Discharging: %f, %s",
-                            chargeLevel.r + chargeLevel.g + chargeLevel.b,
-                            glm::to_string(chargeLevel));
+                        chargeLevel -= outputPower;
                     }
                 }
             }
 
+            chargeLevel = std::clamp(chargeLevel, 0.0, maxChargeLevel);
+
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            signalOutput.SetSignal("charge_level", chargeLevel.r + chargeLevel.g + chargeLevel.b);
+            signalOutput.SetSignal("discharging", discharging);
+            signalOutput.SetSignal("charge_level", chargeLevel);
+            signalOutput.SetSignal("max_charge_level", maxChargeLevel);
             signalOutput.SetSignal("cell_output_r", outputColor.r);
             signalOutput.SetSignal("cell_output_g", outputColor.g);
             signalOutput.SetSignal("cell_output_b", outputColor.b);
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
+        StructField::New("discharging", &ChargeCell::discharging),
         StructField::New("charge_level", &ChargeCell::chargeLevel),
-        StructField::New("max_charge_level", &ChargeCell::maxChargePower),
-        StructField::New("output_power", &ChargeCell::outputPower),
+        StructField::New("max_charge_level", &ChargeCell::maxChargeLevel),
+        StructField::New("output_power_r", &ChargeCell::outputPowerRed),
+        StructField::New("output_power_g", &ChargeCell::outputPowerGreen),
+        StructField::New("output_power_b", &ChargeCell::outputPowerBlue),
         StructField::New("charge_signal_r", &ChargeCell::chargeSignalRed),
         StructField::New("charge_signal_g", &ChargeCell::chargeSignalGreen),
         StructField::New("charge_signal_b", &ChargeCell::chargeSignalBlue));

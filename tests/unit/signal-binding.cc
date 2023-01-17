@@ -16,6 +16,7 @@ namespace SignalBindingTests {
     const std::string TEST_SIGNAL_ACTION4 = "test-action4";
     const std::string TEST_SIGNAL_ACTION5 = "test-action5";
     const std::string TEST_SIGNAL_ACTION6 = "test-action6";
+    const std::string TEST_SIGNAL_ACTION7 = "test-action7";
 
     void TrySetSignals() {
         Tecs::Entity player, hand, unknown;
@@ -49,6 +50,9 @@ namespace SignalBindingTests {
             playerBindings.SetBinding(TEST_SIGNAL_ACTION4, "3 +4 *2 /(1 - -5)+1 /0");
             playerBindings.SetBinding(TEST_SIGNAL_ACTION5, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
             playerBindings.SetBinding(TEST_SIGNAL_ACTION6, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
+            playerBindings.SetBinding(TEST_SIGNAL_ACTION7,
+                "! 10 + 1 || !player/device2_key != !0",
+                ecs::Name("player", ""));
 
             // Test a bunch of invalid expressions to make sure they don't crash the parser
             playerBindings.SetBinding("test", "cos(");
@@ -102,7 +106,7 @@ namespace SignalBindingTests {
 
             auto &expr4 = playerBindings.GetBinding(TEST_SIGNAL_ACTION4);
             AssertEqual(expr4.expr, "3 +4 *2 /(1 - -5)+1 /0");
-            AssertEqual(expr4.nodes.size(), 13u, "Expected 3 expression nodes");
+            AssertEqual(expr4.nodes.size(), 13u, "Expected 13 expression nodes");
             AssertEqual(expr4.rootIndex, 12, "Expected expression root node to be 12");
             AssertEqual(expr4.nodeDebug[expr4.rootIndex],
                 "3 + 4 * 2 / ( 1 - -5 ) + 1 / 0",
@@ -110,7 +114,7 @@ namespace SignalBindingTests {
 
             auto &expr5 = playerBindings.GetBinding(TEST_SIGNAL_ACTION5);
             AssertEqual(expr5.expr, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
-            AssertEqual(expr5.nodes.size(), 13u, "Expected 3 expression nodes");
+            AssertEqual(expr5.nodes.size(), 13u, "Expected 13 expression nodes");
             AssertEqual(expr5.rootIndex, 12, "Expected expression root node to be 12");
             AssertEqual(expr5.nodeDebug[expr5.rootIndex],
                 "cos( max( 2 , 3 ) / 3 * 3.14159265359 ) * -1 ? 42 : 0.1",
@@ -118,10 +122,18 @@ namespace SignalBindingTests {
 
             auto &expr6 = playerBindings.GetBinding(TEST_SIGNAL_ACTION6);
             AssertEqual(expr6.expr, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
-            AssertEqual(expr6.nodes.size(), 15u, "Expected 3 expression nodes");
-            AssertEqual(expr6.rootIndex, 14, "Expected expression root node to be 13");
+            AssertEqual(expr6.nodes.size(), 15u, "Expected 15 expression nodes");
+            AssertEqual(expr6.rootIndex, 14, "Expected expression root node to be 14");
             AssertEqual(expr6.nodeDebug[expr6.rootIndex],
                 "( 0.2 + 0.3 && 2 == 1 * 2 ) + 0.6 == 2 - 0.4",
+                "Unexpected expression node");
+
+            auto &expr7 = playerBindings.GetBinding(TEST_SIGNAL_ACTION7);
+            AssertEqual(expr7.expr, "! 10 + 1 || !player/device2_key != !0");
+            AssertEqual(expr7.nodes.size(), 8u, "Expected 8 expression nodes");
+            AssertEqual(expr7.rootIndex, 7, "Expected expression root node to be 7");
+            AssertEqual(expr7.nodeDebug[expr7.rootIndex],
+                "!10 + 1 || !player:player/device2_key != !0",
                 "Unexpected expression node");
 
             auto &handBindings = hand.Get<ecs::SignalBindings>(lock);
@@ -173,6 +185,8 @@ namespace SignalBindingTests {
             val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION5);
             AssertEqual(val, 42.0, "Expected signal to match trig expression");
             val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION6);
+            AssertEqual(val, 1.0, "Expected signal to match comparison expression");
+            val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION7);
             AssertEqual(val, 1.0, "Expected signal to match comparison expression");
             val = ecs::SignalBindings::GetSignal(lock, player, "foo");
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");

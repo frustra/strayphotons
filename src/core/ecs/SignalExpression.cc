@@ -21,7 +21,7 @@ namespace ecs {
 
     struct PrecedenceTable {
         constexpr PrecedenceTable() {
-            // Unary - operator
+            // Right associative unary operators (-X and !X)
             values[u8'_'] = 1;
 
             // Math operators
@@ -144,7 +144,7 @@ namespace ecs {
                 expr.nodes[index].startToken = startToken;
                 expr.nodes[index].startToken = tokenIndex;
                 expr.nodeDebug[index] = "( " + expr.nodeDebug[index] + " )";
-            } else if (token == "-" && index < 0) {
+            } else if (index < 0 && (token == "-" || token == "!")) {
                 size_t startToken = tokenIndex;
 
                 tokenIndex++;
@@ -156,20 +156,38 @@ namespace ecs {
                 }
 
                 auto *constantNode = std::get_if<SignalExpression::ConstantNode>(&expr.nodes[inputIndex]);
-                if (constantNode) {
-                    constantNode->value *= -1;
-                    index = inputIndex;
-                    expr.nodes[index].startToken = startToken;
-                    expr.nodeDebug[index] = "-" + expr.nodeDebug[index];
-                } else {
-                    index = expr.nodes.size();
-                    expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
-                                                [](double input) {
-                                                    return -input;
-                                                }},
-                        startToken,
-                        tokenIndex);
-                    expr.nodeDebug.emplace_back("-" + expr.nodeDebug[inputIndex]);
+                if (token == "-") {
+                    if (constantNode) {
+                        constantNode->value *= -1;
+                        index = inputIndex;
+                        expr.nodes[index].startToken = startToken;
+                        expr.nodeDebug[index] = "-" + expr.nodeDebug[index];
+                    } else {
+                        index = expr.nodes.size();
+                        expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                                    [](double input) {
+                                                        return -input;
+                                                    }},
+                            startToken,
+                            tokenIndex);
+                        expr.nodeDebug.emplace_back("-" + expr.nodeDebug[inputIndex]);
+                    }
+                } else if (token == "!") {
+                    if (constantNode) {
+                        constantNode->value = constantNode->value >= 0.5 ? 0.0 : 1.0;
+                        index = inputIndex;
+                        expr.nodes[index].startToken = startToken;
+                        expr.nodeDebug[index] = "!" + expr.nodeDebug[index];
+                    } else {
+                        index = expr.nodes.size();
+                        expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                                    [](double input) {
+                                                        return input >= 0.5 ? 0.0 : 1.0;
+                                                    }},
+                            startToken,
+                            tokenIndex);
+                        expr.nodeDebug.emplace_back("!" + expr.nodeDebug[inputIndex]);
+                    }
                 }
             } else if (token == "sin" || token == "cos" || token == "tan") {
                 if (index >= 0) {
@@ -500,6 +518,10 @@ namespace ecs {
         size_t tokenStart = 0;
         for (size_t tokenEnd = 0; tokenEnd < exprView.size(); tokenEnd++) {
             const char &ch = exprView[tokenEnd];
+            if (tokenEnd == tokenStart + 1 && exprView[tokenStart] == '!' && ch != '=') {
+                tokens.emplace_back(exprView.substr(tokenStart, 1));
+                tokenStart++;
+            }
             if (std::isspace(ch)) {
                 if (tokenEnd > tokenStart) tokens.emplace_back(exprView.substr(tokenStart, tokenEnd - tokenStart));
                 tokenStart = tokenEnd + 1;
