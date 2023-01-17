@@ -74,7 +74,10 @@ namespace sp::vulkan::renderer {
                         continue;
                     }
 
-                    if (builder.GetID(textureName, false) == InvalidResource) continue;
+                    if (builder.GetID(textureName, false) == InvalidResource) {
+                        Warnf("Screen missing resource: '%s'", textureName);
+                        continue;
+                    }
 
                     auto id = builder.Read(textureName, Access::FragmentShaderSampleImage);
 

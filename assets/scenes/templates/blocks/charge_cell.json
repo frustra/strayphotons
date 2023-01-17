@@ -19,7 +19,7 @@
 			],
 			"dynamic": true
 		},
-		"signal_output": {
+		"signal_output": { 
 			"charge_level": 0,
 			"cell_output_r": 0,
 			"cell_output_g": 0,
@@ -40,7 +40,7 @@
 				"onTick": "charge_cell",
 				"parameters": {
 					"max_charge_level": 1000,
-					"output_power": "5",
+					"output_power_r": "5",
 					"charge_signal_r": "input-sensor.Icosphere/light_value_r",
 					"charge_signal_g": "input-sensor.Icosphere/light_value_g",
 					"charge_signal_b": "input-sensor.Icosphere/light_value_b"
@@ -192,6 +192,40 @@
 			"laser_sensor": {
 				"threshold": [0.5, 0.5, 0.5]
 			}
+		},
+		{
+			"name": "charge_display",
+			"transform": {
+				"parent": "scoperoot",
+				"scale": [0.13, 0.05, 1],
+				"translate": [0, 0.08, 0]
+			},
+			"gui": {
+				"windowName": "signal_display"
+			},
+			"screen": {
+				"luminance": [3, 3, 3]
+			},
+			"signal_bindings": {
+				"text_color_g": "0.5093 * (!scoperoot/discharging && scoperoot/charge_level != 0)",
+				"text_color_r": "scoperoot/discharging || scoperoot/charge_level == 0",
+				"max_value": "scoperoot/max_charge_level",
+				"value": "scoperoot/charge_level"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "world_gui"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "rotate_to_entity",
+					"parameters": {
+						"target": "player:head"
+					}
+				}
+			]
 		}
 	]
 }

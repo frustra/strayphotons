@@ -192,7 +192,9 @@ namespace sp::scripts {
             chargeLevel = std::clamp(chargeLevel, 0.0, maxChargeLevel);
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
+            signalOutput.SetSignal("discharging", discharging);
             signalOutput.SetSignal("charge_level", chargeLevel);
+            signalOutput.SetSignal("max_charge_level", maxChargeLevel);
             signalOutput.SetSignal("cell_output_r", outputColor.r);
             signalOutput.SetSignal("cell_output_g", outputColor.g);
             signalOutput.SetSignal("cell_output_b", outputColor.b);

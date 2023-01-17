@@ -107,7 +107,6 @@ namespace sp::scripts {
                         joint.remoteOffset.SetPosition(
                             invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
                         joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
-                        Logf("Adding joint: %s / %s", joint.type, joint.target.Name().String());
                         joints.Add(joint);
                     } else {
                         Errorf("Unsupported grab event type: %s", event.toString());
