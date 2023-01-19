@@ -34,6 +34,7 @@ namespace ecs {
         glm::quat GetRotation() const;
         glm::vec3 GetForward() const;
         glm::vec3 GetUp() const;
+        glm::vec3 GetRight() const;
         glm::vec3 GetScale() const;
         const Transform &Get() const;
         Transform GetInverse() const;

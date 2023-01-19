@@ -71,6 +71,7 @@ namespace ecs {
         SignalExpression,
         std::vector<float>,
         std::vector<glm::vec2>,
+        std::vector<glm::vec3>,
         std::vector<std::string>,
         std::vector<AnimationState>,
         std::vector<PhysicsShape>,

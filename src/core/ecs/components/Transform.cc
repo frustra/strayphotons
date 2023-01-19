@@ -187,6 +187,12 @@ namespace ecs {
         return glm::normalize(scaledRotation * glm::vec3(0, 1, 0));
     }
 
+    glm::vec3 Transform::GetRight() const {
+        if (std::isinf(matrix[0][0])) return glm::vec3(1, 0, 0);
+        glm::mat3 scaledRotation = glm::mat3(matrix[0], matrix[1], matrix[2]);
+        return glm::normalize(scaledRotation * glm::vec3(1, 0, 0));
+    }
+
     void Transform::SetScale(const glm::vec3 &xyz) {
         if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
         matrix[0] = glm::normalize(matrix[0]) * xyz.x;

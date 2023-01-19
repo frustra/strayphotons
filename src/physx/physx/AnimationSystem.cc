@@ -65,20 +65,30 @@ namespace sp {
             } else if (animation.interpolation == ecs::InterpolationMode::Cubic) {
                 float tangentScale = playDirection * duration;
 
-                auto t = completion;
-                auto t2 = t * t;
-                auto t3 = t2 * t;
-                auto av1 = 2 * t3 - 3 * t2 + 1;
-                auto at1 = tangentScale * (t3 - 2 * t2 + t);
-                auto av2 = -2 * t3 + 3 * t2;
-                auto at2 = tangentScale * (t3 - t2);
+                // auto t = completion;
+                // auto t2 = t * t;
+                // auto t3 = t2 * t;
+                // auto av1 = 2 * t3 - 3 * t2 + 1;
+                // auto at1 = tangentScale * (t3 - 2 * t2 + t);
+                // auto av2 = -2 * t3 + 3 * t2;
+                // auto at2 = tangentScale * (t3 - t2);
 
-                auto pos = av1 * currentState.pos + at1 * currentState.tangentPos + av2 * nextState.pos +
-                           at2 * nextState.tangentPos;
+                auto pos = CubicBlend(completion,
+                    currentState.pos,
+                    tangentScale * currentState.tangentPos,
+                    nextState.pos,
+                    tangentScale * nextState.tangentPos);
+                // auto pos = av1 * currentState.pos + at1 * currentState.tangentPos + av2 * nextState.pos +
+                //            at2 * nextState.tangentPos;
                 transform.pose.SetPosition(pos);
 
-                auto scale = av1 * currentState.scale + at1 * currentState.tangentScale + av2 * nextState.scale +
-                             at2 * nextState.tangentScale;
+                auto scale = CubicBlend(completion,
+                    currentState.scale,
+                    tangentScale * currentState.tangentScale,
+                    nextState.scale,
+                    tangentScale * nextState.tangentScale);
+                // auto scale = av1 * currentState.scale + at1 * currentState.tangentScale + av2 * nextState.scale +
+                //              at2 * nextState.tangentScale;
                 transform.pose.SetScale(scale);
             }
 

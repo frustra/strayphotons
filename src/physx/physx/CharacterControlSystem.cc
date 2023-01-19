@@ -44,6 +44,9 @@ namespace sp {
     static CVar<float> CVarCharacterMinFlipGravity("p.CharacterMinFlipGravity",
         8.0,
         "Character controller minimum gravity required to orient (m/s^2)");
+    static CVar<float> CVarMaxHeadDisconnect("p.MaxHeadDisconnect",
+        0.1,
+        "Maximum distance the player's head is allowed to disconnect from the body");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
@@ -68,6 +71,18 @@ namespace sp {
                             tree.parent = hmd;
                         } else {
                             tree.parent = flatview;
+                        }
+
+                        ecs::Entity player = entities::Player.Get(lock);
+                        if (!player.Has<ecs::TransformTree>(lock)) return;
+
+                        tree.pose = ecs::Transform();
+                        auto headToPlayer = tree.GetRelativeTransform(lock, player).GetPosition();
+                        auto headOffset = glm::vec3(headToPlayer.x, 0, headToPlayer.z);
+                        auto headDistance = glm::length(headOffset);
+                        float maxDistance = std::max(0.0f, CVarMaxHeadDisconnect.Get());
+                        if (headDistance > maxDistance) {
+                            tree.pose.Translate(glm::normalize(headOffset) * maxDistance - headOffset);
                         }
                     });
 

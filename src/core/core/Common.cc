@@ -50,6 +50,22 @@ namespace sp {
         return r;
     }
 
+    glm::vec3 CubicBlend(float blendFactor,
+        const glm::vec3 &point_a,
+        const glm::vec3 &tangent_a,
+        const glm::vec3 &point_b,
+        const glm::vec3 &tangent_b) {
+        auto t = blendFactor;
+        auto t2 = t * t;
+        auto t3 = t2 * t;
+        auto av1 = 2 * t3 - 3 * t2 + 1;
+        auto at1 = t3 - 2 * t2 + t;
+        auto av2 = -2 * t3 + 3 * t2;
+        auto at2 = t3 - t2;
+
+        return av1 * point_a + at1 * tangent_a + av2 * point_b + at2 * tangent_b;
+    }
+
     float angle_t::degrees() const {
         return glm::degrees(radians_);
     }

@@ -66,7 +66,14 @@ namespace ecs {
 
     bool EntityRef::operator==(const Entity &other) const {
         if (!ptr || !other) return false;
-        return ptr->liveEntity.load() == other || ptr->stagingEntity.load() == other;
+        if (IsLive(other)) {
+            return ptr->liveEntity.load() == other;
+        } else if (IsStaging(other)) {
+            // Multiple staging entities may exist, so we need to do a lookup
+            return ptr == GetEntityRefs().Get(other).ptr;
+        } else {
+            Abortf("Invalid EntityRef entity: %s", std::to_string(other));
+        }
     }
 
     bool EntityRef::operator<(const EntityRef &other) const {

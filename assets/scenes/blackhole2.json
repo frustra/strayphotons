@@ -59,7 +59,10 @@
 		},
 		{
 			"name": "global:spawn",
-			"transform": {}
+			"transform": {
+				"translate": [0, 0, -1],
+				"rotate": [180, 0, 1, 0]
+			}
 		},
 		{
 			"name": "global:station-center",
@@ -134,11 +137,38 @@
 				"rotate": [90, 0, 1, 0],
 				"translate": [0.86, 0.9, 0.14]
 			},
+			"physics_joints": {
+				"type": "Distance",
+				"limit": [0, 0.2],
+				"target": "emitter2"
+			},
 			"script": {
 				"parameters": {
 					"source": "blocks/laser_sensor"
 				},
 				"prefab": "template"
+			}
+		},
+		{
+			"name": "fiberoptic",
+			"script": {
+				"prefab": "rope",
+				"parameters": {
+					"segments": 10,
+					"radius": 0.005,
+					"density": 0.1,
+					"linear_damping": 10,
+					"angular_damping": 100,
+					"model": "box",
+					"model_offset": {
+						"translate": [0.5, 0, 0],
+						"scale": [1, 0.01, 0.01]
+					},
+					"points": [[0.89, 0.94, 0.14], [0.95, 0.94, 0.22], [0.89, 0.94, 0.3]],
+					"tangents": [[0.3, 0, 0], [0, 0, 0.2], [-0.3, 0, 0]],
+					"start_target": "sensor1",
+					"end_target": "emitter2"
+				}
 			}
 		},
 		{

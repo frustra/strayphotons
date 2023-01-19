@@ -52,6 +52,13 @@ namespace sp {
     uint32 Uint32Log2(uint32 v);
     uint64 Uint64Log2(uint64 v);
 
+    // Computes a Cubic Hermite spline interpolation between points a and b
+    glm::vec3 CubicBlend(float blendFactor,
+        const glm::vec3 &point_a,
+        const glm::vec3 &tangent_a,
+        const glm::vec3 &point_b,
+        const glm::vec3 &tangent_b);
+
     template<typename T>
     void ForEachBit(uint32 value, const T &func) {
         uint32 bit = 1, index = 0;

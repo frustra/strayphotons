@@ -77,7 +77,7 @@ namespace sp {
                 auto &laser = ent.Set<ecs::LaserLine>(lock);
                 laser.intensity = 0.5f;
                 laser.mediaDensityFactor = 0;
-                laser.radius = 0.005f;
+                laser.radius = 0.001f;
                 laser.line = ecs::LaserLine::Segments();
             });
 
