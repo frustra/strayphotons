@@ -346,8 +346,8 @@ namespace sp {
             if (joint->forceConstraint) joint->forceConstraint->setActors(actor, targetActor);
             if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
                 auto distanceJoint = joint->pxJoint->is<PxDistanceJoint>();
-                distanceJoint->setMinDistance(ecsJoint.limit.x);
-                if (ecsJoint.limit.y > ecsJoint.limit.x) {
+                if (ecsJoint.limit.y >= ecsJoint.limit.x) {
+                    distanceJoint->setMinDistance(ecsJoint.limit.x);
                     distanceJoint->setMaxDistance(ecsJoint.limit.y);
                     distanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
                 }

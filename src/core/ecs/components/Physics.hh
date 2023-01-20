@@ -113,7 +113,7 @@ namespace ecs {
 
     struct Physics {
         Physics() {}
-        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float mass = 1.0f)
+        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float mass = 0.0f)
             : shapes({shape}), group(group), dynamic(dynamic), mass(mass) {}
 
         std::vector<PhysicsShape> shapes;

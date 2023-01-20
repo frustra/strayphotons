@@ -67,11 +67,12 @@ namespace sp::scripts {
                 ph.linearDamping = linearDamping;
                 ph.angularDamping = angularDamping;
 
+                auto &joints = baseEnt.Set<PhysicsJoints>(lock);
                 PhysicsJoint joint = {};
                 joint.type = PhysicsJointType::Spherical;
                 joint.target = lastInstance;
                 joint.remoteOffset = lastOffset;
-                baseEnt.Set<PhysicsJoints>(lock).Add(joint);
+                joints.Add(joint);
 
                 auto &transform = baseEnt.Set<TransformTree>(lock);
                 transform.pose.SetPosition(pos - rotation * glm::vec3(dist, 0, 0));

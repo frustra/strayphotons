@@ -139,7 +139,7 @@
 			},
 			"physics_joints": {
 				"type": "Distance",
-				"limit": [0, 0.2],
+				"limit": [0, 0.25],
 				"target": "emitter2"
 			},
 			"script": {
@@ -156,9 +156,9 @@
 				"parameters": {
 					"segments": 10,
 					"radius": 0.005,
-					"density": 0.1,
+					"density": 1000,
 					"linear_damping": 10,
-					"angular_damping": 100,
+					"angular_damping": 1000,
 					"model": "box",
 					"model_offset": {
 						"translate": [0.5, 0, 0],
