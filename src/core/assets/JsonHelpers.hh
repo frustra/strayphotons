@@ -339,7 +339,7 @@ namespace sp::json {
             Save(s, value, src);
         }
 
-        if (!value.is<picojson::null>()) return false;
+        if (value.is<picojson::null>()) return false;
         if (field) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             dst.get<picojson::object>()[field] = value;
