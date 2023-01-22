@@ -181,6 +181,31 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "big_frame",
+			"transform": {
+				"parent": "root",
+				"translate": [0.2, 0, 0.3]
+			},
+			"physics": {
+				"dynamic": false,
+				"group": "UserInterface"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/big_frame"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/big_frame"
+					}
+				}
+			]
 		}
 	]
 }

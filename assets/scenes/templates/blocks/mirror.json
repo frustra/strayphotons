@@ -62,8 +62,7 @@
 		{
 			"name": "optic",
 			"optic": {
-				"type": "Mirror",
-				"tint": [0.95, 0.95, 0.95]
+				"reflect_tint": [0.95, 0.95, 0.95]
 			},
 			"renderable": {
 				"model": "colorfilter",

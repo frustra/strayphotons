@@ -24,9 +24,7 @@
 			"renderable": {
 				"model": "mirror"
 			},
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"transform": {
 				"translate": [-0.67, 2.40, -0.58],
 				"scale": [1.2, 1.215, 1],
@@ -40,9 +38,7 @@
 			"renderable": {
 				"model": "mirror"
 			},
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"transform": {
 				"translate": [-0.8527, 1.20, -1.1594],
 				"scale": [1.2, 2.4, 1],
@@ -55,9 +51,7 @@
 			"renderable": {
 				"model": "mirror"
 			},
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"transform": {
 				"translate": [-0.0978, 1.20, -0.7604],
 				"scale": [1.215, 2.4, 1],
@@ -70,9 +64,7 @@
 			"renderable": {
 				"model": "mirror"
 			},
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"transform": {
 				"translate": [-1.2422, 1.20, -0.3996],
 				"scale": [1.215, 2.4, 1],
@@ -85,9 +77,7 @@
 			"renderable": {
 				"model": "mirror"
 			},
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"transform": {
 				"translate": [-0.4873, 1.20, -0.0006],
 				"scale": [1.2, 2.4, 1],

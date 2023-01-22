@@ -151,8 +151,8 @@
 		},
 		{
 			"optic": {
-				"type": "Gel",
-				"tint": [1, 0, 0]
+				"pass_tint": [1, 0, 0],
+				"reflect_tint": [0, 0, 0]
 			},
 			"renderable": {
 				"model": "colorfilter",
@@ -176,8 +176,8 @@
 		},
 		{
 			"optic": {
-				"type": "Gel",
-				"tint": [0, 1, 0]
+				"pass_tint": [0, 1, 0],
+				"reflect_tint": [0, 0, 0]
 			},
 			"renderable": {
 				"model": "colorfilter",
@@ -201,8 +201,8 @@
 		},
 		{
 			"optic": {
-				"type": "Gel",
-				"tint": [0, 0, 1]
+				"pass_tint": [0, 0, 1],
+				"reflect_tint": [0, 0, 0]
 			},
 			"renderable": {
 				"model": "colorfilter",
@@ -226,8 +226,8 @@
 		},
 		{
 			"optic": {
-				"type": "Gel",
-				"tint": [0, 1, 1]
+				"pass_tint": [0, 1, 1],
+				"reflect_tint": [0, 0, 0]
 			},
 			"renderable": {
 				"model": "colorfilter",
@@ -251,8 +251,8 @@
 		},
 		{
 			"optic": {
-				"type": "Gel",
-				"tint": [1, 0, 1]
+				"pass_tint": [1, 0, 1],
+				"reflect_tint": [0, 0, 0]
 			},
 			"renderable": {
 				"model": "colorfilter",
@@ -276,8 +276,8 @@
 		},
 		{
 			"optic": {
-				"type": "Gel",
-				"tint": [1, 1, 0]
+				"pass_tint": [1, 1, 0],
+				"reflect_tint": [0, 0, 0]
 			},
 			"renderable": {
 				"model": "colorfilter",
@@ -301,8 +301,7 @@
 		},
 		{
 			"optic": {
-				"type": "Mirror",
-				"_tint": [1, 0.5, 0.5]
+				"_reflect_tint": [1, 0.5, 0.5]
 			},
 			"renderable": {
 				"model": "mirror"
@@ -325,8 +324,7 @@
 		},
 		{
 			"optic": {
-				"type": "Mirror",
-				"_tint": [0.5, 1, 0.5]
+				"_reflect_tint": [0.5, 1, 0.5]
 			},
 			"renderable": {
 				"model": "mirror"
@@ -349,8 +347,7 @@
 		},
 		{
 			"optic": {
-				"type": "Mirror",
-				"_tint": [0.5, 0.5, 1]
+				"_reflect_tint": [0.5, 0.5, 1]
 			},
 			"renderable": {
 				"model": "mirror"

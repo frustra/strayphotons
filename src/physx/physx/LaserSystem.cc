@@ -31,18 +31,16 @@ namespace sp {
 
             if (userData->entity.Has<ecs::OpticalElement>(lock)) {
                 auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
-                if (optic.type == ecs::OpticType::Gel) {
-                    if (optic.tint == glm::vec3(1)) {
+                if (optic.passTint == glm::vec3(1)) {
+                    if (color * optic.reflectTint == glm::vec3(0)) {
                         return PxQueryHitType::eNONE;
-                    } else if (color * optic.tint != glm::vec3(0)) {
+                    } else {
                         return PxQueryHitType::eTOUCH;
                     }
-                } else if (optic.type == ecs::OpticType::Splitter) {
-                    if (optic.tint == glm::vec3(0)) {
-                        return PxQueryHitType::eNONE;
-                    } else if (color * (glm::vec3(1) - optic.tint.color) != glm::vec3(0)) {
-                        return PxQueryHitType::eTOUCH;
-                    }
+                } else if (color * optic.passTint == glm::vec3(0)) {
+                    return PxQueryHitType::eBLOCK;
+                } else {
+                    return PxQueryHitType::eTOUCH;
                 }
             }
             return PxQueryHitType::eBLOCK;
@@ -155,15 +153,16 @@ namespace sp {
                         if (!userData->entity.Has<ecs::OpticalElement>(lock)) continue;
                         auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
 
-                        auto &segment = segments.emplace_back();
-                        segment.start = laserStart.rayStart;
-                        segment.end = laserStart.rayStart + laserStart.rayDir * (touch.distance - startDistance);
-                        segment.color = laserStart.color;
-                        laserStart.color *= optic.tint;
-                        laserStart.rayStart = segment.end;
-                        startDistance = touch.distance;
-
-                        if (optic.type == ecs::OpticType::Splitter) {
+                        if (laserStart.color * optic.passTint != glm::vec3(0)) {
+                            auto &segment = segments.emplace_back();
+                            segment.start = laserStart.rayStart;
+                            segment.end = laserStart.rayStart + laserStart.rayDir * (touch.distance - startDistance);
+                            segment.color = laserStart.color;
+                            laserStart.color *= optic.passTint;
+                            laserStart.rayStart = segment.end;
+                            startDistance = touch.distance;
+                        }
+                        if (laserStart.color * optic.reflectTint != glm::vec3(0)) {
                             auto &reflectionStart = emitterQueue.emplace_back();
                             reflectionStart.rayDir = glm::normalize(
                                 glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(touch.normal)));
@@ -190,9 +189,8 @@ namespace sp {
                             }
                             if (hitEntity.Has<ecs::OpticalElement>(lock)) {
                                 auto &optic = hitEntity.Get<ecs::OpticalElement>(lock);
-                                if (optic.type == ecs::OpticType::Mirror || optic.type == ecs::OpticType::Splitter) {
-                                    laserStart.color *= optic.tint;
-                                    if (laserStart.color == glm::vec3(0)) continue;
+                                if (laserStart.color * optic.reflectTint != glm::vec3(0)) {
+                                    laserStart.color *= optic.reflectTint;
                                     laserStart.rayDir = glm::normalize(
                                         glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(hit.block.normal)));
                                     // offset to prevent hitting the same object again

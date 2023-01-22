@@ -80,7 +80,7 @@ namespace sp::vulkan {
         GPUScene(DeviceContext &device);
         void Flush();
         void LoadState(rg::RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock);
+            ecs::Lock<ecs::Read<ecs::Renderable, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>> lock);
         shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
@@ -112,8 +112,18 @@ namespace sp::vulkan {
         BufferPtr primitiveLists;
         BufferPtr models;
 
+        struct OpticInstance {
+            ecs::Entity ent;
+            bool pass;
+            bool reflect;
+
+            OpticInstance(ecs::Entity ent, const ecs::OpticalElement &optic);
+
+            bool operator==(const OpticInstance &) const = default;
+        };
+
         uint32 renderableCount = 0;
-        std::vector<ecs::Entity> opticEntities;
+        std::vector<OpticInstance> opticEntities;
         std::vector<glm::mat4> jointPoses;
 
         uint32 vertexCount = 0;

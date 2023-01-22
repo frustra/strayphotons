@@ -62,8 +62,8 @@
 		{
 			"name": "optic",
 			"optic": {
-				"type": "Splitter",
-				"tint": [0.5, 0.5, 0.5]
+				"pass_tint": [0.5, 0.5, 0.5],
+				"reflect_tint": [0.5, 0.5, 0.5]
 			},
 			"renderable": {
 				"model": "colorfilter",

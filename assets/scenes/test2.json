@@ -59,9 +59,7 @@
 			}
 		},
 		{
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"renderable": {
 				"model": "mirror"
 			},
@@ -72,9 +70,7 @@
 			}
 		},
 		{
-			"optic": {
-				"type": "Mirror"
-			},
+			"optic": {},
 			"renderable": {
 				"model": "mirror"
 			},

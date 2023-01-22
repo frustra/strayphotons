@@ -6,19 +6,13 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
-    enum class OpticType {
-        Gel = 0,
-        Mirror,
-        Splitter, // Tint defines reflected color
-    };
-
     struct OpticalElement {
-        OpticType type = OpticType::Gel;
-        sp::color_t tint = glm::vec3(1);
+        sp::color_t passTint = glm::vec3(0);
+        sp::color_t reflectTint = glm::vec3(1);
     };
 
     static StructMetadata MetadataOpticalElement(typeid(OpticalElement),
-        StructField::New("type", &OpticalElement::type),
-        StructField::New("tint", &OpticalElement::tint));
+        StructField::New("pass_tint", &OpticalElement::passTint),
+        StructField::New("reflect_tint", &OpticalElement::reflectTint));
     static Component<OpticalElement> ComponentOpticalElement("optic", MetadataOpticalElement);
 } // namespace ecs

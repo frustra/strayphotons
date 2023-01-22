@@ -450,9 +450,7 @@
 					"model": "round-mirror-mounted.convex1"
 				}
 			},
-			"optic": {
-				"type": "Mirror"
-			}
+			"optic": {}
 		},
 		{
 			"name": "mirrorcube1",

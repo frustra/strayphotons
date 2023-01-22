@@ -1,0 +1,204 @@
+{
+	"properties": {
+		"gravity": [0, 0, 0],
+		"gravity_func": "station_spin",
+		"gravity_transform": {
+			"translate": [0, 153, 0]
+		}
+	},
+	"entities": [
+		{
+			"name": "global:player_gravity_spin",
+			"transform": {
+				"translate": [0, 153, 0]
+			},
+			"scene_connection": {
+				"player_gravity_spin": "1"
+			}
+		},
+		{
+			"name": "zone",
+			"transform": {
+				"scale": [24, 8, 10],
+				"translate": [0, 3, 0]
+			},
+			"scene_connection": {
+				"signal-match": "zone/trigger_player_count"
+			},
+			"trigger_area": "Box",
+			"signal_output": {}
+		},
+		{
+			"name": "segment",
+			"script": {
+				"parameters": {
+					"source": "station_segment"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "global:spawn",
+			"transform": {}
+		},
+		{
+			"name": "table",
+			"transform": {},
+			"script": {
+				"parameters": {
+					"source": "table"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "mirror1",
+			"transform": {
+				"translate": [0.35, 0.9, 0.14]
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/mirror"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "splitter1",
+			"transform": {
+				"translate": [0.35, 0.9, 0.34]
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/splitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "emitter1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.14, 0.9, 0.14]
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "sensor1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.86, 0.9, 0.14]
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_sensor"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "emitter2",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.86, 0.9, 0.3]
+			},
+			"signal_bindings": {
+				"laser_color_b": "sensor1/light_value_b",
+				"laser_color_g": "sensor1/light_value_g",
+				"laser_color_r": "sensor1/light_value_r"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "gate1",
+			"transform": {
+				"translate": [0.54, 0.9, 0.3]
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_gate"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "emitter3",
+			"transform": {
+				"translate": [0.54, 0.9, 0.06]
+			},
+			"signal_output": {
+				"laser_color_g": 20,
+				"laser_color_r": 20
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "sensor_door",
+			"transform": {
+				"translate": [0.54, 0.9, 0.86]
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_sensor"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "door1",
+			"transform": {
+				"translate": [4, 0, 0]
+			},
+			"signal_bindings": {
+				"door_open": "sensor_door/light_value_r"
+			},
+			"script": {
+				"parameters": {
+					"source": "slide_door"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "big_frame_0",
+			"transform": {
+				"translate": [0.54, 0.9, 0.62]
+			},
+			"physics_joints": {
+				"target": "table.surface.6_7.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/big_frame"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.6_7.socket"
+					}
+				}
+			]
+		}
+	]
+}

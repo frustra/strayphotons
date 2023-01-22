@@ -29,6 +29,11 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_GPU_ONLY);
     }
 
+    GPUScene::OpticInstance::OpticInstance(ecs::Entity ent, const ecs::OpticalElement &optic) : ent(ent) {
+        pass = optic.passTint != glm::vec3(0);
+        reflect = optic.reflectTint != glm::vec3(0);
+    }
+
     void GPUScene::Flush() {
         workQueue.Flush();
         textures.Flush();
@@ -36,7 +41,7 @@ namespace sp::vulkan {
     }
 
     void GPUScene::LoadState(rg::RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::Name>> lock) {
+        ecs::Lock<ecs::Read<ecs::Renderable, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>> lock) {
         ZoneScoped;
         renderables.clear();
         meshes.clear();
@@ -74,7 +79,8 @@ namespace sp::vulkan {
                     glm::vec4(renderable.metallicRoughnessOverride, 0, 1));
             }
             if (ent.Has<ecs::OpticalElement>(lock)) {
-                opticEntities.emplace_back(ent);
+                auto &optic = ent.Get<ecs::OpticalElement>(lock);
+                opticEntities.emplace_back(ent, optic);
                 gpuRenderable.opticID = opticEntities.size();
                 gpuRenderable.visibilityMask |= (uint32_t)ecs::VisibilityMask::Optics;
             } else {
