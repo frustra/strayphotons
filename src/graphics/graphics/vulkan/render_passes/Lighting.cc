@@ -133,24 +133,16 @@ namespace sp::vulkan::renderer {
                 }
                 if (light.tint == glm::vec3(0)) break;
 
-                auto &opticTransform = rbLight.lightPath[i].ent.Get<ecs::TransformSnapshot>(lock);
-                auto opticNormal = opticTransform.GetForward();
+                lastOpticTransform = rbLight.lightPath[i].ent.Get<ecs::TransformSnapshot>(lock);
+                auto opticNormal = lastOpticTransform.GetForward();
                 if (reflect) {
-                    lastOpticTransform = opticTransform;
-                    if (glm::dot(opticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
-                        lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), -opticNormal) +
-                                      opticTransform.GetPosition();
-                        lightDir = glm::reflect(lightDir, -opticNormal);
-                    } else {
-                        lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
-                                      opticTransform.GetPosition();
-                        lightDir = glm::reflect(lightDir, opticNormal);
-                    }
-                } else {
-                    lastOpticTransform = opticTransform;
+                    lightOrigin = glm::reflect(lightOrigin - lastOpticTransform.GetPosition(), opticNormal) +
+                                  lastOpticTransform.GetPosition();
+                    lightDir = glm::reflect(lightDir, opticNormal);
                 }
-                // Make sure the optic is facing the incoming light
-                if (glm::dot(opticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
+
+                // Make sure the optic is facing the same direction as the emitted light
+                if (glm::dot(lightDir, opticNormal) < 0) {
                     lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
                 }
             }
