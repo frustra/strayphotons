@@ -168,9 +168,7 @@ namespace sp::scripts {
             double chargePower = chargeColor.r + chargeColor.g + chargeColor.b;
             chargeLevel += chargePower;
 
-            if (chargePower <= 0.0 || chargeLevel > maxChargeLevel) {
-                discharging = true;
-            }
+            if (chargePower <= 0.0) discharging = true;
 
             glm::dvec3 outputColor;
             if (discharging) {
