@@ -25,13 +25,29 @@ namespace sp::vulkan::renderer {
 
         glm::ivec2 shadowAtlasSize = {};
 
+        struct LightPathEntry {
+            ecs::Entity ent;
+            bool reflect;
+
+            LightPathEntry() {}
+            LightPathEntry(ecs::Entity ent, bool reflect) : ent(ent), reflect(reflect) {}
+
+            bool operator==(const LightPathEntry &) const = default;
+            bool operator==(const GPUScene::OpticInstance &other) const {
+                return ent == other.ent;
+            }
+        };
+
         struct VirtualLight {
-            InlineVector<ecs::Entity, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
+            ecs::Entity source;
+            InlineVector<LightPathEntry, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
             std::optional<uint32_t> parentIndex;
             std::optional<uint32_t> opticIndex;
 
             std::string gelName;
             const TextureIndex *gelTexture = nullptr;
+
+            bool operator==(const VirtualLight &) const;
         };
 
         robin_hood::unordered_map<string, TextureHandle> gelTextureCache;

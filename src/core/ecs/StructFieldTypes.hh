@@ -27,7 +27,6 @@ namespace ecs {
     enum class FocusLayer;
     enum class GuiTarget;
     enum class InterpolationMode;
-    enum class OpticType;
     enum class PhysicsGroup : uint16_t;
     enum class PhysicsJointType;
     struct PhysicsShape;
@@ -87,7 +86,6 @@ namespace ecs {
         FocusLayer,
         GuiTarget,
         InterpolationMode,
-        OpticType,
         PhysicsGroup,
         PhysicsJointType,
         sp::ScenePriority,

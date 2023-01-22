@@ -66,7 +66,7 @@ namespace sp::vulkan::renderer {
             if (!light.on) continue;
 
             auto &vLight = lights.emplace_back();
-            vLight.lightPath = {entity};
+            vLight.source = entity;
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
@@ -101,10 +101,8 @@ namespace sp::vulkan::renderer {
                 vLight.gelTexture = &gelTextureCache[gelName].index;
             }
 
-            data.previousIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
-                return light.lightPath.size() == vLight.lightPath.size() &&
-                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
-            }) - previousLights.begin();
+            data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
+                                 previousLights.begin();
             data.parentIndex = ~0u;
 
             if (lights.size() >= MAX_LIGHTS) break;
@@ -114,43 +112,53 @@ namespace sp::vulkan::renderer {
             if (lights.size() >= MAX_LIGHTS) break;
             auto &rbLight = readbackLights[lightIndex];
 
-            auto &sourceLight = rbLight.lightPath.front();
-            if (!sourceLight.Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
-            auto &sourceTransform = sourceLight.Get<ecs::TransformSnapshot>(lock);
-            auto light = sourceLight.Get<ecs::Light>(lock);
+            if (!rbLight.source.Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
+            auto &sourceTransform = rbLight.source.Get<ecs::TransformSnapshot>(lock);
+            auto light = rbLight.source.Get<ecs::Light>(lock);
             if (!light.on) continue;
 
             glm::vec3 lightOrigin = sourceTransform.GetPosition();
             glm::vec3 lightDir = sourceTransform.GetForward();
             ecs::Transform lastOpticTransform = sourceTransform;
 
-            size_t i = 1;
+            size_t i = 0;
             for (; i < rbLight.lightPath.size(); i++) {
-                if (!rbLight.lightPath[i].Has<ecs::TransformSnapshot, ecs::OpticalElement>(lock)) break;
-                auto &optic = rbLight.lightPath[i].Get<ecs::OpticalElement>(lock);
-                light.tint *= optic.tint;
+                if (!rbLight.lightPath[i].ent.Has<ecs::TransformSnapshot, ecs::OpticalElement>(lock)) break;
+                auto &optic = rbLight.lightPath[i].ent.Get<ecs::OpticalElement>(lock);
+                bool reflect = rbLight.lightPath[i].reflect;
+                if (reflect) {
+                    light.tint *= optic.reflectTint;
+                } else {
+                    light.tint *= optic.passTint;
+                }
                 if (light.tint == glm::vec3(0)) break;
 
-                auto &opticTransform = rbLight.lightPath[i].Get<ecs::TransformSnapshot>(lock);
+                auto &opticTransform = rbLight.lightPath[i].ent.Get<ecs::TransformSnapshot>(lock);
                 auto opticNormal = opticTransform.GetForward();
-                if (optic.type == ecs::OpticType::Gel) {
+                if (reflect) {
                     lastOpticTransform = opticTransform;
-                    // Make sure the optic is facing the incoming light
                     if (glm::dot(opticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
-                        lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
+                        lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), -opticNormal) +
+                                      opticTransform.GetPosition();
+                        lightDir = glm::reflect(lightDir, -opticNormal);
+                    } else {
+                        lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
+                                      opticTransform.GetPosition();
+                        lightDir = glm::reflect(lightDir, opticNormal);
                     }
-                } else if (optic.type == ecs::OpticType::Mirror) {
+                } else {
                     lastOpticTransform = opticTransform;
-                    lightOrigin = glm::reflect(lightOrigin - opticTransform.GetPosition(), opticNormal) +
-                                  opticTransform.GetPosition();
-                    lightDir = glm::reflect(lightDir, opticNormal);
+                }
+                // Make sure the optic is facing the incoming light
+                if (glm::dot(opticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
+                    lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
                 }
             }
             if (i < rbLight.lightPath.size()) continue;
 
             auto &vLight = lights.emplace_back(rbLight);
             vLight.parentIndex = std::find_if(lights.begin(), lights.end(), [&vLight](auto &light) {
-                return light.lightPath.size() + 1 == vLight.lightPath.size() &&
+                return light.source == vLight.source && light.lightPath.size() + 1 == vLight.lightPath.size() &&
                        std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
             }) - lights.begin();
             vLight.opticIndex = std::find(scene.opticEntities.begin(),
@@ -220,13 +228,11 @@ namespace sp::vulkan::renderer {
                 vLight.gelTexture = &gelTextureCache[light.gelName].index;
             }
 
-            data.previousIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
-                return light.lightPath.size() == vLight.lightPath.size() &&
-                       std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
-            }) - previousLights.begin();
+            data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
+                                 previousLights.begin();
 
             data.parentIndex = std::find_if(previousLights.begin(), previousLights.end(), [&vLight](auto &light) {
-                return light.lightPath.size() + 1 == vLight.lightPath.size() &&
+                return light.source == vLight.source && light.lightPath.size() + 1 == vLight.lightPath.size() &&
                        std::equal(light.lightPath.begin(), light.lightPath.end(), vLight.lightPath.begin());
             }) - previousLights.begin();
         }
@@ -506,10 +512,18 @@ namespace sp::vulkan::renderer {
                         if (readbackLights.size() >= MAX_LIGHTS) break;
                         if (vLight.opticIndex && opticIndex == *vLight.opticIndex) continue;
                         if (visibility[lightIndex][opticIndex] == 1) {
-                            auto &newLight = readbackLights.emplace_back(vLight);
-                            newLight.parentIndex = lightIndex;
-                            newLight.opticIndex = opticIndex;
-                            newLight.lightPath.emplace_back(optics[opticIndex]);
+                            if (optics[opticIndex].pass) {
+                                auto &newLight = readbackLights.emplace_back(vLight);
+                                newLight.parentIndex = lightIndex;
+                                newLight.opticIndex = opticIndex;
+                                newLight.lightPath.emplace_back(optics[opticIndex].ent, false);
+                            }
+                            if (optics[opticIndex].reflect) {
+                                auto &newLight = readbackLights.emplace_back(vLight);
+                                newLight.parentIndex = lightIndex;
+                                newLight.opticIndex = opticIndex;
+                                newLight.lightPath.emplace_back(optics[opticIndex].ent, true);
+                            }
                         }
                     }
                 }
@@ -577,5 +591,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
                 cmd.Draw(3);
             });
+    }
+
+    bool Lighting::VirtualLight::operator==(const VirtualLight &other) const {
+        return source == other.source && lightPath.size() == other.lightPath.size() &&
+               std::equal(lightPath.begin(), lightPath.end(), other.lightPath.begin());
     }
 } // namespace sp::vulkan::renderer
