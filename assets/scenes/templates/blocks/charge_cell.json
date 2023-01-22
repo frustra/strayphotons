@@ -97,7 +97,7 @@
 			},
 			"laser_line": {},
 			"laser_emitter": {
-				"start_distance": -0.009
+				"start_distance": -0.0085
 			}
 		},
 		{

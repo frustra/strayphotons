@@ -124,7 +124,7 @@ namespace sp::scripts {
             auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
 
             auto targetForward = transform.pose.GetPosition() - relativeTF.GetPosition();
-            if (targetForward == glm::vec3(0)) return;
+            if (targetForward.x == 0 && targetForward.z == 0) return;
             targetForward = glm::normalize(targetForward);
 
             auto currentUp = glm::vec3(0, 1, 0);
