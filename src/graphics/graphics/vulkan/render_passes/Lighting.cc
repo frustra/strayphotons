@@ -141,8 +141,8 @@ namespace sp::vulkan::renderer {
                     lightDir = glm::reflect(lightDir, opticNormal);
                 }
 
-                // Make sure the optic is facing the same direction as the emitted light
-                if (glm::dot(lightDir, opticNormal) < 0) {
+                // Make sure the optic is facing the light origin
+                if (glm::dot(lastOpticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
                     lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
                 }
             }

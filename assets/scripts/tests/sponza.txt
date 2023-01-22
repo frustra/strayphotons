@@ -5,9 +5,9 @@ stepphysics
 screenshot sponza-physics-init.png
 stepgraphics
 stepphysics 120
-# Update optic visibility before taking screenshot
-stepgraphics
 screenshot sponza-test-frame.png
+stepgraphics
+screenshot sponza-test-frame2.png
 stepgraphics
 r.VoxelDebug 1
 screenshot sponza-test-voxels.png
