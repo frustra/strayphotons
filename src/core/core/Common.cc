@@ -55,27 +55,32 @@ namespace sp {
     }
 
     bool is_float(string_view str) {
+        if (str.empty()) return false;
         int state = 0;
         // States:
         // 0: Start of string
         // 1: After negative sign
         // 2: After first digit
         // 3: After decimal place
-        return !str.empty() && std::all_of(str.begin(), str.end(), [&](char ch) {
-            if (ch == '-') {
-                if (state != 0) return false;
-                state = 1;
-                return true;
-            } else if (std::isdigit(ch)) {
-                if (state < 2) state = 2;
-                return true;
-            } else if (ch == '.') {
-                if (state == 3) return false;
-                state = 3;
-                return true;
-            }
+        if (!std::all_of(str.begin(), str.end(), [&](char ch) {
+                if (ch == '-') {
+                    if (state != 0) return false;
+                    state = 1;
+                    return true;
+                } else if (std::isdigit(ch)) {
+                    if (state < 2) state = 2;
+                    return true;
+                } else if (ch == '.') {
+                    if (state == 3) return false;
+                    state = 3;
+                    return true;
+                }
+                return false;
+            })) {
             return false;
-        }) && state > 1;
+        }
+        if (state == 3 && str.length() == 1) return false;
+        return state > 1;
     }
 
     namespace boost_replacements {

@@ -84,7 +84,7 @@ namespace SignalBindingTests {
             AssertEqual(expr1.expr, "player/device2_key", "Expected expression to be set");
             AssertEqual(expr1.nodes.size(), 1u, "Expected a single expression node");
             AssertEqual(expr1.rootIndex, 0, "Expected expression root node to be 0");
-            AssertEqual(expr1.nodeDebug[0], "player:player/device2_key", "Unexpected expression node");
+            AssertEqual(expr1.nodeStrings[0], "player:player/device2_key", "Unexpected expression node");
             Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr1.nodes[0]),
                 "Expected expression node to be signal");
 
@@ -92,9 +92,9 @@ namespace SignalBindingTests {
             AssertEqual(expr2.expr, "player/device2_key + player/device1_button", "Expected expression to be set");
             AssertEqual(expr2.nodes.size(), 3u, "Expected 3 expression nodes");
             AssertEqual(expr2.rootIndex, 2, "Expected expression root node to be 2");
-            AssertEqual(expr2.nodeDebug[0], "player:player/device2_key", "Unexpected expression node");
-            AssertEqual(expr2.nodeDebug[1], "player:player/device1_button", "Unexpected expression node");
-            AssertEqual(expr2.nodeDebug[2],
+            AssertEqual(expr2.nodeStrings[0], "player:player/device2_key", "Unexpected expression node");
+            AssertEqual(expr2.nodeStrings[1], "player:player/device1_button", "Unexpected expression node");
+            AssertEqual(expr2.nodeStrings[2],
                 "player:player/device2_key + player:player/device1_button",
                 "Unexpected expression node");
             Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[0]),
@@ -108,7 +108,7 @@ namespace SignalBindingTests {
             AssertEqual(expr4.expr, "3 +4 *2 /(1 - -5)+1 /0");
             AssertEqual(expr4.nodes.size(), 13u, "Expected 13 expression nodes");
             AssertEqual(expr4.rootIndex, 12, "Expected expression root node to be 12");
-            AssertEqual(expr4.nodeDebug[expr4.rootIndex],
+            AssertEqual(expr4.nodeStrings[expr4.rootIndex],
                 "3 + 4 * 2 / ( 1 - -5 ) + 1 / 0",
                 "Unexpected expression node");
 
@@ -116,7 +116,7 @@ namespace SignalBindingTests {
             AssertEqual(expr5.expr, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
             AssertEqual(expr5.nodes.size(), 13u, "Expected 13 expression nodes");
             AssertEqual(expr5.rootIndex, 12, "Expected expression root node to be 12");
-            AssertEqual(expr5.nodeDebug[expr5.rootIndex],
+            AssertEqual(expr5.nodeStrings[expr5.rootIndex],
                 "cos( max( 2 , 3 ) / 3 * 3.14159265359 ) * -1 ? 42 : 0.1",
                 "Unexpected expression node");
 
@@ -124,7 +124,7 @@ namespace SignalBindingTests {
             AssertEqual(expr6.expr, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
             AssertEqual(expr6.nodes.size(), 15u, "Expected 15 expression nodes");
             AssertEqual(expr6.rootIndex, 14, "Expected expression root node to be 14");
-            AssertEqual(expr6.nodeDebug[expr6.rootIndex],
+            AssertEqual(expr6.nodeStrings[expr6.rootIndex],
                 "( 0.2 + 0.3 && 2 == 1 * 2 ) + 0.6 == 2 - 0.4",
                 "Unexpected expression node");
 
@@ -132,7 +132,7 @@ namespace SignalBindingTests {
             AssertEqual(expr7.expr, "! 10 + 1 || !player/device2_key != !0");
             AssertEqual(expr7.nodes.size(), 8u, "Expected 8 expression nodes");
             AssertEqual(expr7.rootIndex, 7, "Expected expression root node to be 7");
-            AssertEqual(expr7.nodeDebug[expr7.rootIndex],
+            AssertEqual(expr7.nodeStrings[expr7.rootIndex],
                 "!10 + 1 || !player:player/device2_key != !0",
                 "Unexpected expression node");
 
@@ -141,7 +141,7 @@ namespace SignalBindingTests {
             AssertEqual(expr3.expr, "foo:unknown/device1_button", "Expected expression to be set");
             AssertEqual(expr3.nodes.size(), 1u, "Expected a single expression node");
             AssertEqual(expr3.rootIndex, 0, "Expected expression root node to be 0");
-            AssertEqual(expr3.nodeDebug[0], "foo:unknown/device1_button", "Unexpected expression node");
+            AssertEqual(expr3.nodeStrings[0], "foo:unknown/device1_button", "Unexpected expression node");
             Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
                 "Expected expression node to be signal");
         }

@@ -259,33 +259,19 @@
 		{
 			"name": "laser_emitter_3",
 			"transform": {
-				"rotate": [90, -1.08449e-07, 1, -4.05525e-10],
-				"scale": [1.00023, 0.999981, 1.00026],
-				"translate": [0.14, 0.9, 0.78]
-			},
-			"physics_joints": {
-				"local_offset": {
-					"rotate": [90, 0, -1, 0]
-				},
-				"target": "table.surface.1_9.socket"
+				"rotate": [179.327, 9.47373e-06, -1, -1.35295e-06],
+				"scale": [1.0002, 0.99998, 1.00023],
+				"translate": [0.140233, 0.9, 0.779579]
 			},
 			"signal_output": {
 				"laser_color_g": 5
 			},
-			"script": [
-				{
-					"parameters": {
-						"source": "blocks/laser_emitter"
-					},
-					"prefab": "template"
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
 				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.1_9.socket"
-					}
-				}
-			]
+				"prefab": "template"
+			}
 		},
 		{
 			"name": "laser_gate_0",

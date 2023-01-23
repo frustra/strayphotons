@@ -234,8 +234,18 @@ namespace sp {
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::SignalExpression &value) {
-        // TODO: figure out how to re-parse the expression
-        return ImGui::InputText(name.c_str(), &value.expr);
+        bool borderEnable = !value && !value.expr.empty();
+        if (borderEnable) {
+            ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
+        }
+        bool changed = ImGui::InputText(name.c_str(), &value.expr);
+        if (changed) value.Parse();
+        if (borderEnable) {
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+        }
+        return changed;
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::EntityRef &value) {
@@ -379,10 +389,10 @@ namespace sp {
                             ImGui::TableHeadersRow();
 
                             for (auto &field : fields) {
-                                if (field.name) {
+                                if (!field.name.empty()) {
                                     ImGui::TableNextRow();
                                     ImGui::TableSetColumnIndex(0);
-                                    ImGui::Text("%s", field.name);
+                                    ImGui::Text("%s", field.name.c_str());
                                     ImGui::TableSetColumnIndex(1);
                                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
                                         using T = std::remove_pointer_t<decltype(typePtr)>;
@@ -438,7 +448,7 @@ namespace sp {
         const ecs::ComponentBase &comp,
         const void *component) {
         auto value = *field.Access<T>(component);
-        fieldName = field.name ? field.name : "";
+        fieldName = field.name;
         fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
         std::string elementName = fieldName + fieldId;
 
@@ -541,7 +551,7 @@ namespace sp {
 
                     picojson::value tmp;
                     ecs::EntityScope scope(targetScene.data->name, "");
-                    auto changed = json::SaveIfChanged(scope, tmp, nullptr, liveComp, compareComp);
+                    auto changed = json::SaveIfChanged(scope, tmp, "", liveComp, compareComp);
                     if (changed) {
                         if (!comp.LoadEntity(staging, scope, stagingId, tmp)) {
                             Errorf("Failed to save %s component on entity: %s",

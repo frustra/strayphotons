@@ -3,6 +3,7 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/StructFieldTypes.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
@@ -210,17 +211,76 @@ namespace sp::scripts {
         StructField::New("charge_signal_b", &ChargeCell::chargeSignalBlue));
     InternalScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
 
-    struct EmissiveFromSignal {
-        SignalExpression signalExpr;
+    struct ComponentFromSignal {
+        robin_hood::unordered_map<std::string, SignalExpression> mapping;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<Renderable>(lock)) return;
+            for (auto &[fieldPath, signalExpr] : mapping) {
+                size_t delimiter = fieldPath.find('#');
+                if (delimiter == std::string::npos) continue;
+                auto componentName = fieldPath.substr(0, delimiter);
+                auto fieldName = fieldPath.substr(delimiter + 1);
+                auto comp = LookupComponent(componentName);
+                if (!comp) {
+                    Errorf("ComponentFromSignal unknown component: %s", componentName);
+                    continue;
+                }
+                if (!comp->HasComponent(lock, ent)) continue;
+                auto &metadata = comp->metadata;
 
-            auto signalValue = signalExpr.Evaluate(lock);
-            ent.Get<Renderable>(lock).emissiveScale = signalValue;
+                auto signalValue = signalExpr.Evaluate(lock);
+
+                void *compPtr = comp->Access(lock, ent);
+                Assertf(compPtr, "ComponentFromSignal::OnTick access returned null data: %s", ecs::ToString(lock, ent));
+                for (auto &field : metadata.fields) {
+                    if (starts_with(fieldName, field.name)) {
+                        std::string_view subField;
+                        if (fieldName.length() > field.name.length()) {
+                            if (fieldName[field.name.length()] != '.') continue;
+                            subField = std::string_view(fieldName).substr(field.name.length() + 1);
+                        }
+                        ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                            using T = std::remove_pointer_t<decltype(typePtr)>;
+                            if constexpr (is_glm_vec<T>::value || std::is_same_v<T, color_t> ||
+                                          std::is_same_v<T, color_alpha_t>) {
+                                if (subField.empty()) {
+                                    auto &vec = *field.Access<T>(compPtr);
+                                    for (size_t i = 0; i < T::length(); i++) {
+                                        vec[i] = signalValue;
+                                    }
+                                } else if (subField.length() == 1) {
+                                    static const std::array<std::string, 3> indexChars = {"xyzw", "rgba", "0123"};
+                                    bool found = false;
+                                    for (auto &chars : indexChars) {
+                                        auto index = std::find(chars.begin(), chars.end(), subField[0]) - chars.begin();
+                                        if (index >= 0 && (size_t)index < T::length()) {
+                                            (*field.Access<T>(compPtr))[index] = signalValue;
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        Errorf("Invalid glm::vec subfield: %s", subField);
+                                    }
+                                } else {
+                                    Errorf("Invalid glm::vec subfield: %s", subField);
+                                }
+                            } else if constexpr (std::is_convertible_v<double, T>) {
+                                *field.Access<T>(compPtr) = signalValue;
+                            } else {
+                                Errorf("ComponentFromSignal '%s#%s' unsupported type conversion: double to %s",
+                                    componentName,
+                                    fieldName,
+                                    typeid(T).name());
+                            }
+                        });
+                        break;
+                    }
+                }
+            }
         }
     };
-    StructMetadata MetadataEmissiveFromSignal(typeid(EmissiveFromSignal),
-        StructField::New("signal_expr", &EmissiveFromSignal::signalExpr));
-    InternalScript<EmissiveFromSignal> emissiveFromSignal("emissive_from_signal", MetadataEmissiveFromSignal);
+    StructMetadata MetadataComponentFromSignal(typeid(ComponentFromSignal),
+        StructField::New(&ComponentFromSignal::mapping));
+    InternalScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
 } // namespace sp::scripts
