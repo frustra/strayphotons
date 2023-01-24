@@ -182,7 +182,7 @@ namespace sp {
                                 glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(touch.normal)));
                             // offset to prevent hitting the same object again
                             reflectionStart.rayStart = laserStart.rayStart + reflectionStart.rayDir * bounceOffset;
-                            reflectionStart.color = incomingColor;
+                            reflectionStart.color = incomingColor * optic.reflectTint;
                             reflectionStart.depth = laserStart.depth;
                         }
                     }
