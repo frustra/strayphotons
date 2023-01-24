@@ -245,7 +245,7 @@ namespace sp::scripts {
                                           std::is_same_v<T, color_alpha_t>) {
                                 if (subField.empty()) {
                                     auto &vec = *field.Access<T>(compPtr);
-                                    for (size_t i = 0; i < T::length(); i++) {
+                                    for (int i = 0; i < T::length(); i++) {
                                         vec[i] = signalValue;
                                     }
                                 } else if (subField.length() == 1) {
@@ -253,7 +253,7 @@ namespace sp::scripts {
                                     bool found = false;
                                     for (auto &chars : indexChars) {
                                         auto index = std::find(chars.begin(), chars.end(), subField[0]) - chars.begin();
-                                        if (index >= 0 && (size_t)index < T::length()) {
+                                        if (index >= 0 && index < T::length()) {
                                             (*field.Access<T>(compPtr))[index] = signalValue;
                                             found = true;
                                             break;

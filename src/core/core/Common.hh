@@ -140,7 +140,7 @@ namespace sp {
             return color == other.color;
         }
 
-        static size_t length() {
+        static int length() {
             return 3;
         }
     };
@@ -168,7 +168,7 @@ namespace sp {
             return color == other.color;
         }
 
-        static size_t length() {
+        static int length() {
             return 4;
         }
     };
