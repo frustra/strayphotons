@@ -9,10 +9,12 @@ namespace ecs {
     struct OpticalElement {
         sp::color_t passTint = glm::vec3(0);
         sp::color_t reflectTint = glm::vec3(1);
+        bool singleDirection = false;
     };
 
     static StructMetadata MetadataOpticalElement(typeid(OpticalElement),
         StructField::New("pass_tint", &OpticalElement::passTint),
-        StructField::New("reflect_tint", &OpticalElement::reflectTint));
+        StructField::New("reflect_tint", &OpticalElement::reflectTint),
+        StructField::New("single_direction", &OpticalElement::singleDirection));
     static Component<OpticalElement> ComponentOpticalElement("optic", MetadataOpticalElement);
 } // namespace ecs

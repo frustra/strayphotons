@@ -61,20 +61,20 @@ namespace ecs {
         int values[256] = {0};
     };
 
-    std::string joinTokens(const SignalExpression &expr, size_t startToken, size_t endToken) {
-        if (endToken >= expr.tokens.size()) endToken = expr.tokens.size() - 1;
+    std::string SignalExpression::joinTokens(size_t startToken, size_t endToken) const {
+        if (endToken >= tokens.size()) endToken = tokens.size() - 1;
         if (endToken < startToken) return "";
 
-        auto startPtr = expr.tokens[startToken].data();
-        auto endPtr = expr.tokens[endToken].data() + expr.tokens[endToken].size();
-        Assertf(endPtr >= startPtr && (size_t)(endPtr - startPtr) <= expr.expr.size(),
+        auto startPtr = tokens[startToken].data();
+        auto endPtr = tokens[endToken].data() + tokens[endToken].size();
+        Assertf(endPtr >= startPtr && (size_t)(endPtr - startPtr) <= expr.size(),
             "Token string views not in same buffer");
         return std::string(startPtr, (size_t)(endPtr - startPtr));
     }
 
-    int parseNode(SignalExpression &expr, const Name &scope, size_t &tokenIndex, uint8_t precedence = '\x0') {
-        if (tokenIndex >= expr.tokens.size()) {
-            Errorf("Failed to parse signal expression, unexpected end of expression: %s", expr.expr);
+    int SignalExpression::parseNode(size_t &tokenIndex, uint8_t precedence) {
+        if (tokenIndex >= tokens.size()) {
+            Errorf("Failed to parse signal expression, unexpected end of expression: %s", expr);
             return -1;
         }
         int index = -1;
@@ -82,222 +82,222 @@ namespace ecs {
         constexpr auto precedenceLookup = PrecedenceTable();
 
         size_t nodeStart = tokenIndex;
-        while (tokenIndex < expr.tokens.size()) {
-            auto &token = expr.tokens[tokenIndex];
+        while (tokenIndex < tokens.size()) {
+            auto &token = tokens[tokenIndex];
             if (index >= 0 && token.size() >= 1 && precedenceLookup.Compare(precedence, token[0])) return index;
 
             if (token == "?") {
                 if (index < 0) {
                     Errorf("Failed to parse signal expression, unexpected conditional '?': %s",
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
                 int ifIndex = index;
-                size_t startToken = expr.nodes[index].startToken;
+                size_t startToken = nodes[index].startToken;
 
                 tokenIndex++;
-                int trueIndex = parseNode(expr, scope, tokenIndex, ':');
+                int trueIndex = parseNode(tokenIndex, ':');
                 if (trueIndex < 0) {
                     Errorf("Failed to parse signal expression, invalid true expression for conditional: %s",
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
-                } else if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != ":") {
+                } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ":") {
                     Errorf("Failed to parse signal expression, conditional missing ':': %s",
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
                 tokenIndex++;
-                int falseIndex = parseNode(expr, scope, tokenIndex, precedence);
+                int falseIndex = parseNode(tokenIndex, precedence);
                 if (falseIndex < 0) {
                     Errorf("Failed to parse signal expression, invalid false expression for conditional: %s",
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
-                index = expr.nodes.size();
-                expr.nodes.emplace_back(SignalExpression::DeciderOperation{ifIndex, trueIndex, falseIndex},
+                index = nodes.size();
+                nodes.emplace_back(SignalExpression::DeciderOperation{ifIndex, trueIndex, falseIndex},
                     startToken,
                     tokenIndex);
-                expr.nodeDebug.emplace_back(
-                    expr.nodeDebug[ifIndex] + " ? " + expr.nodeDebug[trueIndex] + " : " + expr.nodeDebug[falseIndex]);
+                nodeStrings.emplace_back(
+                    nodeStrings[ifIndex] + " ? " + nodeStrings[trueIndex] + " : " + nodeStrings[falseIndex]);
             } else if (token == "(") {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected expression '(': %s",
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
                 size_t startToken = tokenIndex;
 
                 tokenIndex++;
-                index = parseNode(expr, scope, tokenIndex, ')');
+                index = parseNode(tokenIndex, ')');
                 if (index < 0) {
                     // Errorf("Failed to parse signal expression, invalid expression: %s",
-                    //     joinTokens(expr, startToken, tokenIndex));
+                    //     joinTokens(startToken, tokenIndex));
                     return -1;
-                } else if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != ")") {
+                } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ")") {
                     Errorf("Failed to parse signal expression, expression missing ')': %s",
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
                 tokenIndex++;
-                expr.nodes[index].startToken = startToken;
-                expr.nodes[index].startToken = tokenIndex;
-                expr.nodeDebug[index] = "( " + expr.nodeDebug[index] + " )";
+                nodes[index].startToken = startToken;
+                nodes[index].startToken = tokenIndex;
+                nodeStrings[index] = "( " + nodeStrings[index] + " )";
             } else if (index < 0 && (token == "-" || token == "!")) {
                 size_t startToken = tokenIndex;
 
                 tokenIndex++;
-                int inputIndex = parseNode(expr, scope, tokenIndex, '_');
+                int inputIndex = parseNode(tokenIndex, '_');
                 if (inputIndex < 0) {
                     // Errorf("Failed to parse signal expression, invalid expression: %s",
-                    //     joinTokens(expr, startToken, tokenIndex));
+                    //     joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
-                auto *constantNode = std::get_if<SignalExpression::ConstantNode>(&expr.nodes[inputIndex]);
+                auto *constantNode = std::get_if<SignalExpression::ConstantNode>(&nodes[inputIndex]);
                 if (token == "-") {
                     if (constantNode) {
                         constantNode->value *= -1;
                         index = inputIndex;
-                        expr.nodes[index].startToken = startToken;
-                        expr.nodeDebug[index] = "-" + expr.nodeDebug[index];
+                        nodes[index].startToken = startToken;
+                        nodeStrings[index] = "-" + nodeStrings[index];
                     } else {
-                        index = expr.nodes.size();
-                        expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
-                                                    [](double input) {
-                                                        return -input;
-                                                    }},
+                        index = nodes.size();
+                        nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                               [](double input) {
+                                                   return -input;
+                                               }},
                             startToken,
                             tokenIndex);
-                        expr.nodeDebug.emplace_back("-" + expr.nodeDebug[inputIndex]);
+                        nodeStrings.emplace_back("-" + nodeStrings[inputIndex]);
                     }
                 } else if (token == "!") {
                     if (constantNode) {
                         constantNode->value = constantNode->value >= 0.5 ? 0.0 : 1.0;
                         index = inputIndex;
-                        expr.nodes[index].startToken = startToken;
-                        expr.nodeDebug[index] = "!" + expr.nodeDebug[index];
+                        nodes[index].startToken = startToken;
+                        nodeStrings[index] = "!" + nodeStrings[index];
                     } else {
-                        index = expr.nodes.size();
-                        expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
-                                                    [](double input) {
-                                                        return input >= 0.5 ? 0.0 : 1.0;
-                                                    }},
+                        index = nodes.size();
+                        nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                               [](double input) {
+                                                   return input >= 0.5 ? 0.0 : 1.0;
+                                               }},
                             startToken,
                             tokenIndex);
-                        expr.nodeDebug.emplace_back("!" + expr.nodeDebug[inputIndex]);
+                        nodeStrings.emplace_back("!" + nodeStrings[inputIndex]);
                     }
                 }
             } else if (token == "sin" || token == "cos" || token == "tan") {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
                 size_t startToken = tokenIndex;
 
                 tokenIndex++;
-                if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != "(") {
+                if (tokenIndex >= tokens.size() || tokens[tokenIndex] != "(") {
                     Errorf("Failed to parse signal expression, '%s' function missing open brace: %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
                 tokenIndex++;
-                int inputIndex = parseNode(expr, scope, tokenIndex, ')');
+                int inputIndex = parseNode(tokenIndex, ')');
                 if (inputIndex < 0) {
                     Errorf("Failed to parse signal expression, invalid argument to function '%s': %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
-                } else if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != ")") {
+                } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ")") {
                     Errorf("Failed to parse signal expression, '%s' function missing close brace: %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
                 tokenIndex++;
 
-                index = expr.nodes.size();
+                index = nodes.size();
                 if (token == "sin") {
-                    expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
-                                                [](double input) {
-                                                    return std::sin(input);
-                                                }},
+                    nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                           [](double input) {
+                                               return std::sin(input);
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "cos") {
-                    expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
-                                                [](double input) {
-                                                    return std::cos(input);
-                                                }},
+                    nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                           [](double input) {
+                                               return std::cos(input);
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "tan") {
-                    expr.nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
-                                                [](double input) {
-                                                    return std::tan(input);
-                                                }},
+                    nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                           [](double input) {
+                                               return std::tan(input);
+                                           }},
                         startToken,
                         tokenIndex);
                 } else {
                     Abortf("Invalid function token: %s", std::string(token));
                 }
 
-                expr.nodeDebug.emplace_back(std::string(token) + "( " + expr.nodeDebug[inputIndex] + " )");
+                nodeStrings.emplace_back(std::string(token) + "( " + nodeStrings[inputIndex] + " )");
             } else if (token == "if_focused" || token == "min" || token == "max") {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
                 size_t startToken = tokenIndex;
 
                 tokenIndex++;
-                if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != "(") {
+                if (tokenIndex >= tokens.size() || tokens[tokenIndex] != "(") {
                     Errorf("Failed to parse signal expression, '%s' function missing open brace: %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
                 tokenIndex++;
-                int aIndex = parseNode(expr, scope, tokenIndex, ',');
+                int aIndex = parseNode(tokenIndex, ',');
                 if (aIndex < 0) {
                     Errorf("Failed to parse signal expression, invalid 1st argument to function: '%s': %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
-                } else if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != ",") {
+                } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ",") {
                     Errorf("Failed to parse signal expression, '%s' function expects 2 arguments: %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
                 tokenIndex++;
-                int bIndex = parseNode(expr, scope, tokenIndex, ')');
+                int bIndex = parseNode(tokenIndex, ')');
                 if (bIndex < 0) {
                     Errorf("Failed to parse signal expression, invalid 2nd argument to function '%s': %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
-                } else if (tokenIndex >= expr.tokens.size() || expr.tokens[tokenIndex] != ")") {
+                } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ")") {
                     Errorf("Failed to parse signal expression, '%s' function missing close brace: %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
                 tokenIndex++;
 
-                index = expr.nodes.size();
+                index = nodes.size();
                 if (token == "if_focused") {
-                    auto focusStr = expr.tokens[expr.nodes[aIndex].startToken];
-                    expr.nodeDebug[aIndex] = focusStr;
+                    auto focusStr = tokens[nodes[aIndex].startToken];
+                    nodeStrings[aIndex] = focusStr;
                     FocusLayer focus = FocusLayer::Always;
                     if (!focusStr.empty()) {
                         auto opt = magic_enum::enum_cast<FocusLayer>(focusStr);
@@ -309,36 +309,36 @@ namespace ecs {
                     } else {
                         Errorf("Blank focus layer specified for if_focused: %s", std::string(focusStr));
                     }
-                    expr.nodes.emplace_back(SignalExpression::FocusCondition{focus, bIndex}, startToken, tokenIndex);
+                    nodes.emplace_back(SignalExpression::FocusCondition{focus, bIndex}, startToken, tokenIndex);
                 } else if (token == "min") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return std::min(a, b);
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return std::min(a, b);
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "max") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return std::max(a, b);
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return std::max(a, b);
+                                           }},
                         startToken,
                         tokenIndex);
                 } else {
                     Abortf("Invalid function token: %s", std::string(token));
                 }
 
-                expr.nodeDebug.emplace_back(
-                    std::string(token) + "( " + expr.nodeDebug[aIndex] + " , " + expr.nodeDebug[bIndex] + " )");
+                nodeStrings.emplace_back(
+                    std::string(token) + "( " + nodeStrings[aIndex] + " , " + nodeStrings[bIndex] + " )");
             } else if (token == "+" || token == "-" || token == "*" || token == "/" || token == "&&" || token == "||" ||
                        token == ">" || token == ">=" || token == "<" || token == "<=" || token == "==" ||
                        token == "!=") {
                 if (index < 0) {
                     Errorf("Failed to parse signal expression, unexpected operator '%s': %s",
                         std::string(token),
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
 
@@ -346,161 +346,155 @@ namespace ecs {
                 int aIndex = index;
 
                 tokenIndex++;
-                int bIndex = parseNode(expr, scope, tokenIndex, token[0]);
+                int bIndex = parseNode(tokenIndex, token[0]);
                 if (bIndex < 0) {
                     Errorf("Failed to parse signal expression, invalid 2nd argument to operator '%s': %s",
                         std::string(token),
-                        joinTokens(expr, startToken, tokenIndex));
+                        joinTokens(startToken, tokenIndex));
                     return -1;
                 }
 
-                index = expr.nodes.size();
+                index = nodes.size();
                 if (token == "+") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a + b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a + b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "-") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a - b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a - b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "*") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a * b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a * b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "/") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a / b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a / b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "&&") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a >= 0.5 && b >= 0.5;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a >= 0.5 && b >= 0.5;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "||") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a >= 0.5 || b >= 0.5;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a >= 0.5 || b >= 0.5;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == ">") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a > b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a > b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == ">=") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a >= b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a >= b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "<") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a < b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a < b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "<=") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a <= b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a <= b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "==") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a == b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a == b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else if (token == "!=") {
-                    expr.nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                                bIndex,
-                                                [](double a, double b) {
-                                                    return a != b;
-                                                }},
+                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
+                                           bIndex,
+                                           [](double a, double b) {
+                                               return a != b;
+                                           }},
                         startToken,
                         tokenIndex);
                 } else {
                     Abortf("Invalid operator token: %s", std::string(token));
                 }
 
-                expr.nodeDebug.emplace_back(
-                    expr.nodeDebug[aIndex] + " " + std::string(token) + " " + expr.nodeDebug[bIndex]);
+                nodeStrings.emplace_back(nodeStrings[aIndex] + " " + std::string(token) + " " + nodeStrings[bIndex]);
             } else if (sp::is_float(token)) {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected constant '%s': %s",
                         std::string(token),
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
 
-                index = expr.nodes.size();
-                expr.nodes.emplace_back(SignalExpression::ConstantNode{std::stod(std::string(token))},
+                index = nodes.size();
+                nodes.emplace_back(SignalExpression::ConstantNode{std::stod(std::string(token))},
                     tokenIndex,
                     tokenIndex + 1);
-                expr.nodeDebug.emplace_back(token);
+                nodeStrings.emplace_back(token);
                 tokenIndex++;
             } else if (token == ")" || token == "," || token == ":") {
                 Errorf("Failed to parse signal expression, unexpected token '%s': %s",
                     std::string(token),
-                    joinTokens(expr, nodeStart, tokenIndex));
+                    joinTokens(nodeStart, tokenIndex));
                 return -1;
             } else {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected signal '%s': %s",
                         std::string(token),
-                        joinTokens(expr, nodeStart, tokenIndex));
+                        joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
 
-                auto [entityName, signalName] = ParseSignalString(token, scope);
-                index = expr.nodes.size();
-                expr.nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
-                    tokenIndex,
-                    tokenIndex + 1);
-                expr.nodeDebug.emplace_back(entityName.String() + "/" + signalName);
+                auto [entityName, signalName] = ParseSignalString(token, this->scope);
+                index = nodes.size();
+                nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName}, tokenIndex, tokenIndex + 1);
+                nodeStrings.emplace_back(entityName.String() + "/" + signalName);
                 tokenIndex++;
             }
         }
-        Assertf(tokenIndex >= expr.tokens.size(),
-            "parseNode failed to parse all tokens: %u<%u",
-            tokenIndex,
-            expr.tokens.size());
+        Assertf(tokenIndex >= tokens.size(), "parseNode failed to parse all tokens: %u<%u", tokenIndex, tokens.size());
         if (index < 0) {
-            Errorf("Failed to parse signal expression, blank expression: %s", joinTokens(expr, nodeStart, tokenIndex));
+            Errorf("Failed to parse signal expression, blank expression: %s", joinTokens(nodeStart, tokenIndex));
         } else if (precedence == ')' || precedence == ',' || precedence == ':') {
-            Errorf("Failed to parse signal expression, missing end token '%c': %s", precedence, expr.expr);
+            Errorf("Failed to parse signal expression, missing end token '%c': %s", precedence, expr);
         }
         return index;
     }
@@ -509,12 +503,17 @@ namespace ecs {
         : scope(entity.Name().scene, ""), expr(entity.Name().String() + "/" + signalName) {
         tokens.emplace_back(expr);
         nodes.emplace_back(SignalNode{entity, signalName}, 0, 0);
-        nodeDebug.emplace_back(expr);
+        nodeStrings.emplace_back(expr);
     }
 
     SignalExpression::SignalExpression(std::string_view expr, const Name &scope) : scope(scope), expr(expr) {
+        Parse();
+    }
+
+    bool SignalExpression::Parse() {
         // Tokenize the expression before parsing
         std::string_view exprView = this->expr;
+        tokens.clear();
         size_t tokenStart = 0;
         for (size_t tokenEnd = 0; tokenEnd < exprView.size(); tokenEnd++) {
             const char &ch = exprView[tokenEnd];
@@ -543,17 +542,20 @@ namespace ecs {
         //     Debugf("  %s", std::string(token));
         // }
 
+        nodes.clear();
+        nodeStrings.clear();
         size_t tokenIndex = 0;
-        rootIndex = parseNode(*this, scope, tokenIndex);
+        rootIndex = parseNode(tokenIndex);
         if (rootIndex < 0) {
-            Errorf("Failed to parse expression: %s", this->expr);
-        } else {
-            Assertf(tokenIndex == tokens.size(), "Failed to parse signal expression, incomplete parse: %s", exprView);
+            Errorf("Failed to parse expression: %s", expr);
+            return false;
         }
+        Assertf(tokenIndex == tokens.size(), "Failed to parse signal expression, incomplete parse: %s", exprView);
+        return true;
     }
 
-    double evaluateNode(const ReadSignalsLock &lock, size_t depth, const SignalExpression &expr, int nodeIndex) {
-        if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
+    double SignalExpression::evaluateNode(const ReadSignalsLock &lock, size_t depth, int nodeIndex) const {
+        if (nodeIndex < 0 || (size_t)nodeIndex >= nodes.size()) return 0.0f;
 
         double result = std::visit(
             [&](auto &&node) {
@@ -566,40 +568,39 @@ namespace ecs {
                     if (!lock.Has<FocusLock>() || !lock.Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
                         return 0.0;
                     } else {
-                        return evaluateNode(lock, depth, expr, node.inputIndex);
+                        return evaluateNode(lock, depth, node.inputIndex);
                     }
                 } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
-                    return node.evaluate(evaluateNode(lock, depth, expr, node.inputIndex));
+                    return node.evaluate(evaluateNode(lock, depth, node.inputIndex));
                 } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
-                    return node.evaluate(evaluateNode(lock, depth, expr, node.inputIndexA),
-                        evaluateNode(lock, depth, expr, node.inputIndexB));
+                    return node.evaluate(evaluateNode(lock, depth, node.inputIndexA),
+                        evaluateNode(lock, depth, node.inputIndexB));
                 } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
-                    double ifValue = evaluateNode(lock, depth, expr, node.ifIndex);
+                    double ifValue = evaluateNode(lock, depth, node.ifIndex);
                     if (ifValue >= 0.5) {
-                        return evaluateNode(lock, depth, expr, node.trueIndex);
+                        return evaluateNode(lock, depth, node.trueIndex);
                     } else {
-                        return evaluateNode(lock, depth, expr, node.falseIndex);
+                        return evaluateNode(lock, depth, node.falseIndex);
                     }
                 } else {
                     Abortf("Invalid signal operation: %s", typeid(T).name());
                 }
             },
-            (SignalExpression::NodeVariant)expr.nodes[nodeIndex]);
+            (SignalExpression::NodeVariant)nodes[nodeIndex]);
 
-        // if (!std::holds_alternative<SignalExpression::ConstantNode>(expr.nodes[nodeIndex])) {
-        //     Debugf("     '%s' = %f", expr.nodeDebug[nodeIndex], result);
+        // if (!std::holds_alternative<SignalExpression::ConstantNode>(nodes[nodeIndex])) {
+        //     Debugf("     '%s' = %f", nodeStrings[nodeIndex], result);
         // }
         if (!std::isfinite(result)) {
-            Warnf("Signal expression evaluation error: %s = %f", expr.nodeDebug[nodeIndex], result);
+            Warnf("Signal expression evaluation error: %s = %f", nodeStrings[nodeIndex], result);
             return 0.0;
         }
         return result;
     };
 
     double SignalExpression::Evaluate(ReadSignalsLock lock, size_t depth) const {
-        if (nodes.empty() || rootIndex < 0) return 0.0f;
         // Debugf("Eval '%s'", expr);
-        return evaluateNode(lock, depth, *this, rootIndex);
+        return evaluateNode(lock, depth, rootIndex);
     }
 
     template<>
@@ -626,9 +627,9 @@ namespace ecs {
             //     src.expr,
             //     src.scope.String(),
             //     scope.String());
-            DebugAssertf(src.rootIndex >= 0 && (size_t)src.rootIndex < src.nodeDebug.size(),
+            DebugAssertf(src.rootIndex >= 0 && (size_t)src.rootIndex < src.nodeStrings.size(),
                 "Saving invalid signal expression");
-            dst = picojson::value(src.nodeDebug[src.rootIndex]);
+            dst = picojson::value(src.nodeStrings[src.rootIndex]);
         } else {
             dst = picojson::value(src.expr);
         }

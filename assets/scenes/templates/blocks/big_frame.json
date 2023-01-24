@@ -116,7 +116,7 @@
 				"reflect_tint": [0.5, 1, 1]
 			},
 			"renderable": {
-				"model": "occluder",
+				"model": "colorfilter",
 				"color_override": [0, 0, 0, 1],
 				"metallic_roughness_override": [0.0, 1.0]
 			},

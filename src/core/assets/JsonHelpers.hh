@@ -191,7 +191,7 @@ namespace sp::json {
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const T &src) {
         if constexpr (std::is_enum<T>()) {
             dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
-        } else if constexpr (std::is_convertible_v<T, double>) {
+        } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             dst = picojson::value((double)src);
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
@@ -323,7 +323,7 @@ namespace sp::json {
     template<typename T>
     inline bool SaveIfChanged(const ecs::EntityScope &s,
         picojson::value &dst,
-        const char *field,
+        const std::string &field,
         const T &src,
         const T &def) {
         if (Compare(src, def)) return false;
@@ -339,26 +339,24 @@ namespace sp::json {
             Save(s, value, src);
         }
 
-        if (!value.is<picojson::null>()) {
-            if (field) {
-                if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
-                dst.get<picojson::object>()[field] = value;
-            } else {
-                dst = value;
-            }
-            return true;
+        if (value.is<picojson::null>()) return false;
+        if (!field.empty()) {
+            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+            dst.get<picojson::object>()[field] = value;
+        } else {
+            dst = value;
         }
-        return false;
+        return true;
     }
 
     template<typename T>
     inline bool SaveIfChanged(const ecs::EntityScope &s,
         picojson::object &obj,
-        const char *field,
+        const std::string &field,
         const T &src,
         const T &def) {
         if (Compare(src, def)) return false;
-        Assertf(field != nullptr, "json::SaveIfChanged provided object with no field");
-        return SaveIfChanged(s, obj[field], nullptr, src, def);
+        Assertf(!field.empty(), "json::SaveIfChanged provided object with no field");
+        return SaveIfChanged(s, obj[field], "", src, def);
     }
 } // namespace sp::json

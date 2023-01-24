@@ -201,7 +201,7 @@ namespace sp {
                         Logf("    %s = %.4f = %s",
                             pair.first,
                             binding.Evaluate(lock),
-                            binding.nodeDebug[binding.rootIndex]);
+                            binding.nodeStrings[binding.rootIndex]);
                     }
                 }
             }
@@ -244,7 +244,7 @@ namespace sp {
                     } else {
                         Logf("  Signal binding: %.4f = %s",
                             binding.Evaluate(lock),
-                            binding.nodeDebug[binding.rootIndex]);
+                            binding.nodeStrings[binding.rootIndex]);
                     }
                 }
             }

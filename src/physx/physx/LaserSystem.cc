@@ -38,7 +38,11 @@ namespace sp {
                         return PxQueryHitType::eTOUCH;
                     }
                 } else if (color * optic.passTint == glm::vec3(0)) {
-                    return PxQueryHitType::eBLOCK;
+                    if (optic.singleDirection) {
+                        return PxQueryHitType::eTOUCH;
+                    } else {
+                        return PxQueryHitType::eBLOCK;
+                    }
                 } else {
                     return PxQueryHitType::eTOUCH;
                 }
@@ -150,25 +154,35 @@ namespace sp {
                         if (!touch.actor) continue;
                         auto userData = (ActorUserData *)touch.actor->userData;
                         if (!userData) continue;
-                        if (!userData->entity.Has<ecs::OpticalElement>(lock)) continue;
+                        if (!userData->entity.Has<ecs::OpticalElement, ecs::TransformSnapshot>(lock)) continue;
                         auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
+                        auto &opticTransform = userData->entity.Get<ecs::TransformSnapshot>(lock);
+                        if (optic.singleDirection && glm::dot(opticTransform.GetForward(), laserStart.rayDir) > 0) {
+                            continue;
+                        }
 
-                        if (laserStart.color * optic.passTint != glm::vec3(0)) {
+                        auto incomingColor = laserStart.color;
+                        if (incomingColor * optic.passTint != glm::vec3(0)) {
                             auto &segment = segments.emplace_back();
                             segment.start = laserStart.rayStart;
                             segment.end = laserStart.rayStart + laserStart.rayDir * (touch.distance - startDistance);
-                            segment.color = laserStart.color;
+                            segment.color = incomingColor;
                             laserStart.color *= optic.passTint;
                             laserStart.rayStart = segment.end;
                             startDistance = touch.distance;
+                        } else {
+                            hit.block.distance = touch.distance;
+                            hit.block.actor = touch.actor;
+                            hit.block = touch;
+                            break;
                         }
-                        if (laserStart.color * optic.reflectTint != glm::vec3(0)) {
+                        if (incomingColor * optic.reflectTint != glm::vec3(0)) {
                             auto &reflectionStart = emitterQueue.emplace_back();
                             reflectionStart.rayDir = glm::normalize(
                                 glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(touch.normal)));
                             // offset to prevent hitting the same object again
                             reflectionStart.rayStart = laserStart.rayStart + reflectionStart.rayDir * bounceOffset;
-                            reflectionStart.color = laserStart.color;
+                            reflectionStart.color = incomingColor * optic.reflectTint;
                             reflectionStart.depth = laserStart.depth;
                         }
                     }

@@ -695,10 +695,11 @@ namespace sp {
                 ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
                     if (name == "scene_properties") return;
                     if (comp.HasComponent(staging, e)) {
-                        if (comp.metadata.fields.empty()) {
-                            components[comp.name].set<picojson::object>({});
+                        auto &value = components[comp.name];
+                        if (comp.metadata.fields.empty() || value.is<picojson::null>()) {
+                            value.set<picojson::object>({});
                         }
-                        comp.SaveEntity(staging, scope, components[comp.name], e);
+                        comp.SaveEntity(staging, scope, value, e);
                     }
                 });
                 entities.emplace_back(components);

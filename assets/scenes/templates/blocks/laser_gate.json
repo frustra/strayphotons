@@ -105,34 +105,26 @@
 			}
 		},
 		{
-			"name": "source",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, -0.01],
-				"rotate": [180, 0, 1, 0],
-				"scale": 0.1
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "sensor",
-					"render": true,
-					"physics": "static",
-					"physics_group": "WorldOverlap"
-				}
-			}
-		},
-		{
-			"name": "source.Icosphere",
-			"signal_output": {},
-			"laser_sensor": {}
-		},
-		{
 			"name": "gate-socket",
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0.0215, 0.025, 0],
 				"rotate": [270, 0, 1, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "optic-socket",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "output-socket",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, 0.0165],
+				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
 				"prefab": "gltf",
@@ -164,6 +156,12 @@
 				"rotate": [90, 0, 1, 0],
 				"scale": 0.1
 			},
+			"signal_output": {
+				"gate_sensitivity": 0.5
+			},
+			"signal_bindings": {
+				"value": "(gate.Icosphere/light_value_r + gate.Icosphere/light_value_g + gate.Icosphere/light_value_b) >= gate/gate_sensitivity"
+			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
@@ -180,31 +178,73 @@
 			"laser_sensor": {}
 		},
 		{
-			"name": "output",
+			"name": "optic-forward",
+			"optic": {
+				"reflect_tint": [0, 0, 0],
+				"single_direction": true
+			},
+			"renderable": {
+				"model": "occluder",
+				"color_override": [1, 1, 1, 1],
+                "metallic_roughness_override": [1, 0],
+				"visibility": "Transparent|LightingShadow"
+			},
+			"physics": {
+				"shapes": {
+					"box": [1, 1, 0.02]
+				},
+				"group": "WorldOverlap",
+				"dynamic": false
+			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.025, 0.0165],
-				"rotate": [180, 0, 1, 0]
+				"translate": [0, 0.025, 0],
+				"scale": 0.021
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "optic-socket",
-					"render": true
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"optic#pass_tint": "gate/value",
+						"renderable#color_override.a": "!gate/value"
+					}
 				}
+			]
+		},
+		{
+			"name": "optic-backward",
+			"optic": {
+				"reflect_tint": [0, 0, 0],
+				"single_direction": true
 			},
-			"signal_output": {
-				"gate_sensitivity": 0.5
+			"renderable": {
+				"model": "occluder",
+				"color_override": [1, 1, 1, 1],
+                "metallic_roughness_override": [1, 0],
+				"visibility": "Transparent|LightingShadow"
 			},
-			"signal_bindings": {
-				"laser_color_r": "gate.Icosphere/light_value_r >= output/gate_sensitivity ? source.Icosphere/light_value_r : 0",
-				"laser_color_g": "gate.Icosphere/light_value_g >= output/gate_sensitivity ? source.Icosphere/light_value_g : 0",
-				"laser_color_b": "gate.Icosphere/light_value_b >= output/gate_sensitivity ? source.Icosphere/light_value_b : 0"
+			"physics": {
+				"shapes": {
+					"box": [1, 1, 0.02]
+				},
+				"group": "WorldOverlap",
+				"dynamic": false
 			},
-			"laser_line": {},
-			"laser_emitter": {
-				"start_distance": -0.01
-			}
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.025, 0],
+				"rotate": [180, 0, 1, 0],
+				"scale": 0.021
+			},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"optic#pass_tint": "!gate/value",
+						"renderable#color_override.a": "gate/value"
+					}
+				}
+			]
 		}
 	]
 }

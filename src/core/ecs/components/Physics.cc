@@ -138,7 +138,7 @@ namespace ecs {
         } else {
             Abortf("Unknown PhysicsShape type: %u", src.shape.index());
         }
-        sp::json::SaveIfChanged(scope, obj, "transform", src.transform, {});
+        sp::json::SaveIfChanged(scope, obj, "transform", src.transform, def.transform);
     }
 
     PhysicsShape::ConvexMesh::ConvexMesh(const std::string &fullMeshName) {

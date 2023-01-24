@@ -110,6 +110,10 @@ namespace sp {
             return color[i];
         }
 
+        float &operator[](size_t i) {
+            return color[i];
+        }
+
         color_t operator*(const color_t &other) const {
             return color * other.color;
         }
@@ -135,6 +139,10 @@ namespace sp {
         bool operator==(const color_t &other) const {
             return color == other.color;
         }
+
+        static int length() {
+            return 3;
+        }
     };
 
     struct color_alpha_t {
@@ -152,8 +160,16 @@ namespace sp {
             return color[i];
         }
 
+        float &operator[](size_t i) {
+            return color[i];
+        }
+
         bool operator==(const color_alpha_t &other) const {
             return color == other.color;
+        }
+
+        static int length() {
+            return 4;
         }
     };
 

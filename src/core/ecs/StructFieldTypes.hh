@@ -32,7 +32,7 @@ namespace ecs {
     struct PhysicsShape;
     struct PhysicsJoint;
     class ScriptState;
-    struct SignalExpression;
+    class SignalExpression;
     enum class SoundType;
     class Sound;
     enum class TriggerShape : uint8_t;

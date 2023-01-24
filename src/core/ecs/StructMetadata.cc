@@ -90,7 +90,7 @@ namespace ecs {
         auto *dstfield = static_cast<char *>(dstStruct) + offset;
         auto *srcField = &src;
 
-        if (name != nullptr) {
+        if (!name.empty()) {
             if (!src.is<picojson::object>()) {
                 // Silently leave missing fields as default
                 return true;
@@ -125,7 +125,7 @@ namespace ecs {
         auto *field = static_cast<const char *>(srcStruct) + offset;
         auto *defaultField = defaultStruct ? static_cast<const char *>(defaultStruct) + offset : nullptr;
 
-        if (name != nullptr) {
+        if (!name.empty()) {
             GetFieldType(type, [&](auto *typePtr) {
                 using T = std::remove_pointer_t<decltype(typePtr)>;
 

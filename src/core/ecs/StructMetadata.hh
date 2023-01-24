@@ -36,13 +36,13 @@ namespace ecs {
     };
 
     struct StructField {
-        const char *name = nullptr;
+        std::string name;
         std::type_index type;
         size_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
 
-        StructField(const char *name, std::type_index type, size_t offset, FieldAction actions)
+        StructField(const std::string &name, std::type_index type, size_t offset, FieldAction actions)
             : name(name), type(type), offset(offset), actions(actions) {}
 
         /**
@@ -57,7 +57,7 @@ namespace ecs {
          * }
          */
         template<typename T, typename F>
-        static const StructField New(const char *name, const F T::*M, FieldAction actions = ~FieldAction::None) {
+        static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
             return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
         }
@@ -75,7 +75,7 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField::New(nullptr, M, actions);
+            return StructField::New("", M, actions);
         }
 
         /**
@@ -91,7 +91,7 @@ namespace ecs {
          */
         template<typename T>
         static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField(nullptr, std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+            return StructField("", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
         }
 
         template<typename T>

@@ -334,9 +334,9 @@
 				"model": "red_led"
 			},
 			"script": {
-				"onTick": "emissive_from_signal",
+				"onTick": "component_from_signal",
 				"parameters": {
-					"signal_expr": "airlock_in_button_sensor.Icosphere/value"
+					"renderable#emissive": "airlock_in_button_sensor.Icosphere/value"
 				}
 			}
 		},

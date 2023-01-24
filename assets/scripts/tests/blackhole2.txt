@@ -13,7 +13,8 @@ stepgraphics
 screenshot blackhole2_table_1.png
 stepgraphics
 translate blackhole2:mirror1 0 -10 0
-stepphysics 3
-printdebug
+stepphysics 2
+steplogic
+stepphysics
 screenshot blackhole2_table_2.png
 stepgraphics

@@ -13,6 +13,7 @@ namespace FloatHelperTests {
         Assert(!sp::is_float(""), "Expected '' to be invalid");
         Assert(!sp::is_float("foo"), "Expected 'foo' to be invalid");
         Assert(!sp::is_float("-"), "Expected '-' to be invalid");
+        Assert(!sp::is_float("."), "Expected '.' to be invalid");
         Assert(sp::is_float("1."), "Expected '1.' to be valid");
         Assert(sp::is_float(".01"), "Expected '.01' to be valid");
         Assert(sp::is_float("-.01"), "Expected '-' to be valid");

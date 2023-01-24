@@ -12,13 +12,14 @@
 namespace ecs {
     using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLock>>;
 
-    struct SignalExpression {
+    class SignalExpression {
+    public:
         SignalExpression() {}
         SignalExpression(const EntityRef &entity, const std::string &signalName);
         SignalExpression(std::string_view expr, const Name &scope = Name());
 
         SignalExpression(const SignalExpression &other)
-            : scope(other.scope), expr(other.expr), nodes(other.nodes), nodeDebug(other.nodeDebug),
+            : scope(other.scope), expr(other.expr), nodes(other.nodes), nodeStrings(other.nodeStrings),
               rootIndex(other.rootIndex) {}
 
         struct ConstantNode {
@@ -58,18 +59,31 @@ namespace ecs {
                 : NodeVariant(arg), startToken(startToken), endToken(endToken) {}
         };
 
+        // Called automatically by construct. Should be called when expression string is changed.
+        bool Parse();
+
         double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;
 
         bool operator==(const SignalExpression &other) const {
             return expr == other.expr && scope == other.scope;
         }
 
+        explicit operator bool() const {
+            return !expr.empty() && rootIndex >= 0 && rootIndex < nodes.size();
+        }
+
         EntityScope scope;
         std::string expr;
-        std::vector<std::string_view> tokens; // string_views into expr
         std::vector<Node> nodes;
-        std::vector<std::string> nodeDebug;
-        int rootIndex = 0;
+        std::vector<std::string> nodeStrings;
+        int rootIndex = -1;
+
+    private:
+        std::string joinTokens(size_t startToken, size_t endToken) const;
+        int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
+        double evaluateNode(const ReadSignalsLock &lock, size_t depth, int nodeIndex) const;
+
+        std::vector<std::string_view> tokens; // string_views into expr
     };
 
     std::pair<Name, std::string> ParseSignalString(std::string_view str, const EntityScope &scope = Name());
