@@ -161,35 +161,38 @@ namespace sp {
                             continue;
                         }
 
-                        auto incomingColor = laserStart.color;
-                        if (incomingColor * optic.passTint != glm::vec3(0)) {
-                            auto &segment = segments.emplace_back();
-                            segment.start = laserStart.rayStart;
-                            segment.end = laserStart.rayStart + laserStart.rayDir * (touch.distance - startDistance);
-                            segment.color = incomingColor;
-                            laserStart.color *= optic.passTint;
-                            laserStart.rayStart = segment.end;
-                            startDistance = touch.distance;
-                        } else {
-                            hit.block.distance = touch.distance;
-                            hit.block.actor = touch.actor;
-                            hit.block = touch;
-                            break;
-                        }
-                        if (incomingColor * optic.reflectTint != glm::vec3(0)) {
+                        auto segmentEnd = laserStart.rayStart + laserStart.rayDir * (touch.distance - startDistance);
+
+                        if (laserStart.color * optic.reflectTint != glm::vec3(0)) {
                             auto &reflectionStart = emitterQueue.emplace_back();
                             reflectionStart.rayDir = glm::normalize(
                                 glm::reflect(laserStart.rayDir, PxVec3ToGlmVec3(touch.normal)));
                             // offset to prevent hitting the same object again
-                            reflectionStart.rayStart = laserStart.rayStart + reflectionStart.rayDir * bounceOffset;
-                            reflectionStart.color = incomingColor * optic.reflectTint;
+                            reflectionStart.rayStart = segmentEnd + reflectionStart.rayDir * bounceOffset;
+                            reflectionStart.color = laserStart.color * optic.reflectTint;
                             reflectionStart.depth = laserStart.depth;
+                        }
+                        if (laserStart.color * optic.passTint != glm::vec3(0)) {
+                            auto &segment = segments.emplace_back();
+                            segment.start = laserStart.rayStart;
+                            segment.end = segmentEnd;
+                            segment.color = laserStart.color;
+
+                            laserStart.color *= optic.passTint;
+                            laserStart.rayStart = segmentEnd;
+                            startDistance = touch.distance;
+                        } else {
+                            hit.hasBlock = true;
+                            hit.block = touch;
+                            break;
                         }
                     }
 
                     auto &segment = segments.emplace_back();
                     segment.start = laserStart.rayStart;
-                    segment.end = laserStart.rayStart + laserStart.rayDir * (hit.block.distance - startDistance);
+                    segment.end = laserStart.rayStart +
+                                  laserStart.rayDir *
+                                      ((hit.hasBlock ? hit.block.distance : maxDistance) - startDistance);
                     segment.color = laserStart.color;
 
                     physx::PxRigidActor *hitActor = hit.block.actor;

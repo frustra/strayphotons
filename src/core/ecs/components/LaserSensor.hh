@@ -11,7 +11,6 @@ namespace ecs {
 
         // updated automatically
         glm::vec3 illuminance;
-        bool triggered = false;
     };
 
     static StructMetadata MetadataLaserSensor(typeid(LaserSensor),

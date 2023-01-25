@@ -414,7 +414,7 @@
 						"charge_signal_b": "flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_g",
 						"charge_signal_r": "flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_r",
-						"max_charge_level": 1000,
+						"max_charge_level": 80,
 						"output_power_r": "20",
 						"output_power_g": "20"
 					}
@@ -537,7 +537,7 @@
 						"charge_signal_b": "flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_g",
 						"charge_signal_r": "flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_r",
-						"max_charge_level": 1000,
+						"max_charge_level": 80,
 						"output_power_g": "20",
 						"output_power_r": "20"
 					}

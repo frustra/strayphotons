@@ -24,6 +24,9 @@ namespace ecs {
     template<typename>
     class Component;
 
+    using PhysicsWriteLock = Lock<
+        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, SignalOutput, LaserLine, VoxelArea>>;
+
     class ComponentBase {
     public:
         ComponentBase(const char *name, const StructMetadata &metadata) : name(name), metadata(metadata) {}
@@ -39,6 +42,7 @@ namespace ecs {
         virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
         virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
         virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
+        virtual void *Access(PhysicsWriteLock lock, Entity ent) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
 
@@ -156,6 +160,14 @@ namespace ecs {
 
         void *Access(Lock<WriteAll> lock, Entity ent) const override {
             return &ent.Get<CompType>(lock);
+        }
+
+        void *Access(PhysicsWriteLock lock, Entity ent) const override {
+            if constexpr (Tecs::is_write_allowed<CompType, PhysicsWriteLock>()) {
+                return &ent.Get<CompType>(lock);
+            } else {
+                return nullptr;
+            }
         }
 
         const void *GetLiveDefault() const override {

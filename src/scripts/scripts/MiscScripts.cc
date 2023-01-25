@@ -160,7 +160,7 @@ namespace sp::scripts {
         SignalExpression chargeSignalBlue;
         bool discharging = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
 
             glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
@@ -178,7 +178,7 @@ namespace sp::scripts {
                     std::max(0.0, outputPowerBlue.Evaluate(lock))};
                 double outputPower = outputColor.r + outputColor.g + outputColor.b;
                 if (outputPower > 0 && discharging) {
-                    if (outputPower > chargeLevel) {
+                    if (outputPower >= chargeLevel) {
                         outputColor *= chargeLevel / outputPower;
                         chargeLevel = 0;
                         discharging = false;
@@ -209,12 +209,13 @@ namespace sp::scripts {
         StructField::New("charge_signal_r", &ChargeCell::chargeSignalRed),
         StructField::New("charge_signal_g", &ChargeCell::chargeSignalGreen),
         StructField::New("charge_signal_b", &ChargeCell::chargeSignalBlue));
-    InternalScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
+    InternalPhysicsScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
 
     struct ComponentFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> mapping;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        template<typename LockType>
+        void updateComponentFromSignal(LockType lock, Entity ent) {
             for (auto &[fieldPath, signalExpr] : mapping) {
                 size_t delimiter = fieldPath.find('#');
                 if (delimiter == std::string::npos) continue;
@@ -231,7 +232,10 @@ namespace sp::scripts {
                 auto signalValue = signalExpr.Evaluate(lock);
 
                 void *compPtr = comp->Access(lock, ent);
-                Assertf(compPtr, "ComponentFromSignal::OnTick access returned null data: %s", ecs::ToString(lock, ent));
+                Assertf(compPtr,
+                    "ComponentFromSignal %s access returned null data: %s",
+                    componentName,
+                    ecs::ToString(lock, ent));
                 for (auto &field : metadata.fields) {
                     if (starts_with(fieldName, field.name)) {
                         std::string_view subField;
@@ -279,8 +283,17 @@ namespace sp::scripts {
                 }
             }
         }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateComponentFromSignal(lock, ent);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateComponentFromSignal(lock, ent);
+        }
     };
     StructMetadata MetadataComponentFromSignal(typeid(ComponentFromSignal),
         StructField::New(&ComponentFromSignal::mapping));
     InternalScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
+    InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
+        MetadataComponentFromSignal);
 } // namespace sp::scripts
