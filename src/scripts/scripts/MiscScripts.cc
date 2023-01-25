@@ -236,7 +236,7 @@ namespace sp::scripts {
                     "ComponentFromSignal %s access returned null data: %s",
                     componentName,
                     ecs::ToString(lock, ent));
-                for (auto &field : metadata.fields) {
+                for (const StructField &field : metadata.fields) {
                     if (starts_with(fieldName, field.name)) {
                         std::string_view subField;
                         if (fieldName.length() > field.name.length()) {
