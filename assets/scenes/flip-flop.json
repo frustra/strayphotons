@@ -70,6 +70,16 @@
 				},
 				"target": "table.surface.10_1.socket"
 			},
+			"laser_line": {
+				"media_density": 0,
+				"radius": 0.001,
+				"color": [0, 0, 0.1],
+				"points": [
+					[0, 0.11, 0],
+					[0, 1.6, 0],
+					[-2.8, 1.6, 0]
+				]
+			},
 			"script": [
 				{
 					"parameters": {
@@ -102,6 +112,16 @@
 			"physics_joints": {
 				"target": "table.surface.6_11.socket"
 			},
+			"laser_line": {
+				"media_density": 0,
+				"radius": 0.001,
+				"color": [0, 0, 0.1],
+				"points": [
+					[0, 0.11, 0],
+					[0, 1.6, 0],
+					[0, 1.6, 1.8]
+				]
+			},
 			"script": [
 				{
 					"parameters": {
@@ -129,7 +149,7 @@
 				"translate": [4, 0, 0]
 			},
 			"signal_bindings": {
-				"door_open": "sensor_door_0/light_value_r"
+				"door_open": "sensor_door_0/light_value_g"
 			},
 			"script": {
 				"parameters": {
@@ -145,7 +165,7 @@
 				"translate": [1, 0, 2.5]
 			},
 			"signal_bindings": {
-				"door_open": "sensor_door_1/light_value_r"
+				"door_open": "sensor_door_1/light_value_g"
 			},
 			"script": {
 				"parameters": {
@@ -181,7 +201,7 @@
 				"target": "table.surface.3_4.socket"
 			},
 			"signal_output": {
-				"laser_color_r": 10
+				"laser_color_g": 10
 			},
 			"script": [
 				{
@@ -415,7 +435,7 @@
 				"target": "table.surface.7_3.socket"
 			},
 			"signal_output": {
-				"laser_color_r": 10
+				"laser_color_g": 10
 			},
 			"script": [
 				{
@@ -453,7 +473,7 @@
 				"target": "table.surface.4_8.socket"
 			},
 			"signal_output": {
-				"laser_color_r": 10
+				"laser_color_g": 10
 			},
 			"script": [
 				{
@@ -491,7 +511,7 @@
 				"target": "table.surface.8_7.socket"
 			},
 			"signal_output": {
-				"laser_color_r": 10
+				"laser_color_g": 10
 			},
 			"script": [
 				{
