@@ -492,8 +492,8 @@ namespace sp::vulkan::renderer {
                             lightValid[lightIndex] = false;
                             continue;
                         }
-                        Assertf(vLight.opticIndex < MAX_OPTICS, "Virtual light optic index is out of range");
-                        if (visibility[*vLight.parentIndex][*vLight.opticIndex] != 1) {
+                        if (*vLight.opticIndex >= MAX_OPTICS ||
+                            visibility[*vLight.parentIndex][*vLight.opticIndex] != 1) {
                             lightValid[lightIndex] = false;
                             continue;
                         }

@@ -10,6 +10,7 @@ namespace sp::scripts {
 
     struct MagneticPlug {
         EntityRef attachedSocketEntity;
+        bool disabled = false;
         robin_hood::unordered_flat_set<Entity> grabEntities;
         robin_hood::unordered_flat_set<Entity> socketEntities;
 
@@ -45,6 +46,7 @@ namespace sp::scripts {
                         }
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                    if (disabled) continue;
                     if (std::holds_alternative<bool>(event.data)) {
                         // Grab(false) = Drop
                         if (!std::get<bool>(event.data)) {
@@ -103,7 +105,8 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticPlug(typeid(MagneticPlug),
-        StructField::New("attach", &MagneticPlug::attachedSocketEntity));
+        StructField::New("attach", &MagneticPlug::attachedSocketEntity),
+        StructField::New("disabled", &MagneticPlug::disabled));
     InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,

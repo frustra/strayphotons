@@ -1,0 +1,26 @@
+{
+	"components": {
+		"script": [
+			{
+				"onTick": "interactive_object",
+				"parameters": {
+					"disabled": true
+				}
+			},
+			{
+				"onTick": "magnetic_plug",
+				"parameters": {
+					"disabled": true
+				}
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "mount.Cylinder",
+			"renderable": {
+				"color_override": [0, 0, 0, 1]
+			}
+		}
+	]
+}

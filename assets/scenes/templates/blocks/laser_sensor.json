@@ -35,7 +35,7 @@
 			"light_value_r": "source.Icosphere/light_value_r",
 			"light_value_g": "source.Icosphere/light_value_g",
 			"light_value_b": "source.Icosphere/light_value_b",
-			"value": "source.Icosphere/light_value_r && source.Icosphere/light_value_g && source.Icosphere/light_value_b"
+			"value": "source.Icosphere/light_value_r + source.Icosphere/light_value_g + source.Icosphere/light_value_b"
 		}
 	},
 	"entities": [
@@ -120,9 +120,9 @@
 				"luminance": [3, 3, 3]
 			},
 			"signal_bindings": {
-				"text_color_g": "0",
-				"text_color_r": "1",
-				"value": "source.Icosphere/light_value_r + source.Icosphere/light_value_g + source.Icosphere/light_value_b"
+				"text_color_g": "!!scoperoot/value",
+				"text_color_r": "!scoperoot/value",
+				"value": "scoperoot/value"
 			},
 			"script": [
 				{

@@ -26,6 +26,8 @@ namespace sp::scripts {
                 if (!ent.Has<Name, TransformTree>(lock)) continue;
                 auto &sourceName = ent.Get<Name>(lock);
                 auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                std::optional<SignalOutput> signals;
+                if (ent.Has<SignalOutput>(lock)) signals = ent.Get<SignalOutput>(lock);
 
                 SceneRef scene;
                 if (lock.Has<ActiveScene>()) {
@@ -40,7 +42,7 @@ namespace sp::scripts {
                 auto sharedEntity = make_shared<EntityRef>();
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
                     scene.data->name,
-                    [source = templateSource, transform, baseName = sourceName.entity, sharedEntity](
+                    [source = templateSource, transform, signals, baseName = sourceName.entity, sharedEntity](
                         ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
                         Name name(scene->data->name, "");
@@ -52,6 +54,9 @@ namespace sp::scripts {
 
                         auto newEntity = scene->NewRootEntity(lock, scene, name.entity);
                         newEntity.Set<TransformTree>(lock, transform);
+                        if (signals) {
+                            newEntity.Set<SignalOutput>(lock, *signals);
+                        }
                         auto &scripts = newEntity.Set<Scripts>(lock);
                         auto &prefab = scripts.AddPrefab(Name(scene->data->name, ""), "template");
                         prefab.SetParam("source", source);

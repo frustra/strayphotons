@@ -218,7 +218,6 @@ namespace sp {
             ZoneScopedN("Sync to ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
                 ecs::Read<ecs::LaserEmitter,
-                    ecs::OpticalElement,
                     ecs::EventBindings,
                     ecs::Physics,
                     ecs::EventInput,
@@ -226,6 +225,7 @@ namespace sp {
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
+                    ecs::OpticalElement,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
