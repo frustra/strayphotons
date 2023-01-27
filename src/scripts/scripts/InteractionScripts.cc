@@ -14,6 +14,7 @@ namespace sp::scripts {
         "Toggle to use a fixed joint instead of force limited joint");
 
     struct InteractiveObject {
+        bool disabled = false;
         std::vector<std::pair<Entity, Entity>> grabEntities;
         std::vector<Entity> pointEntities;
         bool renderOutline = false;
@@ -24,7 +25,7 @@ namespace sp::scripts {
 
             auto &ph = ent.Get<Physics>(lock);
             auto &joints = ent.Get<PhysicsJoints>(lock);
-            bool enableInteraction = ph.dynamic && !ph.kinematic;
+            bool enableInteraction = ph.dynamic && !ph.kinematic && !disabled;
 
             glm::vec3 centerOfMass;
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
@@ -135,7 +136,7 @@ namespace sp::scripts {
                 }
             }
 
-            bool newRenderOutline = !grabEntities.empty() || !pointEntities.empty();
+            bool newRenderOutline = !disabled && (!grabEntities.empty() || !pointEntities.empty());
             if (renderOutline != newRenderOutline) {
                 for (auto &e : lock.EntitiesWith<Renderable>()) {
                     if (!e.Has<TransformTree, Renderable>(lock)) continue;
@@ -158,7 +159,8 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataInteractiveObject(typeid(InteractiveObject));
+    StructMetadata MetadataInteractiveObject(typeid(InteractiveObject),
+        StructField::New("disabled", &InteractiveObject::disabled));
     InternalScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
         true,

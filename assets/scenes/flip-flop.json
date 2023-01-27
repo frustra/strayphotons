@@ -65,17 +65,17 @@
 				"target": "table.surface.11_5.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.11_5.socket"
-					}
 				}
 			]
 		},
@@ -90,17 +90,17 @@
 				"target": "table.surface.6_11.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.6_11.socket"
-					}
 				}
 			]
 		},
@@ -123,7 +123,7 @@
 			"name": "door_1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"translate": [1, 0, 3]
+				"translate": [1, 0, 2.5]
 			},
 			"signal_bindings": {
 				"door_open": "sensor_door_1/light_value_r"
@@ -131,6 +131,18 @@
 			"script": {
 				"parameters": {
 					"source": "slide_door"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "table2",
+			"transform": {
+				"translate": [0.5, 0, 3]
+			},
+			"script": {
+				"parameters": {
+					"source": "table"
 				},
 				"prefab": "template"
 			}
@@ -152,17 +164,17 @@
 				"laser_color_r": 10
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.3_4.socket"
-					}
 				}
 			]
 		},
@@ -180,17 +192,17 @@
 				"target": "table.surface.6_7.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/splitter"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.6_7.socket"
-					}
 				}
 			]
 		},
@@ -208,17 +220,17 @@
 				"target": "table.surface.7_7.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.7_7.socket"
-					}
 				}
 			]
 		},
@@ -236,29 +248,32 @@
 				"target": "table.surface.7_4.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.7_4.socket"
-					}
 				}
 			]
 		},
 		{
 			"name": "splitter_1",
 			"transform": {
-				"rotate": [9.56325e-05, 0, 0, 1],
-				"scale": [1.00192, 0.999987, 1.00191],
-				"translate": [0.62, 0.9, 0.46]
+				"rotate": [135, 1.31278e-08, -1, 2.71173e-09],
+				"scale": [1.00194, 0.999983, 1.00194],
+				"translate": [0.96, 0.9, 3.14]
 			},
 			"physics_joints": {
-				"target": "table.surface.7_5.socket"
+				"local_offset": {
+					"rotate": [135, 0, 1, 0]
+				},
+				"target": "table2.surface.5_1.socket"
 			},
 			"script": [
 				{
@@ -270,7 +285,7 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.7_5.socket"
+						"attach": "table2.surface.5_1.socket"
 					}
 				}
 			]
@@ -285,17 +300,17 @@
 				"target": "table.surface.4_7.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.4_7.socket"
-					}
 				}
 			]
 		},
@@ -313,17 +328,17 @@
 				"target": "table.surface.4_4.socket"
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.4_4.socket"
-					}
 				}
 			]
 		},
@@ -341,17 +356,17 @@
 				"laser_color_r": 10
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.7_3.socket"
-					}
 				}
 			]
 		},
@@ -372,17 +387,17 @@
 				"laser_color_r": 10
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.4_8.socket"
-					}
 				}
 			]
 		},
@@ -403,60 +418,43 @@
 				"laser_color_r": 10
 			},
 			"script": [
+                {
+                    "prefab": "template",
+					"parameters": {
+						"source": "disable_block"
+					}
+                },
 				{
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
 					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.8_7.socket"
-					}
 				}
 			]
 		},
 		{
-			"name": "charge_cell_0",
+			"name": "init_pulser",
 			"transform": {
-				"rotate": [180, -3.33094e-08, 1, -8.37919e-08],
-				"scale": [1.00002, 0.999998, 1.00002],
-				"translate": [0.54, 0.9, 0.06]
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.62, 0.925, 0.54]
 			},
-			"physics_joints": {
-				"local_offset": {
-					"rotate": [180, 0, 1, 0]
-				},
-				"target": "table.surface.6_0.socket"
-			},
+			"laser_emitter": {},
+			"laser_line": {},
 			"signal_output": {},
-			"script": [
-				{
-					"parameters": {
-						"source": "blocks/charge_cell"
-					},
-					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.6_0.socket"
-					}
-				},
-				{
-					"onTick": "charge_cell",
-					"parameters": {
-						"charge_level": 100,
-						"charge_signal_b": "flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_b",
-						"charge_signal_g": "flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_g",
-						"charge_signal_r": "flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_r",
-						"discharging": true,
-						"max_charge_level": 100,
-						"output_power_r": "5"
-					}
+			"signal_bindings": {
+				"laser_color_b": "init_pulser/cell_output_b",
+				"laser_color_g": "init_pulser/cell_output_g",
+				"laser_color_r": "init_pulser/cell_output_r"
+			},
+			"script": {
+				"onTick": "charge_cell",
+				"parameters": {
+					"charge_level": 100,
+					"discharging": true,
+					"max_charge_level": 100,
+					"output_power_r": "5"
 				}
-			]
+			}
 		}
 	]
 }
