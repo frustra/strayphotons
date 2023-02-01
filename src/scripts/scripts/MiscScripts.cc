@@ -296,4 +296,37 @@ namespace sp::scripts {
     InternalScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
     InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
         MetadataComponentFromSignal);
+
+    struct SignalDelay {
+        size_t delayFrames = 1;
+        SignalExpression input;
+        std::string output;
+
+        std::queue<double> history;
+
+        template<typename LockType>
+        void updateSignal(LockType lock, Entity ent) {
+            if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
+
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
+            history.emplace(input.Evaluate(lock));
+            while (history.size() > delayFrames) {
+                signalOutput.SetSignal(output, history.front());
+                history.pop();
+            }
+        }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateSignal(lock, ent);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateSignal(lock, ent);
+        }
+    };
+    StructMetadata MetadataSignalDelay(typeid(SignalDelay),
+        StructField::New("delay_frames", &SignalDelay::delayFrames),
+        StructField::New("input", &SignalDelay::input),
+        StructField::New("output", &SignalDelay::output));
+    InternalScript<SignalDelay> signalDelay("signal_delay", MetadataSignalDelay);
+    InternalPhysicsScript<SignalDelay> physicsSignalDelay("physics_signal_delay", MetadataSignalDelay);
 } // namespace sp::scripts

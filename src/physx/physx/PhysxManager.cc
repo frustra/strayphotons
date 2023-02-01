@@ -179,8 +179,8 @@ namespace sp {
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::Physics, ecs::PhysicsJoints, ecs::EventInput, ecs::SceneProperties>,
-                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController>>();
+                ecs::Read<ecs::Physics, ecs::EventInput, ecs::SceneProperties>,
+                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::PhysicsJoints, ecs::CharacterController>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -403,6 +403,7 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Interactive, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::UserInterface, false);
         // Don't collide anything with the noclip group.
@@ -410,6 +411,7 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Interactive, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerLeftHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerRightHand, false);

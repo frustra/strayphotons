@@ -96,7 +96,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.10_1.socket"
+						"attach": "table.surface.10_1.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -138,7 +139,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.6_11.socket"
+						"attach": "table.surface.6_11.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -219,7 +221,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.3_4.socket"
+						"attach": "table.surface.3_4.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -283,7 +286,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.7_7.socket"
+						"attach": "table.surface.7_7.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -318,7 +322,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.7_4.socket"
+						"attach": "table.surface.7_4.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -347,12 +352,6 @@
 					"onTick": "magnetic_plug",
 					"parameters": {
 						"attach": "table2.surface.5_1.socket"
-					}
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.5_1.socket"
 					}
 				}
 			]
@@ -383,7 +382,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.4_7.socket"
+						"attach": "table.surface.4_7.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -418,7 +418,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.4_4.socket"
+						"attach": "table.surface.4_4.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -453,7 +454,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.7_3.socket"
+						"attach": "table.surface.7_3.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -491,7 +493,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.4_8.socket"
+						"attach": "table.surface.4_8.socket",
+						"disabled": true
 					}
 				}
 			]
@@ -529,7 +532,8 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.8_7.socket"
+						"attach": "table.surface.8_7.socket",
+						"disabled": true
 					}
 				}
 			]

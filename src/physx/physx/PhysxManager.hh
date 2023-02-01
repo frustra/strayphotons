@@ -39,6 +39,7 @@ namespace sp {
     struct HullSettings;
     class SceneManager;
     class ForceConstraint;
+    class NoClipConstraint;
 
     struct ActorUserData {
         ecs::Entity entity;
@@ -75,6 +76,7 @@ namespace sp {
         ecs::PhysicsJoint ecsJoint;
         physx::PxJoint *pxJoint = nullptr;
         ForceConstraint *forceConstraint = nullptr;
+        NoClipConstraint *noclipConstraint = nullptr;
     };
 
     class PhysxManager : public RegisteredThread {

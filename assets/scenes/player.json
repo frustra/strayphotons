@@ -4,6 +4,7 @@
 		{
 			"name": "player",
 			"transform": {},
+			"physics_joints": {},
 			"character_controller": {
 				"head": "head"
 			},
@@ -42,6 +43,7 @@
 				{
 					"onTick": "interact_handler",
 					"parameters": {
+						"noclip_entity": "player",
 						"grab_distance": 2
 					}
 				}
