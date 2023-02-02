@@ -55,7 +55,7 @@
 				"shapes": {
 					"model": "door-panel"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -87,7 +87,7 @@
 				"shapes": {
 					"model": "door-panel"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		}		
 	]

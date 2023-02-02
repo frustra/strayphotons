@@ -13,7 +13,7 @@
 					"box": [0.99, 0.99, 0.02]
 				},
 				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "Static"
 			},
 			"transform": {
 				"parent": "scoperoot",

@@ -245,7 +245,7 @@ namespace sp {
 
                         auto userData = (ActorUserData *)actor->userData;
                         Assert(userData, "Physics actor is missing UserData");
-                        if (ph.dynamic && !ph.kinematic && transform == userData->pose) {
+                        if (ph.type == ecs::PhysicsActorType::Dynamic && transform == userData->pose) {
                             auto pose = actor->getGlobalPose();
                             transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                             transform.SetRotation(PxQuatToGlmQuat(pose.q));
@@ -293,7 +293,7 @@ namespace sp {
 
                     if (ent.Has<ecs::Physics>(lock)) {
                         auto &ph = ent.Get<ecs::Physics>(lock);
-                        if (ph.dynamic && !ph.kinematic) continue;
+                        if (ph.type == ecs::PhysicsActorType::Dynamic) continue;
 
                         if (actors.count(ent) > 0) {
                             auto const &actor = actors[ent];
@@ -305,7 +305,7 @@ namespace sp {
                                     GlmQuatToPxQuat(transform.GetRotation()));
                                 if (pxTransform.isSane()) {
                                     auto dynamic = actor->is<PxRigidDynamic>();
-                                    if (dynamic && ph.kinematic) {
+                                    if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
                                         dynamic->setKinematicTarget(pxTransform);
                                     } else {
                                         actor->setGlobalPose(pxTransform);
@@ -393,6 +393,7 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::World, false);
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::Interactive, false);
+        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::HeldObject, false);
         // Don't collide the player with themselves, but allow the hands to collide with eachother
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::PlayerLeftHand, false);
@@ -505,16 +506,16 @@ namespace sp {
             GlmQuatToPxQuat(globalTransform.GetRotation()));
 
         PxRigidActor *actor = nullptr;
-        if (ph.dynamic) {
+        if (ph.type == ecs::PhysicsActorType::Static) {
+            actor = pxPhysics->createRigidStatic(pxTransform);
+        } else if (ph.type == ecs::PhysicsActorType::Dynamic || ph.type == ecs::PhysicsActorType::Kinematic) {
             actor = pxPhysics->createRigidDynamic(pxTransform);
 
-            if (ph.kinematic) {
+            if (ph.type == ecs::PhysicsActorType::Kinematic) {
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES,
                     true);
             }
-        } else {
-            actor = pxPhysics->createRigidStatic(pxTransform);
         }
         Assert(actor, "Physx did not return valid PxRigidActor");
 
@@ -539,6 +540,8 @@ namespace sp {
                         *userData->material);
                     Assertf(pxShape, "Failed to create physx shape");
 
+                    pxShape->userData = new ShapeUserData(e, e);
+
                     PxTransform shapeTransform(GlmVec3ToPxVec3(meshTransform.GetPosition() * scale),
                         GlmQuatToPxQuat(meshTransform.GetRotation()));
                     pxShape->setLocalPose(shapeTransform);
@@ -553,6 +556,8 @@ namespace sp {
                     GeometryFromShape(shape, scale).any(),
                     *userData->material);
                 Assertf(pxShape, "Failed to create physx shape");
+
+                pxShape->userData = new ShapeUserData(e, e);
 
                 PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition() * scale),
                     GlmQuatToPxQuat(shape.transform.GetRotation()));
@@ -594,7 +599,9 @@ namespace sp {
         auto &actor = actors[e];
         auto &ph = e.Get<ecs::Physics>(lock);
         auto dynamic = actor->is<PxRigidDynamic>();
-        if (ph.dynamic != !!dynamic) {
+        bool requestDynamicActor = ph.type == ecs::PhysicsActorType::Dynamic ||
+                                   ph.type == ecs::PhysicsActorType::Kinematic;
+        if (requestDynamicActor != !!dynamic) {
             RemoveActor(actor);
             auto replacementActor = CreateActor(lock, e);
             if (replacementActor) {
@@ -634,6 +641,8 @@ namespace sp {
                         pxShape->setLocalPose(shapeTransform);
                         pxShape->setGeometry(meshGeom);
                     } else {
+                        auto shapeUserData = (ShapeUserData *)pxShape->userData;
+                        if (shapeUserData) delete shapeUserData;
                         actor->detachShape(*pxShape);
                     }
                 }
@@ -662,6 +671,8 @@ namespace sp {
                 if (actorShapeCount > 0) {
                     actor->getShapes(&pxShapes[0], actorShapeCount);
                     for (auto *shape : pxShapes) {
+                        auto shapeUserData = (ShapeUserData *)shape->userData;
+                        if (shapeUserData) delete shapeUserData;
                         actor->detachShape(*shape);
                     }
                 }
@@ -672,6 +683,8 @@ namespace sp {
 
                     auto *pxShape = PxRigidActorExt::createExclusiveShape(*actor, geometry.any(), *userData->material);
                     Assertf(pxShape, "Failed to create physx shape");
+
+                    pxShape->userData = new ShapeUserData(e, e);
 
                     PxTransform shapeTransform(GlmVec3ToPxVec3(shape.transform.GetPosition() * scale),
                         GlmQuatToPxQuat(shape.transform.GetRotation()));
@@ -725,7 +738,7 @@ namespace sp {
             // Logf("Updating actor position: %s", ecs::ToString(lock, e));
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
             if (pxTransform.isSane()) {
-                if (dynamic && ph.kinematic) {
+                if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
                     dynamic->setKinematicTarget(pxTransform);
                 } else {
                     actor->setGlobalPose(pxTransform);
@@ -772,6 +785,13 @@ namespace sp {
 
             auto scene = actor->getScene();
             if (scene) scene->removeActor(*actor);
+            PxU32 nShapes = actor->getNbShapes();
+            vector<PxShape *> shapes(nShapes);
+            actor->getShapes(shapes.data(), nShapes);
+            for (auto *shape : shapes) {
+                auto shapeUserData = (ShapeUserData *)shape->userData;
+                if (shapeUserData) delete shapeUserData;
+            }
             actor->release();
 
             if (userData) delete userData;

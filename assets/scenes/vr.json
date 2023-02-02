@@ -12,7 +12,7 @@
 			"physics": {
 				"__comment": "Dummy actor for velocity calculation",
 				"group": "NoClip",
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"sphere": 0.1
 				}

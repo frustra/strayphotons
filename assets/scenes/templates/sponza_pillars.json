@@ -6,7 +6,7 @@
 				"shapes": {
 					"model": "sponza2.convex28"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -15,7 +15,7 @@
 				"shapes": {
 					"model": "sponza2.convex29"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -24,7 +24,7 @@
 				"shapes": {
 					"model": "sponza2.convex30"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -33,7 +33,7 @@
 				"shapes": {
 					"model": "sponza2.convex31"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -42,7 +42,7 @@
 				"shapes": {
 					"model": "sponza2.convex32"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -51,7 +51,7 @@
 				"shapes": {
 					"model": "sponza2.convex33"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -60,7 +60,7 @@
 				"shapes": {
 					"model": "sponza2.convex34"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -69,7 +69,7 @@
 				"shapes": {
 					"model": "sponza2.convex35"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -78,7 +78,7 @@
 				"shapes": {
 					"model": "sponza2.convex36"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -87,7 +87,7 @@
 				"shapes": {
 					"model": "sponza2.convex37"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -96,7 +96,7 @@
 				"shapes": {
 					"model": "sponza2.convex38"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -105,7 +105,7 @@
 				"shapes": {
 					"model": "sponza2.convex39"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		}
 	]

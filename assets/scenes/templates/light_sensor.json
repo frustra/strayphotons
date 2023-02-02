@@ -26,7 +26,7 @@
 				"shapes": {
 					"model": "sensor-plate-light"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{

@@ -17,7 +17,7 @@
 					}
 				}
 			],
-			"dynamic": true
+			"type": "Dynamic"
 		},
 		"physics_joints": [],
 		"trigger_group": "Magnetic",

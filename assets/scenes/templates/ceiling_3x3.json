@@ -9,7 +9,7 @@
 						"translate": [1.5, 0.25, 1.5]
 					}
 				},
-				"dynamic": false
+				"type": "Static"
 			},
 			"script": {
 				"prefab": "gltf",

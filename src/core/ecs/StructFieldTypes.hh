@@ -28,6 +28,7 @@ namespace ecs {
     enum class GuiTarget;
     enum class InterpolationMode;
     enum class PhysicsGroup : uint16_t;
+    enum class PhysicsActorType : uint8_t;
     enum class PhysicsJointType;
     struct PhysicsShape;
     struct PhysicsJoint;
@@ -87,6 +88,7 @@ namespace ecs {
         GuiTarget,
         InterpolationMode,
         PhysicsGroup,
+        PhysicsActorType,
         PhysicsJointType,
         sp::ScenePriority,
         SoundType,

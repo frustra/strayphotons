@@ -27,7 +27,7 @@
 				"shapes": {
 					"model": "articulating-arm.convex2"
 				},
-				"dynamic": false,
+				"type": "Static",
 				"group": "WorldOverlap"
 			}
 		},

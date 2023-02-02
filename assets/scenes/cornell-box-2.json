@@ -55,7 +55,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{

@@ -87,12 +87,11 @@ namespace ecs {
                         PhysicsShape::ConvexMesh mesh(modelName, *node.meshIndex);
                         auto &physics = newEntity.Set<Physics>(lock, mesh, physicsGroup);
                         if (physicsParam == "dynamic") {
-                            physics.dynamic = true;
+                            physics.type = ecs::PhysicsActorType::Dynamic;
                         } else if (physicsParam == "kinematic") {
-                            physics.dynamic = true;
-                            physics.kinematic = true;
+                            physics.type = ecs::PhysicsActorType::Kinematic;
                         } else if (physicsParam == "static") {
-                            physics.dynamic = false;
+                            physics.type = ecs::PhysicsActorType::Static;
                         } else {
                             Abortf("Unknown gltf physics param: %s", physicsParam);
                         }

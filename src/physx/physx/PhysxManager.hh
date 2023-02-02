@@ -41,6 +41,13 @@ namespace sp {
     class ForceConstraint;
     class NoClipConstraint;
 
+    struct ShapeUserData {
+        ecs::Entity owner; // SubActor physics source entity
+        ecs::Entity parent; // Physics actor shape is attached to
+
+        ShapeUserData(ecs::Entity owner, ecs::Entity parent) : owner(owner), parent(parent) {}
+    };
+
     struct ActorUserData {
         ecs::Entity entity;
         ecs::Transform pose;

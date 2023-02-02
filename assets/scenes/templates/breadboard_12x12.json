@@ -8,7 +8,7 @@
 					"translate": [0.48, -0.02, 0.48]
 				}
 			},
-			"dynamic": false
+			"type": "Static"
 		},
 		"script": {
 			"prefab": "tile",

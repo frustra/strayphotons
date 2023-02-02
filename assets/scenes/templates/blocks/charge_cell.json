@@ -17,7 +17,7 @@
 					}
 				}
 			],
-			"dynamic": true
+			"type": "Dynamic"
 		},
 		"signal_output": { 
 			"charge_level": 0,
@@ -114,29 +114,6 @@
 					"render": true
 				}
 			}
-		},
-		{
-			"name": "charge-panel",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [-0.026, 0.035, 0],
-				"scale": [0.002, 0.04, 0.04]
-			},
-			"renderable": {
-				"emissive": -0.05,
-				"color_override": [0.01, 0.01, 0.02, 1],
-				"metallic_roughness_override": [1, 0.05],
-				"model": "box"
-			},
-			"physics": {
-				"shapes": {
-					"model": "box"
-				},
-				"dynamic": false,
-				"group": "WorldOverlap"
-			},
-			"signal_output": {},
-			"laser_sensor": {}
 		},
 		{
 			"name": "input",

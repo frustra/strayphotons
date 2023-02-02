@@ -29,7 +29,7 @@
 				"shapes": {
 					"model": "01-outside.walls1"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -135,7 +135,7 @@
 				"shapes": {
 					"model": "parking-block"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -151,7 +151,7 @@
 				"shapes": {
 					"model": "parking-block"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -167,7 +167,7 @@
 				"shapes": {
 					"model": "parking-block"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -179,7 +179,7 @@
 				"shapes": {
 					"model": "occluder"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{

@@ -113,16 +113,26 @@ namespace ecs {
         const PhysicsShape &src,
         const PhysicsShape &def);
 
+    enum class PhysicsActorType : uint8_t {
+        Static,
+        Dynamic,
+        Kinematic,
+        SubActor,
+    };
+
     struct Physics {
         Physics() {}
-        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float mass = 1.0f)
-            : shapes({shape}), group(group), dynamic(dynamic), mass(mass) {}
+        Physics(PhysicsShape shape,
+            PhysicsGroup group = PhysicsGroup::World,
+            PhysicsActorType type = PhysicsActorType::Dynamic,
+            float mass = 1.0f)
+            : shapes({shape}), group(group), type(type), mass(mass) {}
 
         std::vector<PhysicsShape> shapes;
 
         PhysicsGroup group = PhysicsGroup::World;
-        bool dynamic = true;
-        bool kinematic = false; // only dynamic actors can be kinematic
+        PhysicsActorType type = PhysicsActorType::Dynamic;
+        EntityRef parentActor;
         float mass = 0.0f; // kilograms (density used if mass is zero)
         float density = 1000.0f; // kg/m^3
         float angularDamping = 0.05f;
@@ -134,8 +144,8 @@ namespace ecs {
     static StructMetadata MetadataPhysics(typeid(Physics),
         StructField::New("shapes", &Physics::shapes),
         StructField::New("group", &Physics::group),
-        StructField::New("dynamic", &Physics::dynamic),
-        StructField::New("kinematic", &Physics::kinematic),
+        StructField::New("type", &Physics::type),
+        StructField::New("parent_actor", &Physics::parentActor),
         StructField::New("mass", &Physics::mass),
         StructField::New("density", &Physics::density),
         StructField::New("angular_damping", &Physics::angularDamping),

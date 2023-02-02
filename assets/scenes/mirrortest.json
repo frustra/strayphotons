@@ -12,7 +12,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -27,7 +27,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -42,7 +42,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -57,7 +57,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -72,7 +72,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -314,7 +314,7 @@
 					}
 				},
 				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "Static"
 			},
 			"transform": {
 				"parent": "mirrorbox",
@@ -337,7 +337,7 @@
 					}
 				},
 				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "Static"
 			},
 			"transform": {
 				"parent": "mirrorbox2",
@@ -360,7 +360,7 @@
 					}
 				},
 				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "Static"
 			},
 			"transform": {
 				"parent": "mirrorbox3",

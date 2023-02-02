@@ -22,7 +22,7 @@
 					"mesh_index": 6,
 					"decompose_hull": true
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -33,7 +33,7 @@
 					"mesh_index": 4,
 					"decompose_hull": true
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -44,7 +44,7 @@
 					"mesh_index": 3,
 					"decompose_hull": true
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -55,7 +55,7 @@
 					"mesh_index": 2,
 					"decompose_hull": true
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
