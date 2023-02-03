@@ -268,7 +268,7 @@ namespace sp {
             PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset.GetPosition()),
                 GlmQuatToPxQuat(ecsJoint.localOffset.GetRotation()));
             PxTransform remoteTransform(PxIdentity);
-            auto targetEntity = ecsJoint.target.Get(lock);
+            ecs::Entity targetEntity = ecsJoint.target.Get(lock);
 
             ecs::Transform targetTransform;
             if (manager.actors.count(targetEntity) > 0) {
@@ -299,7 +299,7 @@ namespace sp {
 
             // Try and determine the velocity of the joint target entity
             glm::vec3 targetVelocity(0);
-            auto targetRoot = targetEntity;
+            ecs::Entity targetRoot = targetEntity;
             while (targetRoot.Has<ecs::TransformTree>(lock)) {
                 if (manager.actors.count(targetRoot) > 0) {
                     auto userData = (ActorUserData *)manager.actors[targetRoot]->userData;
