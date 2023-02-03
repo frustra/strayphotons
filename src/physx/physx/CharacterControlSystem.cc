@@ -163,7 +163,7 @@ namespace sp {
                     auto &controller = controllerEvent.entity.Get<ecs::CharacterController>(lock);
                     if (!controller.pxController) {
                         auto characterUserData = new CharacterControllerUserData(controllerEvent.entity);
-                        characterUserData->actorData.material = std::shared_ptr<PxMaterial>(
+                        characterUserData->material = std::shared_ptr<PxMaterial>(
                             manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f),
                             [](auto *ptr) {
                                 ptr->release();
@@ -182,7 +182,7 @@ namespace sp {
                         desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
                         desc.slopeLimit = cos(glm::radians(30.0f));
 
-                        desc.material = characterUserData->actorData.material.get();
+                        desc.material = characterUserData->material.get();
                         desc.userData = characterUserData;
 
                         // Offset capsule position so the feet are the origin
