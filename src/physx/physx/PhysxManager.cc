@@ -490,6 +490,7 @@ namespace sp {
         const ecs::Entity &actorEnt,
         physx::PxRigidActor *actor,
         const ecs::Transform &offset) {
+        // ZoneScoped;
         bool shapesChanged = false;
         std::vector<bool> existingShapes(physics.shapes.size());
 
@@ -512,33 +513,45 @@ namespace sp {
                 } else {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
                     if (mesh) {
-                        if (!shapeUserData->hullCache || mesh->model != shapeUserData->hullCache->sourceModel ||
-                            mesh->hullSettings != shapeUserData->hullCache->sourceSettings) {
+                        auto meshSettings = mesh->hullSettings->Get();
+                        auto sourceSettings = shapeUserData->hullCache ? shapeUserData->hullCache->sourceSettings->Get()
+                                                                       : nullptr;
+                        if (!meshSettings || !sourceSettings) {
+                            removeShape = true;
+                        } else if (mesh->model != shapeUserData->hullCache->sourceModel ||
+                                   meshSettings->sourceInfo != sourceSettings->sourceInfo) {
                             removeShape = true;
                         } else {
                             existingShapes[shapeUserData->ownerShapeIndex] = true;
 
                             // Update matching mesh
-                            if (glm::any(glm::notEqual(shape.transform.matrix,
-                                    shapeUserData->shapeCache.transform.matrix,
-                                    1e-4f)) ||
-                                glm::any(glm::notEqual(offset.matrix, shapeUserData->shapeOffset.matrix, 1e-4f))) {
-                                // Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
-                                PxConvexMeshGeometry meshGeom;
-                                if (pxShape->getConvexMeshGeometry(meshGeom)) {
-                                    meshGeom.scale = PxMeshScale(
-                                        GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetScale(), 0)));
-                                    PxTransform shapeTransform(
-                                        GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                                        GlmQuatToPxQuat(shape.transform.GetRotation() * offset.GetRotation()));
-                                    pxShape->setLocalPose(shapeTransform);
-                                    pxShape->setGeometry(meshGeom);
-                                } else {
-                                    removeShape = true;
-                                }
-                                shapesChanged = true;
-                            }
-                            shapeUserData->shapeOffset = offset;
+                            // if (glm::any(glm::notEqual(shape.transform.matrix,
+                            //         shapeUserData->shapeCache.transform.matrix,
+                            //         1e-4f)) ||
+                            //     glm::any(glm::notEqual(offset.matrix, shapeUserData->shapeOffset.matrix, 1e-4f))) {
+                            //     // Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
+                            //     PxConvexMeshGeometry meshGeom;
+                            //     if (pxShape->getConvexMeshGeometry(meshGeom)) {
+                            //         meshGeom.scale = PxMeshScale(
+                            //             GlmVec3ToPxVec3(glm::abs(offset * glm::vec4(shape.transform.GetScale(),
+                            //             0))));
+                            //         PxTransform shapeTransform(
+                            //             GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
+                            //             GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
+                            //         pxShape->setLocalPose(shapeTransform);
+                            //         if (!meshGeom.isValid()) {
+                            //             Errorf("Mesh geometry invalid: %s, %u", mesh->meshName, meshGeom.isValid());
+                            //         }
+                            //         meshGeom.convexMesh->acquireReference();
+                            //         pxShape->setGeometry(meshGeom);
+                            //         meshGeom.convexMesh->release();
+                            //         shapeUserData->shapeCache = shape;
+                            //         shapeUserData->shapeOffset = offset;
+                            //     } else {
+                            //         removeShape = true;
+                            //     }
+                            //     shapesChanged = true;
+                            // }
                         }
                     } else if (existingShapes[shapeUserData->ownerShapeIndex]) {
                         removeShape = true;
@@ -561,7 +574,7 @@ namespace sp {
 
                             PxTransform shapeTransform(
                                 GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                                GlmQuatToPxQuat(shape.transform.GetRotation() * offset.GetRotation()));
+                                GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
                             pxShape->setLocalPose(shapeTransform);
                             shapeUserData->shapeCache.transform = shape.transform;
                             shapeUserData->shapeOffset = offset;
@@ -573,6 +586,7 @@ namespace sp {
 
             if (removeShape) {
                 delete shapeUserData;
+                pxShape->userData = nullptr;
                 actor->detachShape(*pxShape);
                 shapeCount--;
                 shapesChanged = true;
@@ -591,13 +605,21 @@ namespace sp {
 
                 if (shapeCache) {
                     for (auto &hull : shapeCache->hulls) {
+                        auto *pxHull = hull.get();
+                        if (mesh->hullSettings->Get()->name == "duck.cooked") {
+                            Logf("Duck pxMesh ref count: %u", pxHull->getReferenceCount());
+                        }
                         PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                            PxConvexMeshGeometry(hull.get(),
+                            PxConvexMeshGeometry(pxHull,
                                 PxMeshScale(GlmVec3ToPxVec3(shape.transform.GetScale() * offset.GetScale()))),
                             *material);
                         Assertf(pxShape, "Failed to create physx shape");
+                        if (mesh->hullSettings->Get()->name == "duck.cooked") {
+                            Logf("After Duck pxMesh ref count: %u", pxHull->getReferenceCount());
+                        }
 
                         auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
+                        shapeUserData->shapeCache.shape = shape.shape;
                         shapeUserData->hullCache = shapeCache;
                         pxShape->userData = shapeUserData;
 
@@ -618,7 +640,9 @@ namespace sp {
                     *material);
                 Assertf(pxShape, "Failed to create physx shape");
 
-                pxShape->userData = new ShapeUserData(owner, i, actorEnt, material);
+                auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
+                shapeUserData->shapeCache.shape = shape.shape;
+                pxShape->userData = shapeUserData;
 
                 PxTransform shapeTransform(GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
                     GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
@@ -640,9 +664,10 @@ namespace sp {
         return shapeCount;
     }
 
-    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
+    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
+        ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
@@ -692,8 +717,8 @@ namespace sp {
     void PhysxManager::UpdateActor(
         ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
         ecs::Entity &e) {
-        ZoneScoped;
-        ZoneStr(ecs::ToString(lock, e));
+        // ZoneScoped;
+        // ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
         if (ph.type == ecs::PhysicsActorType::SubActor) {
@@ -816,13 +841,22 @@ namespace sp {
             PxU32 nShapes = actor->getNbShapes();
             vector<PxShape *> shapes(nShapes);
             actor->getShapes(shapes.data(), nShapes);
-            for (auto *shape : shapes) {
+            Logf("Releasing actor: %s", ecs::EntityRef(userData->entity).Name().String());
+            for (size_t i = 0; i < shapes.size(); i++) {
+                auto *shape = shapes[i];
                 auto shapeUserData = (ShapeUserData *)shape->userData;
-                if (shapeUserData) delete shapeUserData;
+                if (shapeUserData) {
+                    delete shapeUserData;
+                    shape->userData = nullptr;
+                }
+                actor->detachShape(*shape);
             }
             actor->release();
 
-            if (userData) delete userData;
+            if (userData) {
+                delete userData;
+                actor->userData = nullptr;
+            }
         }
     }
 
@@ -854,14 +888,22 @@ namespace sp {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same<ecs::PhysicsShape::Sphere, T>()) {
                     auto avgScale = (scale.x + scale.y + scale.z) / 3.0f;
-                    return PxGeometryHolder(PxSphereGeometry(avgScale * arg.radius));
+                    auto geom = PxSphereGeometry(avgScale * arg.radius);
+                    Assertf(geom.isValid(), "Invalid shape geometry: Sphere");
+                    return PxGeometryHolder(geom);
                 } else if constexpr (std::is_same<ecs::PhysicsShape::Capsule, T>()) {
                     auto avgScaleYZ = (scale.y + scale.z) / 2.0f;
-                    return PxGeometryHolder(PxCapsuleGeometry(avgScaleYZ * arg.radius, scale.x * arg.height * 0.5f));
+                    auto geom = PxCapsuleGeometry(avgScaleYZ * arg.radius, scale.x * arg.height * 0.5f);
+                    Assertf(geom.isValid(), "Invalid shape geometry: Capsule");
+                    return PxGeometryHolder(geom);
                 } else if constexpr (std::is_same<ecs::PhysicsShape::Box, T>()) {
-                    return PxGeometryHolder(PxBoxGeometry(GlmVec3ToPxVec3(scale * arg.extents * 0.5f)));
+                    auto geom = PxBoxGeometry(GlmVec3ToPxVec3(scale * arg.extents * 0.5f));
+                    Assertf(geom.isValid(), "Invalid shape geometry: Box");
+                    return PxGeometryHolder(geom);
                 } else if constexpr (std::is_same<ecs::PhysicsShape::Plane, T>()) {
-                    return PxGeometryHolder(PxPlaneGeometry());
+                    auto geom = PxPlaneGeometry();
+                    Assertf(geom.isValid(), "Invalid shape geometry: Plane");
+                    return PxGeometryHolder(geom);
                 } else if constexpr (std::is_same<ecs::PhysicsShape::ConvexMesh, T>()) {
                     Errorf("PhysxManager::GeometryFromShape does not support PhysicsShape::ConvexMesh");
                     return PxGeometryHolder();

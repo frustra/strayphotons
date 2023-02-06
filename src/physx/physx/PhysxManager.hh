@@ -103,7 +103,7 @@ namespace sp {
         void PreFrame() override;
         void Frame() override;
 
-        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
+        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
             const ecs::Entity &e);
         size_t UpdateShapes(const ecs::Physics &physics,
             const ecs::Entity &owner,
