@@ -10,7 +10,7 @@
 				"parameters": {
 					"model": "level1",
 					"render": true,
-					"physics": "static"
+					"physics": "Static"
 				}
 			}
 		},

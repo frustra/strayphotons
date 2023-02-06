@@ -286,7 +286,7 @@
 			"script": {
 				"parameters": {
 					"model": "sensor",
-					"physics": "static"
+					"physics": "Static"
 				},
 				"prefab": "gltf"
 			}

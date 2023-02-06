@@ -14,7 +14,7 @@
 					"parameters": {
 						"model": "door-frame",
 						"render": true,
-						"physics": "static"
+						"physics": "Static"
 					}
 				},
 				{

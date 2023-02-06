@@ -40,7 +40,7 @@
 				"parameters": {
 					"model": "sensor",
 					"render": true,
-					"physics": "static"
+					"physics": "Static"
 				}
 			}
 		}

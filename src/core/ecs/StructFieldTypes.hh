@@ -78,6 +78,7 @@ namespace ecs {
         std::vector<ScriptState>,
         std::vector<Sound>,
         std::optional<double>,
+        std::optional<PhysicsActorType>,
         robin_hood::unordered_map<std::string, double>,
         robin_hood::unordered_map<std::string, SignalExpression>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,

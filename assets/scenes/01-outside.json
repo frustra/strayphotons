@@ -10,7 +10,7 @@
 				"parameters": {
 					"model": "01-outside",
 					"render": true,
-					"physics": "static"
+					"physics": "Static"
 				}
 			}
 		},

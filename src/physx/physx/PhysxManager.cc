@@ -398,11 +398,6 @@ namespace sp {
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
         using Group = ecs::PhysicsGroup;
-        // Don't collide world overlap elements with the world
-        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::World, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::WorldOverlap, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::Interactive, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::WorldOverlap, (uint16_t)Group::HeldObject, false);
         // Don't collide the player with themselves, but allow the hands to collide with eachother
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::Player, false);
         PxSetGroupCollisionFlag((uint16_t)Group::Player, (uint16_t)Group::PlayerLeftHand, false);
@@ -411,7 +406,6 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::PlayerRightHand, (uint16_t)Group::PlayerRightHand, false);
         // Don't collide user interface elements with objects in the world or other interfaces
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::World, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Interactive, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::UserInterface, (uint16_t)Group::Player, false);
@@ -419,7 +413,6 @@ namespace sp {
         // Don't collide anything with the noclip group.
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::NoClip, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::World, false);
-        PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::WorldOverlap, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Interactive, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::HeldObject, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::Player, false);
@@ -492,7 +485,7 @@ namespace sp {
         return set;
     }
 
-    void PhysxManager::UpdateShapes(const ecs::Physics &physics,
+    size_t PhysxManager::UpdateShapes(const ecs::Physics &physics,
         const ecs::Entity &owner,
         const ecs::Entity &actorEnt,
         physx::PxRigidActor *actor,
@@ -501,9 +494,10 @@ namespace sp {
         std::vector<bool> existingShapes(physics.shapes.size());
 
         auto *userData = (ActorUserData *)actor->userData;
-        if (!userData) return;
+        if (!userData) return 0;
 
-        std::vector<PxShape *> pxShapes(actor->getNbShapes());
+        size_t shapeCount = actor->getNbShapes();
+        std::vector<PxShape *> pxShapes(shapeCount);
         actor->getShapes(pxShapes.data(), pxShapes.size());
         for (auto *pxShape : pxShapes) {
             auto shapeUserData = (ShapeUserData *)pxShape->userData;
@@ -525,8 +519,10 @@ namespace sp {
                             existingShapes[shapeUserData->ownerShapeIndex] = true;
 
                             // Update matching mesh
-                            if (glm::any(
-                                    glm::notEqual(offset.GetScale(), shapeUserData->shapeOffset.GetScale(), 1e-5f))) {
+                            if (glm::any(glm::notEqual(shape.transform.matrix,
+                                    shapeUserData->shapeCache.transform.matrix,
+                                    1e-4f)) ||
+                                glm::any(glm::notEqual(offset.matrix, shapeUserData->shapeOffset.matrix, 1e-4f))) {
                                 // Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
                                 PxConvexMeshGeometry meshGeom;
                                 if (pxShape->getConvexMeshGeometry(meshGeom)) {
@@ -534,7 +530,7 @@ namespace sp {
                                         GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetScale(), 0)));
                                     PxTransform shapeTransform(
                                         GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                                        GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
+                                        GlmQuatToPxQuat(shape.transform.GetRotation() * offset.GetRotation()));
                                     pxShape->setLocalPose(shapeTransform);
                                     pxShape->setGeometry(meshGeom);
                                 } else {
@@ -565,7 +561,7 @@ namespace sp {
 
                             PxTransform shapeTransform(
                                 GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                                GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
+                                GlmQuatToPxQuat(shape.transform.GetRotation() * offset.GetRotation()));
                             pxShape->setLocalPose(shapeTransform);
                             shapeUserData->shapeCache.transform = shape.transform;
                             shapeUserData->shapeOffset = offset;
@@ -578,6 +574,7 @@ namespace sp {
             if (removeShape) {
                 delete shapeUserData;
                 actor->detachShape(*pxShape);
+                shapeCount--;
                 shapesChanged = true;
             }
         }
@@ -610,6 +607,7 @@ namespace sp {
                         pxShape->setLocalPose(shapeTransform);
 
                         SetCollisionGroup(pxShape, userData->physicsGroup);
+                        shapeCount++;
                     }
                 } else {
                     Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
@@ -627,6 +625,7 @@ namespace sp {
                 pxShape->setLocalPose(shapeTransform);
 
                 SetCollisionGroup(pxShape, userData->physicsGroup);
+                shapeCount++;
             }
         }
 
@@ -638,13 +637,13 @@ namespace sp {
                 PxRigidBodyExt::updateMassAndInertia(*dynamic, physics.density);
             }
         }
+        return shapeCount;
     }
 
     PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);
-        if (ph.shapes.empty()) return nullptr;
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
         auto globalTransform = transform.GetGlobalTransform(lock);
@@ -674,7 +673,7 @@ namespace sp {
 
         ecs::Transform shapeOffset;
         shapeOffset.SetScale(scale);
-        UpdateShapes(ph, e, e, actor, shapeOffset);
+        auto shapeCount = UpdateShapes(ph, e, e, actor, shapeOffset);
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic) {
@@ -685,6 +684,7 @@ namespace sp {
             userData->linearDamping = ph.linearDamping;
         }
 
+        if (shapeCount == 0) return actor;
         scene->addActor(*actor);
         return actor;
     }
@@ -753,7 +753,7 @@ namespace sp {
         ecs::Transform shapeOffset = subActorOffset;
         shapeOffset.SetPosition(shapeOffset.GetPosition() * scale);
         shapeOffset.Scale(scale);
-        UpdateShapes(ph, e, actorEnt, actor, shapeOffset);
+        auto shapeCount = UpdateShapes(ph, e, actorEnt, actor, shapeOffset);
 
         if (actorEnt == e) {
             if (glm::any(glm::notEqual(actorTransform.matrix, userData->pose.matrix, 1e-5f))) {
@@ -800,6 +800,10 @@ namespace sp {
                     }
                 }
             }
+        }
+
+        if (!actor->getScene() && shapeCount > 0) {
+            scene->addActor(*actor);
         }
     }
 

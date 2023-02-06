@@ -104,9 +104,9 @@ namespace sp {
             hit.touches = hitBuffer.data();
             hit.maxNbTouches = hitBuffer.size();
             PxFilterData filterData;
-            filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP |
-                                          ecs::PHYSICS_GROUP_INTERACTIVE | ecs::PHYSICS_GROUP_HELD_OBJECT |
-                                          ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND | ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
+            filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_INTERACTIVE |
+                                          ecs::PHYSICS_GROUP_HELD_OBJECT | ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND |
+                                          ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
 
             OpticFilterCallback filterCallback(lock);
 

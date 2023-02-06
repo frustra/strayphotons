@@ -167,8 +167,7 @@
 				"parameters": {
 					"model": "sensor",
 					"render": true,
-					"physics": "static",
-					"physics_group": "WorldOverlap"
+					"physics": "SubActor"
 				}
 			}
 		},

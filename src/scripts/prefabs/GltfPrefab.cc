@@ -11,7 +11,7 @@ namespace ecs {
         std::vector<std::string> skipNames;
         PhysicsGroup physicsGroup = PhysicsGroup::World;
         bool render = true;
-        std::string physicsParam;
+        std::optional<ecs::PhysicsActorType> physicsType;
 
         void Prefab(const ScriptState &state,
             const std::shared_ptr<sp::Scene> &scene,
@@ -82,19 +82,9 @@ namespace ecs {
                         }
                     }
 
-                    if (!physicsParam.empty()) {
-                        sp::to_lower(physicsParam);
+                    if (physicsType) {
                         PhysicsShape::ConvexMesh mesh(modelName, *node.meshIndex);
-                        auto &physics = newEntity.Set<Physics>(lock, mesh, physicsGroup);
-                        if (physicsParam == "dynamic") {
-                            physics.type = ecs::PhysicsActorType::Dynamic;
-                        } else if (physicsParam == "kinematic") {
-                            physics.type = ecs::PhysicsActorType::Kinematic;
-                        } else if (physicsParam == "static") {
-                            physics.type = ecs::PhysicsActorType::Static;
-                        } else {
-                            Abortf("Unknown gltf physics param: %s", physicsParam);
-                        }
+                        newEntity.Set<Physics>(lock, mesh, physicsGroup, *physicsType);
                     }
                 }
 
@@ -110,6 +100,6 @@ namespace ecs {
         StructField::New("skip_nodes", &GltfPrefab::skipNames),
         StructField::New("physics_group", &GltfPrefab::physicsGroup),
         StructField::New("render", &GltfPrefab::render),
-        StructField::New("physics", &GltfPrefab::physicsParam));
+        StructField::New("physics", &GltfPrefab::physicsType));
     PrefabScript<GltfPrefab> gltfPrefab("gltf", MetadataGltfPrefab);
 } // namespace ecs

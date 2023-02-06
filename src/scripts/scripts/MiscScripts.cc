@@ -124,7 +124,7 @@ namespace sp::scripts {
             auto targetTF = targetEnt.Get<TransformTree>(lock);
             auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
 
-            auto targetForward = transform.pose.GetPosition() - relativeTF.GetPosition();
+            auto targetForward = relativeTF.GetPosition() - transform.pose.GetPosition();
             if (targetForward.x == 0 && targetForward.z == 0) return;
             targetForward = glm::normalize(targetForward);
 
@@ -135,8 +135,8 @@ namespace sp::scripts {
             }
 
             auto currentScale = transform.pose.GetScale();
-            auto targetRight = glm::normalize(glm::cross(targetForward, currentUp));
-            auto targetUp = glm::normalize(glm::cross(targetRight, targetForward));
+            auto targetRight = glm::normalize(glm::cross(currentUp, targetForward));
+            auto targetUp = glm::normalize(glm::cross(targetForward, targetRight));
 
             transform.pose.matrix[0] = targetRight * currentScale.x;
             transform.pose.matrix[1] = targetUp * currentScale.y;

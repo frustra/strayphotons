@@ -191,7 +191,7 @@
 				"parameters": {
 					"model": "duck",
 					"render": true,
-					"physics": "dynamic"
+					"physics": "Dynamic"
 				}
 			}
 		},

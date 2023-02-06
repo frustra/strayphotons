@@ -16,7 +16,7 @@
 				"parameters": {
 					"model": "station-segment",
 					"render": true,
-					"physics": "static",
+					"physics": "Static",
 					"skip_nodes": [
 						"Walls-Y",
 						"Walls+Y",
