@@ -191,12 +191,6 @@
 			},
 			"script": [
 				{
-					"parameters": {
-						"source": "world_gui"
-					},
-					"prefab": "template"
-				},
-				{
 					"onTick": "rotate_to_entity",
 					"parameters": {
 						"target": "player:head"

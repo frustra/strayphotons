@@ -696,7 +696,24 @@ namespace sp {
         ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
-        if (ph.type != ecs::PhysicsActorType::SubActor || !actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+        if (ph.type == ecs::PhysicsActorType::SubActor) {
+            if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                auto parentActor = e;
+                while (parentActor.Has<ecs::TransformTree>(lock)) {
+                    auto &tree = parentActor.Get<ecs::TransformTree>(lock);
+                    parentActor = tree.parent.Get(lock);
+                    if (parentActor.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                        break;
+                    }
+                }
+                if (parentActor.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                    actorEnt = parentActor;
+                } else {
+                    return;
+                }
+            }
+        }
+        if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
             actorEnt = e;
         }
         if (actors.count(actorEnt) == 0) {

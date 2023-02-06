@@ -9,12 +9,6 @@
 					"transform": {
 						"translate": [0, 0.005, 0]
 					}
-				},
-				{
-					"box": [0.03, 0.01, 0.03],
-					"transform": {
-						"translate": [0, 0.04, 0]
-					}
 				}
 			],
 			"type": "Dynamic"
@@ -74,8 +68,7 @@
 				"shapes": {
 					"box": [0.99, 0.99, 0.02]
 				},
-				"group": "WorldOverlap",
-				"type": "Static"
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "scoperoot",
