@@ -8,14 +8,28 @@
 			"transform": {
 				"parent": "scoperoot"
 			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "door-frame",
-					"render": true,
-					"physics": "static"
+			"script": [
+				{
+					"prefab": "gltf",
+					"parameters": {
+						"model": "door-frame",
+						"render": true,
+						"physics": "static"
+					}
+				},
+				{
+					"onTick": "edge_trigger",
+					"parameters": {
+						"input_expr": "scoperoot/door_open",
+						"output_event": "/sound/play"
+					}
 				}
-			}
+			],
+			"sound": [{
+				"file": "door_open.ogg",
+				"volume": 0.5
+			}],
+			"event_input": {}
 		},
 		{
 			"name": "left-panel",
