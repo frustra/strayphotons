@@ -485,7 +485,7 @@ namespace sp {
         return set;
     }
 
-    size_t PhysxManager::UpdateShapes(ecs::Lock<ecs::Read<ecs::Physics>> lock,
+    size_t PhysxManager::UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics>> lock,
         const ecs::Entity &owner,
         const ecs::Entity &actorEnt,
         physx::PxRigidActor *actor,
@@ -530,7 +530,9 @@ namespace sp {
                                     shapeUserData->shapeCache.transform.matrix,
                                     1e-4f)) ||
                                 glm::any(glm::notEqual(offset.matrix, shapeUserData->shapeOffset.matrix, 1e-4f))) {
-                                // Logf("Updating actor mesh: %s", ecs::ToString(lock, e));
+                                // Logf("Updating actor mesh: %s index %u",
+                                //     ecs::ToString(lock, owner),
+                                //     shapeUserData->ownerShapeIndex);
                                 PxConvexMeshGeometry meshGeom;
                                 if (pxShape->getConvexMeshGeometry(meshGeom)) {
                                     meshGeom.scale = PxMeshScale(
@@ -556,17 +558,23 @@ namespace sp {
 
                         // Update matching shape
                         if (shape.shape != shapeUserData->shapeCache.shape) {
-                            // Logf("Updating actor shape geometry: index %u", shapeIndex.second);
-                            auto geometry = GeometryFromShape(shape, offset.GetScale());
+                            // Logf("Updating actor shape geometry: %s index %u",
+                            //     ecs::ToString(lock, owner),
+                            //     shapeUserData->ownerShapeIndex);
+                            auto shapeScale = glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0));
+                            auto geometry = GeometryFromShape(shape, shapeScale);
                             pxShape->setGeometry(geometry.any());
                             shapeUserData->shapeCache.shape = shape.shape;
                             shapesChanged = true;
                         }
+                        // TODO: Updating shape scale does not update shape geometry
                         if (glm::any(glm::notEqual(shape.transform.matrix,
                                 shapeUserData->shapeCache.transform.matrix,
                                 1e-4f)) ||
                             glm::any(glm::notEqual(offset.matrix, shapeUserData->shapeOffset.matrix, 1e-4f))) {
-                            // Logf("Updating actor shape pose: index %u", shapeIndex.second);
+                            // Logf("Updating actor shape pose: %s index %u",
+                            //     ecs::ToString(lock, owner),
+                            //     shapeUserData->ownerShapeIndex);
 
                             PxTransform shapeTransform(
                                 GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
@@ -604,16 +612,12 @@ namespace sp {
 
                 if (shapeCache) {
                     for (auto &hull : shapeCache->hulls) {
+                        PxMeshScale meshScale = GlmVec3ToPxVec3(
+                            glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0)));
                         PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                            PxConvexMeshGeometry(hull.get(),
-                                PxMeshScale(GlmVec3ToPxVec3(shape.transform.GetScale() * offset.GetScale()))),
+                            PxConvexMeshGeometry(hull.get(), meshScale),
                             *material);
                         Assertf(pxShape, "Failed to create physx shape");
-
-                        auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
-                        shapeUserData->shapeCache.shape = shape.shape;
-                        shapeUserData->hullCache = shapeCache;
-                        pxShape->userData = shapeUserData;
 
                         PxTransform shapeTransform(
                             GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
@@ -621,6 +625,13 @@ namespace sp {
                         pxShape->setLocalPose(shapeTransform);
 
                         SetCollisionGroup(pxShape, userData->physicsGroup);
+
+                        auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
+                        shapeUserData->shapeCache = shape;
+                        shapeUserData->shapeOffset = offset;
+                        shapeUserData->hullCache = shapeCache;
+                        pxShape->userData = shapeUserData;
+
                         shapeCount++;
                         shapesChanged = true;
                     }
@@ -628,20 +639,23 @@ namespace sp {
                     Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
                 }
             } else {
+                auto shapeScale = glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0));
                 PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                    GeometryFromShape(shape, offset.GetScale()).any(),
+                    GeometryFromShape(shape, shapeScale).any(),
                     *material);
                 Assertf(pxShape, "Failed to create physx shape");
-
-                auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
-                shapeUserData->shapeCache.shape = shape.shape;
-                pxShape->userData = shapeUserData;
 
                 PxTransform shapeTransform(GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
                     GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
                 pxShape->setLocalPose(shapeTransform);
 
                 SetCollisionGroup(pxShape, userData->physicsGroup);
+
+                auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
+                shapeUserData->shapeCache = shape;
+                shapeUserData->shapeOffset = offset;
+                pxShape->userData = shapeUserData;
+
                 shapeCount++;
                 shapesChanged = true;
             }
