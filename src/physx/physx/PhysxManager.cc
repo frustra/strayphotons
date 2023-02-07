@@ -535,14 +535,15 @@ namespace sp {
                                 //     shapeUserData->ownerShapeIndex);
                                 PxConvexMeshGeometry meshGeom;
                                 if (pxShape->getConvexMeshGeometry(meshGeom)) {
-                                    meshGeom.scale = PxMeshScale(
-                                        GlmVec3ToPxVec3(glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0))));
-                                    PxTransform shapeTransform(
-                                        GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                                        GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
-                                    pxShape->setLocalPose(shapeTransform);
+                                    auto shapeTransform = offset * shape.transform;
+                                    meshGeom.scale = PxMeshScale(GlmVec3ToPxVec3(shapeTransform.GetScale()));
+                                    PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                                        GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                                    pxShape->setLocalPose(pxTransform);
+
                                     Assertf(meshGeom.isValid(), "Invalid mesh geometry: %s", mesh->meshName);
                                     pxShape->setGeometry(meshGeom);
+
                                     shapeUserData->shapeCache = shape;
                                     shapeUserData->shapeOffset = offset;
                                 } else {
@@ -561,8 +562,8 @@ namespace sp {
                             // Logf("Updating actor shape geometry: %s index %u",
                             //     ecs::ToString(lock, owner),
                             //     shapeUserData->ownerShapeIndex);
-                            auto shapeScale = glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0));
-                            auto geometry = GeometryFromShape(shape, shapeScale);
+                            auto shapeTransform = offset * shape.transform;
+                            auto geometry = GeometryFromShape(shape, shapeTransform.GetScale());
                             pxShape->setGeometry(geometry.any());
                             shapeUserData->shapeCache.shape = shape.shape;
                             shapesChanged = true;
@@ -576,10 +577,11 @@ namespace sp {
                             //     ecs::ToString(lock, owner),
                             //     shapeUserData->ownerShapeIndex);
 
-                            PxTransform shapeTransform(
-                                GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                                GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
-                            pxShape->setLocalPose(shapeTransform);
+                            auto shapeTransform = offset * shape.transform;
+                            PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                                GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                            pxShape->setLocalPose(pxTransform);
+
                             shapeUserData->shapeCache.transform = shape.transform;
                             shapeUserData->shapeOffset = offset;
                             shapesChanged = true;
@@ -611,18 +613,17 @@ namespace sp {
                 auto shapeCache = LoadConvexHullSet(mesh->model, mesh->hullSettings)->Get();
 
                 if (shapeCache) {
+                    auto shapeTransform = offset * shape.transform;
                     for (auto &hull : shapeCache->hulls) {
-                        PxMeshScale meshScale = GlmVec3ToPxVec3(
-                            glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0)));
+                        PxMeshScale meshScale = GlmVec3ToPxVec3(shapeTransform.GetScale());
                         PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
                             PxConvexMeshGeometry(hull.get(), meshScale),
                             *material);
                         Assertf(pxShape, "Failed to create physx shape");
 
-                        PxTransform shapeTransform(
-                            GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                            GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
-                        pxShape->setLocalPose(shapeTransform);
+                        PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                            GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                        pxShape->setLocalPose(pxTransform);
 
                         SetCollisionGroup(pxShape, userData->physicsGroup);
 
@@ -639,15 +640,15 @@ namespace sp {
                     Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
                 }
             } else {
-                auto shapeScale = glm::abs(offset * glm::vec4(shape.transform.GetScale(), 0));
+                auto shapeTransform = offset * shape.transform;
                 PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                    GeometryFromShape(shape, shapeScale).any(),
+                    GeometryFromShape(shape, shapeTransform.GetScale()).any(),
                     *material);
                 Assertf(pxShape, "Failed to create physx shape");
 
-                PxTransform shapeTransform(GlmVec3ToPxVec3(offset * glm::vec4(shape.transform.GetPosition(), 1)),
-                    GlmQuatToPxQuat(offset.GetRotation() * shape.transform.GetRotation()));
-                pxShape->setLocalPose(shapeTransform);
+                PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                    GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                pxShape->setLocalPose(pxTransform);
 
                 SetCollisionGroup(pxShape, userData->physicsGroup);
 
