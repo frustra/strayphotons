@@ -13,6 +13,10 @@ namespace sp {
         return frameInterval * std::round(value / frameInterval);
     }
 
+    static bool isNormal(glm::vec3 scale) {
+        return std::isnormal(scale.x) && std::isnormal(scale.y) && std::isnormal(scale.z);
+    }
+
     void AnimationSystem::Frame(ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>> lock) {
         ZoneScoped;
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
@@ -23,7 +27,7 @@ namespace sp {
 
             auto &transform = ent.Get<ecs::TransformTree>(lock);
 
-            double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_state");
+            double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_target");
             size_t newTargetState = (size_t)(signalState + 0.5);
             if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
 
@@ -59,9 +63,10 @@ namespace sp {
             float completion = 1.0 - animation.timeUntilNextState / duration;
             if (animation.interpolation == ecs::InterpolationMode::Linear) {
                 glm::vec3 dPos = nextState.pos - currentState.pos;
-                glm::vec3 dScale = nextState.scale - currentState.scale;
                 transform.pose.SetPosition(currentState.pos + completion * dPos);
-                transform.pose.SetScale(currentState.scale + completion * dScale);
+
+                glm::vec3 dScale = nextState.scale - currentState.scale;
+                if (isNormal(dScale)) transform.pose.SetScale(currentState.scale + completion * dScale);
             } else if (animation.interpolation == ecs::InterpolationMode::Cubic) {
                 float tangentScale = playDirection * duration;
 
@@ -79,7 +84,7 @@ namespace sp {
 
                 auto scale = av1 * currentState.scale + at1 * currentState.tangentScale + av2 * nextState.scale +
                              at2 * nextState.tangentScale;
-                transform.pose.SetScale(scale);
+                if (isNormal(scale)) transform.pose.SetScale(scale);
             }
 
             if (animation.timeUntilNextState == 0) {
@@ -87,8 +92,21 @@ namespace sp {
                 if (animation.interpolation == ecs::InterpolationMode::Step ||
                     animation.targetState == nextStateIndex) {
                     transform.pose.SetPosition(nextState.pos);
-                    transform.pose.SetScale(nextState.scale);
+                    if (isNormal(nextState.scale)) transform.pose.SetScale(nextState.scale);
                 }
+            }
+
+            animation.realState = animation.currentState + completion * animation.PlayDirection();
+        }
+    }
+
+    void AnimationSystem::UpdateSignals(ecs::Lock<ecs::Read<ecs::Animation>, ecs::Write<ecs::SignalOutput>> lock) {
+        for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
+            if (!ent.Has<ecs::Animation, ecs::SignalOutput>(lock)) continue;
+            const auto &anim = ent.Get<ecs::Animation>(lock);
+
+            if (ent.Get<const ecs::SignalOutput>(lock).GetSignal("animation_state") != anim.realState) {
+                ent.Get<ecs::SignalOutput>(lock).SetSignal("animation_state", anim.realState);
             }
         }
     }

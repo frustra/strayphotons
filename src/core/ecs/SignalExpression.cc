@@ -189,7 +189,7 @@ namespace ecs {
                         nodeStrings.emplace_back("!" + nodeStrings[inputIndex]);
                     }
                 }
-            } else if (token == "sin" || token == "cos" || token == "tan") {
+            } else if (token == "sin" || token == "cos" || token == "tan" || token == "floor" || token == "ceil") {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),
@@ -240,6 +240,20 @@ namespace ecs {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) {
                                                return std::tan(input);
+                                           }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == "floor") {
+                    nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                           [](double input) {
+                                               return std::floor(input);
+                                           }},
+                        startToken,
+                        tokenIndex);
+                } else if (token == "ceil") {
+                    nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
+                                           [](double input) {
+                                               return std::ceil(input);
                                            }},
                         startToken,
                         tokenIndex);

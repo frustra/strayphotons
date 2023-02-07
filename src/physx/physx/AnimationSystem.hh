@@ -11,6 +11,7 @@ namespace sp {
         ~AnimationSystem() {}
 
         void Frame(ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>> lock);
+        void UpdateSignals(ecs::Lock<ecs::Read<ecs::Animation>, ecs::Write<ecs::SignalOutput>> lock);
 
     private:
         double RoundToFrameInterval(double value) const;
