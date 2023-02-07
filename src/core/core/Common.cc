@@ -83,6 +83,12 @@ namespace sp {
         return state > 1;
     }
 
+    bool all_lower(const string &str) {
+        return std::all_of(str.begin(), str.end(), [](unsigned char c) {
+            return std::islower(c);
+        });
+    }
+
     namespace boost_replacements {
         bool starts_with(const string &str, const string &prefix) {
             return str.rfind(prefix, 0) == 0;

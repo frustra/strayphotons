@@ -232,6 +232,7 @@ namespace sp {
 
             ImGui::Text("Resolution");
             ImGui::Text("Full Screen");
+            ImGui::Text("Mirror VR View");
 
             ImGui::PopStyleVar();
             ImGui::NextColumn();
@@ -260,6 +261,12 @@ namespace sp {
                 bool fullscreen = CVarWindowFullscreen.Get();
                 if (ImGui::Checkbox("##fullscreencheck", &fullscreen)) {
                     CVarWindowFullscreen.Set(fullscreen);
+                }
+
+                auto &mirrorXRCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
+                bool mirrorXR = mirrorXRCVar.Get();
+                if (ImGui::Checkbox("##mirrorxrcheck", &mirrorXR)) {
+                    mirrorXRCVar.Set(mirrorXR);
                 }
             }
 
