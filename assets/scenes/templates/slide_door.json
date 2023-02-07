@@ -20,7 +20,7 @@
 				{
 					"onTick": "edge_trigger",
 					"parameters": {
-						"input_expr": "scoperoot/door_open",
+						"input_expr": "scoperoot/door_open && ceil(left-panel/animation_state)",
 						"output_event": "/sound/play"
 					}
 				}
@@ -30,6 +30,34 @@
 				"volume": 0.5
 			}],
 			"event_input": {}
+		},
+		{
+			"name": "lock",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "left-panel",
+				"translate": [0, 1.25, 0],
+				"scale": [0.14, 0.05, 0.1]
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"translate": [0, 1.25, 0]
+					},
+					{
+						"delay": 0.5,
+						"translate": [0, 1.25, 0.1]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_target": "scoperoot/door_open || ceil(left-panel/animation_state)"
+			},
+			"signal_output": {
+			}
 		},
 		{
 			"name": "left-panel",
@@ -49,7 +77,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open"
+				"animation_target": "scoperoot/door_open && floor(lock/animation_state)"
 			},
 			"signal_output": {
 			},
@@ -83,7 +111,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open"
+				"animation_target": "scoperoot/door_open && floor(lock/animation_state)"
 			},
 			"signal_output": {
 			},

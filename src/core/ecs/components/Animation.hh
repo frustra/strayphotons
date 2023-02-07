@@ -18,7 +18,7 @@ namespace ecs {
         double delay = 0.0;
 
         glm::vec3 pos = glm::vec3(0);
-        glm::vec3 scale = glm::vec3(1);
+        glm::vec3 scale = glm::vec3(-INFINITY);
 
         // derivative vectors, used for cubic interpolation only
         glm::vec3 tangentPos = glm::vec3(0);
