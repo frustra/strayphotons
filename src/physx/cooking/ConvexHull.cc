@@ -266,11 +266,9 @@ namespace sp {
             Errorf("Failed to load physx serialization: %s", settings->name);
             return nullptr;
         }
-        hullSet->collection = std::shared_ptr<physx::PxCollection>(collection,
-            [name = settings->name](physx::PxCollection *ptr) {
-                Logf("Removed collection %s", name);
-                ptr->release();
-            });
+        hullSet->collection = std::shared_ptr<physx::PxCollection>(collection, [](physx::PxCollection *ptr) {
+            ptr->release();
+        });
 
         hullSet->hulls.reserve(collection->getNbObjects());
         for (uint32_t i = 0; i < collection->getNbObjects(); i++) {
@@ -281,9 +279,8 @@ namespace sp {
                 continue;
             }
 
-            if (settings->name == "duck.cooked") Logf("New pxMesh ref count: %u", pxMesh->getReferenceCount());
             hullSet->hulls.emplace_back(pxMesh, [name = settings->name](physx::PxConvexMesh *ptr) {
-                Logf("Removed  %s pxMesh ref count: %u", name, ptr->getReferenceCount());
+                Assertf(ptr->getReferenceCount() == 1, "ConvexHullSet destroyed while shapes still in use: %s", name);
                 ptr->release();
             });
         }

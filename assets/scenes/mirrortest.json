@@ -335,7 +335,7 @@
 						"translate": [0, 0, 0.0095]
 					}
 				},
-				"group": "SubActor"
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "mirrorbox2",
@@ -357,7 +357,7 @@
 						"translate": [0, 0, 0.0095]
 					}
 				},
-				"group": "SubActor"
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "mirrorbox3",

@@ -105,7 +105,7 @@ namespace sp {
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
             const ecs::Entity &e);
-        size_t UpdateShapes(const ecs::Physics &physics,
+        size_t UpdateShapes(ecs::Lock<ecs::Read<ecs::Physics>> lock,
             const ecs::Entity &owner,
             const ecs::Entity &actorEnt,
             physx::PxRigidActor *actor,
