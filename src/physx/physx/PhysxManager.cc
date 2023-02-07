@@ -331,6 +331,7 @@ namespace sp {
 
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
+            animationSystem.UpdateSignals(lock);
 
             {
                 ZoneScopedN("Scripts::OnPhysicsUpdate");

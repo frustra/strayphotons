@@ -3,7 +3,7 @@ steplogic
 stepphysics
 screenshot moving-platform-frame0.png
 stepgraphics
-setsignal moving-platform:platform_root/animation_state 3
+setsignal moving-platform:platform_root/animation_target 3
 steplogic
 stepphysics 100
 screenshot moving-platform-frame1.png

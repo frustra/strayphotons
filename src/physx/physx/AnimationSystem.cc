@@ -23,7 +23,7 @@ namespace sp {
 
             auto &transform = ent.Get<ecs::TransformTree>(lock);
 
-            double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_state");
+            double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_target");
             size_t newTargetState = (size_t)(signalState + 0.5);
             if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
 
@@ -89,6 +89,19 @@ namespace sp {
                     transform.pose.SetPosition(nextState.pos);
                     transform.pose.SetScale(nextState.scale);
                 }
+            }
+
+            animation.realState = animation.currentState + completion * animation.PlayDirection();
+        }
+    }
+
+    void AnimationSystem::UpdateSignals(ecs::Lock<ecs::Read<ecs::Animation>, ecs::Write<ecs::SignalOutput>> lock) {
+        for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
+            if (!ent.Has<ecs::Animation, ecs::SignalOutput>(lock)) continue;
+            const auto &anim = ent.Get<ecs::Animation>(lock);
+
+            if (ent.Get<const ecs::SignalOutput>(lock).GetSignal("animation_state") != anim.realState) {
+                ent.Get<ecs::SignalOutput>(lock).SetSignal("animation_state", anim.realState);
             }
         }
     }

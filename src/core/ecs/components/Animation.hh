@@ -43,6 +43,7 @@ namespace ecs {
         size_t targetState = 0;
         size_t currentState = 0;
         double timeUntilNextState = 0;
+        double realState = 0;
 
         InterpolationMode interpolation = InterpolationMode::Linear;
         float tension = 0.5f;
@@ -56,7 +57,8 @@ namespace ecs {
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
         StructField::New("defaultState", &Animation::targetState),
         StructField::New("interpolation", &Animation::interpolation),
-        StructField::New("tension", &Animation::tension));
+        StructField::New("tension", &Animation::tension),
+        StructField::New("state", &Animation::realState, FieldAction::None));
     static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
 
     template<>

@@ -49,7 +49,9 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": "scoperoot/door_open"
+				"animation_target": "scoperoot/door_open"
+			},
+			"signal_output": {
 			},
 			"physics": {
 				"shapes": {
@@ -81,7 +83,9 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": "scoperoot/door_open"
+				"animation_target": "scoperoot/door_open"
+			},
+			"signal_output": {
 			},
 			"physics": {
 				"shapes": {
