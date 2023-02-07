@@ -21,7 +21,7 @@ namespace ecs {
         std::variant<Line, Segments> line = Line();
 
         float intensity = 1.0f; // multiplier applied to color
-        float mediaDensityFactor = 1.0f;
+        float mediaDensityFactor = 0.6f;
         bool on = true;
         bool relative = true; // multiply transform
         float radius = 0.003; // in world units

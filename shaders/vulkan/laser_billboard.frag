@@ -27,7 +27,7 @@ layout(push_constant) uniform PushConstants {
 void main() {
     float dist = abs(inTexCoord.x - 0.5);
 
-    float weight = (1 - smoothstep(0.1, 0.48, dist)) * inScale;
+    float weight = (1 - smoothstep(0.2, 0.48, dist)) * inScale;
 
     if (mediaDensityFactor > 0) {
         float density = MediaDensity(inWorldPos, time);
