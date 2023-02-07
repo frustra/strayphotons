@@ -195,6 +195,7 @@ namespace sp {
     struct is_glm_vec<glm::vec<L, T, Q>> : std::true_type {};
 
     bool is_float(string_view str);
+    bool all_lower(const string &str);
 
     struct float16_t {
         uint16_t value;

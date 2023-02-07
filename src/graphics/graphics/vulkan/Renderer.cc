@@ -33,6 +33,8 @@ namespace sp::vulkan {
 
     CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
+    static CVar<bool> CVarMirrorXR("r.MirrorXR", false, "Mirror XR in primary window");
+
     static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
     static CVar<string> CVarXRViewTarget("r.XRView", defaultXRViewTarget, "HMD's render target");
@@ -65,6 +67,11 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
+        if (CVarMirrorXR.Changed()) {
+            bool mirrorXR = CVarMirrorXR.Get(true);
+            CVarWindowViewTarget.Set(mirrorXR ? CVarXRViewTarget.Get() : defaultWindowViewTarget);
+        }
+
         for (auto &gui : guis) {
             if (gui.contextShared) gui.contextShared->BeforeFrame();
         }
