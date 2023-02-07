@@ -821,24 +821,26 @@ namespace sp {
                     dynamic->setLinearDamping(ph.linearDamping);
                     userData->linearDamping = ph.linearDamping;
                 }
-
-                if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-                    auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
-                    glm::vec3 gravityForce = sceneProperties.GetGravity(actorTransform.GetPosition());
-                    // Force will accumulate on sleeping objects causing jitter
-                    if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
-                        dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
-                    }
-                    if (gravityForce != userData->gravity) {
-                        dynamic->wakeUp();
-                        userData->gravity = gravityForce;
-                    }
-                }
             }
         }
 
         if (!actor->getScene() && shapeCount > 0) {
             scene->addActor(*actor);
+        }
+
+        if (actorEnt == e && dynamic && actor->getScene()) {
+            if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
+                auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
+                glm::vec3 gravityForce = sceneProperties.GetGravity(actorTransform.GetPosition());
+                // Force will accumulate on sleeping objects causing jitter
+                if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
+                    dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
+                }
+                if (gravityForce != userData->gravity) {
+                    dynamic->wakeUp();
+                    userData->gravity = gravityForce;
+                }
+            }
         }
     }
 

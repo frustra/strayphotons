@@ -212,8 +212,10 @@ namespace sp {
             if (joint.noclipConstraint) joint.noclipConstraint->release();
         }
 
-        auto dynamic = actor->is<PxRigidDynamic>();
-        if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
+        if (actor->getScene()) {
+            auto dynamic = actor->is<PxRigidDynamic>();
+            if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
+        }
 
         manager.joints.erase(entity);
     }
@@ -437,7 +439,7 @@ namespace sp {
             return false;
         });
 
-        if (wakeUp) {
+        if (wakeUp && actor->getScene()) {
             auto dynamic = actor->is<PxRigidDynamic>();
             if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) dynamic->wakeUp();
         }
