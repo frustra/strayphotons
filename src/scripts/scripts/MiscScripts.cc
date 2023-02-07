@@ -296,22 +296,30 @@ namespace sp::scripts {
     InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
         MetadataComponentFromSignal);
 
-    struct SignalDelay {
+    struct DebounceSignal {
         size_t delayFrames = 1;
         SignalExpression input;
         std::string output;
 
-        std::queue<double> history;
+        std::optional<double> lastSignal;
+        size_t frameCount = 0;
 
         template<typename LockType>
         void updateSignal(LockType lock, Entity ent) {
             if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            history.emplace(input.Evaluate(lock));
-            while (history.size() > delayFrames) {
-                signalOutput.SetSignal(output, history.front());
-                history.pop();
+            auto currentOutput = signalOutput.GetSignal(output);
+            if (!lastSignal) lastSignal = currentOutput;
+            auto currentInput = input.Evaluate(lock);
+            if ((currentInput >= 0.5) == (*lastSignal >= 0.5)) {
+                frameCount++;
+            } else {
+                frameCount = 0;
+                lastSignal = currentInput;
+            }
+            if (frameCount > delayFrames) {
+                signalOutput.SetSignal(output, currentInput);
             }
         }
 
@@ -322,10 +330,10 @@ namespace sp::scripts {
             updateSignal(lock, ent);
         }
     };
-    StructMetadata MetadataSignalDelay(typeid(SignalDelay),
-        StructField::New("delay_frames", &SignalDelay::delayFrames),
-        StructField::New("input", &SignalDelay::input),
-        StructField::New("output", &SignalDelay::output));
-    InternalScript<SignalDelay> signalDelay("signal_delay", MetadataSignalDelay);
-    InternalPhysicsScript<SignalDelay> physicsSignalDelay("physics_signal_delay", MetadataSignalDelay);
+    StructMetadata MetadataDebounceSignal(typeid(DebounceSignal),
+        StructField::New("delay_frames", &DebounceSignal::delayFrames),
+        StructField::New("input", &DebounceSignal::input),
+        StructField::New("output", &DebounceSignal::output));
+    InternalScript<DebounceSignal> debounceSignal("debounce", MetadataDebounceSignal);
+    InternalPhysicsScript<DebounceSignal> physicsDebounceSignal("physics_debounce", MetadataDebounceSignal);
 } // namespace sp::scripts

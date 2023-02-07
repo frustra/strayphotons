@@ -287,6 +287,56 @@
 			]
 		},
 		{
+			"name": "laser_gate_0.gate",
+			"signal_output": {
+				"value": 1
+			},
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 2,
+					"input": "laser_gate_0.gate/input_value",
+					"output": "value"
+				}
+			}
+		},
+		{
+			"name": "laser_gate_1.gate",
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 2,
+					"input": "laser_gate_1.gate/input_value",
+					"output": "value"
+				}
+			}
+		},
+		{
+			"name": "laser_gate_2.gate",
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 2,
+					"input": "laser_gate_2.gate/input_value",
+					"output": "value"
+				}
+			}
+		},
+		{
+			"name": "laser_gate_3.gate",
+			"signal_output": {
+				"value": 1
+			},
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 2,
+					"input": "laser_gate_3.gate/input_value",
+					"output": "value"
+				}
+			}
+		},
+		{
 			"name": "laser_gate_1",
 			"transform": {
 				"parent": "table",
@@ -539,7 +589,7 @@
 				"laser_color_g": "init_pulser/cell_output_g",
 				"laser_color_r": "init_pulser/cell_output_r"
 			},
-			"script": {
+			"_script": {
 				"onTick": "charge_cell",
 				"parameters": {
 					"charge_level": 100,

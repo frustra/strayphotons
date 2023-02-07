@@ -312,7 +312,7 @@ namespace sp {
                             if (transform != userData->pose) {
                                 PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()),
                                     GlmQuatToPxQuat(transform.GetRotation()));
-                                if (pxTransform.isSane()) {
+                                if (pxTransform.isSane() && pxTransform.isValid()) {
                                     auto dynamic = actor->is<PxRigidDynamic>();
                                     if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
                                         dynamic->setKinematicTarget(pxTransform);
@@ -671,6 +671,7 @@ namespace sp {
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic && shapesChanged) {
+            Logf("Updating actor inertia: %s", ecs::ToString(lock, actorEnt));
             auto &ph = actorEnt.Get<ecs::Physics>(lock);
             if (ph.mass > 0.0f) {
                 PxRigidBodyExt::setMassAndUpdateInertia(*dynamic, ph.mass);
@@ -802,7 +803,7 @@ namespace sp {
                 // Logf("Updating actor position: %s", ecs::ToString(lock, e));
                 PxTransform pxTransform(GlmVec3ToPxVec3(actorTransform.GetPosition()),
                     GlmQuatToPxQuat(actorTransform.GetRotation()));
-                if (pxTransform.isSane()) {
+                if (pxTransform.isSane() && pxTransform.isValid()) {
                     if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
                         dynamic->setKinematicTarget(pxTransform);
                     } else {
@@ -835,17 +836,22 @@ namespace sp {
             scene->addActor(*actor);
         }
 
-        if (actorEnt == e && dynamic && actor->getScene()) {
-            if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-                auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
-                glm::vec3 gravityForce = sceneProperties.GetGravity(actorTransform.GetPosition());
-                // Force will accumulate on sleeping objects causing jitter
-                if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
-                    dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
-                }
-                if (gravityForce != userData->gravity) {
-                    dynamic->wakeUp();
-                    userData->gravity = gravityForce;
+        if (actor->getScene()) {
+            Assertf(actor->getGlobalPose().isValid(),
+                "Actor pose invalid: %s",
+                ecs::EntityRef(actorEnt).Name().String());
+            if (actorEnt == e && dynamic) {
+                if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
+                    auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
+                    glm::vec3 gravityForce = sceneProperties.GetGravity(actorTransform.GetPosition());
+                    // Force will accumulate on sleeping objects causing jitter
+                    if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
+                        dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
+                    }
+                    if (gravityForce != userData->gravity) {
+                        dynamic->wakeUp();
+                        userData->gravity = gravityForce;
+                    }
                 }
             }
         }
