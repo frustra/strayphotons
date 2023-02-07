@@ -83,13 +83,16 @@
 			"name": "test1:dodecahedron"
 		},
 		{
+			"name": "test1:duck",
+			"physics": {
+				"linear_damping": 15
+			}
+		},
+		{
 			"name": "test1:duck.duck.gltf2",
 			"renderable": {
 				"visibility": "Transparent|LightingVoxel",
 				"emissive": 2.0
-			},
-			"physics": {
-				"linear_damping": 15
 			}
 		},
 		{
