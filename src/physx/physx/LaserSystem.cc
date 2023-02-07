@@ -26,11 +26,11 @@ namespace sp {
             const PxRigidActor *actor,
             PxHitFlags &queryFlags) {
             if (!actor) return PxQueryHitType::eNONE;
-            auto userData = (ActorUserData *)actor->userData;
+            auto userData = (ShapeUserData *)shape->userData;
             if (!userData) return PxQueryHitType::eNONE;
 
-            if (userData->entity.Has<ecs::OpticalElement>(lock)) {
-                auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
+            if (userData->owner.Has<ecs::OpticalElement>(lock)) {
+                auto &optic = userData->owner.Get<ecs::OpticalElement>(lock);
                 if (optic.passTint == glm::vec3(1)) {
                     if (color * optic.reflectTint == glm::vec3(0)) {
                         return PxQueryHitType::eNONE;
@@ -104,8 +104,8 @@ namespace sp {
             hit.touches = hitBuffer.data();
             hit.maxNbTouches = hitBuffer.size();
             PxFilterData filterData;
-            filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_WORLD_OVERLAP |
-                                          ecs::PHYSICS_GROUP_INTERACTIVE | ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND |
+            filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_INTERACTIVE |
+                                          ecs::PHYSICS_GROUP_HELD_OBJECT | ecs::PHYSICS_GROUP_PLAYER_LEFT_HAND |
                                           ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND);
 
             OpticFilterCallback filterCallback(lock);
@@ -152,11 +152,11 @@ namespace sp {
                     for (size_t i = 0; i < hit.nbTouches; i++) {
                         auto &touch = hit.touches[i];
                         if (!touch.actor) continue;
-                        auto userData = (ActorUserData *)touch.actor->userData;
+                        auto userData = (ShapeUserData *)touch.shape->userData;
                         if (!userData) continue;
-                        if (!userData->entity.Has<ecs::OpticalElement, ecs::TransformSnapshot>(lock)) continue;
-                        auto &optic = userData->entity.Get<ecs::OpticalElement>(lock);
-                        auto &opticTransform = userData->entity.Get<ecs::TransformSnapshot>(lock);
+                        if (!userData->owner.Has<ecs::OpticalElement, ecs::TransformSnapshot>(lock)) continue;
+                        auto &optic = userData->owner.Get<ecs::OpticalElement>(lock);
+                        auto &opticTransform = userData->owner.Get<ecs::TransformSnapshot>(lock);
                         if (optic.singleDirection && glm::dot(opticTransform.GetForward(), laserStart.rayDir) > 0) {
                             continue;
                         }
@@ -195,11 +195,11 @@ namespace sp {
                                       ((hit.hasBlock ? hit.block.distance : maxDistance) - startDistance);
                     segment.color = laserStart.color;
 
-                    physx::PxRigidActor *hitActor = hit.block.actor;
-                    if (hitActor) {
-                        auto userData = (ActorUserData *)hitActor->userData;
+                    physx::PxShape *hitShape = hit.block.shape;
+                    if (hitShape) {
+                        auto userData = (ShapeUserData *)hitShape->userData;
                         if (userData) {
-                            auto hitEntity = userData->entity;
+                            auto hitEntity = userData->owner;
                             if (hitEntity.Has<ecs::LaserSensor>(lock)) {
                                 auto &sensor = hitEntity.Get<ecs::LaserSensor>(lock);
                                 sensor.illuminance += glm::vec3(laserStart.color * emitter.intensity);

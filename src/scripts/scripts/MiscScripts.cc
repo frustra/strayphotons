@@ -74,7 +74,7 @@ namespace sp::scripts {
                     newEntity.Set<TransformTree>(lock, transform);
                     newEntity.Set<TransformSnapshot>(lock, transform);
                     newEntity.Set<Renderable>(lock, modelName, sp::Assets().LoadGltf(modelName));
-                    newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, true, 1.0f);
+                    newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, ecs::PhysicsActorType::Dynamic, 1.0f);
                     newEntity.Set<PhysicsJoints>(lock);
                     newEntity.Set<PhysicsQuery>(lock);
                     newEntity.Set<EventInput>(lock);
@@ -124,7 +124,7 @@ namespace sp::scripts {
             auto targetTF = targetEnt.Get<TransformTree>(lock);
             auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
 
-            auto targetForward = transform.pose.GetPosition() - relativeTF.GetPosition();
+            auto targetForward = relativeTF.GetPosition() - transform.pose.GetPosition();
             if (targetForward.x == 0 && targetForward.z == 0) return;
             targetForward = glm::normalize(targetForward);
 
@@ -135,8 +135,8 @@ namespace sp::scripts {
             }
 
             auto currentScale = transform.pose.GetScale();
-            auto targetRight = glm::normalize(glm::cross(targetForward, currentUp));
-            auto targetUp = glm::normalize(glm::cross(targetRight, targetForward));
+            auto targetRight = glm::normalize(glm::cross(currentUp, targetForward));
+            auto targetUp = glm::normalize(glm::cross(targetForward, targetRight));
 
             transform.pose.matrix[0] = targetRight * currentScale.x;
             transform.pose.matrix[1] = targetUp * currentScale.y;
@@ -296,4 +296,37 @@ namespace sp::scripts {
     InternalScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
     InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
         MetadataComponentFromSignal);
+
+    struct SignalDelay {
+        size_t delayFrames = 1;
+        SignalExpression input;
+        std::string output;
+
+        std::queue<double> history;
+
+        template<typename LockType>
+        void updateSignal(LockType lock, Entity ent) {
+            if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
+
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
+            history.emplace(input.Evaluate(lock));
+            while (history.size() > delayFrames) {
+                signalOutput.SetSignal(output, history.front());
+                history.pop();
+            }
+        }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateSignal(lock, ent);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateSignal(lock, ent);
+        }
+    };
+    StructMetadata MetadataSignalDelay(typeid(SignalDelay),
+        StructField::New("delay_frames", &SignalDelay::delayFrames),
+        StructField::New("input", &SignalDelay::input),
+        StructField::New("output", &SignalDelay::output));
+    InternalScript<SignalDelay> signalDelay("signal_delay", MetadataSignalDelay);
+    InternalPhysicsScript<SignalDelay> physicsSignalDelay("physics_signal_delay", MetadataSignalDelay);
 } // namespace sp::scripts

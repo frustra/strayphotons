@@ -25,7 +25,7 @@ namespace sp::scripts {
 
             auto &ph = ent.Get<Physics>(lock);
             auto &joints = ent.Get<PhysicsJoints>(lock);
-            bool enableInteraction = ph.dynamic && !ph.kinematic && !disabled;
+            bool enableInteraction = ph.type == PhysicsActorType::Dynamic && !disabled;
 
             glm::vec3 centerOfMass;
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
@@ -136,6 +136,12 @@ namespace sp::scripts {
                 }
             }
 
+            if (grabEntities.empty() && ph.group == PhysicsGroup::HeldObject) {
+                ph.group = PhysicsGroup::World;
+            } else if (!grabEntities.empty() && ph.group == PhysicsGroup::World) {
+                ph.group = PhysicsGroup::HeldObject;
+            }
+
             bool newRenderOutline = !disabled && (!grabEntities.empty() || !pointEntities.empty());
             if (renderOutline != newRenderOutline) {
                 for (auto &e : lock.EntitiesWith<Renderable>()) {
@@ -170,8 +176,31 @@ namespace sp::scripts {
 
     struct InteractHandler {
         float grabDistance = 2.0f;
+        EntityRef noclipEntity;
         Entity grabEntity, pointEntity, pressEntity;
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
+
+        void UpdateGrabTarget(Lock<Write<PhysicsJoints>> lock, Entity newGrabEntity) {
+            auto noclipEnt = noclipEntity.Get(lock);
+            if (!noclipEnt.Has<PhysicsJoints>(lock)) return;
+            auto &joints = noclipEnt.Get<PhysicsJoints>(lock);
+            PhysicsJoint joint;
+            joint.type = PhysicsJointType::NoClip;
+            joint.target = grabEntity;
+            if (newGrabEntity == grabEntity) {
+                joints.Add(joint);
+            } else {
+                auto it = std::find(joints.joints.begin(), joints.joints.end(), joint);
+                if (it != joints.joints.end()) {
+                    it->type = PhysicsJointType::TemporaryNoClip;
+                }
+                if (newGrabEntity) {
+                    joint.target = newGrabEntity;
+                    joints.Add(joint);
+                }
+                grabEntity = newGrabEntity;
+            }
+        }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (ent.Has<TransformSnapshot, PhysicsQuery>(lock)) {
@@ -197,7 +226,7 @@ namespace sp::scripts {
                         if (grabEntity) {
                             // Drop the currently held entity
                             EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
-                            grabEntity = {};
+                            UpdateGrabTarget(lock, {});
                         }
                         if (std::holds_alternative<bool>(event.data)) {
                             auto &grabEvent = std::get<bool>(event.data);
@@ -206,7 +235,7 @@ namespace sp::scripts {
                                 if (EventBindings::SendEvent(lock,
                                         raycastResult.target,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    grabEntity = raycastResult.target;
+                                    UpdateGrabTarget(lock, raycastResult.target);
                                 }
                             }
                         } else if (std::holds_alternative<Entity>(event.data)) {
@@ -216,7 +245,7 @@ namespace sp::scripts {
                                 if (EventBindings::SendEvent(lock,
                                         targetEnt,
                                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, transform}) > 0) {
-                                    grabEntity = targetEnt;
+                                    UpdateGrabTarget(lock, targetEnt);
                                 }
                             }
                         } else {
@@ -263,7 +292,8 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractHandler(typeid(InteractHandler),
-        StructField::New("grab_distance", &InteractHandler::grabDistance));
+        StructField::New("grab_distance", &InteractHandler::grabDistance),
+        StructField::New("noclip_entity", &InteractHandler::noclipEntity));
     InternalScript<InteractHandler> interactHandler("interact_handler",
         MetadataInteractHandler,
         false,

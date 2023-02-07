@@ -28,6 +28,7 @@ namespace ecs {
     enum class GuiTarget;
     enum class InterpolationMode;
     enum class PhysicsGroup : uint16_t;
+    enum class PhysicsActorType : uint8_t;
     enum class PhysicsJointType;
     struct PhysicsShape;
     struct PhysicsJoint;
@@ -77,6 +78,7 @@ namespace ecs {
         std::vector<ScriptState>,
         std::vector<Sound>,
         std::optional<double>,
+        std::optional<PhysicsActorType>,
         robin_hood::unordered_map<std::string, double>,
         robin_hood::unordered_map<std::string, SignalExpression>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
@@ -87,6 +89,7 @@ namespace ecs {
         GuiTarget,
         InterpolationMode,
         PhysicsGroup,
+        PhysicsActorType,
         PhysicsJointType,
         sp::ScenePriority,
         SoundType,

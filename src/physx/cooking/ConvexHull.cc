@@ -279,7 +279,8 @@ namespace sp {
                 continue;
             }
 
-            hullSet->hulls.emplace_back(pxMesh, [](physx::PxConvexMesh *ptr) {
+            hullSet->hulls.emplace_back(pxMesh, [name = settings->name](physx::PxConvexMesh *ptr) {
+                Assertf(ptr->getReferenceCount() == 1, "ConvexHullSet destroyed while shapes still in use: %s", name);
                 ptr->release();
             });
         }

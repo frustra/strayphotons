@@ -30,8 +30,11 @@
 				"shapes": {
 					"model": "box"
 				},
-				"group": "WorldOverlap",
-				"kinematic": true
+				"type": "Kinematic"
+			},
+			"physics_joints": {
+				"type": "NoClip",
+				"target": "button_actuator"
 			},
 			"signal_output": {},
 			"event_bindings": {
@@ -59,7 +62,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -76,7 +79,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -93,7 +96,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -110,7 +113,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{

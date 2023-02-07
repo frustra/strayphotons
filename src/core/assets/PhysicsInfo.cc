@@ -114,21 +114,23 @@ namespace sp {
         }
     }
 
-    HullSettings PhysicsInfo::GetHull(const std::string &meshName) const {
-        auto it = hulls.find(meshName);
-        if (it != hulls.end()) return it->second;
+    HullSettings PhysicsInfo::GetHull(const std::shared_ptr<const PhysicsInfo> &source, const std::string &meshName) {
+        Assertf(source, "PhysicsInfo::GetHull called with null source");
+
+        auto it = source->hulls.find(meshName);
+        if (it != source->hulls.end()) return it->second;
         if (starts_with(meshName, "convex")) {
             auto end = std::find_if(meshName.begin() + 6, meshName.end(), [](char ch) {
                 return !std::isdigit(ch);
             });
             if (end == meshName.end()) {
                 size_t meshIndex = strtoull(meshName.c_str() + 6, nullptr, 10); // Defaults to 0 on failure
-                return HullSettings(modelName + "." + meshName, meshIndex);
+                return HullSettings(source, source->modelName + "." + meshName, meshIndex);
             } else {
-                Warnf("Missing physics hull, defaulting to convex: %s.%s", modelName, meshName);
+                Warnf("Missing physics hull, defaulting to convex: %s.%s", source->modelName, meshName);
             }
         } else {
-            Warnf("Missing physics hull, defaulting to convex: %s.%s", modelName, meshName);
+            Warnf("Missing physics hull, defaulting to convex: %s.%s", source->modelName, meshName);
         }
         return {};
     }

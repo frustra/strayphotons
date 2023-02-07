@@ -30,7 +30,7 @@
 						"translate": [0.0, 0.0, 0.0]
 					}
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{

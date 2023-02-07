@@ -18,8 +18,8 @@ namespace ecs {
     enum class PhysicsGroup : uint16_t {
         NoClip = 0,
         World,
-        WorldOverlap,
         Interactive,
+        HeldObject,
         Player,
         PlayerLeftHand,
         PlayerRightHand,
@@ -29,8 +29,8 @@ namespace ecs {
     enum PhysicsGroupMask {
         PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
         PHYSICS_GROUP_WORLD = 1 << (size_t)PhysicsGroup::World,
-        PHYSICS_GROUP_WORLD_OVERLAP = 1 << (size_t)PhysicsGroup::WorldOverlap,
         PHYSICS_GROUP_INTERACTIVE = 1 << (size_t)PhysicsGroup::Interactive,
+        PHYSICS_GROUP_HELD_OBJECT = 1 << (size_t)PhysicsGroup::HeldObject,
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
         PHYSICS_GROUP_PLAYER_LEFT_HAND = 1 << (size_t)PhysicsGroup::PlayerLeftHand,
         PHYSICS_GROUP_PLAYER_RIGHT_HAND = 1 << (size_t)PhysicsGroup::PlayerRightHand,
@@ -111,16 +111,26 @@ namespace ecs {
         const PhysicsShape &src,
         const PhysicsShape &def);
 
+    enum class PhysicsActorType : uint8_t {
+        Static,
+        Dynamic,
+        Kinematic,
+        SubActor,
+    };
+
     struct Physics {
         Physics() {}
-        Physics(PhysicsShape shape, PhysicsGroup group = PhysicsGroup::World, bool dynamic = true, float mass = 1.0f)
-            : shapes({shape}), group(group), dynamic(dynamic), mass(mass) {}
+        Physics(PhysicsShape shape,
+            PhysicsGroup group = PhysicsGroup::World,
+            PhysicsActorType type = PhysicsActorType::Dynamic,
+            float mass = 1.0f)
+            : shapes({shape}), group(group), type(type), mass(mass) {}
 
         std::vector<PhysicsShape> shapes;
 
         PhysicsGroup group = PhysicsGroup::World;
-        bool dynamic = true;
-        bool kinematic = false; // only dynamic actors can be kinematic
+        PhysicsActorType type = PhysicsActorType::Dynamic;
+        EntityRef parentActor;
         float mass = 0.0f; // kilograms (density used if mass is zero)
         float density = 1000.0f; // kg/m^3
         float angularDamping = 0.05f;
@@ -132,8 +142,8 @@ namespace ecs {
     static StructMetadata MetadataPhysics(typeid(Physics),
         StructField::New("shapes", &Physics::shapes),
         StructField::New("group", &Physics::group),
-        StructField::New("dynamic", &Physics::dynamic),
-        StructField::New("kinematic", &Physics::kinematic),
+        StructField::New("type", &Physics::type),
+        StructField::New("parent_actor", &Physics::parentActor),
         StructField::New("mass", &Physics::mass),
         StructField::New("density", &Physics::density),
         StructField::New("angular_damping", &Physics::angularDamping),

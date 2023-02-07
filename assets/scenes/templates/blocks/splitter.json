@@ -9,15 +9,9 @@
 					"transform": {
 						"translate": [0, 0.005, 0]
 					}
-				},
-				{
-					"box": [0.03, 0.01, 0.03],
-					"transform": {
-						"translate": [0, 0.04, 0]
-					}
 				}
 			],
-			"dynamic": true
+			"type": "Dynamic"
 		},
 		"physics_joints": [],
 		"trigger_group": "Magnetic",
@@ -74,8 +68,7 @@
 				"shapes": {
 					"box": [0.99, 0.99, 0.02]
 				},
-				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "scoperoot",

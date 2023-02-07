@@ -34,7 +34,7 @@
 					}
 				}
 			],
-			"dynamic": true
+			"type": "Dynamic"
 		},
 		"physics_joints": [],
 		"trigger_group": "Magnetic",
@@ -124,8 +124,7 @@
 				"shapes": {
 					"box": [1, 1, 0.02]
 				},
-				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "scoperoot",

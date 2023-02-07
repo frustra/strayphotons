@@ -42,7 +42,7 @@ namespace sp {
 
                 auto &ph = inspector.Set<ecs::Physics>(lock);
                 ph.group = ecs::PhysicsGroup::UserInterface;
-                ph.dynamic = false;
+                ph.type = ecs::PhysicsActorType::Static;
             });
     }
 

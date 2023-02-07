@@ -13,7 +13,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -50,7 +50,7 @@
 			"physics": {
 				"__comment": "Dummy actor for velocity calculation",
 				"group": "NoClip",
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"sphere": 0.1
 				}
@@ -73,7 +73,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -90,7 +90,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{

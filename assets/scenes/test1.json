@@ -76,7 +76,7 @@
 				"shapes": {
 					"model": "sensor-plate-dark"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -110,7 +110,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			},
 			"light_sensor": {
 				"position": [0, 0, -1],
@@ -151,7 +151,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -166,7 +166,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -181,7 +181,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -196,7 +196,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -211,7 +211,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -226,7 +226,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{

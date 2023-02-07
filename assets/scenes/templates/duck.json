@@ -1,4 +1,15 @@
 {
+	"components": {
+		"transform": {},
+		"physics": {
+			"type": "Dynamic",
+			"mass": 1
+		},
+		"script": {
+			"prefab": "template",
+			"parameters": { "source": "interactive" }
+		}
+	},
 	"entities": [
 		{
 			"name": "duck",
@@ -10,21 +21,17 @@
 				"parameters": {
 					"model": "duck",
 					"render": true,
-					"physics": "dynamic"
+					"physics": "SubActor"
 				}
 			}
 		},
 		{
 			"name": "duck.gltf2",
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "interactive" }
-			},
 			"physics": {
 				"shapes": {
 					"model": "duck.cooked"
 				},
-				"mass": 1
+				"type": "SubActor"
 			}
 		}
 	]

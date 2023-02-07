@@ -112,7 +112,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -128,7 +128,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -144,7 +144,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -160,7 +160,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -176,7 +176,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -192,7 +192,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -208,7 +208,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -224,7 +224,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -286,7 +286,7 @@
 			"script": {
 				"parameters": {
 					"model": "sensor",
-					"physics": "static"
+					"physics": "Static"
 				},
 				"prefab": "gltf"
 			}
@@ -445,7 +445,7 @@
 		{
 			"name": "mount_1.round-mirror",
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "round-mirror-mounted.convex1"
 				}

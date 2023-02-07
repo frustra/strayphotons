@@ -17,7 +17,7 @@
 					}
 				}
 			],
-			"dynamic": true
+			"type": "Dynamic"
 		},
 		"signal_bindings": {
 			"laser_color_r": "0.0",

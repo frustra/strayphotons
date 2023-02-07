@@ -27,8 +27,7 @@
 				"shapes": {
 					"model": "articulating-arm.convex2"
 				},
-				"dynamic": false,
-				"group": "WorldOverlap"
+				"type": "Static"
 			}
 		},
 		{
@@ -59,13 +58,18 @@
 				"angular_damping": 50,
 				"shapes": {
 					"model": "articulating-arm.convex6"
-				},
-				"group": "WorldOverlap"
+				}
 			},
-			"physics_joints": [{
-				"target": "arm.Arm_0",
-				"type": "Fixed"
-			}]
+			"physics_joints": [
+				{
+					"target": "arm.Arm_0",
+					"type": "Fixed"
+				},
+				{
+					"target": "arm.Ball_0",
+					"type": "NoClip"
+				}
+			]
 		},
 		{
 			"name": "arm.Knob",
@@ -96,16 +100,25 @@
 				"angular_damping": 50,
 				"shapes": {
 					"model": "articulating-arm.convex5"
-				},
-				"group": "WorldOverlap"
-			},
-			"physics_joints": [{
-				"target": "arm.Arm_0",
-				"type": "Fixed",
-				"remote_offset": {
-					"translate": [0, 0.1043, 0]
 				}
-			}]
+			},
+			"physics_joints": [
+				{
+					"target": "arm.Arm_0",
+					"type": "Fixed",
+					"remote_offset": {
+						"translate": [0, 0.1043, 0]
+					}
+				},
+				{
+					"target": "arm.Arm_1",
+					"type": "NoClip"
+				},
+				{
+					"target": "arm.Knob",
+					"type": "NoClip"
+				}
+			]
 		},
 		{
 			"name": "arm.Arm_1",
@@ -130,13 +143,18 @@
 				"angular_damping": 50,
 				"shapes": {
 					"model": "articulating-arm.convex7"
-				},
-				"group": "WorldOverlap"
+				}
 			},
-			"physics_joints": [{
-				"target": "arm.Arm_1",
-				"type": "Fixed"
-			}]
+			"physics_joints": [
+				{
+					"target": "arm.Arm_1",
+					"type": "Fixed"
+				},
+				{
+					"target": "arm.Ball_1",
+					"type": "NoClip"
+				}
+			]
 		},
 		{
 			"name": "arm.Ball_1",

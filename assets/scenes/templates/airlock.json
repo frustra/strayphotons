@@ -10,7 +10,7 @@
 				"parameters": {
 					"model": "airlock",
 					"render": true,
-					"physics": "static"
+					"physics": "Static"
 				}
 			}
 		},

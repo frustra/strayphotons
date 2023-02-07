@@ -12,7 +12,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -27,7 +27,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -42,7 +42,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -57,7 +57,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -72,7 +72,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"dynamic": false
+				"type": "Static"
 			}
 		},
 		{
@@ -313,8 +313,7 @@
 						"translate": [0, 0, 0.0095]
 					}
 				},
-				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "mirrorbox",
@@ -336,8 +335,7 @@
 						"translate": [0, 0, 0.0095]
 					}
 				},
-				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "mirrorbox2",
@@ -359,8 +357,7 @@
 						"translate": [0, 0, 0.0095]
 					}
 				},
-				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "mirrorbox3",

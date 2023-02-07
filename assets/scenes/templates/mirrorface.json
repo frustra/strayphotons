@@ -12,8 +12,7 @@
 				"shapes": {
 					"box": [0.99, 0.99, 0.02]
 				},
-				"group": "WorldOverlap",
-				"dynamic": false
+				"type": "SubActor"
 			},
 			"transform": {
 				"parent": "scoperoot",

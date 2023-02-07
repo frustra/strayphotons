@@ -17,7 +17,7 @@
 					}
 				}
 			],
-			"dynamic": true
+			"type": "Dynamic"
 		},
 		"physics_joints": [],
 		"trigger_group": "Magnetic",
@@ -96,8 +96,7 @@
 				"parameters": {
 					"model": "sensor",
 					"render": true,
-					"physics": "static",
-					"physics_group": "WorldOverlap"
+					"physics": "SubActor"
 				}
 			}
 		},
@@ -125,12 +124,6 @@
 				"value": "scoperoot/value"
 			},
 			"script": [
-				{
-					"parameters": {
-						"source": "world_gui"
-					},
-					"prefab": "template"
-				},
 				{
 					"onTick": "rotate_to_entity",
 					"parameters": {

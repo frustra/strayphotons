@@ -22,7 +22,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface",
 				"shapes": {
 					"model": "box"
@@ -36,7 +36,7 @@
 				"translate": [0.1, 0, 0.1]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"signal_output": {
@@ -64,7 +64,7 @@
 				"translate": [0.1, 0, 0.2]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"script": [
@@ -89,7 +89,7 @@
 				"translate": [0.1, 0, 0.3]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"script": [
@@ -114,7 +114,7 @@
 				"translate": [0.2, 0, 0.1]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"script": [
@@ -139,7 +139,7 @@
 				"translate": [0.2, 0, 0.2]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"script": [
@@ -164,7 +164,7 @@
 				"translate": [0.3, 0, 0.2]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"script": [
@@ -189,7 +189,7 @@
 				"translate": [0.2, 0, 0.3]
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"group": "UserInterface"
 			},
 			"script": [

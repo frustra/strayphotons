@@ -4,6 +4,7 @@
 
 namespace sp {
     class Asset;
+    class PhysicsInfo;
 
     struct HullSettings {
         std::string name; // modelName.meshName
@@ -22,8 +23,13 @@ namespace sp {
         } hull;
 #pragma pack(pop)
 
+        std::shared_ptr<const PhysicsInfo> sourceInfo;
+
         HullSettings() {}
-        HullSettings(const std::string &name, size_t meshIndex = 0) : name(name) {
+        HullSettings(const std::shared_ptr<const PhysicsInfo> &sourceInfo,
+            const std::string &name,
+            size_t meshIndex = 0)
+            : name(name), sourceInfo(sourceInfo) {
             hull.meshIndex = meshIndex;
         }
     };
@@ -32,7 +38,7 @@ namespace sp {
     public:
         PhysicsInfo(const std::string &modelName, std::shared_ptr<const Asset> asset = nullptr);
 
-        HullSettings GetHull(const std::string &meshName) const;
+        static HullSettings GetHull(const std::shared_ptr<const PhysicsInfo> &source, const std::string &meshName);
 
         const std::unordered_map<std::string, HullSettings> &GetHulls() const {
             return hulls;

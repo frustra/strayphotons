@@ -54,7 +54,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			},
 			"trigger_group": "Object"
 		},
@@ -72,7 +72,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			},
 			"trigger_group": "Object"
 		},
@@ -90,7 +90,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -107,7 +107,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -124,7 +124,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -141,7 +141,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -158,7 +158,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -175,7 +175,7 @@
 				"shapes": {
 					"model": "box"
 				},
-				"kinematic": true
+				"type": "Kinematic"
 			}
 		},
 		{

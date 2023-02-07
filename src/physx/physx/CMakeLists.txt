@@ -5,6 +5,7 @@ target_sources(${PROJECT_PHYSICS_PHYSX_LIB} PRIVATE
     ConstraintSystem.cc
     ForceConstraint.cc
     LaserSystem.cc
+    NoClipConstraint.cc
     PhysicsDebugCommands.cc
     PhysicsQuerySystem.cc
     PhysxManager.cc

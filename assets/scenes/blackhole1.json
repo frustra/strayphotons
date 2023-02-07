@@ -67,7 +67,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -83,7 +83,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -99,7 +99,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -115,7 +115,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -132,7 +132,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -149,7 +149,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}
@@ -166,7 +166,7 @@
 				"model": "box"
 			},
 			"physics": {
-				"dynamic": false,
+				"type": "Static",
 				"shapes": {
 					"model": "box"
 				}

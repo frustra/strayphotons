@@ -39,6 +39,24 @@ namespace sp {
     struct HullSettings;
     class SceneManager;
     class ForceConstraint;
+    class NoClipConstraint;
+
+    struct ShapeUserData {
+        ecs::Entity owner; // SubActor physics source entity
+        size_t ownerShapeIndex;
+        ecs::Entity parent; // Physics actor shape is attached to
+
+        ecs::PhysicsShape shapeCache;
+        ecs::Transform shapeOffset;
+        std::shared_ptr<const ConvexHullSet> hullCache;
+        std::shared_ptr<physx::PxMaterial> material;
+
+        ShapeUserData(ecs::Entity owner,
+            size_t ownerShapeIndex,
+            ecs::Entity parent,
+            const std::shared_ptr<physx::PxMaterial> &material)
+            : owner(owner), ownerShapeIndex(ownerShapeIndex), parent(parent), material(material) {}
+    };
 
     struct ActorUserData {
         ecs::Entity entity;
@@ -49,9 +67,6 @@ namespace sp {
         float angularDamping = 0.0f;
         float linearDamping = 0.0f;
         ecs::PhysicsGroup physicsGroup = ecs::PhysicsGroup::NoClip;
-        std::vector<std::pair<ecs::PhysicsShape, size_t>> shapeIndexes;
-        std::shared_ptr<const ConvexHullSet> shapeCache;
-        std::shared_ptr<physx::PxMaterial> material;
 
         ActorUserData() {}
         ActorUserData(ecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
@@ -66,6 +81,7 @@ namespace sp {
         bool onGround = false;
         ecs::Entity standingOn;
         bool noclipping = false;
+        std::shared_ptr<physx::PxMaterial> material;
 
         CharacterControllerUserData() {}
         CharacterControllerUserData(ecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
@@ -75,6 +91,7 @@ namespace sp {
         ecs::PhysicsJoint ecsJoint;
         physx::PxJoint *pxJoint = nullptr;
         ForceConstraint *forceConstraint = nullptr;
+        NoClipConstraint *noclipConstraint = nullptr;
     };
 
     class PhysxManager : public RegisteredThread {
@@ -86,11 +103,18 @@ namespace sp {
         void PreFrame() override;
         void Frame() override;
 
-        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, ecs::Entity &e);
+        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+            const ecs::Entity &e);
+        size_t UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics>> lock,
+            const ecs::Entity &owner,
+            const ecs::Entity &actorEnt,
+            physx::PxRigidActor *actor,
+            const ecs::Transform &offset);
         void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
             ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
+        void SetCollisionGroup(physx::PxShape *shape, ecs::PhysicsGroup group);
 
     private:
         void CreatePhysxScene();

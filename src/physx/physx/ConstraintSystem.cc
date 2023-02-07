@@ -6,6 +6,7 @@
 #include "ecs/EcsImpl.hh"
 #include "input/BindingNames.hh"
 #include "physx/ForceConstraint.hh"
+#include "physx/NoClipConstraint.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -144,9 +145,36 @@ namespace sp {
         return wakeUp;
     }
 
-    void ConstraintSystem::Frame(ecs::Lock<
-        ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::PhysicsJoints, ecs::SceneProperties>>
-            lock) {
+    bool ConstraintSystem::UpdateNoClipConstraint(JointState *joint, PxRigidActor *actor0, PxRigidActor *actor1) {
+        if (!joint->noclipConstraint || !joint->noclipConstraint->temporary) return false;
+
+        vector<PxShape *> shapes0(actor0->getNbShapes());
+        vector<PxShape *> shapes1(actor1->getNbShapes());
+        actor0->getShapes(shapes0.data(), shapes0.size());
+        actor1->getShapes(shapes1.data(), shapes1.size());
+
+        auto pose0 = actor0->getGlobalPose();
+        auto pose1 = actor1->getGlobalPose();
+
+        for (auto *shape0 : shapes0) {
+            for (auto *shape1 : shapes1) {
+                if (PxGeometryQuery::overlap(shape0->getGeometry().any(),
+                        pose0 * shape0->getLocalPose(),
+                        shape1->getGeometry().any(),
+                        pose1 * shape1->getLocalPose())) {
+                    return false;
+                }
+            }
+        }
+
+        joint->noclipConstraint->release();
+        joint->noclipConstraint = nullptr;
+        return true;
+    }
+
+    void ConstraintSystem::Frame(
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::SceneProperties>,
+            ecs::Write<ecs::PhysicsJoints>> lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
@@ -164,6 +192,15 @@ namespace sp {
                 if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(rotation * physics.constantForce));
             }
         }
+        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
+            if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
+
+            auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+            auto &controller = entity.Get<ecs::CharacterController>(lock);
+            if (!controller.pxController) continue;
+
+            UpdateJoints(lock, entity, controller.pxController->getActor(), transform);
+        }
     }
 
     void ConstraintSystem::ReleaseJoints(ecs::Entity entity, physx::PxRigidActor *actor) {
@@ -172,6 +209,7 @@ namespace sp {
         for (auto &joint : manager.joints[entity]) {
             if (joint.pxJoint) joint.pxJoint->release();
             if (joint.forceConstraint) joint.forceConstraint->release();
+            if (joint.noclipConstraint) joint.noclipConstraint->release();
         }
 
         auto dynamic = actor->is<PxRigidDynamic>();
@@ -181,7 +219,7 @@ namespace sp {
     }
 
     void ConstraintSystem::UpdateJoints(
-        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::PhysicsJoints, ecs::SceneProperties>> lock,
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::SceneProperties>, ecs::Write<ecs::PhysicsJoints>> lock,
         ecs::Entity entity,
         physx::PxRigidActor *actor,
         ecs::Transform transform) {
@@ -207,6 +245,7 @@ namespace sp {
             }
             if (pxJoint.pxJoint) pxJoint.pxJoint->release();
             if (pxJoint.forceConstraint) pxJoint.forceConstraint->release();
+            if (pxJoint.noclipConstraint) pxJoint.noclipConstraint->release();
             wakeUp = true;
             return true;
         });
@@ -214,7 +253,8 @@ namespace sp {
         auto &sceneProperties = ecs::SceneProperties::Get(lock, entity);
         auto gravity = sceneProperties.GetGravity(transform.GetPosition());
 
-        for (auto &ecsJoint : ecsJoints) {
+        // For each defined ecs joint, removing temporary joints as needed.
+        sp::erase_if(ecsJoints, [&](auto &ecsJoint) {
             JointState *joint = nullptr;
 
             for (auto &j : pxJoints) {
@@ -228,7 +268,7 @@ namespace sp {
             PxTransform localTransform(GlmVec3ToPxVec3(transform.GetScale() * ecsJoint.localOffset.GetPosition()),
                 GlmQuatToPxQuat(ecsJoint.localOffset.GetRotation()));
             PxTransform remoteTransform(PxIdentity);
-            auto targetEntity = ecsJoint.target.Get(lock);
+            ecs::Entity targetEntity = ecsJoint.target.Get(lock);
 
             ecs::Transform targetTransform;
             if (manager.actors.count(targetEntity) > 0) {
@@ -259,7 +299,7 @@ namespace sp {
 
             // Try and determine the velocity of the joint target entity
             glm::vec3 targetVelocity(0);
-            auto targetRoot = targetEntity;
+            ecs::Entity targetRoot = targetEntity;
             while (targetRoot.Has<ecs::TransformTree>(lock)) {
                 if (manager.actors.count(targetRoot) > 0) {
                     auto userData = (ActorUserData *)manager.actors[targetRoot]->userData;
@@ -301,10 +341,21 @@ namespace sp {
                         PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Force:
-                    // Free'd automatically on release();
+                    // Free'd automatically on release()
                     joint->forceConstraint =
                         new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
                     UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
+                    break;
+                case ecs::PhysicsJointType::NoClip:
+                case ecs::PhysicsJointType::TemporaryNoClip:
+                    // Free'd automatically on release()
+                    joint->noclipConstraint = new NoClipConstraint(*manager.pxPhysics,
+                        actor,
+                        targetActor,
+                        ecsJoint.type == ecs::PhysicsJointType::TemporaryNoClip);
+                    if (UpdateNoClipConstraint(joint, actor, targetActor)) {
+                        return true;
+                    }
                     break;
                 default:
                     Abortf("Unsupported PhysX joint type: %s", ecsJoint.type);
@@ -331,11 +382,15 @@ namespace sp {
 
                     wakeUp |=
                         UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
+                } else if (joint->noclipConstraint) {
+                    if (UpdateNoClipConstraint(joint, actor, targetActor)) {
+                        return true;
+                    }
                 }
 
                 if (ecsJoint == joint->ecsJoint) {
                     // joint is up to date
-                    continue;
+                    return false;
                 } else {
                     joint->ecsJoint = ecsJoint;
                 }
@@ -344,6 +399,7 @@ namespace sp {
             wakeUp = true;
             if (joint->pxJoint) joint->pxJoint->setActors(actor, targetActor);
             if (joint->forceConstraint) joint->forceConstraint->setActors(actor, targetActor);
+            if (joint->noclipConstraint) joint->noclipConstraint->setActors(actor, targetActor);
             if (ecsJoint.type == ecs::PhysicsJointType::Distance) {
                 auto distanceJoint = joint->pxJoint->is<PxDistanceJoint>();
                 distanceJoint->setMinDistance(ecsJoint.limit.x);
@@ -378,7 +434,8 @@ namespace sp {
             } else if (ecsJoint.type == ecs::PhysicsJointType::Force) {
                 joint->forceConstraint->setForceLimits(ecsJoint.limit.x, ecsJoint.limit.x, ecsJoint.limit.y);
             }
-        }
+            return false;
+        });
 
         if (wakeUp) {
             auto dynamic = actor->is<PxRigidDynamic>();

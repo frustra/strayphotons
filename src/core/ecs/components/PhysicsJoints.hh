@@ -24,8 +24,10 @@ namespace ecs {
         Hinge,
         Slider,
 
-        // Custom force-limited joints
-        Force,
+        // Custom joints
+        Force, // Move actor0 to actor1 without exceeding force limits
+        NoClip, // Prevents the 2 actors from colliding with eachother. Applies no forces.
+        TemporaryNoClip, // Same as NoClip but removes itself once actors no longer overlap.
     };
 
     struct PhysicsJoint {
@@ -49,7 +51,7 @@ namespace ecs {
         std::vector<PhysicsJoint> joints;
 
         void Add(const PhysicsJoint &joint) {
-            joints.push_back(joint);
+            if (!sp::contains(joints, joint)) joints.push_back(joint);
         }
     };
 
