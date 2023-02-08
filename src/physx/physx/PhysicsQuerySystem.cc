@@ -30,8 +30,8 @@ namespace sp {
                                 if ((arg.relativePosition || arg.relativeDirection) &&
                                     entity.Has<ecs::TransformSnapshot>(lock)) {
                                     const auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
-                                    if (arg.relativePosition) rayStart = transform.matrix * glm::vec4(rayStart, 1);
-                                    if (arg.relativeDirection) rayDir = transform.matrix * glm::vec4(rayDir, 0);
+                                    if (arg.relativePosition) rayStart = transform * glm::vec4(rayStart, 1);
+                                    if (arg.relativeDirection) rayDir = transform * glm::vec4(rayDir, 0);
                                 }
 
                                 rayDir = glm::normalize(rayDir);

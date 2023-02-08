@@ -161,7 +161,7 @@ namespace sp::vulkan::renderer {
             auto &view = views[lights.size() - 1];
             ecs::Transform lightTransform = lastOpticTransform;
             lightTransform.SetPosition(lightOrigin);
-            view.invViewMat = lightTransform.matrix;
+            view.invViewMat = lightTransform.GetMatrix();
             view.viewMat = glm::inverse(view.invViewMat);
             glm::vec3 lightViewMirrorPos = view.viewMat * glm::vec4(lastOpticTransform.GetPosition(), 1);
 

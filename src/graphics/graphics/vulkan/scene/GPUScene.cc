@@ -66,7 +66,7 @@ namespace sp::vulkan {
             auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
 
             GPURenderableEntity gpuRenderable;
-            gpuRenderable.modelToWorld = transform.matrix;
+            gpuRenderable.modelToWorld = transform.GetMatrix();
             gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
@@ -93,7 +93,7 @@ namespace sp::vulkan {
                 auto jointEntity = joint.entity.Get(lock);
                 if (jointEntity.Has<ecs::TransformSnapshot>(lock)) {
                     auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock);
-                    jointPoses.push_back(glm::mat4(jointTransform.matrix) * joint.inverseBindPose);
+                    jointPoses.push_back(jointTransform.GetMatrix() * joint.inverseBindPose);
                 } else {
                     jointPoses.emplace_back(); // missing joints get an identity matrix
                 }

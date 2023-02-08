@@ -96,137 +96,140 @@ namespace ecs {
 
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst) {
-        dst.pose = glm::mat4x3(-INFINITY);
+        dst.pose.offset = glm::mat4x3(-INFINITY);
+        dst.pose.scale = glm::vec3(-INFINITY);
     }
 
     template<>
     void Component<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget) {
-        DebugAssert(!std::isnan(src.pose.matrix[0][0]), "TransformTree::Apply source pose is NaN");
+        DebugAssert(!std::isnan(src.pose.offset[0][0]), "TransformTree::Apply source pose is NaN");
         auto &defaultTree = liveTarget ? ComponentTransformTree.defaultLiveComponent
                                        : ComponentTransformTree.defaultStagingComponent;
 
         if (dst.pose == defaultTree.pose && dst.parent == defaultTree.parent) {
-            if (!std::isinf(src.pose.matrix[0][0])) dst.pose = src.pose;
+            if (!std::isinf(src.pose.offset[0][0])) dst.pose = src.pose;
             dst.parent = src.parent;
         }
     }
 
+    Transform::Transform(const glm::mat4 &matrix) : offset(matrix) {
+        scale = glm::vec3(glm::length(offset[0]), glm::length(offset[1]), glm::length(offset[2]));
+        offset[0] = glm::normalize(offset[0]);
+        offset[1] = glm::normalize(offset[1]);
+        offset[2] = glm::normalize(offset[2]);
+    }
+
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
-        : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
+        : offset(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)), scale(glm::vec3(1.0f)) {}
+
+    void initIfUndefined(Transform &transform) {
+        if (std::isinf(transform.offset[0][0])) {
+            transform.offset = glm::identity<glm::mat4x3>();
+            transform.scale = glm::vec3(1.0f);
+        }
+    }
 
     void Transform::Translate(const glm::vec3 &xyz) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        matrix[3] += xyz;
+        initIfUndefined(*this);
+        offset[3] += xyz;
     }
 
     void Transform::Rotate(float radians, const glm::vec3 &axis) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        glm::vec3 scale = GetScale();
-        glm::mat3 rotation = glm::mat3(matrix[0] / scale.x, matrix[1] / scale.y, matrix[2] / scale.z);
+        initIfUndefined(*this);
+        glm::mat3 &rotation = reinterpret_cast<glm::mat3 &>(offset);
         rotation = glm::rotate(glm::mat4(rotation), radians, axis);
-        matrix[0] = rotation[0] * scale.x;
-        matrix[1] = rotation[1] * scale.y;
-        matrix[2] = rotation[2] * scale.z;
     }
 
     void Transform::Rotate(const glm::quat &quat) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        glm::vec3 scale = GetScale();
-        glm::mat3 rotation = glm::mat3(matrix[0] / scale.x, matrix[1] / scale.y, matrix[2] / scale.z);
-        rotation *= glm::mat3_cast(quat);
-        matrix[0] = rotation[0] * scale.x;
-        matrix[1] = rotation[1] * scale.y;
-        matrix[2] = rotation[2] * scale.z;
+        initIfUndefined(*this);
+        reinterpret_cast<glm::mat3 &>(offset) *= glm::mat3_cast(quat);
     }
 
     void Transform::Scale(const glm::vec3 &xyz) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        matrix[0] *= xyz.x;
-        matrix[1] *= xyz.y;
-        matrix[2] *= xyz.z;
+        initIfUndefined(*this);
+        scale *= xyz;
     }
 
     void Transform::SetPosition(const glm::vec3 &pos) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        matrix[3] = pos;
+        initIfUndefined(*this);
+        offset[3] = pos;
     }
 
     const glm::vec3 &Transform::GetPosition() const {
-        if (std::isinf(matrix[0][0])) {
+        if (std::isinf(offset[0][0])) {
             static const glm::vec3 origin = {0, 0, 0};
             return origin;
         }
-        DebugAssert(!std::isnan(matrix[0][0]), "Transform pose is NaN");
-        return matrix[3];
+        DebugAssert(!std::isnan(offset[0][0]), "Transform pose is NaN");
+        return offset[3];
     }
 
     void Transform::SetRotation(const glm::quat &quat) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        glm::vec3 scale = GetScale();
-        glm::mat3 rotation = glm::mat3_cast(quat);
-        matrix[0] = rotation[0] * scale.x;
-        matrix[1] = rotation[1] * scale.y;
-        matrix[2] = rotation[2] * scale.z;
+        initIfUndefined(*this);
+        reinterpret_cast<glm::mat3 &>(offset) = glm::mat3_cast(quat);
     }
 
     glm::quat Transform::GetRotation() const {
-        if (std::isinf(matrix[0][0])) return glm::identity<glm::quat>();
-        glm::mat3 rotation = glm::mat3(glm::normalize(matrix[0]), glm::normalize(matrix[1]), glm::normalize(matrix[2]));
-        return glm::normalize(glm::quat_cast(rotation));
+        if (std::isinf(offset[0][0])) return glm::identity<glm::quat>();
+        return glm::normalize(glm::quat_cast(reinterpret_cast<const glm::mat3 &>(offset)));
     }
 
     glm::vec3 Transform::GetForward() const {
-        if (std::isinf(matrix[0][0])) return glm::vec3(0, 0, -1);
-        glm::mat3 scaledRotation = glm::mat3(matrix[0], matrix[1], matrix[2]);
-        return glm::normalize(scaledRotation * glm::vec3(0, 0, -1));
+        if (std::isinf(offset[0][0])) return glm::vec3(0, 0, -1);
+        return glm::normalize(reinterpret_cast<const glm::mat3 &>(offset) * glm::vec3(0, 0, -1));
     }
 
     glm::vec3 Transform::GetUp() const {
-        if (std::isinf(matrix[0][0])) return glm::vec3(0, 1, 0);
-        glm::mat3 scaledRotation = glm::mat3(matrix[0], matrix[1], matrix[2]);
-        return glm::normalize(scaledRotation * glm::vec3(0, 1, 0));
+        if (std::isinf(offset[0][0])) return glm::vec3(0, 1, 0);
+        return glm::normalize(reinterpret_cast<const glm::mat3 &>(offset) * glm::vec3(0, 1, 0));
     }
 
     void Transform::SetScale(const glm::vec3 &xyz) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
-        matrix[0] = glm::normalize(matrix[0]) * xyz.x;
-        matrix[1] = glm::normalize(matrix[1]) * xyz.y;
-        matrix[2] = glm::normalize(matrix[2]) * xyz.z;
+        initIfUndefined(*this);
+        scale = xyz;
     }
 
-    glm::vec3 Transform::GetScale() const {
-        if (std::isinf(matrix[0][0])) return glm::vec3(1);
-        return glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
+    const glm::vec3 &Transform::GetScale() const {
+        if (std::isinf(offset[0][0])) {
+            static const glm::vec3 noScale = {1, 1, 1};
+            return noScale;
+        }
+        return scale;
     }
 
     const Transform &Transform::Get() const {
-        if (std::isinf(matrix[0][0])) {
+        if (std::isinf(offset[0][0])) {
             static const Transform identity = {};
             return identity;
         }
-        DebugAssert(!std::isnan(matrix[0][0]), "Transform pose is NaN");
+        DebugAssert(!std::isnan(offset[0][0]), "Transform pose is NaN");
         return *this;
     }
 
     Transform Transform::GetInverse() const {
-        if (std::isinf(matrix[0][0])) return glm::identity<glm::mat4x3>();
-        return Transform(glm::inverse(glm::mat4(matrix)));
+        if (std::isinf(offset[0][0])) return Transform(glm::identity<glm::mat4x3>(), glm::vec3(1.0f));
+        return Transform(glm::inverse(GetMatrix()));
+    }
+
+    glm::mat4 Transform::GetMatrix() const {
+        if (std::isinf(offset[0][0])) return glm::identity<glm::mat4>();
+        return glm::mat4x3(offset[0] * scale.x, offset[1] * scale.y, offset[2] * scale.z, offset[3]);
     }
 
     glm::vec3 Transform::operator*(const glm::vec4 &rhs) const {
-        return matrix * rhs;
+        return GetMatrix() * rhs;
     }
 
     Transform Transform::operator*(const Transform &rhs) const {
-        return Transform(matrix * glm::mat4(rhs.matrix));
+        return Transform(GetMatrix() * rhs.GetMatrix());
     }
 
     bool Transform::operator==(const Transform &other) const {
-        return matrix == other.matrix;
+        return offset == other.offset && scale == other.scale;
     }
 
     bool Transform::operator!=(const Transform &other) const {
-        return matrix != other.matrix;
+        return offset != other.offset || scale != other.scale;
     }
 
     Entity TransformTree::GetRoot(Lock<Read<TransformTree>> lock, Entity entity) {

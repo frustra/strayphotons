@@ -2,7 +2,7 @@
 #include <ecs/components/Transform.h>
 
 // If this changes, make sure it is the same in C++ and Rust
-static_assert(sizeof(ecs::Transform) == 48, "Wrong Transform size");
+static_assert(sizeof(ecs::Transform) == 60, "Wrong Transform size");
 
 int add(int a, int b) {
     return a + b;

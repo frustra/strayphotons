@@ -78,7 +78,7 @@ namespace sp {
             : name(node.name), treeRoot(treeRoot) {
             if (node.matrix.size() >= 12) {
                 std::vector<float> matData(node.matrix.begin(), node.matrix.end());
-                transform.matrix = glm::transpose(*reinterpret_cast<const glm::mat3x4 *>(matData.data()));
+                transform = glm::mat4(glm::transpose(*reinterpret_cast<const glm::mat3x4 *>(matData.data())));
             } else {
                 if (node.translation.size() == 3) {
                     transform.SetPosition(glm::vec3(node.translation[0], node.translation[1], node.translation[2]));

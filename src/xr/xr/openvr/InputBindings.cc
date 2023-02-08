@@ -284,7 +284,7 @@ namespace sp::xr {
                                         auto &transform = poseEntity.Get<ecs::TransformTree>(lock);
 
                                         auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
-                                        transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
+                                        transform.pose = glm::mat4(glm::transpose(glm::make_mat3x4((float *)poseMat)));
                                         transform.parent = vrSystem.vrOriginEntity;
                                     }
                                 }
@@ -352,7 +352,7 @@ namespace sp::xr {
                                         auto &transform = poseEntity.Get<ecs::TransformTree>(lock);
 
                                         auto &poseMat = poseActionData.pose.mDeviceToAbsoluteTracking.m;
-                                        transform.pose = glm::transpose(glm::make_mat3x4((float *)poseMat));
+                                        transform.pose = glm::mat4(glm::transpose(glm::make_mat3x4((float *)poseMat)));
                                         transform.parent = vrSystem.vrOriginEntity;
                                     }
 
