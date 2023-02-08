@@ -25,7 +25,7 @@ namespace ecs {
                 } else if constexpr (std::is_same_v<T, glm::vec3>) {
                     out << glm::to_string(arg);
                 } else if constexpr (std::is_same_v<T, Transform>) {
-                    out << glm::to_string(arg.matrix);
+                    out << glm::to_string(arg.offset) << " scale " << glm::to_string(arg.scale);
                 } else if constexpr (std::is_same_v<T, EntityRef>) {
                     out << arg.Name().String();
                 } else if constexpr (std::is_same_v<T, Tecs::Entity>) {

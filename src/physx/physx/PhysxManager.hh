@@ -47,7 +47,7 @@ namespace sp {
         ecs::Entity parent; // Physics actor shape is attached to
 
         ecs::PhysicsShape shapeCache;
-        ecs::Transform shapeOffset;
+        ecs::Transform shapeTransform;
         std::shared_ptr<const ConvexHullSet> hullCache;
         std::shared_ptr<physx::PxMaterial> material;
 

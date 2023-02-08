@@ -52,7 +52,7 @@ namespace sp::vulkan::renderer {
                 builder.CreateUniform("VoxelState", sizeof(GPUVoxelState));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                GPUVoxelState gpuData = {voxelToWorld.GetInverse().matrix, voxelGridSize};
+                GPUVoxelState gpuData = {glm::inverse(voxelToWorld.GetMatrix()), voxelGridSize};
                 resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
             });
     }
@@ -116,7 +116,7 @@ namespace sp::vulkan::renderer {
         ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
 
         auto voxelCenter = voxelToWorld;
-        voxelCenter.Translate(glm::mat3(voxelCenter.matrix) * (0.5f * glm::vec3(voxelGridSize)));
+        voxelCenter.Translate(voxelCenter * (0.5f * glm::vec4(voxelGridSize, 0)));
 
         std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
         axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
@@ -133,8 +133,8 @@ namespace sp::vulkan::renderer {
         for (size_t i = 0; i < orthoAxes.size(); i++) {
             auto axis = axisTransform[i];
             axis.Scale(glm::vec3(0.5, 0.5, 1));
-            axis.Translate(glm::mat3(axis.matrix) * glm::vec3(0, 0, -0.5));
-            orthoAxes[i].SetInvViewMat(axis.matrix);
+            axis.Translate(axis * glm::vec4(0, 0, -0.5, 0));
+            orthoAxes[i].SetInvViewMat(axis.GetMatrix());
         }
 
         bool clearRadiance = (CVarVoxelClear.Get() & 1) == 1;

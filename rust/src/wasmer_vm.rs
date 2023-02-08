@@ -19,10 +19,11 @@ pub struct GlmMat4x3 {
 #[repr(C, packed(8))]
 #[derive(Copy, Clone, Debug)]
 pub struct Transform {
-    matrix: GlmMat4x3,
+    offset: GlmMat4x3,
     scale: GlmVec3,
 }
-assert_eq_size!(Transform, [u8; 48]);
+// If this changes, make sure it is the same in C++ and WASM
+assert_eq_size!(Transform, [u8; 60]);
 
 unsafe impl wasmer::ValueType for GlmVec3 {}
 unsafe impl wasmer::ValueType for GlmMat4x3 {}
@@ -119,8 +120,8 @@ pub fn run_wasm() -> anyhow::Result<()> {
     }
 
     let mut a = Transform{
-        matrix: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]},
-        scale: GlmVec3{data: [0f32, 3]},
+        offset: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]},
+        scale: GlmVec3{data: [0f32; 3]},
     };
     let mut b = a.clone();
     unsafe {

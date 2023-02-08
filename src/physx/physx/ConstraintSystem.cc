@@ -281,20 +281,20 @@ namespace sp {
                 remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOffset.GetRotation());
                 auto targetPose = targetActor->getGlobalPose();
                 targetTransform = ecs::Transform(PxVec3ToGlmVec3(targetPose.p), PxQuatToGlmQuat(targetPose.q));
-                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset.GetPosition());
+                targetTransform.Translate(targetTransform * glm::vec4(ecsJoint.remoteOffset.GetPosition(), 0));
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
             } else {
                 if (targetEntity.Has<ecs::TransformTree>(lock)) {
                     targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                 } // else Target is scene root
-                targetTransform.Translate(glm::mat3(targetTransform.matrix) * ecsJoint.remoteOffset.GetPosition());
+                targetTransform.Translate(targetTransform * glm::vec4(ecsJoint.remoteOffset.GetPosition(), 0));
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
                 remoteTransform.p = GlmVec3ToPxVec3(targetTransform.GetPosition());
                 remoteTransform.q = GlmQuatToPxQuat(targetTransform.GetRotation());
             }
 
             auto currentTransform = transform;
-            currentTransform.Translate(glm::mat3(currentTransform.matrix) * ecsJoint.localOffset.GetPosition());
+            currentTransform.Translate(currentTransform * glm::vec4(ecsJoint.localOffset.GetPosition(), 0));
             currentTransform.Rotate(ecsJoint.localOffset.GetRotation());
 
             float intervalSeconds = manager.interval.count() / 1e9;

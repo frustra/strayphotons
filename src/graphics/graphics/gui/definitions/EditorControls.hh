@@ -277,7 +277,7 @@ namespace sp {
             ImGui::Text("%s:", fieldName.c_str());
         }
         auto text = "position" + fieldId;
-        bool changed = ImGui::DragFloat3(text.c_str(), (float *)&value.matrix[3], 0.01f);
+        bool changed = ImGui::DragFloat3(text.c_str(), (float *)&value.offset[3], 0.01f);
 
         text = "rotation" + fieldId;
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value.GetRotation()));

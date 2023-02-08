@@ -225,7 +225,7 @@ namespace sp::xr {
                     if (ent.Has<ecs::TransformTree>(lock) && trackedDevicePoses[i].bPoseIsValid) {
                         auto &transform = ent.Get<ecs::TransformTree>(lock);
                         auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
-                        transform.pose = glm::transpose(glm::make_mat3x4((float *)pose));
+                        transform.pose = glm::mat4(glm::transpose(glm::make_mat3x4((float *)pose)));
                         transform.parent = vrOriginEntity;
                     }
                 }

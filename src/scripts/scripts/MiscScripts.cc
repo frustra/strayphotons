@@ -134,13 +134,12 @@ namespace sp::scripts {
                 currentUp = upEnt.Get<TransformTree>(lock).GetRelativeTransform(lock, parent).GetUp();
             }
 
-            auto currentScale = transform.pose.GetScale();
             auto targetRight = glm::normalize(glm::cross(currentUp, targetForward));
             auto targetUp = glm::normalize(glm::cross(targetForward, targetRight));
 
-            transform.pose.matrix[0] = targetRight * currentScale.x;
-            transform.pose.matrix[1] = targetUp * currentScale.y;
-            transform.pose.matrix[2] = targetForward * currentScale.z;
+            transform.pose.offset[0] = targetRight;
+            transform.pose.offset[1] = targetUp;
+            transform.pose.offset[2] = targetForward;
         }
     };
     StructMetadata MetadataRotateToEntity(typeid(RotateToEntity),

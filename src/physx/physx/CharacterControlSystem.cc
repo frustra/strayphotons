@@ -100,8 +100,8 @@ namespace sp {
                         forward.y = 0;
                         forward = glm::normalize(forward);
 
-                        dirTree.pose.matrix[0] = glm::vec3(-forward.z, 0, forward.x);
-                        dirTree.pose.matrix[2] = -forward;
+                        dirTree.pose.offset[0] = glm::vec3(-forward.z, 0, forward.x);
+                        dirTree.pose.offset[2] = -forward;
                     });
             });
 
@@ -383,15 +383,14 @@ namespace sp {
                     controller.pxController->setUpDirection(GlmVec3ToPxVec3(targetUp));
                     setHeadPosition(controller.pxController, headPosition);
 
-                    auto currentScale = transform.GetScale();
                     auto currentForward = transform.GetForward();
                     auto targetRight = glm::normalize(glm::cross(currentForward, targetUp));
                     auto targetForward = glm::normalize(glm::cross(targetRight, targetUp));
 
-                    transform.matrix[0] = targetRight * currentScale.x;
-                    transform.matrix[1] = targetUp * currentScale.y;
-                    transform.matrix[2] = targetForward * currentScale.z;
-                    transform.matrix[3] = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
+                    transform.offset[0] = targetRight;
+                    transform.offset[1] = targetUp;
+                    transform.offset[2] = targetForward;
+                    transform.offset[3] = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
 
                     if (ecs::TransformTree::GetRoot(lock, head) != entity) {
                         // Rotate the head to match

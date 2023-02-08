@@ -30,7 +30,7 @@ namespace ecs {
 
     void View::UpdateViewMatrix(Lock<Read<TransformSnapshot>> lock, Entity e) {
         if (e.Has<TransformSnapshot>(lock)) {
-            this->invViewMat = e.Get<TransformSnapshot>(lock).matrix;
+            this->invViewMat = e.Get<TransformSnapshot>(lock).GetMatrix();
             this->viewMat = glm::inverse(this->invViewMat);
         }
     }

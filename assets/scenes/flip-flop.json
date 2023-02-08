@@ -40,8 +40,8 @@
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [-1.7, 0, 0],
-				"rotate": [-90, 0, 1, 0]
+				"rotate": [90, 0, -1, 0],
+				"translate": [-1.7, 0, 0]
 			}
 		},
 		{
@@ -60,25 +60,24 @@
 			"name": "sensor_door_0",
 			"transform": {
 				"parent": "table",
-				"rotate": [180, 4.96781e-12, 1, -2.1715e-19],
-				"scale": [1.00006, 0.999993, 1.00007],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.86, 0.9, 0.14]
+			},
+			"laser_line": {
+				"color": [0, 0, 0.1],
+				"media_density": 0,
+				"points": [
+					[0, 0.11, 0],
+					[0, 1.6, 0],
+					[-2.8, 1.6, 0]
+				],
+				"radius": 0.001
 			},
 			"physics_joints": {
 				"local_offset": {
 					"rotate": [180, 0, 1, 0]
 				},
 				"target": "table.surface.10_1.socket"
-			},
-			"laser_line": {
-				"media_density": 0,
-				"radius": 0.001,
-				"color": [0, 0, 0.1],
-				"points": [
-					[0, 0.11, 0],
-					[0, 1.6, 0],
-					[-2.8, 1.6, 0]
-				]
 			},
 			"script": [
 				{
@@ -106,22 +105,20 @@
 			"name": "sensor_door_1",
 			"transform": {
 				"parent": "table",
-				"rotate": [3.60093e-05, 0, 0, 1],
-				"scale": [0.999998, 0.999996, 0.999998],
 				"translate": [0.54, 0.9, 0.94]
 			},
-			"physics_joints": {
-				"target": "table.surface.6_11.socket"
-			},
 			"laser_line": {
-				"media_density": 0,
-				"radius": 0.001,
 				"color": [0, 0, 0.1],
+				"media_density": 0,
 				"points": [
 					[0, 0.11, 0],
 					[0, 1.6, 0],
 					[0, 1.6, 1.8]
-				]
+				],
+				"radius": 0.001
+			},
+			"physics_joints": {
+				"target": "table.surface.6_11.socket"
 			},
 			"script": [
 				{
@@ -192,8 +189,7 @@
 			"name": "laser_emitter_0",
 			"transform": {
 				"parent": "table",
-				"rotate": [90.0001, -1.93279e-07, 1, -2.9331e-07],
-				"scale": [1.00133, 0.999885, 1.00133],
+				"rotate": [90.0001, 0, 1, 0],
 				"translate": [0.3, 0.9, 0.38]
 			},
 			"physics_joints": {
@@ -231,8 +227,7 @@
 			"name": "splitter_0",
 			"transform": {
 				"parent": "table",
-				"rotate": [90, 6.92954e-08, -1, 1.67357e-07],
-				"scale": [1.00348, 0.999975, 1.00348],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.14, 0.9, 0.14]
 			},
 			"physics_joints": {
@@ -260,8 +255,7 @@
 			"name": "laser_gate_0",
 			"transform": {
 				"parent": "table",
-				"rotate": [90, -5.26835e-09, 1, -1.58051e-08],
-				"scale": [1.00557, 0.999996, 1.00557],
+				"rotate": [90, 0, 1, 0],
 				"translate": [0.62, 0.9, 0.62]
 			},
 			"physics_joints": {
@@ -297,7 +291,6 @@
 			"transform": {
 				"parent": "table",
 				"rotate": [180, 0, 1, 0],
-				"scale": [1.00031, 0.999992, 1.00031],
 				"translate": [0.62, 0.9, 0.38]
 			},
 			"physics_joints": {
@@ -331,8 +324,7 @@
 		{
 			"name": "mirror_0",
 			"transform": {
-				"rotate": [135, 1.31278e-08, -1, 2.71173e-09],
-				"scale": [1.00194, 0.999983, 1.00194],
+				"rotate": [135, 0, -1, 0],
 				"translate": [0.96, 0.9, 3.14]
 			},
 			"physics_joints": {
@@ -360,7 +352,6 @@
 			"name": "laser_gate_2",
 			"transform": {
 				"parent": "table",
-				"scale": [1.00103, 0.999985, 1.00102],
 				"translate": [0.38, 0.9, 0.62]
 			},
 			"physics_joints": {
@@ -393,7 +384,6 @@
 			"transform": {
 				"parent": "table",
 				"rotate": [90, 0, -1, 0],
-				"scale": [1.0008, 0.999994, 1.0008],
 				"translate": [0.38, 0.9, 0.38]
 			},
 			"physics_joints": {
@@ -428,8 +418,6 @@
 			"name": "laser_emitter_1",
 			"transform": {
 				"parent": "table",
-				"rotate": [1.35096e-10, 0, 0, 1],
-				"scale": [1.00003, 0.999992, 1.00003],
 				"translate": [0.62, 0.9, 0.3]
 			},
 			"physics_joints": {
@@ -464,8 +452,7 @@
 			"name": "laser_emitter_2",
 			"transform": {
 				"parent": "table",
-				"rotate": [180, -2.59363e-08, 1, 1.19467e-09],
-				"scale": [1.00002, 0.999997, 1.00002],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.38, 0.9, 0.7]
 			},
 			"physics_joints": {
@@ -503,8 +490,7 @@
 			"name": "laser_emitter_3",
 			"transform": {
 				"parent": "table",
-				"rotate": [90, 3.45526e-08, -1, -3.86206e-08],
-				"scale": [1.00002, 0.999995, 1.00002],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.7, 0.9, 0.62]
 			},
 			"physics_joints": {

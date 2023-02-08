@@ -15,9 +15,9 @@ namespace sp::vulkan::renderer {
         for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
             auto &laser = entity.Get<ecs::LaserLine>(lock);
 
-            glm::mat4x3 transform;
+            ecs::Transform transform;
             if (laser.relative && entity.Has<ecs::TransformSnapshot>(lock)) {
-                transform = entity.Get<ecs::TransformSnapshot>(lock).matrix;
+                transform = entity.Get<ecs::TransformSnapshot>(lock);
             }
 
             if (!laser.on) continue;
@@ -84,7 +84,7 @@ namespace sp::vulkan::renderer {
                     Screen screen;
                     screen.id = id;
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
-                    screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).matrix;
+                    screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).GetMatrix();
                     screens.push_back(std::move(screen));
                 }
             })
