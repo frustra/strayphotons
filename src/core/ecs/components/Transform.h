@@ -14,11 +14,12 @@ namespace ecs {
 
     typedef struct Transform {
         GlmMat4x3 matrix;
+        GlmVec3 scale;
 
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
         Transform() {}
-        Transform(const glm::mat4x3 &matrix) : matrix(matrix) {}
+        Transform(const glm::mat4x3 &matrix, glm::vec3 scale) : matrix(matrix), scale(scale) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
         void Translate(const glm::vec3 &xyz);
@@ -65,7 +66,7 @@ namespace ecs {
 
 #ifdef __cplusplus
     // If this changes, make sure it is the same in Rust and WASM
-    static_assert(sizeof(Transform) == 48, "Wrong Transform size");
+    static_assert(sizeof(Transform) == 60, "Wrong Transform size");
 
     #ifndef SP_WASM_BUILD
     typedef Transform TransformSnapshot;
@@ -75,7 +76,7 @@ namespace ecs {
         EntityRef parent;
 
         TransformTree() {}
-        TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
+        TransformTree(const glm::mat4x3 &pose, glm::vec3 scale) : pose(pose, scale) {}
         TransformTree(const Transform &pose, EntityRef parent = {}) : pose(pose), parent(parent) {}
         TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
 

@@ -20,6 +20,7 @@ pub struct GlmMat4x3 {
 #[derive(Copy, Clone, Debug)]
 pub struct Transform {
     matrix: GlmMat4x3,
+    scale: GlmVec3,
 }
 assert_eq_size!(Transform, [u8; 48]);
 
@@ -117,7 +118,10 @@ pub fn run_wasm() -> anyhow::Result<()> {
         }
     }
 
-    let mut a = Transform{matrix: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]}};
+    let mut a = Transform{
+        matrix: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]},
+        scale: GlmVec3{data: [0f32, 3]},
+    };
     let mut b = a.clone();
     unsafe {
         transform_identity(&mut a);

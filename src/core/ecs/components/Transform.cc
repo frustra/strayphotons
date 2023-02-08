@@ -112,15 +112,22 @@ namespace ecs {
     }
 
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
-        : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
+        : matrix(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)), scale(glm::vec3(1.0f)) {}
+
+    void initIfUndefined(Transform &transform) {
+        if (std::isinf(transform.matrix[0][0])) {
+            transform.matrix = glm::identity<glm::mat4x3>();
+            transform.scale = glm::vec3(1.0f);
+        }
+    }
 
     void Transform::Translate(const glm::vec3 &xyz) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
+        initIfUndefined(*this);
         matrix[3] += xyz;
     }
 
     void Transform::Rotate(float radians, const glm::vec3 &axis) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
+        initIfUndefined(*this);
         glm::vec3 scale = GetScale();
         glm::mat3 rotation = glm::mat3(matrix[0] / scale.x, matrix[1] / scale.y, matrix[2] / scale.z);
         rotation = glm::rotate(glm::mat4(rotation), radians, axis);
@@ -130,7 +137,7 @@ namespace ecs {
     }
 
     void Transform::Rotate(const glm::quat &quat) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
+        initIfUndefined(*this);
         glm::vec3 scale = GetScale();
         glm::mat3 rotation = glm::mat3(matrix[0] / scale.x, matrix[1] / scale.y, matrix[2] / scale.z);
         rotation *= glm::mat3_cast(quat);
@@ -140,14 +147,14 @@ namespace ecs {
     }
 
     void Transform::Scale(const glm::vec3 &xyz) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
+        initIfUndefined(*this);
         matrix[0] *= xyz.x;
         matrix[1] *= xyz.y;
         matrix[2] *= xyz.z;
     }
 
     void Transform::SetPosition(const glm::vec3 &pos) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
+        initIfUndefined(*this);
         matrix[3] = pos;
     }
 
@@ -161,7 +168,7 @@ namespace ecs {
     }
 
     void Transform::SetRotation(const glm::quat &quat) {
-        if (std::isinf(matrix[0][0])) matrix = glm::identity<glm::mat4x3>();
+        initIfUndefined(*this);
         glm::vec3 scale = GetScale();
         glm::mat3 rotation = glm::mat3_cast(quat);
         matrix[0] = rotation[0] * scale.x;
@@ -209,8 +216,8 @@ namespace ecs {
     }
 
     Transform Transform::GetInverse() const {
-        if (std::isinf(matrix[0][0])) return glm::identity<glm::mat4x3>();
-        return Transform(glm::inverse(glm::mat4(matrix)));
+        if (std::isinf(matrix[0][0])) return Transform(glm::identity<glm::mat4x3>(), glm::vec3(1.0f));
+        return Transform(glm::inverse(glm::mat4(matrix)), 1.0f / scale);
     }
 
     glm::vec3 Transform::operator*(const glm::vec4 &rhs) const {
