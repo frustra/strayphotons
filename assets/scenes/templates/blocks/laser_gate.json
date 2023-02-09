@@ -160,7 +160,8 @@
 				"gate_sensitivity": 0.5
 			},
 			"signal_bindings": {
-				"value": "(gate.Icosphere/light_value_r + gate.Icosphere/light_value_g + gate.Icosphere/light_value_b) >= gate/gate_sensitivity"
+				"input_value": "(gate.Icosphere/light_value_r + gate.Icosphere/light_value_g + gate.Icosphere/light_value_b) >= gate/gate_sensitivity",
+				"value": "gate/input_value"
 			},
 			"script": {
 				"prefab": "gltf",
