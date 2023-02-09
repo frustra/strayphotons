@@ -671,7 +671,7 @@ namespace sp {
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic && shapesChanged) {
-            Debugf("Updating actor inertia: %s", ecs::ToString(lock, actorEnt));
+            Tracef("Updating actor inertia: %s", ecs::ToString(lock, actorEnt));
             auto &ph = actorEnt.Get<ecs::Physics>(lock);
             if (ph.mass > 0.0f) {
                 PxRigidBodyExt::setMassAndUpdateInertia(*dynamic, ph.mass);

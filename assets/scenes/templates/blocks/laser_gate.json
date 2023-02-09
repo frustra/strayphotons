@@ -163,16 +163,14 @@
 				"input_value": "(gate.Icosphere/light_value_r + gate.Icosphere/light_value_g + gate.Icosphere/light_value_b) >= gate/gate_sensitivity",
 				"value": "gate/input_value"
 			},
-			"script": [
-				{
-					"prefab": "gltf",
-					"parameters": {
-						"model": "sensor",
-						"render": true,
-						"physics": "SubActor"
-					}
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "sensor",
+					"render": true,
+					"physics": "SubActor"
 				}
-			]
+			}
 		},
 		{
 			"name": "gate.Icosphere",
