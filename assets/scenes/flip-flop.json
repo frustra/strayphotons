@@ -287,17 +287,6 @@
 			]
 		},
 		{
-			"name": "laser_gate_0.gate",
-			"script": {
-				"onTick": "physics_debounce",
-				"parameters": {
-					"delay_frames": 3,
-					"input": "laser_gate_0.gate/input_value",
-					"output": "value"
-				}
-			}
-		},
-		{
 			"name": "laser_gate_1",
 			"transform": {
 				"parent": "table",
@@ -331,6 +320,17 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "laser_gate_1.gate",
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 3,
+					"input": "laser_gate_1.gate/input_value",
+					"output": "value"
+				}
+			}
 		},
 		{
 			"name": "mirror_0",
