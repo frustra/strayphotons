@@ -8,11 +8,15 @@
 namespace sp::scripts {
     using namespace ecs;
 
+    static CVar<float> CVarMagnetPull("x.MagnetPull", 15.0f, "");
+    static CVar<float> CVarMagnetPullTorque("x.MagnetPullTorque", 0.1f, "");
+
     struct MagneticPlug {
         EntityRef attachedSocketEntity;
         bool disabled = false;
         robin_hood::unordered_flat_set<Entity> grabEntities;
         robin_hood::unordered_flat_set<Entity> socketEntities;
+        Entity forceJointEntity;
 
         glm::quat CalcSnapRotation(glm::quat plug, glm::quat socket, float snapAngle) {
             auto plugRelativeSocket = (glm::inverse(socket) * plug) * glm::vec3(0, 0, -1);
@@ -101,6 +105,41 @@ namespace sp::scripts {
                         Errorf("Unsupported grab event type: %s", event.toString());
                     }
                 }
+            }
+
+            Entity nearestSocket;
+            float nearestDist = -1;
+            for (auto &entity : socketEntities) {
+                if (!entity.Has<TransformSnapshot>(lock)) continue;
+
+                auto &socketTransform = entity.Get<const TransformSnapshot>(lock);
+                float distance = glm::length(socketTransform.GetPosition() - plugTransform.GetPosition());
+                if (!nearestSocket.Has<TransformSnapshot>(lock) || distance < nearestDist) {
+                    nearestSocket = entity;
+                    nearestDist = distance;
+                }
+            }
+
+            sp::erase_if(joints.joints, [&](auto &&joint) {
+                return joint.type == PhysicsJointType::Force && joint.target == forceJointEntity;
+            });
+
+            if (nearestSocket.Has<TransformSnapshot>(lock)) {
+                auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock);
+
+                float snapAngle = SignalBindings::GetSignal(lock, nearestSocket, "snap_angle");
+
+                PhysicsJoint joint;
+                joint.target = nearestSocket;
+                joint.type = PhysicsJointType::Force;
+                joint.limit.x = CVarMagnetPull.Get();
+                joint.limit.y = CVarMagnetPullTorque.Get();
+                joint.localOffset.SetRotation(CalcSnapRotation(plugTransform.GetRotation(),
+                    socketTransform.GetRotation(),
+                    glm::radians(snapAngle)));
+                joints.Add(joint);
+
+                forceJointEntity = nearestSocket;
             }
         }
     };
