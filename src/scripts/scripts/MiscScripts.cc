@@ -309,8 +309,10 @@ namespace sp::scripts {
             if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            auto currentOutput = signalOutput.GetSignal(output);
-            if (!lastSignal) lastSignal = currentOutput;
+            if (!lastSignal) {
+                lastSignal = signalOutput.GetSignal(output);
+                signalOutput.SetSignal(output, *lastSignal);
+            }
             auto currentInput = input.Evaluate(lock);
             if ((currentInput >= 0.5) == (*lastSignal >= 0.5)) {
                 frameCount++;
@@ -318,7 +320,7 @@ namespace sp::scripts {
                 frameCount = 0;
                 lastSignal = currentInput;
             }
-            if (frameCount > delayFrames) {
+            if (frameCount >= delayFrames) {
                 signalOutput.SetSignal(output, currentInput);
             }
         }

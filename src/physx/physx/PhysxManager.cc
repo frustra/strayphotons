@@ -312,7 +312,7 @@ namespace sp {
                             if (transform != userData->pose) {
                                 PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()),
                                     GlmQuatToPxQuat(transform.GetRotation()));
-                                if (pxTransform.isSane() && pxTransform.isValid()) {
+                                if (pxTransform.isSane()) {
                                     auto dynamic = actor->is<PxRigidDynamic>();
                                     if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
                                         dynamic->setKinematicTarget(pxTransform);
@@ -671,7 +671,7 @@ namespace sp {
 
         auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic && shapesChanged) {
-            Logf("Updating actor inertia: %s", ecs::ToString(lock, actorEnt));
+            Debugf("Updating actor inertia: %s", ecs::ToString(lock, actorEnt));
             auto &ph = actorEnt.Get<ecs::Physics>(lock);
             if (ph.mass > 0.0f) {
                 PxRigidBodyExt::setMassAndUpdateInertia(*dynamic, ph.mass);
@@ -803,7 +803,7 @@ namespace sp {
                 // Logf("Updating actor position: %s", ecs::ToString(lock, e));
                 PxTransform pxTransform(GlmVec3ToPxVec3(actorTransform.GetPosition()),
                     GlmQuatToPxQuat(actorTransform.GetRotation()));
-                if (pxTransform.isSane() && pxTransform.isValid()) {
+                if (pxTransform.isSane()) {
                     if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
                         dynamic->setKinematicTarget(pxTransform);
                     } else {
