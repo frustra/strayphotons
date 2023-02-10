@@ -54,24 +54,15 @@
 		{
 			"name": "mirror1",
 			"transform": {
-				"rotate": [90, 5.37434e-08, -1, -8.00286e-08],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.3, 0.9, 0.7]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.3_8.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.3_8.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.3_8.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -90,24 +81,15 @@
 		{
 			"name": "splitter1",
 			"transform": {
-				"rotate": [90, 1.09709e-07, -1, 1.18898e-08],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.14, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.1_7.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.1_7.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.1_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -126,24 +108,15 @@
 		{
 			"name": "emitter1",
 			"transform": {
-				"rotate": [180, -2.09583e-08, 1, -1.45319e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.14, 0.9, 0.94]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.1_11.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.1_11.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.1_11.socket"
+			},
 			"signal_output": {
 				"laser_color_r": 5
 			},
@@ -165,24 +138,15 @@
 		{
 			"name": "sensor1",
 			"transform": {
-				"rotate": [180, 1.20051e-07, -1, 2.04891e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.14, 0.9, 0.54]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.1_6.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.1_6.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.1_6.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -201,24 +165,15 @@
 		{
 			"name": "emitter2",
 			"transform": {
-				"rotate": [90, -3.1733e-08, 1, -4.6443e-08],
+				"rotate": [90, 0, 1, 0],
 				"translate": [0.06, 0.9, 0.86]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.0_10.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.0_10.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.0_10.socket"
+			},
 			"signal_bindings": {
 				"laser_color_b": "sensor1/light_value_b",
 				"laser_color_g": "sensor1/light_value_g",
@@ -242,24 +197,15 @@
 		{
 			"name": "gate1",
 			"transform": {
-				"rotate": [180, -3.73048e-08, 1, 1.93974e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.14, 0.9, 0.86]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.1_10.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.1_10.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.1_10.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -278,24 +224,15 @@
 		{
 			"name": "emitter3",
 			"transform": {
-				"rotate": [180, -3.20244e-08, 1, -1.64889e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.78, 0.9, 0.7]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.9_8.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.9_8.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.9_8.socket"
+			},
 			"signal_output": {
 				"laser_color_g": 20,
 				"laser_color_r": 20
@@ -318,18 +255,15 @@
 		{
 			"name": "sensor_door",
 			"transform": {
-				"rotate": [3.39712e-05, 0, 0, 1],
-				"translate": [0.62, 0.9, 0.94]
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.7, 0.9, 0.06]
 			},
-			"physics_joints": [
-				{
-					"target": "table.surface.7_11.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"target": "table.surface.7_11.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.8_0.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -340,7 +274,7 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.7_11.socket"
+						"attach": "table.surface.8_0.socket"
 					}
 				}
 			]
@@ -363,18 +297,11 @@
 		{
 			"name": "charge_cell_0",
 			"transform": {
-				"rotate": [2.6447e-05, 0, 0, 1],
 				"translate": [0.14, 0.9, 0.7]
 			},
-			"physics_joints": [
-				{
-					"target": "table.surface.1_8.socket"
-				},
-				{
-					"target": "table.surface.1_8.socket",
-					"type": "Force"
-				}
-			],
+			"physics_joints": {
+				"target": "table.surface.1_8.socket"
+			},
 			"signal_output": {
 				"cell_output_b": 0,
 				"cell_output_g": 0,
@@ -413,18 +340,11 @@
 		{
 			"name": "charge_cell_1",
 			"transform": {
-				"rotate": [1.6219e-05, 0, 0, 1],
 				"translate": [0.14, 0.9, 0.78]
 			},
-			"physics_joints": [
-				{
-					"target": "table.surface.1_9.socket"
-				},
-				{
-					"target": "table.surface.1_9.socket",
-					"type": "Force"
-				}
-			],
+			"physics_joints": {
+				"target": "table.surface.1_9.socket"
+			},
 			"signal_output": {
 				"cell_output_b": 0,
 				"cell_output_g": 0,
@@ -449,7 +369,6 @@
 				{
 					"onTick": "charge_cell",
 					"parameters": {
-						"charge_level": 0,
 						"charge_signal_b": "d-latch:charge_cell_1.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "d-latch:charge_cell_1.input-sensor.Icosphere/light_value_g",
 						"charge_signal_r": "d-latch:charge_cell_1.input-sensor.Icosphere/light_value_r",
@@ -462,24 +381,15 @@
 		{
 			"name": "laser_gate_0",
 			"transform": {
-				"rotate": [90, 5.22519e-08, -1, -3.22867e-08],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.3, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.3_7.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.3_7.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.3_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -498,18 +408,11 @@
 		{
 			"name": "splitter_0",
 			"transform": {
-				"rotate": [1.69922e-05, 0, 0, 1],
 				"translate": [0.22, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"target": "table.surface.2_7.socket"
-				},
-				{
-					"target": "table.surface.2_7.socket",
-					"type": "Force"
-				}
-			],
+			"physics_joints": {
+				"target": "table.surface.2_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -528,24 +431,15 @@
 		{
 			"name": "mirror_0",
 			"transform": {
-				"rotate": [180, 4.52455e-08, -1, 2.35086e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.22, 0.9, 0.7]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.2_8.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.2_8.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.2_8.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -564,24 +458,15 @@
 		{
 			"name": "laser_gate_1",
 			"transform": {
-				"rotate": [180, 2.61311e-08, -1, 1.67445e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.78, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.9_7.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.9_7.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.9_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -600,24 +485,15 @@
 		{
 			"name": "laser_gate_2",
 			"transform": {
-				"rotate": [180, -7.50369e-09, 1, -5.63e-09],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.62, 0.9, 0.54]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.7_6.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.7_6.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.7_6.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -634,65 +510,17 @@
 			]
 		},
 		{
-			"name": "laser_emitter_0",
-			"transform": {
-				"rotate": [45, 3.95161e-08, -1, -5.36245e-08],
-				"translate": [0.46, 0.9, 0.78]
-			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [45, 0, 1, 0]
-					},
-					"target": "table.surface.5_9.socket"
-				},
-				{
-					"local_offset": {
-						"rotate": [45, 0, 1, 0]
-					},
-					"target": "table.surface.5_9.socket",
-					"type": "Force"
-				}
-			],
-			"signal_output": {
-				"laser_color_r": 10
-			},
-			"script": [
-				{
-					"parameters": {
-						"source": "blocks/laser_emitter"
-					},
-					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.5_9.socket"
-					}
-				}
-			]
-		},
-		{
 			"name": "laser_emitter_1",
 			"transform": {
-				"rotate": [90, -6.02562e-08, 1, -5.35292e-08],
-				"translate": [0.38, 0.9, 0.86]
+				"rotate": [135, 0, 1, 0],
+				"translate": [0.62, 0.9, 0.94]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.4_10.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [135, 0, -1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.4_10.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.7_11.socket"
+			},
 			"signal_output": {
 				"laser_color_r": 10
 			},
@@ -706,7 +534,7 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.4_10.socket"
+						"attach": "table.surface.7_11.socket"
 					}
 				}
 			]
@@ -714,18 +542,11 @@
 		{
 			"name": "mirror_1",
 			"transform": {
-				"rotate": [1.46876e-05, 0, 0, 1],
 				"translate": [0.78, 0.9, 0.46]
 			},
-			"physics_joints": [
-				{
-					"target": "table.surface.9_5.socket"
-				},
-				{
-					"target": "table.surface.9_5.socket",
-					"type": "Force"
-				}
-			],
+			"physics_joints": {
+				"target": "table.surface.9_5.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -744,18 +565,11 @@
 		{
 			"name": "splitter_1",
 			"transform": {
-				"rotate": [1.32656e-05, 0, 0, 1],
 				"translate": [0.62, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"target": "table.surface.7_7.socket"
-				},
-				{
-					"target": "table.surface.7_7.socket",
-					"type": "Force"
-				}
-			],
+			"physics_joints": {
+				"target": "table.surface.7_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -774,24 +588,15 @@
 		{
 			"name": "mirror_2",
 			"transform": {
-				"rotate": [90, 8.03939e-08, -1, -2.43867e-08],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.54, 0.9, 0.54]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.6_6.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.6_6.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.6_6.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -810,24 +615,15 @@
 		{
 			"name": "mirror_3",
 			"transform": {
-				"rotate": [90, -8.42989e-08, 1, -8.64546e-08],
+				"rotate": [90, 0, 1, 0],
 				"translate": [0.62, 0.9, 0.46]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.7_5.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.7_5.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.7_5.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -846,24 +642,15 @@
 		{
 			"name": "splitter_2",
 			"transform": {
-				"rotate": [90, 6.29425e-08, -1, -4.33868e-08],
+				"rotate": [90, 0, -1, 0],
 				"translate": [0.54, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.6_7.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.6_7.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.6_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -882,24 +669,15 @@
 		{
 			"name": "splitter_3",
 			"transform": {
-				"rotate": [180, -6.16674e-08, 1, -9.45147e-09],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.7, 0.9, 0.46]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.8_5.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.8_5.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.8_5.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -916,62 +694,17 @@
 			]
 		},
 		{
-			"name": "splitter_4",
-			"transform": {
-				"rotate": [90, 4.19205e-08, -1, -4.00117e-08],
-				"translate": [0.62, 0.9, 0.86]
-			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.7_10.socket"
-				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.7_10.socket",
-					"type": "Force"
-				}
-			],
-			"script": [
-				{
-					"parameters": {
-						"source": "blocks/splitter"
-					},
-					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.7_10.socket"
-					}
-				}
-			]
-		},
-		{
 			"name": "laser_gate_4",
 			"transform": {
-				"rotate": [90, 4.9617e-08, -1, -3.75549e-08],
-				"translate": [0.38, 0.9, 0.62]
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.46, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.4_7.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, 1, 0]
-					},
-					"target": "table.surface.4_7.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.5_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -982,7 +715,7 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.4_7.socket"
+						"attach": "table.surface.5_7.socket"
 					}
 				}
 			]
@@ -990,24 +723,15 @@
 		{
 			"name": "splitter_5",
 			"transform": {
-				"rotate": [180, -9.30704e-08, 1, -3.44953e-08],
+				"rotate": [180, 0, 1, 0],
 				"translate": [0.7, 0.9, 0.62]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.8_7.socket"
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
 				},
-				{
-					"local_offset": {
-						"rotate": [180, 0, 1, 0]
-					},
-					"target": "table.surface.8_7.socket",
-					"type": "Force"
-				}
-			],
+				"target": "table.surface.8_7.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -1026,24 +750,11 @@
 		{
 			"name": "laser_gate_5",
 			"transform": {
-				"rotate": [90, -1.8978e-08, 1, -5.20086e-08],
-				"translate": [0.46, 0.9, 0.86]
+				"translate": [0.62, 0.9, 0.7]
 			},
-			"physics_joints": [
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.5_10.socket"
-				},
-				{
-					"local_offset": {
-						"rotate": [90, 0, -1, 0]
-					},
-					"target": "table.surface.5_10.socket",
-					"type": "Force"
-				}
-			],
+			"physics_joints": {
+				"target": "table.surface.7_8.socket"
+			},
 			"script": [
 				{
 					"parameters": {
@@ -1054,7 +765,7 @@
 				{
 					"onTick": "magnetic_plug",
 					"parameters": {
-						"attach": "table.surface.5_10.socket"
+						"attach": "table.surface.7_8.socket"
 					}
 				}
 			]
