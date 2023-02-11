@@ -147,6 +147,10 @@ namespace sp {
 
     bool ConstraintSystem::UpdateNoClipConstraint(JointState *joint, PxRigidActor *actor0, PxRigidActor *actor1) {
         if (!joint->noclipConstraint || !joint->noclipConstraint->temporary) return false;
+        if (!actor0 || !actor1) {
+            Errorf("Invalid NoClip constraint has null actor: %s", joint->ecsJoint.target.Name().String());
+            return true;
+        }
 
         vector<PxShape *> shapes0(actor0->getNbShapes());
         vector<PxShape *> shapes1(actor1->getNbShapes());

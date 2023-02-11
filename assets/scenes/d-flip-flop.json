@@ -1,0 +1,796 @@
+{
+	"properties": {
+		"gravity": [0, 0, 0],
+		"gravity_func": "station_spin",
+		"gravity_transform": {
+			"translate": [0, 153, 0]
+		}
+	},
+	"entities": [
+		{
+			"name": "global:player_gravity_spin",
+			"transform": {
+				"translate": [0, 153, 0]
+			},
+			"scene_connection": {
+				"player_gravity_spin": "1"
+			}
+		},
+		{
+			"name": "zone",
+			"transform": {
+				"scale": [24, 8, 10],
+				"translate": [0, 3, 0]
+			},
+			"scene_connection": {
+				"d-flip-flop": "zone/trigger_player_count"
+			},
+			"trigger_area": "Box",
+			"signal_output": {}
+		},
+		{
+			"name": "segment",
+			"script": {
+				"parameters": {
+					"source": "station_segment"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "global:spawn",
+			"transform": {}
+		},
+		{
+			"name": "table",
+			"transform": {},
+			"script": {
+				"parameters": {
+					"source": "table"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "mirror1",
+			"transform": {
+				"translate": [0.22, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"target": "table.surface.2_4.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.2_4.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter1",
+			"transform": {
+				"translate": [0.14, 0.9, 0.62]
+			},
+			"physics_joints": {
+				"target": "table.surface.1_7.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_7.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "emitter1",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.14, 0.9, 0.94]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
+				},
+				"target": "table.surface.1_11.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_11.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "gate1",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.14, 0.9, 0.86]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
+				},
+				"target": "table.surface.1_10.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_10.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "emitter3",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.38, 0.9, 0.3]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.4_3.socket"
+			},
+			"signal_output": {
+				"laser_color_g": 20,
+				"laser_color_r": 20
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.4_3.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "sensor_door",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.94, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.11_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.11_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "door1",
+			"transform": {
+				"translate": [4, 0, 0]
+			},
+			"signal_bindings": {
+				"door_open": "sensor_door/light_value_r"
+			},
+			"script": {
+				"parameters": {
+					"source": "slide_door"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "charge_cell_0",
+			"transform": {
+				"translate": [0.14, 0.9, 0.7]
+			},
+			"physics_joints": {
+				"target": "table.surface.1_8.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 5,
+				"charge_level": 100,
+				"discharging": 1,
+				"max_charge_level": 100
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_8.socket"
+					}
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 100,
+						"charge_signal_b": "d-flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "d-flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "d-flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_r",
+						"discharging": true,
+						"max_charge_level": 100,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_1",
+			"transform": {
+				"translate": [0.14, 0.9, 0.78]
+			},
+			"physics_joints": {
+				"target": "table.surface.1_9.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 0,
+				"charge_level": 0,
+				"discharging": 0,
+				"max_charge_level": 100
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_9.socket"
+					}
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_signal_b": "d-flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "d-flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "d-flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_r",
+						"max_charge_level": 100,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_0",
+			"transform": {
+				"translate": [0.14, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"target": "table.surface.1_4.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_4.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_0",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.14, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.1_5.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_5.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_0",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.22, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.2_5.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.2_5.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.54, 0.9, 0.3]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.6_3.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.6_3.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_2",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.62, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.7_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.7_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.06, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.0_1.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 10
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.0_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.7, 0.9, 0.3]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.8_3.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_3.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.54, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.6_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.6_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_2",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.62, 0.9, 0.06]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
+				},
+				"target": "table.surface.7_0.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.7_0.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_3",
+			"transform": {
+				"translate": [0.7, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"target": "table.surface.8_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_2",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.54, 0.9, 0.06]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
+				},
+				"target": "table.surface.6_0.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.6_0.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_3",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.7, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.8_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_4",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.3, 0.9, 0.06]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.3_0.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.3_0.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_5",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.54, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.6_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.6_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_5",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.3, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.3_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.3_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_4",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [0.06, 0.9, 0.86]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [180, 0, 1, 0]
+				},
+				"target": "table.surface.0_10.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.0_10.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_5",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.06, 0.9, 0.62]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.0_7.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.0_7.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_6",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.14, 0.9, 0.06]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.1_0.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_0.socket"
+					}
+				}
+			]
+		}
+	]
+}
