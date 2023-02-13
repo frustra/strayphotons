@@ -9,6 +9,7 @@
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
+    static CVar<bool> CVarEnableVoxels2("r.EnableVoxels2", true, "Enable world voxelization for lighting");
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
@@ -28,6 +29,28 @@ namespace sp::vulkan::renderer {
         2,
         "Factor to decrease size of subsequent buckets");
 
+    struct GPUVoxelState {
+        glm::mat4 worldToVoxel;
+        glm::ivec3 size;
+        float _padding[1];
+    };
+
+    struct GPUVoxelFragment {
+        uint16_t position[3];
+        uint16_t _padding0[1];
+        float16_t radiance[3];
+        uint16_t _padding1[1];
+        float16_t normal[3];
+        uint16_t _padding2[1];
+    };
+
+    struct GPUVoxelFragmentList {
+        uint32_t count;
+        uint32_t capacity;
+        uint32_t offset;
+        VkDispatchIndirectCommand cmd;
+    };
+
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
         voxelGridSize = glm::ivec3(0);
         for (auto entity : lock.EntitiesWith<ecs::VoxelArea>()) {
@@ -40,12 +63,6 @@ namespace sp::vulkan::renderer {
                 break; // Only 1 voxel area supported for now
             }
         }
-
-        struct GPUVoxelState {
-            glm::mat4 worldToVoxel;
-            glm::ivec3 size;
-            float _padding[1];
-        };
 
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
@@ -95,22 +112,6 @@ namespace sp::vulkan::renderer {
                 });
             return;
         }
-
-        struct GPUVoxelFragment {
-            uint16_t position[3];
-            uint16_t _padding0[1];
-            float16_t radiance[3];
-            uint16_t _padding1[1];
-            float16_t normal[3];
-            uint16_t _padding2[1];
-        };
-
-        struct GPUVoxelFragmentList {
-            uint32_t count;
-            uint32_t capacity;
-            uint32_t offset;
-            VkDispatchIndirectCommand cmd;
-        };
 
         ecs::View ortho;
         ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
@@ -406,6 +407,148 @@ namespace sp::vulkan::renderer {
                     map[i].capacity);
             }
         });
+    }
+
+    struct VoxelLayerInfo {
+        std::string name;
+        glm::vec3 direction;
+    };
+
+    auto generateVoxelLayerInfo() {
+        constexpr std::array<glm::vec3, 6> directions = {
+            glm::vec3(1, 0, 0),
+            glm::vec3(0, 1, 0),
+            glm::vec3(0, 0, 1),
+            glm::vec3(-1, 0, 0),
+            glm::vec3(0, -1, 0),
+            glm::vec3(0, 0, -1),
+        };
+        constexpr size_t layerCount = directions.size() * MAX_VOXEL_FRAGMENT_LISTS;
+        std::array<VoxelLayerInfo, layerCount> layers;
+        for (size_t i = 0; i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
+            for (size_t dir = 0; dir < directions.size(); dir++) {
+                layers[i * directions.size() + dir] = VoxelLayerInfo{
+                    "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir),
+                    directions[dir],
+                };
+            }
+        }
+        return layers;
+    }
+
+    static const auto VoxelLayerInfo = generateVoxelLayerInfo();
+
+    void Voxels::AddVoxelization2(RenderGraph &graph, const Lighting &lighting) {
+        ZoneScoped;
+        auto scope = graph.Scope("Voxels2");
+
+        if (voxelGridSize == glm::ivec3(0) || !CVarEnableVoxels2.Get()) {
+            graph.AddPass("Dummy")
+                .Build([&](rg::PassBuilder &builder) {
+                    ImageDesc desc;
+                    desc.extent = vk::Extent3D(1, 1, 1);
+                    desc.primaryViewType = vk::ImageViewType::e3D;
+                    desc.imageType = vk::ImageType::e3D;
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    for (auto &layerInfo : VoxelLayerInfo) {
+                        builder.CreateImage(layerInfo.name, desc, Access::TransferWrite);
+                    }
+                })
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                    vk::ClearColorValue clear;
+                    clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+
+                    for (auto &layerInfo : VoxelLayerInfo) {
+                        auto layerView = resources.GetImageView(layerInfo.name);
+
+                        cmd.Raw().clearColorImage(*layerView->Image(),
+                            vk::ImageLayout::eTransferDstOptimal,
+                            clear,
+                            {range});
+                    }
+                });
+            return;
+        }
+
+        ecs::View ortho;
+        ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
+
+        auto voxelCenter = voxelToWorld;
+        voxelCenter.Translate(voxelCenter * (0.5f * glm::vec4(voxelGridSize, 0)));
+
+        std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
+        axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
+        axisTransform[1].Rotate(M_PI_2, glm::vec3(1, 0, 0));
+
+        axisTransform[0].Scale(glm::vec3(voxelGridSize.z, voxelGridSize.y, voxelGridSize.x));
+        axisTransform[1].Scale(glm::vec3(voxelGridSize.x, voxelGridSize.z, voxelGridSize.y));
+        axisTransform[2].Scale(voxelGridSize);
+
+        std::array<ecs::View, 3> orthoAxes = {ortho, ortho, ortho};
+        orthoAxes[0].extents = glm::ivec2(voxelGridSize.z, voxelGridSize.y);
+        orthoAxes[1].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.z);
+        orthoAxes[2].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.y);
+        for (size_t i = 0; i < orthoAxes.size(); i++) {
+            auto axis = axisTransform[i];
+            axis.Scale(glm::vec3(0.5, 0.5, 1));
+            axis.Translate(axis * glm::vec4(0, 0, -0.5, 0));
+            orthoAxes[i].SetInvViewMat(axis.GetMatrix());
+        }
+
+        bool clearRadiance = (CVarVoxelClear.Get() & 1) == 1;
+        auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
+
+        auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
+        auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
+
+        fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
+
+        uint32 totalFragmentListSize = 0;
+        {
+            auto fragmentListSize = (voxelGridSize.x * voxelGridSize.y * voxelGridSize.z) / 2;
+            for (uint32 i = 0; i < fragmentListCount; i++) {
+                fragmentListSizes[i].capacity = fragmentListSize;
+                fragmentListSizes[i].offset = totalFragmentListSize;
+                totalFragmentListSize += fragmentListSize;
+                fragmentListSize /= CVarVoxelFragmentBucketSizeFactor.Get();
+            }
+        }
+
+        graph.AddPass("Init")
+            .Build([&](rg::PassBuilder &builder) {
+                ImageDesc desc;
+                desc.extent = voxelGridExtents;
+                desc.primaryViewType = vk::ImageViewType::e3D;
+                desc.imageType = vk::ImageType::e3D;
+                desc.sampler = SamplerType::TrilinearClampBorder;
+                desc.format = vk::Format::eR16G16B16A16Sfloat;
+                for (size_t i = 0; i < voxelGridMips && i < VoxelLayerInfo.size(); i++) {
+                    builder.CreateImage(VoxelLayerInfo[i].name,
+                        desc,
+                        clearRadiance ? Access::TransferWrite : Access::None);
+                }
+            })
+            .Execute([this, voxelGridMips, clearRadiance](rg::Resources &resources, CommandContext &cmd) {
+                if (clearRadiance) {
+                    vk::ClearColorValue clear;
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+
+                    for (size_t i = 0; i < voxelGridMips && i < VoxelLayerInfo.size(); i++) {
+                        auto layerView = resources.GetImageView(VoxelLayerInfo[i].name);
+                        cmd.Raw().clearColorImage(*layerView->Image(),
+                            vk::ImageLayout::eTransferDstOptimal,
+                            clear,
+                            {range});
+                    }
+                }
+            });
     }
 
     void Voxels::AddDebugPass(RenderGraph &graph) {

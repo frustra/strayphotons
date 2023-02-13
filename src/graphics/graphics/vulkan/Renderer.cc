@@ -136,6 +136,7 @@ namespace sp::vulkan {
         AddMenuGui(lock);
         lighting.AddGelTextures(graph);
         voxels.AddVoxelization(graph, lighting);
+        voxels.AddVoxelization2(graph, lighting);
         renderer::AddLightSensors(graph, scene, lock);
 
 #ifdef SP_XR_SUPPORT
