@@ -42,9 +42,9 @@ void main() {
     ivec3 position = ivec3(fragmentLists[index].position);
     vec3 radiance = vec3(fragmentLists[index].radiance);
     vec3 worldNormal = vec3(fragmentLists[index].normal);
-    if (dot(worldNormal, -layerDirection) <= 0) return;
 
-    imageStore(radianceOut, position, vec4(radiance, 1));
+    float alpha = max(0, dot(worldNormal, -layerDirection));
+    imageStore(radianceOut, position, vec4(radiance, alpha));
 
     // vec3 worldPosition = (inverse(voxelInfo.worldToVoxel) * vec4(position + 0.5f, 1.0)).xyz;
 

@@ -73,9 +73,10 @@ float TraceVoxelGrid2(vec3 rayWorldPos, vec3 rayWorldDir, out vec3 hitRadiance) 
     int maxIterations = int(max(voxelInfo.gridSize.x, max(voxelInfo.gridSize.y, voxelInfo.gridSize.z)) * 3);
     bvec3 mask;
 
+    vec3 lastVoxelDir = rayVoxelDir;
     for (int i = 0; i < maxIterations; i++) {
         vec3 radiance;
-        float alpha = GetVoxelNearest2(rayVoxelPos + rayVoxelDir * 0.001, rayVoxelDir, radiance);
+        float alpha = GetVoxelNearest2(rayVoxelPos + rayVoxelDir * 0.001, lastVoxelDir, radiance);
         if (alpha > 0) {
             hitRadiance = radiance;
             return alpha;
@@ -85,6 +86,7 @@ float TraceVoxelGrid2(vec3 rayWorldPos, vec3 rayWorldDir, out vec3 hitRadiance) 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         rayVoxelPos += rayVoxelDir * dot(vec3(mask), sideDist);
         voxelIndex += ivec3(mask) * rayStep;
+        lastVoxelDir = vec3(mask) * rayStep;
         sideDist = (raySign * (vec3(voxelIndex) - rayVoxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
     }
 
