@@ -617,6 +617,7 @@ namespace sp::vulkan::renderer {
 
     void Voxels::AddDebugPass(RenderGraph &graph) {
         if (CVarVoxelDebug.Get() <= 0 || voxelGridSize == glm::ivec3(0)) return;
+        auto debugMipLayer = CVarVoxelDebugMip.Get();
 
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {
@@ -629,7 +630,7 @@ namespace sp::vulkan::renderer {
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
 
                 for (auto &voxelLayer : VoxelLayerInfo) {
-                    if (voxelLayer.layerIndex > 0) break;
+                    if (voxelLayer.layerIndex != debugMipLayer) continue;
                     builder.Read("Voxels2." + voxelLayer.name, Access::FragmentShaderSampleImage);
                 }
 
@@ -639,7 +640,7 @@ namespace sp::vulkan::renderer {
                 builder.OutputColorAttachment(0, "VoxelDebug", desc, {LoadOp::DontCare, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
-            .Execute([](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([debugMipLayer](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "voxel_debug.frag");
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);
@@ -657,7 +658,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 7, resources.GetImageView("Voxels.Irradiance"));
 
                 for (auto &voxelLayer : VoxelLayerInfo) {
-                    if (voxelLayer.layerIndex > 0) break;
+                    if (voxelLayer.layerIndex != debugMipLayer) continue;
                     auto layerView = resources.GetImageView("Voxels2." + voxelLayer.name);
                     Assertf(layerView, "Layer view missing: %s", voxelLayer.name);
                     cmd.SetImageView(1, voxelLayer.dirIndex, layerView);
@@ -665,7 +666,7 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 2, CVarVoxelDebugMip.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 2, debugMipLayer);
 
                 cmd.Draw(3);
             });
