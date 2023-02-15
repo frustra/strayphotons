@@ -16,9 +16,9 @@ namespace sp::vulkan::renderer {
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
     static CVar<int> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
-        7,
+        15,
         "Change the voxel grid clearing operation used between frames "
-        "(bitfield: 1=radiance, 2=counters, 4=normals)");
+        "(bitfield: 1=radiance, 2=counters, 4=normals, 8=irradiance)");
     static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
@@ -141,6 +141,7 @@ namespace sp::vulkan::renderer {
         bool clearRadiance = (CVarVoxelClear.Get() & 1) == 1;
         bool clearCounters = (CVarVoxelClear.Get() & 2) == 2;
         bool clearNormals = (CVarVoxelClear.Get() & 4) == 4;
+        bool clearIrradiance = (CVarVoxelClear.Get() & 8) == 8;
         auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
 
         auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
@@ -175,6 +176,8 @@ namespace sp::vulkan::renderer {
                 builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
                 // desc.format = vk::Format::eR8G8B8A8Snorm;
                 builder.CreateImage("Normals", desc, clearNormals ? Access::TransferWrite : Access::None);
+                desc.mipLevels = 1;
+                builder.CreateImage("Irradiance", desc, clearIrradiance ? Access::TransferWrite : Access::None);
 
                 builder.CreateBuffer("FragmentListMetadata",
                     {sizeof(GPUVoxelFragmentList), MAX_VOXEL_FRAGMENT_LISTS},
@@ -186,7 +189,8 @@ namespace sp::vulkan::renderer {
                     Residency::GPU_ONLY,
                     Access::None);
             })
-            .Execute([this, clearRadiance, clearCounters, clearNormals](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, clearRadiance, clearIrradiance, clearCounters, clearNormals](rg::Resources &resources,
+                         CommandContext &cmd) {
                 if (clearRadiance) {
                     auto radianceView = resources.GetImageView("Radiance");
                     vk::ClearColorValue clear;
@@ -219,6 +223,18 @@ namespace sp::vulkan::renderer {
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
                     cmd.Raw().clearColorImage(*normalsView->Image(),
+                        vk::ImageLayout::eTransferDstOptimal,
+                        clear,
+                        {range});
+                }
+                if (clearIrradiance) {
+                    auto irradianceView = resources.GetImageView("Irradiance");
+                    vk::ClearColorValue clear;
+                    vk::ImageSubresourceRange range;
+                    range.layerCount = 1;
+                    range.levelCount = 1;
+                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    cmd.Raw().clearColorImage(*irradianceView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
                         {range});
@@ -409,27 +425,30 @@ namespace sp::vulkan::renderer {
         });
     }
 
+    constexpr std::array<glm::vec3, 6> directions = {
+        glm::vec3(1, 0, 0),
+        glm::vec3(0, 1, 0),
+        glm::vec3(0, 0, 1),
+        glm::vec3(-1, 0, 0),
+        glm::vec3(0, -1, 0),
+        glm::vec3(0, 0, -1),
+    };
+
     struct VoxelLayerInfo {
         std::string name;
-        glm::vec3 direction;
+        uint32_t layerIndex;
+        uint32_t dirIndex;
     };
 
     auto generateVoxelLayerInfo() {
-        constexpr std::array<glm::vec3, 6> directions = {
-            glm::vec3(1, 0, 0),
-            glm::vec3(0, 1, 0),
-            glm::vec3(0, 0, 1),
-            glm::vec3(-1, 0, 0),
-            glm::vec3(0, -1, 0),
-            glm::vec3(0, 0, -1),
-        };
         constexpr size_t layerCount = directions.size() * MAX_VOXEL_FRAGMENT_LISTS;
         std::array<VoxelLayerInfo, layerCount> layers;
-        for (size_t i = 0; i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
-            for (size_t dir = 0; dir < directions.size(); dir++) {
+        for (uint32_t i = 0; i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
+            for (uint32_t dir = 0; dir < directions.size(); dir++) {
                 layers[i * directions.size() + dir] = VoxelLayerInfo{
                     "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir),
-                    directions[dir],
+                    i,
+                    dir,
                 };
             }
         }
@@ -526,10 +545,9 @@ namespace sp::vulkan::renderer {
                 desc.imageType = vk::ImageType::e3D;
                 desc.sampler = SamplerType::TrilinearClampBorder;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
-                for (size_t i = 0; i < voxelGridMips && i < VoxelLayerInfo.size(); i++) {
-                    builder.CreateImage(VoxelLayerInfo[i].name,
-                        desc,
-                        clearRadiance ? Access::TransferWrite : Access::None);
+                for (auto &voxelLayer : VoxelLayerInfo) {
+                    if (voxelLayer.layerIndex >= voxelGridMips) break;
+                    builder.CreateImage(voxelLayer.name, desc, clearRadiance ? Access::TransferWrite : Access::None);
                 }
             })
             .Execute([this, voxelGridMips, clearRadiance](rg::Resources &resources, CommandContext &cmd) {
@@ -540,8 +558,9 @@ namespace sp::vulkan::renderer {
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
 
-                    for (size_t i = 0; i < voxelGridMips && i < VoxelLayerInfo.size(); i++) {
-                        auto layerView = resources.GetImageView(VoxelLayerInfo[i].name);
+                    for (auto &voxelLayer : VoxelLayerInfo) {
+                        if (voxelLayer.layerIndex >= voxelGridMips) break;
+                        auto layerView = resources.GetImageView(voxelLayer.name);
                         cmd.Raw().clearColorImage(*layerView->Image(),
                             vk::ImageLayout::eTransferDstOptimal,
                             clear,
@@ -549,6 +568,51 @@ namespace sp::vulkan::renderer {
                     }
                 }
             });
+
+        for (auto &voxelLayer : VoxelLayerInfo) {
+            if (voxelLayer.layerIndex >= voxelGridMips) break;
+            graph.AddPass(voxelLayer.name)
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
+
+                    builder.ReadUniform("VoxelState");
+
+                    builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
+                    builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
+                    builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                })
+
+                .Execute([this, orthoAxes, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetComputeShader("voxel_fill_layer.comp");
+
+                    struct GPULayerData {
+                        glm::vec3 direction;
+                        uint32_t layerIndex;
+                    };
+                    static_assert(sizeof(GPULayerData) == sizeof(glm::vec4), "GPULayerData size missmatch");
+
+                    cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+
+                    GPULayerData layerData = {
+                        directions[voxelLayer.dirIndex],
+                        voxelLayer.layerIndex,
+                    };
+                    cmd.UploadUniformData(0, 1, &layerData);
+
+                    cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
+
+                    auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                    cmd.SetStorageBuffer(0, 3, metadata, 0, sizeof(GPUVoxelFragmentList));
+
+                    cmd.SetStorageBuffer(0,
+                        4,
+                        resources.GetBuffer("Voxels.FragmentLists"),
+                        fragmentListSizes[0].offset * sizeof(GPUVoxelFragment),
+                        fragmentListSizes[0].capacity * sizeof(GPUVoxelFragment));
+
+                    cmd.DispatchIndirect(metadata, offsetof(GPUVoxelFragmentList, cmd));
+                });
+        }
     }
 
     void Voxels::AddDebugPass(RenderGraph &graph) {
@@ -559,9 +623,15 @@ namespace sp::vulkan::renderer {
                 builder.Read("Voxels.FillCounters", Access::FragmentShaderReadStorage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels.Irradiance", Access::FragmentShaderSampleImage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("VoxelState");
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
+
+                for (auto &voxelLayer : VoxelLayerInfo) {
+                    if (voxelLayer.layerIndex > 0) break;
+                    builder.Read("Voxels2." + voxelLayer.name, Access::FragmentShaderSampleImage);
+                }
 
                 builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
 
@@ -584,6 +654,14 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 4, resources.GetImageView("Voxels.FillCounters"));
                 cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
                 cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
+                cmd.SetImageView(0, 7, resources.GetImageView("Voxels.Irradiance"));
+
+                for (auto &voxelLayer : VoxelLayerInfo) {
+                    if (voxelLayer.layerIndex > 0) break;
+                    auto layerView = resources.GetImageView("Voxels2." + voxelLayer.name);
+                    Assertf(layerView, "Layer view missing: %s", voxelLayer.name);
+                    cmd.SetImageView(1, voxelLayer.dirIndex, layerView);
+                }
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());

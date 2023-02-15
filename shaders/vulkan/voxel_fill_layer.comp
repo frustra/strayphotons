@@ -1,0 +1,67 @@
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform LayerDataUniform {
+    vec3 layerDirection;
+    uint layerIndex;
+};
+
+layout(binding = 2, rgba16f) writeonly uniform image3D radianceOut;
+
+struct FragmentListMetadata {
+    uint count;
+    uint capacity;
+    uint offset;
+    VkDispatchIndirectCommand cmd;
+};
+
+layout(std430, binding = 3) buffer VoxelFragmentListMetadata {
+    uint count;
+    uint capacity;
+    uint offset;
+    VkDispatchIndirectCommand cmd;
+};
+
+layout(std430, binding = 4) buffer VoxelFragmentList {
+    VoxelFragment fragmentLists[];
+};
+
+void main() {
+    uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
+    if (index >= count) return;
+    if (layerIndex > 0) return;
+
+    ivec3 position = ivec3(fragmentLists[index].position);
+    vec3 radiance = vec3(fragmentLists[index].radiance);
+    vec3 worldNormal = vec3(fragmentLists[index].normal);
+    if (dot(worldNormal, -layerDirection) <= 0) return;
+
+    imageStore(radianceOut, position, vec4(radiance, 1));
+
+    // vec3 worldPosition = (inverse(voxelInfo.worldToVoxel) * vec4(position + 0.5f, 1.0)).xyz;
+
+    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
+    // vec3 samplePos = worldPosition;
+    // vec3 sampleDir = OrientByNormal(0.0, 0.1, worldNormal);
+    // vec4 indirectDiffuse = ConeTraceGridDiffuse(samplePos, worldNormal, 0);
+
+    // for (int a = 3; a <= 6; a += 3) {
+    //     float diffuseScale = 1.0 / a;
+    //     for (float r = 0; r < a; r++) {
+    //         vec3 sampleDir = OrientByNormal(r * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
+    //         vec4 sampleColor = ConeTraceGridDiffuse(samplePos, sampleDir, 0);
+
+    //         indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale;
+    //     }
+    // }
+
+    // imageStore(radianceOut, position, vec4(indirectDiffuse.rgb * 0.333, 1));
+}
