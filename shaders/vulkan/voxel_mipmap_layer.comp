@@ -19,9 +19,13 @@ layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
 
 layout(binding = 3) uniform sampler3D voxelLayersIn[6];
 
+const uint[6] OppositeAxis = uint[](3, 4, 5, 0, 1, 2);
+const vec3[6] AxisDirections =
+    vec3[](vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(-1, 0, 0), vec3(0, -1, 0), vec3(0, 0, -1));
+
 void main() {
-    ivec3 voxelOutPos = ivec3(gl_GlobalInvocationID);
-    if (any(greaterThanEqual(voxelOutPos, imageSize(voxelLayerOut)))) return;
+    ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
 
     int axis = DominantAxis(layerDirection);
     if (axis < 0) {
@@ -29,37 +33,28 @@ void main() {
     } else {
         axis -= 1;
     }
+    uint inverseAxis = OppositeAxis[axis];
 
-    ivec3 voxelInPos = voxelOutPos;
-    vec4 voxelValue = texelFetch(voxelLayersIn[axis], voxelInPos, 0);
+    int stride = 1 << max(0, layerIndex - 1);
+    vec4 voxelValue = texelFetch(voxelLayersIn[axis], voxelPos, 0);
 
-    if (voxelValue.a < 1.0) {
-        vec4 sampleValue = texelFetch(voxelLayersIn[axis], voxelInPos + ivec3(layerDirection), 0);
-        if (sampleValue.a > 0) {
-            voxelValue.a += sampleValue.a;
-            voxelValue.rgb = mix(voxelValue.rgb, sampleValue.rgb, sampleValue.a / voxelValue.a);
-        }
+    vec4 sampleValue = texelFetch(voxelLayersIn[axis], voxelPos + ivec3(layerDirection) * stride, 0);
+    sampleValue.a *= max(0, 1 - voxelValue.a);
+    for (int a = 0; a < 6; a++) {
+        if (a == axis || a == inverseAxis) continue;
+        ivec3 sampleOffset = ivec3(AxisDirections[a]) * stride;
+        float alpha = texelFetch(voxelLayersIn[a], voxelPos, 0).a;
+
+        vec4 sampleValue2 = texelFetch(voxelLayersIn[axis], voxelPos + sampleOffset, 0);
+        sampleValue2.a *= max(0, 1 - alpha);
+        sampleValue += sampleValue2;
     }
 
-    imageStore(voxelLayerOut, ivec3(voxelOutPos), voxelValue);
+    if (sampleValue.a > 0) {
+        if (sampleValue.a > 1) sampleValue /= sampleValue.a;
+        voxelValue.a += sampleValue.a;
+        voxelValue.rgb = mix(voxelValue.rgb, sampleValue.rgb, sampleValue.a / voxelValue.a);
+    }
 
-    // float alpha = 0.0;
-    // vec3 radiance = vec3(0);
-
-    // for (int x = 0; x < 2; x++) {
-    //     for (int y = 0; y < 2; y++) {
-    //         for (int z = 0; z < 2; z++) {
-    //             vec4 sampleValue = texelFetch(voxelLayersIn[axis], voxelInPos + ivec3(x, y, z), 0);
-
-    //             radiance += sampleValue.rgb;
-    //             sampleValue.a = min(sampleValue.a, 1.0);
-    //             alpha += sampleValue.a;
-    //         }
-    //     }
-    // }
-
-    // // Bias alpha so that 50% full is opaque
-    // alpha = saturate(alpha * 0.25);
-
-    // imageStore(voxelLayerOut, ivec3(voxelOutPos), vec4(radiance * 0.125, alpha));
+    imageStore(voxelLayerOut, ivec3(voxelPos), voxelValue);
 }
