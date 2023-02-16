@@ -1,0 +1,65 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform LayerDataUniform {
+    vec3 layerDirection;
+    uint layerIndex;
+};
+
+layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
+
+layout(binding = 3) uniform sampler3D voxelLayersIn[6];
+
+void main() {
+    ivec3 voxelOutPos = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(voxelOutPos, imageSize(voxelLayerOut)))) return;
+
+    int axis = DominantAxis(layerDirection);
+    if (axis < 0) {
+        axis = -axis + 2;
+    } else {
+        axis -= 1;
+    }
+
+    ivec3 voxelInPos = voxelOutPos;
+    vec4 voxelValue = texelFetch(voxelLayersIn[axis], voxelInPos, 0);
+
+    if (voxelValue.a < 1.0) {
+        vec4 sampleValue = texelFetch(voxelLayersIn[axis], voxelInPos + ivec3(layerDirection), 0);
+        if (sampleValue.a > 0) {
+            voxelValue.a += sampleValue.a;
+            voxelValue.rgb = mix(voxelValue.rgb, sampleValue.rgb, sampleValue.a / voxelValue.a);
+        }
+    }
+
+    imageStore(voxelLayerOut, ivec3(voxelOutPos), voxelValue);
+
+    // float alpha = 0.0;
+    // vec3 radiance = vec3(0);
+
+    // for (int x = 0; x < 2; x++) {
+    //     for (int y = 0; y < 2; y++) {
+    //         for (int z = 0; z < 2; z++) {
+    //             vec4 sampleValue = texelFetch(voxelLayersIn[axis], voxelInPos + ivec3(x, y, z), 0);
+
+    //             radiance += sampleValue.rgb;
+    //             sampleValue.a = min(sampleValue.a, 1.0);
+    //             alpha += sampleValue.a;
+    //         }
+    //     }
+    // }
+
+    // // Bias alpha so that 50% full is opaque
+    // alpha = saturate(alpha * 0.25);
+
+    // imageStore(voxelLayerOut, ivec3(voxelOutPos), vec4(radiance * 0.125, alpha));
+}
