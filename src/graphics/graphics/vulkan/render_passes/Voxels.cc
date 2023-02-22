@@ -510,6 +510,9 @@ namespace sp::vulkan::renderer {
                 for (auto &voxelLayer : VoxelLayers) {
                     if (voxelLayer.layerIndex >= voxelLayerCount) continue;
                     builder.CreateImage(voxelLayer.name, desc, clearMipmap ? Access::TransferWrite : Access::None);
+                    builder.CreateImage(voxelLayer.preBlurName,
+                        desc,
+                        clearMipmap ? Access::TransferWrite : Access::None);
                 }
 
                 builder.CreateImage("Irradiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
@@ -526,6 +529,12 @@ namespace sp::vulkan::renderer {
                         if (voxelLayer.layerIndex >= voxelLayerCount) continue;
                         auto layerView = resources.GetImageView(voxelLayer.name);
                         cmd.Raw().clearColorImage(*layerView->Image(),
+                            vk::ImageLayout::eTransferDstOptimal,
+                            clear,
+                            {range});
+
+                        auto layerView2 = resources.GetImageView(voxelLayer.preBlurName);
+                        cmd.Raw().clearColorImage(*layerView2->Image(),
                             vk::ImageLayout::eTransferDstOptimal,
                             clear,
                             {range});
@@ -554,9 +563,9 @@ namespace sp::vulkan::renderer {
         for (auto &voxelLayer : VoxelLayers) {
             if (voxelLayer.layerIndex >= voxelLayerCount) continue;
             if (voxelLayer.layerIndex == 0) {
-                graph.AddPass(voxelLayer.name)
+                graph.AddPass(voxelLayer.preBlurName)
                     .Build([&](rg::PassBuilder &builder) {
-                        builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
+                        builder.Write(voxelLayer.preBlurName, Access::ComputeShaderWrite);
 
                         builder.ReadUniform("VoxelState");
 
@@ -576,7 +585,7 @@ namespace sp::vulkan::renderer {
                         };
                         cmd.UploadUniformData(0, 1, &layerData);
 
-                        cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
+                        cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.preBlurName));
 
                         auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
                         cmd.SetStorageBuffer(0, 3, metadata, 0, sizeof(GPUVoxelFragmentList));
@@ -590,48 +599,20 @@ namespace sp::vulkan::renderer {
                         cmd.DispatchIndirect(metadata, offsetof(GPUVoxelFragmentList, cmd));
                     });
             } else {
-                graph.AddPass(voxelLayer.name)
+                graph.AddPass(voxelLayer.preBlurName)
                     .Build([&](rg::PassBuilder &builder) {
-                        auto targetId = builder.GetID(voxelLayer.name);
-                        auto desc = builder.DeriveImage(targetId);
-                        builder.CreateImage(voxelLayer.name + "PreBlur", desc, Access::ComputeShaderWrite);
+                        builder.Write(voxelLayer.preBlurName, Access::ComputeShaderWrite);
 
                         for (auto &voxelLayer2 : VoxelLayers) {
-                            if (voxelLayer2.layerIndex + 1 != voxelLayer.layerIndex) continue;
-                            builder.Read(voxelLayer2.name, Access::ComputeShaderSampleImage);
+                            if (voxelLayer2.layerIndex + 1 == voxelLayer.layerIndex &&
+                                voxelLayer2.dirIndex == voxelLayer.dirIndex) {
+                                builder.Read(voxelLayer2.name, Access::ComputeShaderSampleImage);
+                                break;
+                            }
                         }
-
-                        builder.ReadUniform("VoxelState");
                     })
                     .Execute([this, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
                         cmd.SetComputeShader("voxel_mipmap_layer.comp");
-
-                        cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
-
-                        GPULayerData layerData = {
-                            directions[voxelLayer.dirIndex],
-                            voxelLayer.layerIndex,
-                        };
-                        cmd.UploadUniformData(0, 1, &layerData);
-
-                        cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name + "PreBlur"));
-
-                        for (auto &voxelLayer2 : VoxelLayers) {
-                            if (voxelLayer2.layerIndex + 1 != voxelLayer.layerIndex) continue;
-                            cmd.SetImageView(0, 3 + voxelLayer2.dirIndex, resources.GetImageView(voxelLayer2.name));
-                        }
-
-                        auto dispatchCount = (voxelGridSize + 7) / 8;
-                        cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
-                    });
-
-                graph.AddPass("BlurLayer")
-                    .Build([&](rg::PassBuilder &builder) {
-                        builder.Read(voxelLayer.name + "PreBlur", Access::ComputeShaderSampleImage);
-                        builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
-                    })
-                    .Execute([this, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
-                        cmd.SetComputeShader("voxel_mipmap_layer_blur.comp");
 
                         GPULayerData layerData = {
                             directions[voxelLayer.dirIndex],
@@ -639,13 +620,41 @@ namespace sp::vulkan::renderer {
                         };
                         cmd.UploadUniformData(0, 0, &layerData);
 
-                        cmd.SetImageView(0, 1, resources.GetImageView(voxelLayer.name + "PreBlur"));
-                        cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
+                        for (auto &voxelLayer2 : VoxelLayers) {
+                            if (voxelLayer2.layerIndex + 1 == voxelLayer.layerIndex &&
+                                voxelLayer2.dirIndex == voxelLayer.dirIndex) {
+                                cmd.SetImageView(0, 1, resources.GetImageView(voxelLayer2.name));
+                                break;
+                            }
+                        }
+
+                        cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.preBlurName));
 
                         auto dispatchCount = (voxelGridSize + 7) / 8;
                         cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
                     });
             }
+
+            graph.AddPass("BlurLayer")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.Read(voxelLayer.preBlurName, Access::ComputeShaderSampleImage);
+                    builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
+                })
+                .Execute([this, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetComputeShader("voxel_mipmap_layer_blur.comp");
+
+                    GPULayerData layerData = {
+                        directions[voxelLayer.dirIndex],
+                        voxelLayer.layerIndex,
+                    };
+                    cmd.UploadUniformData(0, 0, &layerData);
+
+                    cmd.SetImageView(0, 1, resources.GetImageView(voxelLayer.preBlurName));
+                    cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
+
+                    auto dispatchCount = (voxelGridSize + 7) / 8;
+                    cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
+                });
         }
 
         graph.AddPass("IrradianceCache")
@@ -705,7 +714,7 @@ namespace sp::vulkan::renderer {
 
                 for (auto &voxelLayer : VoxelLayers) {
                     if (voxelLayer.layerIndex != debugMipLayer) continue;
-                    builder.Read("Voxels2." + voxelLayer.name, Access::FragmentShaderSampleImage);
+                    builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
                 }
 
                 builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
@@ -733,8 +742,8 @@ namespace sp::vulkan::renderer {
 
                 for (auto &voxelLayer : VoxelLayers) {
                     if (voxelLayer.layerIndex != debugMipLayer) continue;
-                    auto layerView = resources.GetImageView("Voxels2." + voxelLayer.name);
-                    Assertf(layerView, "Layer view missing: %s", voxelLayer.name);
+                    auto layerView = resources.GetImageView(voxelLayer.fullName);
+                    Assertf(layerView, "Layer view missing: %s", voxelLayer.fullName);
                     cmd.SetImageView(1, voxelLayer.dirIndex, layerView);
                 }
 

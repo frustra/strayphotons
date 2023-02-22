@@ -9,7 +9,7 @@ namespace sp::vulkan::renderer {
     class Lighting;
 
     struct VoxelLayerInfo {
-        std::string name;
+        std::string name, fullName, preBlurName;
         uint32_t layerIndex;
         uint32_t dirIndex;
     };
@@ -50,8 +50,11 @@ namespace sp::vulkan::renderer {
             std::array<VoxelLayerInfo, layerCount> layers;
             for (uint32_t i = 0; i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
                 for (uint32_t dir = 0; dir < directions.size(); dir++) {
+                    std::string name = "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir);
                     layers[i * directions.size() + dir] = VoxelLayerInfo{
-                        "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir),
+                        name,
+                        "Voxels2." + name,
+                        name + "_PreBlur",
                         i,
                         dir,
                     };

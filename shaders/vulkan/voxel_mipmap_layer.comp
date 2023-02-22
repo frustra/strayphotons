@@ -6,54 +6,27 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 #include "../lib/util.glsl"
 #include "../lib/voxel_shared.glsl"
 
-layout(binding = 0) uniform VoxelStateUniform {
-    VoxelState voxelInfo;
-};
-
-layout(binding = 1) uniform LayerDataUniform {
+layout(binding = 0) uniform LayerDataUniform {
     vec3 layerDirection;
     uint layerIndex;
 };
 
+layout(binding = 1) uniform sampler3D voxelLayerIn;
 layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
-
-layout(binding = 3) uniform sampler3D voxelLayersIn[6];
 
 void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
 
-    int axis = DominantAxis(layerDirection);
-    if (axis < 0) {
-        axis = -axis + 2;
-    } else {
-        axis -= 1;
-    }
-    uint inverseAxis = OppositeAxis[axis];
-
-    int stride = 1; // << (max(1, layerIndex) - 1);
+    int stride = max(1, int(layerIndex));
     ivec3 layerOffset = ivec3(layerDirection) * stride;
 
-    vec4 sampleValue = vec4(0);
+    vec4 frontSample = texelFetch(voxelLayerIn, voxelPos, 0);
+    vec4 backSample = texelFetch(voxelLayerIn, voxelPos + layerOffset, 0);
+    backSample.rgb *= 0.5; // Voxel trace distance falloff
 
-    vec4 frontSample = texelFetch(voxelLayersIn[axis], voxelPos, 0);
-    vec4 backSample = texelFetch(voxelLayersIn[axis], voxelPos + layerOffset, 0);
+    vec4 sampleValue = vec4(0);
     sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
     sampleValue.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
-
-    // for (uint a = 0; a < 6; a++) {
-    //     if (a == inverseAxis || a == axis) continue;
-    //     ivec3 sampleOffset = ivec3(AxisDirections[a]) * stride;
-    //     frontSample = texelFetch(voxelLayersIn[axis], voxelPos + sampleOffset, 0);
-    //     backSample = texelFetch(voxelLayersIn[axis], voxelPos + sampleOffset + layerOffset, 0);
-
-    //     sampleValue.a += frontSample.a + backSample.a * max(0, 1 - frontSample.a);
-    //     sampleValue.rgb += frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
-    // }
-    // sampleValue *= 0.2;
-
-    // vec4 existingSample = texelFetch(voxelLayersIn[axis], voxelPos, 0);
-    // existingSample.a += max(0, 1 - existingSample.a) * sampleValue.a;
-    // existingSample.rgb = mix(existingSample.rgb, sampleValue.rgb, sampleValue.a / max(0.001, existingSample.a));
     imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
 }

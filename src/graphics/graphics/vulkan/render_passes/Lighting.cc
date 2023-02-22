@@ -549,7 +549,7 @@ namespace sp::vulkan::renderer {
 
                 for (auto &voxelLayer : Voxels::VoxelLayers) {
                     if (voxelLayer.layerIndex != voxelLayerIndex) continue;
-                    builder.Read("Voxels2." + voxelLayer.name, Access::FragmentShaderSampleImage);
+                    builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
                 }
 
                 auto desc = builder.DeriveImage(gBuffer0);
@@ -594,7 +594,7 @@ namespace sp::vulkan::renderer {
 
                 for (auto &voxelLayer : Voxels::VoxelLayers) {
                     if (voxelLayer.layerIndex != voxelLayerIndex) continue;
-                    cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView("Voxels2." + voxelLayer.name));
+                    cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
                 }
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());

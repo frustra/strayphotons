@@ -45,23 +45,4 @@ void main() {
 
     float alpha = max(0, dot(voxelNormal, -layerDirection));
     imageStore(radianceOut, position, vec4(radiance * alpha, alpha));
-
-    // vec3 worldPosition = (inverse(voxelInfo.worldToVoxel) * vec4(position + 0.5f, 1.0)).xyz;
-
-    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
-    // vec3 samplePos = worldPosition;
-    // vec3 sampleDir = OrientByNormal(0.0, 0.1, worldNormal);
-    // vec4 indirectDiffuse = ConeTraceGridDiffuse(samplePos, worldNormal, 0);
-
-    // for (int a = 3; a <= 6; a += 3) {
-    //     float diffuseScale = 1.0 / a;
-    //     for (float r = 0; r < a; r++) {
-    //         vec3 sampleDir = OrientByNormal(r * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
-    //         vec4 sampleColor = ConeTraceGridDiffuse(samplePos, sampleDir, 0);
-
-    //         indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale;
-    //     }
-    // }
-
-    // imageStore(radianceOut, position, vec4(indirectDiffuse.rgb * 0.333, 1));
 }

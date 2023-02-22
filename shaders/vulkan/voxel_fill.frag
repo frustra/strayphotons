@@ -68,16 +68,16 @@ void main() {
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
     pixelRadiance += emissiveScale * baseColor.rgb;
 
-    if (LIGHT_ATTENUATION > 0) {
-        vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
-        vec3 indirectDiffuse = HemisphereIndirectDiffuse(inWorldPos, inNormal, vec2(0));
-        // Hacky bug fix: For some reason this will occasionally return NaN and poison the whole voxel grid.
-        if (any(isnan(indirectDiffuse))) {
-            indirectDiffuse = vec3(0.0);
-        }
-        pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
-                         smoothstep(0.0, 0.1, length(indirectDiffuse));
-    }
+    // if (LIGHT_ATTENUATION > 0) {
+    //     vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
+    //     vec3 indirectDiffuse = HemisphereIndirectDiffuse(inWorldPos, inNormal, vec2(0));
+    //     // Hacky bug fix: For some reason this will occasionally return NaN and poison the whole voxel grid.
+    //     if (any(isnan(indirectDiffuse))) {
+    //         indirectDiffuse = vec3(0.0);
+    //     }
+    //     pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
+    //                      smoothstep(0.0, 0.1, length(indirectDiffuse));
+    // }
 
     uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
