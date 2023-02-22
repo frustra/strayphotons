@@ -1,0 +1,42 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
+
+layout(binding = 0) uniform LayerDataUniform {
+    vec3 layerDirection;
+    uint layerIndex;
+};
+
+layout(binding = 1) uniform sampler3D voxelLayerIn;
+layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
+
+void main() {
+    ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
+
+    int axis = DominantAxis(layerDirection);
+    if (axis < 0) {
+        axis = -axis + 2;
+    } else {
+        axis -= 1;
+    }
+    uint tangentAxisA = TangentAxisA[axis];
+    uint tangentAxisB = TangentAxisB[axis];
+
+    vec4 sampleValue = vec4(0);
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            ivec3 samplePos = voxelPos + ivec3(AxisDirections[tangentAxisA] * i) +
+                              ivec3(AxisDirections[tangentAxisB] * j);
+            sampleValue += texelFetch(voxelLayerIn, samplePos, 0) * DiskKernel[i + 1][j + 1];
+        }
+    }
+    imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
+
+    // vec4 sampleValue = texelFetch(voxelLayerIn, voxelPos, 0);
+    // imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
+}

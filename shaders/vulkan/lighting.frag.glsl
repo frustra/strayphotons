@@ -7,6 +7,7 @@ layout(num_views = 2) in;
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
 
 layout(binding = 0) uniform sampler2DArray gBuffer0;
 layout(binding = 1) uniform sampler2DArray gBuffer1;
@@ -15,8 +16,11 @@ layout(binding = 3) uniform sampler2DArray gBufferDepth;
 layout(binding = 4) uniform sampler2D shadowMap;
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
+layout(binding = 7) uniform sampler3D voxelIrradiance;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
+
+layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[6];
 
 layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -88,7 +92,27 @@ void main() {
         }
     }
 
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
+    vec3 voxelNormal = normalize(mat3(voxelInfo.worldToVoxel) * worldNormal);
+    // vec4 value = texture(voxelIrradiance, voxelPos / voxelInfo.gridSize, 0);
+
+    // int axis = DominantAxis(worldNormal);
+    // if (axis < 0) {
+    //     axis = -axis + 2;
+    // } else {
+    //     axis -= 1;
+    // }
+    vec4 value = vec4(0);
+    for (int i = 0; i < 6; i++) {
+        // vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos + voxelNormal), 0);
+        vec4 sampleValue = texture(voxelLayersIn[i], (voxelPos + voxelNormal) / voxelInfo.gridSize);
+        value += sampleValue * max(0, dot(AxisDirections[i], voxelNormal));
+    }
+    // vec4 value = texelFetch(voxelLayersIn[axis], ivec3(voxelPos + AxisDirections[axis]), 0);
+    // vec4 value = texture(voxelLayersIn[axis], (voxelPos + AxisDirections[axis]) / voxelInfo.gridSize);
+
+    vec3 indirectDiffuse = value.rgb;
 
     vec3 directDiffuseColor = baseColor * (1 - metalness);
     vec3 directLight =

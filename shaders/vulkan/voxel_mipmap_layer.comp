@@ -19,10 +19,6 @@ layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
 
 layout(binding = 3) uniform sampler3D voxelLayersIn[6];
 
-const uint[6] OppositeAxis = uint[](3, 4, 5, 0, 1, 2);
-const vec3[6] AxisDirections =
-    vec3[](vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(-1, 0, 0), vec3(0, -1, 0), vec3(0, 0, -1));
-
 void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
@@ -35,26 +31,29 @@ void main() {
     }
     uint inverseAxis = OppositeAxis[axis];
 
-    int stride = 1 << max(0, layerIndex - 1);
-    vec4 voxelValue = texelFetch(voxelLayersIn[axis], voxelPos, 0);
+    int stride = 1; // << (max(1, layerIndex) - 1);
+    ivec3 layerOffset = ivec3(layerDirection) * stride;
 
-    vec4 sampleValue = texelFetch(voxelLayersIn[axis], voxelPos + ivec3(layerDirection) * stride, 0);
-    sampleValue.a *= max(0, 1 - voxelValue.a);
-    for (int a = 0; a < 6; a++) {
-        if (a == axis || a == inverseAxis) continue;
-        ivec3 sampleOffset = ivec3(AxisDirections[a]) * stride;
-        float alpha = texelFetch(voxelLayersIn[a], voxelPos, 0).a;
+    vec4 sampleValue = vec4(0);
 
-        vec4 sampleValue2 = texelFetch(voxelLayersIn[axis], voxelPos + sampleOffset, 0);
-        sampleValue2.a *= max(0, 1 - alpha);
-        sampleValue += sampleValue2;
-    }
+    vec4 frontSample = texelFetch(voxelLayersIn[axis], voxelPos, 0);
+    vec4 backSample = texelFetch(voxelLayersIn[axis], voxelPos + layerOffset, 0);
+    sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
+    sampleValue.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
 
-    if (sampleValue.a > 0) {
-        if (sampleValue.a > 1) sampleValue /= sampleValue.a;
-        voxelValue.a += sampleValue.a;
-        voxelValue.rgb = mix(voxelValue.rgb, sampleValue.rgb, sampleValue.a / voxelValue.a);
-    }
+    // for (uint a = 0; a < 6; a++) {
+    //     if (a == inverseAxis || a == axis) continue;
+    //     ivec3 sampleOffset = ivec3(AxisDirections[a]) * stride;
+    //     frontSample = texelFetch(voxelLayersIn[axis], voxelPos + sampleOffset, 0);
+    //     backSample = texelFetch(voxelLayersIn[axis], voxelPos + sampleOffset + layerOffset, 0);
 
-    imageStore(voxelLayerOut, ivec3(voxelPos), voxelValue);
+    //     sampleValue.a += frontSample.a + backSample.a * max(0, 1 - frontSample.a);
+    //     sampleValue.rgb += frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
+    // }
+    // sampleValue *= 0.2;
+
+    // vec4 existingSample = texelFetch(voxelLayersIn[axis], voxelPos, 0);
+    // existingSample.a += max(0, 1 - existingSample.a) * sampleValue.a;
+    // existingSample.rgb = mix(existingSample.rgb, sampleValue.rgb, sampleValue.a / max(0.001, existingSample.a));
+    imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
 }

@@ -4,6 +4,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
+#include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <algorithm>
@@ -16,6 +17,9 @@ namespace sp::vulkan::renderer {
         1,
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
+    static CVar<uint32_t> CVarLightingVoxelLayer("r.LightingVoxelLayer",
+        3,
+        "Voxel layer for diffuse lighting to sample from");
 
     static glm::mat4 makeOpticProjectionMatrix(glm::vec2 clip, glm::vec4 bounds) {
         return glm::mat4(
@@ -531,6 +535,7 @@ namespace sp::vulkan::renderer {
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
         auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
+        auto voxelLayerIndex = CVarLightingVoxelLayer.Get();
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
@@ -540,6 +545,12 @@ namespace sp::vulkan::renderer {
                 builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels2.Irradiance", Access::FragmentShaderSampleImage);
+
+                for (auto &voxelLayer : Voxels::VoxelLayers) {
+                    if (voxelLayer.layerIndex != voxelLayerIndex) continue;
+                    builder.Read("Voxels2." + voxelLayer.name, Access::FragmentShaderSampleImage);
+                }
 
                 auto desc = builder.DeriveImage(gBuffer0);
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
@@ -552,7 +563,7 @@ namespace sp::vulkan::renderer {
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
-            .Execute([this, shadowDepth](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, shadowDepth, voxelLayerIndex](rg::Resources &resources, CommandContext &cmd) {
                 if (CVarPCF.Get()) {
                     cmd.SetShaders("screen_cover.vert", "lighting_pcf.frag");
                 } else {
@@ -572,6 +583,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 4, resources.GetImageView(shadowDepth));
                 cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
                 cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
+                cmd.SetImageView(0, 7, resources.GetImageView("Voxels2.Irradiance"));
 
                 cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
@@ -579,6 +591,11 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
+
+                for (auto &voxelLayer : Voxels::VoxelLayers) {
+                    if (voxelLayer.layerIndex != voxelLayerIndex) continue;
+                    cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView("Voxels2." + voxelLayer.name));
+                }
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
                 cmd.Draw(3);

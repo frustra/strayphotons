@@ -9,12 +9,7 @@ layout(binding = 0) uniform VoxelStateUniform {
     VoxelState voxelInfo;
 };
 
-layout(binding = 1) uniform LayerDataUniform {
-    vec3 layerDirection;
-    uint layerIndex;
-};
-
-layout(binding = 2, rgba16f) writeonly uniform image3D radianceOut;
+layout(binding = 1, rgba16f) writeonly uniform image3D radianceOut;
 
 struct FragmentListMetadata {
     uint count;
@@ -23,28 +18,41 @@ struct FragmentListMetadata {
     VkDispatchIndirectCommand cmd;
 };
 
-layout(std430, binding = 3) buffer VoxelFragmentListMetadata {
+layout(std430, binding = 2) buffer VoxelFragmentListMetadata {
     uint count;
     uint capacity;
     uint offset;
     VkDispatchIndirectCommand cmd;
 };
 
-layout(std430, binding = 4) buffer VoxelFragmentList {
+layout(std430, binding = 3) buffer VoxelFragmentList {
     VoxelFragment fragmentLists[];
 };
+
+layout(set = 1, binding = 0) uniform sampler3D voxelLayersIn[6];
 
 void main() {
     uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
     if (index >= count) return;
-    if (layerIndex > 0) return;
 
     ivec3 position = ivec3(fragmentLists[index].position);
     vec3 radiance = vec3(fragmentLists[index].radiance);
-    vec3 voxelNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
+    vec3 worldNormal = vec3(fragmentLists[index].normal);
 
-    float alpha = max(0, dot(voxelNormal, -layerDirection));
-    imageStore(radianceOut, position, vec4(radiance * alpha, alpha));
+    int axis = DominantAxis(worldNormal);
+    if (axis < 0) {
+        axis = -axis + 2;
+    } else {
+        axis -= 1;
+    }
+    // vec4 voxelValue = vec4(0);
+    // for (int i = 0; i < 6; i++) {
+    //     vec4 sampleValue = texelFetch(voxelLayersIn[i], position + ivec3(AxisDirections[i]), 0);
+    //     voxelValue += sampleValue * step(0, dot(AxisDirections[i], worldNormal));
+    // }
+    // imageStore(radianceOut, position, voxelValue);
+    vec4 voxelValue = texelFetch(voxelLayersIn[axis], position + ivec3(AxisDirections[axis]), 0);
+    imageStore(radianceOut, position, voxelValue);
 
     // vec3 worldPosition = (inverse(voxelInfo.worldToVoxel) * vec4(position + 0.5f, 1.0)).xyz;
 
