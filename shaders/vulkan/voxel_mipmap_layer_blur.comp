@@ -14,14 +14,19 @@ layout(binding = 0) uniform LayerDataUniform {
 layout(binding = 1) uniform sampler3D voxelLayerIn;
 layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
 
+// Sigma = 0.5
+const float[3][3] GaussianKernel = float[][](float[](0.0249, 0.1080, 0.0249),
+    float[](0.1080, 0.4686, 0.1080),
+    float[](0.0249, 0.1080, 0.0249));
+
 void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
 
-    // if (layerIndex == 0) {
-    //     imageStore(voxelLayerOut, ivec3(voxelPos), texelFetch(voxelLayerIn, voxelPos, 0));
-    //     return;
-    // }
+    if (layerIndex == 0) {
+        imageStore(voxelLayerOut, ivec3(voxelPos), texelFetch(voxelLayerIn, voxelPos, 0));
+        return;
+    }
 
     int stride = max(1, int(layerIndex) - 1);
 
@@ -38,7 +43,8 @@ void main() {
     for (int i = -1; i <= 1; i++) {
         for (int j = -1; j <= 1; j++) {
             ivec3 samplePos = voxelPos + tangentAxisA * i + tangentAxisB * j;
-            sampleValue += texelFetch(voxelLayerIn, samplePos, 0) * DiskKernel[i + 1][j + 1];
+            float dist = length(vec3(tangentAxisA * i + tangentAxisB * j));
+            sampleValue += texelFetch(voxelLayerIn, samplePos, 0) * GaussianKernel[i + 1][j + 1];
         }
     }
     imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);

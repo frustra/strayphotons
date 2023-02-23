@@ -18,12 +18,12 @@ void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
 
-    int stride = max(1, int(layerIndex));
+    int stride = 1 << max(0, int(layerIndex) - 1);
     ivec3 layerOffset = ivec3(layerDirection) * stride;
 
     vec4 frontSample = texelFetch(voxelLayerIn, voxelPos, 0);
     vec4 backSample = texelFetch(voxelLayerIn, voxelPos + layerOffset, 0);
-    backSample.rgb *= 0.5; // Voxel trace distance falloff
+    backSample.rgb /= pow(1.1, stride); // Voxel trace distance falloff
 
     vec4 sampleValue = vec4(0);
     sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);

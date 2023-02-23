@@ -18,7 +18,7 @@ namespace sp::vulkan::renderer {
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
     static CVar<uint32_t> CVarLightingVoxelLayer("r.LightingVoxelLayer",
-        3,
+        7,
         "Voxel layer for diffuse lighting to sample from");
 
     static glm::mat4 makeOpticProjectionMatrix(glm::vec2 clip, glm::vec4 bounds) {

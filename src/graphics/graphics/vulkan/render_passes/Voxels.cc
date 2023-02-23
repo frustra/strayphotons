@@ -15,7 +15,7 @@ namespace sp::vulkan::renderer {
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
     static CVar<uint32_t> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
-    static CVar<uint32_t> CVarVoxelLayers("r.VoxelLayers", 4, "The number of voxel mipmap layers");
+    static CVar<uint32_t> CVarVoxelLayers("r.VoxelLayers", 8, "The number of voxel mipmap layers");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
         15,
         "Change the voxel grid clearing operation used between frames "
@@ -509,10 +509,12 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 for (auto &voxelLayer : VoxelLayers) {
                     if (voxelLayer.layerIndex >= voxelLayerCount) continue;
-                    builder.CreateImage(voxelLayer.name, desc, clearMipmap ? Access::TransferWrite : Access::None);
+                    builder.CreateImage(voxelLayer.name,
+                        desc,
+                        voxelLayer.layerIndex == 0 ? Access::TransferWrite : Access::None);
                     builder.CreateImage(voxelLayer.preBlurName,
                         desc,
-                        clearMipmap ? Access::TransferWrite : Access::None);
+                        voxelLayer.layerIndex == 0 ? Access::TransferWrite : Access::None);
                 }
 
                 builder.CreateImage("Irradiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
@@ -526,7 +528,7 @@ namespace sp::vulkan::renderer {
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
 
                     for (auto &voxelLayer : VoxelLayers) {
-                        if (voxelLayer.layerIndex >= voxelLayerCount) continue;
+                        if (voxelLayer.layerIndex >= 1) continue;
                         auto layerView = resources.GetImageView(voxelLayer.name);
                         cmd.Raw().clearColorImage(*layerView->Image(),
                             vk::ImageLayout::eTransferDstOptimal,
