@@ -579,6 +579,50 @@ namespace sp::vulkan::renderer {
 
                         cmd.DispatchIndirect(metadata, offsetof(GPUVoxelFragmentList, cmd));
                     });
+
+                for (uint32_t i = 1; i < fragmentListCount; i++) {
+                    graph.AddPass("Merge")
+                        .Build([&](rg::PassBuilder &builder) {
+                            builder.Read(voxelLayer.preBlurName, Access::ComputeShaderReadStorage);
+                            builder.Write(voxelLayer.preBlurName, Access::ComputeShaderWrite);
+
+                            builder.ReadUniform("VoxelState");
+
+                            builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
+                            builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
+                            builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                        })
+                        .Execute([this, i, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
+                            cmd.SetComputeShader("voxel_merge_layer.comp");
+                            cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
+
+                            cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+
+                            GPULayerData layerData = {
+                                directions[voxelLayer.dirIndex],
+                                voxelLayer.layerIndex,
+                            };
+                            cmd.UploadUniformData(0, 1, &layerData);
+
+                            cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.preBlurName));
+
+                            auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                            cmd.SetStorageBuffer(0,
+                                3,
+                                metadata,
+                                i * sizeof(GPUVoxelFragmentList),
+                                sizeof(GPUVoxelFragmentList));
+
+                            cmd.SetStorageBuffer(0,
+                                4,
+                                resources.GetBuffer("Voxels.FragmentLists"),
+                                fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
+                                fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
+
+                            cmd.DispatchIndirect(metadata,
+                                i * sizeof(GPUVoxelFragmentList) + offsetof(GPUVoxelFragmentList, cmd));
+                        });
+                }
             } else {
                 graph.AddPass(voxelLayer.preBlurName)
                     .Build([&](rg::PassBuilder &builder) {

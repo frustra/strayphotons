@@ -104,7 +104,7 @@ void main() {
     vec4 value = vec4(0);
     for (int i = 0; i < 6; i++) {
         // vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos), 0);
-        vec4 sampleValue = texture(voxelLayersIn[i], (voxelPos + voxelNormal) / voxelInfo.gridSize);
+        vec4 sampleValue = texture(voxelLayersIn[i], voxelPos / voxelInfo.gridSize);
         value += sampleValue * max(0, dot(AxisDirections[i], voxelNormal));
     }
     // vec4 value = texelFetch(voxelLayersIn[axis], ivec3(voxelPos + AxisDirections[axis]), 0);

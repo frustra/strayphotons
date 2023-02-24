@@ -23,6 +23,11 @@ void main() {
 
     vec4 frontSample = texelFetch(voxelLayerIn, voxelPos, 0);
     vec4 backSample = texelFetch(voxelLayerIn, voxelPos + layerOffset, 0);
+    if (layerIndex == 1) {
+        // Alpha acts as voxel fill count on first layer
+        frontSample /= max(1, frontSample.a);
+        backSample /= max(1, backSample.a);
+    }
     backSample.rgb /= pow(1.1, stride); // Voxel trace distance falloff
 
     vec4 sampleValue = vec4(0);
