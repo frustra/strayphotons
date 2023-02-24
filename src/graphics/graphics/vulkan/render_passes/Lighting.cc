@@ -545,7 +545,6 @@ namespace sp::vulkan::renderer {
                 builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels2.Irradiance", Access::FragmentShaderSampleImage);
 
                 for (auto &voxelLayer : Voxels::VoxelLayers) {
                     if (voxelLayer.layerIndex != voxelLayerIndex) continue;
@@ -583,7 +582,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 4, resources.GetImageView(shadowDepth));
                 cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
                 cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
-                cmd.SetImageView(0, 7, resources.GetImageView("Voxels2.Irradiance"));
 
                 cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));

@@ -210,7 +210,7 @@ namespace sp::vulkan::render_graph {
 
             if (res.type == Resource::Type::Image) {
                 auto view = resources.GetImageView(access.id);
-                if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
+                if (!view || view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
                 auto &image = view->Image();
                 auto lastAccess = image->LastAccess();

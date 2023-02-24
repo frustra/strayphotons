@@ -23,7 +23,6 @@ layout(binding = 3) uniform sampler2DArray overlayTex;
 layout(binding = 4, r32ui) readonly uniform uimage3D fillCounters;
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
-layout(binding = 7) uniform sampler3D voxelIrradiance;
 
 layout(set = 1, binding = 0) uniform sampler3D voxelLayers[6];
 

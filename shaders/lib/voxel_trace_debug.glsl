@@ -5,7 +5,7 @@
 
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance) {
     // uint count = imageLoad(fillCounters, ivec3(position)).r;
-    vec4 radianceData = texelFetch(voxelIrradiance, ivec3(position) >> level, level);
+    vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
     vec4 normalData = texelFetch(voxelNormals, ivec3(position) >> level, level);
     // radiance = vec3(length(normalData.xyz / normalData.w));
     radiance = radianceData.rgb; // abs(normalData.xyz);

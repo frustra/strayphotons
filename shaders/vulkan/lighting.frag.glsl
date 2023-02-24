@@ -16,7 +16,6 @@ layout(binding = 3) uniform sampler2DArray gBufferDepth;
 layout(binding = 4) uniform sampler2D shadowMap;
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
-layout(binding = 7) uniform sampler3D voxelIrradiance;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 
@@ -95,7 +94,6 @@ void main() {
     // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
     vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
     vec3 voxelNormal = normalize(mat3(voxelInfo.worldToVoxel) * worldNormal);
-    // vec4 value = texture(voxelIrradiance, voxelPos / voxelInfo.gridSize, 0);
 
     // int axis = DominantAxis(worldNormal);
     // if (axis < 0) {
