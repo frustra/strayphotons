@@ -52,10 +52,11 @@ layout(std430, binding = 8) buffer VoxelFragmentList {
     VoxelFragment fragmentLists[];
 };
 
-layout(binding = 9) uniform sampler3D voxelRadiance; // From previous frame
-layout(binding = 10) uniform sampler3D voxelNormals; // From previous frame
+layout(binding = 9) uniform PreviousVoxelStateUniform {
+    VoxelState previousVoxelInfo;
+};
 
-#include "../lib/voxel_trace_shared.glsl"
+layout(binding = 10) uniform sampler3D voxelLayersIn[6];
 
 void main() {
     vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
@@ -68,16 +69,19 @@ void main() {
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
     pixelRadiance += emissiveScale * baseColor.rgb;
 
-    // if (LIGHT_ATTENUATION > 0) {
-    //     vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
-    //     vec3 indirectDiffuse = HemisphereIndirectDiffuse(inWorldPos, inNormal, vec2(0));
-    //     // Hacky bug fix: For some reason this will occasionally return NaN and poison the whole voxel grid.
-    //     if (any(isnan(indirectDiffuse))) {
-    //         indirectDiffuse = vec3(0.0);
-    //     }
-    //     pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
-    //                      smoothstep(0.0, 0.1, length(indirectDiffuse));
-    // }
+    if (LIGHT_ATTENUATION > 0) {
+        vec3 voxelPos = (previousVoxelInfo.worldToVoxel * vec4(inWorldPos, 1.0)).xyz;
+        vec3 voxelNormal = normalize(mat3(previousVoxelInfo.worldToVoxel) * inNormal);
+
+        vec3 indirectDiffuse = vec3(0);
+        for (int i = 0; i < 6; i++) {
+            vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos + voxelNormal), 0);
+            indirectDiffuse += sampleValue.rgb * step(0, dot(AxisDirections[i], voxelNormal));
+        }
+        vec3 directDiffuseColor = baseColor.rgb * (1 - metalness);
+        pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
+                         smoothstep(0.0, 0.1, length(indirectDiffuse));
+    }
 
     uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);

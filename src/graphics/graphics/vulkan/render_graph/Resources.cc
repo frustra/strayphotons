@@ -201,7 +201,7 @@ namespace sp::vulkan::render_graph {
             buffers[id].reset();
             break;
         default:
-            Abort("resource type is undefined");
+            Abortf("resource type is undefined: %s", resourceNames[id]);
         }
     }
 
@@ -212,6 +212,8 @@ namespace sp::vulkan::render_graph {
             res.imageDesc.usage |= acc.imageUsageMask;
         } else if (res.type == Resource::Type::Buffer) {
             res.bufferDesc.usage |= acc.bufferUsageMask;
+        } else {
+            Abortf("resource type is undefined: %s", resourceNames[id]);
         }
     }
 
@@ -283,7 +285,7 @@ namespace sp::vulkan::render_graph {
     void Resources::EndScope() {
         Assert(scopeStack.size() > 1, "tried to end a scope that wasn't started");
         auto &scope = nameScopes[scopeStack.back()];
-        scope.SetID("LastOutput", LastOutputID(), frameIndex);
+        scope.SetID("LastOutput", LastOutputID(), frameIndex, true);
         scopeStack.pop_back();
     }
 
@@ -294,11 +296,11 @@ namespace sp::vulkan::render_graph {
         return InvalidResource;
     }
 
-    void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex) {
+    void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace) {
         auto &resourceNames = frames[frameIndex].resourceNames;
         Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
         auto &nameID = resourceNames[name.data()];
-        Assert(!nameID, "resource already registered");
+        if (!replace) Assert(!nameID, "resource already registered");
         nameID = id;
     }
 

@@ -21,6 +21,9 @@ namespace sp::vulkan::renderer {
         "Change the voxel grid clearing operation used between frames "
         "(bitfield: 1=radiance, 2=counters, 4=normals, 8=mipmap)");
     static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
+    static CVar<uint32_t> CVarVoxelFillIndex("r.VoxelFillIndex",
+        7,
+        "Voxel layer index to read for light attunation bounces");
     static CVar<uint32> CVarSideSampleLayer("r.SideSampleLayer", 1, "");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
@@ -149,6 +152,7 @@ namespace sp::vulkan::renderer {
         auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
 
         fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
+        auto voxelFillIndex = CVarVoxelFillIndex.Get();
 
         uint32 totalFragmentListSize = 0;
         {
@@ -257,8 +261,13 @@ namespace sp::vulkan::renderer {
                 builder.Write("FillCounters", Access::FragmentShaderWrite);
                 builder.Write("Radiance", Access::FragmentShaderWrite);
                 builder.Write("Normals", Access::FragmentShaderWrite);
-                builder.ReadPreviousFrame("Radiance", Access::FragmentShaderSampleImage);
-                builder.ReadPreviousFrame("Normals", Access::FragmentShaderSampleImage);
+
+                builder.ReadPreviousFrame("VoxelState", Access::AnyShaderReadUniform);
+                for (auto &voxelLayer : Voxels::VoxelLayers) {
+                    if (voxelLayer.layerIndex != voxelFillIndex) continue;
+
+                    builder.ReadPreviousFrame(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                }
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
@@ -272,7 +281,7 @@ namespace sp::vulkan::renderer {
                 builder.Read(drawID.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
 
-            .Execute([this, drawID, orthoAxes](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawID, orthoAxes, voxelFillIndex](rg::Resources &resources, CommandContext &cmd) {
                 ImageDesc desc;
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
                     std::max(voxelGridSize.y, voxelGridSize.z),
@@ -316,17 +325,21 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer(0, 7, resources.GetBuffer("FragmentListMetadata"));
                 cmd.SetStorageBuffer(0, 8, resources.GetBuffer("FragmentLists"));
 
-                auto lastRadianceID = resources.GetID("Radiance", false, 1);
-                if (lastRadianceID != InvalidResource) {
-                    cmd.SetImageView(0, 9, resources.GetImageMipView(lastRadianceID, 0));
+                auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
+                if (lastVoxelStateID != InvalidResource) {
+                    cmd.SetUniformBuffer(0, 9, resources.GetBuffer(lastVoxelStateID));
                 } else {
-                    cmd.SetImageView(0, 9, resources.GetImageMipView("Radiance", 0));
+                    cmd.SetUniformBuffer(0, 9, resources.GetBuffer("VoxelState"));
                 }
-                auto lastNormalsID = resources.GetID("Normals", false, 1);
-                if (lastNormalsID != InvalidResource) {
-                    cmd.SetImageView(0, 10, resources.GetImageMipView(lastNormalsID, 0));
-                } else {
-                    cmd.SetImageView(0, 10, resources.GetImageMipView("Normals", 0));
+                for (auto &voxelLayer : Voxels::VoxelLayers) {
+                    if (voxelLayer.layerIndex != voxelFillIndex) continue;
+
+                    auto lastVoxelLayerID = resources.GetID(voxelLayer.fullName, false, 1);
+                    if (lastVoxelLayerID != InvalidResource) {
+                        cmd.SetImageView(0, 10 + voxelLayer.dirIndex, resources.GetImageView(lastVoxelLayerID));
+                    } else {
+                        cmd.SetImageView(0, 10 + voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
+                    }
                 }
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, fragmentListCount);
@@ -411,7 +424,7 @@ namespace sp::vulkan::renderer {
         });
     }
 
-    void Voxels::AddVoxelization2(RenderGraph &graph, const Lighting &lighting) {
+    void Voxels::AddVoxelizationInit(RenderGraph &graph, const Lighting &lighting) {
         ZoneScoped;
         auto scope = graph.Scope("Voxels2");
 
@@ -448,56 +461,13 @@ namespace sp::vulkan::renderer {
             return;
         }
 
-        // ecs::View ortho;
-        // ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
-
-        // auto voxelCenter = voxelToWorld;
-        // voxelCenter.Translate(voxelCenter * (0.5f * glm::vec4(voxelGridSize, 0)));
-
-        // std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
-        // axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
-        // axisTransform[1].Rotate(M_PI_2, glm::vec3(1, 0, 0));
-
-        // axisTransform[0].Scale(glm::vec3(voxelGridSize.z, voxelGridSize.y, voxelGridSize.x));
-        // axisTransform[1].Scale(glm::vec3(voxelGridSize.x, voxelGridSize.z, voxelGridSize.y));
-        // axisTransform[2].Scale(voxelGridSize);
-
-        // std::array<ecs::View, 3> orthoAxes = {ortho, ortho, ortho};
-        // orthoAxes[0].extents = glm::ivec2(voxelGridSize.z, voxelGridSize.y);
-        // orthoAxes[1].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.z);
-        // orthoAxes[2].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.y);
-        // for (size_t i = 0; i < orthoAxes.size(); i++) {
-        //     auto axis = axisTransform[i];
-        //     axis.Scale(glm::vec3(0.5, 0.5, 1));
-        //     axis.Translate(axis * glm::vec4(0, 0, -0.5, 0));
-        //     orthoAxes[i].SetInvViewMat(axis.GetMatrix());
-        // }
-
-        bool clearMipmap = (CVarVoxelClear.Get() & 8) == 8;
-        // auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
-
-        auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
-        // auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
-
         voxelLayerCount = CVarVoxelLayers.Get();
-        fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
-        uint32_t sideSampleLayer = CVarSideSampleLayer.Get();
-
-        uint32 totalFragmentListSize = 0;
-        {
-            auto fragmentListSize = (voxelGridSize.x * voxelGridSize.y * voxelGridSize.z) / 2;
-            for (uint32 i = 0; i < fragmentListCount; i++) {
-                fragmentListSizes[i].capacity = fragmentListSize;
-                fragmentListSizes[i].offset = totalFragmentListSize;
-                totalFragmentListSize += fragmentListSize;
-                fragmentListSize /= CVarVoxelFragmentBucketSizeFactor.Get();
-            }
-        }
+        bool clearMipmap = (CVarVoxelClear.Get() & 8) == 8;
 
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
-                desc.extent = voxelGridExtents;
+                desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;
                 desc.sampler = SamplerType::TrilinearClampBorder;
@@ -536,6 +506,15 @@ namespace sp::vulkan::renderer {
                     }
                 }
             });
+    }
+
+    void Voxels::AddVoxelization2(RenderGraph &graph, const Lighting &lighting) {
+        if (voxelGridSize == glm::ivec3(0) || !CVarEnableVoxels2.Get()) return;
+
+        ZoneScoped;
+        auto scope = graph.Scope("Voxels2");
+
+        uint32_t sideSampleLayer = CVarSideSampleLayer.Get();
 
         struct GPULayerData {
             glm::vec3 direction;

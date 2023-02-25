@@ -20,6 +20,7 @@ namespace sp::vulkan::renderer {
         void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock);
 
         void AddVoxelization(RenderGraph &graph, const Lighting &lighting);
+        void AddVoxelizationInit(RenderGraph &graph, const Lighting &lighting);
         void AddVoxelization2(RenderGraph &graph, const Lighting &lighting);
         void AddDebugPass(RenderGraph &graph);
 

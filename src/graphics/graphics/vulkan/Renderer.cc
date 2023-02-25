@@ -135,6 +135,7 @@ namespace sp::vulkan {
         AddWorldGuis(lock);
         AddMenuGui(lock);
         lighting.AddGelTextures(graph);
+        voxels.AddVoxelizationInit(graph, lighting);
         voxels.AddVoxelization(graph, lighting);
         voxels.AddVoxelization2(graph, lighting);
         renderer::AddLightSensors(graph, scene, lock);

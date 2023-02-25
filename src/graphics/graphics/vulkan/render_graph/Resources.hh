@@ -137,7 +137,7 @@ namespace sp::vulkan::render_graph {
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames;
 
             ResourceID GetID(string_view name, uint32 frameIndex) const;
-            void SetID(string_view name, ResourceID id, uint32 frameIndex);
+            void SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace = false);
             void ClearID(ResourceID id);
         };
 
