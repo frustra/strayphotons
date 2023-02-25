@@ -28,7 +28,7 @@ void main() {
         frontSample /= max(1, frontSample.a);
         backSample /= max(1, backSample.a);
     }
-    backSample.rgb /= pow(1.1, stride); // Voxel trace distance falloff
+    backSample.rgb *= pow(0.9, stride); // Voxel trace distance falloff
 
     vec4 sampleValue = vec4(0);
     sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);

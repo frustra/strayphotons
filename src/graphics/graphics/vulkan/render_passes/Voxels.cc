@@ -21,6 +21,7 @@ namespace sp::vulkan::renderer {
         "Change the voxel grid clearing operation used between frames "
         "(bitfield: 1=radiance, 2=counters, 4=normals, 8=mipmap)");
     static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
+    static CVar<uint32> CVarSideSampleLayer("r.SideSampleLayer", 1, "");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
@@ -480,6 +481,7 @@ namespace sp::vulkan::renderer {
 
         voxelLayerCount = CVarVoxelLayers.Get();
         fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
+        uint32_t sideSampleLayer = CVarSideSampleLayer.Get();
 
         uint32 totalFragmentListSize = 0;
         {
@@ -664,8 +666,15 @@ namespace sp::vulkan::renderer {
                 .Build([&](rg::PassBuilder &builder) {
                     builder.Read(voxelLayer.preBlurName, Access::ComputeShaderSampleImage);
                     builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
+
+                    if (voxelLayer.layerIndex >= sideSampleLayer) {
+                        for (auto &voxelLayer2 : VoxelLayers) {
+                            if (voxelLayer2.layerIndex + sideSampleLayer != voxelLayer.layerIndex) continue;
+                            builder.Read(voxelLayer2.preBlurName, Access::ComputeShaderSampleImage);
+                        }
+                    }
                 })
-                .Execute([this, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([this, voxelLayer, sideSampleLayer](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_mipmap_layer_blur.comp");
 
                     GPULayerData layerData = {
@@ -674,8 +683,21 @@ namespace sp::vulkan::renderer {
                     };
                     cmd.UploadUniformData(0, 0, &layerData);
 
-                    cmd.SetImageView(0, 1, resources.GetImageView(voxelLayer.preBlurName));
-                    cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
+                    cmd.SetImageView(0, 1, resources.GetImageView(voxelLayer.name));
+                    cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.preBlurName));
+
+                    if (voxelLayer.layerIndex >= sideSampleLayer) {
+                        for (auto &voxelLayer2 : VoxelLayers) {
+                            if (voxelLayer2.layerIndex + sideSampleLayer != voxelLayer.layerIndex) continue;
+                            cmd.SetImageView(0,
+                                3 + voxelLayer2.dirIndex,
+                                resources.GetImageView(voxelLayer2.preBlurName));
+                        }
+                    } else {
+                        for (size_t i = 0; i < 6; i++) {
+                            cmd.SetImageView(0, 3 + i, resources.GetImageView(voxelLayer.preBlurName));
+                        }
+                    }
 
                     auto dispatchCount = (voxelGridSize + 7) / 8;
                     cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);

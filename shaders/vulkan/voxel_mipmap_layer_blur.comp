@@ -11,13 +11,10 @@ layout(binding = 0) uniform LayerDataUniform {
     uint layerIndex;
 };
 
-layout(binding = 1) uniform sampler3D voxelLayerIn;
-layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
+layout(binding = 1, rgba16f) writeonly uniform image3D voxelLayerOut;
 
-// Sigma = 0.5
-const float[3][3] GaussianKernel = float[][](float[](0.0249, 0.1080, 0.0249),
-    float[](0.1080, 0.4686, 0.1080),
-    float[](0.0249, 0.1080, 0.0249));
+layout(binding = 2) uniform sampler3D voxelLayerIn;
+layout(binding = 3) uniform sampler3D baseVoxelLayers[6];
 
 void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
@@ -28,7 +25,7 @@ void main() {
         return;
     }
 
-    int stride = max(1, int(layerIndex) - 1);
+    int stride = 1 << max(0, int(layerIndex) - 2); // max(1, int(layerIndex) - 1);
 
     int axis = DominantAxis(layerDirection);
     if (axis < 0) {
@@ -39,13 +36,48 @@ void main() {
     ivec3 tangentAxisA = ivec3(AxisDirections[TangentAxisA[axis]]) * stride;
     ivec3 tangentAxisB = ivec3(AxisDirections[TangentAxisB[axis]]) * stride;
 
+    ivec3 forwardOffset = ivec3(AxisDirections[axis]);
+    vec4[4] tangentSamples = vec4[](
+        texelFetch(baseVoxelLayers[OppositeAxis[TangentAxisA[axis]]], voxelPos + forwardOffset, 0),
+        texelFetch(baseVoxelLayers[OppositeAxis[TangentAxisB[axis]]], voxelPos + forwardOffset, 0),
+        texelFetch(baseVoxelLayers[TangentAxisA[axis]], voxelPos + forwardOffset, 0),
+        texelFetch(baseVoxelLayers[TangentAxisB[axis]], voxelPos + forwardOffset, 0));
+
+    // Alpha acts as voxel fill count on first layer
+    tangentSamples[0] /= max(1, tangentSamples[0].a);
+    tangentSamples[1] /= max(1, tangentSamples[1].a);
+    tangentSamples[2] /= max(1, tangentSamples[2].a);
+    tangentSamples[3] /= max(1, tangentSamples[3].a);
+
+    vec4[4] cornerSamples = vec4[]((tangentSamples[0] + tangentSamples[1]) * 0.5,
+        (tangentSamples[0] + tangentSamples[3]) * 0.5,
+        (tangentSamples[2] + tangentSamples[1]) * 0.5,
+        (tangentSamples[2] + tangentSamples[3]) * 0.5);
+
+    vec4[3][3] alphaSamples = vec4[][](vec4[](cornerSamples[0], tangentSamples[0], cornerSamples[1]),
+        vec4[](tangentSamples[1], vec4(0), tangentSamples[3]),
+        vec4[](cornerSamples[2], tangentSamples[2], cornerSamples[3]));
+
     vec4 sampleValue = vec4(0);
+    float count = 0;
     for (int i = -1; i <= 1; i++) {
         for (int j = -1; j <= 1; j++) {
             ivec3 samplePos = voxelPos + tangentAxisA * i + tangentAxisB * j;
-            float dist = length(vec3(tangentAxisA * i + tangentAxisB * j));
-            sampleValue += texelFetch(voxelLayerIn, samplePos, 0) * GaussianKernel[i + 1][j + 1];
+
+            vec4 frontSample = alphaSamples[i + 1][j + 1] * vec4(vec3(0.707), 1);
+            vec4 backSample = texelFetch(voxelLayerIn, samplePos, 0);
+            if (layerIndex == 1) {
+                backSample /= max(1, backSample.a);
+            }
+
+            vec4 combined = vec4(0);
+            combined.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
+            combined.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
+
+            float weight = pow(0.9, stride * length(vec2(i, j)));
+            count += weight;
+            sampleValue += combined * weight;
         }
     }
-    imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
+    imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue / count);
 }
