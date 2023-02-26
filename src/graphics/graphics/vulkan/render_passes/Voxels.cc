@@ -20,8 +20,8 @@ namespace sp::vulkan::renderer {
         15,
         "Change the voxel grid clearing operation used between frames "
         "(bitfield: 1=radiance, 2=counters, 4=normals, 8=mipmap)");
-    static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.9, "Light attenuation for voxel bounces");
-    static CVar<float> CVarLightLowPass("r.LightLowPass", 0.5, "Blend this amount of light in from the previous frame");
+    static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.1, "Light attenuation for voxel bounces");
+    static CVar<float> CVarLightLowPass("r.LightLowPass", 0.1, "Blend this amount of light in from the previous frame");
     static CVar<size_t> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
