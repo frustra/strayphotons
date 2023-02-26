@@ -20,10 +20,8 @@ void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
 
-    if (layerIndex == 0) {
-        imageStore(voxelLayerOut, ivec3(voxelPos), texelFetch(voxelLayerIn, voxelPos, 0));
-        return;
-    }
+    // imageStore(voxelLayerOut, ivec3(voxelPos), texelFetch(voxelLayerIn, voxelPos, 0));
+    // return;
 
     int stride = 1 << max(0, int(layerIndex) - 2); // max(1, int(layerIndex) - 1);
 
@@ -36,12 +34,13 @@ void main() {
     ivec3 tangentAxisA = ivec3(AxisDirections[TangentAxisA[axis]]) * stride;
     ivec3 tangentAxisB = ivec3(AxisDirections[TangentAxisB[axis]]) * stride;
 
-    ivec3 forwardOffset = ivec3(AxisDirections[axis]);
+    vec3 forwardOffset = vec3(0.5 + AxisDirections[axis] * 0.5);
+    vec3 gridSize = imageSize(voxelLayerOut);
     vec4[4] tangentSamples = vec4[](
-        texelFetch(baseVoxelLayers[OppositeAxis[TangentAxisA[axis]]], voxelPos + forwardOffset, 0),
-        texelFetch(baseVoxelLayers[OppositeAxis[TangentAxisB[axis]]], voxelPos + forwardOffset, 0),
-        texelFetch(baseVoxelLayers[TangentAxisA[axis]], voxelPos + forwardOffset, 0),
-        texelFetch(baseVoxelLayers[TangentAxisB[axis]], voxelPos + forwardOffset, 0));
+        texture(baseVoxelLayers[OppositeAxis[TangentAxisA[axis]]], (voxelPos + forwardOffset) / gridSize),
+        texture(baseVoxelLayers[OppositeAxis[TangentAxisB[axis]]], (voxelPos + forwardOffset) / gridSize),
+        texture(baseVoxelLayers[TangentAxisA[axis]], (voxelPos + forwardOffset) / gridSize),
+        texture(baseVoxelLayers[TangentAxisB[axis]], (voxelPos + forwardOffset) / gridSize));
 
     // Alpha acts as voxel fill count on first layer
     tangentSamples[0] /= max(1, tangentSamples[0].a);
@@ -74,7 +73,7 @@ void main() {
             combined.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
             combined.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
 
-            float weight = pow(0.9, stride * length(vec2(i, j)));
+            float weight = pow(0.85, stride * length(vec2(i, j)));
             count += weight;
             sampleValue += combined * weight;
         }

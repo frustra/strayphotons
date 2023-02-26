@@ -45,14 +45,14 @@ namespace sp::vulkan::renderer {
             glm::vec3(0, -1, 0),
             glm::vec3(0, 0, -1),
         };
-        static inline const size_t layerCount = directions.size() * MAX_VOXEL_FRAGMENT_LISTS;
+        using VoxelInfoIndex = std::array<std::array<VoxelLayerInfo, directions.size()>, MAX_VOXEL_FRAGMENT_LISTS>;
 
-        static inline std::array<VoxelLayerInfo, layerCount> generateVoxelLayerInfo() {
-            std::array<VoxelLayerInfo, layerCount> layers;
+        static inline VoxelInfoIndex generateVoxelLayerInfo() {
+            VoxelInfoIndex layers;
             for (uint32_t i = 0; i < MAX_VOXEL_FRAGMENT_LISTS; i++) {
                 for (uint32_t dir = 0; dir < directions.size(); dir++) {
                     std::string name = "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir);
-                    layers[i * directions.size() + dir] = VoxelLayerInfo{
+                    layers[i][dir] = VoxelLayerInfo{
                         name,
                         "Voxels2." + name,
                         name + "_PreBlur",

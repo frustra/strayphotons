@@ -6,13 +6,24 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 #include "../lib/util.glsl"
 #include "../lib/voxel_shared.glsl"
 
-layout(binding = 0) uniform LayerDataUniform {
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform LayerDataUniform {
     vec3 layerDirection;
     uint layerIndex;
 };
 
-layout(binding = 1) uniform sampler3D voxelLayerIn;
-layout(binding = 2, rgba16f) writeonly uniform image3D voxelLayerOut;
+layout(binding = 2) uniform sampler3D voxelLayerIn;
+layout(binding = 3, rgba16f) writeonly uniform image3D voxelLayerOut;
+
+layout(binding = 4) uniform PreviousVoxelStateUniform {
+    VoxelState previousVoxelInfo;
+};
+layout(binding = 5) uniform sampler3D prevFrameVoxelLayer;
+
+layout(constant_id = 0) const float PREVIOUS_FRAME_BLEND = 0;
 
 void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
@@ -33,5 +44,14 @@ void main() {
     vec4 sampleValue = vec4(0);
     sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
     sampleValue.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
+
+    if (PREVIOUS_FRAME_BLEND > 0) {
+        vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4(voxelPos + 0.5f, 1.0);
+        ivec3 reprojectedVoxelPos = ivec3(previousVoxelInfo.worldToVoxel * worldPosition);
+        sampleValue = mix(sampleValue,
+            texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0),
+            clamp(PREVIOUS_FRAME_BLEND, 0, 1));
+    }
+
     imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
 }
