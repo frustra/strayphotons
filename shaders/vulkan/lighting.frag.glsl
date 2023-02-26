@@ -116,7 +116,7 @@ void main() {
     vec3 directLight =
         DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
 
-    vec3 indirectLight = indirectDiffuse * directDiffuseColor; // + indirectSpecular;
+    vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
     vec3 totalLight = emissive + directLight + indirectLight;
 
     if (MODE == 0) { // Direct only

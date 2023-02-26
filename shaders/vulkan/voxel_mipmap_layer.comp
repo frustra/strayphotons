@@ -48,9 +48,9 @@ void main() {
     if (PREVIOUS_FRAME_BLEND > 0) {
         vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4(voxelPos + 0.5f, 1.0);
         ivec3 reprojectedVoxelPos = ivec3(previousVoxelInfo.worldToVoxel * worldPosition);
-        sampleValue = mix(sampleValue,
-            texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0),
-            clamp(PREVIOUS_FRAME_BLEND, 0, 1));
+        vec4 previousSample = texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0);
+        float weight = PREVIOUS_FRAME_BLEND * (1 - 0.7 * step(length(sampleValue), length(previousSample)));
+        sampleValue = mix(sampleValue, previousSample, clamp(weight, 0, 1));
     }
 
     imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
