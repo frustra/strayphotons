@@ -45,7 +45,7 @@ namespace sp::vulkan {
     static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
 
     Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), lighting(scene), transparency(scene), voxels(scene),
+        : device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels), transparency(scene),
           guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;

@@ -22,7 +22,7 @@ layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 
-layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[]; // VOXEL_LAYERS * 6
+layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[];
 
 layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;

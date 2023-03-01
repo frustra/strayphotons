@@ -24,7 +24,7 @@ namespace sp::vulkan::renderer {
     static CVar<float> CVarLightLowPass("r.LightLowPass",
         0.15,
         "Blend this amount of light in from the previous frame");
-    static CVar<size_t> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
+    static CVar<uint32> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
@@ -69,6 +69,11 @@ namespace sp::vulkan::renderer {
             }
         }
 
+        currentSetFrame = (currentSetFrame + 1) % layerDescriptorSets.size();
+        if (!layerDescriptorSets[currentSetFrame]) {
+            layerDescriptorSets[currentSetFrame] = graph.Device().CreateBindlessDescriptorSet();
+        }
+
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateUniform("VoxelState", sizeof(GPUVoxelState));
@@ -77,6 +82,30 @@ namespace sp::vulkan::renderer {
                 GPUVoxelState gpuData = {glm::inverse(voxelToWorld.GetMatrix()), voxelGridSize};
                 resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
             });
+    }
+
+    void Voxels::updateDescriptorSet(rg::Resources &resources, DeviceContext &device) {
+        if (voxelLayerCount == 0) return;
+
+        vector<vk::DescriptorImageInfo> descriptorImageInfos;
+        descriptorImageInfos.reserve(voxelLayerCount * 6);
+
+        for (size_t layer = 0; layer < voxelLayerCount; layer++) {
+            for (auto &voxelLayer : VoxelLayers[layer]) {
+                auto tex = resources.GetImageView(voxelLayer.name);
+                descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, vk::ImageLayout::eShaderReadOnlyOptimal);
+            }
+        }
+
+        vk::WriteDescriptorSet descriptorWrite;
+        descriptorWrite.dstSet = GetCurrentVoxelDescriptorSet();
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrite.pImageInfo = descriptorImageInfos.data();
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorCount = descriptorImageInfos.size();
+
+        device->updateDescriptorSets({descriptorWrite}, {});
     }
 
     void Voxels::AddVoxelization(RenderGraph &graph, const Lighting &lighting) {
@@ -152,7 +181,7 @@ namespace sp::vulkan::renderer {
         auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
 
         fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
-        auto voxelFillIndex = std::min(CVarVoxelFillIndex.Get(), VoxelLayers.size() - 1);
+        auto voxelFillIndex = std::min(CVarVoxelFillIndex.Get(), voxelLayerCount - 1);
 
         uint32 totalFragmentListSize = 0;
         {
@@ -427,7 +456,10 @@ namespace sp::vulkan::renderer {
         ZoneScoped;
         auto scope = graph.Scope("Voxels2");
 
-        if (voxelGridSize == glm::ivec3(0) || !CVarEnableVoxels2.Get()) {
+        voxelLayerCount = std::min(CVarVoxelLayers.Get(), VoxelLayers.size());
+        bool clearMipmap = (CVarVoxelClear.Get() & 8) == 8;
+
+        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels2.Get()) {
             graph.AddPass("Dummy")
                 .Build([&](rg::PassBuilder &builder) {
                     ImageDesc desc;
@@ -441,7 +473,7 @@ namespace sp::vulkan::renderer {
                         }
                     }
                 })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                     vk::ClearColorValue clear;
                     clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
                     vk::ImageSubresourceRange range;
@@ -460,12 +492,11 @@ namespace sp::vulkan::renderer {
                                 {range});
                         }
                     }
+
+                    updateDescriptorSet(resources, cmd.Device());
                 });
             return;
         }
-
-        voxelLayerCount = std::min(CVarVoxelLayers.Get(), VoxelLayers.size());
-        bool clearMipmap = (CVarVoxelClear.Get() & 8) == 8;
 
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
@@ -508,6 +539,8 @@ namespace sp::vulkan::renderer {
                             {range});
                     }
                 }
+
+                updateDescriptorSet(resources, cmd.Device());
             });
     }
 
@@ -737,5 +770,9 @@ namespace sp::vulkan::renderer {
 
                 cmd.Draw(3);
             });
+    }
+
+    vk::DescriptorSet Voxels::GetCurrentVoxelDescriptorSet() const {
+        return layerDescriptorSets[currentSetFrame];
     }
 } // namespace sp::vulkan::renderer

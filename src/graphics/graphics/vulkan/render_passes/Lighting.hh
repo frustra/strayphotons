@@ -9,9 +9,11 @@ namespace sp::vulkan::renderer {
     static const int MAX_LIGHTS = 64;
     static const int MAX_OPTICS = 16;
 
+    class Voxels;
+
     class Lighting {
     public:
-        Lighting(GPUScene &scene) : scene(scene) {}
+        Lighting(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {}
         void LoadState(RenderGraph &graph,
             ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
@@ -22,6 +24,7 @@ namespace sp::vulkan::renderer {
     private:
         void AllocateShadowMap();
         GPUScene &scene;
+        Voxels &voxels;
 
         glm::ivec2 shadowAtlasSize = {};
 

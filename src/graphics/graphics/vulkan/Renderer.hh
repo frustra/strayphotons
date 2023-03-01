@@ -77,9 +77,9 @@ namespace sp::vulkan {
 
         GPUScene scene;
 
+        renderer::Voxels voxels;
         renderer::Lighting lighting;
         renderer::Transparency transparency;
-        renderer::Voxels voxels;
         renderer::Emissive emissive;
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;

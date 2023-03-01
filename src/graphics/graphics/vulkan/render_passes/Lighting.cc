@@ -17,7 +17,7 @@ namespace sp::vulkan::renderer {
         1,
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
-    static CVar<size_t> CVarLightingVoxelLayers("r.LightingVoxelLayers",
+    static CVar<uint32_t> CVarLightingVoxelLayers("r.LightingVoxelLayers",
         8,
         "Number of voxel layers to use for diffuse lighting");
 
@@ -535,7 +535,7 @@ namespace sp::vulkan::renderer {
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
         auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
-        uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), Voxels::VoxelLayers.size());
+        uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), voxels.GetLayerCount());
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
@@ -592,12 +592,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
-
-                for (size_t i = 0; i < voxelLayerCount; i++) {
-                    for (auto &voxelLayer : Voxels::VoxelLayers[i]) {
-                        cmd.SetImageView(2, i * 6 + voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
-                    }
-                }
+                cmd.SetBindlessDescriptors(2, voxels.GetCurrentVoxelDescriptorSet());
 
                 cmd.Draw(3);
             });

@@ -24,6 +24,12 @@ namespace sp::vulkan::renderer {
         void AddVoxelization2(RenderGraph &graph, const Lighting &lighting);
         void AddDebugPass(RenderGraph &graph);
 
+        vk::DescriptorSet GetCurrentVoxelDescriptorSet() const;
+
+        uint32_t GetLayerCount() const {
+            return voxelLayerCount;
+        }
+
     private:
         GPUScene &scene;
 
@@ -36,6 +42,11 @@ namespace sp::vulkan::renderer {
         ecs::Transform voxelToWorld;
         glm::ivec3 voxelGridSize;
         uint32_t voxelLayerCount;
+
+        std::array<vk::DescriptorSet, 2> layerDescriptorSets;
+        uint32_t currentSetFrame = 0;
+
+        void updateDescriptorSet(rg::Resources &resources, DeviceContext &device);
 
         static inline const std::array<glm::vec3, 6> directions = {
             glm::vec3(1, 0, 0),
