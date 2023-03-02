@@ -23,7 +23,7 @@ void main() {
     // imageStore(voxelLayerOut, ivec3(voxelPos), texelFetch(voxelLayerIn, voxelPos, 0));
     // return;
 
-    int stride = 1 << max(0, int(layerIndex) - 2); // max(1, int(layerIndex) - 1);
+    int stride = 1; // << max(0, int(layerIndex) - 2); // max(1, int(layerIndex) - 1);
 
     int axis = DominantAxis(layerDirection);
     if (axis < 0) {

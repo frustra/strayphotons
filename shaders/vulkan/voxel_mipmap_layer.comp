@@ -29,7 +29,7 @@ void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
 
-    int stride = 1 << max(0, int(layerIndex) - 1);
+    int stride = 1; // << max(0, int(layerIndex) - 1);
     ivec3 layerOffset = ivec3(layerDirection) * stride;
 
     vec4 frontSample = texelFetch(voxelLayerIn, voxelPos, 0);
@@ -38,20 +38,20 @@ void main() {
         // Alpha acts as voxel fill count on first layer
         frontSample /= max(1, frontSample.a);
         backSample /= max(1, backSample.a);
+
+        if (PREVIOUS_FRAME_BLEND > 0) {
+            vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4(voxelPos + 0.5f, 1.0);
+            ivec3 reprojectedVoxelPos = ivec3(previousVoxelInfo.worldToVoxel * worldPosition);
+            vec4 previousSample = texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0);
+            float weight = PREVIOUS_FRAME_BLEND; // * (1 - 0.3 * step(length(frontSample), length(previousSample)));
+            frontSample = mix(frontSample, previousSample, clamp(weight, 0, 1));
+        }
     }
-    backSample.rgb *= pow(0.9, stride); // Voxel trace distance falloff
+    // backSample.rgb *= pow(0.95, stride); // Voxel trace distance falloff
 
     vec4 sampleValue = vec4(0);
     sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
     sampleValue.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
-
-    if (PREVIOUS_FRAME_BLEND > 0) {
-        vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4(voxelPos + 0.5f, 1.0);
-        ivec3 reprojectedVoxelPos = ivec3(previousVoxelInfo.worldToVoxel * worldPosition);
-        vec4 previousSample = texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0);
-        float weight = PREVIOUS_FRAME_BLEND * (1 - 0.7 * step(length(sampleValue), length(previousSample)));
-        sampleValue = mix(sampleValue, previousSample, clamp(weight, 0, 1));
-    }
 
     imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
 }

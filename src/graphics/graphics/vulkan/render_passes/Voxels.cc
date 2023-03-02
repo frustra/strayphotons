@@ -649,11 +649,12 @@ namespace sp::vulkan::renderer {
 
                         builder.ReadUniform("VoxelState");
                         builder.ReadPreviousFrame("VoxelState", Access::AnyShaderReadUniform);
-                        builder.ReadPreviousFrame(voxelLayer.preBlurName, Access::FragmentShaderSampleImage);
+                        auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][voxelLayer.dirIndex].preBlurName;
+                        builder.ReadPreviousFrame(lastFrameOutput, Access::FragmentShaderSampleImage);
                     })
                     .Execute([this, layer, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
                         cmd.SetComputeShader("voxel_mipmap_layer.comp");
-                        cmd.SetShaderConstant(ShaderStage::Compute, 0, CVarLightLowPass.Get());
+                        cmd.SetShaderConstant(ShaderStage::Compute, 0, layer == 1 ? CVarLightLowPass.Get() : 0.0f);
 
                         cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
 
@@ -674,7 +675,8 @@ namespace sp::vulkan::renderer {
                         } else {
                             cmd.SetUniformBuffer(0, 4, resources.GetBuffer("VoxelState"));
                         }
-                        auto lastVoxelLayerID = resources.GetID(voxelLayer.preBlurName, false, 1);
+                        auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][voxelLayer.dirIndex].preBlurName;
+                        auto lastVoxelLayerID = resources.GetID(lastFrameOutput, false, 1);
                         if (lastVoxelLayerID != InvalidResource) {
                             cmd.SetImageView(0, 5, resources.GetImageView(lastVoxelLayerID));
                         } else {
