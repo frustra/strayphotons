@@ -1,0 +1,41 @@
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform LayerDataUniform {
+    vec3 layerDirection;
+    uint layerIndex;
+};
+
+layout(binding = 2, rgba16f) writeonly uniform image3D radianceOut;
+
+layout(std430, binding = 3) buffer VoxelFragmentListMetadata {
+    uint count;
+    uint capacity;
+    uint offset;
+    VkDispatchIndirectCommand cmd;
+};
+
+layout(std430, binding = 4) buffer VoxelFragmentList {
+    VoxelFragment fragmentLists[];
+};
+
+void main() {
+    uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
+    if (index >= count) return;
+    if (layerIndex > 0) return;
+
+    ivec3 position = ivec3(fragmentLists[index].position);
+    vec3 radiance = vec3(fragmentLists[index].radiance);
+    vec3 voxelNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
+
+    float alpha = max(0, dot(voxelNormal, -layerDirection));
+    imageStore(radianceOut, position, vec4(radiance, 1) * alpha);
+}

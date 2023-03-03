@@ -96,12 +96,20 @@ namespace ecs {
 
         template<typename T>
         T *Access(void *structPtr) const {
+            Assertf(type == typeid(T),
+                "StructMetadata::Access called with wrong type: %s, expected %s",
+                typeid(T).name(),
+                type.name());
             auto *field = static_cast<char *>(structPtr) + offset;
             return reinterpret_cast<T *>(field);
         }
 
         template<typename T>
         const T *Access(const void *structPtr) const {
+            Assertf(type == typeid(T),
+                "StructMetadata::Access called with wrong type: %s, expected %s",
+                typeid(T).name(),
+                type.name());
             auto *field = static_cast<const char *>(structPtr) + offset;
             return reinterpret_cast<const T *>(field);
         }

@@ -5,8 +5,12 @@ layout(num_views = 2) in;
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
 
+layout(constant_id = 0) const uint MODE = 1;
+layout(constant_id = 1) const uint VOXEL_LAYERS = 1;
+
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
 
 layout(binding = 0) uniform sampler2DArray gBuffer0;
 layout(binding = 1) uniform sampler2DArray gBuffer1;
@@ -17,6 +21,8 @@ layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
+
+layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[6];
 
 layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -36,8 +42,6 @@ layout(location = 0) out vec4 outFragColor;
 
 #include "../lib/shading.glsl"
 #include "../lib/voxel_trace_shared.glsl"
-
-layout(constant_id = 0) const uint MODE = 1;
 
 void main() {
     ViewState view = views[gl_ViewID_OVR];
@@ -88,7 +92,27 @@ void main() {
         }
     }
 
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
+    vec3 voxelNormal = normalize(mat3(voxelInfo.worldToVoxel) * worldNormal);
+
+    // int axis = DominantAxis(worldNormal);
+    // if (axis < 0) {
+    //     axis = -axis + 2;
+    // } else {
+    //     axis -= 1;
+    // }
+    vec4 value = vec4(0);
+    for (int i = 0; i < 6; i++) {
+        // vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos), 0);
+        vec4 sampleValue = texture(voxelLayersIn[i], voxelPos / voxelInfo.gridSize);
+        value += sampleValue * max(0, dot(AxisDirections[i], voxelNormal));
+    }
+    // vec4 value = texelFetch(voxelLayersIn[axis], ivec3(voxelPos + AxisDirections[axis]), 0);
+    // vec4 value = texture(voxelLayersIn[axis], (voxelPos + AxisDirections[axis]) /
+    // voxelInfo.gridSize);
+
+    vec3 indirectDiffuse = value.rgb;
 
     vec3 directDiffuseColor = baseColor * (1 - metalness);
     vec3 directLight =

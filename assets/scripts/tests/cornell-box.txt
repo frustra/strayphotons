@@ -4,15 +4,18 @@ r.Exposure 0.5
 steplogic
 stepphysics
 steplogic
+stepgraphics 120
 screenshot cornell-box-1.png
 stepgraphics
 loadscene cornell-box-2
 syncscene
 stepphysics
+stepgraphics 120
 screenshot cornell-box-2.png
 stepgraphics
 loadscene cornell-box-3
 syncscene
 stepphysics
+stepgraphics 120
 screenshot cornell-box-3.png
 stepgraphics

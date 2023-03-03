@@ -371,10 +371,10 @@
 			"transform": {
 				"parent": "voxel_grid_center",
 				"translate": [-8.66, -8.66, -8.66],
-				"scale": [0.068, 0.068, 0.068]
+				"scale": 0.136
 			},
 			"voxel_area": {
-				"extents": [256, 256, 256]
+				"extents": [128, 128, 128]
 			}
 		},
 		{

@@ -53,7 +53,7 @@ namespace sp::scripts {
                     auto &scripts = newEnt.Set<Scripts>(lock);
                     auto &gltfState = scripts.AddPrefab(state.scope, "gltf");
                     gltfState.SetParam<std::string>("model", "wall-4-corner");
-                    gltfState.SetParam<std::string>("physics", "static");
+                    gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
                     ecs::Scripts::RunPrefabs(lock, newEnt);
                 }
@@ -78,7 +78,7 @@ namespace sp::scripts {
                     auto &scripts = newEnt.Set<Scripts>(lock);
                     auto &gltfState = scripts.AddPrefab(state.scope, "gltf");
                     gltfState.SetParam<std::string>("model", model);
-                    gltfState.SetParam<std::string>("physics", "static");
+                    gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
                     ecs::Scripts::RunPrefabs(lock, newEnt);
 

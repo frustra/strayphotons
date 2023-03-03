@@ -33,8 +33,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 
     return result;
 }
-
-const float[5] DiffuseSampleSpacing = float[](1.0, 1.8, 3.0, 8.0, 16.0);
+const float[5] DiffuseSampleSpacing = float[](1.74, 1.8, 2.0, 2.0, 2.0);
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, float offset) {
     vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(rayPos, 1.0)).xyz;

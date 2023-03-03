@@ -15,7 +15,7 @@ layout(std430, binding = 2) buffer VoxelFragmentListMetadata {
 };
 
 layout(std430, binding = 3) buffer VoxelFragmentList {
-    VoxelFragment overflowList[];
+    VoxelFragment fragmentLists[];
 };
 
 #include "../lib/types_common.glsl"
@@ -28,9 +28,9 @@ void main() {
     uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
     if (index >= count) return;
 
-    ivec3 position = ivec3(overflowList[index].position);
-    vec3 overflowRadiance = vec3(overflowList[index].radiance);
-    vec3 overflowNormal = vec3(overflowList[index].normal);
+    ivec3 position = ivec3(fragmentLists[index].position);
+    vec3 overflowRadiance = vec3(fragmentLists[index].radiance);
+    vec3 overflowNormal = vec3(fragmentLists[index].normal);
     vec4 existingRadiance = imageLoad(voxelRadiance, position);
     vec4 existingNormal = imageLoad(voxelNormals, position);
 

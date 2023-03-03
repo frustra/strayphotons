@@ -1,0 +1,57 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform LayerDataUniform {
+    vec3 layerDirection;
+    uint layerIndex;
+};
+
+layout(binding = 2) uniform sampler3D voxelLayerIn;
+layout(binding = 3, rgba16f) writeonly uniform image3D voxelLayerOut;
+
+layout(binding = 4) uniform PreviousVoxelStateUniform {
+    VoxelState previousVoxelInfo;
+};
+layout(binding = 5) uniform sampler3D prevFrameVoxelLayer;
+
+layout(constant_id = 0) const float PREVIOUS_FRAME_BLEND = 0;
+
+void main() {
+    ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut)))) return;
+
+    int stride = 1; // << max(0, int(layerIndex) - 1);
+    ivec3 layerOffset = ivec3(layerDirection) * stride;
+
+    vec4 frontSample = texelFetch(voxelLayerIn, voxelPos, 0);
+    vec4 backSample = texelFetch(voxelLayerIn, voxelPos + layerOffset, 0);
+    if (layerIndex == 1) {
+        // Alpha acts as voxel fill count on first layer
+        frontSample /= max(1, frontSample.a);
+        backSample /= max(1, backSample.a);
+
+        if (PREVIOUS_FRAME_BLEND > 0) {
+            vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4(voxelPos + 0.5f, 1.0);
+            ivec3 reprojectedVoxelPos = ivec3(previousVoxelInfo.worldToVoxel * worldPosition);
+            vec4 previousSample = texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0);
+            float weight = PREVIOUS_FRAME_BLEND * (1 - 0.2 * step(length(frontSample), length(previousSample)));
+            frontSample = mix(frontSample, previousSample, clamp(weight, 0, 1));
+        }
+    }
+    backSample.rgb *= pow(0.95, stride); // Voxel trace distance falloff
+
+    vec4 sampleValue = vec4(0);
+    sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
+    sampleValue.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
+
+    imageStore(voxelLayerOut, ivec3(voxelPos), sampleValue);
+}

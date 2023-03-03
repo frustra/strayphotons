@@ -65,7 +65,9 @@ namespace sp::vulkan::render_graph {
 
     ImageViewPtr Resources::GetImageView(ResourceID id) {
         if (id >= resources.size()) return nullptr;
-        return GetPooledImage(id)->ImageView();
+        auto pooledImage = GetPooledImage(id);
+        if (!pooledImage) return nullptr;
+        return pooledImage->ImageView();
     }
 
     ImageViewPtr Resources::GetImageLayerView(string_view name, uint32 layer) {
@@ -74,7 +76,9 @@ namespace sp::vulkan::render_graph {
 
     ImageViewPtr Resources::GetImageLayerView(ResourceID id, uint32 layer) {
         if (id >= resources.size()) return nullptr;
-        return GetPooledImage(id)->LayerImageView(layer);
+        auto pooledImage = GetPooledImage(id);
+        if (!pooledImage) return nullptr;
+        return pooledImage->LayerImageView(layer);
     }
 
     ImageViewPtr Resources::GetImageMipView(string_view name, uint32 mip) {
@@ -83,7 +87,9 @@ namespace sp::vulkan::render_graph {
 
     ImageViewPtr Resources::GetImageMipView(ResourceID id, uint32 mip) {
         if (id >= resources.size()) return nullptr;
-        return GetPooledImage(id)->MipImageView(mip);
+        auto pooledImage = GetPooledImage(id);
+        if (!pooledImage) return nullptr;
+        return pooledImage->MipImageView(mip);
     }
 
     ImageViewPtr Resources::GetImageDepthView(string_view name) {
@@ -92,7 +98,9 @@ namespace sp::vulkan::render_graph {
 
     ImageViewPtr Resources::GetImageDepthView(ResourceID id) {
         if (id >= resources.size()) return nullptr;
-        return GetPooledImage(id)->DepthImageView();
+        auto pooledImage = GetPooledImage(id);
+        if (!pooledImage) return nullptr;
+        return pooledImage->DepthImageView();
     }
 
     PooledImagePtr Resources::GetPooledImage(ResourceID id) {
@@ -101,7 +109,13 @@ namespace sp::vulkan::render_graph {
         Assertf(res.type == Resource::Type::Image, "resource %s is not a render target", resourceNames[id]);
         Assertf(RefCount(id) > 0, "can't get image %s without accessing it", resourceNames[id]);
         auto &target = images[res.id];
-        if (!target) target = GetImageFromPool(res.imageDesc);
+        if (!target) {
+            if (res.imageDesc.usage == vk::ImageUsageFlagBits::eTransferDst) {
+                Tracef("Image resource never accessed: %s", resourceNames[id]);
+                return nullptr;
+            }
+            target = GetImageFromPool(res.imageDesc);
+        }
         return target;
     }
 
@@ -187,7 +201,7 @@ namespace sp::vulkan::render_graph {
             buffers[id].reset();
             break;
         default:
-            Abort("resource type is undefined");
+            Abortf("resource type is undefined: %s", resourceNames[id]);
         }
     }
 
@@ -198,6 +212,8 @@ namespace sp::vulkan::render_graph {
             res.imageDesc.usage |= acc.imageUsageMask;
         } else if (res.type == Resource::Type::Buffer) {
             res.bufferDesc.usage |= acc.bufferUsageMask;
+        } else {
+            Abortf("resource type is undefined: %s", resourceNames[id]);
         }
     }
 
@@ -269,7 +285,7 @@ namespace sp::vulkan::render_graph {
     void Resources::EndScope() {
         Assert(scopeStack.size() > 1, "tried to end a scope that wasn't started");
         auto &scope = nameScopes[scopeStack.back()];
-        scope.SetID("LastOutput", LastOutputID(), frameIndex);
+        scope.SetID("LastOutput", LastOutputID(), frameIndex, true);
         scopeStack.pop_back();
     }
 
@@ -280,11 +296,11 @@ namespace sp::vulkan::render_graph {
         return InvalidResource;
     }
 
-    void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex) {
+    void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace) {
         auto &resourceNames = frames[frameIndex].resourceNames;
         Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
         auto &nameID = resourceNames[name.data()];
-        Assert(!nameID, "resource already registered");
+        if (!replace) Assert(!nameID, "resource already registered");
         nameID = id;
     }
 
