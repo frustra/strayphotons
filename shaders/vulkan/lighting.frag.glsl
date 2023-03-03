@@ -22,7 +22,7 @@ layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 
-layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[];
+layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[6];
 
 layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -102,15 +102,14 @@ void main() {
     // } else {
     //     axis -= 1;
     // }
-    uint lastLayerOffset = (VOXEL_LAYERS - 1) * 6;
     vec4 value = vec4(0);
     for (int i = 0; i < 6; i++) {
-        // vec4 sampleValue = texelFetch(voxelLayersIn[lastLayerOffset + i], ivec3(voxelPos), 0);
-        vec4 sampleValue = texture(voxelLayersIn[lastLayerOffset + i], voxelPos / voxelInfo.gridSize);
+        // vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos), 0);
+        vec4 sampleValue = texture(voxelLayersIn[i], voxelPos / voxelInfo.gridSize);
         value += sampleValue * max(0, dot(AxisDirections[i], voxelNormal));
     }
-    // vec4 value = texelFetch(voxelLayersIn[lastLayerOffset + axis], ivec3(voxelPos + AxisDirections[axis]), 0);
-    // vec4 value = texture(voxelLayersIn[lastLayerOffset + axis], (voxelPos + AxisDirections[axis]) /
+    // vec4 value = texelFetch(voxelLayersIn[axis], ivec3(voxelPos + AxisDirections[axis]), 0);
+    // vec4 value = texture(voxelLayersIn[axis], (voxelPos + AxisDirections[axis]) /
     // voxelInfo.gridSize);
 
     vec3 indirectDiffuse = value.rgb;

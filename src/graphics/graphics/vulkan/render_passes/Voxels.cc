@@ -69,10 +69,10 @@ namespace sp::vulkan::renderer {
             }
         }
 
-        currentSetFrame = (currentSetFrame + 1) % layerDescriptorSets.size();
-        if (!layerDescriptorSets[currentSetFrame]) {
-            layerDescriptorSets[currentSetFrame] = graph.Device().CreateBindlessDescriptorSet();
-        }
+        // currentSetFrame = (currentSetFrame + 1) % layerDescriptorSets.size();
+        // if (!layerDescriptorSets[currentSetFrame]) {
+        //     layerDescriptorSets[currentSetFrame] = graph.Device().CreateBindlessDescriptorSet();
+        // }
 
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
@@ -493,7 +493,7 @@ namespace sp::vulkan::renderer {
                         }
                     }
 
-                    updateDescriptorSet(resources, cmd.Device());
+                    // updateDescriptorSet(resources, cmd.Device());
                 });
             return;
         }
@@ -540,7 +540,7 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
-                updateDescriptorSet(resources, cmd.Device());
+                // updateDescriptorSet(resources, cmd.Device());
             });
     }
 
