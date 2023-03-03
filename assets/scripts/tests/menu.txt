@@ -8,5 +8,6 @@ stepphysics 2
 screenshot menu.png
 stepgraphics
 stepphysics 100
+stepgraphics 100
 screenshot delayed.png
 stepgraphics

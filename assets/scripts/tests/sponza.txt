@@ -6,7 +6,7 @@ screenshot sponza-physics-init.png
 stepgraphics
 stepphysics 120
 screenshot sponza-test-frame.png
-stepgraphics
+stepgraphics 120
 screenshot sponza-test-frame2.png
 stepgraphics
 r.VoxelDebug 1

@@ -3,10 +3,12 @@ addscene test1
 respawn
 steplogic
 stepphysics
+stepgraphics 2
 screenshot load-override-first1.png
 stepgraphics
 steplogic 2700
 stepphysics
+stepgraphics 120
 screenshot load-override-first2.png
 stepgraphics
 assert_position test1:animbox 0 1 -4.875
@@ -14,6 +16,7 @@ stepphysics 120
 assert_position test1:animbox -1 2 -4.875
 stepphysics 120
 assert_position test1:animbox 1 5 -4.875
+stepgraphics 120
 screenshot load-override-first3.png
 stepgraphics
 
@@ -22,10 +25,12 @@ addscene test1-override
 respawn
 steplogic
 stepphysics
+stepgraphics 2
 screenshot load-override-after1.png
 stepgraphics
 steplogic 2700
 stepphysics
+stepgraphics 120
 screenshot load-override-after2.png
 stepgraphics
 assert_position test1:animbox 0 1.5 -4.875
@@ -33,5 +38,6 @@ stepphysics 120
 assert_position test1:animbox -1 2 -4.875
 stepphysics 120
 assert_position test1:animbox 1 5 -4.875
+stepgraphics 120
 screenshot load-override-after3.png
 stepgraphics
