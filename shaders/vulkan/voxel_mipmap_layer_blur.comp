@@ -73,7 +73,7 @@ void main() {
             combined.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
             combined.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
 
-            float weight = pow(0.85, stride * length(vec2(i, j)));
+            float weight = pow(0.9, stride * length(vec2(i, j)));
             count += weight;
             sampleValue += combined * weight;
         }

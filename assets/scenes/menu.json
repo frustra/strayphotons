@@ -533,15 +533,9 @@
 			"transform": {}
 		},
 		{
-			"transform": {
-				"scale": 0.1,
-				"translate": [-5, -0.05, -4]
-			}
-		},
-		{
 			"transform": {},
 			"voxel_area": {
-				"extents": [256, 100, 360]
+				"extents": [128, 64, 180]
 			},
 			"script": {
 				"onTick": "voxel_controller",
@@ -549,7 +543,7 @@
 					"alignment_target": "station-center:elevator",
 					"follow_target": "player:player",
 					"voxel_offset": [-0.5, -0.2, -0.5],
-					"voxel_scale": 0.25,
+					"voxel_scale": 0.5,
 					"voxel_stride": 16
 				}
 			}

@@ -15,15 +15,13 @@ namespace sp::vulkan::renderer {
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
     static CVar<uint32_t> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
-    static CVar<size_t> CVarVoxelLayers("r.VoxelLayers", 8, "The number of voxel mipmap layers");
+    static CVar<size_t> CVarVoxelLayers("r.VoxelLayers", 3, "The number of voxel mipmap layers");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
         15,
         "Change the voxel grid clearing operation used between frames "
         "(bitfield: 1=radiance, 2=counters, 4=normals, 8=mipmap)");
-    static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.1, "Light attenuation for voxel bounces");
-    static CVar<float> CVarLightLowPass("r.LightLowPass",
-        0.15,
-        "Blend this amount of light in from the previous frame");
+    static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.1f, "Light attenuation for voxel bounces");
+    static CVar<float> CVarLightLowPass("r.LightLowPass", 0.8, "Blend this amount of light in from the previous frame");
     static CVar<uint32> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",

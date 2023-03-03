@@ -43,11 +43,11 @@ void main() {
             vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4(voxelPos + 0.5f, 1.0);
             ivec3 reprojectedVoxelPos = ivec3(previousVoxelInfo.worldToVoxel * worldPosition);
             vec4 previousSample = texelFetch(prevFrameVoxelLayer, reprojectedVoxelPos, 0);
-            float weight = PREVIOUS_FRAME_BLEND; // * (1 - 0.3 * step(length(frontSample), length(previousSample)));
+            float weight = PREVIOUS_FRAME_BLEND * (1 - 0.3 * step(length(frontSample), length(previousSample)));
             frontSample = mix(frontSample, previousSample, clamp(weight, 0, 1));
         }
     }
-    // backSample.rgb *= pow(0.95, stride); // Voxel trace distance falloff
+    backSample.rgb *= pow(0.9, stride); // Voxel trace distance falloff
 
     vec4 sampleValue = vec4(0);
     sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
