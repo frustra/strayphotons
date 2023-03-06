@@ -35,6 +35,9 @@
 				"rotate": [90, 0, 1, 0],
 				"scale": [1, 1.5, 2.3]
 			},
+			"signal_bindings": {
+				"door_open": "station-center:elevator.door/door_open"
+			},
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "slide_door" }
@@ -46,19 +49,13 @@
 				"parent": "scoperoot",
 				"translate": [1.95, 1.1, 1]
 			},
+			"event_bindings": {
+				"/button/press": "station-center:elevator.door/set_signal/open_request"
+			},
 			"script": {
 				"prefab": "template",
 				"parameters": {
 					"source": "button"
-				}
-			}
-		},
-		{
-			"name": "button-out.button",
-			"event_bindings": {
-				"/button/press": {
-					"target": "console:input/action/run_command",
-					"set_value": "togglesignal global:ship_airlock.door-out/door_open; wait 300 togglesignal station-center:elevator.door/door_open"
 				}
 			}
 		},

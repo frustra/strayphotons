@@ -1,6 +1,13 @@
 {
 	"components": {
-		"signal_output": {}
+		"signal_output": {},
+		"event_input": {},
+		"script": {
+			"onTick": "signal_from_event",
+			"parameters": {
+				"outputs": "door_open"
+			}
+		}
 	},
 	"entities": [
 		{

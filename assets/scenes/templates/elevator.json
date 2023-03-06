@@ -31,10 +31,24 @@
 			]
 		},
 		"signal_output": {},
-		"event_input": {},
-		"script": {
-			"onTick": "elevator"
+		"signal_bindings": {
+			"at_floor": "scoperoot/at_floor_source && scoperoot/at_floor_delayed",
+			"at_floor_source": "scoperoot/animation_state == 0 || scoperoot/animation_state == 100"
 		},
+		"event_input": {},
+		"script": [
+			{
+				"onTick": "elevator"
+			},
+			{
+				"onTick": "debounce",
+				"parameters": {
+					"delay_ms": 1000,
+					"input": "scoperoot/at_floor_source",
+					"output": "at_floor_delayed"
+				}
+			}
+		],
 		"transform": {
 			"translate": [0, 160, 0]
 		}
@@ -228,10 +242,41 @@
 				"rotate": [90, 0, 1, 0],
 				"scale": [1, 1.5, 2.3]
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "slide_door" }
-			}
+			"event_input": {},
+			"signal_output": {},
+			"signal_bindings": {
+				"door_open": "scoperoot/at_floor && door/open_request"
+			},
+			"event_bindings": {
+				"/clear_signal/open_request": "door/clear_signal/open_request_delayed"
+			},
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "slide_door" }
+				},
+				{
+					"onTick": "signal_from_event",
+					"parameters": {
+						"outputs": ["open_request", "open_request_delayed"]
+					}
+				},
+				{
+					"onTick": "debounce",
+					"parameters": {
+						"delay_ms": 10000,
+						"input": "door/open_request",
+						"output": "open_request_delayed"
+					}
+				},
+				{
+					"onTick": "edge_trigger",
+					"parameters": {
+						"input_expr": "door/open_request && door/open_request_delayed",
+						"output_event": "/clear_signal/open_request"
+					}
+				}
+			]
 		}
 	]
 }

@@ -298,6 +298,7 @@ namespace sp::scripts {
 
     struct DebounceSignal {
         size_t delayFrames = 1;
+        size_t delayMs = 0;
         SignalExpression input;
         std::string output;
 
@@ -305,11 +306,11 @@ namespace sp::scripts {
         size_t frameCount = 0;
 
         template<typename LockType>
-        void updateSignal(LockType lock, Entity ent) {
+        void updateSignal(LockType lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            if (!lastSignal) {
+            if (!lastSignal || !signalOutput.HasSignal(output)) {
                 lastSignal = signalOutput.GetSignal(output);
                 signalOutput.SetSignal(output, *lastSignal);
             }
@@ -320,20 +321,21 @@ namespace sp::scripts {
                 frameCount = 0;
                 lastSignal = currentInput;
             }
-            if (frameCount >= delayFrames) {
+            if (frameCount >= std::max(delayFrames, (size_t)(std::chrono::milliseconds(delayMs) / interval))) {
                 signalOutput.SetSignal(output, currentInput);
             }
         }
 
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateSignal(lock, ent);
+            updateSignal(lock, ent, interval);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateSignal(lock, ent);
+            updateSignal(lock, ent, interval);
         }
     };
     StructMetadata MetadataDebounceSignal(typeid(DebounceSignal),
         StructField::New("delay_frames", &DebounceSignal::delayFrames),
+        StructField::New("delay_ms", &DebounceSignal::delayMs),
         StructField::New("input", &DebounceSignal::input),
         StructField::New("output", &DebounceSignal::output));
     InternalScript<DebounceSignal> debounceSignal("debounce", MetadataDebounceSignal);

@@ -183,12 +183,22 @@
 			}
 		},
 		{
-			"name": "elevator.control.button",
+			"name": "elevator.control",
 			"event_bindings": {
-				"/button/press": {
-					"target": "console:input/action/run_command",
-					"set_value": "setsignal station-center:elevator.door/door_open 0; setsignal global:ship_airlock.door-out/door_open 0; wait 500 togglesignal station-center:elevator/animation_target 0 100; wait 1000 removescene menu"
-				}
+				"/button/press": [
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "wait 500 togglesignal station-center:elevator/animation_target 0 100"
+					},
+					{
+						"target": "elevator.door/set_signal/door_open",
+						"set_value": 0
+					},
+					{
+						"target": "global:ship_airlock.door-out/set_signal/door_open",
+						"set_value": 0
+					}
+				]
 			}
 		},
 		{
@@ -200,10 +210,10 @@
 			"signal_output": {},
 			"trigger_area": "Box",
 			"event_bindings": {
-				"/trigger/object/enter": {
-					"target": "console:input/action/run_command",
-					"set_value": "wait 1000 togglesignal station-center:elevator.door/door_open; wait 1100 togglesignal blackhole1:elevator_door/door_open"
-				}
+				"/trigger/object/enter": [
+					"elevator.door/toggle_signal/door_open",
+					"blackhole1:elevator_door/toggle_signal/door_open"
+				]
 			}
 		},
 		{

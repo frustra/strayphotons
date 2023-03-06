@@ -1,27 +1,26 @@
 {
+	"components": {
+		"transform": {},
+		"sound": [{
+			"file": "click1.ogg",
+			"volume": 0.3
+		}, {
+			"file": "click2.ogg",
+			"volume": 0.4
+		}],
+		"event_input": {},
+		"signal_bindings": {
+			"button_pressed": "button_body/trigger_object_count > 0"
+		}
+	},
 	"entities": [
-		{
-			"name": "button",
-			"transform": {},
-			"sound": [{
-				"file": "click1.ogg",
-				"volume": 0.3
-			}, {
-				"file": "click2.ogg",
-				"volume": 0.4
-			}],
-			"event_input": {},
-			"signal_bindings": {
-				"button_pressed": "button_body/trigger_object_count > 0"
-			}
-		},
 		{
 			"name": "button_body",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
-				"parent": "button",
+				"parent": "scoperoot",
 				"translate": [-0.05, 0, 0],
 				"scale": [0.1, 0.1, 0.1]
 			},
@@ -39,11 +38,11 @@
 			"signal_output": {},
 			"event_bindings": {
 				"/trigger/object/enter": [
-					"button/button/press",
-					"button/sound/play"
+					"scoperoot/button/press",
+					"scoperoot/sound/play"
 				],
 				"/trigger/object/leave": {
-					"target": "button/sound/play",
+					"target": "scoperoot/sound/play",
 					"set_value": 1
 				}
 			}
@@ -122,7 +121,7 @@
 				"model": "box"
 			},
 			"transform": {
-				"parent": "button",
+				"parent": "scoperoot",
 				"translate": [-0.125, 0, 0],
 				"scale": [0.05, 0.05, 0.05]
 			},
@@ -137,7 +136,7 @@
 				"mass": 0.01
 			},
 			"physics_joints": [{
-				"target": "button",
+				"target": "scoperoot",
 				"type": "Slider",
 				"remote_offset": {
 					"translate": [-0.125, 0, 0]

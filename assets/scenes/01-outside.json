@@ -55,10 +55,16 @@
 				"in_signal": "sensor1/value"
 			},
 			"event_bindings": {
-				"/trigger/player/enter": {
-					"target": "console:input/action/run_command",
-					"set_value": "setsignal global:airlock1-2.door-in/door_open 0; addscene 02-mirrors"
-				}
+				"/trigger/player/enter": [
+					{
+						"target": "global:airlock1-2.door-in/set_signal/door_open",
+						"set_value": 0
+					},
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "addscene 02-mirrors"
+					}
+				]
 			},
 			"script": {
 				"prefab": "template",
