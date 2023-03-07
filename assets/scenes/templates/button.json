@@ -9,8 +9,12 @@
 			"volume": 0.4
 		}],
 		"event_input": {},
+		"signal_output": {
+			"light_enable": 0
+		},
 		"signal_bindings": {
-			"button_pressed": "button_body/trigger_object_count > 0"
+			"button_pressed": "button_body/trigger_object_count > 0",
+			"light": "scoperoot/light_enable || scoperoot/button_pressed"
 		}
 	},
 	"entities": [
@@ -144,7 +148,13 @@
 				"limit": [-0.04, 0]
 			}],
 			"signal_output": {},
-			"trigger_group": "Object"
+			"trigger_group": "Object",
+			"script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable#emissive": "scoperoot/light"
+				}
+			}
 		}
 	]
 }

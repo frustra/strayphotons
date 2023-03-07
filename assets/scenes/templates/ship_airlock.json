@@ -49,15 +49,34 @@
 				"parent": "scoperoot",
 				"translate": [1.95, 1.1, 1]
 			},
+			"signal_output": {},
 			"event_bindings": {
-				"/button/press": "station-center:elevator.door/set_signal/open_request"
+				"/button/press": [
+					"station-center:elevator.door/set_signal/open_request",
+					"button-out/set_signal/light_enable"
+				]
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": {
-					"source": "button"
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": {
+						"source": "button"
+					}
+				},
+				{
+					"onTick": "signal_from_event",
+					"parameters": {
+						"outputs": ["light_enable"]
+					}
+				},
+				{
+					"onTick": "edge_trigger", 
+					"parameters": {
+						"input_expr": "button-out/light_enable && door-out/door_open && door-out.left-panel/animation_state == 1",
+						"output_event": "/clear_signal/light_enable"
+					}
 				}
-			}
+			]
 		},
 		{
 			"name": "floor",

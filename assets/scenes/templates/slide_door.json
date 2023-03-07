@@ -27,7 +27,7 @@
 				{
 					"onTick": "edge_trigger",
 					"parameters": {
-						"input_expr": "scoperoot/door_open && ceil(left-panel/animation_state)",
+						"input_expr": "scoperoot/door_open && left-panel/animation_state != 0",
 						"output_event": "/sound/play"
 					}
 				}
@@ -61,7 +61,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open || ceil(left-panel/animation_state)"
+				"animation_target": "scoperoot/door_open || left-panel/animation_state != 0"
 			},
 			"signal_output": {
 			}
@@ -84,7 +84,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open && floor(lock/animation_state)"
+				"animation_target": "scoperoot/door_open && lock/animation_state == 1"
 			},
 			"signal_output": {
 			},
@@ -118,7 +118,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open && floor(lock/animation_state)"
+				"animation_target": "scoperoot/door_open && lock/animation_state == 1"
 			},
 			"signal_output": {
 			},
