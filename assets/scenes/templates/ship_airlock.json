@@ -36,7 +36,7 @@
 				"scale": [1, 1.5, 2.3]
 			},
 			"signal_bindings": {
-				"door_open": "station-center:elevator.door/door_open"
+				"door_open": "station-center:elevator.door/door_open && station-center:elevator/animation_state == 0"
 			},
 			"script": {
 				"prefab": "template",
@@ -50,30 +50,17 @@
 				"translate": [1.95, 1.1, 1]
 			},
 			"signal_output": {},
+			"signal_bindings": {
+				"light": "button-out/button_pressed || station-center:elevator/up_requested"
+			},
 			"event_bindings": {
-				"/button/press": [
-					"station-center:elevator.door/set_signal/open_request",
-					"button-out/set_signal/light_enable"
-				]
+				"/button/press": "station-center:elevator/elevator/request_up"
 			},
 			"script": [
 				{
 					"prefab": "template",
 					"parameters": {
 						"source": "button"
-					}
-				},
-				{
-					"onTick": "signal_from_event",
-					"parameters": {
-						"outputs": ["light_enable"]
-					}
-				},
-				{
-					"onTick": "edge_trigger", 
-					"parameters": {
-						"input_expr": "button-out/light_enable && door-out/door_open && door-out.left-panel/animation_state == 1",
-						"output_event": "/clear_signal/light_enable"
 					}
 				}
 			]
@@ -155,8 +142,8 @@
 			},
 			"light": {
 				"tint": [0.5, 0.5, 1],
-				"intensity": 300,
-				"spotAngle": 60
+				"intensity": 100,
+				"spotAngle": 50
 			},
 			"script": {
 				"prefab": "template",

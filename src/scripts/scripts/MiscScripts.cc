@@ -19,6 +19,10 @@ namespace sp::scripts {
         std::string inputExpr;
         std::string outputName = "/script/edge_trigger";
 
+        bool noFalling = false;
+        bool noRising = false;
+        std::optional<SignalExpression> eventValue;
+
         // Internal script state
         SignalExpression expr;
         double previousValue;
@@ -30,17 +34,30 @@ namespace sp::scripts {
             }
 
             auto value = expr.Evaluate(lock);
+
+            Event outputEvent;
+            outputEvent.name = outputName;
+            outputEvent.source = ent;
+            if (eventValue) {
+                outputEvent.data = eventValue->Evaluate(lock);
+            } else {
+                outputEvent.data = value >= 0.5;
+            }
+
             if (value >= 0.5 && previousValue < 0.5) {
-                EventBindings::SendEvent(lock, ent, Event{outputName, ent, true});
+                if (!noRising) EventBindings::SendEvent(lock, ent, outputEvent);
             } else if (value < 0.5 && previousValue >= 0.5) {
-                EventBindings::SendEvent(lock, ent, Event{outputName, ent, false});
+                if (!noFalling) EventBindings::SendEvent(lock, ent, outputEvent);
             }
             previousValue = value;
         }
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
-        StructField::New("output_event", &EdgeTrigger::outputName));
+        StructField::New("output_event", &EdgeTrigger::outputName),
+        StructField::New("no_falling", &EdgeTrigger::noFalling),
+        StructField::New("no_rising", &EdgeTrigger::noRising),
+        StructField::New("set_event_value", &EdgeTrigger::eventValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
 
     struct ModelSpawner {
@@ -340,4 +357,65 @@ namespace sp::scripts {
         StructField::New("output", &DebounceSignal::output));
     InternalScript<DebounceSignal> debounceSignal("debounce", MetadataDebounceSignal);
     InternalPhysicsScript<DebounceSignal> physicsDebounceSignal("physics_debounce", MetadataDebounceSignal);
+
+    struct TimerSignal {
+        std::vector<std::string> names = {"timer"};
+
+        template<typename LockType>
+        void updateTimer(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<SignalOutput>(lock) || names.empty()) return;
+            state.definition.events.clear();
+            for (auto &name : names) {
+                state.definition.events.emplace_back("/reset_timer/" + name);
+            }
+
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
+            for (auto &name : names) {
+                double timerValue = SignalBindings::GetSignal(lock, ent, name);
+                bool timerEnable = SignalBindings::GetSignal(lock, ent, name + "_enable") >= 0.5;
+                if (timerEnable) {
+                    timerValue += interval.count() / 1e9;
+                    signalOutput.SetSignal(name, timerValue);
+                }
+            }
+
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                double eventValue = std::visit(
+                    [](auto &&arg) {
+                        using T = std::decay_t<decltype(arg)>;
+
+                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                            return (double)arg;
+                        } else {
+                            return 0.0;
+                        }
+                    },
+                    event.data);
+
+                if (!sp::starts_with(event.name, "/reset_timer/")) {
+                    Errorf("Unexpected event received by component_from_event: %s", event.name);
+                    continue;
+                }
+
+                auto timerName = event.name.substr("/reset_timer/"s.size());
+                if (timerName.empty() || !sp::contains(names, timerName)) {
+                    Errorf("Unexpected event received by component_from_event: %s", event.name);
+                    continue;
+                }
+
+                signalOutput.SetSignal(timerName, eventValue);
+            }
+        }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateTimer(state, lock, ent, interval);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateTimer(state, lock, ent, interval);
+        }
+    };
+    StructMetadata MetadataTimerSignal(typeid(TimerSignal), StructField::New("names", &TimerSignal::names));
+    InternalScript<TimerSignal> timerScript("timer", MetadataTimerSignal);
+    InternalPhysicsScript<TimerSignal> physicsTimerScript("physics_timer", MetadataTimerSignal);
 } // namespace sp::scripts

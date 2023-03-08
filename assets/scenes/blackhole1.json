@@ -179,6 +179,9 @@
 				"scale": [1, 1.5, 2.3],
 				"translate": [0, 0.1, 2.4]
 			},
+			"signal_bindings": {
+				"door_open": "station-center:elevator.door/door_open && station-center:elevator/animation_state == 3"
+			},
 			"script": {
 				"parameters": {
 					"source": "slide_door"

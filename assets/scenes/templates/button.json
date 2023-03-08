@@ -9,12 +9,9 @@
 			"volume": 0.4
 		}],
 		"event_input": {},
-		"signal_output": {
-			"light_enable": 0
-		},
 		"signal_bindings": {
 			"button_pressed": "button_body/trigger_object_count > 0",
-			"light": "scoperoot/light_enable || scoperoot/button_pressed"
+			"light": "scoperoot/button_pressed"
 		}
 	},
 	"entities": [
