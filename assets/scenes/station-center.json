@@ -19,7 +19,7 @@
 			"signal_output": {},
 			"transform": {
 				"scale": [5, 164, 6],
-				"translate": [0, 82, -0.5]
+				"translate": [0, 82, 0.7]
 			},
 			"script": {
 				"prefab": "template",
@@ -32,7 +32,7 @@
 			"signal_output": {},
 			"transform": {
 				"scale": [20, 40, 20],
-				"translate": [0, 19, 0]
+				"translate": [0, 19, 1.2]
 			},
 			"script": {
 				"prefab": "template",
@@ -43,7 +43,7 @@
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [0, 160.05, -5],
+				"translate": [0, 160.05, -3.8],
 				"rotate": [180, 0, 1, 0]
 			}
 		},
@@ -54,7 +54,7 @@
 			},
 			"transform": {
 				"scale": [320, 1, 1],
-				"translate": [0, 160, 2]
+				"translate": [0, 160, 3.2]
 			},
 			"physics": {
 				"shapes": {
@@ -70,7 +70,7 @@
 			},
 			"transform": {
 				"scale": [320, 1, 1],
-				"translate": [0, 160, 2],
+				"translate": [0, 160, 3.2],
 				"rotate": [45, 0, 0, 1]
 			},
 			"physics": {
@@ -87,7 +87,7 @@
 			},
 			"transform": {
 				"scale": [320, 5.2, 0.1],
-				"translate": [0, 160, 1.55],
+				"translate": [0, 160, 2.75],
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
@@ -104,7 +104,7 @@
 			},
 			"transform": {
 				"scale": [5.2, 153.9, 0.1],
-				"translate": [0, 82.95, -3.55]
+				"translate": [0, 82.95, -2.35]
 			},
 			"physics": {
 				"shapes": {
@@ -120,7 +120,7 @@
 			},
 			"transform": {
 				"scale": [0.1, 160, 5],
-				"translate": [2.55, 86, -1]
+				"translate": [2.55, 86, 0.2]
 			},
 			"physics": {
 				"shapes": {
@@ -136,7 +136,7 @@
 			},
 			"transform": {
 				"scale": [0.1, 160, 5],
-				"translate": [-2.55, 86, -1]
+				"translate": [-2.55, 86, 0.2]
 			},
 			"physics": {
 				"shapes": {
@@ -152,7 +152,7 @@
 			},
 			"transform": {
 				"scale": [320, 1, 1],
-				"translate": [0, 160, 2],
+				"translate": [0, 160, 3.2],
 				"rotate": [-45, 0, 0, 1]
 			},
 			"physics": {
@@ -165,7 +165,7 @@
 		{
 			"name": "global:ship_airlock",
 			"transform": {
-				"translate": [0, 160, -5.1]
+				"translate": [0, 160, -3.9]
 			},
 			"scene_connection": {
 				"station-center": "elevator_zone/trigger_player_count"
@@ -177,6 +177,9 @@
 		},
 		{
 			"name": "elevator",
+			"transform": {
+				"translate": [0, 160, 0]
+			},
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "elevator" }
@@ -191,14 +194,14 @@
 				"shadowMapClip": [0.01, 50]
 			},
 			"transform": {
-				"translate": [-4.8, 165.5, -2.7],
+				"translate": [-4.8, 165.5, -1.5],
 				"rotate": [-130, 1, 1, 0]
 			}
 		},
 		{
 			"name": "global:transition1-center",
 			"transform": {
-				"translate": [0, 0, 0]
+				"translate": [0, 0, 1.2]
 			},
 			"scene_connection": {
 				"blackhole1": "transition_zone/trigger_player_count"

@@ -196,7 +196,7 @@
 				"translate": [0, 0, -1]
 			},
 			"scene_connection": {
-				"station-center": "zone/trigger_player_count"
+				"station-center": "zone/trigger_player_count || elevator_door.lock/animation_state != 0"
 			}
 		},
 		{

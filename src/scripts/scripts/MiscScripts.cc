@@ -19,8 +19,8 @@ namespace sp::scripts {
         std::string inputExpr;
         std::string outputName = "/script/edge_trigger";
 
-        bool noFalling = false;
-        bool noRising = false;
+        bool enableFalling = true;
+        bool enableRising = true;
         std::optional<SignalExpression> eventValue;
 
         // Internal script state
@@ -45,9 +45,9 @@ namespace sp::scripts {
             }
 
             if (value >= 0.5 && previousValue < 0.5) {
-                if (!noRising) EventBindings::SendEvent(lock, ent, outputEvent);
+                if (enableRising) EventBindings::SendEvent(lock, ent, outputEvent);
             } else if (value < 0.5 && previousValue >= 0.5) {
-                if (!noFalling) EventBindings::SendEvent(lock, ent, outputEvent);
+                if (enableFalling) EventBindings::SendEvent(lock, ent, outputEvent);
             }
             previousValue = value;
         }
@@ -55,8 +55,8 @@ namespace sp::scripts {
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
         StructField::New("output_event", &EdgeTrigger::outputName),
-        StructField::New("no_falling", &EdgeTrigger::noFalling),
-        StructField::New("no_rising", &EdgeTrigger::noRising),
+        StructField::New("falling_edge", &EdgeTrigger::enableFalling),
+        StructField::New("rising_edge", &EdgeTrigger::enableRising),
         StructField::New("set_event_value", &EdgeTrigger::eventValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
 

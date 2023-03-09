@@ -71,7 +71,7 @@
 				"parameters": {
 					"input_expr": "scoperoot/animation_complete && scoperoot/animation_target != scoperoot/requested_floor && door.lock/animation_state == 0",
 					"output_event": "/set_signal/animation_target",
-					"no_falling": true,
+					"falling_edge": false,
 					"set_event_value": "scoperoot/requested_floor"
 				}
 			}
@@ -88,8 +88,8 @@
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, -0.25, -1],
-				"scale": [4.2, 0.5, 4]
+				"translate": [0, -0.25, 1.25],
+				"scale": [2.8, 0.5, 2.5]
 			},
 			"physics": {
 				"shapes": {
@@ -105,8 +105,8 @@
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 4.15, -1],
-				"scale": [4.2, 0.5, 4]
+				"translate": [0, 3.15, 1.25],
+				"scale": [2.8, 0.5, 2.5]
 			},
 			"physics": {
 				"shapes": {
@@ -116,14 +116,14 @@
 			}
 		},
 		{
-			"name": "right_front_wall",
+			"name": "wall_left_front",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [2, 2, -2.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [1.35, 1.5, 0.575],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -133,14 +133,14 @@
 			}
 		},
 		{
-			"name": "right_back_wall",
+			"name": "wall_left_back",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [2, 2, 0.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [1.35, 1.5, 1.925],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -150,14 +150,14 @@
 			}
 		},
 		{
-			"name": "left_front_wall",
+			"name": "wall_right_front",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [-2, 2, -2.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [-1.35, 1.5, 0.575],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -167,14 +167,14 @@
 			}
 		},
 		{
-			"name": "left_back_wall",
+			"name": "wall_right_back",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [-2, 2, 0.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [-1.35, 1.5, 1.925],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -184,14 +184,14 @@
 			}
 		},
 		{
-			"name": "back_left_wall",
+			"name": "wall_back_right",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [-1.07, 2, 0.9],
-				"scale": [1.85, 4, 0.2]
+				"translate": [-0.7, 1.5, 2.45],
+				"scale": [1.2, 3, 0.1]
 			},
 			"physics": {
 				"shapes": {
@@ -201,14 +201,65 @@
 			}
 		},
 		{
-			"name": "back_right_wall",
+			"name": "wall_back_left",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [1.07, 2, 0.9],
-				"scale": [1.85, 4, 0.2]
+				"translate": [0.7, 1.5, 2.45],
+				"scale": [1.2, 3, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "wall_front_left",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [1.07075, 1.5, 0.05],
+				"scale": [0.4585, 3, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "wall_front_right",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [-1.07075, 1.5, 0.05],
+				"scale": [0.4585, 3, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "wall_front_top",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 2.787, 0.05],
+				"scale": [1.683, 0.426, 0.1]
 			},
 			"physics": {
 				"shapes": {
@@ -225,8 +276,8 @@
 			"laser_line": {
 				"color": [0, 0, 1],
 				"points": [
-					[-1.95, 1.5, -2.9],
-					[1.95, 1.5, -2.9]
+					[-0.8, 1.5, 0],
+					[0.8, 1.5, 0]
 				]
 			}
 		},
@@ -234,7 +285,7 @@
 			"name": "light",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 3.85, -1],
+				"translate": [0, 2.85, 1.25],
 				"rotate": [[270, 1, 0, 0]]
 			},
 			"light": {
@@ -251,9 +302,9 @@
 			"name": "door",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.0, -2.9],
+				"translate": [0, 0, 0.05],
 				"rotate": [90, 0, 1, 0],
-				"scale": [1, 1.5, 2.3]
+				"scale": [0.44, 1, 1]
 			},
 			"event_input": {},
 			"signal_output": {},
@@ -279,7 +330,8 @@
 			"name": "up_button",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [1.95, 1.2, -2]
+				"translate": [1.07075, 1.2, 0.1],
+				"rotate": [90, 0, 1, 0]
 			},
 			"signal_bindings": {
 				"light": "up_button/button_pressed || scoperoot/up_requested"
@@ -298,7 +350,8 @@
 			"name": "down_button",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [1.95, 1.08, -2]
+				"translate": [1.07075, 1.08, 0.1],
+				"rotate": [90, 0, 1, 0]
 			},
 			"signal_bindings": {
 				"light": "down_button/button_pressed || scoperoot/down_requested"
