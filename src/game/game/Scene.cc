@@ -265,6 +265,11 @@ namespace sp {
                 scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, e, resetLive);
             }
         }
+        for (auto e : live.EntitiesWith<ecs::Animation>()) {
+            if (!e.Has<ecs::Animation, ecs::TransformTree>(live)) continue;
+
+            ecs::Animation::UpdateTransform(live, e);
+        }
         for (auto e : live.EntitiesWith<ecs::TransformTree>()) {
             if (!e.Has<ecs::TransformTree>(live)) continue;
 

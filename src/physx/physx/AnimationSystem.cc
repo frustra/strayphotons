@@ -9,14 +9,6 @@
 namespace sp {
     AnimationSystem::AnimationSystem(PhysxManager &manager) : frameInterval(manager.interval.count() / 1e9) {}
 
-    double AnimationSystem::RoundToFrameInterval(double value) const {
-        return frameInterval * std::round(value / frameInterval);
-    }
-
-    static bool isNormal(glm::vec3 scale) {
-        return std::isnormal(scale.x) && std::isnormal(scale.y) && std::isnormal(scale.z);
-    }
-
     void AnimationSystem::Frame(ecs::Lock<ecs::ReadSignalsLock, ecs::Write<ecs::Animation, ecs::TransformTree>> lock) {
         ZoneScoped;
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
@@ -25,78 +17,20 @@ namespace sp {
             auto &animation = ent.Get<ecs::Animation>(lock);
             if (animation.states.empty()) continue;
 
-            auto &transform = ent.Get<ecs::TransformTree>(lock);
+            double targetState = ecs::SignalBindings::GetSignal(lock, ent, "animation_target");
+            auto state = animation.GetCurrNextState(targetState);
+            if (targetState != animation.currentState) {
+                auto &next = animation.states[state.next];
 
-            double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_target");
-            size_t newTargetState = (size_t)(signalState + 0.5);
-            if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
-
-            animation.currentState = std::clamp<size_t>(animation.currentState, 0, animation.states.size() - 1);
-            animation.targetState = std::clamp<size_t>(animation.targetState, 0, animation.states.size() - 1);
-            if (animation.targetState != newTargetState) {
-                auto oldNextState = animation.currentState + animation.PlayDirection();
-                animation.currentState = oldNextState;
-                animation.targetState = newTargetState;
-
-                auto newNextState = animation.currentState + animation.PlayDirection();
-                auto oldCompletion = 1.0 - animation.timeUntilNextState /
-                                               RoundToFrameInterval(animation.states[oldNextState].delay);
-                animation.timeUntilNextState = oldCompletion *
-                                               RoundToFrameInterval(animation.states[newNextState].delay);
-            }
-
-            if (animation.targetState == animation.currentState) continue;
-
-            Assert(animation.targetState < animation.states.size(), "invalid target state");
-            Assert(animation.currentState < animation.states.size(), "invalid current state");
-
-            auto playDirection = animation.PlayDirection();
-            auto nextStateIndex = animation.currentState + playDirection;
-            auto &currentState = animation.states[animation.currentState];
-            auto &nextState = animation.states[nextStateIndex];
-
-            double duration = RoundToFrameInterval(nextState.delay);
-            if (animation.timeUntilNextState <= 0) animation.timeUntilNextState = duration;
-            animation.timeUntilNextState -= frameInterval;
-            animation.timeUntilNextState = std::max(animation.timeUntilNextState, 0.0);
-
-            float completion = 1.0 - animation.timeUntilNextState / duration;
-            if (animation.interpolation == ecs::InterpolationMode::Linear) {
-                glm::vec3 dPos = nextState.pos - currentState.pos;
-                transform.pose.SetPosition(currentState.pos + completion * dPos);
-
-                glm::vec3 dScale = nextState.scale - currentState.scale;
-                if (isNormal(dScale)) transform.pose.SetScale(currentState.scale + completion * dScale);
-            } else if (animation.interpolation == ecs::InterpolationMode::Cubic) {
-                float tangentScale = playDirection * duration;
-
-                auto t = completion;
-                auto t2 = t * t;
-                auto t3 = t2 * t;
-                auto av1 = 2 * t3 - 3 * t2 + 1;
-                auto at1 = tangentScale * (t3 - 2 * t2 + t);
-                auto av2 = -2 * t3 + 3 * t2;
-                auto at2 = tangentScale * (t3 - t2);
-
-                auto pos = av1 * currentState.pos + at1 * currentState.tangentPos + av2 * nextState.pos +
-                           at2 * nextState.tangentPos;
-                transform.pose.SetPosition(pos);
-
-                auto scale = av1 * currentState.scale + at1 * currentState.tangentScale + av2 * nextState.scale +
-                             at2 * nextState.tangentScale;
-                if (isNormal(scale)) transform.pose.SetScale(scale);
-            }
-
-            if (animation.timeUntilNextState == 0) {
-                animation.currentState = nextStateIndex;
-                if (animation.interpolation == ecs::InterpolationMode::Step ||
-                    animation.targetState == nextStateIndex) {
-                    transform.pose.SetPosition(nextState.pos);
-                    if (isNormal(nextState.scale)) transform.pose.SetScale(nextState.scale);
+                double frameDelta = frameInterval / std::max(next.delay, frameInterval);
+                if (frameDelta >= std::abs(targetState - animation.currentState)) {
+                    animation.currentState = targetState;
+                } else {
+                    animation.currentState += state.direction * frameDelta;
                 }
             }
 
-            animation.realState = animation.currentState + completion * animation.PlayDirection();
+            ecs::Animation::UpdateTransform(lock, ent);
         }
     }
 
@@ -105,8 +39,8 @@ namespace sp {
             if (!ent.Has<ecs::Animation, ecs::SignalOutput>(lock)) continue;
             const auto &anim = ent.Get<ecs::Animation>(lock);
 
-            if (ent.Get<const ecs::SignalOutput>(lock).GetSignal("animation_state") != anim.realState) {
-                ent.Get<ecs::SignalOutput>(lock).SetSignal("animation_state", anim.realState);
+            if (ent.Get<const ecs::SignalOutput>(lock).GetSignal("animation_state") != anim.currentState) {
+                ent.Get<ecs::SignalOutput>(lock).SetSignal("animation_state", anim.currentState);
             }
         }
     }

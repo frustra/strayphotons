@@ -14,8 +14,6 @@ namespace sp {
         void UpdateSignals(ecs::Lock<ecs::Read<ecs::Animation>, ecs::Write<ecs::SignalOutput>> lock);
 
     private:
-        double RoundToFrameInterval(double value) const;
-
         const double frameInterval;
     };
 } // namespace sp
