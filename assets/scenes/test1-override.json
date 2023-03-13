@@ -112,7 +112,7 @@
 		{
 			"light": {
 				"tint": [0.1, 0.1, 1],
-				"intensity": 300,
+				"intensity": 400,
 				"spotAngle": 5
 			},
 			"transform": {
