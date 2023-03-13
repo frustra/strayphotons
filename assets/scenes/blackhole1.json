@@ -92,8 +92,8 @@
 		{
 			"name": "elevator-frame3",
 			"transform": {
-				"scale": [5, 2.1, 0.4],
-				"translate": [0, 4.95, 2.4]
+				"scale": [5, 1, 2.4],
+				"translate": [0, 5.5, 1.4]
 			},
 			"renderable": {
 				"model": "box"
@@ -173,14 +173,31 @@
 			}
 		},
 		{
-			"name": "elevator_door",
+			"name": "elevator_door1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"scale": [1, 1.5, 2.3],
-				"translate": [0, 0.1, 2.4]
+				"scale": [0.44, 1, 1],
+				"translate": [-1.45, 0.1, 0.2]
 			},
 			"signal_bindings": {
-				"door_open": "station-center:elevator.door/door_open && station-center:elevator/animation_state == 3"
+				"door_open": "station-center:elevator1.door/door_open && station-center:elevator1/animation_state == 3"
+			},
+			"script": {
+				"parameters": {
+					"source": "slide_door"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "elevator_door2",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"scale": [0.44, 1, 1],
+				"translate": [1.45, 0.1, 0.2]
+			},
+			"signal_bindings": {
+				"door_open": "station-center:elevator2.door/door_open && station-center:elevator2/animation_state == 3"
 			},
 			"script": {
 				"parameters": {

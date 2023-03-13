@@ -88,6 +88,7 @@
 					"onTick": "vr_hand",
 					"parameters": {
 						"hand": "left",
+						"noclip_entity": "player:player",
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
 						"force_limit": 100.0,
@@ -122,6 +123,7 @@
 					"onTick": "vr_hand",
 					"parameters": {
 						"hand": "right",
+						"noclip_entity": "player:player",
 						"teleport_distance": 2.0,
 						"point_distance": 2.0,
 						"force_limit": 100.0,

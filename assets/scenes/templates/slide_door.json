@@ -21,7 +21,7 @@
 					"parameters": {
 						"model": "door-frame",
 						"render": true,
-						"physics": "Static"
+						"physics": "Kinematic"
 					}
 				},
 				{
@@ -92,7 +92,7 @@
 				"shapes": {
 					"model": "door-panel"
 				},
-				"type": "Static"
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -126,7 +126,7 @@
 				"shapes": {
 					"model": "door-panel"
 				},
-				"type": "Static"
+				"type": "Kinematic"
 			}
 		}		
 	]

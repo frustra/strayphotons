@@ -66,6 +66,7 @@ namespace sp::scripts {
     struct VrHandScript {
         // Input parameters
         std::string handStr;
+        EntityRef noclipEntity;
         float teleportDistance = 2.0f;
         float pointDistance = 2.0f;
         float forceLimit = 100.0f;
@@ -252,6 +253,28 @@ namespace sp::scripts {
             }
         }
 
+        void UpdateGrabTarget(Lock<Write<PhysicsJoints>> lock, Entity newGrabEntity) {
+            auto noclipEnt = noclipEntity.Get(lock);
+            if (!noclipEnt.Has<PhysicsJoints>(lock)) return;
+            auto &joints = noclipEnt.Get<PhysicsJoints>(lock);
+            PhysicsJoint joint;
+            joint.type = PhysicsJointType::NoClip;
+            joint.target = grabEntity;
+            if (newGrabEntity == grabEntity) {
+                joints.Add(joint);
+            } else {
+                auto it = std::find(joints.joints.begin(), joints.joints.end(), joint);
+                if (it != joints.joints.end()) {
+                    it->type = PhysicsJointType::TemporaryNoClip;
+                }
+                if (newGrabEntity) {
+                    joint.target = newGrabEntity;
+                    joints.Add(joint);
+                }
+                grabEntity = newGrabEntity;
+            }
+        }
+
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
@@ -367,7 +390,7 @@ namespace sp::scripts {
             if (grabEntity && grabEntity != grabTarget) {
                 // Drop the currently held entity
                 EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
-                grabEntity = {};
+                UpdateGrabTarget(lock, {});
             }
             if (grabTarget && grabTarget != grabEntity) {
                 // Grab the entity being overlapped
@@ -375,7 +398,7 @@ namespace sp::scripts {
                 if (EventBindings::SendEvent(lock,
                         grabTarget,
                         Event{INTERACT_EVENT_INTERACT_GRAB, ent, globalTransform}) > 0) {
-                    grabEntity = grabTarget;
+                    UpdateGrabTarget(lock, grabTarget);
                 }
             }
 
@@ -408,7 +431,8 @@ namespace sp::scripts {
         StructField::New("teleport_distance", &VrHandScript::teleportDistance),
         StructField::New("point_distance", &VrHandScript::pointDistance),
         StructField::New("force_limit", &VrHandScript::forceLimit),
-        StructField::New("torque_limit", &VrHandScript::torqueLimit));
+        StructField::New("torque_limit", &VrHandScript::torqueLimit),
+        StructField::New("noclip_entity", &VrHandScript::noclipEntity));
     InternalPhysicsScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
         false,
