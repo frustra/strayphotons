@@ -18,7 +18,7 @@
 			"name": "elevator_zone",
 			"signal_output": {},
 			"transform": {
-				"scale": [5, 164, 6],
+				"scale": [6, 164, 6],
 				"translate": [0, 82, 0.7]
 			},
 			"script": {
@@ -83,7 +83,8 @@
 		{
 			"name": "spoke3",
 			"renderable": {
-				"model": "box"
+				"model": "box",
+				"visibility": ""
 			},
 			"transform": {
 				"scale": [320, 5.2, 0.1],
@@ -120,7 +121,7 @@
 			},
 			"transform": {
 				"scale": [0.1, 160, 5],
-				"translate": [2.55, 86, 0.2]
+				"translate": [3.05, 86, 0.2]
 			},
 			"physics": {
 				"shapes": {
@@ -136,7 +137,7 @@
 			},
 			"transform": {
 				"scale": [0.1, 160, 5],
-				"translate": [-2.55, 86, 0.2]
+				"translate": [-3.05, 86, 0.2]
 			},
 			"physics": {
 				"shapes": {
@@ -176,9 +177,18 @@
 			}
 		},
 		{
-			"name": "elevator",
+			"name": "left_elevator",
 			"transform": {
-				"translate": [0, 160, 0]
+				"translate": [1.45, 0, 0.07]
+			}
+		},
+		{
+			"name": "elevator1",
+			"transform": {
+				"parent": "left_elevator"
+			},
+			"signal_bindings": {
+				"requested_floor": "elevator1/down_requested ? 3 : (elevator1/up_requested ? 0 : 3 - elevator2/animation_target)"
 			},
 			"script": {
 				"prefab": "template",
@@ -186,16 +196,173 @@
 			}
 		},
 		{
-			"light": {
-				"tint": [1, 0.5, 0.5],
-				"intensity": 300,
-				"spotAngle": 50,
-				"shadowMapSize": 10,
-				"shadowMapClip": [0.01, 50]
+			"name": "left_door",
+			"transform": {
+				"translate": [1.45, 160, -0.05],
+				"rotate": [90, 0, 1, 0],
+				"scale": [0.44, 1, 1]
+			},
+			"signal_bindings": {
+				"door_open": "elevator1.door/door_open && elevator1/animation_state == 0"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "right_elevator",
+			"transform": {
+				"translate": [-1.45, 0, 0.07]
+			}
+		},
+		{
+			"name": "elevator2",
+			"transform": {
+				"parent": "right_elevator"
+			},
+			"signal_bindings": {
+				"requested_floor": "elevator2/down_requested ? 3 : (elevator2/up_requested ? 0 : 3 - elevator1/animation_target)"
+			},
+			"signal_output": {
+				"animation_target": 3
+			},
+			"animation": {
+				"state": 3
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "elevator" }
+			}
+		},
+		{
+			"name": "right_door",
+			"transform": {
+				"translate": [-1.45, 160, -0.05],
+				"rotate": [90, 0, 1, 0],
+				"scale": [0.44, 1, 1]
+			},
+			"signal_bindings": {
+				"door_open": "elevator2.door/door_open && elevator2/animation_state == 0"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "center_wall",
+			"renderable": {
+				"model": "box"
 			},
 			"transform": {
-				"translate": [-4.8, 165.5, -1.5],
-				"rotate": [-130, 1, 1, 0]
+				"scale": [1.215, 2.6, 0.1],
+				"translate": [0, 161.3, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "call_button",
+			"transform": {
+				"translate": [0, 161.3, -0.1],
+				"rotate": [90, 0, -1, 0]
+			},
+			"signal_output": {},
+			"signal_bindings": {
+				"light": "call_button/button_pressed || elevator1/up_requested || elevator2/up_requested"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "call_signal1",
+			"event_bindings": {
+				"/elevator/call": "elevator1/elevator/request_up"
+			},
+			"signal_bindings": {
+				"is_closest": "elevator1/animation_target < elevator2/animation_target || (elevator1/animation_target == elevator2/animation_target && elevator1/animation_state < elevator2/animation_state)"
+			},
+			"script": {
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "call_button/button_pressed && call_signal1/is_closest",
+					"output_event": "/elevator/call",
+					"falling_edge": false
+				}
+			}
+		},
+		{
+			"name": "call_signal2",
+			"event_bindings": {
+				"/elevator/call": "elevator2/elevator/request_up"
+			},
+			"signal_bindings": {
+				"is_closest": "elevator2/animation_target < elevator1/animation_target || (elevator1/animation_target == elevator2/animation_target && elevator2/animation_state < elevator1/animation_state)"
+			},
+			"script": {
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "call_button/button_pressed && call_signal2/is_closest",
+					"output_event": "/elevator/call",
+					"falling_edge": false
+				}
+			}
+		},
+		{
+			"name": "left_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [0.8, 2.6, 0.1],
+				"translate": [2.69, 161.3, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "right_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [0.8, 2.6, 0.1],
+				"translate": [-2.69, 161.3, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "top_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [6, 1.4, 0.1],
+				"translate": [0, 163.25, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
 			}
 		},
 		{

@@ -39,6 +39,8 @@ namespace sp::scene {
                         // Ignore, this is handled by the scene
                     } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
                         // Ignore, this is handled by TransformTree
+                    } else if constexpr (std::is_same_v<T, Animation>) {
+                        // Ignore, this is handled bellow and depends on the final TransformTree
                     } else if constexpr (std::is_same_v<T, SceneProperties>) {
                         auto &component = std::get<std::optional<SceneProperties>>(flatEntity);
                         if (!component) {
@@ -75,26 +77,6 @@ namespace sp::scene {
                             }
 
                             LookupComponent<TransformTree>().ApplyComponent(component.value(), transform, false);
-                        } else if constexpr (std::is_same_v<T, Animation>) {
-                            auto animation = stagingId.Get<Animation>(staging);
-
-                            // Apply scene root transform
-                            if (stagingId.Has<TransformTree>(staging)) {
-                                auto &transform = stagingId.Get<TransformTree>(staging);
-                                if (!transform.parent) {
-                                    Assertf(stagingInfo.scene,
-                                        "Staging entity %s has null scene",
-                                        ToString(staging, stagingId));
-                                    auto &properties = stagingInfo.scene.data->GetProperties(staging);
-                                    if (properties.rootTransform != Transform()) {
-                                        for (auto &state : animation.states) {
-                                            state.pos = properties.rootTransform * glm::vec4(state.pos, 1);
-                                        }
-                                    }
-                                }
-                            }
-
-                            LookupComponent<Animation>().ApplyComponent(component.value(), animation, false);
                         } else {
                             auto &srcComp = stagingId.Get<T>(staging);
                             LookupComponent<T>().ApplyComponent(component.value(), srcComp, false);
@@ -105,6 +87,36 @@ namespace sp::scene {
 
             stagingId = stagingInfo.nextStagingId;
         }
+
+        auto &flatTransform = std::get<std::optional<TransformTree>>(flatEntity);
+        if (flatTransform) {
+            stagingId = e;
+            while (stagingId.Has<SceneInfo>(staging)) {
+                auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
+                if (stagingId.Has<Animation>(staging)) {
+                    auto animation = stagingId.Get<Animation>(staging);
+
+                    // Apply scene root transform
+                    if (!flatTransform->parent) {
+                        Assertf(stagingInfo.scene, "Staging entity %s has null scene", ToString(staging, stagingId));
+                        auto &properties = stagingInfo.scene.data->GetProperties(staging);
+                        if (properties.rootTransform != Transform()) {
+                            for (auto &state : animation.states) {
+                                state.pos = properties.rootTransform * glm::vec4(state.pos, 1);
+                            }
+                        }
+                    }
+
+                    auto &component = std::get<std::optional<Animation>>(flatEntity);
+                    if (!component) {
+                        component = LookupComponent<Animation>().StagingDefault();
+                    }
+                    LookupComponent<Animation>().ApplyComponent(component.value(), animation, false);
+                }
+                stagingId = stagingInfo.nextStagingId;
+            }
+        }
+
         return flatEntity;
     }
 
