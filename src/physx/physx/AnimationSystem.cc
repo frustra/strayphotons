@@ -17,6 +17,7 @@ namespace sp {
             auto &animation = ent.Get<ecs::Animation>(lock);
             if (animation.states.empty()) continue;
 
+            animation.currentState = std::clamp(animation.currentState, 0.0, animation.states.size() - 1.0);
             double targetState = ecs::SignalBindings::GetSignal(lock, ent, "animation_target");
             auto state = animation.GetCurrNextState(targetState);
             if (targetState != animation.currentState) {

@@ -41,7 +41,7 @@ namespace ecs {
     class Animation {
     public:
         std::vector<AnimationState> states;
-        double currentState = 0.0;
+        double currentState = -1.0;
 
         InterpolationMode interpolation = InterpolationMode::Linear;
         float tension = 0.5f;

@@ -16,7 +16,7 @@ namespace ecs {
 
     Animation::CurrNextState Animation::GetCurrNextState(double targetState) const {
         double floorState;
-        float completion = std::modf(currentState, &floorState);
+        float completion = std::modf(std::clamp(currentState, 0.0, states.size() - 1.0), &floorState);
         if (targetState >= currentState) {
             return Animation::CurrNextState{(size_t)floorState, (size_t)floorState + 1, completion, 1};
         } else if (completion == 0.0) {
