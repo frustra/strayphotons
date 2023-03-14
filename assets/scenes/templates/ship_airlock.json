@@ -15,7 +15,7 @@
 			"trigger_area": "Box"
 		},
 		{
-			"name": "door-in",
+			"name": "door_in",
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, 0, -1.95],
@@ -25,6 +25,19 @@
 			"script": {
 				"prefab": "template",
 				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "elevator_doors",
+			"transform": {
+				"translate": [0, 0, 3.9]
+			},
+			"signal_output": {
+				"floor": 0
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "elevator_doors" }
 			}
 		},
 		{
@@ -62,6 +75,23 @@
 			}
 		},
 		{
+			"name": "left-wall2",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [3.05, 2, 2.7],
+				"scale": [0.1, 4.1, 2.2]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
 			"name": "right-wall",
 			"renderable": {
 				"model": "box"
@@ -70,6 +100,23 @@
 				"parent": "scoperoot",
 				"translate": [-2.5, 2, -0.15],
 				"scale": [1.2, 4.1, 3.6]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "right-wall2",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [-3.05, 2, 2.7],
+				"scale": [0.1, 4.1, 2.2]
 			},
 			"physics": {
 				"shapes": {

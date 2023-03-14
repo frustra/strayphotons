@@ -28,7 +28,7 @@
 			}
 		},
 		{
-			"name": "door-out",
+			"name": "door_out",
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [0, 0, 0]
@@ -42,7 +42,7 @@
 			}
 		},
 		{
-			"name": "door-in",
+			"name": "door_in",
 			"transform": {
 				"parent": "scoperoot",
 				"translate": [3, 0, 0]

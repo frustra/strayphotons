@@ -242,7 +242,7 @@
 				"translate": [7.05, 0, 0]
 			},
 			"scene_connection": {
-				"station-center": "global:ship_airlock.triggerzone/trigger_player_count || global:ship_airlock.door-out.lock/animation_state != 0"
+				"station-center": "global:ship_airlock.triggerzone/trigger_player_count || station-center.elevator1.lock/animation_state != 0 || station-center.elevator2.lock/animation_state != 0"
 			},
 			"script": {
 				"parameters": {
@@ -258,7 +258,7 @@
 			},
 			"event_input": {},
 			"event_bindings": {
-				"/toggle_signal/door_open": "global:ship_airlock.door-in/toggle_signal/door_open"
+				"/toggle_signal/door_open": "global:ship_airlock.door_in/toggle_signal/door_open"
 			},
 			"script": [
 				{
