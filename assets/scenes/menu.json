@@ -242,7 +242,7 @@
 				"translate": [7.05, 0, 0]
 			},
 			"scene_connection": {
-				"station-center": "global:ship_airlock.triggerzone/trigger_player_count || station-center.elevator1.lock/animation_state != 0 || station-center.elevator2.lock/animation_state != 0"
+				"station-center": "global:ship_airlock.triggerzone/trigger_player_count || global:ship_airlock.elevator_doors.left_door.lock/animation_state != 0 || global:ship_airlock.elevator_doors.right_door.lock/animation_state != 0"
 			},
 			"script": {
 				"parameters": {
