@@ -13,7 +13,8 @@
 				"translate": [0, 153, 0]
 			},
 			"scene_connection": {
-				"player_gravity_spin": "1"
+				"player_gravity_spin": "1",
+				"game_state": "1"
 			}
 		},
 		{
@@ -60,8 +61,8 @@
 		{
 			"name": "elevator-frame1",
 			"transform": {
-				"scale": [0.7, 5.8, 0.4],
-				"translate": [-2.25, 2.8, 2.4]
+				"scale": [0.1, 6, 5],
+				"translate": [3.05, 3, -2.15]
 			},
 			"renderable": {
 				"model": "box"
@@ -76,8 +77,8 @@
 		{
 			"name": "elevator-frame2",
 			"transform": {
-				"scale": [0.7, 5.8, 0.4],
-				"translate": [2.25, 2.8, 2.4]
+				"scale": [0.1, 6, 5],
+				"translate": [-3.05, 3, -2.15]
 			},
 			"renderable": {
 				"model": "box"
@@ -92,8 +93,43 @@
 		{
 			"name": "elevator-frame3",
 			"transform": {
-				"scale": [5, 2.1, 0.4],
-				"translate": [0, 4.95, 2.4]
+				"rotate": [-35, 1, 0, 0],
+				"scale": [6, 0.1, 3],
+				"translate": [0, 4.92, 1.51]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "elevator-frame-corner1",
+			"transform": {
+				"rotate": [-35, 1, 0, 0],
+				"scale": [0.1, 2, 3],
+				"translate": [-3.05, 5.65, 0.9]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "elevator-frame-corner2",
+			"transform": {
+				"rotate": [-35, 1, 0, 0],
+				"scale": [0.1, 2, 3],
+				"translate": [3.05, 5.65, 0.9]
 			},
 			"renderable": {
 				"model": "box"
@@ -108,8 +144,8 @@
 		{
 			"name": "elevator-frame4",
 			"transform": {
-				"scale": [4, 0.1, 0.4],
-				"translate": [0, 0.1, 2.2]
+				"scale": [6, 0.1, 2.15],
+				"translate": [0, 0.1, 1.3]
 			},
 			"renderable": {
 				"model": "box"
@@ -124,9 +160,9 @@
 		{
 			"name": "elevator-frame5",
 			"transform": {
-				"rotate": [10, 1, 0, 0],
-				"scale": [4, 0.1, 0.6],
-				"translate": [0, 0.04, 2.65]
+				"rotate": [15, 1, 0, 0],
+				"scale": [5, 0.1, 0.6],
+				"translate": [0, 0.024, 2.65]
 			},
 			"renderable": {
 				"model": "box"
@@ -139,51 +175,17 @@
 			}
 		},
 		{
-			"name": "elevator-spoke-extension1",
+			"name": "elevator_doors",
 			"transform": {
-				"rotate": [90, 0, 0, 1],
-				"scale": [6, 0.1, 5.2],
-				"translate": [2.55, 3, 0]
+				"rotate": [180, 0, 1, 0],
+				"translate": [0, 0.1, 0.25]
 			},
-			"renderable": {
-				"model": "box"
-			},
-			"physics": {
-				"type": "Static",
-				"shapes": {
-					"model": "box"
-				}
-			}
-		},
-		{
-			"name": "elevator-spoke-extension2",
-			"transform": {
-				"rotate": [90, 0, 0, 1],
-				"scale": [6, 0.1, 5.2],
-				"translate": [-2.55, 3, 0]
-			},
-			"renderable": {
-				"model": "box"
-			},
-			"physics": {
-				"type": "Static",
-				"shapes": {
-					"model": "box"
-				}
-			}
-		},
-		{
-			"name": "elevator_door",
-			"transform": {
-				"rotate": [90, 0, 1, 0],
-				"scale": [1, 1.5, 2.3],
-				"translate": [0, 0.1, 2.4]
+			"signal_output": {
+				"floor": 3
 			},
 			"script": {
-				"parameters": {
-					"source": "slide_door"
-				},
-				"prefab": "template"
+				"prefab": "template",
+				"parameters": { "source": "elevator_doors" }
 			}
 		},
 		{
@@ -193,7 +195,7 @@
 				"translate": [0, 0, -1]
 			},
 			"scene_connection": {
-				"station-center": "zone/trigger_player_count"
+				"station-center": "zone/trigger_player_count || elevator_doors.left_door.lock/animation_state != 0 || elevator_doors.right_door.lock/animation_state != 0"
 			}
 		},
 		{
@@ -209,7 +211,7 @@
 				"translate": [-7.5, 6, 0]
 			},
 			"light": {
-				"intensity": 300,
+				"intensity": 200,
 				"spotAngle": 50,
 				"tint": [1, 0.5, 0.5]
 			},
@@ -227,7 +229,7 @@
 				"translate": [7.5, 6, 0]
 			},
 			"light": {
-				"intensity": 300,
+				"intensity": 200,
 				"spotAngle": 50,
 				"tint": [1, 0.5, 0.5]
 			},
@@ -241,7 +243,7 @@
 		{
 			"name": "elevator_door_light",
 			"transform": {
-				"rotate": [120, -0.57735, -0.57735, -0.57735],
+				"rotate": [180, 0, 0.573577, 0.819152],
 				"translate": [0, 5, 3.25]
 			},
 			"light": {

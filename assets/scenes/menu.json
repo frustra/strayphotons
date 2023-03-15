@@ -1,6 +1,11 @@
 {
 	"entities": [
 		{
+			"scene_connection": {
+				"game_state": "1"
+			}
+		},
+		{
 			"name": "testroot",
 			"transform": {
 				"scale": 0.075,
@@ -237,7 +242,7 @@
 				"translate": [7.05, 0, 0]
 			},
 			"scene_connection": {
-				"station-center": "global:ship_airlock.triggerzone/trigger_player_count"
+				"station-center": "global:ship_airlock.triggerzone/trigger_player_count || global:ship_airlock.elevator_doors.left_door.lock/animation_state != 0 || global:ship_airlock.elevator_doors.right_door.lock/animation_state != 0"
 			},
 			"script": {
 				"parameters": {
@@ -251,30 +256,26 @@
 			"transform": {
 				"translate": [4.95, 1.1, 2.5]
 			},
-			"script": {
-				"parameters": {
-					"source": "button"
-				},
-				"prefab": "template"
-			}
-		},
-		{
-			"name": "airlock_in_button.button",
 			"event_input": {},
 			"event_bindings": {
-				"open_door": {
-					"set_value": "togglesignal global:ship_airlock.door-in/door_open",
-					"target": "console:input/action/run_command"
-				}
+				"/toggle_signal/door_open": "global:ship_airlock.door_in/toggle_signal/door_open"
 			},
-			"script": {
-				"onTick": "event_gate_by_signal",
-				"parameters": {
-					"gate_signal": "airlock_in_button_sensor.Icosphere/value",
-					"input_event": "/button/press",
-					"output_event": "open_door"
+			"script": [
+				{
+					"parameters": {
+						"source": "button"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "event_gate_by_signal",
+					"parameters": {
+						"gate_signal": "airlock_in_button_sensor.Icosphere/value",
+						"input_event": "/button/press",
+						"output_event": "/toggle_signal/door_open"
+					}
 				}
-			}
+			]
 		},
 		{
 			"name": "airlock_in_button_sensor",
@@ -540,11 +541,11 @@
 			"script": {
 				"onTick": "voxel_controller",
 				"parameters": {
-					"alignment_target": "station-center:elevator",
+					"alignment_target": "station-center:elevator1",
 					"follow_target": "player:player",
 					"voxel_offset": [-0.5, -0.2, -0.5],
 					"voxel_scale": 0.5,
-					"voxel_stride": 16
+					"voxel_stride": 1
 				}
 			}
 		},

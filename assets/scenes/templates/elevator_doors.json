@@ -1,0 +1,184 @@
+{
+	"components": {
+		"signal_output": {
+			"floor": 0
+		}
+	},
+	"entities": [
+		{
+			"name": "left_door",
+			"transform": {
+				"translate": [1.45, 0, -0.05],
+				"rotate": [90, 0, 1, 0],
+				"scale": [0.44, 1, 1]
+			},
+			"signal_bindings": {
+				"door_open": "station-center:elevator1.door/door_open && station-center:elevator1/animation_state == scoperoot/floor"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "right_door",
+			"transform": {
+				"translate": [-1.45, 0, -0.05],
+				"rotate": [90, 0, 1, 0],
+				"scale": [0.44, 1, 1]
+			},
+			"signal_bindings": {
+				"door_open": "station-center:elevator2.door/door_open && station-center:elevator2/animation_state == scoperoot/floor"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": { "source": "slide_door" }
+			}
+		},
+		{
+			"name": "center_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [1.215, 2.6, 0.1],
+				"translate": [0, 1.3, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "call_button",
+			"transform": {
+				"translate": [0, 1.3, -0.1],
+				"rotate": [90, 0, -1, 0]
+			},
+			"signal_output": {},
+			"signal_bindings": {
+				"left_requested": "(station-center:elevator1/up_requested && scoperoot/floor == 0) || (station-center:elevator1/down_requested && scoperoot/floor == 3)",
+				"right_requested": "(station-center:elevator2/up_requested && scoperoot/floor == 0) || (station-center:elevator2/down_requested && scoperoot/floor == 3)",
+				"left_target_distance": "abs(station-center:elevator1/animation_target - scoperoot/floor)",
+				"left_state_distance": "abs(station-center:elevator1/animation_state - scoperoot/floor)",
+				"right_target_distance": "abs(station-center:elevator2/animation_target - scoperoot/floor)",
+				"right_state_distance": "abs(station-center:elevator2/animation_state - scoperoot/floor)",
+				"left_is_closest": "call_button/left_target_distance < call_button/right_target_distance || (call_button/left_target_distance == call_button/right_target_distance && call_button/left_state_distance < call_button/right_state_distance)",
+				"right_is_closest": "call_button/right_target_distance < call_button/left_target_distance || (call_button/left_target_distance == call_button/right_target_distance && call_button/right_state_distance < call_button/left_state_distance)",
+				"light": "call_button/button_pressed || call_button/left_requested || call_button/right_requested"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "call_left_up",
+			"event_bindings": {
+				"/elevator/call": "station-center:elevator1/elevator/request_up"
+			},
+			"script": {
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "call_button/button_pressed && call_button/left_is_closest && scoperoot/floor == 0",
+					"output_event": "/elevator/call",
+					"falling_edge": false
+				}
+			}
+		},
+		{
+			"name": "call_left_down",
+			"event_bindings": {
+				"/elevator/call": "station-center:elevator1/elevator/request_down"
+			},
+			"script": {
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "call_button/button_pressed && call_button/left_is_closest && scoperoot/floor == 3",
+					"output_event": "/elevator/call",
+					"falling_edge": false
+				}
+			}
+		},
+		{
+			"name": "call_right_up",
+			"event_bindings": {
+				"/elevator/call": "station-center:elevator2/elevator/request_up"
+			},
+			"script": {
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "call_button/button_pressed && call_button/right_is_closest && scoperoot/floor == 0",
+					"output_event": "/elevator/call",
+					"falling_edge": false
+				}
+			}
+		},
+		{
+			"name": "call_right_down",
+			"event_bindings": {
+				"/elevator/call": "station-center:elevator2/elevator/request_down"
+			},
+			"script": {
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "call_button/button_pressed && call_button/right_is_closest && scoperoot/floor == 3",
+					"output_event": "/elevator/call",
+					"falling_edge": false
+				}
+			}
+		},
+		{
+			"name": "left_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [0.8, 2.6, 0.1],
+				"translate": [2.69, 1.3, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "right_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [0.8, 2.6, 0.1],
+				"translate": [-2.69, 1.3, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "top_wall",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [6, 1.4, 0.1],
+				"translate": [0, 3.25, -0.05]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		}
+	]
+}

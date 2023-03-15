@@ -1,0 +1,17 @@
+{
+	"priority": "System",
+	"entities": [
+		{
+			"name": "station-center:elevator1",
+			"transform": {},
+			"signal_output": {},
+			"animation": {}
+		},
+		{
+			"name": "station-center:elevator2",
+			"transform": {},
+			"signal_output": {},
+			"animation": {}
+		}
+	]
+}

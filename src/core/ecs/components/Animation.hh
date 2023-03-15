@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Components.hh"
+#include "ecs/SignalExpression.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -40,29 +41,28 @@ namespace ecs {
     class Animation {
     public:
         std::vector<AnimationState> states;
-        size_t targetState = 0;
-        size_t currentState = 0;
-        double timeUntilNextState = 0;
-        double realState = 0;
+        double currentState = -1.0;
 
         InterpolationMode interpolation = InterpolationMode::Linear;
         float tension = 0.5f;
 
-        int PlayDirection() const {
-            return targetState < currentState ? -1 : targetState > currentState ? 1 : 0;
-        }
+        struct CurrNextState {
+            size_t current, next;
+            float completion;
+            int direction;
+        };
+
+        CurrNextState GetCurrNextState(double targetState) const;
+        static void UpdateTransform(Lock<ReadSignalsLock, Read<Animation>, Write<TransformTree>> lock, Entity ent);
     };
 
     static StructMetadata MetadataAnimation(typeid(Animation),
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
-        StructField::New("defaultState", &Animation::targetState),
+        StructField::New("state", &Animation::currentState),
         StructField::New("interpolation", &Animation::interpolation),
-        StructField::New("tension", &Animation::tension),
-        StructField::New("state", &Animation::realState, FieldAction::None));
+        StructField::New("tension", &Animation::tension));
     static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
 
-    template<>
-    bool StructMetadata::Load<Animation>(const EntityScope &scope, Animation &dst, const picojson::value &src);
     template<>
     void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget);
 } // namespace ecs

@@ -485,7 +485,10 @@ namespace sp {
                 auto maxHeadInput = CVarCharacterMaxHeadSpeed.Get() * dt;
                 headInput = glm::clamp(headInput, -maxHeadInput, maxHeadInput);
                 // If the displacement is opposite headInput, make movementInput priority
-                headInput -= glm::clamp(headInput, -glm::abs(displacement), glm::abs(displacement));
+                glm::vec3 oppositeSign = glm::notEqual(-glm::sign(headInput), glm::sign(displacement));
+                auto inputRatio = 0.5f * glm::abs(displacement) /
+                                  glm::max(glm::abs(headInput) + 0.001f, glm::abs(displacement));
+                headInput *= inputRatio + (1.0f - inputRatio) * oppositeSign;
 
                 // Logf("Disp: %s + %s, State:%u, On:%u, In:%u, DeltaXp: %s, Vel: %s",
                 //     glm::to_string(displacement),
@@ -538,7 +541,7 @@ namespace sp {
                         //     glm::to_string(PxVec3ToGlmVec3(state.deltaXP)),
                         //     glm::to_string(userData->actorData.velocity));
                     } else {
-                        userData->actorData.velocity = (newPosition - oldPosition - headInput) / dt;
+                        userData->actorData.velocity = (newPosition - oldPosition) / dt;
                         userData->actorData.velocity += gravityForce * dt;
                         // Logf("OffGround, DeltaPos: %s, Disp %s, HeadInput: %s, Vel: %s",
                         //     glm::to_string(newPosition - oldPosition),
@@ -564,10 +567,11 @@ namespace sp {
                     targetTransform.Translate(deltaPos);
                     ecs::TransformTree::MoveViaRoot(lock, head, targetTransform);
 
-                    // Logf("Moving Head: %s Up: %s, Forward: %s",
+                    // Logf("Moving Head: %s Delta: %s, Clamped: %s",
                     //     glm::to_string(targetTransform.GetPosition()),
                     //     glm::to_string(targetTransform.GetUp()),
-                    //     glm::to_string(targetTransform.GetForward()));
+                    //     glm::to_string(newPosition - oldPosition),
+                    //     glm::to_string(deltaPos));
                 }
             }
 

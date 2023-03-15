@@ -207,6 +207,15 @@ namespace sp {
         return ImGui::DragFloat(name.c_str(), &value, 0.01f);
     }
     template<>
+    bool EditorContext::AddImGuiElement(const std::string &name, double &value) {
+        float floatValue = value;
+        if (ImGui::DragFloat(name.c_str(), &floatValue, 0.01f)) {
+            value = floatValue;
+            return true;
+        }
+        return false;
+    }
+    template<>
     bool EditorContext::AddImGuiElement(const std::string &name, color_t &value) {
         return ImGui::ColorEdit3(name.c_str(), (float *)&value);
     }

@@ -1,6 +1,13 @@
 {
 	"components": {
-		"signal_output": {}
+		"signal_output": {},
+		"event_input": {},
+		"script": {
+			"onTick": "signal_from_event",
+			"parameters": {
+				"outputs": "door_open"
+			}
+		}
 	},
 	"entities": [
 		{
@@ -14,13 +21,13 @@
 					"parameters": {
 						"model": "door-frame",
 						"render": true,
-						"physics": "Static"
+						"physics": "Kinematic"
 					}
 				},
 				{
 					"onTick": "edge_trigger",
 					"parameters": {
-						"input_expr": "scoperoot/door_open && ceil(left-panel/animation_state)",
+						"input_expr": "scoperoot/door_open && left-panel/animation_state != 0",
 						"output_event": "/sound/play"
 					}
 				}
@@ -54,7 +61,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open || ceil(left-panel/animation_state)"
+				"animation_target": "scoperoot/door_open || left-panel/animation_state != 0"
 			},
 			"signal_output": {
 			}
@@ -77,7 +84,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open && floor(lock/animation_state)"
+				"animation_target": "scoperoot/door_open && lock/animation_state == 1"
 			},
 			"signal_output": {
 			},
@@ -85,7 +92,7 @@
 				"shapes": {
 					"model": "door-panel"
 				},
-				"type": "Static"
+				"type": "Kinematic"
 			}
 		},
 		{
@@ -111,7 +118,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "scoperoot/door_open && floor(lock/animation_state)"
+				"animation_target": "scoperoot/door_open && lock/animation_state == 1"
 			},
 			"signal_output": {
 			},
@@ -119,7 +126,7 @@
 				"shapes": {
 					"model": "door-panel"
 				},
-				"type": "Static"
+				"type": "Kinematic"
 			}
 		}		
 	]

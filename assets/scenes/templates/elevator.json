@@ -31,10 +31,51 @@
 			]
 		},
 		"signal_output": {},
-		"event_input": {},
-		"script": {
-			"onTick": "elevator"
+		"signal_bindings": {
+			"at_floor": "scoperoot/animation_state == scoperoot/animation_target",
+			"up_requested": "door/open_timer_up < 0 && !door/open_timer_up_enable",
+			"down_requested": "door/open_timer_down < 0 && !door/open_timer_down_enable",
+			"requested_floor": "scoperoot/down_requested ? 3 : (scoperoot/up_requested ? 0 : scoperoot/animation_target)"
 		},
+		"event_input": {},
+		"event_bindings": {
+			"/elevator/request_up": {
+				"target": "door/reset_timer/open_timer_up",
+				"set_value": -10
+			},
+			"/elevator/request_down": {
+				"target": "door/reset_timer/open_timer_down",
+				"set_value": -10
+			}
+		},
+		"script": [
+			{
+				"onTick": "elevator"
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": ["animation_target"]
+				}
+			},
+			{
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 1,
+					"input": "scoperoot/at_floor",
+					"output": "animation_complete"
+				}
+			},
+			{
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "scoperoot/animation_complete && scoperoot/animation_target != scoperoot/requested_floor && door.lock/animation_state == 0",
+					"output_event": "/set_signal/animation_target",
+					"falling_edge": false,
+					"set_event_value": "scoperoot/requested_floor"
+				}
+			}
+		],
 		"transform": {
 			"translate": [0, 160, 0]
 		}
@@ -47,44 +88,8 @@
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, -0.25, -1],
-				"scale": [4.2, 0.5, 4]
-			},
-			"physics": {
-				"shapes": {
-					"model": "box"
-				},
-				"type": "Kinematic"
-			},
-			"trigger_group": "Object"
-		},
-		{
-			"_comment": "ceiling",
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 4.15, -1],
-				"scale": [4.2, 0.5, 4]
-			},
-			"physics": {
-				"shapes": {
-					"model": "box"
-				},
-				"type": "Kinematic"
-			},
-			"trigger_group": "Object"
-		},
-		{
-			"_comment": "right front wall",
-			"renderable": {
-				"model": "box"
-			},
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [2, 2, -2.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [0, -0.25, 1.25],
+				"scale": [2.8, 0.5, 2.5]
 			},
 			"physics": {
 				"shapes": {
@@ -94,14 +99,14 @@
 			}
 		},
 		{
-			"_comment": "right back wall",
+			"name": "ceiling",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [2, 2, 0.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [0, 3.15, 1.25],
+				"scale": [2.8, 0.5, 2.5]
 			},
 			"physics": {
 				"shapes": {
@@ -111,14 +116,14 @@
 			}
 		},
 		{
-			"_comment": "left front wall",
+			"name": "wall_left_front",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [-2, 2, -2.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [1.35, 1.5, 0.575],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -128,14 +133,14 @@
 			}
 		},
 		{
-			"_comment": "left back wall",
+			"name": "wall_left_back",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [-2, 2, 0.07],
-				"scale": [0.2, 4, 1.85]
+				"translate": [1.35, 1.5, 1.925],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -145,14 +150,14 @@
 			}
 		},
 		{
-			"_comment": "back left wall",
+			"name": "wall_right_front",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [-1.07, 2, 0.9],
-				"scale": [1.85, 4, 0.2]
+				"translate": [-1.35, 1.5, 0.575],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -162,14 +167,14 @@
 			}
 		},
 		{
-			"_comment": "back right wall",
+			"name": "wall_right_back",
 			"renderable": {
 				"model": "box"
 			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [1.07, 2, 0.9],
-				"scale": [1.85, 4, 0.2]
+				"translate": [-1.35, 1.5, 1.925],
+				"scale": [0.1, 3, 1.15]
 			},
 			"physics": {
 				"shapes": {
@@ -179,27 +184,100 @@
 			}
 		},
 		{
-			"name": "control",
+			"name": "wall_back_right",
+			"renderable": {
+				"model": "box"
+			},
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [1.95, 1.1, -2]
+				"translate": [-0.7, 1.5, 2.45],
+				"scale": [1.2, 3, 0.1]
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": {
-					"source": "button"
-				}
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
 			}
 		},
 		{
+			"name": "wall_back_left",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0.7, 1.5, 2.45],
+				"scale": [1.2, 3, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "wall_front_left",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [1.07075, 1.5, 0.05],
+				"scale": [0.4585, 3, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "wall_front_right",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [-1.07075, 1.5, 0.05],
+				"scale": [0.4585, 3, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "wall_front_top",
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 2.787, 0.05],
+				"scale": [1.683, 0.426, 0.1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			}
+		},
+		{
+			"name": "entry_laser",
 			"transform": {
 				"parent": "scoperoot"
 			},
 			"laser_line": {
 				"color": [0, 0, 1],
 				"points": [
-					[-1.95, 1.5, -2.9],
-					[1.95, 1.5, -2.9]
+					[-0.8, 1.5, 0],
+					[0.8, 1.5, 0]
 				]
 			}
 		},
@@ -207,12 +285,12 @@
 			"name": "light",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 3.85, -1],
+				"translate": [0, 2.85, 1.25],
 				"rotate": [[270, 1, 0, 0]]
 			},
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"intensity": 300,
+				"intensity": 100,
 				"spotAngle": 50
 			},
 			"script": {
@@ -224,13 +302,68 @@
 			"name": "door",
 			"transform": {
 				"parent": "scoperoot",
-				"translate": [0, 0.0, -2.9],
+				"translate": [0, 0, 0.05],
 				"rotate": [90, 0, 1, 0],
-				"scale": [1, 1.5, 2.3]
+				"scale": [0.44, 1, 1]
+			},
+			"event_input": {},
+			"signal_output": {},
+			"signal_bindings": {
+				"door_open": "scoperoot/at_floor && ((scoperoot/animation_state == 0 && door/open_timer_up < 0) || (scoperoot/animation_state == 3 && door/open_timer_down < 0))",
+				"open_timer_up_enable": "door/open_timer_up < 0 && door.left-panel/animation_state == 1 && scoperoot/animation_state == 0",
+				"open_timer_down_enable": "door/open_timer_down < 0 && door.left-panel/animation_state == 1 && scoperoot/animation_state == 3"
+			},
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "slide_door" }
+				},
+				{
+					"onTick": "timer",
+					"parameters": {
+						"names": ["open_timer_up", "open_timer_down"]
+					}
+				}
+			]
+		},
+		{
+			"name": "up_button",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [1.07075, 1.2, 0.1],
+				"rotate": [90, 0, 1, 0]
+			},
+			"signal_bindings": {
+				"light": "up_button/button_pressed || scoperoot/up_requested"
+			},
+			"event_bindings": {
+				"/button/press": "scoperoot/elevator/request_up"
 			},
 			"script": {
 				"prefab": "template",
-				"parameters": { "source": "slide_door" }
+				"parameters": {
+					"source": "button"
+				}
+			}
+		},
+		{
+			"name": "down_button",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [1.07075, 1.08, 0.1],
+				"rotate": [90, 0, 1, 0]
+			},
+			"signal_bindings": {
+				"light": "down_button/button_pressed || scoperoot/down_requested"
+			},
+			"event_bindings": {
+				"/button/press": "scoperoot/elevator/request_down"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "button"
+				}
 			}
 		}
 	]

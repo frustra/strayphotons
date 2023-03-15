@@ -17,10 +17,16 @@
 			"trigger_area": "Box",
 			"trigger_group": "Object",
 			"event_bindings": {
-				"/trigger/object/enter": {
-					"target": "console:input/action/run_command",
-					"set_value": "setsignal global:airlock1-2.door-out/door_open 1; wait 2000 removescene 01-outside"
-				}
+				"/trigger/object/enter": [
+					{
+						"target": "global:airlock1-2.door_out/set_signal/door_open",
+						"set_value": 1
+					},
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "wait 2000 removescene 01-outside"
+					}
+				]
 			}
 		},
 		{
@@ -34,10 +40,16 @@
 				"in_signal": "sensor2/value"
 			},
 			"event_bindings": {
-				"/trigger/player/enter": {
-					"target": "console:input/action/run_command",
-					"set_value": "setsignal global:airlock2-3.door-in/door_open 0; addscene 03-dark"
-				}
+				"/trigger/player/enter": [
+					{
+						"target": "global:airlock2-3.door_in/set_signal/door_open",
+						"set_value": 0
+					},
+					{
+						"target": "console:input/action/run_command",
+						"set_value": "addscene 03-dark"
+					}
+				]
 			},
 			"script": {
 				"prefab": "template",

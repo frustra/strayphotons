@@ -134,6 +134,7 @@ namespace sp::json {
     inline bool Load(const ecs::EntityScope &s, std::optional<T> &dst, const picojson::value &src) {
         T entry;
         if (!sp::json::Load(s, entry, src)) {
+            dst.reset();
             return false;
         }
         dst = entry;
@@ -141,11 +142,11 @@ namespace sp::json {
     }
     template<typename T>
     inline bool Load(const ecs::EntityScope &s, std::vector<T> &dst, const picojson::value &src) {
+        dst.clear();
         if (src.is<picojson::array>()) {
             for (auto &p : src.get<picojson::array>()) {
                 auto &entry = dst.emplace_back();
                 if (!sp::json::Load(s, entry, p)) {
-                    dst.clear();
                     return false;
                 }
             }
@@ -164,9 +165,9 @@ namespace sp::json {
         robin_hood::unordered_flat_map<std::string, T> &dst,
         const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
+        dst.clear();
         for (auto &p : src.get<picojson::object>()) {
             if (!sp::json::Load(s, dst[p.first], p.second)) {
-                dst.clear();
                 return false;
             }
         }
@@ -177,9 +178,9 @@ namespace sp::json {
         robin_hood::unordered_node_map<std::string, T> &dst,
         const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
+        dst.clear();
         for (auto &p : src.get<picojson::object>()) {
             if (!sp::json::Load(s, dst[p.first], p.second)) {
-                dst.clear();
                 return false;
             }
         }

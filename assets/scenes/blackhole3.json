@@ -9,9 +9,12 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_spin",
-			"scene_connection": { "player_gravity_spin": "1" },
 			"transform": {
 				"translate": [0, 153, 0]
+			},
+			"scene_connection": {
+				"player_gravity_spin": "1",
+				"game_state": "1"
 			}
 		},
 		{

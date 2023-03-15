@@ -25,6 +25,9 @@ namespace sp::vulkan::renderer {
         0.95,
         "Blend this amount of light in from the previous frame");
     static CVar<uint32> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
+    static CVar<bool> CVarReprojectVoxelGrid("r.VoxelReprojectGrid",
+        true,
+        "Account for the voxel grid moving when sampling previous frames");
 
     static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
@@ -670,7 +673,7 @@ namespace sp::vulkan::renderer {
                         cmd.SetImageView(0, 3, resources.GetImageView(voxelLayer.preBlurName));
 
                         auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
-                        if (lastVoxelStateID != InvalidResource) {
+                        if (lastVoxelStateID != InvalidResource && CVarReprojectVoxelGrid.Get()) {
                             cmd.SetUniformBuffer(0, 4, resources.GetBuffer(lastVoxelStateID));
                         } else {
                             cmd.SetUniformBuffer(0, 4, resources.GetBuffer("VoxelState"));

@@ -18,7 +18,7 @@
 		{
 			"name": "animbox",
 			"transform": {
-				"translate": [0, 1.5, -4.875]
+				"translate": [0, 1.1, -4.875]
 			},
 			"animation": {
 				"interpolation": "Cubic",

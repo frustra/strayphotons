@@ -85,9 +85,9 @@ namespace sp::scripts {
                                     newJoint.remoteOffset.Translate(
                                         invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
                                     newJoint.remoteOffset.Rotate(invParentRotate * transform.GetRotation());
-                                    Logf("Adding secondary joint: %s / %s",
-                                        newJoint.type,
-                                        newJoint.target.Name().String());
+                                    // Logf("Adding secondary joint: %s / %s",
+                                    //     newJoint.type,
+                                    //     newJoint.target.Name().String());
                                     joints.Add(newJoint);
 
                                     break;
@@ -188,7 +188,7 @@ namespace sp::scripts {
             joint.type = PhysicsJointType::NoClip;
             joint.target = grabEntity;
             if (newGrabEntity == grabEntity) {
-                joints.Add(joint);
+                if (grabEntity) joints.Add(joint);
             } else {
                 auto it = std::find(joints.joints.begin(), joints.joints.end(), joint);
                 if (it != joints.joints.end()) {
