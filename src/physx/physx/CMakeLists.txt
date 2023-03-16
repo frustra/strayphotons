@@ -9,5 +9,6 @@ target_sources(${PROJECT_PHYSICS_PHYSX_LIB} PRIVATE
     PhysicsDebugCommands.cc
     PhysicsQuerySystem.cc
     PhysxManager.cc
+    SimulationCallbackHandler.cc
     TriggerSystem.cc
 )

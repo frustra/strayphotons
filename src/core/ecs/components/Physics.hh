@@ -37,6 +37,8 @@ namespace ecs {
         PHYSICS_GROUP_USER_INTERFACE = 1 << (size_t)PhysicsGroup::UserInterface,
     };
 
+    static_assert(magic_enum::enum_count<PhysicsGroup>() <= sizeof(uint32_t) * 8, "Too many PhysicsGroups defined");
+
     struct PhysicsShape {
         struct Sphere {
             float radius;
@@ -135,6 +137,7 @@ namespace ecs {
         float density = 1000.0f; // kg/m^3
         float angularDamping = 0.05f;
         float linearDamping = 0.0f;
+        float contactReportThreshold = -1.0f;
 
         glm::vec3 constantForce;
     };
@@ -148,6 +151,7 @@ namespace ecs {
         StructField::New("density", &Physics::density),
         StructField::New("angular_damping", &Physics::angularDamping),
         StructField::New("linear_damping", &Physics::linearDamping),
+        StructField::New("contact_report_force", &Physics::contactReportThreshold),
         StructField::New("force", &Physics::constantForce));
     static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
 } // namespace ecs

@@ -30,9 +30,9 @@ namespace sp {
     CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
     PhysxManager::PhysxManager(bool stepMode)
-        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
-          constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this),
-          workQueue("PhysXHullLoading") {
+        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), simulationCallback(*this),
+          characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
+          animationSystem(*this), workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -396,7 +396,8 @@ namespace sp {
         PxSceneDesc sceneDesc(pxPhysics->getTolerancesScale());
 
         sceneDesc.gravity = PxVec3(0); // Gravity handled by scene properties
-        sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+        sceneDesc.filterShader = SimulationCallbackHandler::SimulationFilterShader;
+        sceneDesc.simulationEventCallback = &simulationCallback;
 
         using Group = ecs::PhysicsGroup;
         // Don't collide the player with themselves, but allow the hands to collide with eachother
@@ -828,6 +829,11 @@ namespace sp {
                 if (userData->linearDamping != ph.linearDamping) {
                     dynamic->setLinearDamping(ph.linearDamping);
                     userData->linearDamping = ph.linearDamping;
+                }
+                if (userData->contactReportThreshold != ph.contactReportThreshold) {
+                    dynamic->setContactReportThreshold(
+                        ph.contactReportThreshold >= 0 ? ph.contactReportThreshold : PX_MAX_F32);
+                    userData->contactReportThreshold = ph.contactReportThreshold;
                 }
             }
         }
