@@ -3,7 +3,18 @@
 		"transform": {},
 		"physics": {
 			"type": "Dynamic",
-			"mass": 1
+			"mass": 1,
+			"contact_report_force": 100
+		},
+		"sound": [{
+			"file": "quack.ogg",
+			"volume": 0.3
+		}],
+		"event_bindings": {
+			"/physics/collision/force_found": {
+				"target": "scoperoot/sound/play",
+				"set_value": 0
+			}
 		},
 		"script": {
 			"prefab": "template",

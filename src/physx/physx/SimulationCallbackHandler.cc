@@ -1,6 +1,7 @@
 #include "SimulationCallbackHandler.hh"
 
 #include "core/Logging.hh"
+#include "physx/PhysxManager.hh"
 
 namespace sp {
     using namespace physx;
@@ -19,11 +20,45 @@ namespace sp {
     }
 
     // Contact events require an actor pair to have PxPairFlag::eNOTIFY_TOUCH_FOUND, PxPairFlag::eNOTIFY_TOUCH_PERSISTS,
-    // or PxPairFlag::eNOTIFY_TOUCH_LOST flags
+    // or PxPairFlag::eNOTIFY_TOUCH_LOST flags (or the THRESHOLD_FORCE variants) set in the simulation shader.
     void SimulationCallbackHandler::onContact(const PxContactPairHeader &pairHeader,
         const PxContactPair *pairs,
         PxU32 nbPairs) {
-        Logf("SimulationCallbackHandler::onContact: %u", nbPairs);
+        if (nbPairs == 0) return;
+        if (pairHeader.flags.isSet(PxContactPairHeaderFlag::eREMOVED_ACTOR_0) ||
+            pairHeader.flags.isSet(PxContactPairHeaderFlag::eREMOVED_ACTOR_1)) {
+            return;
+        }
+        if (!pairHeader.actors[0] || !pairHeader.actors[1]) return;
+        auto *userData0 = (ActorUserData *)pairHeader.actors[0]->userData;
+        auto *userData1 = (ActorUserData *)pairHeader.actors[1]->userData;
+        if (!userData0 || !userData1) return;
+        auto thresholdForce0 = userData0->contactReportThreshold >= 0 ? userData0->contactReportThreshold : PX_MAX_F32;
+        auto thresholdForce1 = userData1->contactReportThreshold >= 0 ? userData1->contactReportThreshold : PX_MAX_F32;
+        float thresholdForce = std::min(thresholdForce0, thresholdForce1);
+
+        auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
+        Logf("onContact: %s - %s",
+            ecs::EntityRef(userData0->entity).Name().String(),
+            ecs::EntityRef(userData1->entity).Name().String());
+        for (size_t i = 0; i < nbPairs; i++) {
+            auto &pair = pairs[i];
+            if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND)) {
+                ecs::EventBindings::SendEvent(lock,
+                    userData0->entity,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, userData1->entity, thresholdForce});
+                ecs::EventBindings::SendEvent(lock,
+                    userData1->entity,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, userData0->entity, thresholdForce});
+            } else if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST)) {
+                ecs::EventBindings::SendEvent(lock,
+                    userData0->entity,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, userData1->entity, thresholdForce});
+                ecs::EventBindings::SendEvent(lock,
+                    userData1->entity,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, userData0->entity, thresholdForce});
+            }
+        }
     }
 
     // Trigger events require an actor to have the PxShapeFlag::eTRIGGER_SHAPE simulation flag.
@@ -43,7 +78,7 @@ namespace sp {
         constexpr auto count = magic_enum::enum_count<ecs::PhysicsGroup>();
         std::array<std::array<PxPairFlags, count>, count> table;
         auto defaultFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND |
-                            PxPairFlag::eNOTIFY_THRESHOLD_FORCE_PERSISTS | PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST;
+                            PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST;
         std::fill(&table[0][0], &table[count][0], defaultFlags);
 
         auto removeCollision = [&](auto group0, auto group1) {
@@ -65,7 +100,7 @@ namespace sp {
                 setPairFlags(group,
                     ecs::PhysicsGroup::World,
                     defaultFlags | PxPairFlag::eNOTIFY_CONTACT_POINTS | PxPairFlag::eNOTIFY_TOUCH_FOUND |
-                        PxPairFlag::eNOTIFY_TOUCH_PERSISTS | PxPairFlag::eNOTIFY_TOUCH_LOST);
+                        PxPairFlag::eNOTIFY_TOUCH_LOST);
             } else {
                 // Only collide the player's hands with the user interface group
                 removeCollision(group, ecs::PhysicsGroup::UserInterface);

@@ -49,6 +49,10 @@ namespace sp {
     static const std::string INTERACT_EVENT_INTERACT_GRAB = "/interact/grab"; // ecs::Transform or false
     static const std::string INTERACT_EVENT_INTERACT_ROTATE = "/interact/rotate"; // glm::vec2
 
+    // Physics
+    static const std::string PHYSICS_EVENT_COLLISION_FORCE_FOUND = "/physics/collision/force_found"; // float
+    static const std::string PHYSICS_EVENT_COLLISION_FORCE_LOST = "/physics/collision/force_lost"; // float
+
     // Editor Control
     static const std::string EDITOR_EVENT_EDIT_TARGET = "/edit/target"; // ecs::Entity
 
