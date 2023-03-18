@@ -18,6 +18,7 @@
 #include "physx/ConstraintSystem.hh"
 #include "physx/LaserSystem.hh"
 #include "physx/PhysicsQuerySystem.hh"
+#include "physx/SimulationCallbackHandler.hh"
 #include "physx/TriggerSystem.hh"
 
 #include <PxPhysicsAPI.h>
@@ -66,6 +67,7 @@ namespace sp {
         glm::vec3 gravity = glm::vec3(0);
         float angularDamping = 0.0f;
         float linearDamping = 0.0f;
+        float contactReportThreshold = -1.0f;
         ecs::PhysicsGroup physicsGroup = ecs::PhysicsGroup::NoClip;
 
         ActorUserData() {}
@@ -134,6 +136,7 @@ namespace sp {
         SceneManager &scenes;
         CFuncCollection funcs;
 
+        SimulationCallbackHandler simulationCallback;
         std::shared_ptr<physx::PxScene> scene;
         std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
 
