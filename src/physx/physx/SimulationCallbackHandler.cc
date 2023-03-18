@@ -38,7 +38,7 @@ namespace sp {
         float thresholdForce = std::min(thresholdForce0, thresholdForce1);
 
         auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-        Logf("onContact: %s - %s",
+        Debugf("onContact: %s - %s",
             ecs::EntityRef(userData0->entity).Name().String(),
             ecs::EntityRef(userData1->entity).Name().String());
         for (size_t i = 0; i < nbPairs; i++) {
