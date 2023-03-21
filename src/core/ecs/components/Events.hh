@@ -121,12 +121,12 @@ namespace ecs {
     }
 
     template<typename LockType>
-    static size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth) {
+    size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth) {
         if (depth > MAX_EVENT_BINDING_DEPTH) {
             Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
             return 0;
         }
-        auto ent = target.Get(lock);
+        Entity ent = target.Get(lock);
         if (!ent.Exists(lock)) {
             Errorf("Tried to send event to missing entity: %s", target.Name().String());
             return 0;
