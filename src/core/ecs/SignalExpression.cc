@@ -666,7 +666,8 @@ namespace ecs {
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
                 } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
-                    if (!lock.Has<FocusLock>() || !lock.Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
+                    if (!lock.template Has<FocusLock>() ||
+                        !lock.template Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
                         return 0.0;
                     } else if (node.inputIndex < 0) {
                         return 1.0;

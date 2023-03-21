@@ -57,7 +57,7 @@ namespace ecs {
                     return false;
                 } else if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                                      std::is_same_v<T, sp::color_alpha_t>) {
-                    if (subField.empty() || subField.length() > T::length()) {
+                    if (subField.empty() || subField.size() > (size_t)T::length()) {
                         Errorf("AccessStructField invalid glm::vec subfield: %s '%s'",
                             baseType.name(),
                             std::string(fieldName));
@@ -68,10 +68,10 @@ namespace ecs {
                     for (auto &chars : indexChars) {
                         auto it = std::find(chars.begin(), chars.end(), subField[0]);
                         auto index = it - chars.begin();
-                        if (index < 0 || index + subField.size() > T::length()) continue;
+                        if (index < 0 || index + subField.size() > (size_t)T::length()) continue;
                         if (!std::equal(it, it + subField.size(), subField.begin(), subField.end())) continue;
 
-                        if constexpr (std::is_same_v<T::value_type, std::decay_t<ArgT>>) {
+                        if constexpr (std::is_same_v<typename T::value_type, std::decay_t<ArgT>>) {
                             accessor((ArgT &)base[index]);
                             if constexpr (!std::is_const_v<ArgT>) {
                                 for (size_t i = 1; i < subField.size(); i++) {

@@ -251,7 +251,7 @@ namespace ecs {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (sp::is_glm_vec<T>()) {
                     using U = typename T::value_type;
-                    if (actions.size() != T::length()) {
+                    if (actions.size() != (size_t)T::length()) {
                         Errorf("Event binding modify value is wrong size: %u != %u", actions.size(), T::length());
                         return;
                     }
