@@ -14,7 +14,7 @@
 namespace ecs {
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
-    using SendEventsLock = Lock<Read<Name, FocusLock, EventBindings, EventInput>>;
+    using SendEventsLock = Lock<Read<Name, FocusLock, EventBindings, EventInput, SignalBindings, SignalOutput>>;
 
     struct EventInput {
         EventInput() {}
@@ -95,7 +95,8 @@ namespace ecs {
         EventBinding &Bind(std::string source, EntityRef target, std::string dest);
         void Unbind(std::string source, EntityRef target, std::string dest);
 
-        static size_t SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth = 0);
+        template<typename LockType>
+        static size_t SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
@@ -110,4 +111,86 @@ namespace ecs {
     void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
+
+    namespace detail {
+        void ModifyEvent(ReadSignalsLock lock,
+            Event &event,
+            const Event::EventData &input,
+            const EventBinding &binding,
+            size_t depth);
+    }
+
+    template<typename LockType>
+    static size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth) {
+        if (depth > MAX_EVENT_BINDING_DEPTH) {
+            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
+            return 0;
+        }
+        auto ent = target.Get(lock);
+        if (!ent.Exists(lock)) {
+            Errorf("Tried to send event to missing entity: %s", target.Name().String());
+            return 0;
+        }
+
+        size_t eventsSent = 0;
+        if (ent.Has<EventInput>(lock)) {
+            auto &eventInput = ent.Get<EventInput>(lock);
+            eventsSent += eventInput.Add(event);
+        }
+        if (ent.Has<EventBindings>(lock)) {
+            auto &bindings = ent.Get<EventBindings>(lock);
+            auto list = bindings.sourceToDest.find(event.name);
+            if (list != bindings.sourceToDest.end()) {
+                for (auto &binding : list->second) {
+                    // Execute event modifiers before submitting to the destination queue
+                    if (binding.actions.filterExpr) {
+                        if constexpr (ReadSignalsLock::has_all_permissions<LockType>()) {
+                            if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) continue;
+                        } else {
+                            ecs::QueueTransaction<ReadSignalsLock>([event, binding, depth](auto lock) {
+                                if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) return;
+
+                                Event outputEvent = event;
+                                if (binding.actions.setValue) {
+                                    outputEvent.data = *binding.actions.setValue;
+                                }
+                                if (!binding.actions.modifyExprs.empty()) {
+                                    detail::ModifyEvent(lock, outputEvent, event.data, binding, depth);
+                                }
+                                for (auto &dest : binding.outputs) {
+                                    outputEvent.name = dest.queueName;
+                                    SendEvent(lock, dest.target, outputEvent, depth + 1);
+                                }
+                            });
+                            continue;
+                        }
+                    }
+                    Event modifiedEvent = event;
+                    if (binding.actions.setValue) {
+                        modifiedEvent.data = *binding.actions.setValue;
+                    }
+                    if (!binding.actions.modifyExprs.empty()) {
+                        if constexpr (ReadSignalsLock::has_all_permissions<LockType>()) {
+                            detail::ModifyEvent(lock, modifiedEvent, event.data, binding, depth);
+                        } else {
+                            ecs::QueueTransaction<ReadSignalsLock>([modifiedEvent, event, binding, depth](auto lock) {
+                                Event outputEvent = modifiedEvent;
+                                detail::ModifyEvent(lock, outputEvent, event.data, binding, depth);
+                                for (auto &dest : binding.outputs) {
+                                    outputEvent.name = dest.queueName;
+                                    SendEvent(lock, dest.target, outputEvent, depth + 1);
+                                }
+                            });
+                            continue;
+                        }
+                    }
+                    for (auto &dest : binding.outputs) {
+                        modifiedEvent.name = dest.queueName;
+                        eventsSent += SendEvent(lock, dest.target, modifiedEvent, depth + 1);
+                    }
+                }
+            }
+        }
+        return eventsSent;
+    }
 } // namespace ecs

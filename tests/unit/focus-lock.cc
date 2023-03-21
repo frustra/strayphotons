@@ -45,7 +45,7 @@ namespace FocusLockTests {
         }
         {
             Timer t("Try sending events and reading signals with Game focus");
-            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, keyboard, ecs::Event{TEST_EVENT_KEY, keyboard, 42});
             Assert(sentCount == 1, "Expected to successfully queue 1 event");

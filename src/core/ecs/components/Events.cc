@@ -240,7 +240,7 @@ namespace ecs {
         }
     }
 
-    void modifyEvent(ecs::ReadSignalsLock lock,
+    void detail::ModifyEvent(ReadSignalsLock lock,
         Event &event,
         const Event::EventData &input,
         const EventBinding &binding,
@@ -279,72 +279,5 @@ namespace ecs {
                 }
             },
             event.data);
-    }
-
-    size_t EventBindings::SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth) {
-        if (depth > MAX_EVENT_BINDING_DEPTH) {
-            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
-            return 0;
-        }
-        auto ent = target.Get(lock);
-        if (!ent.Exists(lock)) {
-            Errorf("Tried to send event to missing entity: %s", target.Name().String());
-            return 0;
-        }
-
-        size_t eventsSent = 0;
-        if (ent.Has<EventInput>(lock)) {
-            auto &eventInput = ent.Get<EventInput>(lock);
-            eventsSent += eventInput.Add(event);
-        }
-        if (ent.Has<EventBindings>(lock)) {
-            auto &bindings = ent.Get<EventBindings>(lock);
-            auto list = bindings.sourceToDest.find(event.name);
-            if (list != bindings.sourceToDest.end()) {
-                for (auto &binding : list->second) {
-                    // Execute event modifiers before submitting to the destination queue
-                    if (binding.actions.filterExpr) {
-                        ecs::QueueTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>(
-                            [event, binding, depth](auto lock) {
-                                if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) return;
-
-                                Event outputEvent = event;
-                                if (binding.actions.setValue) {
-                                    outputEvent.data = *binding.actions.setValue;
-                                }
-                                if (!binding.actions.modifyExprs.empty()) {
-                                    modifyEvent(lock, outputEvent, event.data, binding, depth);
-                                }
-                                for (auto &dest : binding.outputs) {
-                                    outputEvent.name = dest.queueName;
-                                    EventBindings::SendEvent(lock, dest.target, outputEvent, depth + 1);
-                                }
-                            });
-                        continue;
-                    }
-                    Event modifiedEvent = event;
-                    if (binding.actions.setValue) {
-                        modifiedEvent.data = *binding.actions.setValue;
-                    }
-                    if (!binding.actions.modifyExprs.empty()) {
-                        ecs::QueueTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>(
-                            [modifiedEvent, event, binding, depth](auto lock) {
-                                Event outputEvent = modifiedEvent;
-                                modifyEvent(lock, outputEvent, event.data, binding, depth);
-                                for (auto &dest : binding.outputs) {
-                                    outputEvent.name = dest.queueName;
-                                    EventBindings::SendEvent(lock, dest.target, outputEvent, depth + 1);
-                                }
-                            });
-                        continue;
-                    }
-                    for (auto &dest : binding.outputs) {
-                        modifiedEvent.name = dest.queueName;
-                        eventsSent += EventBindings::SendEvent(lock, dest.target, modifiedEvent, depth + 1);
-                    }
-                }
-            }
-        }
-        return eventsSent;
     }
 } // namespace ecs
