@@ -6,6 +6,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     EntityReferenceManager.cc
     EventQueue.cc
     SignalExpression.cc
+    SignalStructAccess.cc
     StructMetadata.cc
 )
 

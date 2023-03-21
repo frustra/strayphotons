@@ -5,7 +5,7 @@
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
-#include "ecs/components/Focus.hh"
+#include "ecs/SignalExpression.hh"
 
 #include <optional>
 #include <robin_hood.h>
@@ -28,20 +28,57 @@ namespace ecs {
         robin_hood::unordered_map<std::string, std::vector<std::shared_ptr<EventQueue>>> events;
     };
 
-    struct EventBinding {
-        EntityRef target;
-        std::string destQueue;
+    static StructMetadata MetadataEventInput(typeid(EventInput));
+    static Component<EventInput> ComponentEventInput("event_input", MetadataEventInput);
 
-        FocusLayer ifFocused = FocusLayer::Always;
+    struct EventDest {
+        EntityRef target;
+        std::string queueName;
+
+        bool operator==(const EventDest &) const = default;
+    };
+
+    static StructMetadata MetadataEventDest(typeid(EventDest));
+    template<>
+    bool StructMetadata::Load<EventDest>(const EntityScope &scope, EventDest &dst, const picojson::value &src);
+    template<>
+    void StructMetadata::Save<EventDest>(const EntityScope &scope,
+        picojson::value &dst,
+        const EventDest &src,
+        const EventDest &def);
+
+    struct EventBindingActions {
+        std::optional<SignalExpression> filterExpr;
+        std::vector<SignalExpression> modifyExprs;
         std::optional<Event::EventData> setValue;
-        std::optional<double> multiplyValue;
+
+        bool operator==(const EventBindingActions &) const = default;
+    };
+
+    static StructMetadata MetadataEventBindingActions(typeid(EventBindingActions),
+        StructField::New("filter", &EventBindingActions::filterExpr),
+        StructField::New("modify", &EventBindingActions::modifyExprs));
+    template<>
+    bool StructMetadata::Load<EventBindingActions>(const EntityScope &scope,
+        EventBindingActions &dst,
+        const picojson::value &src);
+    template<>
+    void StructMetadata::Save<EventBindingActions>(const EntityScope &scope,
+        picojson::value &dst,
+        const EventBindingActions &src,
+        const EventBindingActions &def);
+
+    struct EventBinding {
+        std::vector<EventDest> outputs;
+
+        EventBindingActions actions;
 
         bool operator==(const EventBinding &) const = default;
     };
 
     static StructMetadata MetadataEventBinding(typeid(EventBinding),
-        StructField::New("if_focused", &EventBinding::ifFocused),
-        StructField::New("multiply_value", &EventBinding::multiplyValue));
+        StructField::New("outputs", &EventBinding::outputs),
+        StructField::New(&EventBinding::actions));
     template<>
     bool StructMetadata::Load<EventBinding>(const EntityScope &scope, EventBinding &dst, const picojson::value &src);
     template<>
@@ -54,12 +91,9 @@ namespace ecs {
     public:
         EventBindings() {}
 
-        void Bind(std::string source, const EventBinding &binding);
-        void Bind(std::string source, EntityRef target, std::string dest);
+        EventBinding &Bind(std::string source, const EventBinding &binding);
+        EventBinding &Bind(std::string source, EntityRef target, std::string dest);
         void Unbind(std::string source, EntityRef target, std::string dest);
-        void UnbindSource(std::string source);
-        void UnbindTarget(EntityRef target);
-        void UnbindDest(EntityRef target, std::string dest);
 
         static size_t SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth = 0);
 
@@ -67,15 +101,13 @@ namespace ecs {
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
-
-    static StructMetadata MetadataEventInput(typeid(EventInput));
-    static Component<EventInput> ComponentEventInput("event_input", MetadataEventInput);
-
     static StructMetadata MetadataEventBindings(typeid(EventBindings),
-        StructField::New(&EventBindings::sourceToDest, ~FieldAction::AutoApply));
+        StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave));
     static Component<EventBindings> ComponentEventBindings("event_bindings", MetadataEventBindings);
-
+    template<>
+    bool StructMetadata::Load<EventBindings>(const EntityScope &scope, EventBindings &dst, const picojson::value &src);
     template<>
     void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
+
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
 } // namespace ecs

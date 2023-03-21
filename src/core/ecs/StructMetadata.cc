@@ -56,10 +56,9 @@ namespace ecs {
         auto *field = static_cast<char *>(dstStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
-        GetFieldType(type, [&](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
+        GetFieldType(type, field, [&](auto &value) {
+            using T = std::decay_t<decltype(value)>;
 
-            auto &value = *reinterpret_cast<T *>(field);
             auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
 
             if constexpr (has_type<T, UndefinedValuesTuple>()) {
@@ -74,13 +73,16 @@ namespace ecs {
         auto *fieldA = static_cast<const char *>(a) + offset;
         auto *fieldB = static_cast<const char *>(b) + offset;
 
-        return GetFieldType(type, [&](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
-
-            auto &valueA = *reinterpret_cast<const T *>(fieldA);
+        return GetFieldType(type, fieldA, [&](auto &valueA) {
+            using T = std::decay_t<decltype(valueA)>;
             auto &valueB = *reinterpret_cast<const T *>(fieldB);
 
-            return valueA == valueB;
+            if constexpr (std::equality_comparable<T>) {
+                return valueA == valueB;
+            } else {
+                Abortf("StructField::Compare called on unsupported type: %s", type.name());
+                return false;
+            }
         });
     }
 
@@ -104,12 +106,9 @@ namespace ecs {
             srcField = &it->second;
         }
 
-        return GetFieldType(type, [&](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
-
-            auto &field = *reinterpret_cast<T *>(dstfield);
-            if (!sp::json::Load(scope, field, *srcField)) {
-                Errorf("Invalid %s field value: %s", typeid(T).name(), src.to_str());
+        return GetFieldType(type, dstfield, [&](auto &dstValue) {
+            if (!sp::json::Load(scope, dstValue, *srcField)) {
+                Errorf("Invalid %s field value: %s", type.name(), src.to_str());
                 return false;
             }
             return true;
@@ -126,10 +125,9 @@ namespace ecs {
         auto *defaultField = defaultStruct ? static_cast<const char *>(defaultStruct) + offset : nullptr;
 
         if (!name.empty()) {
-            GetFieldType(type, [&](auto *typePtr) {
-                using T = std::remove_pointer_t<decltype(typePtr)>;
+            GetFieldType(type, field, [&](auto &value) {
+                using T = std::decay_t<decltype(value)>;
 
-                auto &value = *reinterpret_cast<const T *>(field);
                 if (defaultField) {
                     auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
                     sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
@@ -140,10 +138,7 @@ namespace ecs {
                 }
             });
         } else {
-            GetFieldType(type, [&](auto *typePtr) {
-                using T = std::remove_pointer_t<decltype(typePtr)>;
-
-                auto &value = *reinterpret_cast<const T *>(field);
+            GetFieldType(type, field, [&](auto &value) {
                 sp::json::Save(scope, dst, value);
             });
         }
@@ -156,14 +151,17 @@ namespace ecs {
         auto *srcField = static_cast<const char *>(srcStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
-        GetFieldType(type, [&](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
+        GetFieldType(type, dstField, [&](auto &dstValue) {
+            using T = std::decay_t<decltype(dstValue)>;
 
-            auto &dstValue = *reinterpret_cast<T *>(dstField);
             auto &srcValue = *reinterpret_cast<const T *>(srcField);
             auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
 
-            if (dstValue == defaultValue && !isFieldUndefined(srcValue)) dstValue = srcValue;
+            if constexpr (std::equality_comparable<T>) {
+                if (dstValue == defaultValue && !isFieldUndefined(srcValue)) dstValue = srcValue;
+            } else {
+                Abortf("StructField::Apply called on unsupported type: %s", type.name());
+            }
         });
     }
 } // namespace ecs

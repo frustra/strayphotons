@@ -12,7 +12,7 @@
 		}],
 		"event_bindings": {
 			"/physics/collision/force_found": {
-				"target": "scoperoot/sound/play",
+				"outputs": "scoperoot/sound/play",
 				"set_value": 0
 			}
 		},

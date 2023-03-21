@@ -67,11 +67,8 @@ namespace sp {
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
                 bindings.Unbind(eventName, consoleInputEntity, ACTION_EVENT_RUN_COMMAND);
 
-                ecs::EventBinding binding;
-                binding.target = consoleInputEntity;
-                binding.destQueue = ACTION_EVENT_RUN_COMMAND;
-                binding.setValue = command;
-                bindings.Bind(eventName, binding);
+                auto &binding = bindings.Bind(eventName, consoleInputEntity, ACTION_EVENT_RUN_COMMAND);
+                binding.actions.setValue = command;
             }
         } else {
             Errorf("Key \"%s\" does not exist", keyName);

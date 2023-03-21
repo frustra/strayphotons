@@ -43,7 +43,7 @@
 					"scoperoot/sound/play"
 				],
 				"/trigger/object/leave": {
-					"target": "scoperoot/sound/play",
+					"outputs": "scoperoot/sound/play",
 					"set_value": 1
 				}
 			}
@@ -149,7 +149,7 @@
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"renderable#emissive": "scoperoot/light"
+					"renderable.emissive": "scoperoot/light"
 				}
 			}
 		}

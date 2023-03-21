@@ -3,58 +3,58 @@
         "event_bindings": {
             "/mouse/scroll": [
                 {
-                    "target": "gui:menu/action/menu/scroll",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/scroll",
+                    "filter": "is_focused(Menu)"
                 },
                 {
-                    "target": "gui:debug/action/menu/scroll",
-                    "if_focused": "Overlay"
+                    "outputs": "gui:debug/action/menu/scroll",
+                    "filter": "is_focused(Overlay)"
                 }
             ],
             "/mouse/move": [
                 {
-                    "target": "player:flatview/script/camera_rotate",
-                    "if_focused": "Game",
-                    "multiply_value": 0.001
+                    "outputs": "player:flatview/script/camera_rotate",
+                    "filter": "is_focused(Game)",
+                    "modify": ["event.x * 0.001", "event.y * 0.001"]
                 },
                 {
-                    "target": "player:flatview/interact/rotate",
-                    "if_focused": "Game",
-                    "multiply_value": 0.01
+                    "outputs": "player:flatview/interact/rotate",
+                    "filter": "is_focused(Game)",
+                    "modify": ["event.x * 0.01", "event.y * 0.01"]
                 }
             ],
             "/mouse/pos": [
                 {
-                    "target": "gui:menu/action/menu/cursor",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/cursor",
+                    "filter": "is_focused(Menu)"
                 },
                 {
-                    "target": "gui:debug/action/menu/cursor",
-                    "if_focused": "Overlay"
+                    "outputs": "gui:debug/action/menu/cursor",
+                    "filter": "is_focused(Overlay)"
                 }
             ],
             "/mouse/left_click": [
                 {
-                    "target": "player:flatview/interact/press",
-                    "if_focused": "Game"
+                    "outputs": "player:flatview/interact/press",
+                    "filter": "is_focused(Game)"
                 },
                 {
-                    "target": "gui:menu/action/menu/primary_trigger",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/primary_trigger",
+                    "filter": "is_focused(Menu)"
                 },
                 {
-                    "target": "gui:debug/action/menu/primary_trigger",
-                    "if_focused": "Overlay"
+                    "outputs": "gui:debug/action/menu/primary_trigger",
+                    "filter": "is_focused(Overlay)"
                 }
             ],
             "/mouse/right_click": [
                 {
-                    "target": "gui:menu/action/menu/secondary_trigger",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/secondary_trigger",
+                    "filter": "is_focused(Menu)"
                 },
                 {
-                    "target": "gui:debug/action/menu/secondary_trigger",
-                    "if_focused": "Overlay"
+                    "outputs": "gui:debug/action/menu/secondary_trigger",
+                    "filter": "is_focused(Overlay)"
                 }
             ]
         }
@@ -62,103 +62,111 @@
     "input:keyboard": {
         "event_bindings": {
             "/keyboard/key/f1": {
-                "target": "console:input/action/run_command",
+                "outputs": "console:input/action/run_command",
+                "filter": "event",
                 "set_value": "edit"
             },
             "/keyboard/key/f2": {
-                "target": "console:input/action/run_command",
+                "outputs": "console:input/action/run_command",
+                "filter": "event",
                 "set_value": "tracy"
             },
             "/keyboard/key/f5": {
-                "target": "console:input/action/run_command",
+                "outputs": "console:input/action/run_command",
+                "filter": "event",
                 "set_value": "reloadscene"
             },
             "/keyboard/key/f6": {
-                "target": "console:input/action/run_command",
+                "outputs": "console:input/action/run_command",
+                "filter": "event",
                 "set_value": "reloadscene; reloadplayer"
             },
             "/keyboard/key/f7": {
-                "target": "console:input/action/run_command",
+                "outputs": "console:input/action/run_command",
+                "filter": "event",
                 "set_value": "reloadshaders"
             },
-            "/keyboard/key/backtick": "gui:debug/action/console/toggle",
+            "/keyboard/key/backtick": {
+                "outputs": "gui:debug/action/console/toggle",
+                "filter": "event"
+            },
             "/keyboard/characters": {
-                "target": "gui:debug/action/menu/text_input",
-                "if_focused": "Overlay"
+                "outputs": "gui:debug/action/menu/text_input",
+                "filter": "is_focused(Overlay)"
             },
             "/keyboard/key_down": [
                 {
-                    "target": "gui:menu/action/menu/key_down",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/key_down",
+                    "filter": "is_focused(Menu)"
                 },
                 {
-                    "target": "gui:debug/action/menu/key_down",
-                    "if_focused": "Overlay"
+                    "outputs": "gui:debug/action/menu/key_down",
+                    "filter": "is_focused(Overlay)"
                 }
             ],
             "/keyboard/key_up": [
                 {
-                    "target": "gui:menu/action/menu/key_up",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/key_up",
+                    "filter": "is_focused(Menu)"
                 },
                 {
-                    "target": "gui:debug/action/menu/key_up",
-                    "if_focused": "Overlay"
+                    "outputs": "gui:debug/action/menu/key_up",
+                    "filter": "is_focused(Overlay)"
                 }
             ],
             "/keyboard/key/escape": [
                 {
-                    "target": "gui:menu/action/menu/open",
-                    "if_focused": "Game"
+                    "outputs": "gui:menu/action/menu/open",
+                    "filter": "is_focused(Game) && event"
                 },
                 {
-                    "target": "gui:menu/action/menu/back",
-                    "if_focused": "Menu"
+                    "outputs": "gui:menu/action/menu/back",
+                    "filter": "is_focused(Menu) && event"
                 }
             ],
             "/keyboard/key/enter": {
-                "target": "gui:menu/action/menu/enter",
-                "if_focused": "Menu"
+                "outputs": "gui:menu/action/menu/enter",
+                "filter": "is_focused(Menu) && event"
             },
             "/keyboard/key/space": {
-                "target": "player:player/action/jump",
-                "if_focused": "Game"
+                "outputs": "player:player/action/jump",
+                "filter": "is_focused(Game) && event"
             },
             "/keyboard/key/e": {
-                "target": "player:flatview/interact/grab",
-                "if_focused": "Game"
+                "outputs": "player:flatview/interact/grab",
+                "filter": "is_focused(Game) && event"
             },
             "/keyboard/key/q": {
-                "target": "console:input/action/run_command",
-                "set_value": "tray",
-                "if_focused": "Game"
+                "outputs": "console:input/action/run_command",
+                "filter": "is_focused(Game) && event",
+                "set_value": "tray"
             },
             "/keyboard/key/f": {
-                "target": "player:flashlight/action/flashlight/toggle",
-                "if_focused": "Game"
+                "outputs": "player:flashlight/action/flashlight/toggle",
+                "filter": "is_focused(Game) && event"
             },
             "/keyboard/key/p": {
-                "target": "player:flashlight/action/flashlight/grab",
-                "if_focused": "Game"
+                "outputs": "player:flashlight/action/flashlight/grab",
+                "filter": "is_focused(Game) && event"
             },
             "/keyboard/key/v": {
-                "target": "console:input/action/run_command",
-                "if_focused": "Game",
+                "outputs": "console:input/action/run_command",
+                "filter": "is_focused(Game) && event",
                 "set_value": "togglesignal player:player/move_noclip"
             },
             "/keyboard/key/g": {
-                "target": "console:input/action/run_command",
-                "if_focused": "Game",
+                "outputs": "console:input/action/run_command",
+                "filter": "is_focused(Game) && event",
                 "set_value": "toggle r.VoxelDebug 0 1 2 3"
             },
             "/keyboard/key/z": {
-                "target": "console:input/action/run_command",
-                "if_focused": "Game",
+                "outputs": "console:input/action/run_command",
+                "filter": "is_focused(Game) && event",
                 "set_value": "togglesignal menu:articulating_arm.arm.Knob 0.5 1"
             },
             "/keyboard/key/b": {
-                "target": "console:input/action/run_command",
-                "if_focused": "Game",
+                "outputs": "console:input/action/run_command",
+                "filter": "is_focused(Game) && event",
                 "set_value": "togglesignal menu:articulating_arm_1.arm.Knob 0.5 1"
             }
         }
@@ -188,12 +196,14 @@
             "/actions/main/in/press": "vr:left_hand_skeleton/interact/press",
             "/actions/main/in/grab": "vr:left_hand/interact/grab",
             "/actions/main/in/rotate_left": {
-                "target": "vr:origin/action/snap_rotate",
-                "multiply_value": -45
+                "outputs": "vr:origin/action/snap_rotate",
+                "filter": "event",
+                "set_value": -45
             },
             "/actions/main/in/rotate_right": {
-                "target": "vr:origin/action/snap_rotate",
-                "multiply_value": 45
+                "outputs": "vr:origin/action/snap_rotate",
+                "filter": "event",
+                "set_value": 45
             }
         }
     },
@@ -202,12 +212,14 @@
             "/actions/main/in/press": "vr:right_hand_skeleton/interact/press",
             "/actions/main/in/grab": "vr:right_hand/interact/grab",
             "/actions/main/in/rotate_left": {
-                "target": "vr:origin/action/snap_rotate",
-                "multiply_value": -45
+                "outputs": "vr:origin/action/snap_rotate",
+                "filter": "event",
+                "set_value": -45
             },
             "/actions/main/in/rotate_right": {
-                "target": "vr:origin/action/snap_rotate",
-                "multiply_value": 45
+                "outputs": "vr:origin/action/snap_rotate",
+                "filter": "event",
+                "set_value": 45
             }
         }
     },

@@ -36,11 +36,8 @@ namespace FocusLockTests {
 
             keyboard.Set<ecs::Name>(lock, "input", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
-            ecs::EventBinding binding;
-            binding.target = player;
-            binding.destQueue = TEST_EVENT_ACTION;
-            binding.ifFocused = ecs::FocusLayer::Game;
-            eventBindings.Bind(TEST_EVENT_KEY, binding);
+            auto &binding = eventBindings.Bind(TEST_EVENT_KEY, player, TEST_EVENT_ACTION);
+            binding.actions.filterExpr = ecs::SignalExpression("is_focused(Game)");
 
             mouse.Set<ecs::Name>(lock, "input", "mouse");
             auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);

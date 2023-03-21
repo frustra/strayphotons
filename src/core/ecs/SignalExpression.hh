@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Focus.hh"
 
@@ -25,6 +26,9 @@ namespace ecs {
         struct ConstantNode {
             double value = 0.0f;
         };
+        struct IdentifierNode {
+            std::string id = "input";
+        };
         struct SignalNode {
             EntityRef entity;
             std::string signalName = "value";
@@ -48,8 +52,13 @@ namespace ecs {
             int falseIndex = -1;
         };
 
-        using NodeVariant = std::
-            variant<ConstantNode, SignalNode, FocusCondition, OneInputOperation, TwoInputOperation, DeciderOperation>;
+        using NodeVariant = std::variant<ConstantNode,
+            IdentifierNode,
+            SignalNode,
+            FocusCondition,
+            OneInputOperation,
+            TwoInputOperation,
+            DeciderOperation>;
         struct Node : public NodeVariant {
             size_t startToken = 0;
             size_t endToken = 0;
@@ -63,6 +72,7 @@ namespace ecs {
         bool Parse();
 
         double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;
+        double EvaluateEvent(ReadSignalsLock lock, const Event::EventData &input, size_t depth = 0) const;
 
         bool operator==(const SignalExpression &other) const {
             return expr == other.expr && scope == other.scope;
@@ -81,7 +91,9 @@ namespace ecs {
     private:
         std::string joinTokens(size_t startToken, size_t endToken) const;
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
-        double evaluateNode(const ReadSignalsLock &lock, size_t depth, int nodeIndex) const;
+
+        template<typename LockType, typename InputType>
+        double evaluateNode(const LockType &lock, size_t depth, int nodeIndex, const InputType &input) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

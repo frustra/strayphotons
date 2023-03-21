@@ -40,11 +40,11 @@
 		"event_input": {},
 		"event_bindings": {
 			"/elevator/request_up": {
-				"target": "door/reset_timer/open_timer_up",
+				"outputs": "door/reset_timer/open_timer_up",
 				"set_value": -10
 			},
 			"/elevator/request_down": {
-				"target": "door/reset_timer/open_timer_down",
+				"outputs": "door/reset_timer/open_timer_down",
 				"set_value": -10
 			}
 		},

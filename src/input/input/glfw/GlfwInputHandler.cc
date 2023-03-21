@@ -78,10 +78,8 @@ namespace sp {
                     }
                 } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
                     auto &keyName = std::get<std::string>(event.data);
-                    // TODO: Set up event filters so we can support key-up events
-                    // std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                    // ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard,
-                    // false});
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
 
                     if (keyboard.Has<ecs::SignalOutput>(lock)) {
                         auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);

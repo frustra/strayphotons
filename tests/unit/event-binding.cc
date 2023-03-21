@@ -48,18 +48,17 @@ namespace EventBindingTests {
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             auto targets = bindings.sourceToDest.at(TEST_SOURCE_BUTTON);
             AssertEqual(targets.size(), 1u, "Unexpected binding count");
-            AssertEqual(targets.begin()->target.GetLive(), hand, "Expected button to be bound on hand");
-            AssertEqual(targets.begin()->destQueue, TEST_EVENT_ACTION1, "Expected button to be bound to action1");
+            AssertEqual(targets[0].outputs.size(), 1u, "Unexpected binding output count");
+            AssertEqual(targets[0].outputs[0].target.GetLive(), hand, "Expected button to be bound on hand");
+            AssertEqual(targets[0].outputs[0].queueName, TEST_EVENT_ACTION1, "Expected button to be bound to action1");
 
             targets = bindings.sourceToDest.at(TEST_SOURCE_KEY);
-            auto it = targets.begin();
-            AssertEqual(it->target.GetLive(), hand, "Expected key to be bound on hand");
-            AssertEqual(it->destQueue, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
-            it++;
-            AssertEqual(it->target.GetLive(), player, "Expected key to be bound on player");
-            AssertEqual(it->destQueue, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
-            it++;
-            Assert(it == targets.end(), "Expected key to have no more bindings");
+            AssertEqual(targets.size(), 1u, "Unexpected binding count");
+            AssertEqual(targets[0].outputs.size(), 2u, "Unexpected binding output count");
+            AssertEqual(targets[0].outputs[0].target.GetLive(), hand, "Expected key to be bound on hand");
+            AssertEqual(targets[0].outputs[0].queueName, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
+            AssertEqual(targets[0].outputs[1].target.GetLive(), player, "Expected key to be bound on player");
+            AssertEqual(targets[0].outputs[1].queueName, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
         }
         {
             Timer t("Send some test events");

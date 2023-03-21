@@ -403,14 +403,11 @@ namespace sp {
                                     ImGui::TableSetColumnIndex(0);
                                     ImGui::Text("%s", field.name.c_str());
                                     ImGui::TableSetColumnIndex(1);
-                                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
-                                        using T = std::remove_pointer_t<decltype(typePtr)>;
-
-                                        auto fieldValue = field.Access<T>(dataPtr);
+                                    ecs::GetFieldType(field.type, field.Access(dataPtr), [&](auto &fieldValue) {
                                         auto parentFieldName = fieldName;
                                         fieldName = "";
                                         ImGui::SetNextItemWidth(-FLT_MIN);
-                                        if (AddImGuiElement(rowId + "."s + field.name, *fieldValue)) {
+                                        if (AddImGuiElement(rowId + "."s + field.name, fieldValue)) {
                                             changed = true;
                                         }
                                         fieldName = parentFieldName;
@@ -463,23 +460,25 @@ namespace sp {
 
         bool valueChanged = false;
         bool isDefined = true;
-        if (ecs::IsStaging(target)) {
-            auto defaultLiveComponent = comp.GetLiveDefault();
-            auto defaultStagingComponent = comp.GetStagingDefault();
-            auto &defaultValue = *field.Access<T>(defaultLiveComponent);
-            auto &undefinedValue = *field.Access<T>(defaultStagingComponent);
-            if (defaultValue != undefinedValue) {
-                isDefined = value != undefinedValue;
-                if (ImGui::Checkbox(isDefined ? fieldId.c_str() : elementName.c_str(), &isDefined)) {
-                    // Value has already been toggled by ImGui at this point
-                    if (!isDefined) {
-                        value = undefinedValue;
-                    } else {
-                        value = defaultValue;
+        if constexpr (std::equality_comparable<T>) {
+            if (ecs::IsStaging(target)) {
+                auto defaultLiveComponent = comp.GetLiveDefault();
+                auto defaultStagingComponent = comp.GetStagingDefault();
+                auto &defaultValue = *field.Access<T>(defaultLiveComponent);
+                auto &undefinedValue = *field.Access<T>(defaultStagingComponent);
+                if (defaultValue != undefinedValue) {
+                    isDefined = value != undefinedValue;
+                    if (ImGui::Checkbox(isDefined ? fieldId.c_str() : elementName.c_str(), &isDefined)) {
+                        // Value has already been toggled by ImGui at this point
+                        if (!isDefined) {
+                            value = undefinedValue;
+                        } else {
+                            value = defaultValue;
+                        }
+                        valueChanged = true;
                     }
-                    valueChanged = true;
+                    if (isDefined) ImGui::SameLine();
                 }
-                if (isDefined) ImGui::SameLine();
             }
         }
         if (isDefined) {
@@ -806,9 +805,7 @@ namespace sp {
                     fieldName = field.name;
                     fieldId = "##scene_properties" + std::to_string(field.fieldIndex);
                     std::string elementName = fieldName + fieldId;
-                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
-                        using T = std::remove_pointer_t<decltype(typePtr)>;
-                        auto &value = *field.Access<T>(&properties);
+                    ecs::GetFieldType(field.type, field.Access(&properties), [&](auto &value) {
                         if (AddImGuiElement(elementName, value)) changed = true;
                     });
                 }
