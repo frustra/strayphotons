@@ -232,7 +232,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "connect-test1:loaded + connect-test2:loaded + connect-test3:loaded + connect-test4:loaded"
+				"animation_target": "connect-test1:loaded/value + connect-test2:loaded/value + connect-test3:loaded/value + connect-test4:loaded/value"
 			}
 		},
 		{

@@ -255,7 +255,7 @@ namespace ecs {
                         Errorf("Event binding modify value is wrong size: %u != %u", actions.size(), T::length());
                         return;
                     }
-                    for (size_t i = 0; i < T::length(); i++) {
+                    for (int i = 0; i < T::length(); i++) {
                         if constexpr (std::is_same_v<U, bool>) {
                             arg[i] = actions[i].EvaluateEvent(lock, input, depth) >= 0.5;
                         } else {

@@ -47,7 +47,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "lasersensor * 4"
+				"animation_target": "lasersensor/value * 4"
 			}
 		},
 		{
@@ -145,7 +145,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "sensor1"
+				"animation_target": "sensor1/value"
 			},
 			"physics": {
 				"shapes": {

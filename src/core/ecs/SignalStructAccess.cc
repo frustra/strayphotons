@@ -88,7 +88,8 @@ namespace ecs {
                             ArgT tmp = (ArgT)base[index];
                             accessor(tmp);
                             if constexpr (!std::is_const_v<ArgT>) {
-                                if constexpr (std::is_same_v<T::value_type, bool> && !std::is_same_v<ArgT, bool>) {
+                                if constexpr (std::is_same_v<typename T::value_type, bool> &&
+                                              !std::is_same_v<ArgT, bool>) {
                                     base[index] = (double)tmp > 0.5;
                                 } else {
                                     base[index] = (typename T::value_type)tmp;

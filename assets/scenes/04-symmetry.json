@@ -36,7 +36,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"signal_bindings": {
-				"in_signal": "sensor1 && sensor2"
+				"in_signal": "sensor1/value && sensor2/value"
 			},
 			"event_bindings": {
 				"/trigger/player/enter": [
