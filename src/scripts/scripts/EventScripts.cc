@@ -100,10 +100,10 @@ namespace sp::scripts {
             if (outputs.empty()) return;
             state.definition.events.clear();
             for (auto &fieldPath : outputs) {
-                size_t delim = fieldPath.find('.');
-                if (delim == std::string::npos) continue;
-                auto componentName = fieldPath.substr(0, delim);
-                auto fieldName = fieldPath.substr(delim + 1);
+                size_t delimiter = fieldPath.find('.');
+                if (delimiter == std::string::npos) continue;
+                auto componentName = fieldPath.substr(0, delimiter);
+                auto fieldName = fieldPath.substr(delimiter + 1);
                 if (componentName.empty() || fieldName.empty()) continue;
 
                 state.definition.events.emplace_back("/set/" + componentName + "." + fieldName);
@@ -118,12 +118,12 @@ namespace sp::scripts {
                 }
 
                 auto fieldPath = std::string_view(event.name).substr("/set/"s.size());
-                size_t delim = fieldPath.find('.');
-                if (delim == std::string_view::npos) {
+                size_t delimiter = fieldPath.find('.');
+                if (delimiter == std::string_view::npos) {
                     Errorf("Unexpected event received by component_from_event: %s", event.name);
                     continue;
                 }
-                std::string componentName(fieldPath.substr(0, delim));
+                std::string componentName(fieldPath.substr(0, delimiter));
                 auto comp = LookupComponent(componentName);
                 if (!comp) {
                     Errorf("ComponentFromEvent unknown component: %s", componentName);

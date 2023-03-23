@@ -13,6 +13,8 @@
 namespace ecs {
     using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLock>>;
 
+    class ComponentBase;
+
     class SignalExpression {
     public:
         SignalExpression() {}
@@ -32,6 +34,11 @@ namespace ecs {
         struct SignalNode {
             EntityRef entity;
             std::string signalName = "value";
+        };
+        struct ComponentNode {
+            EntityRef entity;
+            const ComponentBase *component;
+            std::string fieldName = "";
         };
         struct FocusCondition {
             FocusLayer ifFocused;
@@ -55,6 +62,7 @@ namespace ecs {
         using NodeVariant = std::variant<ConstantNode,
             IdentifierNode,
             SignalNode,
+            ComponentNode,
             FocusCondition,
             OneInputOperation,
             TwoInputOperation,
@@ -71,8 +79,23 @@ namespace ecs {
         // Called automatically by construct. Should be called when expression string is changed.
         bool Parse();
 
-        double Evaluate(ReadSignalsLock lock, size_t depth = 0) const;
-        double EvaluateEvent(ReadSignalsLock lock, const Event::EventData &input, size_t depth = 0) const;
+        template<typename LockType>
+        double Evaluate(LockType lock, size_t depth = 0) const {
+            if constexpr (Lock<ReadAll>::template has_all_permissions<LockType>()) {
+                return evaluate((Lock<ReadAll>)lock, depth);
+            } else {
+                return evaluate((DynamicLock<ReadSignalsLock>)lock, depth);
+            }
+        }
+
+        template<typename LockType>
+        double EvaluateEvent(LockType lock, const Event::EventData &input, size_t depth = 0) const {
+            if constexpr (Lock<ReadAll>::template has_all_permissions<LockType>()) {
+                return evaluateEvent((Lock<ReadAll>)lock, input, depth);
+            } else {
+                return evaluateEvent((DynamicLock<ReadSignalsLock>)lock, input, depth);
+            }
+        }
 
         bool operator==(const SignalExpression &other) const {
             return expr == other.expr && scope == other.scope;
@@ -94,6 +117,11 @@ namespace ecs {
 
         template<typename LockType, typename InputType>
         double evaluateNode(const LockType &lock, size_t depth, int nodeIndex, const InputType &input) const;
+
+        double evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const;
+        double evaluate(Lock<ReadAll> lock, size_t depth) const;
+        double evaluateEvent(DynamicLock<ReadSignalsLock> lock, const Event::EventData &input, size_t depth) const;
+        double evaluateEvent(Lock<ReadAll> lock, const Event::EventData &input, size_t depth) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

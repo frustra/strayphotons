@@ -234,12 +234,12 @@ namespace sp::scripts {
         template<typename LockType>
         void updateComponentFromSignal(LockType lock, Entity ent) {
             for (auto &[fieldPath, signalExpr] : mapping) {
-                size_t delim = fieldPath.find('.');
-                if (delim == std::string::npos) {
+                size_t delimiter = fieldPath.find('.');
+                if (delimiter == std::string::npos) {
                     Errorf("ComponentFromSignal unknown component path: %s", fieldPath);
                     continue;
                 }
-                auto componentName = fieldPath.substr(0, delim);
+                auto componentName = fieldPath.substr(0, delimiter);
                 auto comp = LookupComponent(componentName);
                 if (!comp) {
                     Errorf("ComponentFromSignal unknown component: %s", componentName);

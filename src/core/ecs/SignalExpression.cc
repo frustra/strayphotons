@@ -3,6 +3,7 @@
 #include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalStructAccess.hh"
@@ -522,17 +523,38 @@ namespace ecs {
                 }
 
                 index = nodes.size();
-                if (sp::contains(token, '/')) {
-                    auto [entityName, signalName] = ParseSignalString(token, this->scope);
-                    nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
-                        tokenIndex,
-                        tokenIndex + 1);
-                    nodeStrings.emplace_back(entityName.String() + "/" + signalName);
-                } else {
+
+                auto delimiter = token.find_first_of("/#");
+                if (delimiter >= token.length()) {
                     nodes.emplace_back(SignalExpression::IdentifierNode{std::string(token)},
                         tokenIndex,
                         tokenIndex + 1);
                     nodeStrings.emplace_back(token);
+                } else if (token[delimiter] == '/') {
+                    ecs::Name entityName(token.substr(0, delimiter), this->scope);
+                    std::string signalName(token.substr(delimiter + 1));
+                    nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
+                        tokenIndex,
+                        tokenIndex + 1);
+                    nodeStrings.emplace_back(entityName.String() + "/" + signalName);
+                } else if (token[delimiter] == '#') {
+                    ecs::Name entityName(token.substr(0, delimiter), this->scope);
+                    std::string componentPath(token.substr(delimiter + 1));
+                    std::string componentName = componentPath.substr(0, componentPath.find('.'));
+
+                    auto *componentBase = LookupComponent(componentName);
+                    if (!componentBase) {
+                        Errorf("Failed to parse signal expression, unknown component '%s': %s",
+                            std::string(token),
+                            componentName);
+                        return -1;
+                    }
+                    nodes.emplace_back(SignalExpression::ComponentNode{entityName, componentBase, componentPath},
+                        tokenIndex,
+                        tokenIndex + 1);
+                    nodeStrings.emplace_back(entityName.String() + "#" + componentPath);
+                } else {
+                    Abortf("Unexpected delimiter: '%c' %s", token[delimiter], std::string(token));
                 }
                 tokenIndex++;
             }
@@ -632,13 +654,13 @@ namespace ecs {
                 return 0.0;
             }
         } else {
-            size_t delim = id.find('#');
-            if (delim == std::string::npos) {
+            size_t delimiter = id.find('#');
+            if (delimiter == std::string::npos) {
                 Errorf("SignalExpression eval: unknown identifier: %s", id);
                 return 0.0;
             }
 
-            // auto componentName = id.substr(0, delim);
+            // auto componentName = id.substr(0, delimiter);
             // auto comp = LookupComponent(componentName);
             // if (!comp) {
             Errorf("SignalExpression eval: unknown identifier: %s", id);
@@ -665,6 +687,40 @@ namespace ecs {
                     return evaluateIdentifier(lock, input, node.id);
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
+                } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
+                    const ComponentBase *base = node.component;
+                    if (!base) return 0.0;
+                    Entity ent = node.entity.Get(lock);
+                    if (!ent) return 0.0;
+                    return GetFieldType(base->metadata.type, [&](auto *typePtr) {
+                        using T = std::remove_pointer_t<decltype(typePtr)>;
+                        if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                            Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
+                            return 0.0;
+                        } else if constexpr (Tecs::is_read_allowed<T, LockType>()) {
+                            auto &component = ent.Get<const T>(lock);
+                            double fieldValue = 0.0;
+                            AccessStructField(typeid(T), &component, node.fieldName, [&](const double &value) {
+                                fieldValue = value;
+                            });
+                            return fieldValue;
+                        } else {
+                            auto tryLock = lock.TryLock<Read<T>>();
+                            if (tryLock) {
+                                auto &component = ent.Get<const T>(*tryLock);
+                                double fieldValue = 0.0;
+                                AccessStructField(typeid(T), &component, node.fieldName, [&](const double &value) {
+                                    fieldValue = value;
+                                });
+                                return fieldValue;
+                            } else {
+                                Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
+                                    node.fieldName,
+                                    typeid(T).name());
+                                return 0.0;
+                            }
+                        }
+                    });
                 } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
                     if (!lock.template Has<FocusLock>() ||
                         !lock.template Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
@@ -702,15 +758,21 @@ namespace ecs {
         return result;
     };
 
-    double SignalExpression::Evaluate(ReadSignalsLock lock, size_t depth) const {
-        // Debugf("Eval '%s'", expr);
+    double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
-    double SignalExpression::EvaluateEvent(ReadSignalsLock lock, const Event::EventData &input, size_t depth) const {
-        // std::stringstream ss;
-        // ss << input;
-        // Debugf("Eval '%s' input %s", expr, ss.str());
+    double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
+        return evaluateNode(lock, depth, rootIndex, 0.0);
+    }
+
+    double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock,
+        const Event::EventData &input,
+        size_t depth) const {
+        return evaluateNode(lock, depth, rootIndex, input);
+    }
+
+    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const Event::EventData &input, size_t depth) const {
         return evaluateNode(lock, depth, rootIndex, input);
     }
 

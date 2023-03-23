@@ -18,8 +18,8 @@ namespace ecs {
             return ecs::GetFieldType(baseType, basePtr, [&](auto &base) {
                 using T = std::decay_t<decltype(base)>;
 
-                auto delim = fieldName.find('.');
-                if (delim == std::string_view::npos) {
+                auto delimiter = fieldName.find('.');
+                if (delimiter == std::string_view::npos) {
                     if constexpr (std::is_same_v<T, std::decay_t<ArgT>>) {
                         accessor((ArgT &)base);
                         return true;
@@ -42,7 +42,7 @@ namespace ecs {
                     }
                 }
 
-                auto subField = fieldName.substr(delim + 1);
+                auto subField = fieldName.substr(delimiter + 1);
                 if (subField.empty()) {
                     Errorf("AccessStructField empty subfield: %s '%s'", baseType.name(), std::string(fieldName));
                     return false;
