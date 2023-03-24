@@ -665,7 +665,7 @@ namespace ecs {
                 [&lock](auto &&node) {
                     using T = std::decay_t<decltype(node)>;
                     if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                        auto ent = node.entity.Get(lock);
+                        Entity ent = node.entity.Get(lock);
                         if (!ent.Has<SignalBindings>(lock)) return true;
 
                         auto &bindings = ent.Get<const SignalBindings>(lock);
@@ -729,7 +729,7 @@ namespace ecs {
                             });
                             return fieldValue;
                         } else {
-                            auto tryLock = lock.TryLock<Read<T>>();
+                            auto tryLock = lock.template TryLock<Read<T>>();
                             if (tryLock) {
                                 auto &component = ent.Get<const T>(*tryLock);
                                 double fieldValue = 0.0;

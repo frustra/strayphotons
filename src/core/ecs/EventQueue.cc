@@ -44,7 +44,7 @@ namespace ecs {
         State s, s2;
         do {
             s = state.load();
-            s2 = {s.head, (s.tail + 1) % events.size()};
+            s2 = {s.head, (s.tail + 1) % (uint32_t)events.size()};
             if (s2.tail == s2.head) {
                 Warnf("Event Queue full! Dropping event %s from %s", event.name, std::to_string(event.source));
                 return false;
@@ -86,7 +86,7 @@ namespace ecs {
             State s2;
             do {
                 s = state.load();
-                s2 = {(s.head + 1) % events.size(), s.tail};
+                s2 = {(s.head + 1) % (uint32_t)events.size(), s.tail};
             } while (!state.compare_exchange_weak(s, s2, std::memory_order_release, std::memory_order_relaxed));
         }
         if (!outputSet) eventOut = Event();
@@ -107,7 +107,7 @@ namespace ecs {
         }
     }
 
-    EventQueueRef NewEventQueue(size_t maxQueueSize) {
+    EventQueueRef NewEventQueue(uint32_t maxQueueSize) {
         return make_shared<EventQueue>(maxQueueSize);
     }
 } // namespace ecs

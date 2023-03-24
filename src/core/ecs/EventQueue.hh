@@ -52,7 +52,7 @@ namespace ecs {
      */
     class EventQueue {
     public:
-        EventQueue(size_t maxQueueSize) : events(maxQueueSize), state({0, 0}) {}
+        EventQueue(uint32_t maxQueueSize) : events(maxQueueSize), state({0, 0}) {}
 
         // Returns false if the queue is full
         bool Add(const AsyncEvent &event);
@@ -80,5 +80,5 @@ namespace ecs {
 
     using EventQueueRef = std::shared_ptr<EventQueue>;
 
-    EventQueueRef NewEventQueue(size_t maxQueueSize = 1000);
+    EventQueueRef NewEventQueue(uint32_t maxQueueSize = 1000);
 } // namespace ecs
