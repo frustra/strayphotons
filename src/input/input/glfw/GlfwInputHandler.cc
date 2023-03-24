@@ -18,7 +18,7 @@
 #include <stdexcept>
 
 namespace sp {
-    GlfwInputHandler::GlfwInputHandler(GLFWwindow &glfwWindow) : window(&glfwWindow) {
+    GlfwInputHandler::GlfwInputHandler(GLFWwindow &glfwWindow) : window(&glfwWindow), glfwEventQueue(1000) {
         glfwSetWindowUserPointer(window, this);
 
         glfwSetKeyCallback(window, KeyInputCallback);
@@ -60,7 +60,7 @@ namespace sp {
             auto mouse = mouseEntity.Get(lock);
 
             ecs::Event event;
-            while (glfwEventQueue.Poll(event)) {
+            while (glfwEventQueue.Poll(event, lock.GetTransactionId())) {
                 if (event.source == keyboard) {
                     ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
                 } else if (event.source == mouse) {
@@ -78,10 +78,8 @@ namespace sp {
                     }
                 } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
                     auto &keyName = std::get<std::string>(event.data);
-                    // TODO: Set up event filters so we can support key-up events
-                    // std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                    // ecs::EventBindings::SendEvent(lock, ctx->keyboardEntity, ecs::Event{eventName, keyboard,
-                    // false});
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
 
                     if (keyboard.Has<ecs::SignalOutput>(lock)) {
                         auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);

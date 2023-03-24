@@ -337,7 +337,7 @@
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"renderable#emissive": "airlock_in_button_sensor.Icosphere/value"
+					"renderable.emissive": "airlock_in_button_sensor.Icosphere/value"
 				}
 			}
 		},

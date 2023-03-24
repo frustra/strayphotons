@@ -102,6 +102,8 @@ namespace sp {
         color_t() : color(1) {}
         color_t(const glm::vec3 &color) : color(color) {}
 
+        typedef glm::vec3::value_type value_type;
+
         operator glm::vec3() const {
             return color;
         }
@@ -152,6 +154,8 @@ namespace sp {
         color_alpha_t(const glm::vec3 &rgb) : color(rgb, 1) {}
         color_alpha_t(const glm::vec4 &rgba) : color(rgba) {}
 
+        typedef glm::vec4::value_type value_type;
+
         operator glm::vec4() const {
             return color;
         }
@@ -187,6 +191,12 @@ namespace sp {
     inline bool contains(const T &vec, const V &val) {
         return std::find(vec.begin(), vec.end(), val) != vec.end();
     }
+
+    template<typename T>
+    struct is_vector : std::false_type {};
+
+    template<typename T>
+    struct is_vector<std::vector<T>> : std::true_type {};
 
     template<typename T>
     struct is_glm_vec : std::false_type {};

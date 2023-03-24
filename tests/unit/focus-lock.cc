@@ -36,11 +36,8 @@ namespace FocusLockTests {
 
             keyboard.Set<ecs::Name>(lock, "input", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
-            ecs::EventBinding binding;
-            binding.target = player;
-            binding.destQueue = TEST_EVENT_ACTION;
-            binding.ifFocused = ecs::FocusLayer::Game;
-            eventBindings.Bind(TEST_EVENT_KEY, binding);
+            auto &binding = eventBindings.Bind(TEST_EVENT_KEY, player, TEST_EVENT_ACTION);
+            binding.actions.filterExpr = ecs::SignalExpression("is_focused(Game)");
 
             mouse.Set<ecs::Name>(lock, "input", "mouse");
             auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);
@@ -48,7 +45,7 @@ namespace FocusLockTests {
         }
         {
             Timer t("Try sending events and reading signals with Game focus");
-            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, keyboard, ecs::Event{TEST_EVENT_KEY, keyboard, 42});
             Assert(sentCount == 1, "Expected to successfully queue 1 event");
@@ -57,11 +54,11 @@ namespace FocusLockTests {
             Assert(ecs::EventInput::Poll(lock, playerQueue, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION, "Unexpected event name");
             AssertEqual(event.source, keyboard, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData(42), "Unexpected event data");
             Assert(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
             Assert(!event.source, "Event data should not be set");
-            AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
+            AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION);
             AssertEqual(val, 42.0, "Expected signal to match button source");
@@ -84,7 +81,7 @@ namespace FocusLockTests {
             Assert(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
             Assert(!event.source, "Event data should not be set");
-            AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
+            AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION);
             AssertEqual(val, 0.0, "Expected zero signal when out of focus");

@@ -16,7 +16,7 @@ namespace ecs {
         return ss.str();
     }
 
-    std::ostream &operator<<(std::ostream &out, const Event::EventData &v) {
+    std::ostream &operator<<(std::ostream &out, const EventData &v) {
         std::visit(
             [&](auto &&arg) {
                 using T = std::decay_t<decltype(arg)>;
@@ -40,34 +40,74 @@ namespace ecs {
         return out;
     }
 
-    void EventQueue::Add(const Event &event) {
-        std::lock_guard lock(mutex);
-        events.emplace(event);
-    }
-
-    bool EventQueue::Empty() {
-        std::lock_guard lock(mutex);
-        return events.empty();
-    }
-
-    size_t EventQueue::Size() {
-        std::lock_guard lock(mutex);
-        return events.size();
-    }
-
-    bool EventQueue::Poll(Event &eventOut) {
-        std::lock_guard lock(mutex);
-        if (events.empty()) {
-            eventOut = Event();
-            return false;
-        }
-
-        eventOut = events.front();
-        events.pop();
+    bool EventQueue::Add(const AsyncEvent &event) {
+        State s, s2;
+        do {
+            s = state.load();
+            s2 = {s.head, (s.tail + 1) % (uint32_t)events.size()};
+            if (s2.tail == s2.head) {
+                Warnf("Event Queue full! Dropping event %s from %s", event.name, std::to_string(event.source));
+                return false;
+            }
+        } while (!state.compare_exchange_weak(s, s2, std::memory_order_acquire, std::memory_order_relaxed));
+        events[s.tail] = event;
         return true;
     }
 
-    EventQueueRef NewEventQueue() {
-        return make_shared<EventQueue>();
+    bool EventQueue::Add(const Event &event, size_t transactionId) {
+        AsyncEvent asyncEvent(event.name, event.source, event.data);
+        asyncEvent.transactionId = transactionId;
+        return Add(asyncEvent);
+    }
+
+    bool EventQueue::Poll(Event &eventOut, size_t transactionId) {
+        bool outputSet = false;
+        while (!outputSet) {
+            State s = state.load();
+            if (s.head == s.tail) break;
+
+            auto &async = events[s.head];
+            // Check if this event should be visible to the current transaction
+            if (async.transactionId > transactionId && transactionId > 0) break;
+            if (!async.data || !async.data->Ready()) break;
+
+            auto data = async.data->Get();
+            if (data) {
+                eventOut = Event{
+                    async.name,
+                    async.source,
+                    *data,
+                };
+                outputSet = true;
+            } else {
+                // A null event means it was filtered out asynchronously, skip over it
+            }
+
+            State s2;
+            do {
+                s = state.load();
+                s2 = {(s.head + 1) % (uint32_t)events.size(), s.tail};
+            } while (!state.compare_exchange_weak(s, s2, std::memory_order_release, std::memory_order_relaxed));
+        }
+        if (!outputSet) eventOut = Event();
+        return outputSet;
+    }
+
+    bool EventQueue::Empty() {
+        State s = state.load();
+        return s.head == s.tail;
+    }
+
+    size_t EventQueue::Size() {
+        State s = state.load();
+        if (s.head > s.tail) {
+            return s.tail + events.size() - s.head;
+        } else {
+            return s.tail - s.head;
+        }
+    }
+
+    EventQueueRef NewEventQueue(uint32_t maxQueueSize) {
+        return make_shared<EventQueue>(maxQueueSize);
     }
 } // namespace ecs

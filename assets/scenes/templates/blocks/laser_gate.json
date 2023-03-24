@@ -204,13 +204,13 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"renderable#color_override.a": "!gate/value"
+						"renderable.color_override.a": "!gate/value"
 					}
 				},
 				{
 					"onTick": "physics_component_from_signal",
 					"parameters": {
-						"optic#pass_tint": "gate/value"
+						"optic.pass_tint.rgb": "gate/value"
 					}
 				}
 			]
@@ -243,13 +243,13 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"renderable#color_override.a": "gate/value"
+						"renderable.color_override.a": "gate/value"
 					}
 				},
 				{
 					"onTick": "physics_component_from_signal",
 					"parameters": {
-						"optic#pass_tint": "!gate/value"
+						"optic.pass_tint.rgb": "!gate/value"
 					}
 				}
 			]

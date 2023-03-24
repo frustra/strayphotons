@@ -94,14 +94,21 @@ namespace ecs {
             return StructField("", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
         }
 
+        void *Access(void *structPtr) const {
+            return static_cast<char *>(structPtr) + offset;
+        }
+
+        const void *Access(const void *structPtr) const {
+            return static_cast<const char *>(structPtr) + offset;
+        }
+
         template<typename T>
         T *Access(void *structPtr) const {
             Assertf(type == typeid(T),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
-            auto *field = static_cast<char *>(structPtr) + offset;
-            return reinterpret_cast<T *>(field);
+            return reinterpret_cast<T *>(Access(structPtr));
         }
 
         template<typename T>
@@ -110,8 +117,7 @@ namespace ecs {
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
-            auto *field = static_cast<const char *>(structPtr) + offset;
-            return reinterpret_cast<const T *>(field);
+            return reinterpret_cast<const T *>(Access(structPtr));
         }
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;

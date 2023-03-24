@@ -93,6 +93,8 @@ namespace ecs {
     using Entity = Tecs::Entity;
     template<typename... Permissions>
     using Lock = Tecs::Lock<ECS, Permissions...>;
+    template<typename... Permissions>
+    using DynamicLock = Tecs::DynamicLock<ECS, Permissions...>;
     template<typename... Components>
     using Read = Tecs::Read<Components...>;
     using ReadAll = Tecs::ReadAll;

@@ -29,7 +29,7 @@
 			"trigger_area": "Box",
 			"event_bindings": {
 				"/trigger/player/enter": {
-					"target": "console:input/action/run_command",
+					"outputs": "console:input/action/run_command",
 					"set_value": "r.FieldOfView 30"
 				}
 			}

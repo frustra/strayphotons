@@ -149,7 +149,7 @@
 				"translate": [0.86, 0.9, 0.3]
 			},
 			"signal_bindings": {
-				"laser_color_b": "sensor1/light_value_b",
+				"laser_color_b": "sensor1/light_value_b + blackhole2:gate1.optic-forward#optic.pass_tint.r",
 				"laser_color_g": "sensor1/light_value_g",
 				"laser_color_r": "sensor1/light_value_r"
 			},

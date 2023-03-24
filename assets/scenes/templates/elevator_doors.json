@@ -77,58 +77,32 @@
 			}
 		},
 		{
-			"name": "call_left_up",
+			"name": "call_left",
 			"event_bindings": {
-				"/elevator/call": "station-center:elevator1/elevator/request_up"
+				"/elevator/call": "station-center:elevator1/elevator/call_to_floor"
 			},
 			"script": {
 				"onTick": "edge_trigger",
 				"parameters": {
-					"input_expr": "call_button/button_pressed && call_button/left_is_closest && scoperoot/floor == 0",
+					"input_expr": "call_button/button_pressed && call_button/left_is_closest",
 					"output_event": "/elevator/call",
-					"falling_edge": false
+					"falling_edge": false,
+					"set_event_value": "scoperoot/floor"
 				}
 			}
 		},
 		{
-			"name": "call_left_down",
+			"name": "call_right",
 			"event_bindings": {
-				"/elevator/call": "station-center:elevator1/elevator/request_down"
+				"/elevator/call": "station-center:elevator2/elevator/call_to_floor"
 			},
 			"script": {
 				"onTick": "edge_trigger",
 				"parameters": {
-					"input_expr": "call_button/button_pressed && call_button/left_is_closest && scoperoot/floor == 3",
+					"input_expr": "call_button/button_pressed && call_button/right_is_closest",
 					"output_event": "/elevator/call",
-					"falling_edge": false
-				}
-			}
-		},
-		{
-			"name": "call_right_up",
-			"event_bindings": {
-				"/elevator/call": "station-center:elevator2/elevator/request_up"
-			},
-			"script": {
-				"onTick": "edge_trigger",
-				"parameters": {
-					"input_expr": "call_button/button_pressed && call_button/right_is_closest && scoperoot/floor == 0",
-					"output_event": "/elevator/call",
-					"falling_edge": false
-				}
-			}
-		},
-		{
-			"name": "call_right_down",
-			"event_bindings": {
-				"/elevator/call": "station-center:elevator2/elevator/request_down"
-			},
-			"script": {
-				"onTick": "edge_trigger",
-				"parameters": {
-					"input_expr": "call_button/button_pressed && call_button/right_is_closest && scoperoot/floor == 3",
-					"output_event": "/elevator/call",
-					"falling_edge": false
+					"falling_edge": false,
+					"set_event_value": "scoperoot/floor"
 				}
 			}
 		},

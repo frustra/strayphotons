@@ -1,3 +1,4 @@
+#include "assets/JsonHelpers.hh"
 #include "console/Console.hh"
 #include "core/Common.hh"
 #include "core/Tracing.hh"
@@ -9,8 +10,6 @@
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
 #endif
-
-#include <picojson/picojson.h>
 
 namespace sp {
     CFunc<void> CFuncPrintDebug("printdebug", "Print some debug info about the player", []() {
@@ -145,7 +144,7 @@ namespace sp {
         });
 
     CFunc<void> CFuncPrintEvents("printevents", "Print out the current state of event queues", []() {
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventInput, ecs::EventBindings>>();
 
         for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
             Logf("Event input %s:", ecs::ToString(lock, ent));
@@ -156,7 +155,7 @@ namespace sp {
                     if (queue->Empty()) {
                         Logf("  %s: empty", eventName);
                     } else {
-                        Logf("  %s: %u events", eventName, queue->Size());
+                        Logf("  %s: %u/%u events", eventName, queue->Size(), queue->Capacity());
                     }
                 }
             }
@@ -165,16 +164,19 @@ namespace sp {
         for (auto ent : lock.EntitiesWith<ecs::EventBindings>()) {
             Logf("Event binding %s:", ecs::ToString(lock, ent));
 
+            ecs::EntityScope scope;
+            if (ent.Has<ecs::SceneInfo>(lock)) {
+                auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
+                if (sceneInfo.scene) scope.scene = sceneInfo.scene.data->name;
+            }
+
             auto &bindings = ent.Get<ecs::EventBindings>(lock);
             for (auto &[bindingName, list] : bindings.sourceToDest) {
                 Logf("    %s:%s", bindingName, list.empty() ? " none" : "");
                 for (auto &binding : list) {
-                    auto target = binding.target.Get(lock);
-                    if (target) {
-                        Logf("      %s on %s", binding.destQueue, ecs::ToString(lock, target));
-                    } else {
-                        Logf("      %s on %s(missing)", binding.destQueue, binding.target.Name().String());
-                    }
+                    picojson::value outputs;
+                    sp::json::Save(scope, outputs, binding.outputs);
+                    Logf("      %s", outputs.serialize(false));
                 }
             }
         }

@@ -39,14 +39,18 @@
 		},
 		"event_input": {},
 		"event_bindings": {
-			"/elevator/request_up": {
-				"target": "door/reset_timer/open_timer_up",
-				"set_value": -10
-			},
-			"/elevator/request_down": {
-				"target": "door/reset_timer/open_timer_down",
-				"set_value": -10
-			}
+			"/elevator/call_to_floor": [
+				{
+					"outputs": "door/reset_timer/open_timer_up",
+					"filter": "event == 0",
+					"set_value": -10
+				},
+				{
+					"outputs": "door/reset_timer/open_timer_down",
+					"filter": "event == 3",
+					"set_value": -10
+				}
+			]
 		},
 		"script": [
 			{
@@ -337,7 +341,10 @@
 				"light": "up_button/button_pressed || scoperoot/up_requested"
 			},
 			"event_bindings": {
-				"/button/press": "scoperoot/elevator/request_up"
+				"/button/press": {
+					"outputs": "scoperoot/elevator/call_to_floor",
+					"set_value": 0.0
+				}
 			},
 			"script": {
 				"prefab": "template",
@@ -357,7 +364,10 @@
 				"light": "down_button/button_pressed || scoperoot/down_requested"
 			},
 			"event_bindings": {
-				"/button/press": "scoperoot/elevator/request_down"
+				"/button/press": {
+					"outputs": "scoperoot/elevator/call_to_floor",
+					"set_value": 3.0
+				}
 			},
 			"script": {
 				"prefab": "template",

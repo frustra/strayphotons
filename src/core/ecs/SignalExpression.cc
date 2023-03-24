@@ -3,8 +3,10 @@
 #include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/SignalStructAccess.hh"
 
 namespace ecs {
     std::pair<ecs::Name, std::string> ParseSignalString(std::string_view str, const EntityScope &scope) {
@@ -189,8 +191,8 @@ namespace ecs {
                         nodeStrings.emplace_back("!" + nodeStrings[inputIndex]);
                     }
                 }
-            } else if (token == "sin" || token == "cos" || token == "tan" || token == "floor" || token == "ceil" ||
-                       token == "abs") {
+            } else if (token == "is_focused" || token == "sin" || token == "cos" || token == "tan" ||
+                       token == "floor" || token == "ceil" || token == "abs") {
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),
@@ -223,7 +225,22 @@ namespace ecs {
                 tokenIndex++;
 
                 index = nodes.size();
-                if (token == "sin") {
+                if (token == "is_focused") {
+                    auto focusStr = tokens[nodes[inputIndex].startToken];
+                    nodeStrings[inputIndex] = focusStr;
+                    FocusLayer focus = FocusLayer::Always;
+                    if (!focusStr.empty()) {
+                        auto opt = magic_enum::enum_cast<FocusLayer>(focusStr);
+                        if (opt) {
+                            focus = *opt;
+                        } else {
+                            Errorf("Unknown enum value specified for is_focused: %s", std::string(focusStr));
+                        }
+                    } else {
+                        Errorf("Blank focus layer specified for is_focused: %s", std::string(focusStr));
+                    }
+                    nodes.emplace_back(SignalExpression::FocusCondition{focus, -1}, startToken, tokenIndex);
+                } else if (token == "sin") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) {
                                                return std::sin(input);
@@ -499,16 +516,46 @@ namespace ecs {
                 return -1;
             } else {
                 if (index >= 0) {
-                    Errorf("Failed to parse signal expression, unexpected signal '%s': %s",
+                    Errorf("Failed to parse signal expression, unexpected identifier/signal '%s': %s",
                         std::string(token),
                         joinTokens(nodeStart, tokenIndex));
                     return -1;
                 }
 
-                auto [entityName, signalName] = ParseSignalString(token, this->scope);
                 index = nodes.size();
-                nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName}, tokenIndex, tokenIndex + 1);
-                nodeStrings.emplace_back(entityName.String() + "/" + signalName);
+
+                auto delimiter = token.find_first_of("/#");
+                if (delimiter >= token.length()) {
+                    nodes.emplace_back(SignalExpression::IdentifierNode{std::string(token)},
+                        tokenIndex,
+                        tokenIndex + 1);
+                    nodeStrings.emplace_back(token);
+                } else if (token[delimiter] == '/') {
+                    ecs::Name entityName(token.substr(0, delimiter), this->scope);
+                    std::string signalName(token.substr(delimiter + 1));
+                    nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
+                        tokenIndex,
+                        tokenIndex + 1);
+                    nodeStrings.emplace_back(entityName.String() + "/" + signalName);
+                } else if (token[delimiter] == '#') {
+                    ecs::Name entityName(token.substr(0, delimiter), this->scope);
+                    std::string componentPath(token.substr(delimiter + 1));
+                    std::string componentName = componentPath.substr(0, componentPath.find('.'));
+
+                    auto *componentBase = LookupComponent(componentName);
+                    if (!componentBase) {
+                        Errorf("Failed to parse signal expression, unknown component '%s': %s",
+                            std::string(token),
+                            componentName);
+                        return -1;
+                    }
+                    nodes.emplace_back(SignalExpression::ComponentNode{entityName, componentBase, componentPath},
+                        tokenIndex,
+                        tokenIndex + 1);
+                    nodeStrings.emplace_back(entityName.String() + "#" + componentPath);
+                } else {
+                    Abortf("Unexpected delimiter: '%c' %s", token[delimiter], std::string(token));
+                }
                 tokenIndex++;
             }
         }
@@ -576,7 +623,83 @@ namespace ecs {
         return true;
     }
 
-    double SignalExpression::evaluateNode(const ReadSignalsLock &lock, size_t depth, int nodeIndex) const {
+    template<typename InputType>
+    double evaluateIdentifier(const InputType &input, const std::string &id) {
+        if constexpr (std::is_same_v<InputType, EventData>) {
+            if (id == "event" || sp::starts_with(id, "event.")) {
+                return std::visit(
+                    [&](auto &event) {
+                        using T = std::decay_t<decltype(event)>;
+
+                        double result = 0.0;
+                        bool success = ecs::AccessStructField(typeid(T), &event, id, [&result](const double &field) {
+                            result = field;
+                        });
+
+                        if (!success) {
+                            Errorf("SignalExpression eval: unknown identifier: %s", id);
+                        }
+                        return result;
+                    },
+                    input);
+            } else {
+                Errorf("SignalExpression eval: unknown identifier: %s", id);
+                return 0.0;
+            }
+        } else if constexpr (std::is_convertible_v<InputType, double>) {
+            if (id == "input") {
+                return (double)input;
+            } else {
+                Errorf("SignalExpression eval: unknown identifier: %s", id);
+                return 0.0;
+            }
+        } else {
+            Errorf("SignalExpression eval: unknown identifier: %s", id);
+            return 0.0;
+        }
+    }
+
+    bool SignalExpression::canEvaluate(DynamicLock<ReadSignalsLock> lock) const {
+        for (auto &node : nodes) {
+            bool success = std::visit(
+                [&lock](auto &&node) {
+                    using T = std::decay_t<decltype(node)>;
+                    if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
+                        Entity ent = node.entity.Get(lock);
+                        if (!ent.Has<SignalBindings>(lock)) return true;
+
+                        auto &bindings = ent.Get<const SignalBindings>(lock);
+                        return bindings.GetBinding(node.signalName).canEvaluate(lock);
+                    } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
+                        const ComponentBase *base = node.component;
+                        if (!base) return true;
+                        Entity ent = node.entity.Get(lock);
+                        if (!ent) return true;
+                        return GetFieldType(base->metadata.type, [&](auto *typePtr) {
+                            using T = std::remove_pointer_t<decltype(typePtr)>;
+                            if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                                return true;
+                            } else {
+                                return lock.TryLock<Read<T>>().has_value();
+                            }
+                        });
+                    } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
+                        return lock.template Has<FocusLock>();
+                    } else {
+                        return true;
+                    }
+                },
+                (SignalExpression::NodeVariant)node);
+            if (!success) return false;
+        }
+        return true;
+    }
+
+    template<typename LockType, typename InputType>
+    double SignalExpression::evaluateNode(const LockType &lock,
+        size_t depth,
+        int nodeIndex,
+        const InputType &input) const {
         if (nodeIndex < 0 || (size_t)nodeIndex >= nodes.size()) return 0.0f;
 
         double result = std::visit(
@@ -584,25 +707,64 @@ namespace ecs {
                 using T = std::decay_t<decltype(node)>;
                 if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                     return node.value;
+                } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
+                    return evaluateIdentifier(input, node.id);
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
+                } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
+                    const ComponentBase *base = node.component;
+                    if (!base) return 0.0;
+                    Entity ent = node.entity.Get(lock);
+                    if (!ent) return 0.0;
+                    return GetFieldType(base->metadata.type, [&](auto *typePtr) {
+                        using T = std::remove_pointer_t<decltype(typePtr)>;
+                        if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                            Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
+                            return 0.0;
+                        } else if constexpr (Tecs::is_read_allowed<T, LockType>()) {
+                            auto &component = ent.Get<const T>(lock);
+                            double fieldValue = 0.0;
+                            AccessStructField(typeid(T), &component, node.fieldName, [&](const double &value) {
+                                fieldValue = value;
+                            });
+                            return fieldValue;
+                        } else {
+                            auto tryLock = lock.template TryLock<Read<T>>();
+                            if (tryLock) {
+                                auto &component = ent.Get<const T>(*tryLock);
+                                double fieldValue = 0.0;
+                                AccessStructField(typeid(T), &component, node.fieldName, [&](const double &value) {
+                                    fieldValue = value;
+                                });
+                                return fieldValue;
+                            } else {
+                                Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
+                                    node.fieldName,
+                                    typeid(T).name());
+                                return 0.0;
+                            }
+                        }
+                    });
                 } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
-                    if (!lock.Has<FocusLock>() || !lock.Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
+                    if (!lock.template Has<FocusLock>() ||
+                        !lock.template Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
                         return 0.0;
+                    } else if (node.inputIndex < 0) {
+                        return 1.0;
                     } else {
-                        return evaluateNode(lock, depth, node.inputIndex);
+                        return evaluateNode(lock, depth, node.inputIndex, input);
                     }
                 } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
-                    return node.evaluate(evaluateNode(lock, depth, node.inputIndex));
+                    return node.evaluate(evaluateNode(lock, depth, node.inputIndex, input));
                 } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
-                    return node.evaluate(evaluateNode(lock, depth, node.inputIndexA),
-                        evaluateNode(lock, depth, node.inputIndexB));
+                    return node.evaluate(evaluateNode(lock, depth, node.inputIndexA, input),
+                        evaluateNode(lock, depth, node.inputIndexB, input));
                 } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
-                    double ifValue = evaluateNode(lock, depth, node.ifIndex);
+                    double ifValue = evaluateNode(lock, depth, node.ifIndex, input);
                     if (ifValue >= 0.5) {
-                        return evaluateNode(lock, depth, node.trueIndex);
+                        return evaluateNode(lock, depth, node.trueIndex, input);
                     } else {
-                        return evaluateNode(lock, depth, node.falseIndex);
+                        return evaluateNode(lock, depth, node.falseIndex, input);
                     }
                 } else {
                     Abortf("Invalid signal operation: %s", typeid(T).name());
@@ -620,9 +782,30 @@ namespace ecs {
         return result;
     };
 
-    double SignalExpression::Evaluate(ReadSignalsLock lock, size_t depth) const {
-        // Debugf("Eval '%s'", expr);
-        return evaluateNode(lock, depth, rootIndex);
+    double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
+        return evaluateNode(lock, depth, rootIndex, 0.0);
+    }
+
+    double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
+        return evaluateNode(lock, depth, rootIndex, 0.0);
+    }
+
+    double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock,
+        const EventData &input,
+        size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
+        return evaluateNode(lock, depth, rootIndex, input);
+    }
+
+    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input, size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
+        return evaluateNode(lock, depth, rootIndex, input);
     }
 
     template<>

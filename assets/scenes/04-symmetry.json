@@ -19,11 +19,11 @@
 			"event_bindings": {
 				"/trigger/object/enter": [
 					{
-						"target": "global:airlock3-4.door_out/set_signal/door_open",
+						"outputs": "global:airlock3-4.door_out/set_signal/door_open",
 						"set_value": 1
 					},
 					{
-						"target": "console:input/action/run_command",
+						"outputs": "console:input/action/run_command",
 						"set_value": "wait 2000 removescene 03-dark"
 					}
 				]
@@ -36,16 +36,16 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"signal_bindings": {
-				"in_signal": "sensor1 && sensor2"
+				"in_signal": "sensor1/value && sensor2/value"
 			},
 			"event_bindings": {
 				"/trigger/player/enter": [
 					{
-						"target": "airlock4-menu.door_in/set_signal/door_open",
+						"outputs": "airlock4-menu.door_in/set_signal/door_open",
 						"set_value": 0
 					},
 					{
-						"target": "console:input/action/run_command",
+						"outputs": "console:input/action/run_command",
 						"set_value": "wait 1000 loadscene menu"
 					}
 				]
