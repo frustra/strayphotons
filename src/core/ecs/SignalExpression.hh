@@ -81,7 +81,7 @@ namespace ecs {
 
         template<typename LockType>
         double Evaluate(LockType lock, size_t depth = 0) const {
-            if constexpr (Lock<ReadAll>::template has_all_permissions<LockType>()) {
+            if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return evaluate((Lock<ReadAll>)lock, depth);
             } else {
                 return evaluate((DynamicLock<ReadSignalsLock>)lock, depth);
@@ -90,7 +90,7 @@ namespace ecs {
 
         template<typename LockType>
         double EvaluateEvent(LockType lock, const Event::EventData &input, size_t depth = 0) const {
-            if constexpr (Lock<ReadAll>::template has_all_permissions<LockType>()) {
+            if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return evaluateEvent((Lock<ReadAll>)lock, input, depth);
             } else {
                 return evaluateEvent((DynamicLock<ReadSignalsLock>)lock, input, depth);

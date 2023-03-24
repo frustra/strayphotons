@@ -759,20 +759,28 @@ namespace ecs {
     };
 
     double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock,
         const Event::EventData &input,
         size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, input);
     }
 
     double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const Event::EventData &input, size_t depth) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, input);
     }
 

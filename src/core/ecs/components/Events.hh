@@ -144,7 +144,7 @@ namespace ecs {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
                     if (binding.actions.filterExpr) {
-                        if constexpr (ReadSignalsLock::has_all_permissions<LockType>()) {
+                        if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
                             if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) continue;
                         } else {
                             ecs::QueueTransaction<ReadSignalsLock>([event, binding, depth](auto lock) {
@@ -170,7 +170,7 @@ namespace ecs {
                         modifiedEvent.data = *binding.actions.setValue;
                     }
                     if (!binding.actions.modifyExprs.empty()) {
-                        if constexpr (ReadSignalsLock::has_all_permissions<LockType>()) {
+                        if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
                             detail::ModifyEvent(lock, modifiedEvent, event.data, binding, depth);
                         } else {
                             ecs::QueueTransaction<ReadSignalsLock>([modifiedEvent, event, binding, depth](auto lock) {
