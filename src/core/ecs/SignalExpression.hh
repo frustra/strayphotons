@@ -76,8 +76,19 @@ namespace ecs {
                 : NodeVariant(arg), startToken(startToken), endToken(endToken) {}
         };
 
-        // Called automatically by construct. Should be called when expression string is changed.
+        // Called automatically by constructor. Should be called when expression string is changed.
         bool Parse();
+
+        template<typename LockType>
+        bool CanEvaluate(LockType lock) const {
+            if constexpr (LockType::template has_permissions<ReadAll>()) {
+                return true;
+            } else if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
+                return canEvaluate(lock);
+            } else {
+                return false;
+            }
+        }
 
         template<typename LockType>
         double Evaluate(LockType lock, size_t depth = 0) const {
@@ -89,7 +100,7 @@ namespace ecs {
         }
 
         template<typename LockType>
-        double EvaluateEvent(LockType lock, const Event::EventData &input, size_t depth = 0) const {
+        double EvaluateEvent(LockType lock, const EventData &input, size_t depth = 0) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return evaluateEvent((Lock<ReadAll>)lock, input, depth);
             } else {
@@ -115,13 +126,15 @@ namespace ecs {
         std::string joinTokens(size_t startToken, size_t endToken) const;
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
 
+        bool canEvaluate(DynamicLock<ReadSignalsLock> lock) const;
+
         template<typename LockType, typename InputType>
         double evaluateNode(const LockType &lock, size_t depth, int nodeIndex, const InputType &input) const;
 
         double evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const;
         double evaluate(Lock<ReadAll> lock, size_t depth) const;
-        double evaluateEvent(DynamicLock<ReadSignalsLock> lock, const Event::EventData &input, size_t depth) const;
-        double evaluateEvent(Lock<ReadAll> lock, const Event::EventData &input, size_t depth) const;
+        double evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input, size_t depth) const;
+        double evaluateEvent(Lock<ReadAll> lock, const EventData &input, size_t depth) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

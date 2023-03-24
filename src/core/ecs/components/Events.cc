@@ -31,7 +31,7 @@ namespace ecs {
         dst = picojson::value(src.target.Name().String() + src.queueName);
     }
 
-    bool parseEventData(Event::EventData &data, const picojson::value &src) {
+    bool parseEventData(EventData &data, const picojson::value &src) {
         if (src.is<bool>()) {
             data = src.get<bool>();
         } else if (src.is<double>()) {
@@ -52,7 +52,7 @@ namespace ecs {
         if (src.is<picojson::object>()) {
             auto &obj = src.get<picojson::object>();
             if (obj.count("set_value") > 0) {
-                Event::EventData eventData;
+                EventData eventData;
                 if (parseEventData(eventData, obj.at("set_value"))) {
                     dst.setValue = eventData;
                 } else {
@@ -180,13 +180,18 @@ namespace ecs {
         }
     }
 
-    size_t EventInput::Add(const Event &event) const {
+    size_t EventInput::Add(const Event &event, size_t transactionId) const {
+        AsyncEvent asyncEvent(event.name, event.source, event.data);
+        asyncEvent.transactionId = transactionId;
+        return Add(asyncEvent);
+    }
+
+    size_t EventInput::Add(const AsyncEvent &event) const {
         size_t eventsSent = 0;
         auto it = events.find(event.name);
         if (it != events.end()) {
             for (auto &queue : it->second) {
-                queue->Add(event);
-                eventsSent++;
+                if (queue->Add(event)) eventsSent++;
             }
         }
         return eventsSent;
@@ -194,7 +199,7 @@ namespace ecs {
 
     bool EventInput::Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut) {
         if (!queue) return false;
-        return queue->Poll(eventOut);
+        return queue->Poll(eventOut, lock.GetTransactionId());
     }
 
     EventBinding &EventBindings::Bind(std::string source, const EventBinding &binding) {
@@ -240,9 +245,9 @@ namespace ecs {
         }
     }
 
-    void detail::ModifyEvent(ReadSignalsLock lock,
-        Event &event,
-        const Event::EventData &input,
+    void modifyEvent(DynamicLock<ReadSignalsLock> lock,
+        EventData &output,
+        const EventData &input,
         const EventBinding &binding,
         size_t depth) {
         auto &actions = binding.actions.modifyExprs;
@@ -278,6 +283,71 @@ namespace ecs {
                     Errorf("Unsupported event binding modify value: type: %s vec%u", typeid(T).name(), actions.size());
                 }
             },
-            event.data);
+            output);
+    }
+
+    bool detail::FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
+        sp::AsyncPtr<EventData> &asyncOutput,
+        const sp::AsyncPtr<EventData> &asyncInput,
+        const EventBinding &binding,
+        size_t depth) {
+        Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
+
+        if (binding.actions.setValue) {
+            asyncOutput = std::make_shared<sp::Async<EventData>>(
+                std::make_shared<EventData>(*binding.actions.setValue));
+        }
+
+        if (binding.actions.filterExpr) {
+            if (binding.actions.filterExpr->CanEvaluate(lock) && asyncInput->Ready()) {
+                auto input = asyncInput->Get();
+                if (!input) return false; // Event filtered asynchronously
+                if (binding.actions.filterExpr->EvaluateEvent(lock, *input) < 0.5) return false;
+            } else {
+                asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
+                    [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
+                        if (!input) {
+                            return std::make_shared<EventData>(); // Event filtered asynchronously
+                        }
+
+                        auto lock = ecs::StartTransaction<ReadAll>();
+                        if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
+                            return input;
+                        } else {
+                            return std::shared_ptr<EventData>();
+                        }
+                    });
+            }
+        }
+
+        if (!binding.actions.modifyExprs.empty()) {
+            bool canEval = std::all_of(binding.actions.modifyExprs.begin(),
+                binding.actions.modifyExprs.end(),
+                [&lock](auto &&expr) {
+                    return expr.CanEvaluate(lock);
+                });
+            if (canEval && asyncOutput->Ready() && asyncInput->Ready()) {
+                auto input = asyncInput->Get();
+                if (!input) return false; // Event filtered asynchronously
+                auto outputPtr = asyncOutput->Get();
+                EventData output = outputPtr ? *outputPtr : *input;
+                modifyEvent(lock, output, *input, binding, depth);
+                asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
+            } else {
+                asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
+                    asyncOutput,
+                    [binding, depth](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
+                        if (!input || !output) {
+                            return std::make_shared<EventData>(); // Event filtered asynchronously
+                        }
+
+                        auto lock = ecs::StartTransaction<ReadAll>();
+                        EventData modified = *output;
+                        modifyEvent(lock, modified, *input, binding, depth);
+                        return std::make_shared<EventData>(modified);
+                    });
+            }
+        }
+        return true;
     }
 } // namespace ecs

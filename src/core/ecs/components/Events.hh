@@ -7,6 +7,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 
+#include <algorithm>
 #include <optional>
 #include <robin_hood.h>
 #include <string>
@@ -22,7 +23,14 @@ namespace ecs {
         void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding);
         void Unregister(const EventQueueRef &queue, const std::string &binding);
 
-        size_t Add(const Event &event) const;
+        /**
+         * Adds an event to any matching event input queues.
+         *
+         * A transactionId can be provided to synchronize event visibility with transactions.
+         * If no transactionId is provided, this event will be immediately visible to all transactions.
+         */
+        size_t Add(const Event &event, size_t transactionId = 0) const;
+        size_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
         robin_hood::unordered_map<std::string, std::vector<std::shared_ptr<EventQueue>>> events;
@@ -50,7 +58,7 @@ namespace ecs {
     struct EventBindingActions {
         std::optional<SignalExpression> filterExpr;
         std::vector<SignalExpression> modifyExprs;
-        std::optional<Event::EventData> setValue;
+        std::optional<EventData> setValue;
 
         bool operator==(const EventBindingActions &) const = default;
     };
@@ -97,6 +105,8 @@ namespace ecs {
 
         template<typename LockType>
         static size_t SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth = 0);
+        template<typename LockType>
+        static size_t SendEvent(LockType lock, const EntityRef &target, const AsyncEvent &event, size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
@@ -113,15 +123,22 @@ namespace ecs {
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
 
     namespace detail {
-        void ModifyEvent(ReadSignalsLock lock,
-            Event &event,
-            const Event::EventData &input,
+        bool FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
+            sp::AsyncPtr<EventData> &output,
+            const sp::AsyncPtr<EventData> &input,
             const EventBinding &binding,
             size_t depth);
     }
 
     template<typename LockType>
     size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth) {
+        AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
+        asyncEvent.transactionId = lock.GetTransactionId();
+        return SendEvent(lock, target, asyncEvent, depth);
+    }
+
+    template<typename LockType>
+    size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const AsyncEvent &event, size_t depth) {
         if (depth > MAX_EVENT_BINDING_DEPTH) {
             Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
             return 0;
@@ -143,50 +160,12 @@ namespace ecs {
             if (list != bindings.sourceToDest.end()) {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
-                    if (binding.actions.filterExpr) {
-                        if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
-                            if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) continue;
-                        } else {
-                            ecs::QueueTransaction<ReadSignalsLock>([event, binding, depth](auto lock) {
-                                if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) return;
+                    AsyncEvent outputEvent = event;
+                    if (!detail::FilterAndModifyEvent(lock, outputEvent.data, event.data, binding, depth)) continue;
 
-                                Event outputEvent = event;
-                                if (binding.actions.setValue) {
-                                    outputEvent.data = *binding.actions.setValue;
-                                }
-                                if (!binding.actions.modifyExprs.empty()) {
-                                    detail::ModifyEvent(lock, outputEvent, event.data, binding, depth);
-                                }
-                                for (auto &dest : binding.outputs) {
-                                    outputEvent.name = dest.queueName;
-                                    SendEvent(lock, dest.target, outputEvent, depth + 1);
-                                }
-                            });
-                            continue;
-                        }
-                    }
-                    Event modifiedEvent = event;
-                    if (binding.actions.setValue) {
-                        modifiedEvent.data = *binding.actions.setValue;
-                    }
-                    if (!binding.actions.modifyExprs.empty()) {
-                        if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
-                            detail::ModifyEvent(lock, modifiedEvent, event.data, binding, depth);
-                        } else {
-                            ecs::QueueTransaction<ReadSignalsLock>([modifiedEvent, event, binding, depth](auto lock) {
-                                Event outputEvent = modifiedEvent;
-                                detail::ModifyEvent(lock, outputEvent, event.data, binding, depth);
-                                for (auto &dest : binding.outputs) {
-                                    outputEvent.name = dest.queueName;
-                                    SendEvent(lock, dest.target, outputEvent, depth + 1);
-                                }
-                            });
-                            continue;
-                        }
-                    }
                     for (auto &dest : binding.outputs) {
-                        modifiedEvent.name = dest.queueName;
-                        eventsSent += SendEvent(lock, dest.target, modifiedEvent, depth + 1);
+                        outputEvent.name = dest.queueName;
+                        eventsSent += SendEvent(lock, dest.target, outputEvent, depth + 1);
                     }
                 }
             }

@@ -18,7 +18,7 @@
 #include <stdexcept>
 
 namespace sp {
-    GlfwInputHandler::GlfwInputHandler(GLFWwindow &glfwWindow) : window(&glfwWindow) {
+    GlfwInputHandler::GlfwInputHandler(GLFWwindow &glfwWindow) : window(&glfwWindow), glfwEventQueue(1000) {
         glfwSetWindowUserPointer(window, this);
 
         glfwSetKeyCallback(window, KeyInputCallback);
@@ -60,7 +60,7 @@ namespace sp {
             auto mouse = mouseEntity.Get(lock);
 
             ecs::Event event;
-            while (glfwEventQueue.Poll(event)) {
+            while (glfwEventQueue.Poll(event, lock.GetTransactionId())) {
                 if (event.source == keyboard) {
                     ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
                 } else if (event.source == mouse) {

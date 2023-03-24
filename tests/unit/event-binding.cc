@@ -79,50 +79,50 @@ namespace EventBindingTests {
             Assert(!ecs::EventInput::Poll(lock, ecs::EventQueueRef(), event), "Unexpected null event queue");
             AssertEqual(event.name, "", "Event data should not be set");
             Assert(!event.source, "Event data should not be set");
-            AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
+            AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             Assert(ecs::EventInput::Poll(lock, playerQueue, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData('a'), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData('a'), "Unexpected event data");
             Assert(ecs::EventInput::Poll(lock, playerQueue, event), "Expected to receive a second event");
             AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData('b'), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData('b'), "Unexpected event data");
             Assert(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected third event");
             AssertEqual(event.name, "", "Event data should not be set");
             Assert(!event.source, "Event data should not be set");
-            AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
+            AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             Assert(ecs::EventInput::Poll(lock, handQueue1, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION1, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData(42), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData(42), "Unexpected event data");
             Assert(ecs::EventInput::Poll(lock, handQueue1, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData('a'), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData('a'), "Unexpected event data");
             Assert(ecs::EventInput::Poll(lock, handQueue1, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData('b'), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData('b'), "Unexpected event data");
             Assert(!ecs::EventInput::Poll(lock, handQueue1, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
             Assert(!event.source, "Event data should not be set");
-            AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
+            AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             Assert(ecs::EventInput::Poll(lock, handQueue2, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData('a'), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData('a'), "Unexpected event data");
             Assert(ecs::EventInput::Poll(lock, handQueue2, event), "Expected to receive an event");
             AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
-            AssertEqual(event.data, ecs::Event::EventData('b'), "Unexpected event data");
+            AssertEqual(event.data, ecs::EventData('b'), "Unexpected event data");
             Assert(!ecs::EventInput::Poll(lock, handQueue2, event), "Unexpected second event");
             AssertEqual(event.name, "", "Event data should not be set");
             Assert(!event.source, "Event data should not be set");
-            AssertEqual(event.data, ecs::Event::EventData(false), "Event data should not be set");
+            AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
         }
         {
             Timer t("Unregister event queues");

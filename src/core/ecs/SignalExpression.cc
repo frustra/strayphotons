@@ -623,9 +623,9 @@ namespace ecs {
         return true;
     }
 
-    template<typename LockType, typename InputType>
-    double evaluateIdentifier(const LockType &lock, const InputType &input, const std::string &id) {
-        if constexpr (std::is_same_v<InputType, Event::EventData>) {
+    template<typename InputType>
+    double evaluateIdentifier(const InputType &input, const std::string &id) {
+        if constexpr (std::is_same_v<InputType, EventData>) {
             if (id == "event" || sp::starts_with(id, "event.")) {
                 return std::visit(
                     [&](auto &event) {
@@ -654,21 +654,45 @@ namespace ecs {
                 return 0.0;
             }
         } else {
-            size_t delimiter = id.find('#');
-            if (delimiter == std::string::npos) {
-                Errorf("SignalExpression eval: unknown identifier: %s", id);
-                return 0.0;
-            }
-
-            // auto componentName = id.substr(0, delimiter);
-            // auto comp = LookupComponent(componentName);
-            // if (!comp) {
             Errorf("SignalExpression eval: unknown identifier: %s", id);
             return 0.0;
-            // }
-            // auto &metadata = comp->metadata;
-            // bool success = ecs::AccessStructField(comp->metadata.type, )
         }
+    }
+
+    bool SignalExpression::canEvaluate(DynamicLock<ReadSignalsLock> lock) const {
+        for (auto &node : nodes) {
+            bool success = std::visit(
+                [&lock](auto &&node) {
+                    using T = std::decay_t<decltype(node)>;
+                    if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
+                        auto ent = node.entity.Get(lock);
+                        if (!ent.Has<SignalBindings>(lock)) return true;
+
+                        auto &bindings = ent.Get<const SignalBindings>(lock);
+                        return bindings.GetBinding(node.signalName).canEvaluate(lock);
+                    } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
+                        const ComponentBase *base = node.component;
+                        if (!base) return true;
+                        Entity ent = node.entity.Get(lock);
+                        if (!ent) return true;
+                        return GetFieldType(base->metadata.type, [&](auto *typePtr) {
+                            using T = std::remove_pointer_t<decltype(typePtr)>;
+                            if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                                return true;
+                            } else {
+                                return lock.TryLock<Read<T>>().has_value();
+                            }
+                        });
+                    } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
+                        return lock.template Has<FocusLock>();
+                    } else {
+                        return true;
+                    }
+                },
+                (SignalExpression::NodeVariant)node);
+            if (!success) return false;
+        }
+        return true;
     }
 
     template<typename LockType, typename InputType>
@@ -684,7 +708,7 @@ namespace ecs {
                 if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                     return node.value;
                 } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
-                    return evaluateIdentifier(lock, input, node.id);
+                    return evaluateIdentifier(input, node.id);
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
                 } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
@@ -771,14 +795,14 @@ namespace ecs {
     }
 
     double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock,
-        const Event::EventData &input,
+        const EventData &input,
         size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, input);
     }
 
-    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const Event::EventData &input, size_t depth) const {
+    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input, size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, input);

@@ -192,7 +192,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         [](string eventStr, string value) {
             auto [entityName, eventName] = ecs::ParseEventString(eventStr);
 
-            ecs::Event event(eventName, ecs::Entity());
+            ecs::Event event(eventName, ecs::Entity(), true);
             if (!value.empty()) {
                 if (is_float(value)) {
                     event.data = std::stof(value);

@@ -155,7 +155,7 @@ namespace sp {
                     if (queue->Empty()) {
                         Logf("  %s: empty", eventName);
                     } else {
-                        Logf("  %s: %u events", eventName, queue->Size());
+                        Logf("  %s: %u/%u events", eventName, queue->Size(), queue->Capacity());
                     }
                 }
             }
