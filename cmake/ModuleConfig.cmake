@@ -25,7 +25,7 @@ function(add_module_configuration)
     target_link_libraries(${ARG_NAME} PRIVATE
         ${PROJECT_COMMON_EXE}
         ${ARG_LINK_LIBRARIES}
-    )
+    ) 
 
     if(ARG_EXPORT_COMPILE_COMMANDS)
         set_target_properties(${ARG_NAME} PROPERTIES EXPORT_COMPILE_COMMANDS 1)
