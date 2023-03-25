@@ -67,8 +67,9 @@ namespace ecs {
             if (s.head == s.tail) break;
 
             auto &async = events[s.head];
-            // Check if this event should be visible to the current transaction
-            if (async.transactionId > transactionId && transactionId > 0) break;
+            // Check if this event should be visible to the current transaction.
+            // Events are not visible to the transaction that emitted them.
+            if (async.transactionId >= transactionId && transactionId > 0) break;
             if (!async.data || !async.data->Ready()) break;
 
             auto data = async.data->Get();
