@@ -22,8 +22,8 @@ namespace ecs {
                 if (index < 0 || index + subField.size() > (size_t)T::length()) continue;
                 if (!std::equal(it, it + subField.size(), subField.begin(), subField.end())) continue;
 
-                size_t offset = sizeof(T::value_type) * index;
-                return StructField(std::string(subField), typeid(T::value_type), offset, FieldAction::None);
+                size_t offset = sizeof(typename T::value_type) * index;
+                return StructField(std::string(subField), typeid(typename T::value_type), offset, FieldAction::None);
             }
             Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
             return {};
@@ -73,7 +73,7 @@ namespace ecs {
                               std::is_same_v<T, sp::color_alpha_t>) {
                     std::string_view fieldName = field.name;
                     size_t delimiter = fieldName.find_last_of('.');
-                    auto subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
+                    std::optional<StructField> subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
                     if (subField) {
                         auto &subValue = subField->Access<typename T::value_type>(&value);
                         if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
