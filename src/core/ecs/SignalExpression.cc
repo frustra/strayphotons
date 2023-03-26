@@ -526,10 +526,22 @@ namespace ecs {
 
                 auto delimiter = token.find_first_of("/#");
                 if (delimiter >= token.length()) {
-                    nodes.emplace_back(SignalExpression::IdentifierNode{std::string(token)},
-                        tokenIndex,
-                        tokenIndex + 1);
-                    nodeStrings.emplace_back(token);
+                    if (token == "event" || sp::starts_with(token, "event.")) {
+                        auto field = GetStructField(typeid(EventData), token);
+                        if (field) {
+                            nodes.emplace_back(SignalExpression::IdentifierNode{*field}, tokenIndex, tokenIndex + 1);
+                            nodeStrings.emplace_back(token);
+                        } else {
+                            Errorf("Failed to parse signal expression, unexpected identifier '%s': %s",
+                                std::string(token),
+                                joinTokens(nodeStart, tokenIndex));
+                            return -1;
+                        }
+                    } else {
+                        StructField field(std::string(token), typeid(double), 0, FieldAction::None);
+                        nodes.emplace_back(SignalExpression::IdentifierNode{field}, tokenIndex, tokenIndex + 1);
+                        nodeStrings.emplace_back(token);
+                    }
                 } else if (token[delimiter] == '/') {
                     ecs::Name entityName(token.substr(0, delimiter), this->scope);
                     std::string signalName(token.substr(delimiter + 1));
@@ -549,7 +561,14 @@ namespace ecs {
                             componentName);
                         return -1;
                     }
-                    nodes.emplace_back(SignalExpression::ComponentNode{entityName, componentBase, componentPath},
+                    auto componentField = GetStructField(componentBase->metadata.type, componentPath);
+                    if (!componentField) {
+                        Errorf("Failed to parse signal expression, unknown component field '%s': %s",
+                            componentName,
+                            componentPath);
+                        return -1;
+                    }
+                    nodes.emplace_back(SignalExpression::ComponentNode{entityName, componentBase, *componentField},
                         tokenIndex,
                         tokenIndex + 1);
                     nodeStrings.emplace_back(entityName.String() + "#" + componentPath);
@@ -623,42 +642,6 @@ namespace ecs {
         return true;
     }
 
-    template<typename InputType>
-    double evaluateIdentifier(const InputType &input, const std::string &id) {
-        if constexpr (std::is_same_v<InputType, EventData>) {
-            if (id == "event" || sp::starts_with(id, "event.")) {
-                return std::visit(
-                    [&](auto &event) {
-                        using T = std::decay_t<decltype(event)>;
-
-                        double result = 0.0;
-                        bool success = ecs::AccessStructField(typeid(T), &event, id, [&result](const double &field) {
-                            result = field;
-                        });
-
-                        if (!success) {
-                            Errorf("SignalExpression eval: unknown identifier: %s", id);
-                        }
-                        return result;
-                    },
-                    input);
-            } else {
-                Errorf("SignalExpression eval: unknown identifier: %s", id);
-                return 0.0;
-            }
-        } else if constexpr (std::is_convertible_v<InputType, double>) {
-            if (id == "input") {
-                return (double)input;
-            } else {
-                Errorf("SignalExpression eval: unknown identifier: %s", id);
-                return 0.0;
-            }
-        } else {
-            Errorf("SignalExpression eval: unknown identifier: %s", id);
-            return 0.0;
-        }
-    }
-
     bool SignalExpression::canEvaluate(DynamicLock<ReadSignalsLock> lock) const {
         for (auto &node : nodes) {
             bool success = std::visit(
@@ -708,14 +691,17 @@ namespace ecs {
                 if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                     return node.value;
                 } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
-                    return evaluateIdentifier(input, node.id);
+                    ZoneScopedN("IdentifierNode:evaluate");
+                    return ecs::ReadStructField(&input, node.field);
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
+                    ZoneScopedN("SignalNode:evaluate");
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
                 } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                     const ComponentBase *base = node.component;
                     if (!base) return 0.0;
                     Entity ent = node.entity.Get(lock);
                     if (!ent) return 0.0;
+                    ZoneScopedN("ComponentNode:evaluate");
                     return GetFieldType(base->metadata.type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;
                         if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
@@ -723,23 +709,15 @@ namespace ecs {
                             return 0.0;
                         } else if constexpr (Tecs::is_read_allowed<T, LockType>()) {
                             auto &component = ent.Get<const T>(lock);
-                            double fieldValue = 0.0;
-                            AccessStructField(typeid(T), &component, node.fieldName, [&](const double &value) {
-                                fieldValue = value;
-                            });
-                            return fieldValue;
+                            return ecs::ReadStructField(&component, node.field);
                         } else {
                             auto tryLock = lock.template TryLock<Read<T>>();
                             if (tryLock) {
                                 auto &component = ent.Get<const T>(*tryLock);
-                                double fieldValue = 0.0;
-                                AccessStructField(typeid(T), &component, node.fieldName, [&](const double &value) {
-                                    fieldValue = value;
-                                });
-                                return fieldValue;
+                                return ecs::ReadStructField(&component, node.field);
                             } else {
                                 Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
-                                    node.fieldName,
+                                    node.field.name,
                                     typeid(T).name());
                                 return 0.0;
                             }
@@ -783,28 +761,28 @@ namespace ecs {
     };
 
     double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
+        ZoneScoped;
+        ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
+        ZoneScoped;
+        ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock,
         const EventData &input,
         size_t depth) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
+        ZoneScoped;
+        ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, input);
     }
 
     double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input, size_t depth) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
+        ZoneScoped;
+        ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, input);
     }
 

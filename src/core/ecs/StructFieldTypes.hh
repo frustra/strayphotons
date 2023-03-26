@@ -5,6 +5,7 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 
 #include <glm/glm.hpp>
@@ -70,6 +71,7 @@ namespace ecs {
         // Structs
         std::string,
         EntityRef,
+        EventData,
         Transform,
         SignalExpression,
         EventBindingActions,

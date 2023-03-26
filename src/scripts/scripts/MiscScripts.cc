@@ -249,12 +249,18 @@ namespace sp::scripts {
 
                 auto signalValue = signalExpr.Evaluate(lock);
 
+                auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
+                if (!field) {
+                    Errorf("ComponentFromSignal unknown component field: %s", fieldPath);
+                    continue;
+                }
+
                 void *compPtr = comp->Access(lock, ent);
                 Assertf(compPtr,
                     "ComponentFromSignal %s access returned null data: %s",
                     componentName,
                     ecs::ToString(lock, ent));
-                ecs::AccessStructField(comp->metadata.type, compPtr, fieldPath, [&signalValue](double &value) {
+                ecs::WriteStructField(compPtr, *field, [&signalValue](double &value) {
                     value = signalValue;
                 });
             }

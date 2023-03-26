@@ -79,7 +79,7 @@ namespace sp {
         std::array<std::array<PxPairFlags, count>, count> table;
         auto defaultFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND |
                             PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST;
-        std::fill(&table[0][0], &table[count][0], defaultFlags);
+        std::fill(&table[0][0], &table[count - 1][count - 1] + 1, defaultFlags);
 
         auto removeCollision = [&](auto group0, auto group1) {
             table[(size_t)group0][(size_t)group1] = PxPairFlags();

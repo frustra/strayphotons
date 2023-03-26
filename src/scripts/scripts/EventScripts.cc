@@ -131,6 +131,12 @@ namespace sp::scripts {
                 }
                 if (!comp->HasComponent(lock, ent)) continue;
 
+                auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
+                if (!field) {
+                    Errorf("ComponentFromEvent unknown component field: %s", fieldPath);
+                    continue;
+                }
+
                 void *compPtr = comp->Access(lock, ent);
                 Assertf(compPtr,
                     "ComponentFromEvent %s access returned null data: %s",
@@ -141,7 +147,7 @@ namespace sp::scripts {
                         using T = std::decay_t<decltype(arg)>;
 
                         if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            ecs::AccessStructField(comp->metadata.type, compPtr, fieldPath, [&arg](double &value) {
+                            ecs::WriteStructField(compPtr, *field, [&arg](double &value) {
                                 value = (double)arg;
                             });
                         } else {

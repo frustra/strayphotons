@@ -9,7 +9,6 @@
 #include <sstream>
 
 namespace ecs {
-
     template<>
     bool StructMetadata::Load<EventDest>(const EntityScope &scope, EventDest &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;

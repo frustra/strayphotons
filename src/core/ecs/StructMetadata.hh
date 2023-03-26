@@ -58,7 +58,8 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            size_t offset = reinterpret_cast<size_t>(&(((T *)0)->*M));
+            // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
+            size_t offset = reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
             return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
         }
 
@@ -103,21 +104,21 @@ namespace ecs {
         }
 
         template<typename T>
-        T *Access(void *structPtr) const {
+        T &Access(void *structPtr) const {
             Assertf(type == typeid(T),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
-            return reinterpret_cast<T *>(Access(structPtr));
+            return *reinterpret_cast<T *>(Access(structPtr));
         }
 
         template<typename T>
-        const T *Access(const void *structPtr) const {
+        const T &Access(const void *structPtr) const {
             Assertf(type == typeid(T),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
-            return reinterpret_cast<const T *>(Access(structPtr));
+            return *reinterpret_cast<const T *>(Access(structPtr));
         }
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;

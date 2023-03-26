@@ -73,7 +73,7 @@ namespace ecs {
         auto *fieldA = static_cast<const char *>(a) + offset;
         auto *fieldB = static_cast<const char *>(b) + offset;
 
-        return GetFieldType(type, fieldA, [&](auto &valueA) {
+        return GetFieldType(type, fieldA, [&](auto &valueA) -> bool {
             using T = std::decay_t<decltype(valueA)>;
             auto &valueB = *reinterpret_cast<const T *>(fieldB);
 
@@ -81,7 +81,6 @@ namespace ecs {
                 return valueA == valueB;
             } else {
                 Abortf("StructField::Compare called on unsupported type: %s", type.name());
-                return false;
             }
         });
     }
