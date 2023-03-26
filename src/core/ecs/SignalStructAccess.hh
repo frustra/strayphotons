@@ -24,12 +24,16 @@ namespace ecs {
      * struct Component {
      *     SubType field1;
      *     SubType field2;
-     * } comp;
+     * };
      *
      * auto field = ecs::GetStructField(typeid(Component), "component.field1.value2.y");
      * // field.name == "component.field1.value2.x"
      * // field.type == typeid(glm::vec3::value_type)
      * // field.offset == offsetof(Component, field1) + offsetof(SubType, value2) + sizeof(glm::vec3::value_type)
+     *
+     * Component comp = {{1, glm::vec3(2, 3, 4)}, {5, glm::vec3(6, 7, 8)}};
+     * float value = ReadStructField(&comp, *field);
+     * // value == 3.0f
      * ```
      */
     std::optional<StructField> GetStructField(std::type_index baseType,
