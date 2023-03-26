@@ -47,7 +47,6 @@ namespace ecs {
                 return true;
             } else if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                                  std::is_same_v<T, sp::color_alpha_t>) {
-                using VecT = typename T::value_type;
                 if (!ConvertAccessor<ArgT>(value[0], accessor)) return false;
                 if constexpr (!std::is_const_v<ArgT>) {
                     for (size_t i = 1; i < value.length(); i++) {
@@ -76,7 +75,7 @@ namespace ecs {
                     size_t delimiter = fieldName.find_last_of('.');
                     auto subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
                     if (subField) {
-                        auto &subValue = subField->Access<T::value_type>(&value);
+                        auto &subValue = subField->Access<typename T::value_type>(&value);
                         if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
                     }
                     Errorf("AccessStructField unable to vector convert from: %s to %s '%s'",
