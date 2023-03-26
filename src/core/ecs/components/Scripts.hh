@@ -75,7 +75,7 @@ namespace ecs {
                 Assertf(dataPtr, "ScriptState::SetParam access returned null data: %s", definition.name);
                 for (auto &field : definition.context->metadata.fields) {
                     if (field.name == name) {
-                        *field.Access<T>(dataPtr) = value;
+                        field.Access<T>(dataPtr) = value;
                         break;
                     }
                 }
@@ -91,7 +91,7 @@ namespace ecs {
                 Assertf(dataPtr, "ScriptState::GetParam access returned null data: %s", definition.name);
                 for (auto &field : definition.context->metadata.fields) {
                     if (field.name == name) {
-                        return *field.Access<T>(dataPtr);
+                        return field.Access<T>(dataPtr);
                     }
                 }
                 Errorf("ScriptState::GetParam field not found: %s on %s", name, definition.name);

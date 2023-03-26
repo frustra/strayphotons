@@ -4,35 +4,35 @@
 #include "ecs/StructFieldTypes.hh"
 #include "ecs/StructMetadata.hh"
 
+#include <optional>
 #include <string_view>
 
 namespace ecs {
+    double ReadStructField(const void *basePtr, const StructField &field);
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(double &)> accessor);
+    // New accessor function argument types can be appended here as needed
+
     /**
-     * Calls the provided accessor callback function with a reference to the requested field.
+     * Determines the offset and type of a field in a struct so it can be accessed dynamically.
      *
      * Example:
      * ```
+     * struct SubType {
+     *     int value1;
+     *     glm::vec3 value2;
+     * };
      * struct Component {
-     *     SubType field;
+     *     SubType field1;
+     *     SubType field2;
      * } comp;
-     * void *basePtr = &comp;
-     * ecs::AccessStructField(typeid(Component), basePtr, "<ignored>.field", [](auto &value) {
-     *     // if basePtr is a const void*, value is a (const SubType &)
-     *     // if basePtr is a void*, value is a (SubType &)
-     * }) == true;
      *
-     * ecs::AccessStructField(metadata, basePtr, "component.missing", [](auto &value) {
-     *     // Callback is never called, ecs::AccessStructField() returns false
-     * }) == false;
+     * auto field = ecs::GetStructField(typeid(Component), "component.field1.value2.y");
+     * // field.name == "component.field1.value2.x"
+     * // field.type == typeid(glm::vec3::value_type)
+     * // field.offset == offsetof(Component, field1) + offsetof(SubType, value2) + sizeof(glm::vec3::value_type)
      * ```
      */
-    bool AccessStructField(std::type_index baseType,
-        void *basePtr,
+    std::optional<StructField> GetStructField(std::type_index baseType,
         std::string_view fieldName,
-        std::function<void(double &)> accessor);
-    bool AccessStructField(std::type_index baseType,
-        const void *basePtr,
-        std::string_view fieldName,
-        std::function<void(const double &)> accessor);
-    // New accessor function argument types can be appended here as needed
+        size_t fieldNameOffset = 0);
 } // namespace ecs

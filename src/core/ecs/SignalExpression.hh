@@ -29,7 +29,7 @@ namespace ecs {
             double value = 0.0f;
         };
         struct IdentifierNode {
-            std::string id = "input";
+            StructField field;
         };
         struct SignalNode {
             EntityRef entity;
@@ -38,7 +38,7 @@ namespace ecs {
         struct ComponentNode {
             EntityRef entity;
             const ComponentBase *component;
-            std::string fieldName = "";
+            StructField field;
         };
         struct FocusCondition {
             FocusLayer ifFocused;

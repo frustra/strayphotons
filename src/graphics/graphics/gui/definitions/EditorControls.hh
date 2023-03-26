@@ -453,7 +453,7 @@ namespace sp {
     void EditorContext::AddFieldControls(const ecs::StructField &field,
         const ecs::ComponentBase &comp,
         const void *component) {
-        auto value = *field.Access<T>(component);
+        auto value = field.Access<T>(component);
         fieldName = field.name;
         fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
         std::string elementName = fieldName + fieldId;
@@ -464,8 +464,8 @@ namespace sp {
             if (ecs::IsStaging(target)) {
                 auto defaultLiveComponent = comp.GetLiveDefault();
                 auto defaultStagingComponent = comp.GetStagingDefault();
-                auto &defaultValue = *field.Access<T>(defaultLiveComponent);
-                auto &undefinedValue = *field.Access<T>(defaultStagingComponent);
+                auto &defaultValue = field.Access<T>(defaultLiveComponent);
+                auto &undefinedValue = field.Access<T>(defaultStagingComponent);
                 if (defaultValue != undefinedValue) {
                     isDefined = value != undefinedValue;
                     if (ImGui::Checkbox(isDefined ? fieldId.c_str() : elementName.c_str(), &isDefined)) {
@@ -489,7 +489,7 @@ namespace sp {
             if (ecs::IsLive(target)) {
                 ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto lock) {
                     void *component = comp.Access(lock, target);
-                    *field.Access<T>(component) = value;
+                    field.Access<T>(component) = value;
                 });
             } else if (scene) {
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
@@ -497,7 +497,7 @@ namespace sp {
                     [target = this->target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
                         void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
-                        *field.Access<T>(component) = value;
+                        field.Access<T>(component) = value;
                     });
             } else {
                 Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
