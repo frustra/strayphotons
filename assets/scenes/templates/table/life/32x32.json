@@ -4,7 +4,7 @@
 		"script": {
 			"prefab": "tile",
 			"parameters": {
-				"surface": "table/life/cell",
+				"surface": "table/life/life_cell",
 				"edge": "table/life/wrap_edge",
 				"corner": "table/life/wrap_corner",
 				"axes": "xz",

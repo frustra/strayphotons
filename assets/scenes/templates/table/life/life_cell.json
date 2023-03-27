@@ -2,27 +2,26 @@
 	"components": {
 		"transform": {},
 		"signal_output": {
-			"alive": 0,
-			"toggled": 0
+			"alive": 0
 		},
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
-			"should_toggle": "scoperoot/toggled || (scoperoot/neighbor_count == 3 ? !scoperoot/alive : (scoperoot/neighbor_count == 2 ? 0 : scoperoot/alive))"
+			"should_toggle": "scoperoot/neighbor_count == 3 ? !scoperoot/alive : (scoperoot/neighbor_count == 2 ? 0 : scoperoot/alive)"
 		},
 		"event_input": {},
 		"event_bindings": {
 			"/physics/collision/force_found": {
-				"outputs": "scoperoot/set_signal/toggled",
+				"outputs": "scoperoot/life/toggle_alive",
 				"set_value": true
 			},
 			"/life/update_alive": {
-				"outputs": "scoperoot/set_signal/alive",
-				"filter": "event",
-				"modify": "!scoperoot/alive"
+				"outputs": "scoperoot/life/toggle_alive",
+				"filter": "scoperoot/should_toggle",
+				"set_value": true
 			},
-			"/toggle_signal/alive": {
-				"outputs": "scoperoot/set_signal/toggled",
-				"set_value": false
+			"/life/toggle_alive": {
+				"outputs": ["scoperoot/set_signal/alive", "light/set/renderable.emissive"],
+				"modify": "!scoperoot/alive"
 			}
 		},
 		"physics": {
@@ -43,15 +42,15 @@
 				}
 			},
 			{
-				"onTick": "event_from_signal",
+				"onTick": "collapse_events",
 				"parameters": {
-					"/life/update_alive": "scoperoot/should_toggle"
+					"/life/neighbor_updated": "/life/update_alive"
 				}
 			},
 			{
 				"onTick": "signal_from_event",
 				"parameters": {
-					"outputs": ["alive", "toggled"]
+					"outputs": ["alive"]
 				}
 			}
 		]
@@ -70,9 +69,9 @@
 			"event_input": {},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"onTick": "component_from_event",
 					"parameters": {
-						"renderable.emissive": "scoperoot/alive"
+						"outputs": "renderable.emissive"
 					}
 				}
 			]

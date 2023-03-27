@@ -122,8 +122,8 @@ namespace SignalBindingTests {
 
             auto &expr6 = playerBindings.GetBinding(TEST_SIGNAL_ACTION6);
             AssertEqual(expr6.expr, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
-            AssertEqual(expr6.nodes.size(), 15u, "Expected 15 expression nodes");
-            AssertEqual(expr6.rootIndex, 14, "Expected expression root node to be 14");
+            AssertEqual(expr6.nodes.size(), 13u, "Expected 15 expression nodes with 2 optimized out");
+            AssertEqual(expr6.rootIndex, 12, "Expected expression root node to be 14");
             AssertEqual(expr6.nodeStrings[expr6.rootIndex],
                 "( 0.2 + 0.3 && 2 == 1 * 2 ) + 0.6 == 2 - 0.4",
                 "Unexpected expression node");
@@ -133,7 +133,7 @@ namespace SignalBindingTests {
             AssertEqual(expr7.nodes.size(), 8u, "Expected 8 expression nodes");
             AssertEqual(expr7.rootIndex, 7, "Expected expression root node to be 7");
             AssertEqual(expr7.nodeStrings[expr7.rootIndex],
-                "!10 + 1 || !player:player/device2_key != !0",
+                "!10 + 1 || !player:player/device2_key != 1",
                 "Unexpected expression node");
 
             auto &handBindings = hand.Get<ecs::SignalBindings>(lock);

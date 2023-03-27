@@ -27,36 +27,52 @@ namespace ecs {
 
         struct ConstantNode {
             double value = 0.0f;
+
+            bool operator==(const ConstantNode &) const = default;
         };
         struct IdentifierNode {
             StructField field;
+
+            bool operator==(const IdentifierNode &) const = default;
         };
         struct SignalNode {
             EntityRef entity;
             std::string signalName = "value";
+
+            bool operator==(const SignalNode &) const = default;
         };
         struct ComponentNode {
             EntityRef entity;
             const ComponentBase *component;
             StructField field;
+
+            bool operator==(const ComponentNode &) const = default;
         };
         struct FocusCondition {
             FocusLayer ifFocused;
             int inputIndex = -1;
+
+            bool operator==(const FocusCondition &) const = default;
         };
         struct OneInputOperation {
             int inputIndex = -1;
-            std::function<double(double)> evaluate;
+            double (*evaluate)(double) = nullptr;
+
+            bool operator==(const OneInputOperation &) const = default;
         };
         struct TwoInputOperation {
             int inputIndexA = -1;
             int inputIndexB = -1;
-            std::function<double(double, double)> evaluate;
+            double (*evaluate)(double, double) = nullptr;
+
+            bool operator==(const TwoInputOperation &) const = default;
         };
         struct DeciderOperation {
             int ifIndex = -1;
             int trueIndex = -1;
             int falseIndex = -1;
+
+            bool operator==(const DeciderOperation &) const = default;
         };
 
         using NodeVariant = std::variant<ConstantNode,
@@ -124,12 +140,10 @@ namespace ecs {
 
     private:
         std::string joinTokens(size_t startToken, size_t endToken) const;
+        int deduplicateNode(int index);
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
 
         bool canEvaluate(DynamicLock<ReadSignalsLock> lock) const;
-
-        template<typename LockType, typename InputType>
-        double evaluateNode(const LockType &lock, size_t depth, int nodeIndex, const InputType &input) const;
 
         double evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const;
         double evaluate(Lock<ReadAll> lock, size_t depth) const;

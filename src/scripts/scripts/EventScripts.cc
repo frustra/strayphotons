@@ -7,11 +7,27 @@
 namespace sp::scripts {
     using namespace ecs;
 
+    struct InitEvent {
+        std::vector<std::string> outputs;
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            state.definition.events.clear();
+            state.definition.filterOnEvent = true;
+
+            for (auto &output : outputs) {
+                EventBindings::SendEvent(lock, ent, Event{output, ent, true});
+            }
+        }
+    };
+    StructMetadata MetadataInitEvent(typeid(InitEvent), StructField::New(&InitEvent::outputs));
+    InternalScript<InitEvent> initEvent("init_event", MetadataInitEvent);
+
     struct EventGateBySignal {
         std::string inputEvent, outputEvent;
         SignalExpression gateExpression;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             if (inputEvent.empty()) return;
             state.definition.events = {inputEvent};
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
@@ -33,11 +49,12 @@ namespace sp::scripts {
         StructField::New("gate_expr", &EventGateBySignal::gateExpression));
     InternalScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
-    struct CollaposeEvents {
+    struct CollapseEvents {
         robin_hood::unordered_map<std::string, std::string> mapping;
 
         template<typename LockType>
         void updateEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             if (mapping.empty()) return;
             state.definition.events.clear();
             for (auto &map : mapping) {
@@ -65,9 +82,9 @@ namespace sp::scripts {
             updateEvents(state, lock, ent, interval);
         }
     };
-    StructMetadata MetadataCollaposeEvents(typeid(CollaposeEvents), StructField::New(&CollaposeEvents::mapping));
-    InternalScript<CollaposeEvents> collapseEvents("collapse_events", MetadataCollaposeEvents);
-    InternalPhysicsScript<CollaposeEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollaposeEvents);
+    StructMetadata MetadataCollapseEvents(typeid(CollapseEvents), StructField::New(&CollapseEvents::mapping));
+    InternalScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
+    InternalPhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
 
     struct SignalFromEvent {
         std::vector<std::string> outputs;

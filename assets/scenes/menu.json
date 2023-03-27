@@ -558,32 +558,37 @@
 		},
 		{
 			"name": "life.3_3",
-			"signal_output": {
-				"alive": 1
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/set_signal/alive"]
 			}
 		},
 		{
 			"name": "life.4_4",
-			"signal_output": {
-				"alive": 1
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/set_signal/alive"]
 			}
 		},
 		{
 			"name": "life.4_5",
-			"signal_output": {
-				"alive": 1
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/set_signal/alive"]
 			}
 		},
 		{
 			"name": "life.3_5",
-			"signal_output": {
-				"alive": 1
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/set_signal/alive"]
 			}
 		},
 		{
 			"name": "life.2_5",
-			"signal_output": {
-				"alive": 1
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/set_signal/alive"]
 			}
 		},
 		{
