@@ -67,41 +67,38 @@ namespace ecs {
             return true;
         }
 
-        // Add defined components to the template root entity
-        void ApplyComponents(Lock<AddRemove> lock) {
-            if (!componentsObj) return;
-
-            ecs::Entity rootOverride = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", rootScope);
-            for (auto &comp : *componentsObj) {
-                if (comp.first.empty() || comp.first[0] == '_') continue;
-                Assertf(comp.first != "name",
-                    "Template components can't override entity name: %s",
-                    comp.second.to_str());
+        // Add defined components to the template root entity with the given name
+        Entity ApplyComponents(const picojson::object &source,
+            Lock<AddRemove> lock,
+            std::string name,
+            ecs::EntityScope scope,
+            Transform offset = {}) {
+            Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, name, scope);
+            for (auto &comp : source) {
+                if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
-                    if (!componentType->LoadEntity(lock, rootScope, rootOverride, comp.second)) {
-                        Errorf("Failed to load component, ignoring: %s", comp.first);
+                    if (!componentType->LoadEntity(lock, scope, newEntity, comp.second)) {
+                        Errorf("LoadTemplate(%s): Failed to load component, ignoring: %s", sourceName, comp.first);
                     }
                 } else {
-                    Errorf("Unknown component, ignoring: %s", comp.first);
+                    Errorf("LoadTemplate(%s): Unknown component, ignoring: %s", sourceName, comp.first);
                 }
             }
-            if (rootOverride.Has<ecs::Scripts>(lock)) {
-                ecs::Scripts::RunPrefabs(lock, rootOverride);
+            if (newEntity.Has<ecs::TransformTree>(lock)) {
+                auto &transform = newEntity.Get<ecs::TransformTree>(lock);
+                if (!transform.parent) {
+                    if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
+                    transform.pose = offset * transform.pose.Get();
+                }
             }
+            return newEntity;
         }
 
         // Add defined entities as sub-entities of the template root
-        void AddEntities(Lock<AddRemove> lock, std::string_view nestedScope = {}, Transform offset = {}) {
+        void AddEntities(Lock<AddRemove> lock, ecs::EntityScope scope, Transform offset = {}) {
             if (!entityList) return;
-
-            ecs::EntityScope scope;
-            if (nestedScope.empty()) {
-                scope = rootScope;
-            } else {
-                scope = ecs::Name(nestedScope, rootScope);
-            }
 
             std::vector<ecs::Entity> entities;
             for (auto &value : *entityList) {
@@ -113,29 +110,8 @@ namespace ecs {
                     Errorf("Entity name 'scoperoot' in template not allowed, ignoring");
                     continue;
                 }
-                ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope);
 
-                for (auto comp : obj) {
-                    if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
-
-                    auto componentType = ecs::LookupComponent(comp.first);
-                    if (componentType != nullptr) {
-                        if (!componentType->LoadEntity(lock, scope, newEntity, comp.second)) {
-                            Errorf("Failed to load component, ignoring: %s", comp.first);
-                        }
-                    } else {
-                        Errorf("Unknown component, ignoring: %s", comp.first);
-                    }
-                }
-
-                if (newEntity.Has<ecs::TransformTree>(lock)) {
-                    auto &transform = newEntity.Get<ecs::TransformTree>(lock);
-                    if (!transform.parent) {
-                        if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
-                        transform.pose = offset * transform.pose.Get();
-                    }
-                }
-
+                Entity newEntity = ApplyComponents(obj, lock, relativeName, scope, offset);
                 entities.emplace_back(newEntity);
             }
 
@@ -157,8 +133,14 @@ namespace ecs {
             TemplateParser parser(scene, ent, state.GetInstanceId(), source);
             if (!parser.Parse(lock)) return;
 
-            parser.ApplyComponents(lock);
-            parser.AddEntities(lock);
+            Entity rootOverride;
+            if (parser.componentsObj) {
+                rootOverride = parser.ApplyComponents(*parser.componentsObj, lock, "scoperoot", parser.rootScope);
+            }
+            parser.AddEntities(lock, parser.rootScope);
+            if (rootOverride.Has<ecs::Scripts>(lock)) {
+                ecs::Scripts::RunPrefabs(lock, rootOverride);
+            }
         }
     };
     StructMetadata MetadataTemplatePrefab(typeid(TemplatePrefab), StructField::New("source", &TemplatePrefab::source));
@@ -196,8 +178,6 @@ namespace ecs {
             TemplateParser corner(scene, ent, state.GetInstanceId(), cornerTemplate);
             auto haveCorner = corner.Parse(lock);
 
-            surface.ApplyComponents(lock);
-
             glm::vec3 normal{1, 1, 1};
             normal[axesIndex.first] = 0;
             normal[axesIndex.second] = 0;
@@ -210,7 +190,19 @@ namespace ecs {
                     offset3D[axesIndex.first] = offset2D.x;
                     offset3D[axesIndex.second] = offset2D.y;
 
-                    auto scope = std::to_string(x) + "_" + std::to_string(y);
+                    ecs::EntityScope scope = ecs::Name(std::to_string(x) + "_" + std::to_string(y), surface.rootScope);
+
+                    ecs::Entity tileEnt;
+                    if (surface.componentsObj) {
+                        tileEnt = surface.ApplyComponents(*surface.componentsObj, lock, "scoperoot", scope, offset3D);
+                    } else {
+                        static const picojson::object empty = {};
+                        tileEnt = surface.ApplyComponents(empty, lock, "scoperoot", scope, offset3D);
+                    }
+                    Assertf(tileEnt, "Failed to create tile entity: %s", ToString(lock, ent));
+                    auto &signalOutput = tileEnt.Get<ecs::SignalOutput>(lock);
+                    signalOutput.SetSignal("tile.x", x);
+                    signalOutput.SetSignal("tile.y", y);
                     surface.AddEntities(lock, scope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);
@@ -227,6 +219,9 @@ namespace ecs {
                                 transform.Rotate(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
+                            if (corner.componentsObj) {
+                                corner.ApplyComponents(*corner.componentsObj, lock, "scoperoot", scope, transform);
+                            }
                             corner.AddEntities(lock, scope, transform);
                         }
                     } else if (xEdge || yEdge) {
@@ -240,8 +235,14 @@ namespace ecs {
                                 transform.Rotate(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
+                            if (edge.componentsObj) {
+                                edge.ApplyComponents(*edge.componentsObj, lock, "scoperoot", scope, transform);
+                            }
                             edge.AddEntities(lock, scope, transform);
                         }
+                    }
+                    if (tileEnt.Has<ecs::Scripts>(lock)) {
+                        ecs::Scripts::RunPrefabs(lock, tileEnt);
                     }
                 }
             }

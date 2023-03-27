@@ -590,6 +590,7 @@ namespace ecs {
     SignalExpression::SignalExpression(const EntityRef &entity, const std::string &signalName)
         : scope(entity.Name().scene, ""), expr(entity.Name().String() + "/" + signalName) {
         tokens.emplace_back(expr);
+        rootIndex = nodes.size();
         nodes.emplace_back(SignalNode{entity, signalName}, 0, 0);
         nodeStrings.emplace_back(expr);
     }
@@ -691,17 +692,24 @@ namespace ecs {
                 if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                     return node.value;
                 } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
-                    ZoneScopedN("IdentifierNode:evaluate");
+                    // ZoneScopedN("IdentifierNode:evaluate");
+                    if (node.field.type != typeid(InputType)) {
+                        Warnf("SignalExpression can't convert %s from %s to %s",
+                            nodeStrings[nodeIndex],
+                            node.field.type.name(),
+                            typeid(InputType).name());
+                        return 0.0;
+                    }
                     return ecs::ReadStructField(&input, node.field);
                 } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                    ZoneScopedN("SignalNode:evaluate");
+                    // ZoneScopedN("SignalNode:evaluate");
                     return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
                 } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                     const ComponentBase *base = node.component;
                     if (!base) return 0.0;
                     Entity ent = node.entity.Get(lock);
                     if (!ent) return 0.0;
-                    ZoneScopedN("ComponentNode:evaluate");
+                    // ZoneScopedN("ComponentNode:evaluate");
                     return GetFieldType(base->metadata.type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;
                         if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
@@ -750,7 +758,7 @@ namespace ecs {
             },
             (SignalExpression::NodeVariant)nodes[nodeIndex]);
 
-        // if (!std::holds_alternative<SignalExpression::ConstantNode>(nodes[nodeIndex])) {
+        // if (!std::holds_alternative<SignalExpression::ConstantNode>(nodes[nodeIndex]) && nodes.size() > 2) {
         //     Debugf("     '%s' = %f", nodeStrings[nodeIndex], result);
         // }
         if (!std::isfinite(result)) {
@@ -761,29 +769,27 @@ namespace ecs {
     };
 
     double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
-        ZoneScoped;
-        ZoneStr(expr);
+        // ZoneScoped;
+        // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
-        ZoneScoped;
-        ZoneStr(expr);
+        // ZoneScoped;
+        // ZoneStr(expr);
         return evaluateNode(lock, depth, rootIndex, 0.0);
     }
 
-    double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock,
-        const EventData &input,
-        size_t depth) const {
-        ZoneScoped;
-        ZoneStr(expr);
-        return evaluateNode(lock, depth, rootIndex, input);
+    double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
+        return evaluateNode(lock, 0, rootIndex, input);
     }
 
-    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input, size_t depth) const {
-        ZoneScoped;
-        ZoneStr(expr);
-        return evaluateNode(lock, depth, rootIndex, input);
+    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input) const {
+        // ZoneScoped;
+        // ZoneStr(expr);
+        return evaluateNode(lock, 0, rootIndex, input);
     }
 
     template<>
@@ -810,8 +816,9 @@ namespace ecs {
             //     src.expr,
             //     src.scope.String(),
             //     scope.String());
-            DebugAssertf(src.rootIndex >= 0 && (size_t)src.rootIndex < src.nodeStrings.size(),
-                "Saving invalid signal expression");
+            Assertf(src.rootIndex >= 0 && (size_t)src.rootIndex < src.nodeStrings.size(),
+                "Saving invalid signal expression: %s",
+                src.expr);
             dst = picojson::value(src.nodeStrings[src.rootIndex]);
         } else {
             dst = picojson::value(src.expr);

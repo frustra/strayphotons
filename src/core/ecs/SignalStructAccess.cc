@@ -47,7 +47,7 @@ namespace ecs {
                 return true;
             } else if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                                  std::is_same_v<T, sp::color_alpha_t>) {
-                if (!ConvertAccessor<ArgT>(value[0], accessor)) return false;
+                if (!ConvertAccessor<ArgT, typename T::value_type>(value[0], accessor)) return false;
                 if constexpr (!std::is_const_v<ArgT>) {
                     for (size_t i = 1; i < value.length(); i++) {
                         value[i] = value[0];
@@ -66,8 +66,8 @@ namespace ecs {
                 field.type.name(),
                 field.name);
 
-            return ecs::GetFieldType(field.type, field.Access(basePtr), [&](auto &value) {
-                using T = std::decay_t<decltype(value)>;
+            return ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                using T = std::remove_pointer_t<decltype(typePtr)>;
 
                 if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                               std::is_same_v<T, sp::color_alpha_t>) {
@@ -75,7 +75,7 @@ namespace ecs {
                     size_t delimiter = fieldName.find_last_of('.');
                     std::optional<StructField> subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
                     if (subField) {
-                        auto &subValue = subField->Access<typename T::value_type>(&value);
+                        auto &subValue = subField->Access<typename T::value_type>(basePtr);
                         if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
                     }
                     Errorf("AccessStructField unable to vector convert from: %s to %s '%s'",
@@ -84,6 +84,7 @@ namespace ecs {
                         field.name);
                     return false;
                 } else if constexpr (std::is_same_v<T, EventData>) {
+                    auto &value = field.Access<EventData>(basePtr);
                     return std::visit(
                         [&](auto &&event) {
                             using EventT = std::decay_t<decltype(event)>;
@@ -93,6 +94,7 @@ namespace ecs {
                         },
                         value);
                 } else {
+                    auto &value = field.Access<T>(basePtr);
                     bool success = ConvertAccessor<ArgT>(value, accessor);
                     if (!success) {
                         Errorf("AccessStructField unable to convert from: %s to %s '%s'",

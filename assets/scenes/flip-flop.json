@@ -51,7 +51,7 @@
 			},
 			"script": {
 				"parameters": {
-					"source": "table"
+					"source": "table/1x1"
 				},
 				"prefab": "template"
 			}
@@ -180,7 +180,7 @@
 			},
 			"script": {
 				"parameters": {
-					"source": "table"
+					"source": "table/1x1"
 				},
 				"prefab": "template"
 			}

@@ -26,12 +26,12 @@ namespace sp::scripts {
 
         // Internal script state
         SignalExpression expr;
-        double previousValue;
+        std::optional<double> previousValue;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (expr.expr != inputExpr) {
                 expr = SignalExpression(inputExpr, state.scope);
-                previousValue = expr.Evaluate(lock);
+                if (!previousValue) previousValue = expr.Evaluate(lock);
             }
 
             auto value = expr.Evaluate(lock);
@@ -45,9 +45,9 @@ namespace sp::scripts {
                 outputEvent.data = value >= 0.5;
             }
 
-            if (value >= 0.5 && previousValue < 0.5) {
+            if (value >= 0.5 && *previousValue < 0.5) {
                 if (enableRising) EventBindings::SendEvent(lock, ent, outputEvent);
-            } else if (value < 0.5 && previousValue >= 0.5) {
+            } else if (value < 0.5 && *previousValue >= 0.5) {
                 if (enableFalling) EventBindings::SendEvent(lock, ent, outputEvent);
             }
             previousValue = value;
@@ -58,6 +58,7 @@ namespace sp::scripts {
         StructField::New("output_event", &EdgeTrigger::outputName),
         StructField::New("falling_edge", &EdgeTrigger::enableFalling),
         StructField::New("rising_edge", &EdgeTrigger::enableRising),
+        StructField::New("init_value", &EdgeTrigger::previousValue),
         StructField::New("set_event_value", &EdgeTrigger::eventValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
 
@@ -360,13 +361,13 @@ namespace sp::scripts {
                     event.data);
 
                 if (!sp::starts_with(event.name, "/reset_timer/")) {
-                    Errorf("Unexpected event received by component_from_event: %s", event.name);
+                    Errorf("Unexpected event received by timer: %s", event.name);
                     continue;
                 }
 
                 auto timerName = event.name.substr("/reset_timer/"s.size());
                 if (timerName.empty() || !sp::contains(names, timerName)) {
-                    Errorf("Unexpected event received by component_from_event: %s", event.name);
+                    Errorf("Unexpected event received by timer: %s", event.name);
                     continue;
                 }
 

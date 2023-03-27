@@ -10,29 +10,64 @@ namespace sp::scripts {
     struct EventGateBySignal {
         std::string inputEvent, outputEvent;
         SignalExpression gateExpression;
-        float signalThreshold = 0.5f;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (inputEvent.empty()) return;
             state.definition.events = {inputEvent};
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
 
-            bool gateOpen = gateExpression.Evaluate(lock) >= signalThreshold;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (!gateOpen || outputEvent.empty()) continue;
+                if (outputEvent.empty()) continue;
 
-                event.name = outputEvent;
-                EventBindings::SendEvent(lock, ent, event);
+                if (gateExpression.EvaluateEvent(lock, event.data) >= 0.5) {
+                    event.name = outputEvent;
+                    EventBindings::SendEvent(lock, ent, event);
+                }
             }
         }
     };
     StructMetadata MetadataEventGateBySignal(typeid(EventGateBySignal),
         StructField::New("input_event", &EventGateBySignal::inputEvent),
         StructField::New("output_event", &EventGateBySignal::outputEvent),
-        StructField::New("gate_signal", &EventGateBySignal::gateExpression),
-        StructField::New("signal_threshold", &EventGateBySignal::signalThreshold));
+        StructField::New("gate_expr", &EventGateBySignal::gateExpression));
     InternalScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
+
+    struct CollaposeEvents {
+        robin_hood::unordered_map<std::string, std::string> mapping;
+
+        template<typename LockType>
+        void updateEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+            if (mapping.empty()) return;
+            state.definition.events.clear();
+            for (auto &map : mapping) {
+                state.definition.events.emplace_back(map.first);
+            }
+            state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
+
+            robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                auto it = mapping.find(event.name);
+                if (it == mapping.end()) continue;
+
+                outputEvents[event.name] = Event{it->second, event.source, event.data};
+            }
+            for (auto &[name, outputEvent] : outputEvents) {
+                if (outputEvent) EventBindings::SendEvent(lock, ent, *outputEvent);
+            }
+        }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateEvents(state, lock, ent, interval);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateEvents(state, lock, ent, interval);
+        }
+    };
+    StructMetadata MetadataCollaposeEvents(typeid(CollaposeEvents), StructField::New(&CollaposeEvents::mapping));
+    InternalScript<CollaposeEvents> collapseEvents("collapse_events", MetadataCollaposeEvents);
+    InternalPhysicsScript<CollaposeEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollaposeEvents);
 
     struct SignalFromEvent {
         std::vector<std::string> outputs;
@@ -91,6 +126,27 @@ namespace sp::scripts {
     StructMetadata MetadataSignalFromEvent(typeid(SignalFromEvent),
         StructField::New("outputs", &SignalFromEvent::outputs));
     InternalScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
+
+    struct EventFromSignal {
+        robin_hood::unordered_map<std::string, SignalExpression> outputs;
+
+        template<typename LockType>
+        void sendOutputEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+            for (auto &[name, expr] : outputs) {
+                EventBindings::SendEvent(lock, ent, Event{name, ent, expr.Evaluate(lock)});
+            }
+        }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            sendOutputEvents(state, lock, ent, interval);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            sendOutputEvents(state, lock, ent, interval);
+        }
+    };
+    StructMetadata MetadataEventFromSignal(typeid(EventFromSignal), StructField::New(&EventFromSignal::outputs));
+    InternalScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
+    InternalPhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
 
     struct ComponentFromEvent {
         std::vector<std::string> outputs;

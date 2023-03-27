@@ -202,8 +202,8 @@ namespace ecs {
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                ZoneScopedN("OnTick");
-                ZoneStr(ecs::ToString(lock, ent));
+                // ZoneScopedN("OnTick");
+                // ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
             }
         }
@@ -214,8 +214,8 @@ namespace ecs {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                ZoneScopedN("OnPhysicsUpdate");
-                ZoneStr(ecs::ToString(lock, ent));
+                // ZoneScopedN("OnPhysicsUpdate");
+                // ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
             }
         }

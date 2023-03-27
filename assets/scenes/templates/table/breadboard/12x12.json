@@ -13,9 +13,9 @@
 		"script": {
 			"prefab": "tile",
 			"parameters": {
-				"surface": "breadboard_surface",
-				"edge": "breadboard_edge",
-				"corner": "breadboard_corner",
+				"surface": "table/breadboard/surface",
+				"edge": "table/breadboard/edge",
+				"corner": "table/breadboard/corner",
 				"axes": "xz",
 				"count": [12, 12],
 				"stride": [0.08, 0.08]

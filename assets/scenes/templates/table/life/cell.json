@@ -1,0 +1,81 @@
+{
+	"components": {
+		"transform": {},
+		"signal_output": {
+			"alive": 0,
+			"toggled": 0
+		},
+		"signal_bindings": {
+			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
+			"should_toggle": "scoperoot/toggled || (scoperoot/neighbor_count == 3 ? !scoperoot/alive : (scoperoot/neighbor_count == 2 ? 0 : scoperoot/alive))"
+		},
+		"event_input": {},
+		"event_bindings": {
+			"/physics/collision/force_found": {
+				"outputs": "scoperoot/set_signal/toggled",
+				"set_value": true
+			},
+			"/life/update_alive": {
+				"outputs": "scoperoot/set_signal/alive",
+				"filter": "event",
+				"modify": "!scoperoot/alive"
+			},
+			"/toggle_signal/alive": {
+				"outputs": "scoperoot/set_signal/toggled",
+				"set_value": false
+			}
+		},
+		"physics": {
+			"shapes": {
+				"box": [0.03, 0.03, 0.03],
+				"transform": {
+					"translate": [0, 0.015, 0]
+				}
+			},
+			"type": "Static",
+			"contact_report_force": 1
+		},
+		"script": [
+			{
+				"prefab": "life_cell",
+				"parameters": {
+					"board_size": [32, 32]
+				}
+			},
+			{
+				"onTick": "event_from_signal",
+				"parameters": {
+					"/life/update_alive": "scoperoot/should_toggle"
+				}
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": ["alive", "toggled"]
+				}
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "light",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.015, 0],
+				"scale": 0.03
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"renderable.emissive": "scoperoot/alive"
+					}
+				}
+			]
+		}
+	]
+}

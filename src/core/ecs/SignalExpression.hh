@@ -100,11 +100,11 @@ namespace ecs {
         }
 
         template<typename LockType>
-        double EvaluateEvent(LockType lock, const EventData &input, size_t depth = 0) const {
+        double EvaluateEvent(LockType lock, const EventData &input) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
-                return evaluateEvent((Lock<ReadAll>)lock, input, depth);
+                return evaluateEvent((Lock<ReadAll>)lock, input);
             } else {
-                return evaluateEvent((DynamicLock<ReadSignalsLock>)lock, input, depth);
+                return evaluateEvent((DynamicLock<ReadSignalsLock>)lock, input);
             }
         }
 
@@ -133,8 +133,8 @@ namespace ecs {
 
         double evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const;
         double evaluate(Lock<ReadAll> lock, size_t depth) const;
-        double evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input, size_t depth) const;
-        double evaluateEvent(Lock<ReadAll> lock, const EventData &input, size_t depth) const;
+        double evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input) const;
+        double evaluateEvent(Lock<ReadAll> lock, const EventData &input) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };
