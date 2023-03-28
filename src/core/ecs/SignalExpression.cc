@@ -786,7 +786,7 @@ namespace ecs {
                             return EvaluateNode(lock, node.falseIndex, input);
                         }
                     } else {
-                        static_assert(false, "Invalid signal expression node type");
+                        static_assert(!sizeof(T), "Invalid signal expression node type");
                     }
                 },
                 (SignalExpression::NodeVariant)expr.nodes[nodeIndex]);

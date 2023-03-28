@@ -177,7 +177,7 @@ namespace sp {
                     nullptr,
                     "%u");
             } else {
-                static_assert(false, "AddImGuiElement unsupported vector type");
+                static_assert(!sizeof(U), "AddImGuiElement unsupported vector type");
             }
         } else {
             picojson::value jsonValue;
