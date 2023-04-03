@@ -56,4 +56,11 @@ namespace ecs {
         return e.Get<Name>(lock).String() + "(" + (IsLive(e) ? "gen " : "staging gen ") + std::to_string(generation) +
                ", index " + std::to_string(e.index) + ")";
     }
+
+    std::string ToString(EntityLock<Read<Name>> entLock) {
+        if (!entLock.Has<Name>()) return std::to_string(entLock.entity);
+        auto generation = Tecs::GenerationWithoutIdentifier(entLock.entity.generation);
+        return entLock.Get<Name>().String() + "(" + (IsLive(entLock.entity) ? "gen " : "staging gen ") +
+               std::to_string(generation) + ", index " + std::to_string(entLock.entity.index) + ")";
+    }
 } // namespace ecs

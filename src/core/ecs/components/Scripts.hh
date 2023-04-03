@@ -22,8 +22,9 @@ namespace ecs {
         Read<TransformSnapshot>,
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, SignalOutput, LaserLine, VoxelArea>>;
 
-    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
-    using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
+    using OnTickFunc = std::function<void(ScriptState &, EntityLock<WriteAll>, chrono_clock::duration)>;
+    using OnPhysicsUpdateFunc =
+        std::function<void(ScriptState &, EntityLock<PhysicsUpdateLock>, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
 
     struct InternalScriptBase {
@@ -159,8 +160,8 @@ namespace ecs {
             return scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName));
         }
 
-        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
-        void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
+        void OnTick(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
+        void OnPhysicsUpdate(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval);
 
         // RunPrefabs should only be run from the SceneManager thread
         static void RunPrefabs(Lock<AddRemove> lock, Entity ent);
@@ -200,10 +201,10 @@ namespace ecs {
             return ptr ? ptr : &defaultValue;
         }
 
-        static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        static void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
             if (!ptr) ptr = &state.userData.emplace<T>();
-            ptr->OnTick(state, lock, ent, interval);
+            ptr->OnTick(state, entLock, interval);
         }
 
         InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
@@ -237,12 +238,11 @@ namespace ecs {
         }
 
         static void OnPhysicsUpdate(ScriptState &state,
-            PhysicsUpdateLock lock,
-            Entity ent,
+            EntityLock<PhysicsUpdateLock> entLock,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
             if (!ptr) ptr = &state.userData.emplace<T>();
-            ptr->OnPhysicsUpdate(state, lock, ent, interval);
+            ptr->OnPhysicsUpdate(state, entLock, interval);
         }
 
         InternalPhysicsScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {

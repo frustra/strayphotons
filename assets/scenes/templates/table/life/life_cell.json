@@ -69,7 +69,7 @@
 				{
 					"onTick": "component_from_event",
 					"parameters": {
-						"outputs": "renderable.emissive"
+						"outputs": ["renderable.emissive"]
 					}
 				}
 			]

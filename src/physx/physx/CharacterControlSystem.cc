@@ -56,15 +56,14 @@ namespace sp {
                 auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
                 headScripts.AddOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
-                        ecs::Entity ent,
+                        ecs::EntityLock<ecs::WriteAll> entLock,
                         chrono_clock::duration interval) {
-                        if (!ent.Has<ecs::TransformTree>(lock)) return;
-                        auto &tree = ent.Get<ecs::TransformTree>(lock);
+                        if (!entLock.Has<ecs::TransformTree>()) return;
+                        auto &tree = entLock.Get<ecs::TransformTree>();
 
-                        ecs::Entity hmd = entities::VrHmd.Get(lock);
-                        ecs::Entity flatview = entities::Flatview.Get(lock);
-                        if (hmd.Has<ecs::TransformTree>(lock) && hmd.Get<ecs::TransformTree>(lock).parent) {
+                        ecs::Entity hmd = entities::VrHmd.Get(entLock);
+                        ecs::Entity flatview = entities::Flatview.Get(entLock);
+                        if (hmd.Has<ecs::TransformTree>(entLock) && hmd.Get<ecs::TransformTree>(entLock).parent) {
                             tree.parent = hmd;
                         } else {
                             tree.parent = flatview;
@@ -78,20 +77,19 @@ namespace sp {
                 auto &dirScripts = dirEnt.Set<ecs::Scripts>(lock);
                 dirScripts.AddOnPhysicsUpdate(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::PhysicsUpdateLock lock,
-                        ecs::Entity ent,
+                        ecs::EntityLock<ecs::PhysicsUpdateLock> entLock,
                         chrono_clock::duration interval) {
-                        if (!ent.Has<ecs::TransformTree>(lock)) return;
-                        auto &dirTree = ent.Get<ecs::TransformTree>(lock);
+                        if (!entLock.Has<ecs::TransformTree>()) return;
+                        auto &dirTree = entLock.Get<ecs::TransformTree>();
 
-                        ecs::Entity head = entities::Head.Get(lock);
-                        if (!head.Has<ecs::TransformTree>(lock)) return;
+                        ecs::Entity head = entities::Head.Get(entLock);
+                        if (!head.Has<ecs::TransformTree>(entLock)) return;
 
-                        ecs::Entity player = entities::Player.Get(lock);
-                        if (!player.Has<ecs::TransformTree>(lock)) return;
+                        ecs::Entity player = entities::Player.Get(entLock);
+                        if (!player.Has<ecs::TransformTree>(entLock)) return;
 
-                        auto &headTree = head.Get<ecs::TransformTree>(lock);
-                        auto headToPlayer = headTree.GetRelativeTransform(lock, player);
+                        auto &headTree = head.Get<const ecs::TransformTree>(entLock);
+                        auto headToPlayer = headTree.GetRelativeTransform(entLock, player);
 
                         auto forward = headToPlayer.GetForward();
                         if (std::abs(forward.y) > 0.999) {

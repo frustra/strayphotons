@@ -30,13 +30,13 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<PhysicsJoints, TransformSnapshot>(lock)) return;
-            auto &joints = ent.Get<PhysicsJoints>(lock);
-            auto &plugTransform = ent.Get<const TransformSnapshot>(lock);
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<PhysicsJoints, TransformSnapshot>()) return;
+            auto &joints = entLock.Get<PhysicsJoints>();
+            auto &plugTransform = entLock.Get<const TransformSnapshot>();
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (EventInput::Poll(entLock, state.eventQueue, event)) {
                 if (event.name == "/magnet/nearby") {
                     if (std::holds_alternative<bool>(event.data)) {
                         if (std::get<bool>(event.data)) {
@@ -56,20 +56,20 @@ namespace sp::scripts {
                                 Entity nearestSocket;
                                 float nearestDist = -1;
                                 for (auto &entity : socketEntities) {
-                                    if (!entity.Has<TransformSnapshot>(lock)) continue;
+                                    if (!entity.Has<TransformSnapshot>(entLock)) continue;
 
-                                    auto &socketTransform = entity.Get<const TransformSnapshot>(lock);
+                                    auto &socketTransform = entity.Get<const TransformSnapshot>(entLock);
                                     float distance = glm::length(
                                         socketTransform.GetPosition() - plugTransform.GetPosition());
-                                    if (!nearestSocket.Has<TransformSnapshot>(lock) || distance < nearestDist) {
+                                    if (!nearestSocket.Has<TransformSnapshot>(entLock) || distance < nearestDist) {
                                         nearestSocket = entity;
                                         nearestDist = distance;
                                     }
                                 }
-                                if (nearestSocket.Has<TransformSnapshot>(lock)) {
-                                    auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock);
+                                if (nearestSocket.Has<TransformSnapshot>(entLock)) {
+                                    auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(entLock);
 
-                                    float snapAngle = SignalBindings::GetSignal(lock, nearestSocket, "snap_angle");
+                                    float snapAngle = SignalBindings::GetSignal(entLock, nearestSocket, "snap_angle");
 
                                     PhysicsJoint joint;
                                     joint.target = nearestSocket;
@@ -86,7 +86,7 @@ namespace sp::scripts {
                     } else if (std::holds_alternative<Transform>(event.data)) {
                         if (attachedSocketEntity) {
                             Debugf("Detaching: %s from %s",
-                                ecs::ToString(lock, ent),
+                                ecs::ToString(entLock),
                                 attachedSocketEntity.Name().String());
 
                             sp::erase_if(joints.joints, [&](auto &&joint) {
@@ -116,27 +116,27 @@ namespace sp::scripts {
     struct MagneticSocket {
         robin_hood::unordered_flat_set<Entity> disabledEntities;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<TriggerArea>(lock)) return;
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<TriggerArea>()) return;
 
             EntityRef enableTriggerEntity = ecs::Name("enable_trigger", state.scope);
-            auto enableTrigger = enableTriggerEntity.Get(lock);
-            if (!enableTrigger.Has<TriggerArea>(lock)) return;
+            auto enableTrigger = enableTriggerEntity.Get(entLock);
+            if (!enableTrigger.Has<TriggerArea>(entLock)) return;
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (EventInput::Poll(entLock, state.eventQueue, event)) {
                 auto data = std::get_if<Entity>(&event.data);
                 if (!data) continue;
 
                 if (event.name == "/trigger/magnetic/leave") {
                     if (event.source == enableTrigger) {
                         disabledEntities.erase(*data);
-                        EventBindings::SendEvent(lock, *data, Event{"/magnet/nearby", ent, false});
+                        EventBindings::SendEvent(entLock, *data, Event{"/magnet/nearby", entLock.entity, false});
                     }
                 } else if (event.name == "/trigger/magnetic/enter") {
-                    if (event.source == ent && !disabledEntities.contains(*data)) {
+                    if (event.source == entLock.entity && !disabledEntities.contains(*data)) {
                         disabledEntities.emplace(*data);
-                        EventBindings::SendEvent(lock, *data, Event{"/magnet/nearby", ent, true});
+                        EventBindings::SendEvent(entLock, *data, Event{"/magnet/nearby", entLock.entity, true});
                     }
                 }
             }

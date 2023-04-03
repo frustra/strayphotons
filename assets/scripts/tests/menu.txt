@@ -7,7 +7,37 @@ stepphysics 2
 # TODO: BUG: First menu frame is missing the GUI
 screenshot menu.png
 stepgraphics
-stepphysics 100
-stepgraphics 100
+stepphysics 10
+stepgraphics 10
 screenshot delayed.png
+stepgraphics
+setsignal player:player/move_noclip 1
+steplogic
+set_position player:player -1.5 0.25 2.5
+rotate player:player 90 0 1 0
+rotate player:flatview -90 1 0 0
+stepphysics
+steplogic
+screenshot life0.png
+stepgraphics
+steplogic
+screenshot life1.png
+stepgraphics
+steplogic
+screenshot life2.png
+stepgraphics
+steplogic
+screenshot life3.png
+stepgraphics
+steplogic
+screenshot life4.png
+stepgraphics
+steplogic
+screenshot life5.png
+stepgraphics
+steplogic
+screenshot life6.png
+stepgraphics
+steplogic
+screenshot life7.png
 stepgraphics

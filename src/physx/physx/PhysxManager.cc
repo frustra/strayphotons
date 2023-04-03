@@ -337,7 +337,7 @@ namespace sp {
                 ZoneScopedN("Scripts::OnPhysicsUpdate");
                 for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                     auto &scripts = entity.Get<ecs::Scripts>(lock);
-                    scripts.OnPhysicsUpdate(lock, entity, interval);
+                    scripts.OnPhysicsUpdate(ecs::EntityLock<ecs::PhysicsUpdateLock>(lock, entity), interval);
                 }
             }
 
@@ -736,7 +736,7 @@ namespace sp {
     void PhysxManager::UpdateActor(
         ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
         ecs::Entity &e) {
-        // ZoneScoped;
+        ZoneScoped;
         // ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);

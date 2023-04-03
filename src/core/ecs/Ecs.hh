@@ -94,7 +94,7 @@ namespace ecs {
     template<typename... Permissions>
     using Lock = Tecs::Lock<ECS, Permissions...>;
     template<typename... Permissions>
-    using DynamicLock = Tecs::DynamicLock<ECS, Permissions...>;
+    using EntityLock = Tecs::EntityLock<ECS, Permissions...>;
     template<typename... Components>
     using Read = Tecs::Read<Components...>;
     using ReadAll = Tecs::ReadAll;
@@ -102,6 +102,8 @@ namespace ecs {
     using Write = Tecs::Write<Components...>;
     using WriteAll = Tecs::WriteAll;
     using AddRemove = Tecs::AddRemove;
+    template<typename... Permissions>
+    using Optional = Tecs::Optional<Permissions...>;
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;
     template<typename T>
@@ -113,6 +115,7 @@ namespace ecs {
     using ComponentEvent = Tecs::ComponentEvent<T>;
 
     std::string ToString(Lock<Read<Name>> lock, Entity e);
+    std::string ToString(EntityLock<Read<Name>> entLock);
 
     ECS &World();
     ECS &StagingWorld();

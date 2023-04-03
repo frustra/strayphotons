@@ -197,26 +197,26 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
+    void Scripts::OnTick(EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                // ZoneScopedN("OnTick");
-                // ZoneStr(ecs::ToString(lock, ent));
-                (*callback)(state, lock, ent, interval);
+                ZoneScopedN("OnTick");
+                ZoneStr(ecs::ToString(entLock));
+                (*callback)(state, entLock, interval);
             }
         }
     }
 
-    void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
+    void Scripts::OnPhysicsUpdate(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval) {
         for (auto &state : scripts) {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
                 ZoneScopedN("OnPhysicsUpdate");
-                ZoneStr(ecs::ToString(lock, ent));
-                (*callback)(state, lock, ent, interval);
+                ZoneStr(ecs::ToString(entLock));
+                (*callback)(state, entLock, interval);
             }
         }
     }

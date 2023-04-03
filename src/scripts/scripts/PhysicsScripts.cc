@@ -15,29 +15,31 @@ namespace sp::scripts {
         EntityRef alignmentEntity, followEntity;
         std::optional<glm::vec3> alignment;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<TransformTree, VoxelArea>(lock) || voxelScale == 0.0f || voxelStride < 1.0f) return;
+        void OnPhysicsUpdate(ScriptState &state,
+            EntityLock<PhysicsUpdateLock> entLock,
+            chrono_clock::duration interval) {
+            if (!entLock.Has<TransformTree, VoxelArea>() || voxelScale == 0.0f || voxelStride < 1.0f) return;
 
-            auto &transform = ent.Get<TransformTree>(lock);
-            auto &voxelArea = ent.Get<VoxelArea>(lock);
-            auto voxelRotation = transform.GetGlobalRotation(lock);
+            auto &transform = entLock.Get<TransformTree>();
+            auto &voxelArea = entLock.Get<VoxelArea>();
+            auto voxelRotation = transform.GetGlobalRotation(entLock);
 
             glm::vec3 offset = voxelOffset * glm::vec3(voxelArea.extents) * voxelScale;
-            auto alignmentTarget = alignmentEntity.Get(lock);
-            if (alignmentTarget.Has<TransformSnapshot>(lock)) {
+            auto alignmentTarget = alignmentEntity.Get(entLock);
+            if (alignmentTarget.Has<TransformSnapshot>(entLock)) {
                 glm::vec3 alignmentOffset;
                 if (alignment) {
-                    alignmentOffset = alignmentTarget.Get<TransformSnapshot>(lock).GetPosition() - alignment.value();
+                    alignmentOffset = alignmentTarget.Get<TransformSnapshot>(entLock).GetPosition() - alignment.value();
                 } else {
-                    alignment = alignmentTarget.Get<TransformSnapshot>(lock).GetPosition();
+                    alignment = alignmentTarget.Get<TransformSnapshot>(entLock).GetPosition();
                 }
                 offset += glm::mod(alignmentOffset, voxelStride * voxelScale);
             }
 
             auto followPosition = glm::vec3(0);
-            auto followTarget = followEntity.Get(lock);
-            if (followTarget.Has<TransformSnapshot>(lock)) {
-                followPosition = followTarget.Get<TransformSnapshot>(lock).GetPosition();
+            auto followTarget = followEntity.Get(entLock);
+            if (followTarget.Has<TransformSnapshot>(entLock)) {
+                followPosition = followTarget.Get<TransformSnapshot>(entLock).GetPosition();
             }
 
             followPosition = voxelRotation * followPosition;
@@ -58,10 +60,12 @@ namespace sp::scripts {
         glm::vec3 rotationAxis;
         float rotationSpeedRpm;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
+        void OnPhysicsUpdate(ScriptState &state,
+            EntityLock<PhysicsUpdateLock> entLock,
+            chrono_clock::duration interval) {
+            if (!entLock.Has<TransformTree>() || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
-            auto &transform = ent.Get<TransformTree>(lock);
+            auto &transform = entLock.Get<TransformTree>();
             auto currentRotation = transform.pose.GetRotation();
             transform.pose.SetRotation(glm::rotate(currentRotation,
                 (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),

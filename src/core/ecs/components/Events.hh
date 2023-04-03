@@ -108,6 +108,11 @@ namespace ecs {
         template<typename LockType>
         static size_t SendEvent(LockType lock, const EntityRef &target, const AsyncEvent &event, size_t depth = 0);
 
+        template<typename... Permissions, typename EventType>
+        static size_t SendEvent(EntityLock<Permissions...> entLock, const EventType &event, size_t depth = 0) {
+            return SendEvent(entLock, entLock.entity, event, depth);
+        }
+
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
@@ -123,7 +128,7 @@ namespace ecs {
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
 
     namespace detail {
-        bool FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
+        bool FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
             sp::AsyncPtr<EventData> &output,
             const sp::AsyncPtr<EventData> &input,
             const EventBinding &binding);
@@ -138,6 +143,7 @@ namespace ecs {
 
     template<typename LockType>
     size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const AsyncEvent &event, size_t depth) {
+        ZoneScoped;
         if (depth > MAX_EVENT_BINDING_DEPTH) {
             Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
             return 0;
@@ -160,7 +166,16 @@ namespace ecs {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
                     AsyncEvent outputEvent = event;
-                    if (!detail::FilterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;
+                    if constexpr (std::is_convertible_v<LockType, EntityLock<ReadSignalsLock, Optional<ReadAll>>>) {
+                        if (!detail::FilterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;
+                    } else {
+                        if (!detail::FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>>(lock, ent),
+                                outputEvent.data,
+                                event.data,
+                                binding)) {
+                            continue;
+                        }
+                    }
 
                     for (auto &dest : binding.outputs) {
                         outputEvent.name = dest.queueName;

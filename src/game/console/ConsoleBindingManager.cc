@@ -18,11 +18,10 @@ namespace sp {
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
                 auto &scriptState = scripts.AddOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
-                        ecs::Entity ent,
+                        ecs::EntityLock<ecs::WriteAll> entLock,
                         chrono_clock::duration interval) {
                         ecs::Event event;
-                        while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {
+                        while (ecs::EventInput::Poll(entLock, state.eventQueue, event)) {
                             auto command = std::get_if<std::string>(&event.data);
                             if (command && !command->empty()) {
                                 GetConsoleManager().QueueParseAndExecute(*command);

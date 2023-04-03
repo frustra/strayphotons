@@ -1,3 +1,5 @@
+#include "core/Common.hh"
+
 #include <tests.hh>
 
 namespace ExampleTests {

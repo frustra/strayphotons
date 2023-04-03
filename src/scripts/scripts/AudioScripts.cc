@@ -10,16 +10,16 @@ namespace sp::scripts {
     struct SoundOcclusion {
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<Sounds, PhysicsQuery, TransformSnapshot>(lock)) return;
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<Sounds, PhysicsQuery, TransformSnapshot>()) return;
 
-            auto &constSounds = ent.Get<const Sounds>(lock);
+            auto &constSounds = entLock.Get<const Sounds>();
             if (constSounds.occlusionWeight <= 0.0f) return;
 
-            auto listener = sp::entities::Head.Get(lock);
-            if (listener.Has<TransformSnapshot>(lock)) {
-                auto listenerPos = listener.Get<TransformSnapshot>(lock).GetPosition();
-                auto soundPos = ent.Get<TransformSnapshot>(lock).GetPosition();
+            auto listener = sp::entities::Head.Get(entLock);
+            if (listener.Has<TransformSnapshot>(entLock)) {
+                auto listenerPos = listener.Get<TransformSnapshot>(entLock).GetPosition();
+                auto soundPos = entLock.Get<TransformSnapshot>().GetPosition();
                 auto rayToListener = listenerPos - soundPos;
 
                 PhysicsQuery::Raycast nextQuery(glm::length(rayToListener),
@@ -29,14 +29,14 @@ namespace sp::scripts {
                 nextQuery.relativeDirection = false;
                 nextQuery.maxHits = 16;
 
-                auto &physicsQuery = ent.Get<PhysicsQuery>(lock);
+                auto &physicsQuery = entLock.Get<PhysicsQuery>();
 
                 if (!raycastQuery) {
                     raycastQuery = physicsQuery.NewQuery(nextQuery);
                 } else {
                     auto &query = physicsQuery.Lookup(raycastQuery);
                     if (query.result) {
-                        auto &sounds = ent.Get<Sounds>(lock);
+                        auto &sounds = entLock.Get<Sounds>();
                         sounds.occlusion = query.result->hits;
                         query = nextQuery;
                     }

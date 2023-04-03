@@ -95,24 +95,20 @@ namespace ecs {
         // Called automatically by constructor. Should be called when expression string is changed.
         bool Parse();
 
-        template<typename LockType>
-        bool CanEvaluate(LockType lock) const {
-            if constexpr (LockType::template has_permissions<ReadAll>()) {
-                return true;
-            } else if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
-                return canEvaluate(lock);
-            } else {
-                return false;
-            }
-        }
+        bool CanEvaluate(Lock<ReadSignalsLock, Optional<ReadAll>> lock) const;
 
         template<typename LockType>
         double Evaluate(LockType lock, size_t depth = 0) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return evaluate((Lock<ReadAll>)lock, depth);
             } else {
-                return evaluate((DynamicLock<ReadSignalsLock>)lock, depth);
+                return evaluate((Lock<ReadSignalsLock, Optional<ReadAll>>)lock, depth);
             }
+        }
+
+        template<typename... Permissions>
+        double Evaluate(const EntityLock<Permissions...> &entLock, size_t depth = 0) const {
+            return evaluate((EntityLock<ReadSignalsLock, Optional<ReadAll>>)entLock, depth);
         }
 
         template<typename LockType>
@@ -120,8 +116,13 @@ namespace ecs {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return evaluateEvent((Lock<ReadAll>)lock, input);
             } else {
-                return evaluateEvent((DynamicLock<ReadSignalsLock>)lock, input);
+                return evaluateEvent((Lock<ReadSignalsLock, Optional<ReadAll>>)lock, input);
             }
+        }
+
+        template<typename... Permissions>
+        double EvaluateEvent(const EntityLock<Permissions...> &entLock, const EventData &input) const {
+            return evaluateEvent((EntityLock<ReadSignalsLock, Optional<ReadAll>>)entLock, input);
         }
 
         bool operator==(const SignalExpression &other) const {
@@ -143,12 +144,10 @@ namespace ecs {
         int deduplicateNode(int index);
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
 
-        bool canEvaluate(DynamicLock<ReadSignalsLock> lock) const;
-
-        double evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const;
-        double evaluate(Lock<ReadAll> lock, size_t depth) const;
-        double evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input) const;
-        double evaluateEvent(Lock<ReadAll> lock, const EventData &input) const;
+        double evaluate(Lock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const;
+        double evaluate(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const;
+        double evaluateEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock, const EventData &input) const;
+        double evaluateEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock, const EventData &input) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

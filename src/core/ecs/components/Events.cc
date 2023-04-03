@@ -271,10 +271,8 @@ namespace ecs {
         }
     }
 
-    void modifyEvent(DynamicLock<ReadSignalsLock> lock,
-        EventData &output,
-        const EventData &input,
-        const EventBinding &binding) {
+    template<typename LockType>
+    void modifyEvent(LockType &lock, EventData &output, const EventData &input, const EventBinding &binding) {
         auto &actions = binding.actions.modifyExprs;
         std::visit(
             [&](auto &&arg) {
@@ -311,10 +309,12 @@ namespace ecs {
             output);
     }
 
-    bool detail::FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
+    // TODO: Test that filter and modify expressions can see changes from earlier this frame
+    bool detail::FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
         sp::AsyncPtr<EventData> &asyncOutput,
         const sp::AsyncPtr<EventData> &asyncInput,
         const EventBinding &binding) {
+        ZoneScoped;
         Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
 
         if (binding.actions.setValue) {
@@ -323,10 +323,13 @@ namespace ecs {
         }
 
         if (binding.actions.filterExpr) {
-            if (binding.actions.filterExpr->CanEvaluate(lock) && asyncInput->Ready()) {
+            if (binding.actions.filterExpr->CanEvaluate(entLock) && asyncInput->Ready()) {
                 auto input = asyncInput->Get();
                 if (!input) return false; // Event filtered asynchronously
-                if (binding.actions.filterExpr->EvaluateEvent(lock, *input) < 0.5) return false;
+                if (binding.actions.filterExpr->EvaluateEvent(entLock, *input) < 0.5) {
+                    Logf("Filtering event: %f", binding.actions.filterExpr->EvaluateEvent(entLock, *input));
+                    return false;
+                }
             } else {
                 asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
                     [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
@@ -347,15 +350,15 @@ namespace ecs {
         if (!binding.actions.modifyExprs.empty()) {
             bool canEval = std::all_of(binding.actions.modifyExprs.begin(),
                 binding.actions.modifyExprs.end(),
-                [&lock](auto &&expr) {
-                    return expr.CanEvaluate(lock);
+                [&entLock](auto &&expr) {
+                    return expr.CanEvaluate(entLock);
                 });
             if (canEval && asyncOutput->Ready() && asyncInput->Ready()) {
                 auto input = asyncInput->Get();
                 if (!input) return false; // Event filtered asynchronously
                 auto outputPtr = asyncOutput->Get();
                 EventData output = outputPtr ? *outputPtr : *input;
-                modifyEvent(lock, output, *input, binding);
+                modifyEvent(entLock, output, *input, binding);
                 asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
             } else {
                 asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,

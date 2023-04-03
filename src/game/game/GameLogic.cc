@@ -46,7 +46,7 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::WriteAll>();
             for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                 auto &scripts = entity.Get<ecs::Scripts>(lock);
-                scripts.OnTick(lock, entity, interval);
+                scripts.OnTick(ecs::EntityLock<ecs::WriteAll>(lock, entity), interval);
             }
         }
     }

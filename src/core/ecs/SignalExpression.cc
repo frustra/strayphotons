@@ -664,7 +664,7 @@ namespace ecs {
         return true;
     }
 
-    bool SignalExpression::canEvaluate(DynamicLock<ReadSignalsLock> lock) const {
+    bool SignalExpression::CanEvaluate(Lock<ReadSignalsLock, Optional<ReadAll>> lock) const {
         for (auto &node : nodes) {
             bool success = std::visit(
                 [&lock](auto &&node) {
@@ -674,7 +674,7 @@ namespace ecs {
                         if (!ent.Has<SignalBindings>(lock)) return true;
 
                         auto &bindings = ent.Get<const SignalBindings>(lock);
-                        return bindings.GetBinding(node.signalName).canEvaluate(lock);
+                        return bindings.GetBinding(node.signalName).CanEvaluate(lock);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
                         if (!base) return true;
@@ -750,8 +750,19 @@ namespace ecs {
                             } else {
                                 auto tryLock = lock.template TryLock<Read<T>>();
                                 if (tryLock) {
-                                    auto &component = ent.Get<const T>(*tryLock);
-                                    return ecs::ReadStructField(&component, node.field);
+
+                                    if constexpr (Tecs::is_entity_lock<LockType>()) {
+                                        if (ent == tryLock->entity) {
+                                            auto &component = tryLock->Get<const T>();
+                                            return ecs::ReadStructField(&component, node.field);
+                                        } else {
+                                            auto &component = ent.Get<const T>(*tryLock);
+                                            return ecs::ReadStructField(&component, node.field);
+                                        }
+                                    } else {
+                                        auto &component = ent.Get<const T>(*tryLock);
+                                        return ecs::ReadStructField(&component, node.field);
+                                    }
                                 } else {
                                     Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
                                         node.field.name,
@@ -804,28 +815,30 @@ namespace ecs {
         };
     };
 
-    double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
+    double SignalExpression::evaluate(Lock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this, depth);
         return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
-    double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
+    double SignalExpression::evaluate(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this, depth);
         return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
-    double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input) const {
+    double SignalExpression::evaluateEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
+        const EventData &input) const {
         // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this);
         return eval.EvaluateNode(lock, rootIndex, input);
     }
 
-    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input) const {
+    double SignalExpression::evaluateEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock,
+        const EventData &input) const {
         // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this);

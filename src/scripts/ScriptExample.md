@@ -14,15 +14,15 @@ Script Example Definition
         // Internal script state
         bool init = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
             if (!init) {
                 // First run only
-                Logf("Example script added to %s", ToString(lock, ent));
+                Logf("Example script added to %s", ToString(entLock));
                 init = true;
             }
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (EventInput::Poll(entLock, state.eventQueue, event)) {
                 if (event.name != "/script/event") continue;
 
                 // Process event

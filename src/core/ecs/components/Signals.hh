@@ -37,13 +37,38 @@ namespace ecs {
             }
 
             if (ent.Has<SignalOutput>(lock)) {
-                auto &signalOutput = ent.Get<const SignalOutput>(lock);
-                if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
+                if constexpr (Tecs::is_entity_lock<LockType>()) {
+                    if (ent == lock.entity) {
+                        auto &signalOutput = lock.Get<const SignalOutput>();
+                        if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
+                    } else {
+                        auto &signalOutput = ent.Get<const SignalOutput>(lock);
+                        if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
+                    }
+                } else {
+                    auto &signalOutput = ent.Get<const SignalOutput>(lock);
+                    if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
+                }
             }
             if (!ent.Has<SignalBindings>(lock)) return 0.0;
 
-            auto &bindings = ent.Get<const SignalBindings>(lock);
-            return bindings.GetBinding(name).Evaluate(lock, depth);
+            if constexpr (Tecs::is_entity_lock<LockType>()) {
+                if (ent == lock.entity) {
+                    auto &bindings = lock.Get<const SignalBindings>();
+                    return bindings.GetBinding(name).Evaluate(lock, depth);
+                } else {
+                    auto &bindings = ent.Get<const SignalBindings>(lock);
+                    return bindings.GetBinding(name).Evaluate(lock, depth);
+                }
+            } else {
+                auto &bindings = ent.Get<const SignalBindings>(lock);
+                return bindings.GetBinding(name).Evaluate(lock, depth);
+            }
+        }
+
+        template<typename... Permissions>
+        static inline double GetSignal(EntityLock<Permissions...> entLock, const std::string &name, size_t depth = 0) {
+            return GetSignal(entLock, entLock.entity, name, depth);
         }
 
         robin_hood::unordered_map<std::string, SignalExpression> bindings;

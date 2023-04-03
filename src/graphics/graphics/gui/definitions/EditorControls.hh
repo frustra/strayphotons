@@ -497,7 +497,7 @@ namespace sp {
         if (valueChanged) {
             if (ecs::IsLive(target)) {
                 ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto lock) {
-                    void *component = comp.Access(lock, target);
+                    void *component = comp.Access((ecs::Lock<ecs::Optional<ecs::WriteAll>>)lock, target);
                     field.Access<T>(component) = value;
                 });
             } else if (scene) {
@@ -505,7 +505,7 @@ namespace sp {
                     scene.data->name,
                     [target = this->target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
-                        void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
+                        void *component = comp.Access((ecs::Lock<ecs::Optional<ecs::WriteAll>>)lock, target);
                         field.Access<T>(component) = value;
                     });
             } else {
@@ -723,7 +723,7 @@ namespace sp {
             if (!comp.HasComponent(lock, this->target)) return;
             auto flags = (name == "scene_properties") ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_DefaultOpen;
             if (ImGui::CollapsingHeader(name.c_str(), flags)) {
-                const void *component = comp.Access(lock, this->target);
+                const void *component = comp.Access((ecs::Lock<ecs::Optional<ecs::ReadAll>>)lock, this->target);
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;

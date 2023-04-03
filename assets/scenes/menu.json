@@ -585,7 +585,7 @@
 				"shadowMapClip": [0.1, 10],
 				"shadowMapSize": 10,
 				"spotAngle": 40,
-				"tint": [1, 0, 0]
+				"tint": 1
 			}
 		},
 		{
@@ -598,7 +598,7 @@
 				"shadowMapClip": [0.1, 10],
 				"shadowMapSize": 10,
 				"spotAngle": 40,
-				"tint": [0, 1, 0]
+				"tint": 1
 			}
 		}
 	]

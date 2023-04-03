@@ -40,9 +40,10 @@ namespace ecs {
             picojson::value &dst,
             const Entity &src) const = 0;
         virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
-        virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
-        virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
-        virtual void *Access(PhysicsWriteLock lock, Entity ent) const = 0;
+        virtual const void *Access(Lock<Optional<ReadAll>> lock, Entity ent) const = 0;
+        virtual void *Access(Lock<Optional<WriteAll>> lock, Entity ent) const = 0;
+        virtual const void *Access(EntityLock<Optional<ReadAll>> entLock) const = 0;
+        virtual void *Access(EntityLock<Optional<WriteAll>> entLock) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
 
@@ -154,17 +155,37 @@ namespace ecs {
             return ent.Has<CompType>(lock);
         }
 
-        const void *Access(Lock<ReadAll> lock, Entity ent) const override {
-            return &ent.Get<CompType>(lock);
+        const void *Access(Lock<Optional<ReadAll>> lock, Entity ent) const override {
+            auto readLock = lock.TryLock<Read<CompType>>();
+            if (readLock) {
+                return &ent.Get<const CompType>(*readLock);
+            } else {
+                return nullptr;
+            }
         }
 
-        void *Access(Lock<WriteAll> lock, Entity ent) const override {
-            return &ent.Get<CompType>(lock);
+        void *Access(Lock<Optional<WriteAll>> lock, Entity ent) const override {
+            auto writeLock = lock.TryLock<Write<CompType>>();
+            if (writeLock) {
+                return &ent.Get<CompType>(*writeLock);
+            } else {
+                return nullptr;
+            }
         }
 
-        void *Access(PhysicsWriteLock lock, Entity ent) const override {
-            if constexpr (Tecs::is_write_allowed<CompType, PhysicsWriteLock>()) {
-                return &ent.Get<CompType>(lock);
+        const void *Access(EntityLock<Optional<ReadAll>> entLock) const override {
+            auto readLock = entLock.TryLock<Read<CompType>>();
+            if (readLock) {
+                return &readLock->Get<const CompType>();
+            } else {
+                return nullptr;
+            }
+        }
+
+        void *Access(EntityLock<Optional<WriteAll>> entLock) const override {
+            auto writeLock = entLock.TryLock<Write<CompType>>();
+            if (writeLock) {
+                return &writeLock->Get<CompType>();
             } else {
                 return nullptr;
             }

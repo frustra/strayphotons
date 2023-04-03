@@ -10,25 +10,25 @@ namespace sp::scripts {
     struct Flashlight {
         EntityRef parentEntity;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<Light, TransformTree, SignalOutput>(lock)) return;
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<Light, TransformTree, SignalOutput>()) return;
 
-            auto &light = ent.Get<Light>(lock);
-            auto &signalComp = ent.Get<SignalOutput>(lock);
+            auto &light = entLock.Get<Light>();
+            auto &signalComp = entLock.Get<SignalOutput>();
 
             light.on = signalComp.GetSignal("on") >= 0.5;
             light.intensity = signalComp.GetSignal("intensity");
             light.spotAngle = glm::radians(signalComp.GetSignal("angle"));
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (EventInput::Poll(entLock, state.eventQueue, event)) {
                 if (event.name == "/action/flashlight/toggle") {
                     signalComp.SetSignal("on", light.on ? 0.0 : 1.0);
                     light.on = !light.on;
                 } else if (event.name == "/action/flashlight/grab") {
-                    auto &transform = ent.Get<TransformTree>(lock);
+                    auto &transform = entLock.Get<TransformTree>();
                     if (transform.parent) {
-                        transform.pose = transform.GetGlobalTransform(lock);
+                        transform.pose = transform.GetGlobalTransform(entLock);
                         transform.parent = EntityRef();
                     } else {
                         if (parentEntity) {
@@ -51,11 +51,11 @@ namespace sp::scripts {
         "/action/flashlight/grab");
 
     struct SunScript {
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<TransformTree, SignalOutput>(lock)) return;
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<TransformTree, SignalOutput>()) return;
 
-            auto &transform = ent.Get<TransformTree>(lock);
-            auto &signalComp = ent.Get<SignalOutput>(lock);
+            auto &transform = entLock.Get<TransformTree>();
+            auto &signalComp = entLock.Get<SignalOutput>();
 
             auto sunPos = signalComp.GetSignal("position");
             if (signalComp.GetSignal("fix_position") == 0.0) {
@@ -75,11 +75,11 @@ namespace sp::scripts {
     InternalScript<SunScript> sun("sun", MetadataSunScript);
 
     struct LightSensorScript {
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<LightSensor, SignalOutput>(lock)) return;
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<LightSensor, SignalOutput>()) return;
 
-            auto &sensorComp = ent.Get<LightSensor>(lock);
-            auto &outputComp = ent.Get<SignalOutput>(lock);
+            auto &sensorComp = entLock.Get<LightSensor>();
+            auto &outputComp = entLock.Get<SignalOutput>();
 
             outputComp.SetSignal("light_value_r", sensorComp.illuminance.r);
             outputComp.SetSignal("light_value_g", sensorComp.illuminance.g);

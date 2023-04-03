@@ -10,9 +10,9 @@ namespace sp::scripts {
     struct TraySpawner {
         std::string templateSource;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (EventInput::Poll(entLock, state.eventQueue, event)) {
                 if (event.name != INTERACT_EVENT_INTERACT_GRAB) continue;
 
                 // Ignore drop events
@@ -23,15 +23,15 @@ namespace sp::scripts {
                     continue;
                 }
 
-                if (!ent.Has<Name, TransformTree>(lock)) continue;
-                auto &sourceName = ent.Get<Name>(lock);
-                auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                if (!entLock.Has<Name, TransformTree>()) continue;
+                auto &sourceName = entLock.Get<Name>();
+                auto transform = entLock.Get<TransformTree>().GetGlobalTransform(entLock);
                 std::optional<SignalOutput> signals;
-                if (ent.Has<SignalOutput>(lock)) signals = ent.Get<SignalOutput>(lock);
+                if (entLock.Has<SignalOutput>()) signals = entLock.Get<SignalOutput>();
 
                 SceneRef scene;
-                if (lock.Has<ActiveScene>()) {
-                    auto &active = lock.Get<ActiveScene>();
+                if (entLock.Has<ActiveScene>()) {
+                    auto &active = entLock.Get<ActiveScene>();
                     scene = active.scene;
                 }
                 if (!scene) {
@@ -65,7 +65,7 @@ namespace sp::scripts {
                         *sharedEntity = newEntity;
                     });
                 GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, scene.data->name);
-                GetSceneManager().QueueAction([ent, target = event.source, sharedEntity] {
+                GetSceneManager().QueueAction([ent = entLock.entity, target = event.source, sharedEntity] {
                     auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
                     ecs::EventBindings::SendEvent(lock,
                         target,
