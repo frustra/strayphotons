@@ -65,9 +65,6 @@ namespace ecs {
 
         ScriptState();
         ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
-        ScriptState(const EntityScope &scope, OnTickFunc callback);
-        ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback);
-        ScriptState(const EntityScope &scope, PrefabFunc callback);
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
@@ -127,37 +124,80 @@ namespace ecs {
         size_t instanceId;
 
         friend class StructMetadata;
+        friend class ScriptInstance;
     };
-
     static StructMetadata MetadataScriptState(typeid(ScriptState));
+
+    class ScriptInstance {
+    public:
+        ScriptInstance() {}
+        ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
+            : state(std::make_shared<ScriptState>(scope, definition)) {}
+        ScriptInstance(const EntityScope &scope, OnTickFunc callback)
+            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, callback}) {}
+        ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
+            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, callback}) {}
+        ScriptInstance(const EntityScope &scope, PrefabFunc callback)
+            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, callback}) {}
+
+        explicit operator bool() const {
+            return state && *state;
+        }
+
+        void RegisterEvents(Lock<Read<Scripts>, Write<EventInput>> lock, const Entity &ent) const;
+
+        // Compare script definition and parameters
+        bool operator==(const ScriptInstance &other) const {
+            return state && other.state && *state == *other.state;
+        }
+
+        // Returns true if the two scripts should represent the same instance
+        bool CompareOverride(const ScriptInstance &other) const {
+            return state && other.state && state->CompareOverride(*other.state);
+        }
+
+        size_t GetInstanceId() const {
+            if (!state) return 0;
+            return state->instanceId;
+        }
+
+    private:
+        std::shared_ptr<ScriptState> state;
+
+        friend class StructMetadata;
+        friend struct Scripts;
+    };
+    static StructMetadata MetadataScriptInstance(typeid(ScriptInstance));
     template<>
-    bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &dst, const picojson::value &src);
+    bool StructMetadata::Load<ScriptInstance>(const EntityScope &scope,
+        ScriptInstance &dst,
+        const picojson::value &src);
     template<>
-    void StructMetadata::Save<ScriptState>(const EntityScope &scope,
+    void StructMetadata::Save<ScriptInstance>(const EntityScope &scope,
         picojson::value &dst,
-        const ScriptState &src,
-        const ScriptState &def);
+        const ScriptInstance &src,
+        const ScriptInstance &def);
 
     struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
-            return scripts.emplace_back(scope, callback);
+            return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
-            return scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName));
+            return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
 
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
-            return scripts.emplace_back(scope, callback);
+            return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, const std::string &scriptName) {
-            return scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName));
+            return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
 
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
-            return scripts.emplace_back(scope, callback);
+            return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
-            return scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName));
+            return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
         }
 
         void OnTick(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
@@ -168,7 +208,7 @@ namespace ecs {
 
         const ScriptState *FindScript(size_t instanceId) const;
 
-        std::vector<ScriptState> scripts;
+        std::vector<ScriptInstance> scripts;
     };
 
     static StructMetadata MetadataScripts(typeid(Scripts), StructField::New(&Scripts::scripts, FieldAction::AutoLoad));

@@ -326,10 +326,7 @@ namespace ecs {
             if (binding.actions.filterExpr->CanEvaluate(entLock) && asyncInput->Ready()) {
                 auto input = asyncInput->Get();
                 if (!input) return false; // Event filtered asynchronously
-                if (binding.actions.filterExpr->EvaluateEvent(entLock, *input) < 0.5) {
-                    Logf("Filtering event: %f", binding.actions.filterExpr->EvaluateEvent(entLock, *input));
-                    return false;
-                }
+                if (binding.actions.filterExpr->EvaluateEvent(entLock, *input) < 0.5) return false;
             } else {
                 asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
                     [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {

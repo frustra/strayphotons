@@ -86,7 +86,7 @@ namespace ecs {
         std::vector<AnimationState>,
         std::vector<PhysicsShape>,
         std::vector<PhysicsJoint>,
-        std::vector<ScriptState>,
+        std::vector<ScriptInstance>,
         std::vector<Sound>,
         std::optional<double>,
         std::optional<SignalExpression>,
