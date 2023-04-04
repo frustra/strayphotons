@@ -54,7 +54,7 @@ namespace sp {
                 auto &headTree = headEnt.Set<ecs::TransformTree>(lock);
                 headTree.parent = entities::Flatview;
                 auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
-                headScripts.AddOnTick(ecs::Name(scene->data->name, ""),
+                headScripts.AddEntityOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
                         ecs::EntityLock<ecs::WriteAll> entLock,
                         chrono_clock::duration interval) {

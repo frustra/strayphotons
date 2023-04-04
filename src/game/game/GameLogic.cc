@@ -32,12 +32,16 @@ namespace sp {
                 }
             }
         }
+        // TODO: Change this to exclude Write<Script, EventInput>
         {
-            // TODO: Change this to exclude Write<EventInput>
             auto lock = ecs::StartTransaction<ecs::WriteAll>();
             for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                 auto &scripts = entity.Get<ecs::Scripts>(lock);
-                scripts.OnTick(ecs::EntityLock<ecs::WriteAll>(lock, entity), interval);
+                scripts.OnTickRoot(lock, entity, interval);
+            }
+            for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
+                auto &scripts = entity.Get<ecs::Scripts>(lock);
+                scripts.OnTickEntity(ecs::EntityLock<ecs::WriteAll>(lock, entity), interval);
             }
         }
     }

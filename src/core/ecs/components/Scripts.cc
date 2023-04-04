@@ -142,12 +142,8 @@ namespace ecs {
         const Scripts &def) {
         picojson::array arrayOut;
         for (auto &instance : src.scripts) {
-            if (!instance) continue;
             // Skip if the script is the same as the default
-            auto it = std::find_if(def.scripts.begin(), def.scripts.end(), [&](auto &arg) {
-                return arg && instance == arg;
-            });
-            if (it != def.scripts.end()) continue;
+            if (!instance || sp::contains(def.scripts, instance)) continue;
 
             picojson::value val;
             sp::json::Save(scope, val, *instance.state);
@@ -189,6 +185,7 @@ namespace ecs {
 
     void ScriptInstance::RegisterEvents(Lock<Read<Scripts>, Write<EventInput>> lock, const Entity &ent) const {
         if (!state) return;
+        std::shared_lock lock2(state->mutex);
         if (!state->definition.events.empty() && !state->eventQueue) {
             auto &eventInput = ent.Get<ecs::EventInput>(lock);
             state->eventQueue = ecs::NewEventQueue();
@@ -201,7 +198,6 @@ namespace ecs {
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &instance : src.scripts) {
-            if (!instance) continue;
             auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
                 return instance.CompareOverride(arg);
             });
@@ -213,15 +209,29 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnTick(EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+    void Scripts::OnTickRoot(Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
-            auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            auto callback = std::get_if<OnTickRootFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                ZoneScopedN("OnTick");
-                ZoneStr(ecs::ToString(entLock));
+                ZoneScopedN("OnTickRoot");
+                ZoneStr(ecs::ToString(lock, ent));
+                (*callback)(state, lock, ent, interval);
+            }
+        }
+    }
+
+    void Scripts::OnTickEntity(EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        for (auto &instance : scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+            auto callback = std::get_if<OnTickEntityFunc>(&state.definition.callback);
+            if (callback && *callback) {
+                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
+                ZoneScopedN("OnTickEntity");
+                // ZoneStr(ecs::ToString(entLock));
                 (*callback)(state, entLock, interval);
             }
         }
@@ -234,8 +244,8 @@ namespace ecs {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                ZoneScopedN("OnPhysicsUpdate");
-                ZoneStr(ecs::ToString(entLock));
+                // ZoneScopedN("OnPhysicsUpdate");
+                // ZoneStr(ecs::ToString(entLock));
                 (*callback)(state, entLock, interval);
             }
         }

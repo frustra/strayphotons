@@ -7,7 +7,7 @@ stepphysics 2
 # TODO: BUG: First menu frame is missing the GUI
 screenshot menu.png
 stepgraphics
-stepphysics 10
-stepgraphics 10
+stepphysics 100
+stepgraphics 100
 screenshot delayed.png
 stepgraphics

@@ -128,11 +128,15 @@ namespace ecs {
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
 
     namespace detail {
+        bool FilterAndModifyEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
+            sp::AsyncPtr<EventData> &output,
+            const sp::AsyncPtr<EventData> &input,
+            const EventBinding &binding);
         bool FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
             sp::AsyncPtr<EventData> &output,
             const sp::AsyncPtr<EventData> &input,
             const EventBinding &binding);
-    }
+    } // namespace detail
 
     template<typename LockType>
     size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth) {
@@ -166,10 +170,15 @@ namespace ecs {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
                     AsyncEvent outputEvent = event;
-                    if constexpr (std::is_convertible_v<LockType, EntityLock<ReadSignalsLock, Optional<ReadAll>>>) {
-                        if (!detail::FilterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;
+                    if constexpr (Tecs::is_entity_lock<LockType>()) {
+                        if (!detail::FilterAndModifyEvent((EntityLock<ReadSignalsLock, Optional<ReadAll>>)lock,
+                                outputEvent.data,
+                                event.data,
+                                binding)) {
+                            continue;
+                        }
                     } else {
-                        if (!detail::FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>>(lock, ent),
+                        if (!detail::FilterAndModifyEvent((Lock<ReadSignalsLock, Optional<ReadAll>>)lock,
                                 outputEvent.data,
                                 event.data,
                                 binding)) {

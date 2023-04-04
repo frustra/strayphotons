@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/LockFreeMutex.hh"
 #include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
@@ -22,7 +23,8 @@ namespace ecs {
         Read<TransformSnapshot>,
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, SignalOutput, LaserLine, VoxelArea>>;
 
-    using OnTickFunc = std::function<void(ScriptState &, EntityLock<WriteAll>, chrono_clock::duration)>;
+    using OnTickRootFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
+    using OnTickEntityFunc = std::function<void(ScriptState &, EntityLock<WriteAll>, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc =
         std::function<void(ScriptState &, EntityLock<PhysicsUpdateLock>, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
@@ -40,7 +42,7 @@ namespace ecs {
         std::vector<std::string> events;
         bool filterOnEvent = false;
         const InternalScriptBase *context = nullptr;
-        std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
+        std::variant<std::monostate, OnTickRootFunc, OnTickEntityFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
     };
 
     struct ScriptDefinitions {
@@ -114,6 +116,7 @@ namespace ecs {
             return instanceId;
         }
 
+        sp::LockFreeMutex mutex;
         EntityScope scope;
         ScriptDefinition definition;
         ecs::EventQueueRef eventQueue;
@@ -133,7 +136,9 @@ namespace ecs {
         ScriptInstance() {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
             : state(std::make_shared<ScriptState>(scope, definition)) {}
-        ScriptInstance(const EntityScope &scope, OnTickFunc callback)
+        ScriptInstance(const EntityScope &scope, OnTickRootFunc callback)
+            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, callback}) {}
+        ScriptInstance(const EntityScope &scope, OnTickEntityFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, callback}) {}
         ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, callback}) {}
@@ -161,11 +166,7 @@ namespace ecs {
             return state->instanceId;
         }
 
-    private:
         std::shared_ptr<ScriptState> state;
-
-        friend class StructMetadata;
-        friend struct Scripts;
     };
     static StructMetadata MetadataScriptInstance(typeid(ScriptInstance));
     template<>
@@ -179,18 +180,18 @@ namespace ecs {
         const ScriptInstance &def);
 
     struct Scripts {
-        ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
-            return *(scripts.emplace_back(scope, callback).state);
-        }
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
             return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
 
-        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
+        ScriptState &AddRootOnTick(const EntityScope &scope, OnTickRootFunc callback) {
             return *(scripts.emplace_back(scope, callback).state);
         }
-        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, const std::string &scriptName) {
-            return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
+        ScriptState &AddEntityOnTick(const EntityScope &scope, OnTickEntityFunc callback) {
+            return *(scripts.emplace_back(scope, callback).state);
+        }
+        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
+            return *(scripts.emplace_back(scope, callback).state);
         }
 
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
@@ -200,7 +201,8 @@ namespace ecs {
             return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
         }
 
-        void OnTick(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
+        void OnTickRoot(Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval);
+        void OnTickEntity(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
         void OnPhysicsUpdate(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval);
 
         // RunPrefabs should only be run from the SceneManager thread
@@ -241,20 +243,61 @@ namespace ecs {
             return ptr ? ptr : &defaultValue;
         }
 
-        static void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        static void OnTickEntity(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
             if (!ptr) ptr = &state.userData.emplace<T>();
             ptr->OnTick(state, entLock, interval);
         }
 
         InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript({name, {}, false, this, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name, {}, false, this, OnTickEntityFunc(&OnTickEntity)});
         }
 
         template<typename... Events>
         InternalScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
             : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript({name, {events...}, filterOnEvent, this, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript(
+                {name, {events...}, filterOnEvent, this, OnTickEntityFunc(&OnTickEntity)});
+        }
+    };
+
+    template<typename T>
+    struct InternalRootScript final : public InternalScriptBase {
+        const T defaultValue = {};
+
+        const void *GetDefault() const override {
+            return &defaultValue;
+        }
+
+        void *Access(ScriptState &state) const override {
+            void *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            return ptr;
+        }
+
+        const void *Access(const ScriptState &state) const override {
+            const void *ptr = std::any_cast<T>(&state.userData);
+            return ptr ? ptr : &defaultValue;
+        }
+
+        static void OnTickRoot(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            T *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            ptr->OnTick(state, lock, ent, interval);
+        }
+
+        InternalRootScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
+            GetScriptDefinitions().RegisterScript({name, {}, false, this, OnTickRootFunc(&OnTickRoot)});
+        }
+
+        template<typename... Events>
+        InternalRootScript(const std::string &name,
+            const StructMetadata &metadata,
+            bool filterOnEvent,
+            Events... events)
+            : InternalScriptBase(metadata) {
+            GetScriptDefinitions().RegisterScript(
+                {name, {events...}, filterOnEvent, this, OnTickRootFunc(&OnTickRoot)});
         }
     };
 

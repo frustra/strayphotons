@@ -271,107 +271,126 @@ namespace ecs {
         }
     }
 
-    template<typename LockType>
-    void modifyEvent(LockType &lock, EventData &output, const EventData &input, const EventBinding &binding) {
-        auto &actions = binding.actions.modifyExprs;
-        std::visit(
-            [&](auto &&arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (sp::is_glm_vec<T>()) {
-                    using U = typename T::value_type;
-                    if (actions.size() != (size_t)T::length()) {
-                        Errorf("Event binding modify value is wrong size: %u != %u", actions.size(), T::length());
-                        return;
-                    }
-                    for (int i = 0; i < T::length(); i++) {
-                        if constexpr (std::is_same_v<U, bool>) {
-                            arg[i] = actions[i].EvaluateEvent(lock, input) >= 0.5;
-                        } else {
-                            arg[i] = (U)actions[i].EvaluateEvent(lock, input);
+    namespace detail {
+        template<typename LockType>
+        void modifyEvent(LockType &lock, EventData &output, const EventData &input, const EventBinding &binding) {
+            auto &actions = binding.actions.modifyExprs;
+            std::visit(
+                [&](auto &&arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (sp::is_glm_vec<T>()) {
+                        using U = typename T::value_type;
+                        if (actions.size() != (size_t)T::length()) {
+                            Errorf("Event binding modify value is wrong size: %u != %u", actions.size(), T::length());
+                            return;
                         }
+                        for (int i = 0; i < T::length(); i++) {
+                            if constexpr (std::is_same_v<U, bool>) {
+                                arg[i] = actions[i].EvaluateEvent(lock, input) >= 0.5;
+                            } else {
+                                arg[i] = (U)actions[i].EvaluateEvent(lock, input);
+                            }
+                        }
+                    } else if constexpr (std::is_same_v<T, bool>) {
+                        if (actions.size() != 1) {
+                            Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
+                            return;
+                        }
+                        arg = actions[0].EvaluateEvent(lock, input) >= 0.5;
+                    } else if constexpr (std::is_convertible_v<double, T>) {
+                        if (actions.size() != 1) {
+                            Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
+                            return;
+                        }
+                        arg = (T)actions[0].EvaluateEvent(lock, input);
+                    } else {
+                        Errorf("Unsupported event binding modify value: type: %s vec%u",
+                            typeid(T).name(),
+                            actions.size());
                     }
-                } else if constexpr (std::is_same_v<T, bool>) {
-                    if (actions.size() != 1) {
-                        Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
-                        return;
-                    }
-                    arg = actions[0].EvaluateEvent(lock, input) >= 0.5;
-                } else if constexpr (std::is_convertible_v<double, T>) {
-                    if (actions.size() != 1) {
-                        Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
-                        return;
-                    }
-                    arg = (T)actions[0].EvaluateEvent(lock, input);
+                },
+                output);
+        }
+
+        template<typename LockType>
+        bool filterAndModifyEvent(LockType &lock,
+            sp::AsyncPtr<EventData> &asyncOutput,
+            const sp::AsyncPtr<EventData> &asyncInput,
+            const EventBinding &binding) {
+            Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
+
+            if (binding.actions.setValue) {
+                asyncOutput = std::make_shared<sp::Async<EventData>>(
+                    std::make_shared<EventData>(*binding.actions.setValue));
+            }
+
+            if (binding.actions.filterExpr) {
+                if (binding.actions.filterExpr->CanEvaluate(lock) && asyncInput->Ready()) {
+                    auto input = asyncInput->Get();
+                    if (!input) return false; // Event filtered asynchronously
+                    if (binding.actions.filterExpr->EvaluateEvent(lock, *input) < 0.5) return false;
                 } else {
-                    Errorf("Unsupported event binding modify value: type: %s vec%u", typeid(T).name(), actions.size());
+                    asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
+                        [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
+                            if (!input) {
+                                return std::make_shared<EventData>(); // Event filtered asynchronously
+                            }
+
+                            auto lock = ecs::StartTransaction<ReadAll>();
+                            if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
+                                return input;
+                            } else {
+                                return std::shared_ptr<EventData>();
+                            }
+                        });
                 }
-            },
-            output);
-    }
-
-    // TODO: Test that filter and modify expressions can see changes from earlier this frame
-    bool detail::FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
-        sp::AsyncPtr<EventData> &asyncOutput,
-        const sp::AsyncPtr<EventData> &asyncInput,
-        const EventBinding &binding) {
-        ZoneScoped;
-        Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
-
-        if (binding.actions.setValue) {
-            asyncOutput = std::make_shared<sp::Async<EventData>>(
-                std::make_shared<EventData>(*binding.actions.setValue));
-        }
-
-        if (binding.actions.filterExpr) {
-            if (binding.actions.filterExpr->CanEvaluate(entLock) && asyncInput->Ready()) {
-                auto input = asyncInput->Get();
-                if (!input) return false; // Event filtered asynchronously
-                if (binding.actions.filterExpr->EvaluateEvent(entLock, *input) < 0.5) return false;
-            } else {
-                asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
-                    [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
-                        if (!input) {
-                            return std::make_shared<EventData>(); // Event filtered asynchronously
-                        }
-
-                        auto lock = ecs::StartTransaction<ReadAll>();
-                        if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
-                            return input;
-                        } else {
-                            return std::shared_ptr<EventData>();
-                        }
-                    });
             }
-        }
 
-        if (!binding.actions.modifyExprs.empty()) {
-            bool canEval = std::all_of(binding.actions.modifyExprs.begin(),
-                binding.actions.modifyExprs.end(),
-                [&entLock](auto &&expr) {
-                    return expr.CanEvaluate(entLock);
-                });
-            if (canEval && asyncOutput->Ready() && asyncInput->Ready()) {
-                auto input = asyncInput->Get();
-                if (!input) return false; // Event filtered asynchronously
-                auto outputPtr = asyncOutput->Get();
-                EventData output = outputPtr ? *outputPtr : *input;
-                modifyEvent(entLock, output, *input, binding);
-                asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
-            } else {
-                asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
-                    asyncOutput,
-                    [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
-                        if (!input || !output) {
-                            return std::make_shared<EventData>(); // Event filtered asynchronously
-                        }
-
-                        auto lock = ecs::StartTransaction<ReadAll>();
-                        EventData modified = *output;
-                        modifyEvent(lock, modified, *input, binding);
-                        return std::make_shared<EventData>(modified);
+            if (!binding.actions.modifyExprs.empty()) {
+                bool canEval = std::all_of(binding.actions.modifyExprs.begin(),
+                    binding.actions.modifyExprs.end(),
+                    [&lock](auto &&expr) {
+                        return expr.CanEvaluate(lock);
                     });
+                if (canEval && asyncOutput->Ready() && asyncInput->Ready()) {
+                    auto input = asyncInput->Get();
+                    if (!input) return false; // Event filtered asynchronously
+                    auto outputPtr = asyncOutput->Get();
+                    EventData output = outputPtr ? *outputPtr : *input;
+                    modifyEvent(lock, output, *input, binding);
+                    asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
+                } else {
+                    asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
+                        asyncOutput,
+                        [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
+                            if (!input || !output) {
+                                return std::make_shared<EventData>(); // Event filtered asynchronously
+                            }
+
+                            auto lock = ecs::StartTransaction<ReadAll>();
+                            EventData modified = *output;
+                            modifyEvent(lock, modified, *input, binding);
+                            return std::make_shared<EventData>(modified);
+                        });
+                }
             }
+            return true;
         }
-        return true;
-    }
+
+        bool FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
+            sp::AsyncPtr<EventData> &asyncOutput,
+            const sp::AsyncPtr<EventData> &asyncInput,
+            const EventBinding &binding) {
+            ZoneScoped;
+            return filterAndModifyEvent(entLock, asyncOutput, asyncInput, binding);
+        }
+
+        bool FilterAndModifyEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
+            sp::AsyncPtr<EventData> &asyncOutput,
+            const sp::AsyncPtr<EventData> &asyncInput,
+            const EventBinding &binding) {
+            ZoneScoped;
+            return filterAndModifyEvent(lock, asyncOutput, asyncInput, binding);
+        }
+    } // namespace detail
 } // namespace ecs
