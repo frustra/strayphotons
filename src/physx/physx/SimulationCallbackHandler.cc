@@ -48,9 +48,9 @@ namespace sp {
                 continue;
             }
 
-            Debugf("onContact: %s - %s",
-                ecs::ToString(lock, shapeUserData0->parent),
-                ecs::ToString(lock, shapeUserData1->parent));
+            // Debugf("onContact: %s - %s",
+            //     ecs::ToString(lock, shapeUserData0->parent),
+            //     ecs::ToString(lock, shapeUserData1->parent));
 
             if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND)) {
                 if (shapeUserData0->owner != shapeUserData0->parent) {
