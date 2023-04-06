@@ -39,7 +39,7 @@ namespace ecs {
             if (ent.Has<SignalOutput>(lock)) {
                 if constexpr (Tecs::is_entity_lock<LockType>()) {
                     if (ent == lock.entity) {
-                        auto &signalOutput = lock.Get<const SignalOutput>();
+                        auto &signalOutput = lock.template Get<const SignalOutput>();
                         if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
                     } else {
                         auto &signalOutput = ent.Get<const SignalOutput>(lock);
@@ -54,7 +54,7 @@ namespace ecs {
 
             if constexpr (Tecs::is_entity_lock<LockType>()) {
                 if (ent == lock.entity) {
-                    auto &bindings = lock.Get<const SignalBindings>();
+                    auto &bindings = lock.template Get<const SignalBindings>();
                     return bindings.GetBinding(name).Evaluate(lock, depth);
                 } else {
                     auto &bindings = ent.Get<const SignalBindings>(lock);

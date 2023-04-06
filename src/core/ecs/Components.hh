@@ -176,7 +176,7 @@ namespace ecs {
         const void *Access(EntityLock<Optional<ReadAll>> entLock) const override {
             auto readLock = entLock.TryLock<Read<CompType>>();
             if (readLock) {
-                return &readLock->Get<const CompType>();
+                return &readLock->template Get<const CompType>();
             } else {
                 return nullptr;
             }
@@ -185,7 +185,7 @@ namespace ecs {
         void *Access(EntityLock<Optional<WriteAll>> entLock) const override {
             auto writeLock = entLock.TryLock<Write<CompType>>();
             if (writeLock) {
-                return &writeLock->Get<CompType>();
+                return &writeLock->template Get<CompType>();
             } else {
                 return nullptr;
             }
