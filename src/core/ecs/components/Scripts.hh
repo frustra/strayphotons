@@ -26,8 +26,7 @@ namespace ecs {
     using ScriptInitFunc = std::function<void(ScriptState &)>;
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
     using OnTickParallelFunc = std::function<void(ScriptState &, EntityLock<WriteAll>, chrono_clock::duration)>;
-    using OnPhysicsUpdateFunc =
-        std::function<void(ScriptState &, Lock<PhysicsUpdateLock>, Entity, chrono_clock::duration)>;
+    using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateParallelFunc =
         std::function<void(ScriptState &, EntityLock<PhysicsUpdateLock>, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
@@ -217,7 +216,7 @@ namespace ecs {
         static void Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent);
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
         void OnTickParallel(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
-        void OnPhysicsUpdate(Lock<PhysicsUpdateLock> lock, const Entity &ent, chrono_clock::duration interval);
+        void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
         void OnPhysicsUpdateParallel(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval);
 
         // RunPrefabs should only be run from the SceneManager thread
@@ -415,7 +414,7 @@ namespace ecs {
         }
 
         static void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
+            PhysicsUpdateLock lock,
             const Entity &ent,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);

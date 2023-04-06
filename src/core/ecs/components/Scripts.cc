@@ -249,7 +249,7 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnPhysicsUpdate(Lock<PhysicsUpdateLock> lock, const Entity &ent, chrono_clock::duration interval) {
+    void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;

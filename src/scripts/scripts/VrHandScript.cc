@@ -188,7 +188,7 @@ namespace sp::scripts {
             return shape;
         };
 
-        void HandlePointing(ScriptState &state, Lock<PhysicsUpdateLock> lock, const Entity &ent, bool isPointing) {
+        void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, const Entity &ent, bool isPointing) {
             glm::vec3 pointOrigin, pointDir, pointPos;
             Entity pointTarget;
 
@@ -275,10 +275,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
 
