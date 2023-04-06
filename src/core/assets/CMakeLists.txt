@@ -7,3 +7,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Image.cc
     PhysicsInfo.cc
 )
+
+target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
+    Async.hh
+)

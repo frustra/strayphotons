@@ -13,7 +13,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
 target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
     Components.hh
     Ecs.hh
-    EcsImpl.hh
+    # EcsImpl.hh
     EntityRef.hh
     EventQueue.hh
     SignalExpression.hh
