@@ -337,9 +337,10 @@ namespace sp {
             auto &state = *instance.state;
             std::lock_guard lock(state.mutex);
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-            bool isOnTick = std::holds_alternative<ecs::OnTickRootFunc>(state.definition.callback) ||
-                            std::holds_alternative<ecs::OnTickEntityFunc>(state.definition.callback) ||
-                            std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);
+            bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
+                            std::holds_alternative<ecs::OnTickParallelFunc>(state.definition.callback) ||
+                            std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback) ||
+                            std::holds_alternative<ecs::OnPhysicsUpdateParallelFunc>(state.definition.callback);
             bool isPrefab = std::holds_alternative<ecs::PrefabFunc>(state.definition.callback);
             std::string scriptLabel;
             if (isOnTick) {
@@ -456,7 +457,7 @@ namespace sp {
             if (ImGui::Button("Add Script")) {
                 ecs::EntityScope scope = ecs::Name(scene.data->name, "");
                 ecs::ScriptDefinition definition;
-                definition.callback = ecs::OnTickEntityFunc();
+                definition.callback = ecs::OnTickFunc();
                 value.emplace_back(scope, definition);
                 changed = true;
             }

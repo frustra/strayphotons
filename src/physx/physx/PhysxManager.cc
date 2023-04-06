@@ -337,7 +337,11 @@ namespace sp {
                 ZoneScopedN("Scripts::OnPhysicsUpdate");
                 for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                     auto &scripts = entity.Get<ecs::Scripts>(lock);
-                    scripts.OnPhysicsUpdate(ecs::EntityLock<ecs::PhysicsUpdateLock>(lock, entity), interval);
+                    scripts.OnPhysicsUpdate(lock, entity, interval);
+                }
+                for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
+                    auto &scripts = entity.Get<ecs::Scripts>(lock);
+                    scripts.OnPhysicsUpdateParallel(ecs::EntityLock<ecs::PhysicsUpdateLock>(lock, entity), interval);
                 }
             }
 

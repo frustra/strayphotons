@@ -220,36 +220,36 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnTickRoot(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
+    void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
-            auto callback = std::get_if<OnTickRootFunc>(&state.definition.callback);
+            auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                ZoneScopedN("OnTickRoot");
+                ZoneScopedN("OnTick");
                 ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
             }
         }
     }
 
-    void Scripts::OnTickEntity(EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+    void Scripts::OnTickParallel(EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
             std::lock_guard l(state.mutex);
-            auto callback = std::get_if<OnTickEntityFunc>(&state.definition.callback);
+            auto callback = std::get_if<OnTickParallelFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                ZoneScopedN("OnTickEntity");
+                ZoneScopedN("OnTickParallel");
                 // ZoneStr(ecs::ToString(entLock));
                 (*callback)(state, entLock, interval);
             }
         }
     }
 
-    void Scripts::OnPhysicsUpdate(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval) {
+    void Scripts::OnPhysicsUpdate(Lock<PhysicsUpdateLock> lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
@@ -257,7 +257,22 @@ namespace ecs {
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                // ZoneScopedN("OnPhysicsUpdate");
+                ZoneScopedN("OnPhysicsUpdate");
+                ZoneStr(ecs::ToString(lock, ent));
+                (*callback)(state, lock, ent, interval);
+            }
+        }
+    }
+
+    void Scripts::OnPhysicsUpdateParallel(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval) {
+        for (auto &instance : scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
+            auto callback = std::get_if<OnPhysicsUpdateParallelFunc>(&state.definition.callback);
+            if (callback && *callback) {
+                if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
+                ZoneScopedN("OnPhysicsUpdateParallel");
                 // ZoneStr(ecs::ToString(entLock));
                 (*callback)(state, entLock, interval);
             }

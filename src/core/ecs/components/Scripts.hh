@@ -24,9 +24,11 @@ namespace ecs {
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, SignalOutput, LaserLine, VoxelArea>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
-    using OnTickRootFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
-    using OnTickEntityFunc = std::function<void(ScriptState &, EntityLock<WriteAll>, chrono_clock::duration)>;
+    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
+    using OnTickParallelFunc = std::function<void(ScriptState &, EntityLock<WriteAll>, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc =
+        std::function<void(ScriptState &, Lock<PhysicsUpdateLock>, Entity, chrono_clock::duration)>;
+    using OnPhysicsUpdateParallelFunc =
         std::function<void(ScriptState &, EntityLock<PhysicsUpdateLock>, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
 
@@ -44,7 +46,13 @@ namespace ecs {
         bool filterOnEvent = false;
         const InternalScriptBase *context = nullptr;
         std::optional<ScriptInitFunc> initFunc;
-        std::variant<std::monostate, OnTickRootFunc, OnTickEntityFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
+        std::variant<std::monostate,
+            OnTickFunc,
+            OnTickParallelFunc,
+            OnPhysicsUpdateFunc,
+            OnPhysicsUpdateParallelFunc,
+            PrefabFunc>
+            callback;
     };
 
     struct ScriptDefinitions {
@@ -138,11 +146,13 @@ namespace ecs {
         ScriptInstance() {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
             : state(std::make_shared<ScriptState>(scope, definition)) {}
-        ScriptInstance(const EntityScope &scope, OnTickRootFunc callback)
+        ScriptInstance(const EntityScope &scope, OnTickFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
-        ScriptInstance(const EntityScope &scope, OnTickEntityFunc callback)
+        ScriptInstance(const EntityScope &scope, OnTickParallelFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
         ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
+            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
+        ScriptInstance(const EntityScope &scope, OnPhysicsUpdateParallelFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
         ScriptInstance(const EntityScope &scope, PrefabFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
@@ -184,13 +194,16 @@ namespace ecs {
             return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
 
-        ScriptState &AddRootOnTick(const EntityScope &scope, OnTickRootFunc callback) {
+        ScriptState &AddRootOnTick(const EntityScope &scope, OnTickFunc callback) {
             return *(scripts.emplace_back(scope, callback).state);
         }
-        ScriptState &AddEntityOnTick(const EntityScope &scope, OnTickEntityFunc callback) {
+        ScriptState &AddEntityOnTick(const EntityScope &scope, OnTickParallelFunc callback) {
             return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
+            return *(scripts.emplace_back(scope, callback).state);
+        }
+        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateParallelFunc callback) {
             return *(scripts.emplace_back(scope, callback).state);
         }
 
@@ -202,9 +215,10 @@ namespace ecs {
         }
 
         static void Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent);
-        void OnTickRoot(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
-        void OnTickEntity(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
-        void OnPhysicsUpdate(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval);
+        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
+        void OnTickParallel(EntityLock<WriteAll> entLock, chrono_clock::duration interval);
+        void OnPhysicsUpdate(Lock<PhysicsUpdateLock> lock, const Entity &ent, chrono_clock::duration interval);
+        void OnPhysicsUpdateParallel(EntityLock<PhysicsUpdateLock> entLock, chrono_clock::duration interval);
 
         // RunPrefabs should only be run from the SceneManager thread
         static void RunPrefabs(Lock<AddRemove> lock, Entity ent);
@@ -257,7 +271,7 @@ namespace ecs {
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
-        static void OnTickEntity(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        static void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
             if (!ptr) ptr = &state.userData.emplace<T>();
             ptr->OnTick(state, entLock, interval);
@@ -265,14 +279,14 @@ namespace ecs {
 
         InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, {}, false, this, ScriptInitFunc(&Init), OnTickEntityFunc(&OnTickEntity)});
+                {name, {}, false, this, ScriptInitFunc(&Init), OnTickParallelFunc(&OnTick)});
         }
 
         template<typename... Events>
         InternalScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
             : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnTickEntityFunc(&OnTickEntity)});
+                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnTickParallelFunc(&OnTick)});
         }
     };
 
@@ -301,15 +315,14 @@ namespace ecs {
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
-        static void OnTickRoot(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
             if (!ptr) ptr = &state.userData.emplace<T>();
             ptr->OnTick(state, lock, ent, interval);
         }
 
         InternalRootScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
-                {name, {}, false, this, ScriptInitFunc(&Init), OnTickRootFunc(&OnTickRoot)});
+            GetScriptDefinitions().RegisterScript({name, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -319,7 +332,7 @@ namespace ecs {
             Events... events)
             : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnTickRootFunc(&OnTickRoot)});
+                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
         }
     };
 
@@ -358,11 +371,66 @@ namespace ecs {
 
         InternalPhysicsScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, {}, false, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
+                {name, {}, false, this, ScriptInitFunc(&Init), OnPhysicsUpdateParallelFunc(&OnPhysicsUpdate)});
         }
 
         template<typename... Events>
         InternalPhysicsScript(const std::string &name,
+            const StructMetadata &metadata,
+            bool filterOnEvent,
+            Events... events)
+            : InternalScriptBase(metadata) {
+            GetScriptDefinitions().RegisterScript({name,
+                {events...},
+                filterOnEvent,
+                this,
+                ScriptInitFunc(&Init),
+                OnPhysicsUpdateParallelFunc(&OnPhysicsUpdate)});
+        }
+    };
+
+    template<typename T>
+    struct InternalRootPhysicsScript final : public InternalScriptBase {
+        const T defaultValue = {};
+
+        const void *GetDefault() const override {
+            return &defaultValue;
+        }
+
+        void *Access(ScriptState &state) const override {
+            void *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            return ptr;
+        }
+
+        const void *Access(const ScriptState &state) const override {
+            const void *ptr = std::any_cast<T>(&state.userData);
+            return ptr ? ptr : &defaultValue;
+        }
+
+        static void Init(ScriptState &state) {
+            T *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            if constexpr (script_has_init_func<T>()) ptr->Init(state);
+        }
+
+        static void OnPhysicsUpdate(ScriptState &state,
+            Lock<PhysicsUpdateLock> lock,
+            const Entity &ent,
+            chrono_clock::duration interval) {
+            T *ptr = std::any_cast<T>(&state.userData);
+            if (!ptr) ptr = &state.userData.emplace<T>();
+            ptr->OnPhysicsUpdate(state, lock, ent, interval);
+        }
+
+        InternalRootPhysicsScript(const std::string &name, const StructMetadata &metadata)
+            : InternalScriptBase(metadata) {
+            GetScriptDefinitions().RegisterScript(
+                {name, {}, false, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
+        }
+
+        template<typename... Events>
+        InternalRootPhysicsScript(const std::string &name,
             const StructMetadata &metadata,
             bool filterOnEvent,
             Events... events)

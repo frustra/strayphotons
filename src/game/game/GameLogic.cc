@@ -25,11 +25,11 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::WriteAll>();
             for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                 auto &scripts = entity.Get<ecs::Scripts>(lock);
-                scripts.OnTickRoot(lock, entity, interval);
+                scripts.OnTick(lock, entity, interval);
             }
             for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                 auto &scripts = entity.Get<ecs::Scripts>(lock);
-                scripts.OnTickEntity(ecs::EntityLock<ecs::WriteAll>(lock, entity), interval);
+                scripts.OnTickParallel(ecs::EntityLock<ecs::WriteAll>(lock, entity), interval);
             }
         }
     }
