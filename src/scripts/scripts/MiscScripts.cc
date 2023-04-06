@@ -310,10 +310,10 @@ namespace sp::scripts {
         size_t frameCount = 0;
 
         template<typename LockType>
-        void updateSignal(LockType entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<SignalOutput>() || output.empty()) return;
+        void updateSignal(LockType &entLock, chrono_clock::duration interval) {
+            if (!entLock.template Has<SignalOutput>() || output.empty()) return;
 
-            auto &signalOutput = entLock.Get<SignalOutput>();
+            auto &signalOutput = entLock.template Get<SignalOutput>();
             if (!lastSignal || !signalOutput.HasSignal(output)) {
                 lastSignal = signalOutput.GetSignal(output);
                 signalOutput.SetSignal(output, *lastSignal);
@@ -359,10 +359,10 @@ namespace sp::scripts {
         }
 
         template<typename LockType>
-        void updateTimer(ScriptState &state, LockType entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<SignalOutput>() || names.empty()) return;
+        void updateTimer(ScriptState &state, LockType &entLock, chrono_clock::duration interval) {
+            if (!entLock.template Has<SignalOutput>() || names.empty()) return;
 
-            auto &signalOutput = entLock.Get<SignalOutput>();
+            auto &signalOutput = entLock.template Get<SignalOutput>();
             for (auto &name : names) {
                 double timerValue = SignalBindings::GetSignal(entLock, name);
                 bool timerEnable = SignalBindings::GetSignal(entLock, name + "_enable") >= 0.5;
