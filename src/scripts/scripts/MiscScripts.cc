@@ -28,7 +28,8 @@ namespace sp::scripts {
         SignalExpression expr;
         std::optional<double> previousValue;
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        template<typename LockType>
+        void updateEdgeTrigger(ScriptState &state, LockType &entLock) {
             if (expr.expr != inputExpr) {
                 expr = SignalExpression(inputExpr, state.scope);
                 if (!previousValue) previousValue = expr.Evaluate(entLock);
@@ -52,6 +53,15 @@ namespace sp::scripts {
             }
             previousValue = value;
         }
+
+        void OnPhysicsUpdate(ScriptState &state,
+            EntityLock<PhysicsUpdateLock> entLock,
+            chrono_clock::duration interval) {
+            updateEdgeTrigger(state, entLock);
+        }
+        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+            updateEdgeTrigger(state, entLock);
+        }
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
@@ -61,6 +71,7 @@ namespace sp::scripts {
         StructField::New("init_value", &EdgeTrigger::previousValue),
         StructField::New("set_event_value", &EdgeTrigger::eventValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
+    InternalPhysicsScript<EdgeTrigger> physicsEdgeTrigger("physics_edge_trigger", MetadataEdgeTrigger);
 
     struct ModelSpawner {
         EntityRef targetEntity;
@@ -339,13 +350,17 @@ namespace sp::scripts {
     struct TimerSignal {
         std::vector<std::string> names = {"timer"};
 
-        template<typename LockType>
-        void updateTimer(ScriptState &state, LockType entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<SignalOutput>() || names.empty()) return;
+        void Init(ScriptState &state) {
             state.definition.events.clear();
+            state.definition.events.reserve(names.size());
             for (auto &name : names) {
                 state.definition.events.emplace_back("/reset_timer/" + name);
             }
+        }
+
+        template<typename LockType>
+        void updateTimer(ScriptState &state, LockType entLock, chrono_clock::duration interval) {
+            if (!entLock.Has<SignalOutput>() || names.empty()) return;
 
             auto &signalOutput = entLock.Get<SignalOutput>();
             for (auto &name : names) {

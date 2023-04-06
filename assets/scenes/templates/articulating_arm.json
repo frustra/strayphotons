@@ -10,13 +10,11 @@
 						"model": "articulating-arm",
 						"render": true
 					}
-				},
-				{
-					"onTick": "articulating_arm"
 				}
 			],
 			"signal_bindings": {
-				"locked_ratio": "arm.Knob/value"
+				"locked_ratio": "arm.Knob/value",
+				"fix_joints": "arm/locked_ratio > 0.999"
 			}
 		},
 		{
@@ -50,7 +48,44 @@
 					"translate": [0, 0.023, 0],
 					"rotate": [90, 0, 0, 1]
 				}
-			}]
+			}],
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Arm_0/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Arm_0/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
+				}
+			]
 		},
 		{
 			"name": "arm.Socket_0",
@@ -68,6 +103,43 @@
 				{
 					"target": "arm.Ball_0",
 					"type": "NoClip"
+				}
+			],
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Socket_0/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Socket_0/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
 				}
 			]
 		},
@@ -89,10 +161,47 @@
 			"signal_output": {
 				"value": 1
 			},
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "interactive" }
-			}
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Knob/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Knob/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "interactive" }
+				},
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
+				}
+			]
 		},
 		{
 			"name": "arm.Shaft",
@@ -118,6 +227,43 @@
 					"target": "arm.Knob",
 					"type": "NoClip"
 				}
+			],
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Shaft/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Shaft/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
+				}
 			]
 		},
 		{
@@ -135,7 +281,44 @@
 				"remote_offset": {
 					"translate": [-0.0174, 0.1043, 0]
 				}
-			}]
+			}],
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Arm_1/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Arm_1/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
+				}
+			]
 		},
 		{
 			"name": "arm.Socket_1",
@@ -153,6 +336,43 @@
 				{
 					"target": "arm.Ball_1",
 					"type": "NoClip"
+				}
+			],
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Socket_1/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Socket_1/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
 				}
 			]
 		},
@@ -177,10 +397,47 @@
 					"rotate": [90, 0, 0, 1]
 				}
 			}],
-			"script": {
-				"prefab": "template",
-				"parameters": { "source": "interactive" }
-			}
+			"event_input": {},
+			"event_bindings": {
+				"/script/lock_enable": [
+					{
+						"outputs": "arm.Ball_1/physics_joint/lock/set_current_offset",
+						"filter": "event",
+						"set_value": "arm.Ball_0"
+					},
+					"arm.Ball_1/physics_joint/lock/enable"
+				]
+			},
+			"script": [
+				{
+					"prefab": "template",
+					"parameters": { "source": "interactive" }
+				},
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.linear_damping": "arm/locked_ratio * 100"
+					}
+				},
+				{
+					"onTick": "physics_joint_from_event",
+					"parameters": {
+						"lock": {
+							"target": "arm",
+							"type": "Fixed"
+						}
+					}
+				},
+				{
+					"onTick": "physics_edge_trigger",
+					"parameters": {
+						"init_value": 0,
+						"input_expr": "arm/fix_joints",
+						"output_event": "/script/lock_enable"
+					}
+				}
+			]
 		}
 	]
 }

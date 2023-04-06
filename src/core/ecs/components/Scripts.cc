@@ -5,6 +5,7 @@
 #include "ecs/EcsImpl.hh"
 
 #include <atomic>
+#include <utility>
 
 namespace ecs {
     ScriptDefinitions &GetScriptDefinitions() {
@@ -183,18 +184,6 @@ namespace ecs {
         return !definition.name.empty();
     }
 
-    void ScriptInstance::RegisterEvents(Lock<Read<Scripts>, Write<EventInput>> lock, const Entity &ent) const {
-        if (!state) return;
-        std::shared_lock lock2(state->mutex);
-        if (!state->definition.events.empty() && !state->eventQueue) {
-            auto &eventInput = ent.Get<ecs::EventInput>(lock);
-            state->eventQueue = ecs::NewEventQueue();
-            for (auto &event : state->definition.events) {
-                eventInput.Register(lock, state->eventQueue, event);
-            }
-        }
-    }
-
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &instance : src.scripts) {
@@ -209,7 +198,29 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnTickRoot(Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+    void Scripts::Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent) {
+        if (!ent.Has<Scripts>(lock)) return;
+        for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+
+            std::lock_guard l(state.mutex);
+            if (!state.eventQueue) state.eventQueue = NewEventQueue();
+            if (state.definition.initFunc) (*state.definition.initFunc)(state);
+            if (ent.Has<EventInput>(lock)) {
+                auto &eventInput = ent.Get<EventInput>(lock);
+                for (auto &event : state.definition.events) {
+                    eventInput.Register(lock, state.eventQueue, event);
+                }
+            } else if (!state.definition.events.empty()) {
+                Warnf("Script %s has events but %s has no EventInput component",
+                    state.definition.name,
+                    ecs::ToString(lock, ent));
+            }
+        }
+    }
+
+    void Scripts::OnTickRoot(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
@@ -227,6 +238,7 @@ namespace ecs {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             auto callback = std::get_if<OnTickEntityFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
@@ -241,6 +253,7 @@ namespace ecs {
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
@@ -267,6 +280,7 @@ namespace ecs {
             auto instance = ent.Get<const Scripts>(lock).scripts[i];
             if (!instance) continue;
             auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
             if (callback && *callback) (*callback)(state, scene, lock, ent);
         }

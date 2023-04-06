@@ -22,18 +22,6 @@ namespace sp {
     void GameLogic::Frame() {
         ZoneScoped;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Scripts>, ecs::Write<ecs::EventInput>>();
-
-            for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
-                if (!entity.Has<ecs::Scripts, ecs::EventInput>(lock)) continue;
-                auto &scripts = entity.Get<ecs::Scripts>(lock);
-                for (auto &instance : scripts.scripts) {
-                    instance.RegisterEvents(lock, entity);
-                }
-            }
-        }
-        // TODO: Change this to exclude Write<Script, EventInput>
-        {
             auto lock = ecs::StartTransaction<ecs::WriteAll>();
             for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                 auto &scripts = entity.Get<ecs::Scripts>(lock);
