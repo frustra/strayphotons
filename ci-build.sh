@@ -39,84 +39,37 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
     ./assets/cache-assets.py --save
 fi
 
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-core :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-core 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-game :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-game 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-graphics-vulkan-headless :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-graphics-vulkan-headless 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-graphics-vulkan-xr :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-graphics-vulkan-xr 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-input-glfw :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-input-glfw 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-physics-physx :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-physics-physx 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-xr-openvr :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-xr-openvr 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
-
-echo -e "--- Running \033[33mcmake build\033[0m strayphotons-scripts :rocket:"
-cmake --build ./build --config RelWithDebInfo --target strayphotons-scripts 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo -e "\n^^^ +++"
-    echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
-    exit 1
-fi
+targets=( \
+    strayphotons-core \
+    strayphotons-game \
+    strayphotons-graphics-core \
+    strayphotons-graphics-vulkan-core \
+    strayphotons-graphics-vulkan-headless \
+    strayphotons-graphics-vulkan-xr \
+    strayphotons-input-glfw \
+    strayphotons-physics-physx \
+    strayphotons-physics-cooking \
+    strayphotons-physics-xr-core \
+    strayphotons-physics-xr-openvr \
+    strayphotons-physics-scripts \
+)
+for target in "${targets[@]}"; do
+    echo -e "--- Running \033[33mcmake build\033[0m $target :rocket:"
+    cmake --build ./build --config RelWithDebInfo --target $target 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        echo -e "\n^^^ +++"
+        echo -e "\033[31mCMake Build failed\033[0m"
+        cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --context $target --style error --append
+        exit 1
+    fi
+done
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
 cmake --build ./build --config RelWithDebInfo --target all 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     echo -e "\n^^^ +++"
     echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
+    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --context all --style error --append
     exit 1
 fi
 
