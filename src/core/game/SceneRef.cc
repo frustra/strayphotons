@@ -1,5 +1,6 @@
 #include "SceneRef.hh"
 
+#include "ecs/components/SceneProperties.hh"
 #include "game/Scene.hh"
 
 #include <memory>

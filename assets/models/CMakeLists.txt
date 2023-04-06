@@ -79,7 +79,7 @@ set(RAW_MODEL_FOLDERS
 
 set(RAW_MODELS
     box
-    # sphere
+    sphere
     cornell-box-1
     cornell-box-2
     cornell-box-3

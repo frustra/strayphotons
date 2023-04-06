@@ -5,7 +5,7 @@
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"

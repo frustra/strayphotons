@@ -2,6 +2,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 
 #include <glm/glm.hpp>
 

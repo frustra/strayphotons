@@ -2,7 +2,6 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
-#include "ecs/StructFieldTypes.hh"
 
 namespace sp::scripts {
     using namespace ecs;

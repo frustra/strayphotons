@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {
     enum class Access : uint8_t {

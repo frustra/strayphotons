@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "core/Common.hh"
+#include "core/Tracing.hh"
 
 #include <stb_image.h>
 

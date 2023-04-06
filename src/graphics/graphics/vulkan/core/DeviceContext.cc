@@ -11,7 +11,7 @@
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
-#include "graphics/vulkan/core/Tracing.hh"
+#include "graphics/vulkan/core/VkTracing.hh"
 
 #include <algorithm>
 #include <iostream>

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graphics/vulkan/core/VkTracing.hh"
 #include "graphics/vulkan/render_graph/Pass.hh"
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"

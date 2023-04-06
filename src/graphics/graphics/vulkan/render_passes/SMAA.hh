@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "assets/Async.hh"
 
 namespace sp::vulkan::renderer {
     class SMAA {

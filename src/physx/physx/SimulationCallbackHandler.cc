@@ -1,6 +1,8 @@
 #include "SimulationCallbackHandler.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
+#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 
 namespace sp {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {
     const int MAX_VERTEX_ATTRIBUTES = 5, MAX_VERTEX_INPUT_BINDINGS = 5;

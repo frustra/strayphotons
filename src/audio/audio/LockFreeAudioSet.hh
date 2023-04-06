@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace sp {

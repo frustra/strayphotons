@@ -2,10 +2,12 @@
 
 #include "core/Common.hh"
 
+#include <cstdint>
+
 namespace sp::vulkan {
     class DeviceContext;
 
-    typedef uint64 UniqueID;
+    typedef uint64_t UniqueID;
 
     class HasUniqueID {
     public:

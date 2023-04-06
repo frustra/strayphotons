@@ -2,6 +2,7 @@
 
 #include "core/Common.hh"
 #include "core/Hashing.hh"
+#include "core/Logging.hh"
 
 namespace ecs {
     Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {

@@ -1,6 +1,8 @@
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 

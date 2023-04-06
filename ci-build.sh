@@ -49,9 +49,9 @@ targets=( \
     strayphotons-input-glfw \
     strayphotons-physics-physx \
     strayphotons-physics-cooking \
-    strayphotons-physics-xr-core \
-    strayphotons-physics-xr-openvr \
-    strayphotons-physics-scripts \
+    strayphotons-xr-core \
+    strayphotons-xr-openvr \
+    strayphotons-scripts \
 )
 for target in "${targets[@]}"; do
     echo -e "--- Running \033[33mcmake build\033[0m $target :rocket:"

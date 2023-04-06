@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/Hashing.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan::render_graph {
     struct ImageDesc {

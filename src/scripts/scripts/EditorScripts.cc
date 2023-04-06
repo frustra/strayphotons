@@ -3,6 +3,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "game/SceneManager.hh"
+#include "input/BindingNames.hh"
 
 namespace sp::scripts {
     using namespace ecs;

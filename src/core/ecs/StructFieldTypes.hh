@@ -3,7 +3,7 @@
 #include "core/Common.hh"
 #include "core/EnumTypes.hh"
 #include "ecs/Components.hh"
-#include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
@@ -17,33 +17,7 @@ namespace picojson {
     class value;
 }
 
-namespace sp {
-    class Gltf;
-    enum class ScenePriority;
-} // namespace sp
-
 namespace ecs {
-    enum class FieldAction;
-    struct AnimationState;
-    struct EventDest;
-    struct EventBinding;
-    struct EventBindingActions;
-    enum class FocusLayer;
-    enum class GuiTarget;
-    enum class InterpolationMode;
-    enum class PhysicsGroup : uint16_t;
-    enum class PhysicsActorType : uint8_t;
-    enum class PhysicsJointType;
-    struct PhysicsShape;
-    struct PhysicsJoint;
-    class ScriptState;
-    class SignalExpression;
-    enum class SoundType;
-    class Sound;
-    enum class TriggerShape : uint8_t;
-    enum class VisibilityMask;
-    enum class XrEye;
-
     using FieldTypes = std::tuple<
         // Basic types
         bool,
@@ -94,7 +68,7 @@ namespace ecs {
         robin_hood::unordered_map<std::string, double>,
         robin_hood::unordered_map<std::string, std::string>,
         robin_hood::unordered_map<std::string, SignalExpression>,
-        robin_hood::unordered_map<std::string, ecs::PhysicsJoint>,
+        robin_hood::unordered_map<std::string, PhysicsJoint>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
         robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
 

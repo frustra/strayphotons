@@ -1,6 +1,10 @@
 #pragma once
 
+#include "ecs/components/Transform.h"
+
 #include <PxPhysicsAPI.h>
+#include <array>
+#include <glm/glm.hpp>
 
 namespace sp {
     using namespace physx;

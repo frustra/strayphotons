@@ -9,6 +9,9 @@
 #include "game/SceneRef.hh"
 
 namespace sp {
+    class Asset;
+    struct SceneMetadata;
+
     class Scene {
     public:
         ~Scene();

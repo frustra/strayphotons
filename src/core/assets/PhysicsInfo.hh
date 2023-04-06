@@ -2,6 +2,8 @@
 
 #include "core/Common.hh"
 
+#include <unordered_map>
+
 namespace sp {
     class Asset;
     class PhysicsInfo;

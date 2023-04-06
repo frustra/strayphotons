@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "ecs/Ecs.hh"
 
 namespace sp::vulkan::renderer {
     class Emissive {

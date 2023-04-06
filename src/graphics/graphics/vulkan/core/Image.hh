@@ -2,7 +2,7 @@
 
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/Access.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
 namespace sp::vulkan {

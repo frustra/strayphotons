@@ -1,7 +1,5 @@
 #include "Renderer.hh"
 
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
@@ -9,6 +7,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
+#include "graphics/vulkan/core/VkTracing.hh"
 #include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/gui/GuiRenderer.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"

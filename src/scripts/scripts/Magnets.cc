@@ -1,6 +1,7 @@
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "input/BindingNames.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <unordered_set>

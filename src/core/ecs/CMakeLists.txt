@@ -15,6 +15,8 @@ target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
     Ecs.hh
     EcsImpl.hh
     EntityRef.hh
+    EventQueue.hh
+    SignalExpression.hh
     StructMetadata.hh
 )
 
