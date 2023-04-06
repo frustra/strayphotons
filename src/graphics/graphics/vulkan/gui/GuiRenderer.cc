@@ -5,9 +5,9 @@
 #include "core/Defer.hh"
 #include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
-#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
 #include <GLFW/glfw3.h>

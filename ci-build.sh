@@ -49,7 +49,6 @@ targets=( \
     strayphotons-input-glfw \
     strayphotons-physics-physx \
     strayphotons-physics-cooking \
-    strayphotons-xr-core \
     strayphotons-xr-openvr \
     strayphotons-scripts \
 )
