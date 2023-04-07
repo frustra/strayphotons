@@ -19,7 +19,12 @@ namespace sp {
 }
 
 namespace ecs {
-    enum class FieldAction;
+    enum class FieldAction {
+        None = 0,
+        AutoLoad = 1 << 0,
+        AutoSave = 1 << 1,
+        AutoApply = 1 << 2,
+    };
 }; // namespace ecs
 
 template<>
@@ -28,13 +33,6 @@ struct magic_enum::customize::enum_range<ecs::FieldAction> {
 };
 
 namespace ecs {
-    enum class FieldAction {
-        None = 0,
-        AutoLoad = 1 << 0,
-        AutoSave = 1 << 1,
-        AutoApply = 1 << 2,
-    };
-
     struct StructField {
         std::string name;
         std::type_index type;

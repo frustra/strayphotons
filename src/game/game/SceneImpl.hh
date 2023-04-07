@@ -56,7 +56,7 @@ namespace sp::scene {
                         if (!component) {
                             auto comp = LookupComponent(typeid(T));
                             Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
-                            component = comp->GetStagingDefault<T>();
+                            component = comp->template GetStagingDefault<T>();
                         }
 
                         if constexpr (std::is_same_v<T, TransformTree>) {
