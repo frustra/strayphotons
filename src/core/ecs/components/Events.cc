@@ -313,11 +313,11 @@ namespace ecs {
                 output);
         }
 
-        template<typename LockType>
-        bool filterAndModifyEvent(LockType &lock,
+        bool filterAndModifyEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
             sp::AsyncPtr<EventData> &asyncOutput,
             const sp::AsyncPtr<EventData> &asyncInput,
             const EventBinding &binding) {
+            ZoneScoped;
             Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
 
             if (binding.actions.setValue) {
@@ -377,21 +377,52 @@ namespace ecs {
             }
             return true;
         }
-
-        bool FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
-            sp::AsyncPtr<EventData> &asyncOutput,
-            const sp::AsyncPtr<EventData> &asyncInput,
-            const EventBinding &binding) {
-            ZoneScoped;
-            return filterAndModifyEvent(entLock, asyncOutput, asyncInput, binding);
-        }
-
-        bool FilterAndModifyEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
-            sp::AsyncPtr<EventData> &asyncOutput,
-            const sp::AsyncPtr<EventData> &asyncInput,
-            const EventBinding &binding) {
-            ZoneScoped;
-            return filterAndModifyEvent(lock, asyncOutput, asyncInput, binding);
-        }
     } // namespace detail
+
+    size_t EventBindings::SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth) {
+        AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
+        asyncEvent.transactionId = lock.GetTransactionId();
+        return SendEvent(lock, target, asyncEvent, depth);
+    }
+
+    size_t EventBindings::SendEvent(SendEventsLock lock,
+        const EntityRef &target,
+        const AsyncEvent &event,
+        size_t depth) {
+        ZoneScoped;
+        if (depth > MAX_EVENT_BINDING_DEPTH) {
+            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
+            return 0;
+        }
+        Entity ent = target.Get(lock);
+        if (!ent.Exists(lock)) {
+            Errorf("Tried to send event to missing entity: %s", target.Name().String());
+            return 0;
+        }
+
+        size_t eventsSent = 0;
+        if (ent.Has<EventInput>(lock)) {
+            auto &eventInput = ent.Get<EventInput>(lock);
+            eventsSent += eventInput.Add(event);
+        }
+        if (ent.Has<EventBindings>(lock)) {
+            auto &bindings = ent.Get<EventBindings>(lock);
+            auto list = bindings.sourceToDest.find(event.name);
+            if (list != bindings.sourceToDest.end()) {
+                for (auto &binding : list->second) {
+                    // Execute event modifiers before submitting to the destination queue
+                    AsyncEvent outputEvent = event;
+                    if (!detail::filterAndModifyEvent(lock, outputEvent.data, event.data, binding)) {
+                        continue;
+                    }
+
+                    for (auto &dest : binding.outputs) {
+                        outputEvent.name = dest.queueName;
+                        eventsSent += SendEvent(lock, dest.target, outputEvent, depth + 1);
+                    }
+                }
+            }
+        }
+        return eventsSent;
+    }
 } // namespace ecs

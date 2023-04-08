@@ -106,11 +106,6 @@ namespace ecs {
             }
         }
 
-        template<typename... Permissions>
-        double Evaluate(const EntityLock<Permissions...> &entLock, size_t depth = 0) const {
-            return evaluate((EntityLock<ReadSignalsLock, Optional<ReadAll>>)entLock, depth);
-        }
-
         template<typename LockType>
         double EvaluateEvent(LockType lock, const EventData &input) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
@@ -118,11 +113,6 @@ namespace ecs {
             } else {
                 return evaluateEvent((Lock<ReadSignalsLock, Optional<ReadAll>>)lock, input);
             }
-        }
-
-        template<typename... Permissions>
-        double EvaluateEvent(const EntityLock<Permissions...> &entLock, const EventData &input) const {
-            return evaluateEvent((EntityLock<ReadSignalsLock, Optional<ReadAll>>)entLock, input);
         }
 
         bool operator==(const SignalExpression &other) const {
@@ -145,9 +135,7 @@ namespace ecs {
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
 
         double evaluate(Lock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const;
-        double evaluate(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const;
         double evaluateEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock, const EventData &input) const;
-        double evaluateEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock, const EventData &input) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

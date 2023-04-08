@@ -42,8 +42,6 @@ namespace ecs {
         virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
         virtual const void *Access(Lock<Optional<ReadAll>> lock, Entity ent) const = 0;
         virtual void *Access(Lock<Optional<WriteAll>> lock, Entity ent) const = 0;
-        virtual const void *Access(EntityLock<Optional<ReadAll>> entLock) const = 0;
-        virtual void *Access(EntityLock<Optional<WriteAll>> entLock) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
 
@@ -168,24 +166,6 @@ namespace ecs {
             auto writeLock = lock.TryLock<Write<CompType>>();
             if (writeLock) {
                 return &ent.Get<CompType>(*writeLock);
-            } else {
-                return nullptr;
-            }
-        }
-
-        const void *Access(EntityLock<Optional<ReadAll>> entLock) const override {
-            auto readLock = entLock.TryLock<Read<CompType>>();
-            if (readLock) {
-                return &readLock->template Get<const CompType>();
-            } else {
-                return nullptr;
-            }
-        }
-
-        void *Access(EntityLock<Optional<WriteAll>> entLock) const override {
-            auto writeLock = entLock.TryLock<Write<CompType>>();
-            if (writeLock) {
-                return &writeLock->template Get<CompType>();
             } else {
                 return nullptr;
             }

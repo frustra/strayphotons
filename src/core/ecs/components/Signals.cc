@@ -69,4 +69,20 @@ namespace ecs {
         static const SignalExpression defaultExpr = {};
         return defaultExpr;
     }
+
+    double SignalBindings::GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth) {
+        if (depth > MAX_SIGNAL_BINDING_DEPTH) {
+            Errorf("Max signal binding depth exceeded: %s", name);
+            return 0.0f;
+        }
+
+        if (ent.Has<SignalOutput>(lock)) {
+            auto &signalOutput = ent.Get<const SignalOutput>(lock);
+            if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
+        }
+        if (!ent.Has<SignalBindings>(lock)) return 0.0;
+
+        auto &bindings = ent.Get<const SignalBindings>(lock);
+        return bindings.GetBinding(name).Evaluate(lock, depth);
+    }
 } // namespace ecs

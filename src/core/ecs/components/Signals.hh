@@ -29,47 +29,7 @@ namespace ecs {
         bool HasBinding(const std::string &name) const;
         const SignalExpression &GetBinding(const std::string &name) const;
 
-        template<typename LockType>
-        static inline double GetSignal(LockType lock, Entity ent, const std::string &name, size_t depth = 0) {
-            if (depth > MAX_SIGNAL_BINDING_DEPTH) {
-                Errorf("Max signal binding depth exceeded: %s", name);
-                return 0.0f;
-            }
-
-            if (ent.Has<SignalOutput>(lock)) {
-                if constexpr (Tecs::is_entity_lock<LockType>()) {
-                    if (ent == lock.entity) {
-                        auto &signalOutput = lock.template Get<const SignalOutput>();
-                        if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
-                    } else {
-                        auto &signalOutput = ent.Get<const SignalOutput>(lock);
-                        if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
-                    }
-                } else {
-                    auto &signalOutput = ent.Get<const SignalOutput>(lock);
-                    if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
-                }
-            }
-            if (!ent.Has<SignalBindings>(lock)) return 0.0;
-
-            if constexpr (Tecs::is_entity_lock<LockType>()) {
-                if (ent == lock.entity) {
-                    auto &bindings = lock.template Get<const SignalBindings>();
-                    return bindings.GetBinding(name).Evaluate(lock, depth);
-                } else {
-                    auto &bindings = ent.Get<const SignalBindings>(lock);
-                    return bindings.GetBinding(name).Evaluate(lock, depth);
-                }
-            } else {
-                auto &bindings = ent.Get<const SignalBindings>(lock);
-                return bindings.GetBinding(name).Evaluate(lock, depth);
-            }
-        }
-
-        template<typename... Permissions>
-        static inline double GetSignal(EntityLock<Permissions...> entLock, const std::string &name, size_t depth = 0) {
-            return GetSignal(entLock, entLock.entity, name, depth);
-        }
+        static double GetSignal(ReadSignalsLock lock, Entity ent, const std::string &name, size_t depth = 0);
 
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };

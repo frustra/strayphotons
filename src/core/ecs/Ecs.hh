@@ -93,8 +93,6 @@ namespace ecs {
     using Entity = Tecs::Entity;
     template<typename... Permissions>
     using Lock = Tecs::Lock<ECS, Permissions...>;
-    template<typename... Permissions>
-    using EntityLock = Tecs::EntityLock<ECS, Permissions...>;
     template<typename... Components>
     using Read = Tecs::Read<Components...>;
     using ReadAll = Tecs::ReadAll;
@@ -114,8 +112,16 @@ namespace ecs {
     template<typename T>
     using ComponentEvent = Tecs::ComponentEvent<T>;
 
+    template<typename... Permissions>
+    class EntityLock : public Lock<Permissions...> {
+    public:
+        EntityLock(const Lock<Permissions...> &lock, const Entity &ent)
+            : Lock<Permissions...>(lock, ent), entity(ent) {}
+
+        const Entity entity;
+    };
+
     std::string ToString(Lock<Read<Name>> lock, Entity e);
-    std::string ToString(EntityLock<Read<Name>> entLock);
 
     ECS &World();
     ECS &StagingWorld();

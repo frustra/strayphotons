@@ -103,15 +103,11 @@ namespace ecs {
         EventBinding &Bind(std::string source, EntityRef target, std::string dest);
         void Unbind(std::string source, EntityRef target, std::string dest);
 
-        template<typename LockType>
-        static size_t SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth = 0);
-        template<typename LockType>
-        static size_t SendEvent(LockType lock, const EntityRef &target, const AsyncEvent &event, size_t depth = 0);
-
-        template<typename... Permissions, typename EventType>
-        static size_t SendEvent(EntityLock<Permissions...> entLock, const EventType &event, size_t depth = 0) {
-            return SendEvent(entLock, entLock.entity, event, depth);
-        }
+        static size_t SendEvent(SendEventsLock lock, const EntityRef &target, const Event &event, size_t depth = 0);
+        static size_t SendEvent(SendEventsLock lock,
+            const EntityRef &target,
+            const AsyncEvent &event,
+            size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
@@ -126,73 +122,4 @@ namespace ecs {
     void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
-
-    namespace detail {
-        bool FilterAndModifyEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
-            sp::AsyncPtr<EventData> &output,
-            const sp::AsyncPtr<EventData> &input,
-            const EventBinding &binding);
-        bool FilterAndModifyEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> entLock,
-            sp::AsyncPtr<EventData> &output,
-            const sp::AsyncPtr<EventData> &input,
-            const EventBinding &binding);
-    } // namespace detail
-
-    template<typename LockType>
-    size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const Event &event, size_t depth) {
-        AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
-        asyncEvent.transactionId = lock.GetTransactionId();
-        return SendEvent(lock, target, asyncEvent, depth);
-    }
-
-    template<typename LockType>
-    size_t EventBindings::SendEvent(LockType lock, const EntityRef &target, const AsyncEvent &event, size_t depth) {
-        ZoneScoped;
-        if (depth > MAX_EVENT_BINDING_DEPTH) {
-            Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
-            return 0;
-        }
-        Entity ent = target.Get(lock);
-        if (!ent.Exists(lock)) {
-            Errorf("Tried to send event to missing entity: %s", target.Name().String());
-            return 0;
-        }
-
-        size_t eventsSent = 0;
-        if (ent.Has<EventInput>(lock)) {
-            auto &eventInput = ent.Get<EventInput>(lock);
-            eventsSent += eventInput.Add(event);
-        }
-        if (ent.Has<EventBindings>(lock)) {
-            auto &bindings = ent.Get<EventBindings>(lock);
-            auto list = bindings.sourceToDest.find(event.name);
-            if (list != bindings.sourceToDest.end()) {
-                for (auto &binding : list->second) {
-                    // Execute event modifiers before submitting to the destination queue
-                    AsyncEvent outputEvent = event;
-                    if constexpr (Tecs::is_entity_lock<LockType>()) {
-                        if (!detail::FilterAndModifyEvent((EntityLock<ReadSignalsLock, Optional<ReadAll>>)lock,
-                                outputEvent.data,
-                                event.data,
-                                binding)) {
-                            continue;
-                        }
-                    } else {
-                        if (!detail::FilterAndModifyEvent((Lock<ReadSignalsLock, Optional<ReadAll>>)lock,
-                                outputEvent.data,
-                                event.data,
-                                binding)) {
-                            continue;
-                        }
-                    }
-
-                    for (auto &dest : binding.outputs) {
-                        outputEvent.name = dest.queueName;
-                        eventsSent += SendEvent(lock, dest.target, outputEvent, depth + 1);
-                    }
-                }
-            }
-        }
-        return eventsSent;
-    }
 } // namespace ecs

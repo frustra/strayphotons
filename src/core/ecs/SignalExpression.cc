@@ -710,8 +710,10 @@ namespace ecs {
             cache.fill(-std::numeric_limits<double>::infinity());
         }
 
-        template<typename LockType, typename InputType>
-        double EvaluateNode(const LockType &lock, int nodeIndex, const InputType &input) {
+        template<typename InputType>
+        double EvaluateNode(const Lock<ReadSignalsLock, Optional<ReadAll>> &lock,
+            int nodeIndex,
+            const InputType &input) {
             if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
             if (cache[nodeIndex] != -std::numeric_limits<double>::infinity()) return cache[nodeIndex];
 
@@ -744,35 +746,11 @@ namespace ecs {
                             if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
                                 Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
                                 return 0.0;
-                            } else if constexpr (Tecs::is_read_allowed<T, LockType>()) {
-                                if constexpr (Tecs::is_entity_lock<LockType>()) {
-                                    if (ent == lock.entity) {
-                                        auto &component = lock.template Get<const T>();
-                                        return ecs::ReadStructField(&component, node.field);
-                                    } else {
-                                        auto &component = ent.Get<const T>(lock);
-                                        return ecs::ReadStructField(&component, node.field);
-                                    }
-                                } else {
-                                    auto &component = ent.Get<const T>(lock);
-                                    return ecs::ReadStructField(&component, node.field);
-                                }
                             } else {
                                 auto tryLock = lock.template TryLock<Read<T>>();
                                 if (tryLock) {
-
-                                    if constexpr (Tecs::is_entity_lock<LockType>()) {
-                                        if (ent == tryLock->entity) {
-                                            auto &component = tryLock->template Get<const T>();
-                                            return ecs::ReadStructField(&component, node.field);
-                                        } else {
-                                            auto &component = ent.Get<const T>(*tryLock);
-                                            return ecs::ReadStructField(&component, node.field);
-                                        }
-                                    } else {
-                                        auto &component = ent.Get<const T>(*tryLock);
-                                        return ecs::ReadStructField(&component, node.field);
-                                    }
+                                    auto &component = ent.Get<const T>(*tryLock);
+                                    return ecs::ReadStructField(&component, node.field);
                                 } else {
                                     Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
                                         node.field.name,
@@ -832,22 +810,7 @@ namespace ecs {
         return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
-    double SignalExpression::evaluate(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock, size_t depth) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
-        ExpressionEvaluator eval(*this, depth);
-        return eval.EvaluateNode(lock, rootIndex, 0.0);
-    }
-
     double SignalExpression::evaluateEvent(Lock<ReadSignalsLock, Optional<ReadAll>> lock,
-        const EventData &input) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
-        ExpressionEvaluator eval(*this);
-        return eval.EvaluateNode(lock, rootIndex, input);
-    }
-
-    double SignalExpression::evaluateEvent(EntityLock<ReadSignalsLock, Optional<ReadAll>> lock,
         const EventData &input) const {
         // ZoneScoped;
         // ZoneStr(expr);
