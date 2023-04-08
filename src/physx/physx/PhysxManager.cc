@@ -341,7 +341,7 @@ namespace sp {
                 }
                 for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                     auto &scripts = entity.Get<ecs::Scripts>(lock);
-                    scripts.OnPhysicsUpdateParallel(ecs::EntityLock<ecs::PhysicsUpdateLock>(lock, entity), interval);
+                    scripts.OnPhysicsUpdateParallel(ecs::Lock<ecs::PhysicsUpdateLock>(lock, entity), interval);
                 }
             }
 

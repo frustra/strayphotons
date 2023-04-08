@@ -16,30 +16,31 @@ namespace sp::scripts {
         std::optional<glm::vec3> alignment;
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            if (!entLock.Has<TransformTree, VoxelArea>() || voxelScale == 0.0f || voxelStride < 1.0f) return;
+            if (!ent.Has<TransformTree, VoxelArea>(lock) || voxelScale == 0.0f || voxelStride < 1.0f) return;
 
-            auto &transform = entLock.Get<TransformTree>();
-            auto &voxelArea = entLock.Get<VoxelArea>();
-            auto voxelRotation = transform.GetGlobalRotation(entLock);
+            auto &transform = ent.Get<TransformTree>(lock);
+            auto &voxelArea = ent.Get<VoxelArea>(lock);
+            auto voxelRotation = transform.GetGlobalRotation(lock);
 
             glm::vec3 offset = voxelOffset * glm::vec3(voxelArea.extents) * voxelScale;
-            auto alignmentTarget = alignmentEntity.Get(entLock);
-            if (alignmentTarget.Has<TransformSnapshot>(entLock)) {
+            auto alignmentTarget = alignmentEntity.Get(lock);
+            if (alignmentTarget.Has<TransformSnapshot>(lock)) {
                 glm::vec3 alignmentOffset;
                 if (alignment) {
-                    alignmentOffset = alignmentTarget.Get<TransformSnapshot>(entLock).GetPosition() - alignment.value();
+                    alignmentOffset = alignmentTarget.Get<TransformSnapshot>(lock).GetPosition() - alignment.value();
                 } else {
-                    alignment = alignmentTarget.Get<TransformSnapshot>(entLock).GetPosition();
+                    alignment = alignmentTarget.Get<TransformSnapshot>(lock).GetPosition();
                 }
                 offset += glm::mod(alignmentOffset, voxelStride * voxelScale);
             }
 
             auto followPosition = glm::vec3(0);
-            auto followTarget = followEntity.Get(entLock);
-            if (followTarget.Has<TransformSnapshot>(entLock)) {
-                followPosition = followTarget.Get<TransformSnapshot>(entLock).GetPosition();
+            auto followTarget = followEntity.Get(lock);
+            if (followTarget.Has<TransformSnapshot>(lock)) {
+                followPosition = followTarget.Get<TransformSnapshot>(lock).GetPosition();
             }
 
             followPosition = voxelRotation * followPosition;
@@ -61,11 +62,12 @@ namespace sp::scripts {
         float rotationSpeedRpm;
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            if (!entLock.Has<TransformTree>() || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
+            if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
-            auto &transform = entLock.Get<TransformTree>();
+            auto &transform = ent.Get<TransformTree>(lock);
             auto currentRotation = transform.pose.GetRotation();
             transform.pose.SetRotation(glm::rotate(currentRotation,
                 (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
@@ -94,12 +96,13 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            if (!entLock.Has<ecs::Physics, ecs::PhysicsJoints>()) return;
+            if (!ent.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) return;
 
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/physics_joint/"),
                     "Event name should be /physics_joint/<name>/<action>");
                 auto eventName = std::string_view(event.name).substr("/physics_joint/"s.size());
@@ -112,7 +115,7 @@ namespace sp::scripts {
                 auto it = definedJoints.find(jointName);
                 if (it == definedJoints.end()) continue;
                 auto &joint = it->second;
-                auto &joints = entLock.Get<ecs::PhysicsJoints>().joints;
+                auto &joints = ent.Get<ecs::PhysicsJoints>(lock).joints;
                 auto existing = std::find_if(joints.begin(), joints.end(), [&joint](auto &arg) {
                     return arg.target == joint.target && arg.type == joint.type;
                 });
@@ -152,16 +155,16 @@ namespace sp::scripts {
                     Entity target;
                     if (std::holds_alternative<std::string>(event.data)) {
                         auto targetName = std::get<std::string>(event.data);
-                        target = ecs::EntityRef(ecs::Name(targetName, state.scope)).Get(entLock);
+                        target = ecs::EntityRef(ecs::Name(targetName, state.scope)).Get(lock);
                     } else if (std::holds_alternative<EntityRef>(event.data)) {
-                        target = std::get<EntityRef>(event.data).Get(entLock);
+                        target = std::get<EntityRef>(event.data).Get(lock);
                     } else {
                         Errorf("Invalid set_current_offset event type: %s", event.toString());
                         continue;
                     }
-                    if (entLock.Has<TransformSnapshot>() && target.Has<TransformSnapshot>(entLock)) {
-                        joint.localOffset = entLock.Get<ecs::TransformSnapshot>().GetInverse() *
-                                            target.Get<ecs::TransformSnapshot>(entLock);
+                    if (ent.Has<TransformSnapshot>(lock) && target.Has<TransformSnapshot>(lock)) {
+                        joint.localOffset = ent.Get<ecs::TransformSnapshot>(lock).GetInverse() *
+                                            target.Get<ecs::TransformSnapshot>(lock);
                     }
                 } else if (action == "set_local_offset") {
                     if (std::holds_alternative<Transform>(event.data)) {

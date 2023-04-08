@@ -18,10 +18,10 @@ namespace sp::scripts {
         int frames = 0;
         float avgSpeed = 0.0f;
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<TransformSnapshot, Sounds>()) return;
-            auto &transform = entLock.Get<TransformSnapshot>();
-            auto &sounds = entLock.Get<Sounds>();
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformSnapshot, Sounds>(lock)) return;
+            auto &transform = ent.Get<TransformSnapshot>(lock);
+            auto &sounds = ent.Get<Sounds>(lock);
 
             if (!init) {
                 lastTransform = transform;
@@ -33,9 +33,9 @@ namespace sp::scripts {
             if (shouldPlay || frames++ > 69) {
                 if (shouldPlay != playing) {
                     if (shouldPlay) {
-                        EventBindings::SendEvent(entLock, Event{"/sound/play", entLock.entity, 0});
+                        EventBindings::SendEvent(lock, Event{"/sound/play", ent, 0});
                     } else {
-                        EventBindings::SendEvent(entLock, Event{"/sound/stop", entLock.entity, 0});
+                        EventBindings::SendEvent(lock, Event{"/sound/stop", ent, 0});
                     }
                     playing = shouldPlay;
                 }

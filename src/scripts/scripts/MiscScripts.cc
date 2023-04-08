@@ -27,39 +27,39 @@ namespace sp::scripts {
         SignalExpression expr;
         std::optional<double> previousValue;
 
-        template<typename LockType>
-        void updateEdgeTrigger(ScriptState &state, LockType &entLock) {
+        void updateEdgeTrigger(ScriptState &state, Lock<PhysicsUpdateLock, Optional<ReadAll>> lock, Entity ent) {
             if (expr.expr != inputExpr) {
                 expr = SignalExpression(inputExpr, state.scope);
-                if (!previousValue) previousValue = expr.Evaluate(entLock);
+                if (!previousValue) previousValue = expr.Evaluate(lock);
             }
 
-            auto value = expr.Evaluate(entLock);
+            auto value = expr.Evaluate(lock);
 
             Event outputEvent;
             outputEvent.name = outputName;
-            outputEvent.source = entLock.entity;
+            outputEvent.source = ent;
             if (eventValue) {
-                outputEvent.data = eventValue->Evaluate(entLock);
+                outputEvent.data = eventValue->Evaluate(lock);
             } else {
                 outputEvent.data = value >= 0.5;
             }
 
             if (value >= 0.5 && *previousValue < 0.5) {
-                if (enableRising) EventBindings::SendEvent(entLock, outputEvent);
+                if (enableRising) EventBindings::SendEvent(lock, outputEvent);
             } else if (value < 0.5 && *previousValue >= 0.5) {
-                if (enableFalling) EventBindings::SendEvent(entLock, outputEvent);
+                if (enableFalling) EventBindings::SendEvent(lock, outputEvent);
             }
             previousValue = value;
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            updateEdgeTrigger(state, entLock);
+            updateEdgeTrigger(state, lock, ent);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            updateEdgeTrigger(state, entLock);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateEdgeTrigger(state, lock, ent);
         }
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
@@ -77,24 +77,21 @@ namespace sp::scripts {
         glm::vec3 position;
         std::string modelName;
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             Transform relativeTransform;
-            auto target = targetEntity.Get(entLock);
-            if (target.Has<TransformSnapshot>(entLock)) {
-                relativeTransform = target.Get<TransformSnapshot>(entLock);
+            auto target = targetEntity.Get(lock);
+            if (target.Has<TransformSnapshot>(lock)) {
+                relativeTransform = target.Get<TransformSnapshot>(lock);
             }
 
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name != "/script/spawn") continue;
 
                 Transform transform(position);
                 transform = relativeTransform * transform;
 
-                GetSceneManager().QueueAction([ent = entLock.entity,
-                                                  transform,
-                                                  modelName = modelName,
-                                                  scope = state.scope]() {
+                GetSceneManager().QueueAction([ent, transform, modelName = modelName, scope = state.scope]() {
                     auto lock = ecs::StartTransaction<ecs::AddRemove>();
                     if (!ent.Has<ecs::SceneInfo>(lock)) return;
                     auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
@@ -126,10 +123,10 @@ namespace sp::scripts {
         glm::vec3 rotationAxis;
         float rotationSpeedRpm;
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<TransformTree>() || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
-            auto &transform = entLock.Get<TransformTree>();
+            auto &transform = ent.Get<TransformTree>(lock);
             auto currentRotation = transform.pose.GetRotation();
             transform.pose.SetRotation(glm::rotate(currentRotation,
                 (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * interval.count() / 1e9),
@@ -144,26 +141,26 @@ namespace sp::scripts {
     struct RotateToEntity {
         EntityRef targetEntityRef, upEntityRef;
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<TransformTree>()) return;
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree>(lock)) return;
 
-            auto targetEnt = targetEntityRef.Get(entLock);
-            if (!targetEnt.Has<TransformTree>(entLock)) return;
+            auto targetEnt = targetEntityRef.Get(lock);
+            if (!targetEnt.Has<TransformTree>(lock)) return;
 
-            auto &transform = entLock.Get<TransformTree>();
-            auto parent = transform.parent.Get(entLock);
+            auto &transform = ent.Get<TransformTree>(lock);
+            auto parent = transform.parent.Get(lock);
 
-            auto targetTF = targetEnt.Get<TransformTree>(entLock);
-            auto relativeTF = targetTF.GetRelativeTransform(entLock, parent);
+            auto targetTF = targetEnt.Get<TransformTree>(lock);
+            auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
 
             auto targetForward = relativeTF.GetPosition() - transform.pose.GetPosition();
             if (targetForward.x == 0 && targetForward.z == 0) return;
             targetForward = glm::normalize(targetForward);
 
             auto currentUp = glm::vec3(0, 1, 0);
-            auto upEnt = upEntityRef.Get(entLock);
-            if (upEnt.Has<TransformTree>(entLock)) {
-                currentUp = upEnt.Get<TransformTree>(entLock).GetRelativeTransform(entLock, parent).GetUp();
+            auto upEnt = upEntityRef.Get(lock);
+            if (upEnt.Has<TransformTree>(lock)) {
+                currentUp = upEnt.Get<TransformTree>(lock).GetRelativeTransform(lock, parent).GetUp();
             }
 
             auto targetRight = glm::normalize(glm::cross(currentUp, targetForward));
@@ -192,13 +189,14 @@ namespace sp::scripts {
         bool discharging = false;
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            if (!entLock.Has<SignalOutput>()) return;
+            if (!ent.Has<SignalOutput>(lock)) return;
 
-            glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(entLock)),
-                std::max(0.0, chargeSignalGreen.Evaluate(entLock)),
-                std::max(0.0, chargeSignalBlue.Evaluate(entLock))};
+            glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
+                std::max(0.0, chargeSignalGreen.Evaluate(lock)),
+                std::max(0.0, chargeSignalBlue.Evaluate(lock))};
             double chargePower = chargeColor.r + chargeColor.g + chargeColor.b;
             chargeLevel += chargePower;
 
@@ -206,9 +204,9 @@ namespace sp::scripts {
 
             glm::dvec3 outputColor;
             if (discharging) {
-                outputColor = {std::max(0.0, outputPowerRed.Evaluate(entLock)),
-                    std::max(0.0, outputPowerGreen.Evaluate(entLock)),
-                    std::max(0.0, outputPowerBlue.Evaluate(entLock))};
+                outputColor = {std::max(0.0, outputPowerRed.Evaluate(lock)),
+                    std::max(0.0, outputPowerGreen.Evaluate(lock)),
+                    std::max(0.0, outputPowerBlue.Evaluate(lock))};
                 double outputPower = outputColor.r + outputColor.g + outputColor.b;
                 if (outputPower > 0 && discharging) {
                     if (outputPower >= chargeLevel) {
@@ -223,7 +221,7 @@ namespace sp::scripts {
 
             chargeLevel = std::clamp(chargeLevel, 0.0, maxChargeLevel);
 
-            auto &signalOutput = entLock.Get<SignalOutput>();
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
             signalOutput.SetSignal("discharging", discharging);
             signalOutput.SetSignal("charge_level", chargeLevel);
             signalOutput.SetSignal("max_charge_level", maxChargeLevel);
@@ -247,8 +245,7 @@ namespace sp::scripts {
     struct ComponentFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> mapping;
 
-        template<typename LockType>
-        void updateComponentFromSignal(LockType entLock) {
+        void updateComponentFromSignal(Lock<PhysicsUpdateLock, Optional<ReadAll>> lock, Entity ent) {
             for (auto &[fieldPath, signalExpr] : mapping) {
                 size_t delimiter = fieldPath.find('.');
                 if (delimiter == std::string::npos) {
@@ -261,9 +258,9 @@ namespace sp::scripts {
                     Errorf("ComponentFromSignal unknown component: %s", componentName);
                     continue;
                 }
-                if (!comp->HasComponent(entLock, entLock.entity)) continue;
+                if (!comp->HasComponent(lock, ent)) continue;
 
-                auto signalValue = signalExpr.Evaluate(entLock);
+                auto signalValue = signalExpr.Evaluate(lock);
 
                 auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
                 if (!field) {
@@ -271,11 +268,11 @@ namespace sp::scripts {
                     continue;
                 }
 
-                void *compPtr = comp->Access((EntityLock<Optional<WriteAll>>)entLock);
+                void *compPtr = comp->Access(lock, ent);
                 if (!compPtr) {
                     Errorf("ComponentFromSignal %s access returned null data: %s",
                         componentName,
-                        ecs::ToString(entLock));
+                        ecs::ToString(lock, ent));
                     continue;
                 }
                 ecs::WriteStructField(compPtr, *field, [&signalValue](double &value) {
@@ -285,12 +282,13 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            updateComponentFromSignal(entLock);
+            updateComponentFromSignal(lock, ent);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            updateComponentFromSignal(entLock);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateComponentFromSignal(lock, ent);
         }
     };
     StructMetadata MetadataComponentFromSignal(typeid(ComponentFromSignal),
@@ -308,16 +306,17 @@ namespace sp::scripts {
         std::optional<double> lastSignal;
         size_t frameCount = 0;
 
-        template<typename LockType>
-        void updateSignal(LockType &entLock, chrono_clock::duration interval) {
-            if (!entLock.template Has<SignalOutput>() || output.empty()) return;
+        void updateSignal(Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            if (!ent.template Has<SignalOutput>(lock) || output.empty()) return;
 
-            auto &signalOutput = entLock.template Get<SignalOutput>();
+            auto &signalOutput = ent.template Get<SignalOutput>(lock);
             if (!lastSignal || !signalOutput.HasSignal(output)) {
                 lastSignal = signalOutput.GetSignal(output);
                 signalOutput.SetSignal(output, *lastSignal);
             }
-            auto currentInput = input.Evaluate(entLock);
+            auto currentInput = input.Evaluate(lock);
             if ((currentInput >= 0.5) == (*lastSignal >= 0.5)) {
                 frameCount++;
             } else {
@@ -330,12 +329,13 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            updateSignal(entLock, interval);
+            updateSignal(lock, ent, interval);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            updateSignal(entLock, interval);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateSignal(lock, ent, interval);
         }
     };
     StructMetadata MetadataDebounceSignal(typeid(DebounceSignal),
@@ -357,14 +357,16 @@ namespace sp::scripts {
             }
         }
 
-        template<typename LockType>
-        void updateTimer(ScriptState &state, LockType &entLock, chrono_clock::duration interval) {
-            if (!entLock.template Has<SignalOutput>() || names.empty()) return;
+        void updateTimer(ScriptState &state,
+            Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            if (!ent.template Has<SignalOutput>(lock) || names.empty()) return;
 
-            auto &signalOutput = entLock.template Get<SignalOutput>();
+            auto &signalOutput = ent.template Get<SignalOutput>(lock);
             for (auto &name : names) {
-                double timerValue = SignalBindings::GetSignal(entLock, name);
-                bool timerEnable = SignalBindings::GetSignal(entLock, name + "_enable") >= 0.5;
+                double timerValue = SignalBindings::GetSignal(lock, name);
+                bool timerEnable = SignalBindings::GetSignal(lock, name + "_enable") >= 0.5;
                 if (timerEnable) {
                     timerValue += interval.count() / 1e9;
                     signalOutput.SetSignal(name, timerValue);
@@ -372,7 +374,7 @@ namespace sp::scripts {
             }
 
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 double eventValue = std::visit(
                     [](auto &&arg) {
                         using T = std::decay_t<decltype(arg)>;
@@ -401,12 +403,13 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            updateTimer(state, entLock, interval);
+            updateTimer(state, lock, ent, interval);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            updateTimer(state, entLock, interval);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateTimer(state, lock, ent, interval);
         }
     };
     StructMetadata MetadataTimerSignal(typeid(TimerSignal), StructField::New("names", &TimerSignal::names));

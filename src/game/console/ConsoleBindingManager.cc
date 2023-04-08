@@ -16,12 +16,12 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
-                auto &scriptState = scripts.AddEntityOnTick(ecs::Name(scene->data->name, ""),
+                auto &scriptState = scripts.AddOnTickParallel(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::EntityLock<ecs::WriteAll> entLock,
+                        ecs::Lock<ecs::WriteAll> lock, Entity ent,
                         chrono_clock::duration interval) {
                         ecs::Event event;
-                        while (ecs::EventInput::Poll(entLock, state.eventQueue, event)) {
+                        while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {
                             auto command = std::get_if<std::string>(&event.data);
                             if (command && !command->empty()) {
                                 GetConsoleManager().QueueParseAndExecute(*command);

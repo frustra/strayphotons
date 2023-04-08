@@ -10,12 +10,12 @@ namespace sp::scripts {
         EntityRef target;
         std::vector<std::string> outputs;
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             state.definition.events.clear();
             state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
 
             for (auto &output : outputs) {
-                EventBindings::SendEvent(entLock, Event{output, entLock.entity, true});
+                EventBindings::SendEvent(lock, Event{output, ent, true});
             }
         }
     };
@@ -35,15 +35,15 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             ZoneScoped;
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (outputEvent.empty()) continue;
 
-                if (gateExpression.EvaluateEvent(entLock, event.data) >= 0.5) {
+                if (gateExpression.EvaluateEvent(lock, event.data) >= 0.5) {
                     event.name = outputEvent;
-                    EventBindings::SendEvent(entLock, event);
+                    EventBindings::SendEvent(lock, event);
                 }
             }
         }
@@ -66,29 +66,32 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        template<typename LockType>
-        void updateEvents(ScriptState &state, LockType entLock, chrono_clock::duration interval) {
+        void updateEvents(ScriptState &state,
+            Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             ZoneScoped;
             robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 auto it = mapping.find(event.name);
                 if (it == mapping.end()) continue;
 
                 outputEvents[event.name] = Event{it->second, event.source, event.data};
             }
             for (auto &[name, outputEvent] : outputEvents) {
-                if (outputEvent) EventBindings::SendEvent(entLock, *outputEvent);
+                if (outputEvent) EventBindings::SendEvent(lock, *outputEvent);
             }
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            updateEvents(state, entLock, interval);
+            updateEvents(state, lock, ent, interval);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            updateEvents(state, entLock, interval);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateEvents(state, lock, ent, interval);
         }
     };
     StructMetadata MetadataCollapseEvents(typeid(CollapseEvents), StructField::New(&CollapseEvents::mapping));
@@ -110,11 +113,11 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            if (!entLock.Has<SignalOutput>()) return;
-            auto &signalOutput = entLock.Get<SignalOutput>();
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<SignalOutput>(lock)) return;
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
                 double eventValue = std::visit(
                     [](auto &&arg) {
@@ -138,7 +141,7 @@ namespace sp::scripts {
                 if (signalName.empty()) continue;
 
                 if (action == "toggle") {
-                    double currentValue = SignalBindings::GetSignal(entLock, signalName);
+                    double currentValue = SignalBindings::GetSignal(lock, signalName);
 
                     if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
                         signalOutput.SetSignal(signalName, 0);
@@ -164,20 +167,23 @@ namespace sp::scripts {
     struct EventFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> outputs;
 
-        template<typename LockType>
-        void sendOutputEvents(ScriptState &state, LockType entLock, chrono_clock::duration interval) {
+        void sendOutputEvents(ScriptState &state,
+            Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
-                EventBindings::SendEvent(entLock, Event{name, entLock.entity, expr.Evaluate(entLock)});
+                EventBindings::SendEvent(lock, Event{name, ent, expr.Evaluate(lock)});
             }
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            sendOutputEvents(state, entLock, interval);
+            sendOutputEvents(state, lock, ent, interval);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            sendOutputEvents(state, entLock, interval);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            sendOutputEvents(state, lock, ent, interval);
         }
     };
     StructMetadata MetadataEventFromSignal(typeid(EventFromSignal), StructField::New(&EventFromSignal::outputs));
@@ -202,10 +208,9 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        template<typename LockType>
-        void updateComponentFromEvent(ScriptState &state, LockType entLock) {
+        void updateComponentFromEvent(ScriptState &state, Lock<PhysicsUpdateLock, Optional<ReadAll>> lock, Entity ent) {
             Event event;
-            while (EventInput::Poll(entLock, state.eventQueue, event)) {
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (!sp::starts_with(event.name, "/set/")) {
                     Errorf("Unexpected event received by component_from_event: %s", event.name);
                     continue;
@@ -223,7 +228,7 @@ namespace sp::scripts {
                     Errorf("ComponentFromEvent unknown component: %s", componentName);
                     continue;
                 }
-                if (!comp->HasComponent(entLock, entLock.entity)) continue;
+                if (!comp->HasComponent(lock, ent)) continue;
 
                 auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
                 if (!field) {
@@ -231,11 +236,11 @@ namespace sp::scripts {
                     continue;
                 }
 
-                void *compPtr = comp->Access((EntityLock<Optional<WriteAll>>)entLock);
+                void *compPtr = comp->Access(lock);
                 Assertf(compPtr,
                     "ComponentFromEvent %s access returned null data: %s",
                     componentName,
-                    ecs::ToString(entLock));
+                    ecs::ToString(lock, ent));
                 std::visit(
                     [&](auto &&arg) {
                         using T = std::decay_t<decltype(arg)>;
@@ -256,12 +261,13 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            EntityLock<PhysicsUpdateLock> entLock,
+            Lock<PhysicsUpdateLock> lock,
+            Entity ent,
             chrono_clock::duration interval) {
-            updateComponentFromEvent(state, entLock);
+            updateComponentFromEvent(state, lock, ent);
         }
-        void OnTick(ScriptState &state, EntityLock<WriteAll> entLock, chrono_clock::duration interval) {
-            updateComponentFromEvent(state, entLock);
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateComponentFromEvent(state, lock, ent);
         }
     };
     StructMetadata MetadataComponentFromEvent(typeid(ComponentFromEvent),

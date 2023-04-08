@@ -112,15 +112,6 @@ namespace ecs {
     template<typename T>
     using ComponentEvent = Tecs::ComponentEvent<T>;
 
-    template<typename... Permissions>
-    class EntityLock : public Lock<Permissions...> {
-    public:
-        EntityLock(const Lock<Permissions...> &lock, const Entity &ent)
-            : Lock<Permissions...>(lock, ent), entity(ent) {}
-
-        const Entity entity;
-    };
-
     std::string ToString(Lock<Read<Name>> lock, Entity e);
 
     ECS &World();
