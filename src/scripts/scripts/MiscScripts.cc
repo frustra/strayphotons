@@ -45,9 +45,9 @@ namespace sp::scripts {
             }
 
             if (value >= 0.5 && *previousValue < 0.5) {
-                if (enableRising) EventBindings::SendEvent(lock, outputEvent);
+                if (enableRising) EventBindings::SendEvent(lock, ent, outputEvent);
             } else if (value < 0.5 && *previousValue >= 0.5) {
-                if (enableFalling) EventBindings::SendEvent(lock, outputEvent);
+                if (enableFalling) EventBindings::SendEvent(lock, ent, outputEvent);
             }
             previousValue = value;
         }
@@ -268,7 +268,7 @@ namespace sp::scripts {
                     continue;
                 }
 
-                void *compPtr = comp->Access(lock, ent);
+                void *compPtr = comp->Access((Lock<Optional<WriteAll>>)lock, ent);
                 if (!compPtr) {
                     Errorf("ComponentFromSignal %s access returned null data: %s",
                         componentName,
@@ -365,8 +365,8 @@ namespace sp::scripts {
 
             auto &signalOutput = ent.template Get<SignalOutput>(lock);
             for (auto &name : names) {
-                double timerValue = SignalBindings::GetSignal(lock, name);
-                bool timerEnable = SignalBindings::GetSignal(lock, name + "_enable") >= 0.5;
+                double timerValue = SignalBindings::GetSignal(lock, ent, name);
+                bool timerEnable = SignalBindings::GetSignal(lock, ent, name + "_enable") >= 0.5;
                 if (timerEnable) {
                     timerValue += interval.count() / 1e9;
                     signalOutput.SetSignal(name, timerValue);

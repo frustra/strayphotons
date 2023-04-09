@@ -21,7 +21,7 @@ namespace sp::scripts {
 
                 auto data = std::get_if<glm::vec2>(&event.data);
                 if (data) {
-                    EventBindings::SendEvent(lock, Event{"/script/joystick_out", ent, *data * scaleFactor});
+                    EventBindings::SendEvent(lock, ent, Event{"/script/joystick_out", ent, *data * scaleFactor});
                 } else {
                     Errorf("Unsupported joystick_in event type: %s", event.toString());
                 }
@@ -150,7 +150,7 @@ namespace sp::scripts {
                 if (event.name != "/script/camera_rotate") continue;
 
                 auto angleDiff = std::get<glm::vec2>(event.data);
-                if (SignalBindings::GetSignal(lock, "interact_rotate") < 0.5) {
+                if (SignalBindings::GetSignal(lock, ent, "interact_rotate") < 0.5) {
                     // Apply pitch/yaw rotations
                     auto &transform = ent.Get<TransformTree>(lock);
                     auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *

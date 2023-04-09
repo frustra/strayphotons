@@ -18,7 +18,8 @@ namespace sp {
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
                 auto &scriptState = scripts.AddOnTickParallel(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock, Entity ent,
+                        ecs::Lock<ecs::WriteAll> lock,
+                        ecs::Entity ent,
                         chrono_clock::duration interval) {
                         ecs::Event event;
                         while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {

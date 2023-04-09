@@ -31,8 +31,8 @@ namespace sp::scripts {
                 if (ent.Has<SignalOutput>(lock)) signals = ent.Get<SignalOutput>(lock);
 
                 SceneRef scene;
-                if (ent.Has<ActiveScene>(lock)) {
-                    auto &active = ent.Get<ActiveScene>(lock);
+                if (lock.Has<ActiveScene>()) {
+                    auto &active = lock.Get<ActiveScene>();
                     scene = active.scene;
                 }
                 if (!scene) {

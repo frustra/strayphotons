@@ -33,9 +33,9 @@ namespace sp::scripts {
             if (shouldPlay || frames++ > 69) {
                 if (shouldPlay != playing) {
                     if (shouldPlay) {
-                        EventBindings::SendEvent(lock, Event{"/sound/play", ent, 0});
+                        EventBindings::SendEvent(lock, ent, Event{"/sound/play", ent, 0});
                     } else {
-                        EventBindings::SendEvent(lock, Event{"/sound/stop", ent, 0});
+                        EventBindings::SendEvent(lock, ent, Event{"/sound/stop", ent, 0});
                     }
                     playing = shouldPlay;
                 }

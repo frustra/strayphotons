@@ -15,7 +15,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
 
             for (auto &output : outputs) {
-                EventBindings::SendEvent(lock, Event{output, ent, true});
+                EventBindings::SendEvent(lock, ent, Event{output, ent, true});
             }
         }
     };
@@ -43,7 +43,7 @@ namespace sp::scripts {
 
                 if (gateExpression.EvaluateEvent(lock, event.data) >= 0.5) {
                     event.name = outputEvent;
-                    EventBindings::SendEvent(lock, event);
+                    EventBindings::SendEvent(lock, ent, event);
                 }
             }
         }
@@ -80,7 +80,7 @@ namespace sp::scripts {
                 outputEvents[event.name] = Event{it->second, event.source, event.data};
             }
             for (auto &[name, outputEvent] : outputEvents) {
-                if (outputEvent) EventBindings::SendEvent(lock, *outputEvent);
+                if (outputEvent) EventBindings::SendEvent(lock, ent, *outputEvent);
             }
         }
 
@@ -141,7 +141,7 @@ namespace sp::scripts {
                 if (signalName.empty()) continue;
 
                 if (action == "toggle") {
-                    double currentValue = SignalBindings::GetSignal(lock, signalName);
+                    double currentValue = SignalBindings::GetSignal(lock, ent, signalName);
 
                     if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
                         signalOutput.SetSignal(signalName, 0);
@@ -172,7 +172,7 @@ namespace sp::scripts {
             Entity ent,
             chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
-                EventBindings::SendEvent(lock, Event{name, ent, expr.Evaluate(lock)});
+                EventBindings::SendEvent(lock, ent, Event{name, ent, expr.Evaluate(lock)});
             }
         }
 
@@ -236,7 +236,7 @@ namespace sp::scripts {
                     continue;
                 }
 
-                void *compPtr = comp->Access(lock);
+                void *compPtr = comp->Access((Lock<Optional<WriteAll>>)lock, ent);
                 Assertf(compPtr,
                     "ComponentFromEvent %s access returned null data: %s",
                     componentName,
