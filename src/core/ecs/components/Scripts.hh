@@ -42,11 +42,7 @@ namespace ecs {
         bool filterOnEvent = false;
         const InternalScriptBase *context = nullptr;
         std::optional<ScriptInitFunc> initFunc;
-        std::variant<std::monostate,
-            OnTickFunc,
-            OnPhysicsUpdateFunc,
-            PrefabFunc>
-            callback;
+        std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
         bool runParallel = false;
     };
 
@@ -313,7 +309,8 @@ namespace ecs {
         }
 
         InternalRootScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript({name, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick), false});
+            GetScriptDefinitions().RegisterScript(
+                {name, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick), false});
         }
 
         template<typename... Events>
@@ -377,7 +374,8 @@ namespace ecs {
                 filterOnEvent,
                 this,
                 ScriptInitFunc(&Init),
-                OnPhysicsUpdateFunc(&OnPhysicsUpdate), true});
+                OnPhysicsUpdateFunc(&OnPhysicsUpdate),
+                true});
         }
     };
 
@@ -427,8 +425,13 @@ namespace ecs {
             bool filterOnEvent,
             Events... events)
             : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
-                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate), false});
+            GetScriptDefinitions().RegisterScript({name,
+                {events...},
+                filterOnEvent,
+                this,
+                ScriptInitFunc(&Init),
+                OnPhysicsUpdateFunc(&OnPhysicsUpdate),
+                false});
         }
     };
 
