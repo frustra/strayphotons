@@ -55,7 +55,12 @@ namespace sp::json {
                 dst = {};
                 return true;
             }
-            auto opt = magic_enum::enum_cast<T>(name);
+            std::optional<T> opt;
+            if constexpr (is_flags_enum<T>()) {
+                opt = magic_enum::enum_flags_cast<T>(name);
+            } else {
+                opt = magic_enum::enum_cast<T>(name);
+            }
             if (!opt) {
                 Errorf("Unknown enum value specified for %s: %s", typeid(T).name(), name);
                 return false;
