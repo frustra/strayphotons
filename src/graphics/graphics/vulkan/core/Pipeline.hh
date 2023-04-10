@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/Hashing.hh"
-#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/Shader.hh"
 #include "graphics/vulkan/core/VertexLayout.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 #include <SPIRV-Reflect/spirv_reflect.h>
 #include <bitset>

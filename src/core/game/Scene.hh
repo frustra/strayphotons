@@ -11,7 +11,7 @@
 namespace sp {
     class Asset;
     struct SceneMetadata;
-    
+
     class Scene {
     public:
         ~Scene();

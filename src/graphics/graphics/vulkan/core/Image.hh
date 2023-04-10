@@ -2,8 +2,8 @@
 
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/Access.hh"
-#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {
     enum class LoadOp {
