@@ -1,4 +1,5 @@
 #include "Components.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <glm/glm.hpp>
 #include <map>

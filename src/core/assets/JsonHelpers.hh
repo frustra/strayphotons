@@ -10,6 +10,7 @@
 #include <picojson/picojson.h>
 #include <robin_hood.h>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace sp::json {
@@ -191,7 +192,11 @@ namespace sp::json {
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const T &src) {
         if constexpr (std::is_enum<T>()) {
-            dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
+            if constexpr (is_flags_enum<T>()) {
+                dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
+            } else {
+                dst = picojson::value(std::string(magic_enum::enum_name(src)));
+            }
         } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             dst = picojson::value((double)src);
         } else {

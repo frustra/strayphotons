@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/SignalExpression.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>

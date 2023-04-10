@@ -11,7 +11,7 @@
 #include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
 
-namespace sp::vulkan::CommandContextFlags {
+namespace sp::vulkan {
     enum class DirtyFlags {
         Viewport = 1 << 0,
         Scissor = 1 << 1,
@@ -19,10 +19,10 @@ namespace sp::vulkan::CommandContextFlags {
         Pipeline = 1 << 3,
         Stencil = 1 << 4,
     };
-} // namespace sp::vulkan::CommandContextFlags
+} // namespace sp::vulkan
 
 template<>
-struct magic_enum::customize::enum_range<sp::vulkan::CommandContextFlags::DirtyFlags> {
+struct magic_enum::customize::enum_range<sp::vulkan::DirtyFlags> {
     static constexpr bool is_flags = true;
 };
 
@@ -52,8 +52,6 @@ namespace sp::vulkan {
 
     class CommandContext : public NonCopyable {
     public:
-        using DirtyFlags = CommandContextFlags::DirtyFlags;
-
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
             CommandContextType type,

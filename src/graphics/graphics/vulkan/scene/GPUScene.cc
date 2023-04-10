@@ -1,5 +1,6 @@
 #include "GPUScene.hh"
 
+#include "ecs/EcsImpl.hh"
 #include "assets/GltfImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

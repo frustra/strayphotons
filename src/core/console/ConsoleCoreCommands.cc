@@ -1,7 +1,7 @@
 #include "console/Console.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
-#include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <fstream>
 #include <shared_mutex>

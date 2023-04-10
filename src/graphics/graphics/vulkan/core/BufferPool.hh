@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
 #include <robin_hood.h>

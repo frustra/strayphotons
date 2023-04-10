@@ -3,7 +3,7 @@
 #include "assets/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_passes/Emissive.hh"

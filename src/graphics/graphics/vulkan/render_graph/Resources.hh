@@ -3,7 +3,7 @@
 #include "core/Hashing.hh"
 #include "core/InlineVector.hh"
 #include "graphics/vulkan/core/Access.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 

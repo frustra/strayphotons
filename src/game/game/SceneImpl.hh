@@ -2,10 +2,7 @@
 
 #include "core/Common.hh"
 #include "core/Logging.hh"
-#include "ecs/Ecs.hh"
-#include "ecs/components/Name.hh"
-#include "ecs/components/SceneInfo.hh"
-#include "ecs/components/Transform.h"
+#include "ecs/EcsImpl.hh"
 
 #include <bitset>
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "console/CFunc.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/EntityRef.hh"
 

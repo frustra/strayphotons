@@ -1,7 +1,9 @@
 #include "AudioManager.hh"
 
 #include "assets/AssetManager.hh"
+#include "console/CVar.hh"
 #include "core/Tracing.hh"
+#include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 
 #include <resonance-audio/resonance_audio/base/constants_and_types.h>

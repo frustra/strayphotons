@@ -1,6 +1,7 @@
 #include "Voxels.hh"
 
 #include "core/Common.hh"
+#include "ecs/components/VoxelArea.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"

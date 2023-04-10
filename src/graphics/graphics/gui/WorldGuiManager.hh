@@ -2,6 +2,7 @@
 
 #include "GuiContext.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EventQueue.hh"
 
 namespace sp {
 

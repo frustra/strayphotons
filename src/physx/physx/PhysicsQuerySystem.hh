@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ecs/Ecs.hh"
+
 namespace sp {
     class PhysxManager;
 
