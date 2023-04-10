@@ -239,9 +239,9 @@
 				"cell_output_b": 0,
 				"cell_output_g": 0,
 				"cell_output_r": 5,
-				"charge_level": 100,
+				"charge_level": 1000,
 				"discharging": 1,
-				"max_charge_level": 100
+				"max_charge_level": 1000
 			},
 			"script": [
 				{
@@ -259,12 +259,12 @@
 				{
 					"onTick": "charge_cell",
 					"parameters": {
-						"charge_level": 100,
+						"charge_level": 1000,
 						"charge_signal_b": "d-flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "d-flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_g",
 						"charge_signal_r": "d-flip-flop:charge_cell_0.input-sensor.Icosphere/light_value_r",
 						"discharging": true,
-						"max_charge_level": 100,
+						"max_charge_level": 1000,
 						"output_power_r": "5"
 					}
 				}
@@ -284,7 +284,7 @@
 				"cell_output_r": 0,
 				"charge_level": 0,
 				"discharging": 0,
-				"max_charge_level": 100
+				"max_charge_level": 1000
 			},
 			"script": [
 				{
@@ -305,7 +305,7 @@
 						"charge_signal_b": "d-flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "d-flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_g",
 						"charge_signal_r": "d-flip-flop:charge_cell_1.input-sensor.Icosphere/light_value_r",
-						"max_charge_level": 100,
+						"max_charge_level": 1000,
 						"output_power_r": "5"
 					}
 				}

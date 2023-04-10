@@ -74,7 +74,7 @@
 				"onTick": "edge_trigger",
 				"parameters": {
 					"input_expr": "scoperoot/animation_complete && scoperoot/animation_target != scoperoot/requested_floor && door.lock/animation_state == 0",
-					"output_event": "/set_signal/animation_target",
+					"output_event": "/signal/set/animation_target",
 					"falling_edge": false,
 					"set_event_value": "scoperoot/requested_floor"
 				}

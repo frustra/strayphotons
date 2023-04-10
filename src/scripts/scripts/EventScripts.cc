@@ -92,16 +92,19 @@ namespace sp::scripts {
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock) || outputs.empty()) return;
             state.definition.events.clear();
+            state.definition.events.reserve(outputs.size() * 4);
             for (auto &outputSignal : outputs) {
-                state.definition.events.emplace_back("/toggle_signal/" + outputSignal);
-                state.definition.events.emplace_back("/set_signal/" + outputSignal);
-                state.definition.events.emplace_back("/clear_signal/" + outputSignal);
+                state.definition.events.emplace_back("/signal/toggle/" + outputSignal);
+                state.definition.events.emplace_back("/signal/set/" + outputSignal);
+                state.definition.events.emplace_back("/signal/add/" + outputSignal);
+                state.definition.events.emplace_back("/signal/clear/" + outputSignal);
             }
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
+                Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
                 double eventValue = std::visit(
                     [](auto &&arg) {
                         using T = std::decay_t<decltype(arg)>;
@@ -116,8 +119,15 @@ namespace sp::scripts {
                     },
                     event.data);
 
-                if (sp::starts_with(event.name, "/toggle_signal/")) {
-                    auto signalName = event.name.substr("/toggle_signal/"s.size());
+                auto eventName = std::string_view(event.name).substr("/signal/"s.size());
+                auto delimiter = eventName.find('/');
+                Assertf(delimiter != std::string_view::npos, "Event name should be /signal/<action>/<signal>");
+                auto action = eventName.substr(0, delimiter);
+                std::string signalName(eventName.substr(delimiter + 1));
+                if (signalName.empty()) continue;
+
+                if (action == "toggle") {
+                    auto signalName = event.name.substr("/signal/toggle/"s.size());
                     if (signalName.empty()) continue;
                     double currentValue = SignalBindings::GetSignal(lock, ent, signalName);
 
@@ -126,16 +136,18 @@ namespace sp::scripts {
                     } else {
                         signalOutput.SetSignal(signalName, eventValue);
                     }
-                } else if (sp::starts_with(event.name, "/set_signal/")) {
-                    auto signalName = event.name.substr("/set_signal/"s.size());
+                } else if (action == "set") {
+                    auto signalName = event.name.substr("/signal/set/"s.size());
                     if (signalName.empty()) continue;
                     signalOutput.SetSignal(signalName, eventValue);
-                } else if (sp::starts_with(event.name, "/clear_signal/")) {
-                    auto signalName = event.name.substr("/clear_signal/"s.size());
+                } else if (action == "add") {
+                    signalOutput.SetSignal(signalName, signalOutput.GetSignal(signalName) + eventValue);
+                } else if (action == "clear") {
+                    auto signalName = event.name.substr("/signal/clear/"s.size());
                     if (signalName.empty()) continue;
                     signalOutput.ClearSignal(signalName);
                 } else {
-                    Errorf("Unexpected event received by signal_from_event: %s", event.name);
+                    Errorf("Unknown signal action: '%s'", std::string(action));
                 }
             }
         }
@@ -172,6 +184,7 @@ namespace sp::scripts {
         void updateComponentFromEvent(ScriptState &state, LockType lock, Entity ent) {
             if (outputs.empty()) return;
             state.definition.events.clear();
+            state.definition.events.reserve(outputs.size());
             for (auto &fieldPath : outputs) {
                 size_t delimiter = fieldPath.find('.');
                 if (delimiter == std::string::npos) continue;

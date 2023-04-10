@@ -5,11 +5,9 @@
 namespace sp {
     using namespace physx;
 
-    class PhysxManager;
-
     class SimulationCallbackHandler : public PxSimulationEventCallback {
     public:
-        SimulationCallbackHandler(PhysxManager &manager) : manager(manager) {}
+        SimulationCallbackHandler() {}
 
         void onConstraintBreak(PxConstraintInfo *constraints, PxU32 count) override;
         void onWake(PxActor **actors, PxU32 count) override;
@@ -25,8 +23,5 @@ namespace sp {
             PxPairFlags &pairFlags,
             const void *constantBlock,
             PxU32 constantBlockSize);
-
-    private:
-        PhysxManager &manager;
     };
 } // namespace sp

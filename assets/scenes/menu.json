@@ -258,7 +258,7 @@
 			},
 			"event_input": {},
 			"event_bindings": {
-				"/toggle_signal/door_open": "global:ship_airlock.door_in/toggle_signal/door_open"
+				"/signal/toggle/door_open": "global:ship_airlock.door_in/signal/toggle/door_open"
 			},
 			"script": [
 				{
@@ -272,7 +272,7 @@
 					"parameters": {
 						"gate_expr": "airlock_in_button_sensor.Icosphere/value",
 						"input_event": "/button/press",
-						"output_event": "/toggle_signal/door_open"
+						"output_event": "/signal/toggle/door_open"
 					}
 				}
 			]
@@ -528,68 +528,6 @@
 					"onTick": "magnetic_plug"
 				}
 			]
-		},
-		{
-			"name": "table2",
-			"transform": {
-				"translate": [-2, 0, 2]
-			},
-			"script": {
-				"parameters": {
-					"source": "table/1x1"
-				},
-				"prefab": "template"
-			}
-		},
-		{
-			"name": "life",
-			"transform": {
-				"parent": "table2.surface",
-				"translate": [0, 0, 0]
-			},
-			"script": [
-				{
-					"parameters": {
-						"source": "table/life/32x32"
-					},
-					"prefab": "template"
-				}
-			]
-		},
-		{
-			"name": "life.3_3",
-			"script": {
-				"onTick": "init_event",
-				"parameters": ["/set_signal/alive"]
-			}
-		},
-		{
-			"name": "life.4_4",
-			"script": {
-				"onTick": "init_event",
-				"parameters": ["/set_signal/alive"]
-			}
-		},
-		{
-			"name": "life.4_5",
-			"script": {
-				"onTick": "init_event",
-				"parameters": ["/set_signal/alive"]
-			}
-		},
-		{
-			"name": "life.3_5",
-			"script": {
-				"onTick": "init_event",
-				"parameters": ["/set_signal/alive"]
-			}
-		},
-		{
-			"name": "life.2_5",
-			"script": {
-				"onTick": "init_event",
-				"parameters": ["/set_signal/alive"]
-			}
 		},
 		{
 			"name": "global:spawn",

@@ -12,20 +12,18 @@
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan::CommandContextFlags {
-    enum class DirtyBits {
+    enum class DirtyFlags {
         Viewport = 1 << 0,
         Scissor = 1 << 1,
         PushConstants = 1 << 2,
         Pipeline = 1 << 3,
         Stencil = 1 << 4,
     };
-
-    using DirtyFlags = vk::Flags<DirtyBits>;
 } // namespace sp::vulkan::CommandContextFlags
 
 template<>
-struct vk::FlagTraits<sp::vulkan::CommandContextFlags::DirtyBits> {
-    enum : sp::vulkan::CommandContextFlags::DirtyFlags::MaskType { allFlags = ~0 };
+struct magic_enum::customize::enum_range<sp::vulkan::CommandContextFlags::DirtyFlags> {
+    static constexpr bool is_flags = true;
 };
 
 namespace sp::vulkan {
@@ -55,7 +53,6 @@ namespace sp::vulkan {
     class CommandContext : public NonCopyable {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
-        using DirtyBits = CommandContextFlags::DirtyBits;
 
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
@@ -145,39 +142,39 @@ namespace sp::vulkan {
         void SetVertexLayout(const VertexLayout &layout) {
             if (layout != pipelineInput.state.vertexLayout) {
                 pipelineInput.state.vertexLayout = layout;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetPrimitiveTopology(vk::PrimitiveTopology topology) {
             if (topology != pipelineInput.state.primitiveTopology) {
                 pipelineInput.state.primitiveTopology = topology;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetPolygonMode(vk::PolygonMode mode) {
             if (mode != pipelineInput.state.polygonMode) {
                 pipelineInput.state.polygonMode = mode;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetLineWidth(float width) {
             if (width != pipelineInput.state.lineWidth) {
                 pipelineInput.state.lineWidth = width;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetScissor(const vk::Rect2D &newScissor) {
             if (pipelineInput.state.scissorCount != 1) {
                 pipelineInput.state.scissorCount = 1;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
             if (scissors[0] != newScissor) {
                 scissors[0] = newScissor;
-                SetDirty(DirtyBits::Scissor);
+                SetDirty(DirtyFlags::Scissor);
             }
         }
 
@@ -196,7 +193,7 @@ namespace sp::vulkan {
         void SetYDirection(YDirection dir) {
             if (viewportYDirection != dir) {
                 viewportYDirection = dir;
-                SetDirty(DirtyBits::Viewport);
+                SetDirty(DirtyFlags::Viewport);
 
                 if (dir == YDirection::Down) {
                     SetFrontFaceWinding(vk::FrontFace::eClockwise);
@@ -209,11 +206,11 @@ namespace sp::vulkan {
         void SetViewport(const vk::Rect2D &newViewport) {
             if (pipelineInput.state.viewportCount != 1) {
                 pipelineInput.state.viewportCount = 1;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
             if (viewports[0] != newViewport) {
                 viewports[0] = newViewport;
-                SetDirty(DirtyBits::Viewport);
+                SetDirty(DirtyFlags::Viewport);
             }
         }
 
@@ -222,28 +219,28 @@ namespace sp::vulkan {
         void SetDepthRange(float minDepth, float maxDepth) {
             this->minDepth = minDepth;
             this->maxDepth = maxDepth;
-            SetDirty(DirtyBits::Viewport);
+            SetDirty(DirtyFlags::Viewport);
         }
 
         void SetDepthTest(bool test, bool write) {
             if (test != pipelineInput.state.depthTest || write != pipelineInput.state.depthWrite) {
                 pipelineInput.state.depthTest = test;
                 pipelineInput.state.depthWrite = write;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetDepthCompareOp(vk::CompareOp compareOp) {
             if (compareOp != pipelineInput.state.depthCompareOp) {
                 pipelineInput.state.depthCompareOp = compareOp;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetStencilTest(bool test) {
             if (test != pipelineInput.state.stencilTest) {
                 pipelineInput.state.stencilTest = test;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
@@ -251,13 +248,13 @@ namespace sp::vulkan {
             if (faces & vk::StencilFaceFlagBits::eFront) {
                 if (mask != stencilState[0].writeMask) {
                     stencilState[0].writeMask = mask;
-                    SetDirty(DirtyBits::Stencil);
+                    SetDirty(DirtyFlags::Stencil);
                 }
             }
             if (faces & vk::StencilFaceFlagBits::eBack) {
                 if (mask != stencilState[1].writeMask) {
                     stencilState[1].writeMask = mask;
-                    SetDirty(DirtyBits::Stencil);
+                    SetDirty(DirtyFlags::Stencil);
                 }
             }
         }
@@ -266,13 +263,13 @@ namespace sp::vulkan {
             if (faces & vk::StencilFaceFlagBits::eFront) {
                 if (mask != stencilState[0].compareMask) {
                     stencilState[0].compareMask = mask;
-                    SetDirty(DirtyBits::Stencil);
+                    SetDirty(DirtyFlags::Stencil);
                 }
             }
             if (faces & vk::StencilFaceFlagBits::eBack) {
                 if (mask != stencilState[1].compareMask) {
                     stencilState[1].compareMask = mask;
-                    SetDirty(DirtyBits::Stencil);
+                    SetDirty(DirtyFlags::Stencil);
                 }
             }
         }
@@ -281,13 +278,13 @@ namespace sp::vulkan {
             if (faces & vk::StencilFaceFlagBits::eFront) {
                 if (value != stencilState[0].reference) {
                     stencilState[0].reference = value;
-                    SetDirty(DirtyBits::Stencil);
+                    SetDirty(DirtyFlags::Stencil);
                 }
             }
             if (faces & vk::StencilFaceFlagBits::eBack) {
                 if (value != stencilState[1].reference) {
                     stencilState[1].reference = value;
-                    SetDirty(DirtyBits::Stencil);
+                    SetDirty(DirtyFlags::Stencil);
                 }
             }
         }
@@ -295,42 +292,42 @@ namespace sp::vulkan {
         void SetStencilCompareOp(vk::CompareOp op) {
             if (op != pipelineInput.state.stencilCompareOp) {
                 pipelineInput.state.stencilCompareOp = op;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetStencilFailOp(vk::StencilOp op) {
             if (op != pipelineInput.state.stencilFailOp) {
                 pipelineInput.state.stencilFailOp = op;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetStencilDepthFailOp(vk::StencilOp op) {
             if (op != pipelineInput.state.stencilDepthFailOp) {
                 pipelineInput.state.stencilDepthFailOp = op;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetStencilPassOp(vk::StencilOp op) {
             if (op != pipelineInput.state.stencilPassOp) {
                 pipelineInput.state.stencilPassOp = op;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetCullMode(vk::CullModeFlags mode) {
             if (mode != pipelineInput.state.cullMode) {
                 pipelineInput.state.cullMode = mode;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
         void SetFrontFaceWinding(vk::FrontFace winding) {
             if (winding != pipelineInput.state.frontFaceWinding) {
                 pipelineInput.state.frontFaceWinding = winding;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
@@ -339,7 +336,7 @@ namespace sp::vulkan {
             if (enable != pipelineInput.state.blendEnable || blendOp != pipelineInput.state.blendOp) {
                 pipelineInput.state.blendEnable = enable;
                 pipelineInput.state.blendOp = blendOp;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 
@@ -358,7 +355,7 @@ namespace sp::vulkan {
                 pipelineInput.state.srcAlphaBlendFactor = srcAlpha;
                 pipelineInput.state.dstBlendFactor = dstRGB;
                 pipelineInput.state.dstAlphaBlendFactor = dstAlpha;
-                SetDirty(DirtyBits::Pipeline);
+                SetDirty(DirtyFlags::Pipeline);
             }
         }
 

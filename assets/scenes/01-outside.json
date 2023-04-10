@@ -57,7 +57,7 @@
 			"event_bindings": {
 				"/trigger/player/enter": [
 					{
-						"outputs": "global:airlock1-2.door_in/set_signal/door_open",
+						"outputs": "global:airlock1-2.door_in/signal/set/door_open",
 						"set_value": 0
 					},
 					{

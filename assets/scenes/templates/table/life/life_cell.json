@@ -2,29 +2,24 @@
 	"components": {
 		"transform": {},
 		"signal_output": {
+			"neighbor_count": 0,
 			"alive": 0
 		},
 		"signal_bindings": {
-			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
-			"should_toggle": "scoperoot/neighbor_count == 3 ? !scoperoot/alive : (scoperoot/neighbor_count == 2 ? 0 : scoperoot/alive)"
+			"next_alive": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)"
 		},
 		"event_input": {},
 		"event_bindings": {
-			"/physics/collision/force_found": {
-				"outputs": "scoperoot/life/toggle_alive",
-				"set_value": true
+			"/life/neighbor_alive": {
+				"outputs": ["scoperoot/signal/add/neighbor_count"],
+				"modify": "event ? 1 : -1"
 			},
-			"/life/update_alive": {
-				"outputs": "scoperoot/life/toggle_alive",
-				"filter": "scoperoot/should_toggle",
-				"set_value": true
-			},
-			"/life/toggle_alive": {
-				"outputs": ["scoperoot/set_signal/alive", "light/set/renderable.emissive"],
-				"modify": "!scoperoot/alive"
+			"/signal/set/alive": {
+				"outputs": ["scoperoot/life/notify_neighbors", "light/set/renderable.emissive"],
+				"filter": "event != scoperoot/alive"
 			}
 		},
-		"physics": {
+		"_physics": {
 			"shapes": {
 				"box": [0.03, 0.03, 0.03],
 				"transform": {
@@ -42,15 +37,18 @@
 				}
 			},
 			{
-				"onTick": "collapse_events",
+				"onTick": "signal_from_event",
 				"parameters": {
-					"/life/neighbor_updated": "/life/update_alive"
+					"outputs": ["alive", "neighbor_count"]
 				}
 			},
 			{
-				"onTick": "signal_from_event",
+				"onTick": "edge_trigger",
 				"parameters": {
-					"outputs": ["alive"]
+					"input_expr": "scoperoot/alive != scoperoot/next_alive",
+					"output_event": "/signal/set/alive",
+					"falling_edge": false,
+					"set_event_value": "scoperoot/next_alive"
 				}
 			}
 		]
@@ -75,6 +73,26 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "debug",
+			"transform": {
+				"aprent": "scoperoot",
+				"translate": [0, 0.03, 0],
+				"scale": 0.01
+			},
+			"renderable": {
+				"model": "box",
+				"color_override": [0, 0, 0, 1]
+			},
+			"script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable.color_override.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
+					"renderable.color_override.g": "scoperoot/alive",
+					"renderable.color_override.b": "scoperoot/next_alive"
+				}
+			}
 		}
 	]
 }
