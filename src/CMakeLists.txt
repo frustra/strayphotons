@@ -49,8 +49,8 @@ add_module_configuration(
 
 add_subdirectory(core)
 
-# target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
-# target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
 
 
 if(WIN32)

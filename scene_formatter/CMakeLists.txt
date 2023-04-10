@@ -9,6 +9,6 @@ target_link_libraries(scene_formatter
     cxxopts
 )
 
-# target_precompile_headers(scene_formatter REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(scene_formatter REUSE_FROM ${PROJECT_CORE_LIB})
 
 target_include_directories(scene_formatter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
