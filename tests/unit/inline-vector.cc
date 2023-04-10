@@ -21,19 +21,19 @@ namespace InlineVectorTests {
 
     void TestInlineVectorInsert() {
         sp::InlineVector<int, 8> vec;
-        Assert(vec.insert(vec.begin(), {1, 2}) == vec.begin(), "iterator unequal");
+        AssertEqual(vec.insert(vec.begin(), {1, 2}), vec.begin(), "iterator unequal");
         AssertEqual(vec.size(), 2u);
         AssertEqual(vec[0], 1);
         AssertEqual(vec[1], 2);
 
-        Assert(vec.insert(vec.end(), {5, 6}) == vec.begin() + 2, "iterator unequal");
+        AssertEqual(vec.insert(vec.end(), {5, 6}), vec.begin() + 2, "iterator unequal");
         AssertEqual(vec.size(), 4u);
         AssertEqual(vec[0], 1);
         AssertEqual(vec[1], 2);
         AssertEqual(vec[2], 5);
         AssertEqual(vec[3], 6);
 
-        Assert(vec.insert(vec.begin() + 2, {3, 4}) == vec.begin() + 2, "iterator unequal");
+        AssertEqual(vec.insert(vec.begin() + 2, {3, 4}), vec.begin() + 2, "iterator unequal");
         AssertEqual(vec.size(), 6u);
         for (size_t i = 0; i < vec.size(); i++) {
             AssertEqual(vec[i], (int)i + 1);
