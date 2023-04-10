@@ -37,6 +37,33 @@ namespace ecs {
             data = src.get<double>();
         } else if (src.is<std::string>()) {
             data = src.get<std::string>();
+        } else if (src.is<picojson::array>()) {
+            auto &arr = src.get<picojson::array>();
+            if (arr.size() == 2) {
+                glm::vec2 vec;
+                if (!sp::json::Load({}, vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else if (arr.size() == 3) {
+                glm::vec3 vec;
+                if (!sp::json::Load({}, vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else if (arr.size() == 4) {
+                glm::vec4 vec;
+                if (!sp::json::Load({}, vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else {
+                Errorf("Unsupported EventData array size: %u", arr.size());
+                return false;
+            }
         } else {
             Errorf("Unsupported EventData value: %s", src.to_str());
             return false;

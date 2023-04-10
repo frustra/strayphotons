@@ -127,8 +127,6 @@ namespace sp::scripts {
                 if (signalName.empty()) continue;
 
                 if (action == "toggle") {
-                    auto signalName = event.name.substr("/signal/toggle/"s.size());
-                    if (signalName.empty()) continue;
                     double currentValue = SignalBindings::GetSignal(lock, ent, signalName);
 
                     if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
@@ -137,14 +135,10 @@ namespace sp::scripts {
                         signalOutput.SetSignal(signalName, eventValue);
                     }
                 } else if (action == "set") {
-                    auto signalName = event.name.substr("/signal/set/"s.size());
-                    if (signalName.empty()) continue;
                     signalOutput.SetSignal(signalName, eventValue);
                 } else if (action == "add") {
                     signalOutput.SetSignal(signalName, signalOutput.GetSignal(signalName) + eventValue);
                 } else if (action == "clear") {
-                    auto signalName = event.name.substr("/signal/clear/"s.size());
-                    if (signalName.empty()) continue;
                     signalOutput.ClearSignal(signalName);
                 } else {
                     Errorf("Unknown signal action: '%s'", std::string(action));

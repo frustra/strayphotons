@@ -23,7 +23,26 @@ namespace ecs {
                 if (!std::equal(it, it + subField.size(), subField.begin(), subField.end())) continue;
 
                 size_t offset = sizeof(typename T::value_type) * index;
-                return StructField(std::string(subField), typeid(typename T::value_type), offset, FieldAction::None);
+                std::type_index type = typeid(void);
+                switch (subField.size()) {
+                case 1:
+                    type = typeid(typename T::value_type);
+                    break;
+                case 2:
+                    type = typeid(glm::vec<2, typename T::value_type>);
+                    break;
+                case 3:
+                    type = typeid(glm::vec<3, typename T::value_type>);
+                    break;
+                case 4:
+                    type = typeid(glm::vec<4, typename T::value_type>);
+                    break;
+                default:
+                    Abortf("GetVectorSubfield unexpected subfield size: %s '%s'",
+                        typeid(T).name(),
+                        std::string(subField));
+                };
+                return StructField(std::string(subField), type, offset, FieldAction::None);
             }
             Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
             return {};
@@ -49,7 +68,7 @@ namespace ecs {
                                  std::is_same_v<T, sp::color_alpha_t>) {
                 if (!ConvertAccessor<ArgT, typename T::value_type>(value[0], accessor)) return false;
                 if constexpr (!std::is_const_v<ArgT>) {
-                    for (size_t i = 1; i < value.length(); i++) {
+                    for (glm::length_t i = 1; i < value.length(); i++) {
                         value[i] = value[0];
                     }
                 }
@@ -75,8 +94,19 @@ namespace ecs {
                     size_t delimiter = fieldName.find_last_of('.');
                     std::optional<StructField> subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
                     if (subField) {
-                        auto &subValue = subField->Access<typename T::value_type>(basePtr);
-                        if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
+                        if (subField->type == typeid(typename T::value_type)) {
+                            auto &subValue = subField->Access<typename T::value_type>(basePtr);
+                            if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
+                        } else if (subField->type == typeid(glm::vec<2, typename T::value_type>)) {
+                            auto &subValue = subField->Access<glm::vec<2, typename T::value_type>>(basePtr);
+                            if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
+                        } else if (subField->type == typeid(glm::vec<3, typename T::value_type>)) {
+                            auto &subValue = subField->Access<glm::vec<3, typename T::value_type>>(basePtr);
+                            if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
+                        } else if (subField->type == typeid(glm::vec<4, typename T::value_type>)) {
+                            auto &subValue = subField->Access<glm::vec<4, typename T::value_type>>(basePtr);
+                            if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
+                        }
                     }
                     Errorf("AccessStructField unable to vector convert from: %s to %s '%s'",
                         field.type.name(),
