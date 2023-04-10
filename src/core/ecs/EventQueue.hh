@@ -5,6 +5,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
 
+#include <atomic>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <queue>
@@ -12,8 +13,18 @@
 #include <variant>
 
 namespace ecs {
-    using EventData = std::
-        variant<bool, char, int, float, double, glm::vec2, glm::vec3, Transform, EntityRef, Tecs::Entity, std::string>;
+    using EventData = std::variant<bool,
+        char,
+        int,
+        float,
+        double,
+        glm::vec2,
+        glm::vec3,
+        glm::vec4,
+        Transform,
+        EntityRef,
+        Tecs::Entity,
+        std::string>;
 
     struct Event {
         std::string name;
@@ -71,7 +82,10 @@ namespace ecs {
 
     private:
         struct State {
-            uint32_t head, tail;
+            // Workaround for Clang so that std::atomic<State> operations can be inlined as if uint64. See issue:
+            // https://stackoverflow.com/questions/60445848/clang-doesnt-inline-stdatomicload-for-loading-64-bit-structs
+            alignas(std::atomic_uint64_t) uint32_t head;
+            uint32_t tail;
         };
 
         std::vector<AsyncEvent> events;

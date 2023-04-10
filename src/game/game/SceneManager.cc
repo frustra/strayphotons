@@ -640,6 +640,11 @@ namespace sp {
                 bool hasName = ent.count("name") && ent["name"].is<string>();
                 auto relativeName = hasName ? ent["name"].get<string>() : "";
                 ecs::Entity entity = scene->NewRootEntity(lock, scene, relativeName);
+                if (!entity) {
+                    // Most llkely a duplicate or invalid name
+                    Errorf("LoadScene(%s): Failed to create entity, ignoring: %s", sceneName, relativeName);
+                    continue;
+                }
 
                 for (auto comp : ent) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
@@ -647,10 +652,10 @@ namespace sp {
                     auto componentType = ecs::LookupComponent(comp.first);
                     if (componentType != nullptr) {
                         if (!componentType->LoadEntity(lock, scope, entity, comp.second)) {
-                            Errorf("Failed to load component, ignoring: %s", comp.first);
+                            Errorf("LoadScene(%s): Failed to load component, ignoring: %s", sceneName, comp.first);
                         }
                     } else {
-                        Errorf("Unknown component, ignoring: %s", comp.first);
+                        Errorf("LoadScene(%s): Unknown component, ignoring: %s", sceneName, comp.first);
                     }
                 }
 

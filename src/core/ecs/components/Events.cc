@@ -37,6 +37,33 @@ namespace ecs {
             data = src.get<double>();
         } else if (src.is<std::string>()) {
             data = src.get<std::string>();
+        } else if (src.is<picojson::array>()) {
+            auto &arr = src.get<picojson::array>();
+            if (arr.size() == 2) {
+                glm::vec2 vec;
+                if (!sp::json::Load({}, vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else if (arr.size() == 3) {
+                glm::vec3 vec;
+                if (!sp::json::Load({}, vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else if (arr.size() == 4) {
+                glm::vec4 vec;
+                if (!sp::json::Load({}, vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else {
+                Errorf("Unsupported EventData array size: %u", arr.size());
+                return false;
+            }
         } else {
             Errorf("Unsupported EventData value: %s", src.to_str());
             return false;
@@ -247,8 +274,7 @@ namespace ecs {
     void modifyEvent(DynamicLock<ReadSignalsLock> lock,
         EventData &output,
         const EventData &input,
-        const EventBinding &binding,
-        size_t depth) {
+        const EventBinding &binding) {
         auto &actions = binding.actions.modifyExprs;
         std::visit(
             [&](auto &&arg) {
@@ -261,9 +287,9 @@ namespace ecs {
                     }
                     for (int i = 0; i < T::length(); i++) {
                         if constexpr (std::is_same_v<U, bool>) {
-                            arg[i] = actions[i].EvaluateEvent(lock, input, depth) >= 0.5;
+                            arg[i] = actions[i].EvaluateEvent(lock, input) >= 0.5;
                         } else {
-                            arg[i] = (U)actions[i].EvaluateEvent(lock, input, depth);
+                            arg[i] = (U)actions[i].EvaluateEvent(lock, input);
                         }
                     }
                 } else if constexpr (std::is_same_v<T, bool>) {
@@ -271,13 +297,13 @@ namespace ecs {
                         Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
                         return;
                     }
-                    arg = actions[0].EvaluateEvent(lock, input, depth) >= 0.5;
+                    arg = actions[0].EvaluateEvent(lock, input) >= 0.5;
                 } else if constexpr (std::is_convertible_v<double, T>) {
                     if (actions.size() != 1) {
                         Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
                         return;
                     }
-                    arg = (T)actions[0].EvaluateEvent(lock, input, depth);
+                    arg = (T)actions[0].EvaluateEvent(lock, input);
                 } else {
                     Errorf("Unsupported event binding modify value: type: %s vec%u", typeid(T).name(), actions.size());
                 }
@@ -288,8 +314,7 @@ namespace ecs {
     bool detail::FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
         sp::AsyncPtr<EventData> &asyncOutput,
         const sp::AsyncPtr<EventData> &asyncInput,
-        const EventBinding &binding,
-        size_t depth) {
+        const EventBinding &binding) {
         Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
 
         if (binding.actions.setValue) {
@@ -330,19 +355,19 @@ namespace ecs {
                 if (!input) return false; // Event filtered asynchronously
                 auto outputPtr = asyncOutput->Get();
                 EventData output = outputPtr ? *outputPtr : *input;
-                modifyEvent(lock, output, *input, binding, depth);
+                modifyEvent(lock, output, *input, binding);
                 asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
             } else {
                 asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
                     asyncOutput,
-                    [binding, depth](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
+                    [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
                         if (!input || !output) {
                             return std::make_shared<EventData>(); // Event filtered asynchronously
                         }
 
                         auto lock = ecs::StartTransaction<ReadAll>();
                         EventData modified = *output;
-                        modifyEvent(lock, modified, *input, binding, depth);
+                        modifyEvent(lock, modified, *input, binding);
                         return std::make_shared<EventData>(modified);
                     });
             }

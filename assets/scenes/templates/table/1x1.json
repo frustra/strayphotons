@@ -245,7 +245,7 @@
 			"script": {
 				"prefab": "template",
 				"parameters": {
-					"source": "breadboard_12x12"
+					"source": "table/breadboard/12x12"
 				}
 			}
 		}

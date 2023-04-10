@@ -126,8 +126,7 @@ namespace ecs {
         bool FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
             sp::AsyncPtr<EventData> &output,
             const sp::AsyncPtr<EventData> &input,
-            const EventBinding &binding,
-            size_t depth);
+            const EventBinding &binding);
     }
 
     template<typename LockType>
@@ -161,7 +160,7 @@ namespace ecs {
                 for (auto &binding : list->second) {
                     // Execute event modifiers before submitting to the destination queue
                     AsyncEvent outputEvent = event;
-                    if (!detail::FilterAndModifyEvent(lock, outputEvent.data, event.data, binding, depth)) continue;
+                    if (!detail::FilterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;
 
                     for (auto &dest : binding.outputs) {
                         outputEvent.name = dest.queueName;

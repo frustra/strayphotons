@@ -30,9 +30,9 @@ namespace sp {
     CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
     PhysxManager::PhysxManager(bool stepMode)
-        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), simulationCallback(*this),
-          characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
-          animationSystem(*this), workQueue("PhysXHullLoading") {
+        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
+          constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this),
+          workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,

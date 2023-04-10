@@ -40,7 +40,7 @@ namespace ecs {
     void forEachComponent(ECSType<AllComponentTypes...> *,
         std::function<void(const std::string &, const ComponentBase &)> &callback) {
         ( // For each component:
-            [&callback] {
+            [&] {
                 using T = AllComponentTypes;
 
                 if constexpr (std::is_same_v<T, Name> || std::is_same_v<T, SceneInfo>) {

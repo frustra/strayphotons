@@ -46,7 +46,7 @@
 			"transform": {},
 			"script": {
 				"parameters": {
-					"source": "table"
+					"source": "table/1x1"
 				},
 				"prefab": "template"
 			}

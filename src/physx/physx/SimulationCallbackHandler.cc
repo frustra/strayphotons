@@ -38,25 +38,56 @@ namespace sp {
         float thresholdForce = std::min(thresholdForce0, thresholdForce1);
 
         auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-        Debugf("onContact: %s - %s",
-            ecs::EntityRef(userData0->entity).Name().String(),
-            ecs::EntityRef(userData1->entity).Name().String());
         for (size_t i = 0; i < nbPairs; i++) {
             auto &pair = pairs[i];
+            if (!pair.shapes[0] || !pair.shapes[1]) continue;
+            auto *shapeUserData0 = (ShapeUserData *)pair.shapes[0]->userData;
+            auto *shapeUserData1 = (ShapeUserData *)pair.shapes[1]->userData;
+            if (!shapeUserData0 || !shapeUserData1) continue;
+            if (shapeUserData0->parent != userData0->entity || shapeUserData1->parent != userData1->entity) {
+                continue;
+            }
+
+            Debugf("onContact: %s - %s",
+                ecs::ToString(lock, shapeUserData0->parent),
+                ecs::ToString(lock, shapeUserData1->parent));
+
             if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND)) {
+                if (shapeUserData0->owner != shapeUserData0->parent) {
+                    ecs::EventBindings::SendEvent(lock,
+                        shapeUserData0->owner,
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, thresholdForce});
+                }
+                if (shapeUserData1->owner != shapeUserData1->parent) {
+                    ecs::EventBindings::SendEvent(lock,
+                        shapeUserData1->owner,
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, thresholdForce});
+                }
+
                 ecs::EventBindings::SendEvent(lock,
-                    userData0->entity,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, userData1->entity, thresholdForce});
+                    shapeUserData0->parent,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, thresholdForce});
                 ecs::EventBindings::SendEvent(lock,
-                    userData1->entity,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, userData0->entity, thresholdForce});
+                    shapeUserData1->parent,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, thresholdForce});
             } else if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST)) {
                 ecs::EventBindings::SendEvent(lock,
-                    userData0->entity,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, userData1->entity, thresholdForce});
+                    shapeUserData0->parent,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, thresholdForce});
                 ecs::EventBindings::SendEvent(lock,
-                    userData1->entity,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, userData0->entity, thresholdForce});
+                    shapeUserData1->parent,
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, thresholdForce});
+
+                if (shapeUserData0->owner != shapeUserData0->parent) {
+                    ecs::EventBindings::SendEvent(lock,
+                        shapeUserData0->owner,
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, thresholdForce});
+                }
+                if (shapeUserData1->owner != shapeUserData1->parent) {
+                    ecs::EventBindings::SendEvent(lock,
+                        shapeUserData1->owner,
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, thresholdForce});
+                }
             }
         }
     }

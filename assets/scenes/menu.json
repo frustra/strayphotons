@@ -258,7 +258,7 @@
 			},
 			"event_input": {},
 			"event_bindings": {
-				"/toggle_signal/door_open": "global:ship_airlock.door_in/toggle_signal/door_open"
+				"/signal/toggle/door_open": "global:ship_airlock.door_in/signal/toggle/door_open"
 			},
 			"script": [
 				{
@@ -270,9 +270,9 @@
 				{
 					"onTick": "event_gate_by_signal",
 					"parameters": {
-						"gate_signal": "airlock_in_button_sensor.Icosphere/value",
+						"gate_expr": "airlock_in_button_sensor.Icosphere/value",
 						"input_event": "/button/press",
-						"output_event": "/toggle_signal/door_open"
+						"output_event": "/signal/toggle/door_open"
 					}
 				}
 			]
@@ -362,7 +362,7 @@
 			},
 			"script": {
 				"parameters": {
-					"source": "table"
+					"source": "table/1x1"
 				},
 				"prefab": "template"
 			}

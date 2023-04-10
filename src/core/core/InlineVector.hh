@@ -45,6 +45,10 @@ namespace sp {
             offset = size;
         }
 
+        void fill(const T &value) {
+            std::fill(begin(), end(), value);
+        }
+
         bool empty() const {
             return !offset;
         }

@@ -178,13 +178,13 @@ namespace sp::vulkan {
         Assert(newScissors.size() <= device.Limits().maxViewports, "too many scissors for device");
         if (pipelineInput.state.scissorCount != newScissors.size()) {
             pipelineInput.state.scissorCount = newScissors.size();
-            SetDirty(DirtyBits::Pipeline);
+            SetDirty(DirtyFlags::Pipeline);
         }
         size_t i = 0;
         for (auto &newScissor : newScissors) {
             if (scissors[i] != newScissor) {
                 scissors[i] = newScissor;
-                SetDirty(DirtyBits::Scissor);
+                SetDirty(DirtyFlags::Scissor);
             }
             i++;
         }
@@ -195,13 +195,13 @@ namespace sp::vulkan {
         Assert(newViewports.size() <= device.Limits().maxViewports, "too many viewports for device");
         if (pipelineInput.state.viewportCount != newViewports.size()) {
             pipelineInput.state.viewportCount = newViewports.size();
-            SetDirty(DirtyBits::Pipeline);
+            SetDirty(DirtyFlags::Pipeline);
         }
         size_t i = 0;
         for (auto &newViewport : newViewports) {
             if (viewports[i] != newViewport) {
                 viewports[i] = newViewport;
-                SetDirty(DirtyBits::Viewport);
+                SetDirty(DirtyFlags::Viewport);
             }
             i++;
         }
@@ -264,7 +264,7 @@ namespace sp::vulkan {
         auto &spec = pipelineInput.state.specializations[stage];
         std::fill(spec.values.begin(), spec.values.end(), 0);
         spec.set.reset();
-        SetDirty(DirtyBits::Pipeline);
+        SetDirty(DirtyFlags::Pipeline);
     }
 
     void CommandContext::SetSingleShader(ShaderStage stage, string_view name) {
@@ -276,13 +276,13 @@ namespace sp::vulkan {
         auto &spec = pipelineInput.state.specializations[stage];
         spec.values[index] = data;
         spec.set.set(index, true);
-        SetDirty(DirtyBits::Pipeline);
+        SetDirty(DirtyFlags::Pipeline);
     }
 
     void CommandContext::PushConstants(const void *data, VkDeviceSize offset, VkDeviceSize range) {
         Assert(offset + range <= sizeof(shaderData.pushConstants), "CommandContext::PushConstants overflow");
         memcpy(shaderData.pushConstants + offset, data, range);
-        SetDirty(DirtyBits::PushConstants);
+        SetDirty(DirtyFlags::PushConstants);
     }
 
     void CommandContext::SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler) {
@@ -398,7 +398,7 @@ namespace sp::vulkan {
         auto pipelineLayout = currentPipeline->GetLayout();
         auto &layoutInfo = pipelineLayout->Info();
 
-        if (ResetDirty(DirtyBits::PushConstants)) {
+        if (ResetDirty(DirtyFlags::PushConstants)) {
             auto &range = layoutInfo.pushConstantRange;
             if (range.stageFlags) {
                 Assert(range.offset == 0, "push constant range must start at 0");
@@ -408,7 +408,7 @@ namespace sp::vulkan {
     }
 
     void CommandContext::FlushComputeState() {
-        if (ResetDirty(DirtyBits::Pipeline)) {
+        if (ResetDirty(DirtyFlags::Pipeline)) {
             auto pipeline = device.GetPipeline(pipelineInput);
             if (pipeline != currentPipeline) {
                 cmd->bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
@@ -421,7 +421,7 @@ namespace sp::vulkan {
     }
 
     void CommandContext::FlushGraphicsState() {
-        if (ResetDirty(DirtyBits::Pipeline)) {
+        if (ResetDirty(DirtyFlags::Pipeline)) {
             auto pipeline = device.GetPipeline(pipelineInput);
             if (pipeline != currentPipeline) {
                 cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
@@ -429,7 +429,7 @@ namespace sp::vulkan {
             currentPipeline = pipeline;
         }
 
-        if (ResetDirty(DirtyBits::Viewport)) {
+        if (ResetDirty(DirtyFlags::Viewport)) {
             std::array<vk::Viewport, MAX_VIEWPORTS> vps;
 
             for (size_t i = 0; i < pipelineInput.state.viewportCount; i++) {
@@ -451,7 +451,7 @@ namespace sp::vulkan {
             cmd->setViewport(0, pipelineInput.state.viewportCount, vps.data());
         }
 
-        if (ResetDirty(DirtyBits::Scissor)) {
+        if (ResetDirty(DirtyFlags::Scissor)) {
             std::array<vk::Rect2D, MAX_VIEWPORTS> scs;
             for (size_t i = 0; i < pipelineInput.state.scissorCount; i++) {
                 scs[i] = scissors[i];
@@ -460,7 +460,7 @@ namespace sp::vulkan {
             cmd->setScissor(0, pipelineInput.state.scissorCount, scs.data());
         }
 
-        if (pipelineInput.state.stencilTest && ResetDirty(DirtyBits::Stencil)) {
+        if (pipelineInput.state.stencilTest && ResetDirty(DirtyFlags::Stencil)) {
             const auto &front = stencilState[0];
             const auto &back = stencilState[1];
             if (front.writeMask == back.writeMask) {

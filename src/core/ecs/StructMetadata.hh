@@ -121,6 +121,8 @@ namespace ecs {
             return *reinterpret_cast<const T *>(Access(structPtr));
         }
 
+        bool operator==(const StructField &) const = default;
+
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
         bool Compare(const void *a, const void *b) const;
         bool Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const;

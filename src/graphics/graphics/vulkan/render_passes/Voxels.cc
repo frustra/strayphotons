@@ -476,7 +476,7 @@ namespace sp::vulkan::renderer {
                         }
                     }
                 })
-                .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {
                     vk::ClearColorValue clear;
                     clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
                     vk::ImageSubresourceRange range;
@@ -520,7 +520,7 @@ namespace sp::vulkan::renderer {
                     }
                 }
             })
-            .Execute([this, clearMipmap](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([clearMipmap](rg::Resources &resources, CommandContext &cmd) {
                 if (clearMipmap) {
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;

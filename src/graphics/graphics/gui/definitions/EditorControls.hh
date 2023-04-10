@@ -167,8 +167,17 @@ namespace sp {
                     nullptr,
                     nullptr,
                     "%d");
+            } else if constexpr (std::is_same_v<U, uint32_t>) {
+                changed = ImGui::DragScalarN(name.c_str(),
+                    ImGuiDataType_U32,
+                    &value,
+                    T::length(),
+                    1.0f,
+                    nullptr,
+                    nullptr,
+                    "%u");
             } else {
-                Abortf("AddImGuiElement unsupported vector type: %s", typeid(T).name());
+                static_assert(!sizeof(U), "AddImGuiElement unsupported vector type");
             }
         } else {
             picojson::value jsonValue;

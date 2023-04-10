@@ -19,7 +19,7 @@
 			"event_bindings": {
 				"/trigger/object/enter": [
 					{
-						"outputs": "global:airlock3-4.door_out/set_signal/door_open",
+						"outputs": "global:airlock3-4.door_out/signal/set/door_open",
 						"set_value": 1
 					},
 					{
@@ -41,7 +41,7 @@
 			"event_bindings": {
 				"/trigger/player/enter": [
 					{
-						"outputs": "airlock4-menu.door_in/set_signal/door_open",
+						"outputs": "airlock4-menu.door_in/signal/set/door_open",
 						"set_value": 0
 					},
 					{

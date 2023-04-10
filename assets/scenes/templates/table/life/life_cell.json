@@ -1,0 +1,98 @@
+{
+	"components": {
+		"transform": {},
+		"signal_output": {
+			"neighbor_count": 0,
+			"alive": 0
+		},
+		"signal_bindings": {
+			"next_alive": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)"
+		},
+		"event_input": {},
+		"event_bindings": {
+			"/life/neighbor_alive": {
+				"outputs": ["scoperoot/signal/add/neighbor_count"],
+				"modify": "event ? 1 : -1"
+			},
+			"/signal/set/alive": {
+				"outputs": ["scoperoot/life/notify_neighbors", "light/set/renderable.emissive"],
+				"filter": "event != scoperoot/alive"
+			}
+		},
+		"_physics": {
+			"shapes": {
+				"box": [0.03, 0.03, 0.03],
+				"transform": {
+					"translate": [0, 0.015, 0]
+				}
+			},
+			"type": "Static",
+			"contact_report_force": 1
+		},
+		"script": [
+			{
+				"prefab": "life_cell",
+				"parameters": {
+					"board_size": [32, 32]
+				}
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": ["alive", "neighbor_count"]
+				}
+			},
+			{
+				"onTick": "edge_trigger",
+				"parameters": {
+					"input_expr": "scoperoot/alive != scoperoot/next_alive",
+					"output_event": "/signal/set/alive",
+					"falling_edge": false,
+					"set_event_value": "scoperoot/next_alive"
+				}
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "light",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.015, 0],
+				"scale": 0.03
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": "renderable.emissive"
+					}
+				}
+			]
+		},
+		{
+			"name": "debug",
+			"transform": {
+				"aprent": "scoperoot",
+				"translate": [0, 0.03, 0],
+				"scale": 0.01
+			},
+			"renderable": {
+				"model": "box",
+				"color_override": [0, 0, 0, 1]
+			},
+			"script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable.color_override.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
+					"renderable.color_override.g": "scoperoot/alive",
+					"renderable.color_override.b": "scoperoot/next_alive"
+				}
+			}
+		}
+	]
+}

@@ -192,6 +192,7 @@ c5ed88427cca6189da9d2bc81331b1b3    models/sensor-plate-light/LightPlate_Metalli
 b446dad68d58be26078dd0f9e641bf0f    models/sensor-plate-light/sensor-plate-light.gltf
 13bb5bb2e988564c00e11a25a8041bf6    models/sensor-plate-light/sensor-plate-light.mtl
 ef9d89bb4e15442c7632d4847368bb65    models/sensor-plate-light/sensor-plate-light.obj
+4aafc7ee0f2087442d4b487493bc80af    models/sphere.gltf
 f78e1363ad6b59bcf703fcc40fd969fa    models/sponza/10381718147657362067.jpg
 3ebd847216b0825992794f4854f62289    models/sponza/10388182081421875623.jpg
 e7834a045687d783e0ef836b0421a34e    models/sponza/11474523244911310074.jpg
