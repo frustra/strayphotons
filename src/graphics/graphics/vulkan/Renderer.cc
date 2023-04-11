@@ -609,11 +609,11 @@ namespace sp::vulkan {
 
         GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
             bool complete = true;
-            for (auto ent : lock.template EntitiesWith<ecs::Renderable>()) {
-                if (!ent.template Has<ecs::SceneInfo>(lock)) continue;
-                if (ent.template Get<ecs::SceneInfo>(lock).scene != scene) continue;
+            for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Renderable>()) {
+                if (!ent.Has<ecs::SceneInfo>(lock)) continue;
+                if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
 
-                auto &renderable = ent.template Get<ecs::Renderable>(lock);
+                auto &renderable = ent.Get<ecs::Renderable>(lock);
                 if (!renderable.model) continue;
                 if (!renderable.model->Ready()) {
                     complete = false;

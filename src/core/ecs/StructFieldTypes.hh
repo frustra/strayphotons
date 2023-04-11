@@ -68,6 +68,7 @@ namespace ecs {
         robin_hood::unordered_map<std::string, double>,
         robin_hood::unordered_map<std::string, std::string>,
         robin_hood::unordered_map<std::string, SignalExpression>,
+        robin_hood::unordered_map<std::string, PhysicsJoint>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
         robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
 
