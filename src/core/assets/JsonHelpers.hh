@@ -10,6 +10,7 @@
 #include <picojson/picojson.h>
 #include <robin_hood.h>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace sp::json {
@@ -54,7 +55,12 @@ namespace sp::json {
                 dst = {};
                 return true;
             }
-            auto opt = magic_enum::enum_cast<T>(name);
+            std::optional<T> opt;
+            if constexpr (is_flags_enum<T>()) {
+                opt = magic_enum::enum_flags_cast<T>(name);
+            } else {
+                opt = magic_enum::enum_cast<T>(name);
+            }
             if (!opt) {
                 Errorf("Unknown enum value specified for %s: %s", typeid(T).name(), name);
                 return false;
@@ -191,7 +197,11 @@ namespace sp::json {
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const T &src) {
         if constexpr (std::is_enum<T>()) {
-            dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
+            if constexpr (is_flags_enum<T>()) {
+                dst = picojson::value(std::string(magic_enum::enum_flags_name(src)));
+            } else {
+                dst = picojson::value(std::string(magic_enum::enum_name(src)));
+            }
         } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             dst = picojson::value((double)src);
         } else {

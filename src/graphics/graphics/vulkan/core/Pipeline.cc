@@ -1,6 +1,5 @@
 #include "Pipeline.hh"
 
-#include "core/EnumTypes.hh"
 #include "core/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 

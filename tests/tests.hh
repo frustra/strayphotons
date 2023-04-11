@@ -28,10 +28,6 @@ inline std::ostream &operator<<(std::ostream &out, const std::pair<Ta, Tb> &v) {
     return out << "(" << v.first << ", " << v.second << ")";
 }
 
-#ifdef Assert
-    #undef Assert
-#endif
-
 namespace testing {
     extern std::vector<std::function<void()>> registeredTests;
 
@@ -42,7 +38,7 @@ namespace testing {
         }
     };
 
-    static inline void Assert(bool condition, const std::string &message) {
+    static inline void AssertTrue(bool condition, const std::string &message) {
         if (!condition) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << std::endl;

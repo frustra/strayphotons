@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Common.hh"
+#include "core/Common.hh"
 
 #include <array>
+#include <cstring>
 
 namespace sp {
     template<typename T, size_t MaxSize, typename ArrayT = std::array<T, MaxSize>>

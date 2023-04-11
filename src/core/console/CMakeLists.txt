@@ -3,8 +3,3 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     ConsoleCoreCommands.cc
     ConsoleTracy.cc
 )
-
-target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
-    CFunc.hh
-    CVar.hh
-)

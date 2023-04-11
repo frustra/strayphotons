@@ -1,5 +1,6 @@
 #include "Renderer.hh"
 
+#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
