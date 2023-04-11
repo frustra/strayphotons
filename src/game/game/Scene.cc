@@ -276,9 +276,12 @@ namespace sp {
         {
             ZoneScopedN("ScriptInit");
             for (auto &e : live.EntitiesWith<ecs::Scripts>()) {
-                if (!e.Has<ecs::SceneInfo>(live)) continue;
-                auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
-                if (sceneInfo.scene != *this) continue;
+                // TODO: Figure out a better criteria for when to re-init scripts
+                // Player bindings break on reload if we filter by scene
+
+                // if (!e.Has<ecs::SceneInfo>(live)) continue;
+                // auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
+                // if (sceneInfo.scene != *this) continue;
                 ecs::Scripts::Init(live, e);
             }
         }
