@@ -109,6 +109,22 @@
 			}
 		},
 		{
+			"name": "mirrorcube1",
+			"transform": {
+				"scale": 0.1,
+				"translate": [0.65, 0, 0.35]
+			},
+			"physics": {
+				"contact_report_force": 1
+			},
+			"script": {
+				"parameters": {
+					"source": "mirrorcube"
+				},
+				"prefab": "template"
+			}
+		},
+		{
 			"name": "life",
 			"transform": {
 				"parent": "table.surface",

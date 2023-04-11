@@ -27,7 +27,7 @@ namespace sp::scripts {
         SignalExpression expr;
         std::optional<double> previousValue;
 
-        void updateEdgeTrigger(ScriptState &state, Lock<PhysicsUpdateLock, Optional<ReadAll>> lock, Entity ent) {
+        void updateEdgeTrigger(ScriptState &state, Lock<PhysicsUpdateLock, Optional<ReadAll>> lock, const Entity &ent) {
             if (expr.expr != inputExpr) {
                 expr = SignalExpression(inputExpr, state.scope);
                 if (!previousValue) previousValue = expr.Evaluate(lock);
@@ -53,8 +53,8 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
+            PhysicsUpdateLock lock,
+            const Entity &ent,
             chrono_clock::duration interval) {
             updateEdgeTrigger(state, lock, ent);
         }
@@ -188,10 +188,7 @@ namespace sp::scripts {
         SignalExpression chargeSignalBlue;
         bool discharging = false;
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
 
             glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
@@ -281,10 +278,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateComponentFromSignal(lock, ent);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -328,10 +322,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateSignal(lock, ent, interval);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -359,7 +350,7 @@ namespace sp::scripts {
 
         void updateTimer(ScriptState &state,
             Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
-            Entity ent,
+            const Entity &ent,
             chrono_clock::duration interval) {
             if (!ent.template Has<SignalOutput>(lock) || names.empty()) return;
 
@@ -402,10 +393,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateTimer(state, lock, ent, interval);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {

@@ -81,6 +81,7 @@ namespace ecs {
         } else if (definition->context) {
             instance = ScriptInstance(scope, *definition);
             auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             // Access will initialize default parameters
             void *dataPtr = state.definition.context->Access(state);
             Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
@@ -146,8 +147,11 @@ namespace ecs {
             // Skip if the script is the same as the default
             if (!instance || sp::contains(def.scripts, instance)) continue;
 
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
+
             picojson::value val;
-            sp::json::Save(scope, val, *instance.state);
+            sp::json::Save(scope, val, state);
             arrayOut.emplace_back(val);
         }
         if (arrayOut.size() > 1) {
@@ -270,7 +274,7 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnPhysicsUpdateParallel(Lock<PhysicsUpdateLock> lock, chrono_clock::duration interval) {
+    void Scripts::OnPhysicsUpdateParallel(PhysicsUpdateLock lock, chrono_clock::duration interval) {
         Assertf(lock.entity.has_value(), "Scripts::OnPhysicsUpdateParallel requires an entity lock");
         auto &ent = *lock.entity;
         for (auto &instance : scripts) {

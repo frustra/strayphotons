@@ -68,7 +68,7 @@ namespace sp::scripts {
 
         void updateEvents(ScriptState &state,
             Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
-            Entity ent,
+            const Entity &ent,
             chrono_clock::duration interval) {
             ZoneScoped;
             robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
@@ -84,10 +84,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateEvents(state, lock, ent, interval);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -169,17 +166,15 @@ namespace sp::scripts {
 
         void sendOutputEvents(ScriptState &state,
             Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
-            Entity ent,
+            const Entity &ent,
             chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
-                EventBindings::SendEvent(lock, ent, Event{name, ent, expr.Evaluate(lock)});
+                auto value = expr.Evaluate(lock);
+                if (value >= 0.5) EventBindings::SendEvent(lock, ent, Event{name, ent, value});
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             sendOutputEvents(state, lock, ent, interval);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -208,7 +203,9 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void updateComponentFromEvent(ScriptState &state, Lock<PhysicsUpdateLock, Optional<ReadAll>> lock, Entity ent) {
+        void updateComponentFromEvent(ScriptState &state,
+            Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
+            const Entity &ent) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (!sp::starts_with(event.name, "/set/")) {
@@ -260,10 +257,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateComponentFromEvent(state, lock, ent);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {

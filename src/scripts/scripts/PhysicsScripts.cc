@@ -15,10 +15,7 @@ namespace sp::scripts {
         EntityRef alignmentEntity, followEntity;
         std::optional<glm::vec3> alignment;
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree, VoxelArea>(lock) || voxelScale == 0.0f || voxelStride < 1.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -61,10 +58,7 @@ namespace sp::scripts {
         glm::vec3 rotationAxis;
         float rotationSpeedRpm;
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -95,10 +89,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
         }
 
-        void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) return;
 
             Event event;

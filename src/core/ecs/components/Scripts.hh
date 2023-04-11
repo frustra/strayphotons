@@ -180,6 +180,9 @@ namespace ecs {
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
             return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
+        ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
+            return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
+        }
 
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
             return *(scripts.emplace_back(scope, callback, false).state);
@@ -193,19 +196,15 @@ namespace ecs {
         ScriptState &AddOnPhysicsUpdateParallel(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
             return *(scripts.emplace_back(scope, callback, true).state);
         }
-
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
             return *(scripts.emplace_back(scope, callback).state);
-        }
-        ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
-            return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
         }
 
         static void Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent);
         void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
         void OnTickParallel(Lock<WriteAll> lock, chrono_clock::duration interval);
         void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
-        void OnPhysicsUpdateParallel(Lock<PhysicsUpdateLock> lock, chrono_clock::duration interval);
+        void OnPhysicsUpdateParallel(PhysicsUpdateLock lock, chrono_clock::duration interval);
 
         // RunPrefabs should only be run from the SceneManager thread
         static void RunPrefabs(Lock<AddRemove> lock, Entity ent);
@@ -350,7 +349,7 @@ namespace ecs {
         }
 
         static void OnPhysicsUpdate(ScriptState &state,
-            Lock<PhysicsUpdateLock> lock,
+            PhysicsUpdateLock lock,
             Entity ent,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
