@@ -7,29 +7,28 @@
 #include <functional>
 #include <mutex>
 #include <sstream>
-#include <string>
 
 namespace sp {
     template<typename VarType>
-    static inline void ToggleBetweenValues(VarType &var, const std::string *str_values, size_t count);
+    static inline void ToggleBetweenValues(VarType &var, const string *str_values, size_t count);
 
     class CVarBase {
     public:
-        CVarBase(const std::string &name, const std::string &description);
+        CVarBase(const string &name, const string &description);
         virtual ~CVarBase() {}
 
         void Register();
         void UnRegister();
 
-        const std::string &GetName() const {
+        const string &GetName() const {
             return name;
         }
 
-        const std::string &GetNameLower() const {
+        const string &GetNameLower() const {
             return nameLower;
         }
 
-        const std::string &GetDescription() const {
+        const string &GetDescription() const {
             return description;
         }
 
@@ -59,9 +58,9 @@ namespace sp {
             pendingCompletion = false;
         }
 
-        virtual std::string StringValue() = 0;
-        virtual void SetFromString(const std::string &newValue) = 0;
-        virtual void ToggleValue(const std::string *values, size_t count) {}
+        virtual string StringValue() = 0;
+        virtual void SetFromString(const string &newValue) = 0;
+        virtual void ToggleValue(const string *values, size_t count) {}
         virtual bool IsValueType() = 0;
 
         bool Changed() const {
@@ -72,9 +71,9 @@ namespace sp {
         bool dirty = true;
 
     private:
-        std::string name, nameLower, description;
+        string name, nameLower, description;
 
-        std::vector<std::string> completions;
+        std::vector<string> completions;
         std::atomic_bool pendingCompletion = false;
         std::mutex completionMutex;
     };
@@ -82,7 +81,7 @@ namespace sp {
     template<typename VarType>
     class CVar : public CVarBase {
     public:
-        CVar(const std::string &name, const VarType &initial, const std::string &description)
+        CVar(const string &name, const VarType &initial, const string &description)
             : CVarBase(name, description), value(initial) {
             this->Register();
         }
@@ -106,13 +105,13 @@ namespace sp {
             dirty = true;
         }
 
-        std::string StringValue() {
+        string StringValue() {
             std::stringstream out;
             out << value;
             return out.str();
         }
 
-        void SetFromString(const std::string &newValue) {
+        void SetFromString(const string &newValue) {
             if (newValue.size() == 0) return;
 
             std::stringstream in(newValue);
@@ -120,7 +119,7 @@ namespace sp {
             dirty = true;
         }
 
-        void ToggleValue(const std::string *str_values, size_t count) {
+        void ToggleValue(const string *str_values, size_t count) {
             ToggleBetweenValues(value, str_values, count);
             dirty = true;
         }
@@ -134,7 +133,7 @@ namespace sp {
     };
 
     template<>
-    inline void CVar<std::string>::ToggleValue(const std::string *str_values, size_t count) {
+    inline void CVar<string>::ToggleValue(const string *str_values, size_t count) {
         // Do nothing
     }
 
@@ -143,7 +142,7 @@ namespace sp {
      * If no values are given, a true/false toggle is used.
      */
     template<typename VarType>
-    static inline void ToggleBetweenValues(VarType &var, const std::string *str_values, size_t count) {
+    static inline void ToggleBetweenValues(VarType &var, const string *str_values, size_t count) {
         if (count == 0) {
             if (var == VarType()) {
                 var = VarType(1);

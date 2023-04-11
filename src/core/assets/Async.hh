@@ -2,7 +2,6 @@
 
 #include "core/Common.hh"
 #include "core/LockFreeMutex.hh"
-#include "core/Logging.hh"
 
 #include <chrono>
 #include <future>

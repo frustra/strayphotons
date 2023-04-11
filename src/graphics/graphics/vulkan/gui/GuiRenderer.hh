@@ -22,9 +22,9 @@ namespace sp::vulkan {
     private:
         double lastTime = 0.0, deltaTime;
 
-        std::unique_ptr<VertexLayout> vertexLayout;
+        unique_ptr<VertexLayout> vertexLayout;
 
-        std::shared_ptr<ImFontAtlas> fontAtlas;
+        shared_ptr<ImFontAtlas> fontAtlas;
         AsyncPtr<ImageView> fontView;
     };
 } // namespace sp::vulkan

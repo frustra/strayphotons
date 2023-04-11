@@ -143,11 +143,11 @@ namespace sp {
         ZoneScoped;
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
             bool complete = true;
-            for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
-                if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
-                if (ent.template Get<ecs::SceneInfo>(lock).scene != scene) continue;
+            for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
+                if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
 
-                auto &ph = ent.template Get<ecs::Physics>(lock);
+                auto &ph = ent.Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
                     if (!mesh || !mesh->model || !mesh->hullSettings) continue;

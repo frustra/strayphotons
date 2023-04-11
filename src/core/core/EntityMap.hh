@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/Common.hh"
-#include "core/Logging.hh"
 
 #include <Tecs.hh>
 #include <map>

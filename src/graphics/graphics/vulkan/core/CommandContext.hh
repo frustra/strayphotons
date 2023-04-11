@@ -56,8 +56,11 @@ namespace sp::vulkan {
 
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
+            CommandContextType type,
             CommandContextScope scope) noexcept;
         ~CommandContext();
+
+        CommandContextType GetType() {
             return type;
         }
 

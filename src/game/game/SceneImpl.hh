@@ -54,9 +54,9 @@ namespace sp::scene {
 
                         auto &component = std::get<std::optional<T>>(flatEntity);
                         if (!component) {
-                            auto comp = LookupComponent(typeid(T));
+                            const ecs::ComponentBase *comp = LookupComponent(typeid(T));
                             Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
-                            component = comp->template GetStagingDefault<T>();
+                            component = comp->GetStagingDefault<T>();
                         }
 
                         if constexpr (std::is_same_v<T, TransformTree>) {

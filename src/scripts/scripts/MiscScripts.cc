@@ -301,11 +301,11 @@ namespace sp::scripts {
         size_t frameCount = 0;
 
         void updateSignal(Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
-            Entity ent,
+            const Entity &ent,
             chrono_clock::duration interval) {
-            if (!ent.template Has<SignalOutput>(lock) || output.empty()) return;
+            if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
 
-            auto &signalOutput = ent.template Get<SignalOutput>(lock);
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
             if (!lastSignal || !signalOutput.HasSignal(output)) {
                 lastSignal = signalOutput.GetSignal(output);
                 signalOutput.SetSignal(output, *lastSignal);
@@ -352,9 +352,9 @@ namespace sp::scripts {
             Lock<PhysicsUpdateLock, Optional<ReadAll>> lock,
             const Entity &ent,
             chrono_clock::duration interval) {
-            if (!ent.template Has<SignalOutput>(lock) || names.empty()) return;
+            if (!ent.Has<SignalOutput>(lock) || names.empty()) return;
 
-            auto &signalOutput = ent.template Get<SignalOutput>(lock);
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
             for (auto &name : names) {
                 double timerValue = SignalBindings::GetSignal(lock, ent, name);
                 bool timerEnable = SignalBindings::GetSignal(lock, ent, name + "_enable") >= 0.5;

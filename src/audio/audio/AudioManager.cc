@@ -252,7 +252,6 @@ namespace sp {
                 auto soundID = soundIDs->at(index);
 
                 if (event.name == "/sound/play") {
-                    Tracef("Playing sound index %d on %s", index, ecs::ToString(lock, ent));
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::PlayFromStart, soundID});
                 } else if (event.name == "/sound/resume") {
                     soundEvents.PushEvent(SoundEvent{SoundEvent::Type::Resume, soundID});

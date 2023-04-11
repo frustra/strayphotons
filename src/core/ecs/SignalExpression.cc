@@ -689,7 +689,7 @@ namespace ecs {
                             }
                         });
                     } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
-                        return lock.template Has<FocusLock>();
+                        return lock.Has<FocusLock>();
                     } else {
                         return true;
                     }
@@ -747,7 +747,7 @@ namespace ecs {
                                 Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
                                 return 0.0;
                             } else {
-                                auto tryLock = lock.template TryLock<Read<T>>();
+                                auto tryLock = lock.TryLock<Read<T>>();
                                 if (tryLock) {
                                     auto &component = ent.Get<const T>(*tryLock);
                                     return ecs::ReadStructField(&component, node.field);
@@ -761,8 +761,7 @@ namespace ecs {
                         });
                     } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
                         // ZoneScopedN("FocusCondition:evaluate");
-                        if (!lock.template Has<FocusLock>() ||
-                            !lock.template Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
+                        if (!lock.Has<FocusLock>() || !lock.Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
                             return 0.0;
                         } else if (node.inputIndex < 0) {
                             return 1.0;
