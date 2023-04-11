@@ -3,7 +3,7 @@
 #include "core/Common.hh"
 #include "core/EnumTypes.hh"
 #include "ecs/Components.hh"
-#include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"

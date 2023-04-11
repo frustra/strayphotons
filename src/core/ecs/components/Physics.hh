@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <variant>
 
 namespace sp {
     class Gltf;

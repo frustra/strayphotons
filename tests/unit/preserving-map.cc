@@ -30,11 +30,11 @@ namespace PreservingMapTests {
 
             for (int i = 0; i < 10; i++) {
                 auto ptr = map.Load(std::to_string(i));
-                Assert(ptr != nullptr, "Expected entry to still exist after 100ms");
+                AssertTrue(ptr != nullptr, "Expected entry to still exist after 100ms");
             }
             for (auto &weakPtr : entries) {
                 auto ptr = weakPtr.lock();
-                Assert(ptr != nullptr, "Expected entry to still exist after 100ms");
+                AssertTrue(ptr != nullptr, "Expected entry to still exist after 100ms");
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -44,11 +44,11 @@ namespace PreservingMapTests {
 
             for (int i = 0; i < 10; i++) {
                 auto ptr = map.Load(std::to_string(i));
-                Assert(!ptr, "Expected entry to have been cleaned up after 101ms");
+                AssertTrue(!ptr, "Expected entry to have been cleaned up after 101ms");
             }
             for (auto &weakPtr : entries) {
                 auto ptr = weakPtr.lock();
-                Assert(!ptr, "Expected entry to have been cleaned up after 101ms");
+                AssertTrue(!ptr, "Expected entry to have been cleaned up after 101ms");
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(10));

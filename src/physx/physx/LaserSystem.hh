@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/SignalExpression.hh"
 
 namespace sp {
     class PhysxManager;

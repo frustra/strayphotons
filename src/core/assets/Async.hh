@@ -22,7 +22,6 @@ namespace sp {
         }
 
         std::shared_ptr<T> Get() const {
-            Assertf(this != nullptr, "AsyncPtr->Get() called on nullptr");
             while (!valid.test()) {
                 valid.wait(false);
             }

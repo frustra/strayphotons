@@ -12,6 +12,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Physics.hh"
+#include "ecs/components/PhysicsJoints.hh"
 #include "ecs/components/Transform.h"
 #include "physx/AnimationSystem.hh"
 #include "physx/CharacterControlSystem.hh"

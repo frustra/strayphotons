@@ -4,7 +4,7 @@
 #include "core/Hashing.hh"
 #include "core/Tracing.hh"
 #include "graphics/vulkan/core/Access.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 #ifdef _MSC_VER
     #pragma warning(push)

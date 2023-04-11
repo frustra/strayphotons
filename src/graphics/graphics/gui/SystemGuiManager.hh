@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GuiContext.hh"
+#include "ecs/EventQueue.hh"
 
 namespace sp {
 

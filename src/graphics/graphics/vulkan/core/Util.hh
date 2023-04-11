@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {
     glm::mat4 MakeOrthographicProjection(float left,

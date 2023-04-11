@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "core/Common.hh"
 
 #include <atomic>
@@ -22,6 +23,7 @@ namespace sp::gltf {
 
 namespace sp {
     class Asset;
+    class Gltf;
     struct HullSettings;
 
     typedef std::shared_ptr<physx::PxConvexMesh> ConvexHull;

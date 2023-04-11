@@ -85,7 +85,7 @@ namespace SignalBindingTests {
             AssertEqual(expr1.nodes.size(), 1u, "Expected a single expression node");
             AssertEqual(expr1.rootIndex, 0, "Expected expression root node to be 0");
             AssertEqual(expr1.nodeStrings[0], "player:player/device2_key", "Unexpected expression node");
-            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr1.nodes[0]),
+            AssertTrue(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr1.nodes[0]),
                 "Expected expression node to be signal");
 
             auto &expr2 = playerBindings.GetBinding(TEST_SIGNAL_ACTION2);
@@ -97,11 +97,11 @@ namespace SignalBindingTests {
             AssertEqual(expr2.nodeStrings[2],
                 "player:player/device2_key + player:player/device1_button",
                 "Unexpected expression node");
-            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[0]),
+            AssertTrue(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[0]),
                 "Expected expression node to be signal");
-            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[1]),
+            AssertTrue(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr2.nodes[1]),
                 "Expected expression node to be signal");
-            Assert(std::holds_alternative<ecs::SignalExpression::TwoInputOperation>(expr2.nodes[2]),
+            AssertTrue(std::holds_alternative<ecs::SignalExpression::TwoInputOperation>(expr2.nodes[2]),
                 "Expected expression node to an add operator");
 
             auto &expr4 = playerBindings.GetBinding(TEST_SIGNAL_ACTION4);
@@ -142,7 +142,7 @@ namespace SignalBindingTests {
             AssertEqual(expr3.nodes.size(), 1u, "Expected a single expression node");
             AssertEqual(expr3.rootIndex, 0, "Expected expression root node to be 0");
             AssertEqual(expr3.nodeStrings[0], "foo:unknown/device1_button", "Unexpected expression node");
-            Assert(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
+            AssertTrue(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
                 "Expected expression node to be signal");
         }
         {

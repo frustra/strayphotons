@@ -16,7 +16,7 @@ namespace sp {
     public:
         // Warning: This function will overwrite data when an entity index is reused.
         T &operator[](const Tecs::Entity &e) {
-            Assertf(e, "Referencing EntityMap with null entity");
+            Assert(e, "Referencing EntityMap with null entity");
             if (e.index >= VectorT::size()) VectorT::resize(e.index + 1);
             auto &entry = VectorT::operator[](e.index);
             if (entry.first == 0) entry.first = e.generation;
@@ -29,10 +29,10 @@ namespace sp {
         }
 
         const T &operator[](const Tecs::Entity &e) const {
-            Assertf(e, "Referencing EntityMap with null entity");
-            Assertf(e.index < VectorT::size(), "Referencing EntityMap with out of range entity");
+            Assert(e, "Referencing EntityMap with null entity");
+            Assert(e.index < VectorT::size(), "Referencing EntityMap with out of range entity");
             auto &entry = VectorT::operator[](e.index);
-            Assertf(entry.first == e.generation, "Referencing EntityMap with mismatched generation id");
+            Assert(entry.first == e.generation, "Referencing EntityMap with mismatched generation id");
             return entry.second;
         }
 

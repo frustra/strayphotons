@@ -2,7 +2,7 @@
 
 #include "console/CVar.hh"
 #include "core/Common.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 #include <queue>
 #include <stack>

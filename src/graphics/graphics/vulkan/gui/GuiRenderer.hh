@@ -1,7 +1,8 @@
 #pragma once
 
-#include "graphics/vulkan/core/Common.hh"
+#include "assets/Async.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 struct ImFontAtlas;
 

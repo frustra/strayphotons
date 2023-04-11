@@ -4,7 +4,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
-#include "graphics/vulkan/core/Tracing.hh"
+#include "graphics/vulkan/core/VkTracing.hh"
 
 namespace sp::vulkan::render_graph {
     RenderGraph::RenderGraph(DeviceContext &device) : device(device), resources(device) {}

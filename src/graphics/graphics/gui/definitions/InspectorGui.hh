@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 #include "graphics/gui/GuiContext.hh"
 
 #include <memory>

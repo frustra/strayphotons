@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecs/EventQueue.hh"
 #include "graphics/gui/SystemGuiManager.hh"
 
 namespace sp {

@@ -4,7 +4,6 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalStructAccess.hh"
-#include "ecs/StructFieldTypes.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 

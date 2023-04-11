@@ -1,6 +1,10 @@
 #pragma once
 
-#include <core/Tracing.hh>
+#include "core/Tracing.hh"
+
+#include <vulkan/vulkan.hpp>
+
+// vulkan.hpp must be included before tracy
 #include <tracy/TracyVulkan.hpp>
 
 #ifndef TRACY_ENABLE_GRAPHICS

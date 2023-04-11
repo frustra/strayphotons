@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/LockFreeMutex.hh"
-#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 #ifdef SP_DEBUG
     #define HANDLE_POOL_DEBUG_UNFREED_HANDLES

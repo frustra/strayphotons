@@ -1,5 +1,8 @@
 #include "Lighting.hh"
 
+#include "ecs/components/Light.hh"
+#include "ecs/components/OpticalElement.hh"
+#include "ecs/components/Transform.h"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"

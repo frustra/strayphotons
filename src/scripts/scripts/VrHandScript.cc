@@ -1,5 +1,6 @@
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/EnumTypes.hh"
 #include "core/Logging.hh"

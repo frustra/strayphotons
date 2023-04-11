@@ -4,9 +4,9 @@
 #include "assets/Gltf.hh"
 #include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
-#include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {
     typedef uint16 TextureIndex;

@@ -18,7 +18,7 @@ namespace ecs {
         std::string windowName; // Must be set at component creation
 
         Gui() {}
-        Gui(std::string windowName, GuiTarget target = GuiTarget::World) : windowName(windowName), target(target) {}
+        Gui(std::string windowName, GuiTarget target = GuiTarget::World) : target(target), windowName(windowName) {}
     };
 
     static StructMetadata MetadataGui(typeid(Gui),

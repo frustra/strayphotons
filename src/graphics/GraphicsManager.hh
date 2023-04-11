@@ -8,7 +8,7 @@
     #include "ecs/EntityRef.hh"
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        #include "graphics/vulkan/core/Common.hh"
+        #include "graphics/vulkan/core/VkCommon.hh"
     #endif
 
     #ifdef SP_INPUT_SUPPORT_GLFW
