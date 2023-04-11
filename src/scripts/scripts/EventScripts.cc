@@ -67,7 +67,7 @@ namespace sp::scripts {
         }
 
         template<typename LockType>
-        void updateEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+        void updateEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
             ZoneScoped;
             robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
             Event event;
@@ -164,7 +164,7 @@ namespace sp::scripts {
         robin_hood::unordered_map<std::string, SignalExpression> outputs;
 
         template<typename LockType>
-        void sendOutputEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+        void sendOutputEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
                 auto value = expr.Evaluate(lock);
                 if (value >= 0.5) EventBindings::SendEvent(lock, ent, Event{name, ent, value});
@@ -201,7 +201,7 @@ namespace sp::scripts {
         }
 
         template<typename LockType>
-        void updateComponentFromEvent(ScriptState &state, LockType lock, Entity ent) {
+        void updateComponentFromEvent(ScriptState &state, LockType &lock, Entity ent) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (!sp::starts_with(event.name, "/set/")) {

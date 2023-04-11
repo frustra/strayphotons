@@ -10,6 +10,10 @@
 		},
 		"event_input": {},
 		"event_bindings": {
+			"/physics/collision/force_found": {
+				"outputs": ["scoperoot/signal/set/alive"],
+				"modify": "!scoperoot/alive"
+			},
 			"/life/neighbor_alive": {
 				"outputs": ["scoperoot/signal/add/neighbor_count"],
 				"modify": "event ? 1 : -1"
@@ -23,7 +27,7 @@
 				"filter": "event != scoperoot/alive"
 			}
 		},
-		"_physics": {
+		"physics": {
 			"shapes": {
 				"box": [0.03, 0.03, 0.03],
 				"transform": {
