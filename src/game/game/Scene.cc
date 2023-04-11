@@ -265,16 +265,31 @@ namespace sp {
                 scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, e, resetLive);
             }
         }
-        for (auto e : live.EntitiesWith<ecs::Animation>()) {
-            if (!e.Has<ecs::Animation, ecs::TransformTree>(live)) continue;
+        {
+            ZoneScopedN("AnimationUpdate");
+            for (auto e : live.EntitiesWith<ecs::Animation>()) {
+                if (!e.Has<ecs::Animation, ecs::TransformTree>(live)) continue;
 
-            ecs::Animation::UpdateTransform(live, e);
+                ecs::Animation::UpdateTransform(live, e);
+            }
         }
-        for (auto e : live.EntitiesWith<ecs::TransformTree>()) {
-            if (!e.Has<ecs::TransformTree>(live)) continue;
+        {
+            ZoneScopedN("ScriptInit");
+            for (auto &e : live.EntitiesWith<ecs::Scripts>()) {
+                if (!e.Has<ecs::SceneInfo>(live)) continue;
+                auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
+                if (sceneInfo.scene != *this) continue;
+                ecs::Scripts::Init(live, e);
+            }
+        }
+        {
+            ZoneScopedN("TransformSnapshot");
+            for (auto e : live.EntitiesWith<ecs::TransformTree>()) {
+                if (!e.Has<ecs::TransformTree>(live)) continue;
 
-            auto transform = e.Get<ecs::TransformTree>(live).GetGlobalTransform(live);
-            e.Set<ecs::TransformSnapshot>(live, transform);
+                auto transform = e.Get<ecs::TransformTree>(live).GetGlobalTransform(live);
+                e.Set<ecs::TransformSnapshot>(live, transform);
+            }
         }
         active = true;
     }

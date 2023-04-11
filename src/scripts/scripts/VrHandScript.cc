@@ -87,7 +87,7 @@ namespace sp::scripts {
 
         PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;
 
-        bool Init(ScriptState &state, Lock<Read<ecs::Name>> lock, Entity ent) {
+        bool Init(ScriptState &state, Lock<Read<ecs::Name>> lock, const Entity &ent) {
             to_lower(handStr);
 
             laserPointerRef = ecs::Name("vr", "laser_pointer");
@@ -189,7 +189,7 @@ namespace sp::scripts {
             return shape;
         };
 
-        void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, Entity ent, bool isPointing) {
+        void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, const Entity &ent, bool isPointing) {
             glm::vec3 pointOrigin, pointDir, pointPos;
             Entity pointTarget;
 
@@ -281,7 +281,12 @@ namespace sp::scripts {
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
 
             if (!init) {
-                if (!Init(state, lock, ent)) return;
+                if (!Init(state, lock, ent)) {
+                    // Don't run again
+                    state.definition.events.clear();
+                    state.definition.filterOnEvent = true;
+                    return;
+                }
                 init = true;
             }
 

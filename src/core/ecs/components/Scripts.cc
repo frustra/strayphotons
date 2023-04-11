@@ -27,17 +27,13 @@ namespace ecs {
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
-    ScriptState::ScriptState(const EntityScope &scope, OnTickFunc callback)
-        : scope(scope), definition({"", {}, false, nullptr, callback}), instanceId(++nextInstanceId) {}
-    ScriptState::ScriptState(const EntityScope &scope, OnPhysicsUpdateFunc callback)
-        : scope(scope), definition({"", {}, false, nullptr, callback}), instanceId(++nextInstanceId) {}
-    ScriptState::ScriptState(const EntityScope &scope, PrefabFunc callback)
-        : scope(scope), definition({"", {}, false, nullptr, callback}), instanceId(++nextInstanceId) {}
 
     template<>
-    bool StructMetadata::Load<ScriptState>(const EntityScope &scope, ScriptState &state, const picojson::value &src) {
+    bool StructMetadata::Load<ScriptInstance>(const EntityScope &scope,
+        ScriptInstance &instance,
+        const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
-        state.scope = scope;
+        const ScriptDefinition *definition = nullptr;
         auto &srcObj = src.get<picojson::object>();
         for (auto param : srcObj) {
             if (param.first == "onTick") {
@@ -45,11 +41,11 @@ namespace ecs {
                     auto scriptName = param.second.get<std::string>();
                     auto it = definitions.scripts.find(scriptName);
                     if (it != definitions.scripts.end()) {
-                        if (state) {
+                        if (definition) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
                         }
-                        state.definition = it->second;
+                        definition = &it->second;
                     } else {
                         Errorf("Script has unknown onTick definition: %s", scriptName);
                         return false;
@@ -63,11 +59,11 @@ namespace ecs {
                     auto scriptName = param.second.get<std::string>();
                     auto it = definitions.prefabs.find(scriptName);
                     if (it != definitions.prefabs.end()) {
-                        if (state) {
+                        if (definition) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
                         }
-                        state.definition = it->second;
+                        definition = &it->second;
                     } else {
                         Errorf("Script has unknown prefab definition: %s", scriptName);
                         return false;
@@ -78,11 +74,13 @@ namespace ecs {
                 }
             }
         }
-        if (std::holds_alternative<std::monostate>(state.definition.callback)) {
+        if (!definition) {
             Errorf("Script has no definition: %s", src.to_str());
             return false;
-        }
-        if (state.definition.context) {
+        } else if (definition->context) {
+            instance = ScriptInstance(scope, *definition);
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             // Access will initialize default parameters
             void *dataPtr = state.definition.context->Access(state);
             Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
@@ -101,34 +99,36 @@ namespace ecs {
     }
 
     template<>
-    void StructMetadata::Save<ScriptState>(const EntityScope &scope,
+    void StructMetadata::Save<ScriptInstance>(const EntityScope &scope,
         picojson::value &dst,
-        const ScriptState &src,
-        const ScriptState &def) {
-        if (src.definition.name.empty()) {
+        const ScriptInstance &src,
+        const ScriptInstance &def) {
+        if (!src.state) return;
+        auto &srcState = *src.state;
+        if (srcState.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
-        } else if (!std::holds_alternative<std::monostate>(src.definition.callback)) {
+        } else if (!std::holds_alternative<std::monostate>(srcState.definition.callback)) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             auto &obj = dst.get<picojson::object>();
-            if (std::holds_alternative<PrefabFunc>(src.definition.callback)) {
-                obj["prefab"] = picojson::value(src.definition.name);
+            if (std::holds_alternative<PrefabFunc>(srcState.definition.callback)) {
+                obj["prefab"] = picojson::value(srcState.definition.name);
             } else {
-                obj["onTick"] = picojson::value(src.definition.name);
+                obj["onTick"] = picojson::value(srcState.definition.name);
             }
 
-            if (src.definition.context) {
-                const void *dataPtr = src.definition.context->Access(src);
-                const void *defaultPtr = src.definition.context->GetDefault();
-                Assertf(dataPtr, "Script definition returned null data: %s", src.definition.name);
+            if (srcState.definition.context) {
+                const void *dataPtr = srcState.definition.context->Access(srcState);
+                const void *defaultPtr = srcState.definition.context->GetDefault();
+                Assertf(dataPtr, "Script definition returned null data: %s", srcState.definition.name);
                 bool changed = false;
-                for (auto &field : src.definition.context->metadata.fields) {
+                for (auto &field : srcState.definition.context->metadata.fields) {
                     if (!field.Compare(dataPtr, defaultPtr)) {
                         changed = true;
                         break;
                     }
                 }
                 if (changed) {
-                    for (auto &field : src.definition.context->metadata.fields) {
+                    for (auto &field : srcState.definition.context->metadata.fields) {
                         field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
                     }
                 }
@@ -142,11 +142,15 @@ namespace ecs {
         const Scripts &src,
         const Scripts &def) {
         picojson::array arrayOut;
-        for (auto &script : src.scripts) {
-            if (sp::contains(def.scripts, script)) continue;
+        for (auto &instance : src.scripts) {
+            // Skip if the script is the same as the default
+            if (!instance || sp::contains(def.scripts, instance)) continue;
+
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
 
             picojson::value val;
-            sp::json::Save(scope, val, script);
+            sp::json::Save(scope, val, state);
             arrayOut.emplace_back(val);
         }
         if (arrayOut.size() > 1) {
@@ -185,24 +189,49 @@ namespace ecs {
 
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
-        for (auto &script : src.scripts) {
+        for (auto &instance : src.scripts) {
             auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
-                return script.CompareOverride(arg);
+                return instance.CompareOverride(arg);
             });
             if (existing == dst.scripts.end()) {
-                dst.scripts.emplace_back(script);
-            } else if (liveTarget && existing->GetInstanceId() != script.GetInstanceId()) {
-                *existing = script;
+                dst.scripts.emplace_back(instance);
+            } else if (liveTarget && existing->GetInstanceId() != instance.GetInstanceId()) {
+                *existing = instance;
+            }
+        }
+    }
+
+    void Scripts::Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent) {
+        if (!ent.Has<Scripts>(lock)) return;
+        for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+
+            std::lock_guard l(state.mutex);
+            if (!state.eventQueue) state.eventQueue = NewEventQueue();
+            if (state.definition.initFunc) (*state.definition.initFunc)(state);
+            if (ent.Has<EventInput>(lock)) {
+                auto &eventInput = ent.Get<EventInput>(lock);
+                for (auto &event : state.definition.events) {
+                    eventInput.Register(lock, state.eventQueue, event);
+                }
+            } else if (!state.definition.events.empty()) {
+                Warnf("Script %s has events but %s has no EventInput component",
+                    state.definition.name,
+                    ecs::ToString(lock, ent));
             }
         }
     }
 
     void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
-        for (auto &state : scripts) {
+        for (auto &instance : scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-                // ZoneScopedN("OnTick");
+                ZoneScopedN("OnTick");
                 // ZoneStr(ecs::ToString(lock, ent));
                 (*callback)(state, lock, ent, interval);
             }
@@ -210,7 +239,10 @@ namespace ecs {
     }
 
     void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
-        for (auto &state : scripts) {
+        for (auto &instance : scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
@@ -231,11 +263,13 @@ namespace ecs {
         Assertf(scene, "RunPrefabs entity has null scene: %s", ecs::ToString(lock, ent));
 
         // Prefab scripts may add additional scripts while iterating.
-        // Script state references may not be valid if storage is resized,
+        // The Scripts component may not remain valid if storage is resized,
         // so we need to reference the lock every loop iteration.
         for (size_t i = 0; i < ent.Get<const Scripts>(lock).scripts.size(); i++) {
-            // Create a read-only copy of the script state so the passed reference is stable.
-            auto state = ent.Get<const Scripts>(lock).scripts[i];
+            auto instance = ent.Get<const Scripts>(lock).scripts[i];
+            if (!instance) continue;
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
             if (callback && *callback) (*callback)(state, scene, lock, ent);
         }
@@ -245,6 +279,6 @@ namespace ecs {
         auto it = std::find_if(scripts.begin(), scripts.end(), [&](auto &arg) {
             return arg.GetInstanceId() == instanceId;
         });
-        return it != scripts.end() ? &*it : nullptr;
+        return it != scripts.end() ? it->state.get() : nullptr;
     }
 } // namespace ecs

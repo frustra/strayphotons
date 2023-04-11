@@ -73,7 +73,8 @@ namespace sp {
 
                         if (realFrameEnd >= frameEnd) {
                             // Falling behind, reset target frame end time.
-                            frameEnd = realFrameEnd;
+                            // Add some extra time to allow other threads to start transactions.
+                            frameEnd = realFrameEnd + std::chrono::nanoseconds(100);
                         }
 
                         std::this_thread::sleep_until(frameEnd);

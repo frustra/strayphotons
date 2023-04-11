@@ -41,7 +41,7 @@ namespace sp::scripts {
                     std::string bindingName = "neighbor[" + std::to_string(dx) + "][" + std::to_string(dy) + "]";
                     signalBindings.SetBinding(bindingName, neighbor, "alive");
 
-                    eventBindings.Bind("/signal/set/alive", neighbor, "/life/neighbor_updated");
+                    eventBindings.Bind("/life/notify_neighbors", neighbor, "/life/neighbor_alive");
                 }
             }
         }
