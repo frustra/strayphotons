@@ -17,33 +17,7 @@ namespace picojson {
     class value;
 }
 
-namespace sp {
-    class Gltf;
-    enum class ScenePriority;
-} // namespace sp
-
 namespace ecs {
-    enum class FieldAction;
-    struct AnimationState;
-    struct EventDest;
-    struct EventBinding;
-    struct EventBindingActions;
-    enum class FocusLayer;
-    enum class GuiTarget;
-    enum class InterpolationMode;
-    enum class PhysicsGroup : uint16_t;
-    enum class PhysicsActorType : uint8_t;
-    enum class PhysicsJointType;
-    struct PhysicsShape;
-    struct PhysicsJoint;
-    class ScriptState;
-    class SignalExpression;
-    enum class SoundType;
-    class Sound;
-    enum class TriggerShape : uint8_t;
-    enum class VisibilityMask;
-    enum class XrEye;
-
     using FieldTypes = std::tuple<
         // Basic types
         bool,
@@ -86,7 +60,7 @@ namespace ecs {
         std::vector<AnimationState>,
         std::vector<PhysicsShape>,
         std::vector<PhysicsJoint>,
-        std::vector<ScriptState>,
+        std::vector<ScriptInstance>,
         std::vector<Sound>,
         std::optional<double>,
         std::optional<SignalExpression>,

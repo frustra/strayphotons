@@ -27,7 +27,8 @@ namespace sp::scripts {
         SignalExpression expr;
         std::optional<double> previousValue;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        template<typename LockType>
+        void updateEdgeTrigger(ScriptState &state, const LockType &lock, const Entity &ent) {
             if (expr.expr != inputExpr) {
                 expr = SignalExpression(inputExpr, state.scope);
                 if (!previousValue) previousValue = expr.Evaluate(lock);
@@ -51,6 +52,13 @@ namespace sp::scripts {
             }
             previousValue = value;
         }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateEdgeTrigger(state, lock, ent);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateEdgeTrigger(state, lock, ent);
+        }
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
@@ -60,6 +68,7 @@ namespace sp::scripts {
         StructField::New("init_value", &EdgeTrigger::previousValue),
         StructField::New("set_event_value", &EdgeTrigger::eventValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
+    InternalPhysicsScript<EdgeTrigger> physicsEdgeTrigger("physics_edge_trigger", MetadataEdgeTrigger);
 
     struct ModelSpawner {
         EntityRef targetEntity;
@@ -256,10 +265,12 @@ namespace sp::scripts {
                 }
 
                 void *compPtr = comp->Access(lock, ent);
-                Assertf(compPtr,
-                    "ComponentFromSignal %s access returned null data: %s",
-                    componentName,
-                    ecs::ToString(lock, ent));
+                if (!compPtr) {
+                    Errorf("ComponentFromSignal %s access returned null data: %s",
+                        componentName,
+                        ecs::ToString(lock, ent));
+                    continue;
+                }
                 ecs::WriteStructField(compPtr, *field, [&signalValue](double &value) {
                     value = signalValue;
                 });
@@ -327,13 +338,17 @@ namespace sp::scripts {
     struct TimerSignal {
         std::vector<std::string> names = {"timer"};
 
-        template<typename LockType>
-        void updateTimer(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock) || names.empty()) return;
+        void Init(ScriptState &state) {
             state.definition.events.clear();
+            state.definition.events.reserve(names.size());
             for (auto &name : names) {
                 state.definition.events.emplace_back("/reset_timer/" + name);
             }
+        }
+
+        template<typename LockType>
+        void updateTimer(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<SignalOutput>(lock)) return;
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
             for (auto &name : names) {

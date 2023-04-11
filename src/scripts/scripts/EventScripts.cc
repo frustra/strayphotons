@@ -7,11 +7,12 @@ namespace sp::scripts {
     using namespace ecs;
 
     struct InitEvent {
+        EntityRef target;
         std::vector<std::string> outputs;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             state.definition.events.clear();
-            state.definition.filterOnEvent = true;
+            state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
 
             for (auto &output : outputs) {
                 EventBindings::SendEvent(lock, ent, Event{output, ent, true});
@@ -25,12 +26,17 @@ namespace sp::scripts {
         std::string inputEvent, outputEvent;
         SignalExpression gateExpression;
 
+        void Init(ScriptState &state) {
+            if (inputEvent.empty()) {
+                state.definition.events.clear();
+            } else {
+                state.definition.events = {inputEvent};
+            }
+            state.definition.filterOnEvent = true;
+        }
+
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             ZoneScoped;
-            if (inputEvent.empty()) return;
-            state.definition.events = {inputEvent};
-            state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
-
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (outputEvent.empty()) continue;
@@ -51,16 +57,18 @@ namespace sp::scripts {
     struct CollapseEvents {
         robin_hood::unordered_map<std::string, std::string> mapping;
 
-        template<typename LockType>
-        void updateEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
-            ZoneScoped;
-            if (mapping.empty()) return;
+        void Init(ScriptState &state) {
             state.definition.events.clear();
+            state.definition.events.reserve(mapping.size());
             for (auto &map : mapping) {
                 state.definition.events.emplace_back(map.first);
             }
-            state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
+            state.definition.filterOnEvent = true;
+        }
 
+        template<typename LockType>
+        void updateEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -88,8 +96,7 @@ namespace sp::scripts {
     struct SignalFromEvent {
         std::vector<std::string> outputs;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock) || outputs.empty()) return;
+        void Init(ScriptState &state) {
             state.definition.events.clear();
             state.definition.events.reserve(outputs.size() * 4);
             for (auto &outputSignal : outputs) {
@@ -98,7 +105,11 @@ namespace sp::scripts {
                 state.definition.events.emplace_back("/signal/add/" + outputSignal);
                 state.definition.events.emplace_back("/signal/clear/" + outputSignal);
             }
-            state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
+            state.definition.filterOnEvent = true;
+        }
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<SignalOutput>(lock)) return;
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
             Event event;
@@ -153,9 +164,10 @@ namespace sp::scripts {
         robin_hood::unordered_map<std::string, SignalExpression> outputs;
 
         template<typename LockType>
-        void sendOutputEvents(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
+        void sendOutputEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
-                EventBindings::SendEvent(lock, ent, Event{name, ent, expr.Evaluate(lock)});
+                auto value = expr.Evaluate(lock);
+                if (value >= 0.5) EventBindings::SendEvent(lock, ent, Event{name, ent, value});
             }
         }
 
@@ -173,9 +185,7 @@ namespace sp::scripts {
     struct ComponentFromEvent {
         std::vector<std::string> outputs;
 
-        template<typename LockType>
-        void updateComponentFromEvent(ScriptState &state, LockType lock, Entity ent) {
-            if (outputs.empty()) return;
+        void Init(ScriptState &state) {
             state.definition.events.clear();
             state.definition.events.reserve(outputs.size());
             for (auto &fieldPath : outputs) {
@@ -187,8 +197,11 @@ namespace sp::scripts {
 
                 state.definition.events.emplace_back("/set/" + componentName + "." + fieldName);
             }
-            state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
+            state.definition.filterOnEvent = true;
+        }
 
+        template<typename LockType>
+        void updateComponentFromEvent(ScriptState &state, LockType &lock, Entity ent) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (!sp::starts_with(event.name, "/set/")) {

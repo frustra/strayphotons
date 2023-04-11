@@ -329,10 +329,13 @@ namespace sp {
         return false;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptState> &value) {
+    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
-        for (auto &state : value) {
+        for (auto &instance : value) {
+            if (!instance || !instance.state) continue;
+            auto &state = *instance.state;
+            std::lock_guard l(state.mutex);
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
             bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
                             std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);
@@ -436,22 +439,24 @@ namespace sp {
         }
         if (ecs::IsStaging(target)) {
             for (auto &instanceId : removeList) {
-                sp::erase_if(value, [&](auto &&state) {
-                    return state.GetInstanceId() == instanceId;
+                sp::erase_if(value, [&](auto &&instance) {
+                    return instance.GetInstanceId() == instanceId;
                 });
                 changed = true;
             }
             if (ImGui::Button("Add Prefab")) {
-                auto &state = value.emplace_back();
-                state.scope = ecs::Name(scene.data->name, "");
-                state.definition.callback = ecs::PrefabFunc();
+                ecs::EntityScope scope = ecs::Name(scene.data->name, "");
+                ecs::ScriptDefinition definition;
+                definition.callback = ecs::PrefabFunc();
+                value.emplace_back(scope, definition);
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Script")) {
-                auto &state = value.emplace_back();
-                state.scope = ecs::Name(scene.data->name, "");
-                state.definition.callback = ecs::OnTickFunc();
+                ecs::EntityScope scope = ecs::Name(scene.data->name, "");
+                ecs::ScriptDefinition definition;
+                definition.callback = ecs::OnTickFunc();
+                value.emplace_back(scope, definition);
                 changed = true;
             }
         }

@@ -90,7 +90,7 @@ namespace sp {
                         ecs::Entity player = entities::Player.Get(lock);
                         if (!player.Has<ecs::TransformTree>(lock)) return;
 
-                        auto &headTree = head.Get<ecs::TransformTree>(lock);
+                        auto &headTree = head.Get<const ecs::TransformTree>(lock);
                         auto headToPlayer = headTree.GetRelativeTransform(lock, player);
 
                         auto forward = headToPlayer.GetForward();
