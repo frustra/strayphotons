@@ -4,6 +4,7 @@ namespace ExampleTests {
     using namespace testing;
 
     void ExampleTest() {
+        AssertTrue(2 == (1 + 1), "This is an example of a test");
         AssertEqual(2, 1 + 1, "This is an example of a test");
     }
 

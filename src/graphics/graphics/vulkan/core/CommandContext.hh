@@ -51,9 +51,9 @@ namespace sp::vulkan {
     const size_t MAX_VIEWPORTS = 4;
 
     class CommandContext : public NonCopyable {
+    public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
 
-    public:
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
             CommandContextType type,
