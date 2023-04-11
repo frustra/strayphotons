@@ -73,7 +73,7 @@ namespace sp {
     private:
         string name, nameLower, description;
 
-        std::vector<string> completions;
+        vector<string> completions;
         std::atomic_bool pendingCompletion = false;
         std::mutex completionMutex;
     };
