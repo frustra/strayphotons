@@ -6,20 +6,21 @@
 			"alive": 0
 		},
 		"signal_bindings": {
-			"next_alive": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)"
+			"life_eval": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)",
+			"next_alive": "scoperoot/force_toggle ? !scoperoot/alive : scoperoot/life_eval"
 		},
 		"event_input": {},
 		"event_bindings": {
 			"/physics/collision/force_found": {
-				"outputs": ["scoperoot/signal/set/alive"],
-				"modify": "!scoperoot/alive"
+				"outputs": ["scoperoot/signal/set/force_toggle"],
+				"set_value": true
 			},
 			"/life/neighbor_alive": {
 				"outputs": ["scoperoot/signal/add/neighbor_count"],
 				"modify": "event ? 1 : -1"
 			},
 			"/life/toggle_alive": {
-				"outputs": ["scoperoot/signal/set/alive"],
+				"outputs": ["scoperoot/signal/set/alive", "scoperoot/signal/clear/force_toggle"],
 				"modify": "scoperoot/next_alive"
 			},
 			"/signal/set/alive": {
@@ -47,7 +48,7 @@
 			{
 				"onTick": "signal_from_event",
 				"parameters": {
-					"outputs": ["alive", "neighbor_count"]
+					"outputs": ["alive", "neighbor_count", "force_toggle"]
 				}
 			},
 			{
