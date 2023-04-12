@@ -15,8 +15,8 @@ namespace SceneManagerTests {
 
     template<typename T>
     ecs::Entity EntityWith(ecs::Lock<ecs::Read<T>> lock, const T &value) {
-        for (auto e : lock.template EntitiesWith<T>()) {
-            if (e.template Has<T>(lock) && e.template Get<const T>(lock) == value) return e;
+        for (const ecs::Entity &e : lock.template EntitiesWith<T>()) {
+            if (e.Has<T>(lock) && e.Get<const T>(lock) == value) return e;
         }
         return {};
     }

@@ -147,8 +147,8 @@ namespace sp {
                                 if (manager.actors.count(target) > 0) {
                                     auto &result = arg.result.emplace();
 
-                                    const auto &actor = manager.actors[target];
-                                    auto dynamic = actor->template is<PxRigidDynamic>();
+                                    const physx::PxRigidActor *actor = manager.actors[target];
+                                    auto dynamic = actor->is<PxRigidDynamic>();
                                     if (dynamic) {
                                         result.weight = dynamic->getMass();
                                         result.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
