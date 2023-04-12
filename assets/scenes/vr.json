@@ -71,7 +71,8 @@
 				"group": "PlayerLeftHand",
 				"density": 1000,
 				"linear_damping": 10,
-				"angular_damping": 100
+				"angular_damping": 100,
+				"contact_report_force": 1
 			},
 			"physics_joints": [],
 			"physics_query": {},
@@ -106,7 +107,8 @@
 				"group": "PlayerRightHand",
 				"density": 1000,
 				"linear_damping": 10,
-				"angular_damping": 100
+				"angular_damping": 100,
+				"contact_report_force": 1
 			},
 			"physics_joints": [],
 			"physics_query": {},
