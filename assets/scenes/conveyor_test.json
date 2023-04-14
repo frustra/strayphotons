@@ -1,0 +1,913 @@
+{
+	"entities": [
+		{
+			"name": "floor",
+			"transform": {
+				"scale": [10, 0.5, 8],
+				"translate": [0, -0.25, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "ceiling",
+			"transform": {
+				"scale": [10, 0.1, 8],
+				"translate": [0, 5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "front_wall",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, -4]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "left_wall",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [-5, 2.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "right_wall",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [5, 2.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "back_wall",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, 4]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute",
+			"transform": {
+				"translate": [0, 0, -3.5]
+			}
+		},
+		{
+			"name": "chute_bottom_base",
+			"transform": {
+				"parent": "chute",
+				"scale": [0.43, 0.1, 0.3],
+				"translate": [-1.485, 0.2, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_bottom_front",
+			"transform": {
+				"parent": "chute",
+				"rotate": [30, 1, 0, 0],
+				"scale": [0.4, 0.2, 0.1],
+				"translate": [-1.5, 0.26, 0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_bottom_back",
+			"transform": {
+				"parent": "chute",
+				"rotate": [30, -1, 0, 0],
+				"scale": [0.4, 0.2, 0.1],
+				"translate": [-1.5, 0.26, -0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "angle_root",
+			"transform": {
+				"parent": "chute",
+				"rotate": [30, 0, 0, 1],
+				"translate": [0, 0.95, 0]
+			}
+		},
+		{
+			"name": "chute_base",
+			"transform": {
+				"parent": "angle_root",
+				"scale": [2.98, 0.1, 0.3],
+				"translate": [-0.02, 0, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_front",
+			"transform": {
+				"parent": "angle_root",
+				"rotate": [30, 1, 0, 0],
+				"scale": [3, 0.2, 0.1],
+				"translate": [0, 0.06, 0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_back",
+			"transform": {
+				"parent": "angle_root",
+				"rotate": [30, -1, 0, 0],
+				"scale": [3, 0.2, 0.1],
+				"translate": [0, 0.06, -0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_top_base",
+			"transform": {
+				"parent": "chute",
+				"scale": [0.4, 0.1, 0.3],
+				"translate": [1.45, 1.68, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_top_front",
+			"transform": {
+				"parent": "chute",
+				"rotate": [30, 1, 0, 0],
+				"scale": [0.4, 0.2, 0.1],
+				"translate": [1.45, 1.74, 0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_top_back",
+			"transform": {
+				"parent": "chute",
+				"rotate": [30, -1, 0, 0],
+				"scale": [0.4, 0.2, 0.1],
+				"translate": [1.45, 1.74, -0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "launcher",
+			"transform": {
+				"parent": "funnel_angle",
+				"scale": [0.05, 0.05, 0.2],
+				"translate": [0, 0.125, -0.2]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Kinematic"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"translate": [0, 0.125, -0.25]
+					},
+					{
+						"delay": 0.05,
+						"translate": [0, 0.125, -0.45]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_target": "launch_button/button_pressed"
+			}
+		},
+		{
+			"name": "launcher_top",
+			"transform": {
+				"parent": "funnel_angle",
+				"scale": [0.2, 0.1, 0.2],
+				"translate": [0, 0.2, -0.25]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "launch_button",
+			"transform": {
+				"parent": "funnel_angle",
+				"rotate": [90, 0, 0, -1],
+				"translate": [0, 0.2, -0.25]
+			},
+			"script": {
+				"parameters": {
+					"source": "button"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "ball1",
+			"transform": {
+				"scale": 0.2,
+				"translate": [-0.25, 1.5, -2.4]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"sphere": 0.5
+				}
+			},
+			"script": {
+				"parameters": {
+					"source": "interactive"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "ball2",
+			"transform": {
+				"scale": 0.2,
+				"translate": [0, 1.6, -2.5]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"sphere": 0.5
+				}
+			},
+			"script": {
+				"parameters": {
+					"source": "interactive"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "ball3",
+			"transform": {
+				"scale": 0.2,
+				"translate": [0.25, 1.5, -2.4]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"sphere": 0.5
+				}
+			},
+			"script": {
+				"parameters": {
+					"source": "interactive"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "table",
+			"transform": {},
+			"script": {
+				"parameters": {
+					"source": "table/1x1"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "sensor_piston",
+			"transform": {
+				"rotate": [90, 2.95599e-08, -1, -6.25617e-09],
+				"translate": [0.14, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.1_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_0",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [-0.22, 0.9, -2.99]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.9_1.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 5,
+				"charge_level": 1000,
+				"discharging": 1,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.9_1.socket"
+					}
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 1000,
+						"charge_signal_b": "conveyor_test:charge_cell_0.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "conveyor_test:charge_cell_0.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "conveyor_test:charge_cell_0.input-sensor.Icosphere/light_value_r",
+						"discharging": true,
+						"max_charge_level": 1000,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [-0.22, 0.9, -2.91]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.9_2.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 0,
+				"charge_level": 0,
+				"discharging": 0,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.9_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_0",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [-0.3, 0.9, -2.99]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.8_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_0",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [-0.38, 0.9, -2.91]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.7_2.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.7_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_2",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0, 0.9, -2.99]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.11_1.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.11_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_0",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [-0.3, 0.9, -2.91]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.8_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [-0.14, 0.9, -2.99]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.10_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.10_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_0",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [-0.14, 0.9, -2.91]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.10_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.10_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "global:spawn",
+			"transform": {}
+		},
+		{
+			"transform": {
+				"rotate": [90, -1, 0, 0],
+				"translate": [0, 5, 0]
+			},
+			"light": {
+				"intensity": 15,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
+				"spotAngle": 60,
+				"tint": [1, 1, 1]
+			}
+		},
+		{
+			"name": "laser_emitter_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.94, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.11_4.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_gate_2",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.86, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.10_4.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_gate"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_gate_2.optic-forward",
+			"optic": {
+				"pass_tint": [1, 1, 1]
+			}
+		},
+		{
+			"name": "mirror_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.86, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.10_5.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/mirror"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "splitter_1",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.7, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.8_4.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/splitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_gate_3",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.7, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.8_5.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_gate"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_emitter_3",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.62, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.7_5.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "charge_cell_2",
+			"transform": {
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.78, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.9_5.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 5,
+				"charge_level": 500,
+				"discharging": 1,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 500,
+						"charge_signal_b": "conveyor_test:charge_cell_2.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "conveyor_test:charge_cell_2.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "conveyor_test:charge_cell_2.input-sensor.Icosphere/light_value_r",
+						"discharging": true,
+						"max_charge_level": 1000,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_3",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.78, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.9_4.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 0,
+				"charge_level": 500,
+				"discharging": 0,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 500,
+						"charge_signal_b": "conveyor_test:charge_cell_3.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "conveyor_test:charge_cell_3.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "conveyor_test:charge_cell_3.input-sensor.Icosphere/light_value_r",
+						"max_charge_level": 1000,
+						"output_power_r": "5"
+					}
+				}
+			]
+		}
+	]
+}

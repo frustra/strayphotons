@@ -180,6 +180,7 @@
 		{
 			"name": "optic-forward",
 			"optic": {
+				"pass_tint": [0, 0, 0],
 				"reflect_tint": [0, 0, 0],
 				"single_direction": true
 			},
@@ -218,12 +219,13 @@
 		{
 			"name": "optic-backward",
 			"optic": {
+				"pass_tint": [1, 1, 1],
 				"reflect_tint": [0, 0, 0],
 				"single_direction": true
 			},
 			"renderable": {
 				"model": "occluder",
-				"color_override": [1, 1, 1, 1],
+				"color_override": [1, 1, 1, 0],
                 "metallic_roughness_override": [1, 0],
 				"visibility": "Transparent|LightingShadow"
 			},
