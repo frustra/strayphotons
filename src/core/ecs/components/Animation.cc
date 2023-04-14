@@ -14,9 +14,9 @@ namespace ecs {
         }
     }
 
-    Animation::CurrNextState Animation::GetCurrNextState(double targetState) const {
+    Animation::CurrNextState Animation::GetCurrNextState(double currentState, double targetState) const {
         double floorState;
-        float completion = std::modf(std::clamp(currentState, 0.0, states.size() - 1.0), &floorState);
+        float completion = std::modf(currentState, &floorState);
         if (targetState >= currentState) {
             return Animation::CurrNextState{(size_t)floorState, (size_t)floorState + 1, completion, 1};
         } else if (completion == 0.0) {
@@ -38,13 +38,15 @@ namespace ecs {
 
         auto &transform = ent.Get<TransformTree>(lock);
 
+        double currentState = SignalBindings::GetSignal(lock, ent, "animation_state");
         double targetState = SignalBindings::GetSignal(lock, ent, "animation_target");
+        currentState = std::clamp(currentState, 0.0, animation.states.size() - 1.0);
         targetState = std::clamp(targetState, 0.0, animation.states.size() - 1.0);
-        auto state = animation.GetCurrNextState(targetState);
+        auto state = animation.GetCurrNextState(currentState, targetState);
         if (state.current >= animation.states.size()) state.current = animation.states.size() - 1;
         if (state.next >= animation.states.size()) state.next = animation.states.size() - 1;
 
-        auto &currentState = animation.states[state.current];
+        auto &currState = animation.states[state.current];
         auto &nextState = animation.states[state.next];
 
         glm::vec3 dPos, dScale;
@@ -54,11 +56,11 @@ namespace ecs {
             if (!glm::any(glm::isinf(nextState.scale))) transform.pose.SetScale(nextState.scale);
             break;
         case InterpolationMode::Linear:
-            dPos = nextState.pos - currentState.pos;
-            transform.pose.SetPosition(currentState.pos + state.completion * dPos);
+            dPos = nextState.pos - currState.pos;
+            transform.pose.SetPosition(currState.pos + state.completion * dPos);
 
-            dScale = nextState.scale - currentState.scale;
-            if (isNormal(dScale)) transform.pose.SetScale(currentState.scale + state.completion * dScale);
+            dScale = nextState.scale - currState.scale;
+            if (isNormal(dScale)) transform.pose.SetScale(currState.scale + state.completion * dScale);
             break;
         case InterpolationMode::Cubic:
             float tangentScale = state.direction * nextState.delay;
@@ -71,11 +73,11 @@ namespace ecs {
             auto av2 = -2 * t3 + 3 * t2;
             auto at2 = tangentScale * (t3 - t2);
 
-            auto pos = av1 * currentState.pos + at1 * currentState.tangentPos + av2 * nextState.pos +
+            auto pos = av1 * currState.pos + at1 * currState.tangentPos + av2 * nextState.pos +
                        at2 * nextState.tangentPos;
             transform.pose.SetPosition(pos);
 
-            auto scale = av1 * currentState.scale + at1 * currentState.tangentScale + av2 * nextState.scale +
+            auto scale = av1 * currState.scale + at1 * currState.tangentScale + av2 * nextState.scale +
                          at2 * nextState.tangentScale;
             if (isNormal(scale)) transform.pose.SetScale(scale);
             break;

@@ -41,7 +41,6 @@ namespace ecs {
     class Animation {
     public:
         std::vector<AnimationState> states;
-        double currentState = -1.0;
 
         InterpolationMode interpolation = InterpolationMode::Linear;
         float tension = 0.5f;
@@ -52,13 +51,12 @@ namespace ecs {
             int direction;
         };
 
-        CurrNextState GetCurrNextState(double targetState) const;
+        CurrNextState GetCurrNextState(double currentState, double targetState) const;
         static void UpdateTransform(Lock<ReadSignalsLock, Read<Animation>, Write<TransformTree>> lock, Entity ent);
     };
 
     static StructMetadata MetadataAnimation(typeid(Animation),
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
-        StructField::New("state", &Animation::currentState),
         StructField::New("interpolation", &Animation::interpolation),
         StructField::New("tension", &Animation::tension));
     static Component<Animation> ComponentAnimation("animation", MetadataAnimation);

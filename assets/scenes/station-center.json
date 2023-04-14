@@ -213,10 +213,8 @@
 				"requested_floor": "elevator2/down_requested ? 3 : (elevator2/up_requested ? 0 : 3 - elevator1/animation_target)"
 			},
 			"signal_output": {
+				"animation_state": 3,
 				"animation_target": 3
-			},
-			"animation": {
-				"state": 3
 			},
 			"script": {
 				"prefab": "template",

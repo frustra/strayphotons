@@ -122,7 +122,7 @@ namespace sp {
     private:
         void CreatePhysxScene();
         void DestroyPhysxScene();
-        void CacheDebugLines();
+        void UpdateDebugLines(ecs::Lock<ecs::Write<ecs::LaserLine>> lock) const;
         void RegisterDebugCommands();
 
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(AsyncPtr<Gltf> model, AsyncPtr<HullSettings> settings);
