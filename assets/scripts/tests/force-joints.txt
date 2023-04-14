@@ -2,6 +2,7 @@ loadscene force-joints
 syncscene
 r.Exposure 1
 steplogic
+stepphysics
 #screenshot force-joints-frame0.png
 stepgraphics
 assert_position force-joints:test_linear -1.5 2 -1.9

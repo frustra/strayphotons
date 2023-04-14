@@ -774,11 +774,6 @@ namespace sp {
                 } else {
                     Errorf("Actor transform pose is not valid for entity: %s", ecs::ToString(lock, e));
                 }
-
-                userData->velocity = (actorTransform.GetPosition() - userData->pose.GetPosition()) *
-                                     (float)(1e9 / interval.count());
-            } else {
-                userData->velocity = glm::vec3(0);
             }
             userData->pose = actorTransform;
             if (userData->physicsGroup != ph.group) SetCollisionGroup(actor, ph.group);
