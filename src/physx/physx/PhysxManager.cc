@@ -176,11 +176,36 @@ namespace sp {
 
         characterControlSystem.RegisterEvents();
 
+        { // Simulate 1 physics frame (blocking)
+            ZoneScopedN("Simulate");
+            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
+                nullptr,
+                scratchBlock.data(),
+                scratchBlock.size());
+            scene->fetchResults(true);
+        }
+
         { // Sync ECS state to physx
-            ZoneScopedN("Sync from ECS");
+            ZoneScopedN("Sync ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::Physics, ecs::EventInput, ecs::SceneProperties>,
-                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::PhysicsJoints, ecs::CharacterController>>();
+                ecs::Read<ecs::LaserEmitter,
+                    ecs::EventBindings,
+                    ecs::Physics,
+                    ecs::EventInput,
+                    ecs::CharacterController,
+                    ecs::SceneProperties>,
+                ecs::Write<ecs::Animation,
+                    ecs::TransformSnapshot,
+                    ecs::TransformTree,
+                    ecs::PhysicsJoints,
+                    ecs::CharacterController,
+                    ecs::OpticalElement,
+                    ecs::PhysicsQuery,
+                    ecs::LaserLine,
+                    ecs::LaserSensor,
+                    ecs::SignalOutput,
+                    ecs::Scripts>,
+                ecs::PhysicsUpdateLock>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -212,35 +237,6 @@ namespace sp {
 
             constraintSystem.Frame(lock);
             characterControlSystem.Frame(lock);
-        }
-
-        { // Simulate 1 physics frame (blocking)
-            ZoneScopedN("Simulate");
-            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
-                nullptr,
-                scratchBlock.data(),
-                scratchBlock.size());
-            scene->fetchResults(true);
-        }
-
-        { // Sync ECS state from physx
-            ZoneScopedN("Sync to ECS");
-            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::LaserEmitter,
-                    ecs::EventBindings,
-                    ecs::Physics,
-                    ecs::EventInput,
-                    ecs::CharacterController>,
-                ecs::Write<ecs::Animation,
-                    ecs::TransformSnapshot,
-                    ecs::TransformTree,
-                    ecs::OpticalElement,
-                    ecs::PhysicsQuery,
-                    ecs::LaserLine,
-                    ecs::LaserSensor,
-                    ecs::SignalOutput,
-                    ecs::Scripts>,
-                ecs::PhysicsUpdateLock>();
 
             {
                 ZoneScopedN("UpdateSnapshots(Dynamic)");
