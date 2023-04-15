@@ -86,6 +86,7 @@ namespace sp::scene {
         }
 
         auto &flatTransform = std::get<std::optional<TransformTree>>(flatEntity);
+        auto &flatAnimation = std::get<std::optional<Animation>>(flatEntity);
         if (flatTransform) {
             stagingId = e;
             while (stagingId.Has<SceneInfo>(staging)) {
@@ -104,14 +105,17 @@ namespace sp::scene {
                         }
                     }
 
-                    auto &component = std::get<std::optional<Animation>>(flatEntity);
-                    if (!component) {
-                        component = LookupComponent<Animation>().StagingDefault();
+                    if (!flatAnimation) {
+                        flatAnimation = LookupComponent<Animation>().StagingDefault();
                     }
-                    LookupComponent<Animation>().ApplyComponent(component.value(), animation, false);
+                    LookupComponent<Animation>().ApplyComponent(flatAnimation.value(), animation, false);
                 }
                 stagingId = stagingInfo.nextStagingId;
             }
+        }
+        auto &flatSignalOutput = std::get<std::optional<SignalOutput>>(flatEntity);
+        if (!flatSignalOutput && flatAnimation) {
+            flatSignalOutput = LookupComponent<SignalOutput>().StagingDefault();
         }
 
         return flatEntity;

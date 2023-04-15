@@ -37,9 +37,13 @@ namespace sp {
 
             ecs::Animation::UpdateTransform(lock, ent);
 
-            if (ent.Has<ecs::SignalOutput>(lock) && originalState != currentState) {
-                auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
-                signalOutput.SetSignal("animation_state", currentState);
+            if (ent.Has<ecs::SignalOutput>(lock)) {
+                if (originalState != currentState) {
+                    auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
+                    signalOutput.SetSignal("animation_state", currentState);
+                }
+            } else {
+                Warnf("Entity %s has animation component but no signal output", ecs::ToString(lock, ent));
             }
         }
     }
