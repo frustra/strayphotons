@@ -106,8 +106,8 @@
 			"name": "chute_bottom_base",
 			"transform": {
 				"parent": "chute",
-				"scale": [0.43, 0.1, 0.3],
-				"translate": [-1.485, 0.2, 0]
+				"scale": [1, 0.1, 0.3],
+				"translate": [-1.785, 0.2, 0]
 			},
 			"renderable": {
 				"model": "box"
@@ -121,6 +121,24 @@
 		},
 		{
 			"name": "chute_bottom_front",
+			"transform": {
+				"parent": "chute",
+				"rotate": [30, 1, 0, 0],
+				"scale": [0.560, 0.2, 0.1],
+				"translate": [-2.005, 0.26, 0.12]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_bottom_front2",
 			"transform": {
 				"parent": "chute",
 				"rotate": [30, 1, 0, 0],
@@ -142,8 +160,8 @@
 			"transform": {
 				"parent": "chute",
 				"rotate": [30, -1, 0, 0],
-				"scale": [0.4, 0.2, 0.1],
-				"translate": [-1.5, 0.26, -0.12]
+				"scale": [1.0, 0.2, 0.1],
+				"translate": [-1.785, 0.26, -0.12]
 			},
 			"renderable": {
 				"model": "box"
@@ -270,11 +288,11 @@
 			}
 		},
 		{
-			"name": "launcher",
+			"name": "gate",
 			"transform": {
-				"parent": "funnel_angle",
-				"scale": [0.05, 0.05, 0.2],
-				"translate": [0, 0.125, -0.2]
+				"parent": "chute",
+				"scale": [0.02, 0.15, 0.2],
+				"translate": [-1.71, 0.35, 0.21]
 			},
 			"renderable": {
 				"model": "box"
@@ -289,24 +307,25 @@
 				"states": [
 					{
 						"delay": 0.5,
-						"translate": [0, 0.125, -0.25]
+						"translate": [-1.71, 0.3, 0.21]
 					},
 					{
-						"delay": 0.05,
-						"translate": [0, 0.125, -0.45]
+						"delay": 0.5,
+						"translate": [-1.71, 0.3, 0]
 					}
 				]
 			},
+			"signal_output": {},
 			"signal_bindings": {
-				"animation_target": "launch_button/button_pressed"
+				"animation_target": "sensor_gate/value"
 			}
 		},
 		{
-			"name": "launcher_top",
+			"name": "piston",
 			"transform": {
-				"parent": "funnel_angle",
-				"scale": [0.2, 0.1, 0.2],
-				"translate": [0, 0.2, -0.25]
+				"parent": "chute",
+				"scale": [0.2, 0.2, 0.2],
+				"translate": [-2.1, 0.35, 0]
 			},
 			"renderable": {
 				"model": "box"
@@ -315,21 +334,52 @@
 				"shapes": {
 					"model": "box"
 				},
-				"type": "Static"
+				"type": "Kinematic"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"translate": [-2.1, 0.3, 0]
+					},
+					{
+						"delay": 0.5,
+						"translate": [-1.79, 0.3, 0]
+					}
+				]
+			},
+			"signal_output": {},
+			"signal_bindings": {
+				"animation_target": "sensor_piston/value"
 			}
 		},
 		{
-			"name": "launch_button",
+			"name": "spawn_button",
 			"transform": {
-				"parent": "funnel_angle",
+				"parent": "table.surface",
 				"rotate": [90, 0, 0, -1],
-				"translate": [0, 0.2, -0.25]
+				"translate": [0.06, -0.11, -0.06]
+			},
+			"event_bindings": {
+				"/button/press": "ball_spawner/script/spawn"
 			},
 			"script": {
 				"parameters": {
 					"source": "button"
 				},
 				"prefab": "template"
+			}
+		},
+		{
+			"name": "ball_spawner",
+			"event_input": {},
+			"script": {
+				"onTick": "model_spawner",
+				"parameters": {
+					"model": "box",
+					"position": [0, 1, 0],
+					"relative_to": "ball1"
+				}
 			}
 		},
 		{
@@ -411,7 +461,7 @@
 		{
 			"name": "sensor_piston",
 			"transform": {
-				"rotate": [90, 2.95599e-08, -1, -6.25617e-09],
+				"rotate": [90, 0, -1, -0],
 				"translate": [0.14, 0.9, 0.14]
 			},
 			"physics_joints": {
@@ -431,6 +481,33 @@
 					"onTick": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.1_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "sensor_gate",
+			"transform": {
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.14, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.1_4.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_4.socket"
 					}
 				}
 			]

@@ -107,6 +107,7 @@ namespace sp::scripts {
                     newEntity.Set<EventInput>(lock);
                     auto &scripts = newEntity.Set<Scripts>(lock);
                     scripts.AddOnTick(scope, "interactive_object");
+                    scripts.Init(lock, newEntity);
                 });
             }
         }
