@@ -101,6 +101,12 @@ namespace sp {
 #endif
 
         auto &scenes = GetSceneManager();
+#ifndef SP_GRAPHICS_SUPPORT
+        scenes.DisableGraphicsPreload();
+#endif
+#ifndef SP_PHYSICS_SUPPORT_PHYSX
+        scenes.DisablePhysicsPreload();
+#endif
         scenes.QueueAction(SceneAction::ReloadPlayer);
         scenes.QueueAction(SceneAction::ReloadBindings);
 

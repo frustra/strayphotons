@@ -176,15 +176,6 @@ namespace sp {
 
         characterControlSystem.RegisterEvents();
 
-        { // Simulate 1 physics frame (blocking)
-            ZoneScopedN("Simulate");
-            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
-                nullptr,
-                scratchBlock.data(),
-                scratchBlock.size());
-            scene->fetchResults(true);
-        }
-
         { // Sync ECS state to physx
             ZoneScopedN("Sync ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
@@ -338,6 +329,15 @@ namespace sp {
                     scripts.OnPhysicsUpdate(lock, entity, interval);
                 }
             }
+        }
+
+        { // Simulate 1 physics frame (blocking)
+            ZoneScopedN("Simulate");
+            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
+                nullptr,
+                scratchBlock.data(),
+                scratchBlock.size());
+            scene->fetchResults(true);
         }
 
         triggerSystem.Frame();
