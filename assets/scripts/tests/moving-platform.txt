@@ -8,10 +8,12 @@ steplogic
 stepphysics 100
 screenshot moving-platform-frame1.png
 stepgraphics
-stepphysics 500
+stepphysics 499
+# Turn debug lines on 1 frame early to account for delay
+x.DebugColliders 1
+stepphysics
 screenshot moving-platform-frame2.png
 stepgraphics
-x.DebugColliders 1
 stepphysics
 screenshot moving-platform-frame2b.png
 stepgraphics
