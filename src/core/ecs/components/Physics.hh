@@ -40,6 +40,18 @@ namespace ecs {
 
     static_assert(magic_enum::enum_count<PhysicsGroup>() <= sizeof(uint32_t) * 8, "Too many PhysicsGroups defined");
 
+    struct PhysicsMaterial {
+        float staticFriction = 0.6f;
+        float dynamicFriction = 0.5f;
+        float restitution = 0.0f;
+
+        bool operator==(const PhysicsMaterial &) const = default;
+    };
+    static StructMetadata MetadataPhysicsMaterial(typeid(PhysicsMaterial),
+        StructField::New("static_friction", &PhysicsMaterial::staticFriction),
+        StructField::New("dynamic_friction", &PhysicsMaterial::dynamicFriction),
+        StructField::New("restitution", &PhysicsMaterial::restitution));
+
     struct PhysicsShape {
         struct Sphere {
             float radius;
@@ -89,6 +101,7 @@ namespace ecs {
 
         std::variant<std::monostate, Sphere, Capsule, Box, Plane, ConvexMesh> shape;
         Transform transform;
+        PhysicsMaterial material;
 
         PhysicsShape() : shape(std::monostate()) {}
         PhysicsShape(Sphere sphere, Transform transform = Transform()) : shape(sphere), transform(transform) {}

@@ -114,7 +114,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -132,7 +134,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -150,7 +154,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -168,7 +174,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -193,7 +201,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -211,7 +221,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -229,7 +241,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -246,7 +260,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -264,7 +280,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -282,7 +300,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Static"
 			}
@@ -299,7 +319,9 @@
 			},
 			"physics": {
 				"shapes": {
-					"model": "box"
+					"model": "box",
+					"static_friction": 0.0,
+					"dynamic_friction": 0.0
 				},
 				"type": "Kinematic"
 			},
@@ -394,7 +416,10 @@
 			"physics": {
 				"mass": 1,
 				"shapes": {
-					"sphere": 0.5
+					"sphere": 0.5,
+					"static_friction": 0.1,
+					"dynamic_friction": 0.08,
+					"restitution": 0.5
 				}
 			},
 			"script": {
@@ -416,7 +441,10 @@
 			"physics": {
 				"mass": 1,
 				"shapes": {
-					"sphere": 0.5
+					"sphere": 0.5,
+					"static_friction": 0.1,
+					"dynamic_friction": 0.08,
+					"restitution": 0.5
 				}
 			},
 			"script": {
@@ -438,7 +466,10 @@
 			"physics": {
 				"mass": 1,
 				"shapes": {
-					"sphere": 0.5
+					"sphere": 0.5,
+					"static_friction": 0.1,
+					"dynamic_friction": 0.08,
+					"restitution": 0.5
 				}
 			},
 			"script": {

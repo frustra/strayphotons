@@ -94,6 +94,21 @@ namespace ecs {
                     Errorf("Couldn't parse PhysicsShape transform");
                     return false;
                 }
+            } else if (param.first == "static_friction") {
+                if (!sp::json::Load(scope, shape.material.staticFriction, param.second)) {
+                    Errorf("Couldn't parse PhysicsShape static_friction");
+                    return false;
+                }
+            } else if (param.first == "dynamic_friction") {
+                if (!sp::json::Load(scope, shape.material.dynamicFriction, param.second)) {
+                    Errorf("Couldn't parse PhysicsShape dynamic_friction");
+                    return false;
+                }
+            } else if (param.first == "restitution") {
+                if (!sp::json::Load(scope, shape.material.restitution, param.second)) {
+                    Errorf("Couldn't parse PhysicsShape restitution");
+                    return false;
+                }
             } else {
                 Errorf("Unknown PhysicsShape field: %s", param.first);
                 return false;
@@ -139,6 +154,17 @@ namespace ecs {
             Abortf("Unknown PhysicsShape type: %u", src.shape.index());
         }
         sp::json::SaveIfChanged(scope, obj, "transform", src.transform, def.transform);
+        sp::json::SaveIfChanged(scope,
+            obj,
+            "static_friction",
+            src.material.staticFriction,
+            def.material.staticFriction);
+        sp::json::SaveIfChanged(scope,
+            obj,
+            "dynamic_friction",
+            src.material.dynamicFriction,
+            def.material.dynamicFriction);
+        sp::json::SaveIfChanged(scope, obj, "restitution", src.material.restitution, def.material.restitution);
     }
 
     PhysicsShape::ConvexMesh::ConvexMesh(const std::string &fullMeshName) {

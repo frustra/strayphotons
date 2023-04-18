@@ -573,8 +573,10 @@ namespace sp {
         for (size_t i = 0; i < physics.shapes.size(); i++) {
             if (existingShapes[i]) continue;
             auto &shape = physics.shapes[i];
-            // TODO: Add these material properties to the shape definition
-            std::shared_ptr<PxMaterial> material(pxPhysics->createMaterial(0.1f, 0.08f, 0.5f), [](auto *ptr) {
+            PxMaterial *pxMaterial = pxPhysics->createMaterial(shape.material.staticFriction,
+                shape.material.dynamicFriction,
+                shape.material.restitution);
+            std::shared_ptr<PxMaterial> material(pxMaterial, [](auto *ptr) {
                 ptr->release();
             });
             auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
