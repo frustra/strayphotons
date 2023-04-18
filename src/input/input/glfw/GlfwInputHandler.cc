@@ -53,7 +53,7 @@ namespace sp {
     void GlfwInputHandler::Frame() {
         {
             ZoneScopedN("GlfwPollEvents");
-            glfwWaitEventsTimeout(0.0);
+            glfwPollEvents();
         }
         if (!glfwEventQueue.Empty()) {
             ZoneScopedN("GlfwCommitEvents");
