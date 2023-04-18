@@ -272,10 +272,10 @@ namespace sp {
                 }
 
                 // Logf("Teleport: %s, Up: %s, Height: %f Forward: %s",
-                //     glm::to_string(targetTransform.GetPosition()),
-                //     glm::to_string(targetTransform.GetUp()),
+                //     glm::to_string(transform.GetPosition()),
+                //     glm::to_string(transform.GetUp()),
                 //     targetHeight,
-                //     glm::to_string(targetTransform.GetForward()));
+                //     glm::to_string(transform.GetForward()));
 
                 userData->onGround = false;
                 userData->actorData.pose = transform;

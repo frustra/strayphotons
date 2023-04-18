@@ -9,14 +9,16 @@
 
 template<typename Callback>
 void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
-    auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree>>();
+    auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree, ecs::TransformSnapshot>>();
     auto entity = entityRef.Get(lock);
     if (!entity.Exists(lock)) {
         Errorf("Entity does not exist: %s", entityRef.Name().String());
-    } else if (!entity.Has<ecs::TransformTree>(lock)) {
-        Errorf("Entity has no TransformTree: %s", entityRef.Name().String());
+    } else if (!entity.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+        Errorf("Entity has no TransformTree or TransformSnapshot: %s", entityRef.Name().String());
     } else {
-        callback(lock, entity.Get<ecs::TransformTree>(lock));
+        auto &transform = entity.Get<ecs::TransformTree>(lock);
+        callback(lock, transform);
+        entity.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
     }
 }
 

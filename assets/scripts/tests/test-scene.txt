@@ -6,7 +6,7 @@ stepgraphics 2
 screenshot test-scene1.png
 stepgraphics
 steplogic 2700
-stepphysics
+stepphysics 2
 stepgraphics 120
 screenshot test-scene2.png
 stepgraphics

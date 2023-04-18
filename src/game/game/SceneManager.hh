@@ -44,7 +44,7 @@ namespace sp {
 
     class SceneManager : public RegisteredThread {
     public:
-        SceneManager(bool skipPreload = false);
+        SceneManager();
         ~SceneManager();
         void Shutdown();
 
@@ -63,6 +63,14 @@ namespace sp {
         using ScenePreloadCallback = std::function<bool(ecs::Lock<ecs::ReadAll>, std::shared_ptr<Scene>)>;
         void PreloadSceneGraphics(ScenePreloadCallback callback);
         void PreloadScenePhysics(ScenePreloadCallback callback);
+
+        void DisableGraphicsPreload() {
+            enableGraphicsPreload = false;
+        }
+
+        void DisablePhysicsPreload() {
+            enablePhysicsPreload = false;
+        }
 
     private:
         void RunSceneActions();
@@ -112,8 +120,9 @@ namespace sp {
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;
         std::shared_ptr<Scene> preloadScene;
-        std::atomic_flag physicsPreload, graphicsPreload;
-        bool skipPreload;
+        std::atomic_flag graphicsPreload, physicsPreload;
+        bool enableGraphicsPreload = true;
+        bool enablePhysicsPreload = true;
 
         LockFreeMutex activeSceneMutex;
         std::vector<SceneRef> activeSceneCache;

@@ -34,6 +34,10 @@ namespace ecs {
         const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
         const ScriptDefinition *definition = nullptr;
+        if (!src.is<picojson::object>()) {
+            Errorf("Script has invalid definition: %s", src.to_str());
+            return false;
+        }
         auto &srcObj = src.get<picojson::object>();
         for (auto param : srcObj) {
             if (param.first == "onTick") {
@@ -104,31 +108,32 @@ namespace ecs {
         const ScriptInstance &src,
         const ScriptInstance &def) {
         if (!src.state) return;
-        auto &srcState = *src.state;
-        if (srcState.definition.name.empty()) {
+        auto &state = *src.state;
+        std::lock_guard l(state.mutex);
+        if (state.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
-        } else if (!std::holds_alternative<std::monostate>(srcState.definition.callback)) {
+        } else if (!std::holds_alternative<std::monostate>(state.definition.callback)) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             auto &obj = dst.get<picojson::object>();
-            if (std::holds_alternative<PrefabFunc>(srcState.definition.callback)) {
-                obj["prefab"] = picojson::value(srcState.definition.name);
+            if (std::holds_alternative<PrefabFunc>(state.definition.callback)) {
+                obj["prefab"] = picojson::value(state.definition.name);
             } else {
-                obj["onTick"] = picojson::value(srcState.definition.name);
+                obj["onTick"] = picojson::value(state.definition.name);
             }
 
-            if (srcState.definition.context) {
-                const void *dataPtr = srcState.definition.context->Access(srcState);
-                const void *defaultPtr = srcState.definition.context->GetDefault();
-                Assertf(dataPtr, "Script definition returned null data: %s", srcState.definition.name);
+            if (state.definition.context) {
+                const void *dataPtr = state.definition.context->Access(state);
+                const void *defaultPtr = state.definition.context->GetDefault();
+                Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
                 bool changed = false;
-                for (auto &field : srcState.definition.context->metadata.fields) {
+                for (auto &field : state.definition.context->metadata.fields) {
                     if (!field.Compare(dataPtr, defaultPtr)) {
                         changed = true;
                         break;
                     }
                 }
                 if (changed) {
-                    for (auto &field : srcState.definition.context->metadata.fields) {
+                    for (auto &field : state.definition.context->metadata.fields) {
                         field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
                     }
                 }
@@ -146,11 +151,8 @@ namespace ecs {
             // Skip if the script is the same as the default
             if (!instance || sp::contains(def.scripts, instance)) continue;
 
-            auto &state = *instance.state;
-            std::lock_guard l(state.mutex);
-
             picojson::value val;
-            sp::json::Save(scope, val, state);
+            sp::json::Save(scope, val, instance);
             arrayOut.emplace_back(val);
         }
         if (arrayOut.size() > 1) {

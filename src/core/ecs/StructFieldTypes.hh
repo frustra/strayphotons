@@ -52,6 +52,7 @@ namespace ecs {
         Transform,
         SignalExpression,
         EventBindingActions,
+        PhysicsMaterial,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,

@@ -22,7 +22,9 @@ int main(int argc, char **argv) {
 
     sp::logging::SetLogLevel(sp::logging::Level::Log);
 
-    sp::SceneManager scenes(true);
+    sp::SceneManager scenes;
+    scenes.DisableGraphicsPreload();
+    scenes.DisablePhysicsPreload();
     scenes.QueueActionAndBlock(sp::SceneAction::LoadScene, sceneName);
     scenes.QueueActionAndBlock(sp::SceneAction::SaveStagingScene, sceneName);
     return 0;

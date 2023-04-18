@@ -177,63 +177,19 @@ namespace sp {
         characterControlSystem.RegisterEvents();
 
         { // Sync ECS state to physx
-            ZoneScopedN("Sync from ECS");
-            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::Physics, ecs::EventInput, ecs::SceneProperties>,
-                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::PhysicsJoints, ecs::CharacterController>>();
-
-            // Delete actors for removed entities
-            ecs::ComponentEvent<ecs::Physics> physicsEvent;
-            while (physicsObserver.Poll(lock, physicsEvent)) {
-                if (physicsEvent.type == Tecs::EventType::REMOVED) {
-                    if (actors.count(physicsEvent.entity) > 0) {
-                        RemoveActor(actors[physicsEvent.entity]);
-                        actors.erase(physicsEvent.entity);
-                    }
-                }
-            }
-
-            animationSystem.Frame(lock);
-
-            // Update actors with latest entity data
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.type == ecs::PhysicsActorType::SubActor) continue;
-                UpdateActor(lock, ent);
-            }
-            // Update sub actors once all parent actors are complete
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.type != ecs::PhysicsActorType::SubActor) continue;
-                UpdateActor(lock, ent);
-            }
-
-            constraintSystem.Frame(lock);
-            characterControlSystem.Frame(lock);
-        }
-
-        { // Simulate 1 physics frame (blocking)
-            ZoneScopedN("Simulate");
-            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
-                nullptr,
-                scratchBlock.data(),
-                scratchBlock.size());
-            scene->fetchResults(true);
-        }
-
-        { // Sync ECS state from physx
-            ZoneScopedN("Sync to ECS");
+            ZoneScopedN("Sync ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
                 ecs::Read<ecs::LaserEmitter,
                     ecs::EventBindings,
                     ecs::Physics,
                     ecs::EventInput,
-                    ecs::CharacterController>,
+                    ecs::CharacterController,
+                    ecs::SceneProperties>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
+                    ecs::PhysicsJoints,
+                    ecs::CharacterController,
                     ecs::OpticalElement,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
@@ -241,6 +197,8 @@ namespace sp {
                     ecs::SignalOutput,
                     ecs::Scripts>,
                 ecs::PhysicsUpdateLock>();
+
+            characterControlSystem.Frame(lock);
 
             {
                 ZoneScopedN("UpdateSnapshots(Dynamic)");
@@ -329,9 +287,40 @@ namespace sp {
                 }
             }
 
+            animationSystem.Frame(lock);
+
+            // Delete actors for removed entities
+            ecs::ComponentEvent<ecs::Physics> physicsEvent;
+            while (physicsObserver.Poll(lock, physicsEvent)) {
+                if (physicsEvent.type == Tecs::EventType::REMOVED) {
+                    if (actors.count(physicsEvent.entity) > 0) {
+                        RemoveActor(actors[physicsEvent.entity]);
+                        actors.erase(physicsEvent.entity);
+                    }
+                }
+            }
+
+            // Update actors with latest entity data
+            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                if (ph.type == ecs::PhysicsActorType::SubActor) continue;
+                UpdateActor(lock, ent);
+            }
+
+            // Update sub actors once all parent actors are complete
+            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                if (ph.type != ecs::PhysicsActorType::SubActor) continue;
+                UpdateActor(lock, ent);
+            }
+
+            constraintSystem.Frame(lock);
+
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
-            animationSystem.UpdateSignals(lock);
+            UpdateDebugLines(lock);
 
             {
                 ZoneScopedN("Scripts::OnPhysicsUpdate");
@@ -340,43 +329,15 @@ namespace sp {
                     scripts.OnPhysicsUpdate(lock, entity, interval);
                 }
             }
+        }
 
-            auto debugLines = debugLineEntity.Get(lock);
-            if (debugLines.Has<ecs::LaserLine>(lock)) {
-                auto &laser = debugLines.Get<ecs::LaserLine>(lock);
-                if (!std::holds_alternative<ecs::LaserLine::Segments>(laser.line)) {
-                    laser.line = ecs::LaserLine::Segments();
-                }
-                auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);
-                segments.clear();
-                if (CVarPhysxDebugCollision.Get() || CVarPhysxDebugJoints.Get()) {
-                    auto &rb = scene->getRenderBuffer();
-                    for (size_t i = 0; i < rb.getNbLines(); i++) {
-                        auto &line = rb.getLines()[i];
-                        ecs::LaserLine::Segment segment;
-                        segment.start = PxVec3ToGlmVec3(line.pos0);
-                        segment.end = PxVec3ToGlmVec3(line.pos1);
-                        segment.color = PxColorToGlmVec3(line.color0);
-                        segments.push_back(segment);
-                    }
-                    for (size_t i = 0; i < rb.getNbTriangles(); i++) {
-                        auto &triangle = rb.getTriangles()[i];
-                        ecs::LaserLine::Segment segment;
-                        segment.start = PxVec3ToGlmVec3(triangle.pos0);
-                        segment.end = PxVec3ToGlmVec3(triangle.pos1);
-                        segment.color = PxColorToGlmVec3(triangle.color0);
-                        segments.push_back(segment);
-                        segment.start = PxVec3ToGlmVec3(triangle.pos1);
-                        segment.end = PxVec3ToGlmVec3(triangle.pos2);
-                        segment.color = PxColorToGlmVec3(triangle.color1);
-                        segments.push_back(segment);
-                        segment.start = PxVec3ToGlmVec3(triangle.pos2);
-                        segment.end = PxVec3ToGlmVec3(triangle.pos0);
-                        segment.color = PxColorToGlmVec3(triangle.color2);
-                        segments.push_back(segment);
-                    }
-                }
-            }
+        { // Simulate 1 physics frame (blocking)
+            ZoneScopedN("Simulate");
+            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
+                nullptr,
+                scratchBlock.data(),
+                scratchBlock.size());
+            scene->fetchResults(true);
         }
 
         triggerSystem.Frame();
@@ -612,8 +573,10 @@ namespace sp {
         for (size_t i = 0; i < physics.shapes.size(); i++) {
             if (existingShapes[i]) continue;
             auto &shape = physics.shapes[i];
-            // TODO: Add these material properties to the shape definition
-            std::shared_ptr<PxMaterial> material(pxPhysics->createMaterial(0.6f, 0.5f, 0.0f), [](auto *ptr) {
+            PxMaterial *pxMaterial = pxPhysics->createMaterial(shape.material.staticFriction,
+                shape.material.dynamicFriction,
+                shape.material.restitution);
+            std::shared_ptr<PxMaterial> material(pxMaterial, [](auto *ptr) {
                 ptr->release();
             });
             auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
@@ -813,10 +776,9 @@ namespace sp {
                 } else {
                     Errorf("Actor transform pose is not valid for entity: %s", ecs::ToString(lock, e));
                 }
-
                 userData->velocity = (actorTransform.GetPosition() - userData->pose.GetPosition()) *
                                      (float)(1e9 / interval.count());
-            } else {
+            } else if (ph.type != ecs::PhysicsActorType::Dynamic) {
                 userData->velocity = glm::vec3(0);
             }
             userData->pose = actorTransform;
@@ -941,5 +903,44 @@ namespace sp {
                 }
             },
             shape.shape);
+    }
+
+    void PhysxManager::UpdateDebugLines(ecs::Lock<ecs::Write<ecs::LaserLine>> lock) const {
+        auto debugLines = debugLineEntity.Get(lock);
+        if (debugLines.Has<ecs::LaserLine>(lock)) {
+            auto &laser = debugLines.Get<ecs::LaserLine>(lock);
+            if (!std::holds_alternative<ecs::LaserLine::Segments>(laser.line)) {
+                laser.line = ecs::LaserLine::Segments();
+            }
+            auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);
+            segments.clear();
+            if (CVarPhysxDebugCollision.Get() || CVarPhysxDebugJoints.Get()) {
+                auto &rb = scene->getRenderBuffer();
+                for (size_t i = 0; i < rb.getNbLines(); i++) {
+                    auto &line = rb.getLines()[i];
+                    ecs::LaserLine::Segment segment;
+                    segment.start = PxVec3ToGlmVec3(line.pos0);
+                    segment.end = PxVec3ToGlmVec3(line.pos1);
+                    segment.color = PxColorToGlmVec3(line.color0);
+                    segments.push_back(segment);
+                }
+                for (size_t i = 0; i < rb.getNbTriangles(); i++) {
+                    auto &triangle = rb.getTriangles()[i];
+                    ecs::LaserLine::Segment segment;
+                    segment.start = PxVec3ToGlmVec3(triangle.pos0);
+                    segment.end = PxVec3ToGlmVec3(triangle.pos1);
+                    segment.color = PxColorToGlmVec3(triangle.color0);
+                    segments.push_back(segment);
+                    segment.start = PxVec3ToGlmVec3(triangle.pos1);
+                    segment.end = PxVec3ToGlmVec3(triangle.pos2);
+                    segment.color = PxColorToGlmVec3(triangle.color1);
+                    segments.push_back(segment);
+                    segment.start = PxVec3ToGlmVec3(triangle.pos2);
+                    segment.end = PxVec3ToGlmVec3(triangle.pos0);
+                    segment.color = PxColorToGlmVec3(triangle.color2);
+                    segments.push_back(segment);
+                }
+            }
+        }
     }
 } // namespace sp

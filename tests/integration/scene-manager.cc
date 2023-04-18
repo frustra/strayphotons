@@ -9,7 +9,9 @@ namespace SceneManagerTests {
     using namespace testing;
 
     sp::SceneManager &Scenes() {
-        static sp::SceneManager scenes(true);
+        static sp::SceneManager scenes;
+        scenes.DisableGraphicsPreload();
+        scenes.DisablePhysicsPreload();
         return scenes;
     }
 

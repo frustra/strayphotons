@@ -131,7 +131,7 @@
 					"model": "box"
 				},
 				"group": "Interactive",
-				"force": [-0.1, 0, 0],
+				"force": [-0.2, 0, 0],
 				"linear_damping": 10,
 				"angular_damping": 100,
 				"mass": 0.01

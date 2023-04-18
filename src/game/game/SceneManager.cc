@@ -41,7 +41,7 @@ namespace sp {
         return result;
     }
 
-    SceneManager::SceneManager(bool skipPreload) : RegisteredThread("SceneManager", 30.0), skipPreload(skipPreload) {
+    SceneManager::SceneManager() : RegisteredThread("SceneManager", 30.0) {
         activeSceneManagerThread = std::this_thread::get_id();
         funcs.Register<std::string>("loadscene",
             "Load a scene and replace current scenes",
@@ -544,10 +544,12 @@ namespace sp {
             physicsPreload.clear();
         }
 
-        if (!skipPreload) {
+        if (enableGraphicsPreload) {
             while (!graphicsPreload.test()) {
                 graphicsPreload.wait(false);
             }
+        }
+        if (enablePhysicsPreload) {
             while (!physicsPreload.test()) {
                 physicsPreload.wait(false);
             }

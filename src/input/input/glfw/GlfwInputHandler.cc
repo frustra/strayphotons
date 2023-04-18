@@ -51,9 +51,12 @@ namespace sp {
     }
 
     void GlfwInputHandler::Frame() {
-        ZoneScoped;
-        glfwPollEvents();
+        {
+            ZoneScopedN("GlfwPollEvents");
+            glfwPollEvents();
+        }
         if (!glfwEventQueue.Empty()) {
+            ZoneScopedN("GlfwCommitEvents");
             auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::SignalOutput>>();
 
             auto keyboard = keyboardEntity.Get(lock);
@@ -143,6 +146,7 @@ namespace sp {
     }
 
     void GlfwInputHandler::KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+        ZoneScoped;
         if (key == GLFW_KEY_UNKNOWN) return;
 
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
@@ -162,6 +166,7 @@ namespace sp {
     }
 
     void GlfwInputHandler::CharInputCallback(GLFWwindow *window, unsigned int ch) {
+        ZoneScoped;
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx, "CharInputCallback occured without valid context");
 
@@ -171,6 +176,7 @@ namespace sp {
     }
 
     void GlfwInputHandler::MouseMoveCallback(GLFWwindow *window, double xPos, double yPos) {
+        ZoneScoped;
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx, "MouseMoveCallback occured without valid context");
 
@@ -179,6 +185,7 @@ namespace sp {
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+        ZoneScoped;
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx, "MouseButtonCallback occured without valid context");
 
@@ -193,6 +200,7 @@ namespace sp {
     }
 
     void GlfwInputHandler::MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
+        ZoneScoped;
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx, "MouseScrollCallback occured without valid context");
 
