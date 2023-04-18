@@ -7,7 +7,7 @@ stepgraphics 2
 screenshot load-override-first1.png
 stepgraphics
 steplogic 2700
-stepphysics
+stepphysics 2
 stepgraphics 120
 screenshot load-override-first2.png
 stepgraphics
@@ -29,7 +29,7 @@ stepgraphics 2
 screenshot load-override-after1.png
 stepgraphics
 steplogic 2700
-stepphysics
+stepphysics 2
 stepgraphics 120
 screenshot load-override-after2.png
 stepgraphics
