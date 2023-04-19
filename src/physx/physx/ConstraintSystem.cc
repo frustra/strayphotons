@@ -287,6 +287,24 @@ namespace sp {
                 targetTransform = ecs::Transform(PxVec3ToGlmVec3(targetPose.p), PxQuatToGlmQuat(targetPose.q));
                 targetTransform.Translate(targetTransform * glm::vec4(ecsJoint.remoteOffset.GetPosition(), 0));
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
+            } else if (manager.subActors.count(targetEntity) > 0) {
+                targetActor = manager.subActors[targetEntity];
+                auto userData = (ActorUserData *)targetActor->userData;
+                Assert(userData, "Physics targetActor is missing UserData");
+                remoteTransform.p = GlmVec3ToPxVec3(userData->scale * ecsJoint.remoteOffset.GetPosition());
+                remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOffset.GetRotation());
+
+                if (targetEntity.Has<ecs::TransformTree>(lock)) {
+                    auto subActorTransform = targetEntity.Get<ecs::TransformTree>(lock).GetRelativeTransform(lock,
+                        userData->entity);
+                    remoteTransform.p += GlmVec3ToPxVec3(userData->scale * subActorTransform.GetPosition());
+                    remoteTransform.q *= GlmQuatToPxQuat(subActorTransform.GetRotation());
+                }
+
+                auto targetPose = targetActor->getGlobalPose();
+                targetTransform = ecs::Transform(PxVec3ToGlmVec3(targetPose.p), PxQuatToGlmQuat(targetPose.q));
+                targetTransform.Translate(targetTransform * glm::vec4(ecsJoint.remoteOffset.GetPosition(), 0));
+                targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
             } else {
                 if (targetEntity.Has<ecs::TransformTree>(lock)) {
                     targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
@@ -309,6 +327,13 @@ namespace sp {
             while (targetRoot.Has<ecs::TransformTree>(lock)) {
                 if (manager.actors.count(targetRoot) > 0) {
                     auto userData = (ActorUserData *)manager.actors[targetRoot]->userData;
+                    if (userData) {
+                        targetVelocity = userData->velocity;
+                        targetTransform.Translate(-targetVelocity * intervalSeconds);
+                    }
+                    break;
+                } else if (manager.subActors.count(targetRoot) > 0) {
+                    auto userData = (ActorUserData *)manager.subActors[targetRoot]->userData;
                     if (userData) {
                         targetVelocity = userData->velocity;
                         targetTransform.Translate(-targetVelocity * intervalSeconds);

@@ -67,6 +67,14 @@ namespace sp {
             if (entry.first == e.generation) entry = {};
         }
 
+        void erase(const T &value) {
+            for (auto &entry : *this) {
+                if (entry.first != 0 && entry.second == value) {
+                    entry = {};
+                }
+            }
+        }
+
         using VectorT::clear;
     };
 } // namespace sp

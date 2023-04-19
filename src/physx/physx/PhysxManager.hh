@@ -164,7 +164,7 @@ namespace sp {
         TriggerSystem triggerSystem;
         AnimationSystem animationSystem;
 
-        EntityMap<physx::PxRigidActor *> actors;
+        EntityMap<physx::PxRigidActor *> actors, subActors;
         EntityMap<physx::PxController *> controllers;
 
         EntityMap<vector<JointState>> joints;

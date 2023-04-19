@@ -165,9 +165,7 @@
 		{
 			"name": "input-sensor.Icosphere",
 			"signal_output": {},
-			"laser_sensor": {
-				"threshold": [0.5, 0.5, 0.5]
-			}
+			"laser_sensor": {}
 		},
 		{
 			"name": "charge_display",

@@ -28,7 +28,12 @@ namespace ecs {
         picojson::value &dst,
         const EventDest &src,
         const EventDest &def) {
-        dst = picojson::value(src.target.Name().String() + src.queueName);
+        sp::json::Save(scope, dst, src.target);
+        if (dst.is<std::string>()) {
+            dst = picojson::value(dst.get<std::string>() + src.queueName);
+        } else {
+            Errorf("Failed to save EventDest: %s", src.target.Name().String() + src.queueName);
+        }
     }
 
     bool parseEventData(EventData &data, const picojson::value &src) {
