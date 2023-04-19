@@ -66,6 +66,7 @@ namespace ecs {
             std::vector<std::string>>;
 
         ScriptState();
+        ScriptState(const ScriptState &other);
         ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
 
         template<typename T>
@@ -156,6 +157,8 @@ namespace ecs {
         bool CompareOverride(const ScriptInstance &other) const {
             return state && other.state && state->CompareOverride(*other.state);
         }
+
+        ScriptInstance Copy() const;
 
         size_t GetInstanceId() const {
             if (!state) return 0;

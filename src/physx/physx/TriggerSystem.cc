@@ -17,11 +17,10 @@ namespace sp {
         triggerGroupObserver.Stop(lock);
     }
 
-    void TriggerSystem::Frame() {
+    void TriggerSystem::Frame(ecs::Lock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+        ecs::Write<ecs::TriggerArea, ecs::SignalOutput>,
+        ecs::SendEventsLock> lock) {
         ZoneScoped;
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
-            ecs::Write<ecs::TriggerArea, ecs::SignalOutput>,
-            ecs::SendEventsLock>();
 
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;

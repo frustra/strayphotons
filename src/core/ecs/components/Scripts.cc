@@ -25,6 +25,9 @@ namespace ecs {
     static std::atomic_size_t nextInstanceId;
 
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
+    ScriptState::ScriptState(const ScriptState &other)
+        : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), userData(other.userData),
+          instanceId(other.instanceId) {}
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
 
@@ -189,16 +192,24 @@ namespace ecs {
         return !definition.name.empty();
     }
 
+    ScriptInstance ScriptInstance::Copy() const {
+        Assert(state, "ScriptInstance::Copy called on empty instance");
+        ScriptInstance newInstance = *this;
+        newInstance.state = std::make_shared<ScriptState>(*state);
+        return newInstance;
+    }
+
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &instance : src.scripts) {
+            if (!instance) continue;
             auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
                 return instance.CompareOverride(arg);
             });
             if (existing == dst.scripts.end()) {
-                dst.scripts.emplace_back(instance);
+                dst.scripts.emplace_back(instance.Copy());
             } else if (liveTarget && existing->GetInstanceId() != instance.GetInstanceId()) {
-                *existing = instance;
+                *existing = instance.Copy();
             }
         }
     }
@@ -210,17 +221,19 @@ namespace ecs {
             auto &state = *instance.state;
 
             std::lock_guard l(state.mutex);
-            if (!state.eventQueue) state.eventQueue = NewEventQueue();
-            if (state.definition.initFunc) (*state.definition.initFunc)(state);
-            if (ent.Has<EventInput>(lock)) {
-                auto &eventInput = ent.Get<EventInput>(lock);
-                for (auto &event : state.definition.events) {
-                    eventInput.Register(lock, state.eventQueue, event);
+            if (!state.eventQueue) {
+                state.eventQueue = NewEventQueue();
+                if (state.definition.initFunc) (*state.definition.initFunc)(state);
+                if (ent.Has<EventInput>(lock)) {
+                    auto &eventInput = ent.Get<EventInput>(lock);
+                    for (auto &event : state.definition.events) {
+                        eventInput.Register(lock, state.eventQueue, event);
+                    }
+                } else if (!state.definition.events.empty()) {
+                    Warnf("Script %s has events but %s has no EventInput component",
+                        state.definition.name,
+                        ecs::ToString(lock, ent));
                 }
-            } else if (!state.definition.events.empty()) {
-                Warnf("Script %s has events but %s has no EventInput component",
-                    state.definition.name,
-                    ecs::ToString(lock, ent));
             }
         }
     }

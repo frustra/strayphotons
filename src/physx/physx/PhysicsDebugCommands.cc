@@ -81,6 +81,8 @@ void sp::PhysxManager::RegisterDebugCommands() {
             ActorUserData *actorData = nullptr;
             if (actors.count(entity) > 0) {
                 actorData = (ActorUserData *)actors[entity]->userData;
+            } else if (subActors.count(entity) > 0) {
+                actorData = (ActorUserData *)subActors[entity]->userData;
             } else if (controllers.count(entity) > 0) {
                 auto controllerData = (CharacterControllerUserData *)controllers[entity]->getUserData();
                 if (controllerData) actorData = &controllerData->actorData;

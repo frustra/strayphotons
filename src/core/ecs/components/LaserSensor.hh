@@ -7,7 +7,7 @@
 
 namespace ecs {
     struct LaserSensor {
-        glm::vec3 threshold;
+        glm::vec3 threshold = glm::vec3(0.5f, 0.5f, 0.5f);
 
         // updated automatically
         glm::vec3 illuminance;

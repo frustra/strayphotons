@@ -102,6 +102,7 @@ namespace sp {
             RemoveActor(actor.second);
         }
         actors.clear();
+        subActors.clear();
         scene.reset();
         cache.DropAll();
 
@@ -183,11 +184,13 @@ namespace sp {
                     ecs::EventBindings,
                     ecs::Physics,
                     ecs::EventInput,
+                    ecs::TriggerGroup,
                     ecs::CharacterController,
                     ecs::SceneProperties>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
+                    ecs::TriggerArea,
                     ecs::PhysicsJoints,
                     ecs::CharacterController,
                     ecs::OpticalElement,
@@ -295,7 +298,8 @@ namespace sp {
                 if (physicsEvent.type == Tecs::EventType::REMOVED) {
                     if (actors.count(physicsEvent.entity) > 0) {
                         RemoveActor(actors[physicsEvent.entity]);
-                        actors.erase(physicsEvent.entity);
+                    } else if (subActors.count(physicsEvent.entity) > 0) {
+                        RemoveActor(subActors[physicsEvent.entity]);
                     }
                 }
             }
@@ -318,6 +322,7 @@ namespace sp {
 
             constraintSystem.Frame(lock);
 
+            triggerSystem.Frame(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
             UpdateDebugLines(lock);
@@ -340,7 +345,6 @@ namespace sp {
             scene->fetchResults(true);
         }
 
-        triggerSystem.Frame();
         cache.Tick(interval);
 
         {
@@ -691,6 +695,7 @@ namespace sp {
             userData->linearDamping = ph.linearDamping;
         }
 
+        actors[e] = actor;
         if (shapeCount == 0) return actor;
         scene->addActor(*actor);
         return actor;
@@ -704,6 +709,7 @@ namespace sp {
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
         if (ph.type == ecs::PhysicsActorType::SubActor) {
+            ZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
             if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
                 auto parentActor = e;
                 while (parentActor.Has<ecs::TransformTree>(lock)) {
@@ -719,35 +725,36 @@ namespace sp {
                     return;
                 }
             }
+        } else {
+            ZoneStr(ecs::ToString(lock, e));
         }
         if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
             actorEnt = e;
         }
         if (actors.count(actorEnt) == 0) {
-            if (actorEnt == e) {
-                auto actor = CreateActor(lock, e);
-                if (actor) actors[e] = actor;
-            }
+            if (actorEnt == e) CreateActor(lock, e);
             return;
         }
-        if (actorEnt != e && actors.count(e) != 0) {
-            RemoveActor(actors[e]);
-            actors.erase(e);
+        auto &actor = actors[actorEnt];
+        if (actorEnt != e) {
+            if (actors.count(e) > 0) RemoveActor(actors[e]);
+            if (subActors.count(e) > 0) {
+                if (subActors[e] != actor) {
+                    RemoveActor(subActors[e]);
+                    subActors[e] = actor;
+                }
+            } else {
+                subActors[e] = actor;
+            }
         }
 
-        auto &actor = actors[actorEnt];
         auto dynamic = actor->is<PxRigidDynamic>();
         if (actorEnt == e) {
             bool requestDynamicActor = ph.type == ecs::PhysicsActorType::Dynamic ||
                                        ph.type == ecs::PhysicsActorType::Kinematic;
             if (requestDynamicActor != !!dynamic) {
                 RemoveActor(actor);
-                auto replacementActor = CreateActor(lock, e);
-                if (replacementActor) {
-                    actors[e] = replacementActor;
-                } else {
-                    actors.erase(e);
-                }
+                CreateActor(lock, e);
                 return;
             }
         }
@@ -826,8 +833,10 @@ namespace sp {
     }
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
+        ZoneScoped;
         if (actor) {
             auto userData = (ActorUserData *)actor->userData;
+            if (userData) ZoneStr(std::to_string(userData->entity));
 
             auto scene = actor->getScene();
             if (scene) scene->removeActor(*actor);
@@ -847,6 +856,10 @@ namespace sp {
             actor->release();
 
             if (userData) delete userData;
+
+            // Remove matching actors from the lookup maps
+            actors.erase(actor);
+            subActors.erase(actor);
         }
     }
 

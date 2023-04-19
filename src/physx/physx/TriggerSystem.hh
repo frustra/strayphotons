@@ -10,7 +10,9 @@ namespace sp {
         TriggerSystem();
         ~TriggerSystem();
 
-        void Frame();
+        void Frame(ecs::Lock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+            ecs::Write<ecs::TriggerArea, ecs::SignalOutput>,
+            ecs::SendEventsLock> lock);
 
         ecs::ComponentObserver<ecs::TriggerGroup> triggerGroupObserver;
     };
