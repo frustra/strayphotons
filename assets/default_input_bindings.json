@@ -35,7 +35,7 @@
             ],
             "/mouse/left_click": [
                 {
-                    "outputs": "player:flatview/interact/press",
+                    "outputs": ["player:flatview/interact/press", "edit_tool:edit_tool/interact/press"],
                     "filter": "is_focused(Game)"
                 },
                 {

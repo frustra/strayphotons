@@ -77,4 +77,92 @@ namespace sp::scripts {
     };
     StructMetadata MetadataTraySpawner(typeid(TraySpawner), StructField::New("source", &TraySpawner::templateSource));
     InternalScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
+
+    struct EditTool {
+        Entity selectedEntity;
+        float toolDistance;
+        glm::vec3 lastToolPosition, faceNormal;
+        PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree, PhysicsQuery>(lock)) return;
+            auto &query = ent.Get<PhysicsQuery>(lock);
+            auto &transform = ent.Get<TransformTree>(lock);
+
+            PhysicsQuery::Raycast::Result raycastResult;
+            if (raycastQuery) {
+                auto &result = query.Lookup(raycastQuery).result;
+                if (result) raycastResult = result.value();
+            } else {
+                raycastQuery = query.NewQuery(PhysicsQuery::Raycast(100.0f,
+                    PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+            }
+
+            auto globalTransform = transform.GetGlobalTransform(lock);
+            auto position = globalTransform.GetPosition();
+            auto forward = globalTransform.GetForward();
+
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
+                    if (std::holds_alternative<bool>(event.data)) {
+                        if (std::get<bool>(event.data) && raycastResult.subTarget.Has<TransformTree>(lock)) {
+                            selectedEntity = raycastResult.subTarget;
+                            toolDistance = raycastResult.distance;
+                            lastToolPosition = position + forward * toolDistance;
+                            if (raycastResult.normal != glm::vec3(0)) {
+                                faceNormal = glm::normalize(raycastResult.normal);
+                            }
+                        } else {
+                            selectedEntity = {};
+                        }
+                    }
+                }
+            }
+
+            if (selectedEntity.Has<TransformTree>(lock) && faceNormal != glm::vec3(0)) {
+                auto &targetTree = selectedEntity.Get<TransformTree>(lock);
+
+                auto newToolPosition = position + forward * toolDistance;
+                auto worldDelta = newToolPosition - lastToolPosition;
+                auto projectedDelta = glm::dot(worldDelta, faceNormal) * faceNormal;
+                // Logf("Selected %s, delta: %s, normal: %s, projected: %s",
+                //     ToString(lock, selectedEntity),
+                //     glm::to_string(worldDelta),
+                //     glm::to_string(faceNormal),
+                //     glm::to_string(projectedDelta));
+
+                auto parent = targetTree.parent.Get(lock);
+                Transform parentTransform;
+                if (parent.Has<TransformTree>(lock)) {
+                    parentTransform = parent.Get<const TransformTree>(lock).GetGlobalTransform(lock);
+                    projectedDelta = parentTransform.GetInverse() * glm::vec4(projectedDelta, 0.0f);
+                }
+
+                auto mode = SignalBindings::GetSignal(lock, ent, "edit_mode");
+                if (mode == 0) { // Translate mode
+                    targetTree.pose.Translate(projectedDelta);
+                } else if (mode == 1) { // Scale mode
+                    auto targetTransform = targetTree.GetGlobalTransform(lock);
+
+                    // Project the tool position onto the face normal to get a distance from target center
+                    auto newToolDepth = glm::dot(newToolPosition - targetTransform.GetPosition(), faceNormal);
+                    auto lastToolDepth = glm::dot(lastToolPosition - targetTransform.GetPosition(), faceNormal);
+                    if (newToolDepth * lastToolDepth < 0 || newToolDepth == lastToolDepth) return;
+
+                    newToolDepth = std::abs(newToolDepth);
+                    lastToolDepth = std::abs(lastToolDepth);
+
+                    auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
+                    auto scaleFactor = glm::abs(relativeNormal) * (newToolDepth - lastToolDepth);
+                    targetTree.pose.Scale(1.0f + scaleFactor);
+                    targetTree.pose.Translate(projectedDelta * 0.5f);
+                }
+
+                lastToolPosition = newToolPosition;
+            }
+        }
+    };
+    StructMetadata MetadataEditTool(typeid(EditTool));
+    InternalScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

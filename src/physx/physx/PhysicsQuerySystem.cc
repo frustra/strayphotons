@@ -56,24 +56,35 @@ namespace sp {
                                     GlmVec3ToPxVec3(rayDir),
                                     arg.maxDistance,
                                     hit,
-                                    PxHitFlags(),
+                                    PxHitFlag::eDEFAULT,
                                     PxQueryFilterData(filterData, queryFlags));
 
                                 auto &result = arg.result.emplace();
                                 result.hits = hit.getNbAnyHits();
+                                result.position = PxVec3ToGlmVec3(hit.block.position);
+                                result.normal = PxVec3ToGlmVec3(hit.block.normal);
+                                result.distance = hit.block.distance;
 
                                 physx::PxRigidActor *hitActor = nullptr;
+                                physx::PxShape *hitShape = nullptr;
                                 if (arg.maxHits == 1) {
                                     hitActor = hit.block.actor;
+                                    hitShape = hit.block.shape;
                                 } else if (result.hits > 0) {
                                     hitActor = hit.getTouch(0).actor;
+                                    hitShape = hit.getTouch(0).shape;
                                 }
-                                if (hitActor) {
+                                if (hitShape) {
+                                    auto userData = (ShapeUserData *)hitShape->userData;
+                                    if (userData) {
+                                        result.target = userData->parent;
+                                        result.subTarget = userData->owner;
+                                    }
+                                } else if (hitActor) {
                                     auto userData = (ActorUserData *)hitActor->userData;
                                     if (userData) {
                                         result.target = userData->entity;
-                                        result.position = rayDir * hit.block.distance + rayStart;
-                                        result.distance = hit.block.distance;
+                                        result.subTarget = userData->entity;
                                     }
                                 }
                             }

@@ -1,0 +1,22 @@
+{
+    "entities": [
+        {
+            "name": "edit_tool",
+            "transform": {
+                "parent": "player:flatview"
+			},
+			"laser_emitter": {
+				"color": [1, 0, 0]
+			},
+			"laser_line": {},
+            "physics_query": {},
+            "event_input": {},
+            "signal_output": {
+                "edit_mode": 1
+            },
+            "script": {
+                "onTick": "edit_tool"
+            }
+        }
+    ]
+}
