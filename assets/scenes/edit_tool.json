@@ -30,6 +30,9 @@
             "signal_output": {
                 "edit_mode": 1
             },
+            "signal_bindings": {
+                "snap_mode": "input:keyboard/key_left_shift"
+            },
             "script": [
                 {
                     "onTick": "edit_tool"
