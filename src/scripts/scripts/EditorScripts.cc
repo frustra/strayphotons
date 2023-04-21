@@ -1,3 +1,4 @@
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
@@ -7,6 +8,10 @@
 
 namespace sp::scripts {
     using namespace ecs;
+
+    static CVar<float> CVarEditRotateSensitivity("e.RotateSensitivity",
+        2.0f,
+        "Movement sensitivity for rotation in edit tool");
 
     struct TraySpawner {
         std::string templateSource;
@@ -120,6 +125,43 @@ namespace sp::scripts {
                 }
             }
 
+            auto editMode = (int)SignalBindings::GetSignal(lock, ent, "edit_mode");
+            editMode = std::clamp(editMode, 0, 2);
+            if (ent.Has<SignalOutput>(lock)) {
+                ent.Get<SignalOutput>(lock).SetSignal("edit_mode", editMode);
+            }
+
+            if (ent.Has<LaserLine>(lock)) {
+                auto &laserLine = ent.Get<LaserLine>(lock);
+                if (selectedEntity || raycastResult.subTarget) {
+                    laserLine.on = true;
+                    laserLine.mediaDensityFactor = 0.0f;
+                    laserLine.relative = false;
+                    LaserLine::Line line;
+                    if (editMode == 0) {
+                        line.color = glm::vec3(0, 0, 1);
+                    } else if (editMode == 1) {
+                        line.color = glm::vec3(0, 1, 0);
+                    } else if (editMode == 2) {
+                        line.color = glm::vec3(1, 0, 0);
+                    } else {
+                        line.color = glm::vec3(1, 1, 1);
+                    }
+                    if (selectedEntity) {
+                        laserLine.intensity = 10.0f;
+                        auto cursorPosition = position + forward * toolDistance;
+                        line.points = {cursorPosition, cursorPosition + faceNormal * 0.1f};
+                    } else {
+                        laserLine.intensity = 1.0f;
+                        auto cursorPosition = position + forward * raycastResult.distance;
+                        line.points = {cursorPosition, cursorPosition + raycastResult.normal * 0.1f};
+                    }
+                    laserLine.line = line;
+                } else {
+                    laserLine.on = false;
+                }
+            }
+
             if (selectedEntity.Has<TransformTree>(lock) && faceNormal != glm::vec3(0)) {
                 auto &targetTree = selectedEntity.Get<TransformTree>(lock);
 
@@ -139,10 +181,9 @@ namespace sp::scripts {
                     projectedDelta = parentTransform.GetInverse() * glm::vec4(projectedDelta, 0.0f);
                 }
 
-                auto mode = SignalBindings::GetSignal(lock, ent, "edit_mode");
-                if (mode == 0) { // Translate mode
+                if (editMode == 0) { // Translate mode
                     targetTree.pose.Translate(projectedDelta);
-                } else if (mode == 1) { // Scale mode
+                } else if (editMode == 1) { // Scale mode
                     auto targetTransform = targetTree.GetGlobalTransform(lock);
 
                     // Project the tool position onto the face normal to get a distance from target center
@@ -157,6 +198,11 @@ namespace sp::scripts {
                     auto scaleFactor = glm::abs(relativeNormal) * (newToolDepth - lastToolDepth);
                     targetTree.pose.Scale(1.0f + scaleFactor);
                     targetTree.pose.Translate(projectedDelta * 0.5f);
+                } else if (editMode == 2) { // Rotate mode
+                    auto targetTransform = targetTree.GetGlobalTransform(lock);
+                    auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
+                    targetTree.pose.Rotate(glm::dot(worldDelta, faceNormal) * CVarEditRotateSensitivity.Get(),
+                        relativeNormal);
                 }
 
                 lastToolPosition = newToolPosition;
