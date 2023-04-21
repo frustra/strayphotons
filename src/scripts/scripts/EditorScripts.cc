@@ -130,6 +130,7 @@ namespace sp::scripts {
                 targetTree.pose.Rotate(glm::dot(worldDelta, faceNormal) * CVarEditRotateSensitivity.Get(),
                     relativeNormal);
             }
+            selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
         }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
