@@ -109,16 +109,21 @@ namespace sp::scripts {
             if (editMode == 0) { // Translate mode
                 targetTree.pose.Translate(projectedDelta);
             } else if (editMode == 1) { // Scale mode
-                auto targetTransform = targetTree.GetGlobalTransform(lock);
+                // Simulate an extrude tool by anchoring the opposite face (assuming model is symmetric around origin)
 
-                // Project the tool position onto the face normal to get the depth
+                // Project the tool position onto the face normal to get a depth scalar
                 auto deltaToolDepth = glm::dot(toolPosition - lastToolPosition, faceNormal);
 
+                // Calculate the required scale to move the face by the tool depth in world space
+                auto targetTransform = targetTree.GetGlobalTransform(lock);
                 auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
-                auto scaleFactor = glm::abs(relativeNormal) * deltaToolDepth;
-                if (glm::any(glm::lessThanEqual(scaleFactor, glm::vec3(-1.0f)))) return;
-                targetTree.pose.Scale(1.0f + scaleFactor);
-                targetTree.pose.Translate(projectedDelta * 0.5f);
+                auto scaleFactor = 1.0f + glm::abs(relativeNormal) * deltaToolDepth;
+
+                // Make sure we don't invert the scale
+                if (glm::all(glm::greaterThan(scaleFactor, glm::vec3(0.0f)))) {
+                    targetTree.pose.Scale(scaleFactor);
+                    targetTree.pose.Translate(projectedDelta * 0.5f);
+                }
             } else if (editMode == 2) { // Rotate mode
                 auto targetTransform = targetTree.GetGlobalTransform(lock);
                 auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
