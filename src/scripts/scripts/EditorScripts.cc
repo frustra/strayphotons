@@ -6,12 +6,15 @@
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
+#include <glm/gtx/quaternion.hpp>
+
 namespace sp::scripts {
     using namespace ecs;
 
     static CVar<float> CVarEditRotateSensitivity("e.RotateSensitivity",
         2.0f,
         "Movement sensitivity for rotation in edit tool");
+    static CVar<float> CVarEditRotateSnapDegrees("e.RotateSnapDegrees", 5.0f, "Snap angle for rotation in edit tool");
 
     struct TraySpawner {
         std::string templateSource;
@@ -89,48 +92,50 @@ namespace sp::scripts {
         glm::vec3 lastToolPosition, faceNormal;
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        void performUpdate(Lock<WriteAll> lock, glm::vec3 toolPosition, int editMode) {
-            auto worldDelta = toolPosition - lastToolPosition;
-            auto projectedDelta = glm::dot(worldDelta, faceNormal) * faceNormal;
-            // Logf("Selected %s, delta: %s, normal: %s, projected: %s",
-            //     ToString(lock, selectedEntity),
-            //     glm::to_string(worldDelta),
-            //     glm::to_string(faceNormal),
-            //     glm::to_string(projectedDelta));
+        bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode) {
+            auto deltaVector = toolDepth * faceNormal;
 
             auto &targetTree = selectedEntity.Get<TransformTree>(lock);
             auto parent = targetTree.parent.Get(lock);
             Transform parentTransform;
             if (parent.Has<TransformTree>(lock)) {
                 parentTransform = parent.Get<const TransformTree>(lock).GetGlobalTransform(lock);
-                projectedDelta = parentTransform.GetInverse() * glm::vec4(projectedDelta, 0.0f);
+                deltaVector = parentTransform.GetInverse() * glm::vec4(deltaVector, 0.0f);
             }
 
             if (editMode == 0) { // Translate mode
-                targetTree.pose.Translate(projectedDelta);
+                targetTree.pose.Translate(deltaVector);
             } else if (editMode == 1) { // Scale mode
                 // Simulate an extrude tool by anchoring the opposite face (assuming model is symmetric around origin)
-
-                // Project the tool position onto the face normal to get a depth scalar
-                auto deltaToolDepth = glm::dot(toolPosition - lastToolPosition, faceNormal);
-
                 // Calculate the required scale to move the face by the tool depth in world space
                 auto targetTransform = targetTree.GetGlobalTransform(lock);
                 auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
-                auto scaleFactor = 1.0f + glm::abs(relativeNormal) * deltaToolDepth;
+                auto scaleFactor = 1.0f + glm::abs(relativeNormal) * toolDepth;
 
                 // Make sure we don't invert the scale
-                if (glm::all(glm::greaterThan(scaleFactor, glm::vec3(0.0f)))) {
-                    targetTree.pose.Scale(scaleFactor);
-                    targetTree.pose.Translate(projectedDelta * 0.5f);
-                }
+                if (glm::any(glm::lessThanEqual(scaleFactor, glm::vec3(0.0f)))) return false;
+
+                targetTree.pose.Scale(scaleFactor);
+                targetTree.pose.Translate(deltaVector * 0.5f);
             } else if (editMode == 2) { // Rotate mode
                 auto targetTransform = targetTree.GetGlobalTransform(lock);
                 auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
-                targetTree.pose.Rotate(glm::dot(worldDelta, faceNormal) * CVarEditRotateSensitivity.Get(),
-                    relativeNormal);
+
+                auto snapRadians = glm::radians(CVarEditRotateSnapDegrees.Get());
+                auto angle = std::round(toolDepth * CVarEditRotateSensitivity.Get() / snapRadians) * snapRadians;
+                if (angle == 0.0f) return false;
+                targetTree.pose.Rotate(angle, relativeNormal);
             }
             selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
+            return true;
+        }
+
+        void performRotateToFace(Lock<WriteAll> lock, glm::vec3 targetNormal) {
+            auto &targetTree = selectedEntity.Get<TransformTree>(lock);
+            auto worldToLocalRotation = glm::inverse(targetTree.GetGlobalRotation(lock));
+            auto deltaRotation = glm::rotation(worldToLocalRotation * faceNormal, worldToLocalRotation * -targetNormal);
+            targetTree.pose.Rotate(deltaRotation);
+            selectedEntity.Set<TransformSnapshot>(lock, targetTree.GetGlobalTransform(lock));
         }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -171,8 +176,14 @@ namespace sp::scripts {
                             }
                         } else if (selectedEntity) {
                             if (snapMode && raycastResult.subTarget) {
-                                auto newToolPosition = position + forward * raycastResult.distance;
-                                performUpdate(lock, newToolPosition, editMode);
+                                if (editMode == 2) {
+                                    performRotateToFace(lock, raycastResult.normal);
+                                } else {
+                                    // Project the tool position onto the face normal to get a depth scalar
+                                    auto newToolPosition = position + forward * raycastResult.distance;
+                                    auto projectedDepth = glm::dot(newToolPosition - lastToolPosition, faceNormal);
+                                    performUpdate(lock, projectedDepth, editMode);
+                                }
                             }
                             selectedEntity = {};
                         }
@@ -181,7 +192,7 @@ namespace sp::scripts {
             }
 
             float cursorLength = 0.1f;
-            if (snapMode && selectedEntity && raycastResult.subTarget) {
+            if (snapMode && selectedEntity && raycastResult.subTarget && editMode != 2) {
                 auto newToolPosition = position + forward * raycastResult.distance;
                 cursorLength = glm::dot(newToolPosition - lastToolPosition, faceNormal);
             }
@@ -216,13 +227,13 @@ namespace sp::scripts {
                 }
             }
 
-            if (selectedEntity.Has<TransformTree>(lock) && faceNormal != glm::vec3(0)) {
-                if (snapMode) return;
-
+            if (!snapMode && selectedEntity.Has<TransformTree>(lock) && faceNormal != glm::vec3(0)) {
+                // Project the tool position onto the face normal to get a depth scalar
                 auto newToolPosition = position + forward * toolDistance;
-                performUpdate(lock, newToolPosition, editMode);
-
-                lastToolPosition = newToolPosition;
+                auto projectedDepth = glm::dot(newToolPosition - lastToolPosition, faceNormal);
+                if (performUpdate(lock, projectedDepth, editMode)) {
+                    lastToolPosition += projectedDepth * faceNormal;
+                }
             }
         }
     };
