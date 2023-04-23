@@ -1,3 +1,4 @@
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
@@ -7,6 +8,10 @@
 
 namespace sp::scripts {
     using namespace ecs;
+
+    static CVar<float> CVarEditRotateSensitivity("e.RotateSensitivity",
+        2.0f,
+        "Movement sensitivity for rotation in edit tool");
 
     struct TraySpawner {
         std::string templateSource;
@@ -77,4 +82,150 @@ namespace sp::scripts {
     };
     StructMetadata MetadataTraySpawner(typeid(TraySpawner), StructField::New("source", &TraySpawner::templateSource));
     InternalScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
+
+    struct EditTool {
+        Entity selectedEntity;
+        float toolDistance;
+        glm::vec3 lastToolPosition, faceNormal;
+        PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
+
+        void performUpdate(Lock<WriteAll> lock, glm::vec3 toolPosition, int editMode) {
+            auto worldDelta = toolPosition - lastToolPosition;
+            auto projectedDelta = glm::dot(worldDelta, faceNormal) * faceNormal;
+            // Logf("Selected %s, delta: %s, normal: %s, projected: %s",
+            //     ToString(lock, selectedEntity),
+            //     glm::to_string(worldDelta),
+            //     glm::to_string(faceNormal),
+            //     glm::to_string(projectedDelta));
+
+            auto &targetTree = selectedEntity.Get<TransformTree>(lock);
+            auto parent = targetTree.parent.Get(lock);
+            Transform parentTransform;
+            if (parent.Has<TransformTree>(lock)) {
+                parentTransform = parent.Get<const TransformTree>(lock).GetGlobalTransform(lock);
+                projectedDelta = parentTransform.GetInverse() * glm::vec4(projectedDelta, 0.0f);
+            }
+
+            if (editMode == 0) { // Translate mode
+                targetTree.pose.Translate(projectedDelta);
+            } else if (editMode == 1) { // Scale mode
+                // Simulate an extrude tool by anchoring the opposite face (assuming model is symmetric around origin)
+
+                // Project the tool position onto the face normal to get a depth scalar
+                auto deltaToolDepth = glm::dot(toolPosition - lastToolPosition, faceNormal);
+
+                // Calculate the required scale to move the face by the tool depth in world space
+                auto targetTransform = targetTree.GetGlobalTransform(lock);
+                auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
+                auto scaleFactor = 1.0f + glm::abs(relativeNormal) * deltaToolDepth;
+
+                // Make sure we don't invert the scale
+                if (glm::all(glm::greaterThan(scaleFactor, glm::vec3(0.0f)))) {
+                    targetTree.pose.Scale(scaleFactor);
+                    targetTree.pose.Translate(projectedDelta * 0.5f);
+                }
+            } else if (editMode == 2) { // Rotate mode
+                auto targetTransform = targetTree.GetGlobalTransform(lock);
+                auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
+                targetTree.pose.Rotate(glm::dot(worldDelta, faceNormal) * CVarEditRotateSensitivity.Get(),
+                    relativeNormal);
+            }
+            selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
+        }
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree, PhysicsQuery>(lock)) return;
+            auto &query = ent.Get<PhysicsQuery>(lock);
+            auto &transform = ent.Get<TransformTree>(lock);
+
+            PhysicsQuery::Raycast::Result raycastResult;
+            if (raycastQuery) {
+                auto &result = query.Lookup(raycastQuery).result;
+                if (result) raycastResult = result.value();
+            } else {
+                raycastQuery = query.NewQuery(PhysicsQuery::Raycast(100.0f,
+                    PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+            }
+
+            auto globalTransform = transform.GetGlobalTransform(lock);
+            auto position = globalTransform.GetPosition();
+            auto forward = globalTransform.GetForward();
+
+            auto editMode = (int)SignalBindings::GetSignal(lock, ent, "edit_mode");
+            editMode = std::clamp(editMode, 0, 2);
+            if (ent.Has<SignalOutput>(lock)) {
+                ent.Get<SignalOutput>(lock).SetSignal("edit_mode", editMode);
+            }
+            auto snapMode = SignalBindings::GetSignal(lock, ent, "snap_mode") >= 0.5;
+
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
+                    if (std::holds_alternative<bool>(event.data)) {
+                        if (std::get<bool>(event.data) && raycastResult.subTarget.Has<TransformTree>(lock)) {
+                            selectedEntity = raycastResult.subTarget;
+                            toolDistance = raycastResult.distance;
+                            lastToolPosition = position + forward * toolDistance;
+                            if (raycastResult.normal != glm::vec3(0)) {
+                                faceNormal = glm::normalize(raycastResult.normal);
+                            }
+                        } else if (selectedEntity) {
+                            if (snapMode && raycastResult.subTarget) {
+                                auto newToolPosition = position + forward * raycastResult.distance;
+                                performUpdate(lock, newToolPosition, editMode);
+                            }
+                            selectedEntity = {};
+                        }
+                    }
+                }
+            }
+
+            float cursorLength = 0.1f;
+            if (snapMode && selectedEntity && raycastResult.subTarget) {
+                auto newToolPosition = position + forward * raycastResult.distance;
+                cursorLength = glm::dot(newToolPosition - lastToolPosition, faceNormal);
+            }
+
+            if (ent.Has<LaserLine>(lock)) {
+                auto &laserLine = ent.Get<LaserLine>(lock);
+                if (selectedEntity || raycastResult.subTarget) {
+                    laserLine.on = true;
+                    laserLine.mediaDensityFactor = 0.0f;
+                    laserLine.relative = false;
+                    LaserLine::Line line;
+                    if (editMode == 0) {
+                        line.color = glm::vec3(0, 0, 1);
+                    } else if (editMode == 1) {
+                        line.color = glm::vec3(0, 1, 0);
+                    } else if (editMode == 2) {
+                        line.color = glm::vec3(1, 0, 0);
+                    } else {
+                        line.color = glm::vec3(1, 1, 1);
+                    }
+                    if (selectedEntity) {
+                        laserLine.intensity = 10.0f;
+                        line.points = {lastToolPosition, lastToolPosition + faceNormal * cursorLength};
+                    } else {
+                        laserLine.intensity = 1.0f;
+                        auto cursorPosition = position + forward * raycastResult.distance;
+                        line.points = {cursorPosition, cursorPosition + raycastResult.normal * cursorLength};
+                    }
+                    laserLine.line = line;
+                } else {
+                    laserLine.on = false;
+                }
+            }
+
+            if (selectedEntity.Has<TransformTree>(lock) && faceNormal != glm::vec3(0)) {
+                if (snapMode) return;
+
+                auto newToolPosition = position + forward * toolDistance;
+                performUpdate(lock, newToolPosition, editMode);
+
+                lastToolPosition = newToolPosition;
+            }
+        }
+    };
+    StructMetadata MetadataEditTool(typeid(EditTool));
+    InternalScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

@@ -64,7 +64,7 @@ namespace sp {
                 for (auto &subQuery : query.queries) {
                     auto *raycastQuery = std::get_if<ecs::PhysicsQuery::Raycast>(&subQuery);
                     if (raycastQuery && raycastQuery->result) {
-                        target = raycastQuery->result->target;
+                        target = raycastQuery->result->subTarget;
                         if (target) break;
                     }
                 }

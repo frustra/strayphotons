@@ -36,8 +36,8 @@ namespace ecs {
             }
 
             struct Result {
-                Entity target;
-                glm::vec3 position;
+                Entity target, subTarget;
+                glm::vec3 position, normal;
                 float distance;
                 uint32 hits;
             };
