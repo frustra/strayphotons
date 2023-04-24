@@ -1,0 +1,27 @@
+{
+	"components": {
+		"script": {
+			"prefab": "template",
+			"parameters": {
+				"source": "slide_door"
+			}
+		},
+		"signal_bindings": {
+			"door_open": "gate_lock/open"
+		}
+	},
+	"entities": [
+		{
+			"name": "gate_lock",
+			"transform": {
+				"translate": [0.15, 0.9, -0.8]
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "gate_lock"
+				}
+			}
+		}
+	]
+}

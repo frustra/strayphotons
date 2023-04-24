@@ -57,102 +57,14 @@
 			}
 		},
 		{
-			"name": "sensor_door_0",
-			"transform": {
-				"parent": "table",
-				"rotate": [180, 0, 1, 0],
-				"translate": [0.86, 0.9, 0.14]
-			},
-			"laser_line": {
-				"color": [0, 0, 0.1],
-				"media_density": 0,
-				"points": [
-					[0, 0.11, 0],
-					[0, 1.6, 0],
-					[-2.8, 1.6, 0]
-				],
-				"radius": 0.001
-			},
-			"physics_joints": {
-				"local_offset": {
-					"rotate": [180, 0, 1, 0]
-				},
-				"target": "table.surface.10_1.socket"
-			},
-			"script": [
-				{
-					"parameters": {
-						"source": "disable_block"
-					},
-					"prefab": "template"
-				},
-				{
-					"parameters": {
-						"source": "blocks/laser_sensor"
-					},
-					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.10_1.socket",
-						"disabled": true
-					}
-				}
-			]
-		},
-		{
-			"name": "sensor_door_1",
-			"transform": {
-				"parent": "table",
-				"translate": [0.54, 0.9, 0.94]
-			},
-			"laser_line": {
-				"color": [0, 0, 0.1],
-				"media_density": 0,
-				"points": [
-					[0, 0.11, 0],
-					[0, 1.6, 0],
-					[0, 1.6, 1.8]
-				],
-				"radius": 0.001
-			},
-			"physics_joints": {
-				"target": "table.surface.6_11.socket"
-			},
-			"script": [
-				{
-					"parameters": {
-						"source": "disable_block"
-					},
-					"prefab": "template"
-				},
-				{
-					"parameters": {
-						"source": "blocks/laser_sensor"
-					},
-					"prefab": "template"
-				},
-				{
-					"onTick": "magnetic_plug",
-					"parameters": {
-						"attach": "table.surface.6_11.socket",
-						"disabled": true
-					}
-				}
-			]
-		},
-		{
 			"name": "door_0",
 			"transform": {
-				"translate": [4, 0, 0]
-			},
-			"signal_bindings": {
-				"door_open": "sensor_door_0/light_value_g"
+				"translate": [4, 0, -0.48],
+				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
 				"parameters": {
-					"source": "slide_door"
+					"source": "slide_door_lock"
 				},
 				"prefab": "template"
 			}
@@ -161,14 +73,11 @@
 			"name": "door_1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"translate": [1, 0, 2.5]
-			},
-			"signal_bindings": {
-				"door_open": "sensor_door_1/light_value_g"
+				"translate": [1.78, 0, 2.5]
 			},
 			"script": {
 				"parameters": {
-					"source": "slide_door"
+					"source": "slide_door_lock"
 				},
 				"prefab": "template"
 			}

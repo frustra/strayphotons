@@ -35,6 +35,11 @@
 			{
 				"onTick": "magnetic_plug"
 			}
+			,
+			{
+				"prefab": "template",
+				"parameters": { "source": "optics/laser_emitter" }
+			}
 		]
 	},
 	"entities": [
@@ -51,59 +56,6 @@
 					"model": "octagon",
 					"render": true
 				}
-			}
-		},
-		{
-			"name": "block-gizmo",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, 0],
-				"rotate": [-90, 0, 0, 1]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "optic-tube-3mm-flat-one-side",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "input",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, -0.0165]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "optic-socket",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "output",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, 0.0165],
-				"rotate": [180, 0, 1, 0]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "optic-socket",
-					"render": true
-				}
-			},
-			"signal_bindings": {
-				"laser_color_r": "scoperoot/laser_color_r",
-				"laser_color_g": "scoperoot/laser_color_g",
-				"laser_color_b": "scoperoot/laser_color_b"
-			},
-			"laser_line": {},
-			"laser_emitter": {
-				"start_distance": -0.03
 			}
 		}
 	]
