@@ -1,0 +1,83 @@
+{
+	"components": {
+		"transform": {
+		},
+		"signal_output": {
+		},
+		"signal_bindings": {
+			"open": "(sensor/light_value_r + sensor/light_value_g + sensor/light_value_b) >= 9000"
+		}
+	},
+	"entities": [
+		{
+			"transform": {
+				"translate": [0, 0, 0]
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "optics/laser_sensor"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "sensor",
+			"transform": {
+				"translate": [0, 0, 0]
+			},
+			"physics": {
+				"type": "Static"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "optics/laser_sensor"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "gate",
+			"transform": {
+				"translate": [0, 0, -0.07]
+			},
+			"physics": {
+				"type": "Static"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "power_laser",
+			"transform": {
+				"rotate": [0, 0, 1, 0],
+				"translate": [0, 0, -0.14]
+			},
+			"signal_output": {
+				"laser_color_r": 3000,
+				"laser_color_g": 3000,
+				"laser_color_b": 3000
+			},
+			"physics": {
+				"type": "Static"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "optics/laser_emitter"
+					},
+					"prefab": "template"
+				}
+			]
+		}
+	]
+}

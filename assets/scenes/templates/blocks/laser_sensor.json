@@ -28,21 +28,18 @@
 				"parameters": { "source": "interactive" }
 			},
 			{
+				"prefab": "template",
+				"parameters": { "source": "optics/laser_sensor" }
+			},
+			{
 				"onTick": "magnetic_plug"
 			}
-		],
-		"signal_bindings": {
-			"light_value_r": "source.Icosphere/light_value_r",
-			"light_value_g": "source.Icosphere/light_value_g",
-			"light_value_b": "source.Icosphere/light_value_b",
-			"value": "source.Icosphere/light_value_r + source.Icosphere/light_value_g + source.Icosphere/light_value_b"
-		}
+		]
 	},
 	"entities": [
 		{
 			"name": "mount",
 			"transform": {
-				"parent": "scoperoot",
 				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
@@ -55,60 +52,8 @@
 			}
 		},
 		{
-			"name": "block-gizmo",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, 0],
-				"rotate": [-90, 0, 0, 1]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "optic-tube-3mm-flat-one-side",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "source-socket",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, -0.0165]
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "optic-socket",
-					"render": true
-				}
-			}
-		},
-		{
-			"name": "source",
-			"transform": {
-				"parent": "scoperoot",
-				"translate": [0, 0.025, -0.005],
-				"rotate": [180, 0, 1, 0],
-				"scale": 0.1
-			},
-			"script": {
-				"prefab": "gltf",
-				"parameters": {
-					"model": "sensor",
-					"render": true,
-					"physics": "SubActor"
-				}
-			}
-		},
-		{
-			"name": "source.Icosphere",
-			"signal_output": {},
-			"laser_sensor": {}
-		},
-		{
 			"name": "signal_display",
 			"transform": {
-				"parent": "scoperoot",
 				"scale": [0.13, 0.05, 1],
 				"translate": [0, 0.08, 0]
 			},
