@@ -10,6 +10,9 @@
 namespace ecs {
     double ReadStructField(const void *basePtr, const StructField &field);
     bool WriteStructField(void *basePtr, const StructField &field, std::function<void(double &)> accessor);
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(glm::dvec2 &)> accessor);
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(glm::dvec3 &)> accessor);
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(glm::dvec4 &)> accessor);
     // New accessor function argument types can be appended here as needed
 
     /**

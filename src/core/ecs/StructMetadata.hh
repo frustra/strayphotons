@@ -45,6 +45,12 @@ namespace ecs {
         StructField(const std::string &name, std::type_index type, size_t offset, FieldAction actions)
             : name(name), type(type), offset(offset), actions(actions) {}
 
+        template<typename T, typename F>
+        static size_t OffsetOf(const F T::*M) {
+            // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
+            return reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
+        }
+
         /**
          * Registers a struct's field for serialization as a named field. For example:
          * StructField::New("model", &Renderable::modelName)
@@ -58,9 +64,7 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
-            size_t offset = reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
-            return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), offset, actions);
+            return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
         }
 
         /**

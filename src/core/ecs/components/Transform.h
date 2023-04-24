@@ -96,7 +96,12 @@ namespace ecs {
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
-    static StructMetadata MetadataTransform(typeid(Transform));
+    static StructMetadata MetadataTransform(typeid(Transform),
+        StructField("translate",
+            typeid(glm::vec3),
+            StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
+            FieldAction::AutoApply),
+        StructField::New("scale", &Transform::scale, FieldAction::AutoApply));
     template<>
     bool StructMetadata::Load<Transform>(const EntityScope &scope, Transform &dst, const picojson::value &src);
     template<>
