@@ -44,17 +44,19 @@ namespace sp {
             for (auto &triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) continue;
                 auto &transform = triggerEnt.Get<ecs::TransformSnapshot>(lock);
-                if (glm::length2(transform.GetPosition() - areaCenter) > boundingRadiusSquared) continue;
-                auto entityPos = invAreaTransform * glm::vec4(transform.GetPosition(), 1.0);
+                auto entityPos = transform.GetPosition();
                 bool inArea = false;
-                switch (area.shape) {
-                case ecs::TriggerShape::Box:
-                    inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
-                             glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
-                    break;
-                case ecs::TriggerShape::Sphere:
-                    inArea = glm::length2(entityPos) < 0.25;
-                    break;
+                if (glm::length2(entityPos - areaCenter) <= boundingRadiusSquared) {
+                    auto relativePos = invAreaTransform * glm::vec4(transform.GetPosition(), 1.0);
+                    switch (area.shape) {
+                    case ecs::TriggerShape::Box:
+                        inArea = glm::all(glm::greaterThan(relativePos, glm::vec3(-0.5))) &&
+                                 glm::all(glm::lessThan(relativePos, glm::vec3(0.5)));
+                        break;
+                    case ecs::TriggerShape::Sphere:
+                        inArea = glm::length2(relativePos) < 0.25;
+                        break;
+                    }
                 }
 
                 auto &triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);

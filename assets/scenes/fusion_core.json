@@ -1,4 +1,7 @@
 {
+	"properties": {
+		"gravity": [0, -3, 0]
+	},
 	"entities": [
 		{
 			"name": "floor",
@@ -109,7 +112,7 @@
 			}
 		},
 		{
-			"name": "pellet_sensor_area",
+			"name": "pellet_respawn_area",
 			"transform": {
 				"parent": "reactor_center",
 				"scale": 0.1,
@@ -125,6 +128,19 @@
 				},
 				"prefab": "template"
 			}
+		},
+		{
+			"name": "pellet_laser_area",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": 0.1,
+				"translate": [0, -0.03, 0]
+			},
+			"trigger_area": "Sphere",
+			"event_bindings": {
+				"/trigger/object/enter": "ball1/script/react"
+			},
+			"signal_output": {}
 		},
 		{
 			"name": "pellet_sensor_laser",
@@ -156,8 +172,24 @@
 		},
 		{
 			"name": "pellet_sensor_receiver.Icosphere",
-			"signal_output": {},
-			"laser_sensor": {}
+			"laser_sensor": {},
+			"signal_output": {
+				"light_value_r": 1
+			}
+		},
+		{
+			"name": "laser_controller",
+			"signal_output": {
+				"intensity": 0
+			},
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 0,
+					"input": "max(100 * (pellet_laser_area/trigger_object_count != 0), laser_controller/intensity - 15)",
+					"output": "intensity"
+				}
+			}
 		},
 		{
 			"name": "fusion_laser1",
@@ -168,15 +200,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -195,15 +226,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -221,15 +251,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -248,15 +277,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -275,15 +303,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.067
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -302,15 +329,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -329,15 +355,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -356,15 +381,14 @@
 			},
 			"laser_emitter": {
 				"color": [0.04, -1, 1],
-				"intensity": 100,
-				"on": false,
+				"intensity": 0,
 				"start_distance": 0.051
 			},
 			"laser_line": {},
 			"script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"laser_emitter.on": "pellet_sensor_receiver.Icosphere/light_value_r == 0"
+					"laser_emitter.intensity": "laser_controller/intensity"
 				}
 			}
 		},
@@ -372,7 +396,7 @@
 			"name": "ball1",
 			"transform": {
 				"scale": 0.04,
-				"translate": [-0.25, 1.5, -2.4]
+				"translate": [0.3, 1.1, -1]
 			},
 			"renderable": {
 				"model": "sphere"
@@ -387,7 +411,68 @@
 				}
 			},
 			"trigger_group": "Object",
-			"event_input": {},
+			"event_bindings": {
+				"/script/react": {
+					"outputs": "ball1/set/renderable.emissive",
+					"set_value": 100
+				},
+				"/script/respawn": [
+					{
+						"modify": [
+							"pellet_dropper#transform_snapshot.translate.x",
+							"pellet_dropper#transform_snapshot.translate.y",
+							"pellet_dropper#transform_snapshot.translate.z"
+						],
+						"outputs": [
+							"ball1/set/transform.translate.xyz",
+							"ball1/set/transform_snapshot.translate.xyz"
+						],
+						"set_value": [0, 0, 0]
+					},
+					{
+						"outputs": "ball1/set/renderable.emissive",
+						"set_value": 0
+					}
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": [
+							"renderable.emissive",
+							"transform.translate.xyz",
+							"transform_snapshot.translate.xyz"
+						]
+					}
+				},
+				{
+					"parameters": {
+						"source": "interactive"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "ball2",
+			"transform": {
+				"scale": 0.04,
+				"translate": [0, 1.1, -1]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"dynamic_friction": 0.08,
+					"restitution": 0.5,
+					"sphere": 0.5,
+					"static_friction": 0.1
+				}
+			},
+			"trigger_group": "Object",
 			"event_bindings": {
 				"/script/respawn": {
 					"modify": [
@@ -421,35 +506,10 @@
 			]
 		},
 		{
-			"name": "ball2",
-			"transform": {
-				"scale": 0.04,
-				"translate": [0, 1.6, -2.5]
-			},
-			"renderable": {
-				"model": "sphere"
-			},
-			"physics": {
-				"mass": 1,
-				"shapes": {
-					"dynamic_friction": 0.08,
-					"restitution": 0.5,
-					"sphere": 0.5,
-					"static_friction": 0.1
-				}
-			},
-			"script": {
-				"parameters": {
-					"source": "interactive"
-				},
-				"prefab": "template"
-			}
-		},
-		{
 			"name": "ball3",
 			"transform": {
 				"scale": 0.04,
-				"translate": [0.25, 1.5, -2.4]
+				"translate": [-0.3, 1.1, -1]
 			},
 			"renderable": {
 				"model": "sphere"
@@ -463,12 +523,38 @@
 					"static_friction": 0.1
 				}
 			},
-			"script": {
-				"parameters": {
-					"source": "interactive"
+			"trigger_group": "Object",
+			"event_bindings": {
+				"/script/respawn": {
+					"modify": [
+						"pellet_dropper#transform_snapshot.translate.x",
+						"pellet_dropper#transform_snapshot.translate.y",
+						"pellet_dropper#transform_snapshot.translate.z"
+					],
+					"outputs": [
+						"ball1/set/transform.translate.xyz",
+						"ball1/set/transform_snapshot.translate.xyz"
+					],
+					"set_value": [0, 0, 0]
+				}
+			},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": [
+							"transform.translate.xyz",
+							"transform_snapshot.translate.xyz"
+						]
+					}
 				},
-				"prefab": "template"
-			}
+				{
+					"parameters": {
+						"source": "interactive"
+					},
+					"prefab": "template"
+				}
+			]
 		},
 		{
 			"name": "reactor_center",

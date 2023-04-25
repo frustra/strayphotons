@@ -142,7 +142,8 @@ namespace sp::scripts {
         "/action/snap_rotate");
 
     struct CameraView {
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        template<typename LockType>
+        void updateCamera(ScriptState &state, LockType &lock, Entity ent) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             Event event;
@@ -170,7 +171,18 @@ namespace sp::scripts {
                 }
             }
         }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateCamera(state, lock, ent);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateCamera(state, lock, ent);
+        }
     };
     StructMetadata MetadataCameraView(typeid(CameraView));
     InternalScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
+    InternalPhysicsScript<CameraView> physicsCameraView("physics_camera_view",
+        MetadataCameraView,
+        true,
+        "/script/camera_rotate");
 } // namespace sp::scripts

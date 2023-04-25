@@ -705,11 +705,10 @@ namespace sp {
         ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
         ecs::Entity &e) {
         ZoneScoped;
-        // ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
         if (ph.type == ecs::PhysicsActorType::SubActor) {
-            ZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
+            // ZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
             if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
                 auto parentActor = e;
                 while (parentActor.Has<ecs::TransformTree>(lock)) {
@@ -726,7 +725,7 @@ namespace sp {
                 }
             }
         } else {
-            ZoneStr(ecs::ToString(lock, e));
+            // ZoneStr(ecs::ToString(lock, e));
         }
         if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
             actorEnt = e;
