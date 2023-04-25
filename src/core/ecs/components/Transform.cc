@@ -209,7 +209,18 @@ namespace ecs {
 
     Transform Transform::GetInverse() const {
         if (std::isinf(offset[0][0])) return Transform(glm::identity<glm::mat4x3>(), glm::vec3(1.0f));
-        return Transform(glm::affineInverse(GetMatrix()));
+        // return Transform(glm::affineInverse(GetMatrix()));
+
+        ZoneScoped;
+        // Optimized inverse taking advantage of separate scale and offset
+        glm::mat3 inv = offset;
+        inv[0] /= scale.x;
+        inv[1] /= scale.y;
+        inv[2] /= scale.z;
+        inv = glm::transpose(inv);
+        glm::mat4 newOffset = inv;
+        newOffset[3] = glm::vec4(inv * -offset[3], 1.0f);
+        return Transform(newOffset);
     }
 
     glm::mat4 Transform::GetMatrix() const {
