@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
@@ -208,7 +209,7 @@ namespace ecs {
 
     Transform Transform::GetInverse() const {
         if (std::isinf(offset[0][0])) return Transform(glm::identity<glm::mat4x3>(), glm::vec3(1.0f));
-        return Transform(glm::inverse(GetMatrix()));
+        return Transform(glm::affineInverse(GetMatrix()));
     }
 
     glm::mat4 Transform::GetMatrix() const {
