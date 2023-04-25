@@ -6,7 +6,7 @@ int main() {
     const double zeroCelsius = 273.15; // Zero Celsius in Kelvin
     const double backupPower = 10.0; // Minimum power available to the reactor (in kW)
     const double ambientTemp = zeroCelsius + 20.0; // Ambient temperature of the reactor (in K)
-    const double maxReactorTemp = zeroCelsius + 10000.0; // Maximum temperature of the reactor (in K)
+    // const double maxReactorTemp = zeroCelsius + 10000.0; // Maximum temperature of the reactor (in K)
     const double tempIncreasePerPellet = 8.0; // Temperature increase per pellet (in K)
     const double powerOutputPerPellet = 1000.0; // Power output per pellet (in kW)
     const double pelletReactivity = 300000.0; // A higher number means pellets require more energy to react
