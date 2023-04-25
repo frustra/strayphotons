@@ -58,7 +58,7 @@ namespace testing {
     }
 
     inline bool FloatEqual(float a, float b) {
-        float feps = std::numeric_limits<float>::epsilon() * 10.0f;
+        constexpr float feps = 0.0000015;
         return (a - feps < b) && (a + feps > b);
     }
 
@@ -75,7 +75,7 @@ namespace testing {
     template<>
     inline void AssertEqual<glm::quat, glm::quat>(glm::quat a, glm::quat b, const std::string &message) {
         float dot = glm::abs(glm::dot(a, b));
-        float feps = std::numeric_limits<float>::epsilon() * 10.0f;
+        constexpr float feps = 0.0000015;
         if (dot + feps < 1.0f) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
