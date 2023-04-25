@@ -1,0 +1,55 @@
+{
+	"components": {
+		"transform": {},
+		"laser_emitter": {
+			"color": [0.04, -1, 1],
+			"intensity": 0,
+			"start_distance": 0.123
+		},
+		"laser_line": {},
+		"script": {
+			"onTick": "component_from_signal",
+			"parameters": {
+				"laser_emitter.intensity": "scoperoot/intensity"
+			}
+		}
+	},
+	"entities": [
+		{
+			"name": "laser_body",
+			"transform": {
+				"parent": "scoperoot",
+				"scale": [0.04, 0.04, 0.05],
+				"translate": [0, 0, -0.07]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"box": [1, 1, 1]
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "laser_point",
+			"transform": {
+				"parent": "scoperoot",
+				"scale": 0.015,
+				"rotate": [31.7, 1, 0, 0],
+				"translate": [0, 0.001, -0.091]
+			},
+			"renderable": {
+				"model": "dodecahedron",
+				"color_override": [0, 0, 0.05, 1]
+			},
+			"physics": {
+				"shapes": {
+					"model": "dodecahedron"
+				},
+				"type": "Static"
+			}
+		}
+	]
+}

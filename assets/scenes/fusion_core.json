@@ -1,7 +1,4 @@
 {
-	"properties": {
-		"gravity": [0, -3, 0]
-	},
 	"entities": [
 		{
 			"name": "floor",
@@ -147,35 +144,13 @@
 			"transform": {
 				"parent": "reactor_center",
 				"rotate": [90, 0, 1, 0],
-				"translate": [0.949, 0, 0]
+				"translate": [1, 0, 0]
 			},
 			"laser_emitter": {
-				"color": [1, 0, 0]
+				"color": [1, 0, 0],
+				"start_distance": 0.123
 			},
 			"laser_line": {}
-		},
-		{
-			"name": "pellet_sensor_receiver",
-			"transform": {
-				"parent": "reactor_center",
-				"rotate": [90, 0, 1, 0],
-				"scale": 0.25,
-				"translate": [-0.95, 0, 0]
-			},
-			"script": {
-				"parameters": {
-					"model": "sensor",
-					"physics": "Static"
-				},
-				"prefab": "gltf"
-			}
-		},
-		{
-			"name": "pellet_sensor_receiver.Icosphere",
-			"laser_sensor": {},
-			"signal_output": {
-				"light_value_r": 1
-			}
 		},
 		{
 			"name": "laser_controller",
@@ -198,16 +173,13 @@
 				"rotate": [90, 0, 1, 0],
 				"translate": [1, 0, 0]
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -218,22 +190,13 @@
 				"rotate": [45, 0, 1, 0],
 				"translate": [0.7071, 0, 0.7071]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -243,22 +206,13 @@
 				"parent": "reactor_center",
 				"translate": [0, 0, 1]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -269,22 +223,13 @@
 				"rotate": [45, 0, -1, 0],
 				"translate": [-0.7071, 0, 0.7071]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -295,22 +240,13 @@
 				"rotate": [90, 0, -1, 0],
 				"translate": [-1, 0, 0]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.067
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -321,22 +257,13 @@
 				"rotate": [135, 0, -1, 0],
 				"translate": [-0.7071, 0, -0.7071]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -347,22 +274,13 @@
 				"rotate": [180, 0, 1, 0],
 				"translate": [0, 0, -1]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
@@ -373,22 +291,13 @@
 				"rotate": [135, 0, 1, 0],
 				"translate": [0.7071, 0, -0.7071]
 			},
-			"physics": {
-				"shapes": {
-					"box": [0.1, 0.1, 0.1]
-				},
-				"type": "Static"
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
 			},
-			"laser_emitter": {
-				"color": [0.04, -1, 1],
-				"intensity": 0,
-				"start_distance": 0.051
-			},
-			"laser_line": {},
 			"script": {
-				"onTick": "component_from_signal",
+				"prefab": "template",
 				"parameters": {
-					"laser_emitter.intensity": "laser_controller/intensity"
+					"source": "fusion_core/fusion_laser"
 				}
 			}
 		},
