@@ -335,7 +335,7 @@ namespace sp {
         for (auto &instance : value) {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
-            std::lock_guard l(state.mutex);
+            std::lock_guard l(ecs::ScriptTypeMutex[state.definition.callback.index()]);
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
             bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
                             std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);

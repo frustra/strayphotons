@@ -24,6 +24,8 @@ namespace ecs {
 
     static std::atomic_size_t nextInstanceId;
 
+    std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
+
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const ScriptState &other)
         : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), userData(other.userData),
@@ -87,7 +89,7 @@ namespace ecs {
         } else if (definition->context) {
             instance = ScriptInstance(scope, *definition);
             auto &state = *instance.state;
-            std::lock_guard l(state.mutex);
+            std::lock_guard l(ScriptTypeMutex[state.definition.callback.index()]);
             // Access will initialize default parameters
             void *dataPtr = state.definition.context->Access(state);
             Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
@@ -112,7 +114,7 @@ namespace ecs {
         const ScriptInstance &def) {
         if (!src.state) return;
         auto &state = *src.state;
-        std::lock_guard l(state.mutex);
+        std::lock_guard l(ScriptTypeMutex[state.definition.callback.index()]);
         if (state.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
         } else if (!std::holds_alternative<std::monostate>(state.definition.callback)) {
@@ -142,6 +144,16 @@ namespace ecs {
                 }
             }
         }
+    }
+
+    template<>
+    bool StructMetadata::Load<Scripts>(const EntityScope &scope, Scripts &dst, const picojson::value &src) {
+        // Scripts will already be populated by subfield-handler, just update the callback mask
+        dst.callbackMask.reset();
+        for (auto &script : dst.scripts) {
+            if (script) dst.callbackMask.set(script.state->definition.callback.index());
+        }
+        return true;
     }
 
     template<>
@@ -212,19 +224,31 @@ namespace ecs {
                 *existing = instance.Copy();
             }
         }
+        dst.callbackMask.reset();
+        for (auto &script : dst.scripts) {
+            if (script) dst.callbackMask.set(script.state->definition.callback.index());
+        }
     }
 
     void Scripts::Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent) {
         if (!ent.Has<Scripts>(lock)) return;
+        ZoneScoped;
         for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
 
-            std::lock_guard l(state.mutex);
+            std::lock_guard l(ScriptTypeMutex[state.definition.callback.index()]);
             if (!state.eventQueue) {
-                state.eventQueue = NewEventQueue();
-                if (state.definition.initFunc) (*state.definition.initFunc)(state);
+                {
+                    ZoneScopedN("InitEventQueue");
+                    state.eventQueue = NewEventQueue();
+                }
+                {
+                    ZoneScopedN("InitFunc");
+                    if (state.definition.initFunc) (*state.definition.initFunc)(state);
+                }
                 if (ent.Has<EventInput>(lock)) {
+                    ZoneScopedN("RegisterEvents");
                     auto &eventInput = ent.Get<EventInput>(lock);
                     for (auto &event : state.definition.events) {
                         eventInput.Register(lock, state.eventQueue, event);
@@ -238,11 +262,11 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) {
+    void Scripts::OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) const {
+        ZoneScoped;
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
-            std::lock_guard l(state.mutex);
             auto callback = std::get_if<OnTickFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
@@ -253,11 +277,11 @@ namespace ecs {
         }
     }
 
-    void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) {
+    void Scripts::OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) const {
+        ZoneScoped;
         for (auto &instance : scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
-            std::lock_guard l(state.mutex);
             auto callback = std::get_if<OnPhysicsUpdateFunc>(&state.definition.callback);
             if (callback && *callback) {
                 if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
@@ -270,6 +294,7 @@ namespace ecs {
 
     void Scripts::RunPrefabs(Lock<AddRemove> lock, Entity ent) {
         if (!ent.Has<Scripts, SceneInfo>(lock)) return;
+        if (!ent.Get<const Scripts>(lock).HasPrefab()) return;
 
         ZoneScopedN("RunPrefabs");
         ZoneStr(ecs::ToString(lock, ent));
@@ -277,6 +302,7 @@ namespace ecs {
         auto scene = ent.Get<const SceneInfo>(lock).scene;
         Assertf(scene, "RunPrefabs entity has null scene: %s", ecs::ToString(lock, ent));
 
+        std::lock_guard l(ScriptTypeMutex[ScriptCallbackIndex<PrefabFunc>()]);
         // Prefab scripts may add additional scripts while iterating.
         // The Scripts component may not remain valid if storage is resized,
         // so we need to reference the lock every loop iteration.
@@ -284,7 +310,6 @@ namespace ecs {
             auto instance = ent.Get<const Scripts>(lock).scripts[i];
             if (!instance) continue;
             auto &state = *instance.state;
-            std::lock_guard l(state.mutex);
             auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
             if (callback && *callback) (*callback)(state, scene, lock, ent);
         }

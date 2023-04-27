@@ -109,6 +109,7 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             if (!ent.Has<SignalOutput>(lock)) return;
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
@@ -172,9 +173,11 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             sendOutputEvents(state, lock, ent, interval);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             sendOutputEvents(state, lock, ent, interval);
         }
     };
@@ -275,9 +278,11 @@ namespace sp::scripts {
         }
 
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             updateComponentFromEvent(state, lock, ent);
         }
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            ZoneScoped;
             updateComponentFromEvent(state, lock, ent);
         }
     };

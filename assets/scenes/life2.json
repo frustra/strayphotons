@@ -1,0 +1,237 @@
+{
+	"entities": [
+		{
+			"name": "floor",
+			"transform": {
+				"scale": [10, 0.5, 8],
+				"translate": [0, -0.25, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "ceiling",
+			"transform": {
+				"scale": [10, 0.1, 8],
+				"translate": [0, 5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "front_wall",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, -4]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "left_wall",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [-5, 2.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "right_wall",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [5, 2.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "back_wall",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, 4]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"type": "Static",
+				"shapes": {
+					"model": "box"
+				}
+			}
+		},
+		{
+			"name": "table",
+			"transform": {
+				"translate": [-0.5, 0, -2]
+			},
+			"script": {
+				"parameters": {
+					"source": "table/1x1"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "mirrorcube1",
+			"transform": {
+				"scale": 0.1,
+				"translate": [0.65, 0, 0.35]
+			},
+			"physics": {
+				"contact_report_force": 1
+			},
+			"script": {
+				"parameters": {
+					"source": "mirrorcube"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "life",
+			"transform": {
+				"parent": "table.surface",
+				"translate": [0, 0, 0]
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "table/life/128x128"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "life.3_3",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.4_4",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.4_5",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.3_5",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.2_5",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.12_5",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.11_6",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.11_7",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.13_6",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.13_7",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "life.12_8",
+			"script": {
+				"onTick": "init_event",
+				"parameters": ["/signal/set/alive"]
+			}
+		},
+		{
+			"name": "global:spawn",
+			"transform": {}
+		},
+		{
+			"transform": {
+				"rotate": [90, -1, 0, 0],
+				"translate": [0, 5, 0]
+			},
+			"light": {
+				"intensity": 15,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
+				"spotAngle": 60,
+				"tint": [1, 1, 1]
+			}
+		}
+	]
+}

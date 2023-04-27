@@ -15,6 +15,7 @@ namespace sp::scripts {
         2.0f,
         "Movement sensitivity for rotation in edit tool");
     static CVar<float> CVarEditRotateSnapDegrees("e.RotateSnapDegrees", 5.0f, "Snap angle for rotation in edit tool");
+    static CVar<float> CVarEditTranslateSnap("e.TranslateSnap", 0.001f, "Snap distance for translation in edit tool");
 
     struct TraySpawner {
         std::string templateSource;
@@ -92,8 +93,12 @@ namespace sp::scripts {
         glm::vec3 lastToolPosition, faceNormal;
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode) {
-            auto deltaVector = toolDepth * faceNormal;
+        bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode, bool snapToFace) {
+            auto deltaDepth = toolDepth;
+            if (!snapToFace) {
+                deltaDepth = std::round(toolDepth / CVarEditTranslateSnap.Get()) * CVarEditTranslateSnap.Get();
+            }
+            auto deltaVector = deltaDepth * faceNormal;
 
             auto &targetTree = selectedEntity.Get<TransformTree>(lock);
             auto parent = targetTree.parent.Get(lock);
@@ -104,13 +109,15 @@ namespace sp::scripts {
             }
 
             if (editMode == 0) { // Translate mode
+                if (deltaDepth == 0.0f) return false;
                 targetTree.pose.Translate(deltaVector);
             } else if (editMode == 1) { // Scale mode
+                if (deltaDepth == 0.0f) return false;
                 // Simulate an extrude tool by anchoring the opposite face (assuming model is symmetric around origin)
                 // Calculate the required scale to move the face by the tool depth in world space
                 auto targetTransform = targetTree.GetGlobalTransform(lock);
                 auto relativeNormal = targetTransform.GetInverse() * glm::vec4(faceNormal, 0.0f);
-                auto scaleFactor = 1.0f + glm::abs(relativeNormal) * toolDepth;
+                auto scaleFactor = 1.0f + glm::abs(relativeNormal) * deltaDepth;
 
                 // Make sure we don't invert the scale
                 if (glm::any(glm::lessThanEqual(scaleFactor, glm::vec3(0.0f)))) return false;
@@ -182,7 +189,7 @@ namespace sp::scripts {
                                     // Project the tool position onto the face normal to get a depth scalar
                                     auto newToolPosition = position + forward * raycastResult.distance;
                                     auto projectedDepth = glm::dot(newToolPosition - lastToolPosition, faceNormal);
-                                    performUpdate(lock, projectedDepth, editMode);
+                                    performUpdate(lock, projectedDepth, editMode, true);
                                 }
                             }
                             selectedEntity = {};
@@ -231,7 +238,7 @@ namespace sp::scripts {
                 // Project the tool position onto the face normal to get a depth scalar
                 auto newToolPosition = position + forward * toolDistance;
                 auto projectedDepth = glm::dot(newToolPosition - lastToolPosition, faceNormal);
-                if (performUpdate(lock, projectedDepth, editMode)) {
+                if (performUpdate(lock, projectedDepth, editMode, false)) {
                     lastToolPosition += projectedDepth * faceNormal;
                 }
             }

@@ -186,7 +186,8 @@ namespace sp {
                     ecs::EventInput,
                     ecs::TriggerGroup,
                     ecs::CharacterController,
-                    ecs::SceneProperties>,
+                    ecs::SceneProperties,
+                    ecs::Scripts>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
@@ -197,8 +198,7 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::SignalOutput,
-                    ecs::Scripts>,
+                    ecs::SignalOutput>,
                 ecs::PhysicsUpdateLock>();
 
             characterControlSystem.Frame(lock);
@@ -304,20 +304,26 @@ namespace sp {
                 }
             }
 
-            // Update actors with latest entity data
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.type == ecs::PhysicsActorType::SubActor) continue;
-                UpdateActor(lock, ent);
+            {
+                ZoneScopedN("UpdateActors");
+                // Update actors with latest entity data
+                for (auto &ent : lock.EntitiesWith<ecs::Physics>()) {
+                    if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+                    auto &ph = ent.Get<ecs::Physics>(lock);
+                    if (ph.type == ecs::PhysicsActorType::SubActor) continue;
+                    UpdateActor(lock, ent);
+                }
             }
 
-            // Update sub actors once all parent actors are complete
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.type != ecs::PhysicsActorType::SubActor) continue;
-                UpdateActor(lock, ent);
+            {
+                ZoneScopedN("UpdateSubActors");
+                // Update sub actors once all parent actors are complete
+                for (auto &ent : lock.EntitiesWith<ecs::Physics>()) {
+                    if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+                    auto &ph = ent.Get<ecs::Physics>(lock);
+                    if (ph.type != ecs::PhysicsActorType::SubActor) continue;
+                    UpdateActor(lock, ent);
+                }
             }
 
             constraintSystem.Frame(lock);
@@ -329,8 +335,10 @@ namespace sp {
 
             {
                 ZoneScopedN("Scripts::OnPhysicsUpdate");
+                std::lock_guard l(ecs::ScriptTypeMutex[ecs::ScriptCallbackIndex<ecs::OnPhysicsUpdateFunc>()]);
                 for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
                     auto &scripts = entity.Get<ecs::Scripts>(lock);
+                    if (!scripts.HasOnPhysicsUpdate()) continue;
                     scripts.OnPhysicsUpdate(lock, entity, interval);
                 }
             }
@@ -703,7 +711,7 @@ namespace sp {
 
     void PhysxManager::UpdateActor(
         ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
-        ecs::Entity &e) {
+        const ecs::Entity &e) {
         ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);

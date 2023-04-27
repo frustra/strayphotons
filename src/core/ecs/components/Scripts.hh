@@ -27,6 +27,16 @@ namespace ecs {
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
+    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc>;
+
+    template<typename T>
+    struct ScriptCallbackIndex : std::integral_constant<size_t, 0> {};
+    template<>
+    struct ScriptCallbackIndex<OnTickFunc> : std::integral_constant<size_t, 1> {};
+    template<>
+    struct ScriptCallbackIndex<OnPhysicsUpdateFunc> : std::integral_constant<size_t, 2> {};
+    template<>
+    struct ScriptCallbackIndex<PrefabFunc> : std::integral_constant<size_t, 3> {};
 
     struct InternalScriptBase {
         const StructMetadata &metadata;
@@ -42,7 +52,7 @@ namespace ecs {
         bool filterOnEvent = false;
         const InternalScriptBase *context = nullptr;
         std::optional<ScriptInitFunc> initFunc;
-        std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc> callback;
+        ScriptCallback callback;
     };
 
     struct ScriptDefinitions {
@@ -117,7 +127,6 @@ namespace ecs {
             return instanceId;
         }
 
-        sp::LockFreeMutex mutex;
         EntityScope scope;
         ScriptDefinition definition;
         ecs::EventQueueRef eventQueue;
@@ -180,37 +189,63 @@ namespace ecs {
 
     struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
-            return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
+            auto &newState = *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
+            callbackMask.set(newState.definition.callback.index());
+            return newState;
         }
         ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
-            return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
+            auto &newState = *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
+            callbackMask.set(newState.definition.callback.index());
+            return newState;
         }
 
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
+            callbackMask.set(ScriptCallbackIndex<OnTickFunc>());
             return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
+            callbackMask.set(ScriptCallbackIndex<OnPhysicsUpdateFunc>());
             return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
+            callbackMask.set(ScriptCallbackIndex<PrefabFunc>());
             return *(scripts.emplace_back(scope, callback).state);
         }
 
         static void Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent);
-        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval);
-        void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval);
+        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) const;
+        void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) const;
 
         // RunPrefabs should only be run from the SceneManager thread
         static void RunPrefabs(Lock<AddRemove> lock, Entity ent);
 
         const ScriptState *FindScript(size_t instanceId) const;
 
+        inline bool HasOnTick() const {
+            return callbackMask.test(ScriptCallbackIndex<OnTickFunc>());
+        }
+
+        inline bool HasOnPhysicsUpdate() const {
+            return callbackMask.test(ScriptCallbackIndex<OnPhysicsUpdateFunc>());
+        }
+
+        inline bool HasPrefab() const {
+            return callbackMask.test(ScriptCallbackIndex<PrefabFunc>());
+        }
+
+        // Bitmask caches callback types so iteration can to quickly check if a callback type is present
+        std::bitset<std::variant_size_v<ScriptCallback>> callbackMask;
         std::vector<ScriptInstance> scripts;
     };
+
+    // Scripts share one global mutex per callback type
+    extern std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
 
     static StructMetadata MetadataScripts(typeid(Scripts), StructField::New(&Scripts::scripts, FieldAction::AutoLoad));
     static Component<Scripts> ComponentScripts("script", MetadataScripts);
 
+    template<>
+    bool StructMetadata::Load<Scripts>(const EntityScope &scope, Scripts &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<Scripts>(const EntityScope &scope,
         picojson::value &dst,
