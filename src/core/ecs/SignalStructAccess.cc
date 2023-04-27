@@ -94,6 +94,7 @@ namespace ecs {
                     size_t delimiter = fieldName.find_last_of('.');
                     std::optional<StructField> subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
                     if (subField) {
+                        subField->offset += field.offset;
                         if (subField->type == typeid(typename T::value_type)) {
                             auto &subValue = subField->Access<typename T::value_type>(basePtr);
                             if (ConvertAccessor<ArgT>(subValue, accessor)) return true;
@@ -150,6 +151,18 @@ namespace ecs {
         return detail::AccessStructField<double>(basePtr, field, accessor);
     }
 
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(glm::dvec2 &)> accessor) {
+        return detail::AccessStructField<glm::dvec2>(basePtr, field, accessor);
+    }
+
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(glm::dvec3 &)> accessor) {
+        return detail::AccessStructField<glm::dvec3>(basePtr, field, accessor);
+    }
+
+    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(glm::dvec4 &)> accessor) {
+        return detail::AccessStructField<glm::dvec4>(basePtr, field, accessor);
+    }
+
     std::optional<StructField> GetStructField(std::type_index baseType,
         std::string_view fieldName,
         size_t fieldNameOffset) {
@@ -184,16 +197,21 @@ namespace ecs {
                 auto *metadata = StructMetadata::Get(baseType);
                 if (metadata) {
                     for (const StructField &field : metadata->fields) {
-                        if (!sp::starts_with(subField, field.name)) continue;
-                        if (subField.length() > field.name.length() && subField[field.name.length()] != '.') {
-                            continue;
-                        }
+                        if (field.name.empty()) {
+                            auto result = GetStructField(field.type, fieldName, fieldNameOffset);
+                            if (result) return result;
+                        } else {
+                            if (!sp::starts_with(subField, field.name)) continue;
+                            if (subField.length() > field.name.length() && subField[field.name.length()] != '.') {
+                                continue;
+                            }
 
-                        auto result = GetStructField(field.type, subField, delimiter + 1);
-                        if (result) {
-                            result->offset += field.offset;
+                            auto result = GetStructField(field.type, subField, delimiter + 1);
+                            if (result) {
+                                result->offset += field.offset;
+                            }
+                            return result;
                         }
-                        return result;
                     }
                     Errorf("GetStructField missing subfield: %s '%s'", baseType.name(), std::string(fieldName));
                     return {};

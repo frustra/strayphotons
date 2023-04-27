@@ -251,4 +251,17 @@ namespace sp {
                 }
             }
         });
+
+    CFunc<std::string> CFuncEvalSignal("evalsignal",
+        "Evaluate a signal expresion and print out the result",
+        [](std::string exprStr) {
+            auto lock = ecs::StartTransaction<ecs::ReadAll>();
+
+            ecs::SignalExpression expr(exprStr);
+            if (expr) {
+                Logf("%s = %f", exprStr, expr.Evaluate(lock));
+            } else {
+                Errorf("Invalid signal expression: %s", exprStr);
+            }
+        });
 } // namespace sp

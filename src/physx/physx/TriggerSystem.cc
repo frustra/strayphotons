@@ -6,6 +6,8 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
+#include <glm/gtx/norm.hpp>
+
 namespace sp {
     TriggerSystem::TriggerSystem() {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
@@ -25,7 +27,10 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;
             auto &area = entity.Get<ecs::TriggerArea>(lock);
-            auto invAreaTransform = entity.Get<ecs::TransformSnapshot>(lock).GetInverse();
+            auto &areaTransform = entity.Get<ecs::TransformSnapshot>(lock);
+            auto areaCenter = areaTransform.GetPosition();
+            auto boundingRadiusSquared = glm::length2(areaTransform * glm::vec4(glm::vec3(0.5f), 0.0f));
+            auto invAreaTransform = areaTransform.GetInverse();
 
             ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
             while (triggerGroupObserver.Poll(lock, triggerEvent)) {
@@ -36,19 +41,22 @@ namespace sp {
                 }
             }
 
-            for (auto triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
+            for (auto &triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) continue;
                 auto &transform = triggerEnt.Get<ecs::TransformSnapshot>(lock);
-                auto entityPos = invAreaTransform * glm::vec4(transform.GetPosition(), 1.0);
+                auto entityPos = transform.GetPosition();
                 bool inArea = false;
-                switch (area.shape) {
-                case ecs::TriggerShape::Box:
-                    inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
-                             glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
-                    break;
-                case ecs::TriggerShape::Sphere:
-                    inArea = glm::length(entityPos) < 0.5;
-                    break;
+                if (glm::length2(entityPos - areaCenter) <= boundingRadiusSquared) {
+                    auto relativePos = invAreaTransform * glm::vec4(transform.GetPosition(), 1.0);
+                    switch (area.shape) {
+                    case ecs::TriggerShape::Box:
+                        inArea = glm::all(glm::greaterThan(relativePos, glm::vec3(-0.5))) &&
+                                 glm::all(glm::lessThan(relativePos, glm::vec3(0.5)));
+                        break;
+                    case ecs::TriggerShape::Sphere:
+                        inArea = glm::length2(relativePos) < 0.25;
+                        break;
+                    }
                 }
 
                 auto &triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);

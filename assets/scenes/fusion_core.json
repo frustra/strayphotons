@@ -1,0 +1,1173 @@
+{
+	"entities": [
+		{
+			"name": "floor",
+			"transform": {
+				"scale": [10, 0.5, 8],
+				"translate": [0, -0.25, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "ceiling",
+			"transform": {
+				"scale": [10, 0.1, 8],
+				"translate": [0, 5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "front_wall",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, -4]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "left_wall",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [-5, 2.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "right_wall",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [5, 2.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "back_wall",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, 4]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "pellet_dropper",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": 0.1,
+				"translate": [0, 1.05, 0]
+			},
+			"renderable": {
+				"model": "box",
+				"visibility": "Transparent"
+			}
+		},
+		{
+			"name": "pellet_respawn_area",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": 0.1,
+				"translate": [0, -1, 0]
+			},
+			"trigger_area": "Box",
+			"event_bindings": {
+				"/trigger/object/enter": "ball1/script/respawn"
+			},
+			"script": {
+				"parameters": {
+					"source": "laser_cube"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "pellet_laser_area",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": 0.1,
+				"translate": [0, -0.03, 0]
+			},
+			"trigger_area": "Sphere",
+			"event_bindings": {
+				"/trigger/object/enter": "ball1/script/react"
+			},
+			"signal_output": {}
+		},
+		{
+			"name": "pellet_sensor_laser",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [90, 0, 1, 0],
+				"translate": [1, 0, 0]
+			},
+			"laser_emitter": {
+				"color": [1, 0, 0],
+				"start_distance": 0.123
+			},
+			"laser_line": {}
+		},
+		{
+			"name": "laser_controller",
+			"signal_output": {
+				"intensity": 0
+			},
+			"script": {
+				"onTick": "physics_debounce",
+				"parameters": {
+					"delay_frames": 0,
+					"input": "max(100 * (pellet_laser_area/trigger_object_count != 0), laser_controller/intensity - 15)",
+					"output": "intensity"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser1",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [90, 0, 1, 0],
+				"translate": [1, 0, 0]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser2",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [45, 0, 1, 0],
+				"translate": [0.7071, 0, 0.7071]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser3",
+			"transform": {
+				"parent": "reactor_center",
+				"translate": [0, 0, 1]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser4",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [45, 0, -1, 0],
+				"translate": [-0.7071, 0, 0.7071]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser5",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [90, 0, -1, 0],
+				"translate": [-1, 0, 0]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser6",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [135, 0, -1, 0],
+				"translate": [-0.7071, 0, -0.7071]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser7",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [180, 0, 1, 0],
+				"translate": [0, 0, -1]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "fusion_laser8",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [135, 0, 1, 0],
+				"translate": [0.7071, 0, -0.7071]
+			},
+			"signal_bindings": {
+				"intensity": "laser_controller/intensity"
+			},
+			"script": {
+				"prefab": "template",
+				"parameters": {
+					"source": "fusion_core/fusion_laser"
+				}
+			}
+		},
+		{
+			"name": "ball1",
+			"transform": {
+				"scale": 0.04,
+				"translate": [0.3, 1.1, -1]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"dynamic_friction": 0.08,
+					"restitution": 0.5,
+					"sphere": 0.5,
+					"static_friction": 0.1
+				}
+			},
+			"trigger_group": "Object",
+			"event_bindings": {
+				"/script/react": {
+					"outputs": "ball1/set/renderable.emissive",
+					"set_value": 100
+				},
+				"/script/respawn": [
+					{
+						"modify": [
+							"pellet_dropper#transform_snapshot.translate.x",
+							"pellet_dropper#transform_snapshot.translate.y",
+							"pellet_dropper#transform_snapshot.translate.z"
+						],
+						"outputs": [
+							"ball1/set/transform.translate.xyz",
+							"ball1/set/transform_snapshot.translate.xyz"
+						],
+						"set_value": [0, 0, 0]
+					},
+					{
+						"outputs": "ball1/set/renderable.emissive",
+						"set_value": 0
+					}
+				]
+			},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": [
+							"renderable.emissive",
+							"transform.translate.xyz",
+							"transform_snapshot.translate.xyz"
+						]
+					}
+				},
+				{
+					"parameters": {
+						"source": "interactive"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "ball2",
+			"transform": {
+				"scale": 0.04,
+				"translate": [0, 1.1, -1]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"dynamic_friction": 0.08,
+					"restitution": 0.5,
+					"sphere": 0.5,
+					"static_friction": 0.1
+				}
+			},
+			"trigger_group": "Object",
+			"event_bindings": {
+				"/script/respawn": {
+					"modify": [
+						"pellet_dropper#transform_snapshot.translate.x",
+						"pellet_dropper#transform_snapshot.translate.y",
+						"pellet_dropper#transform_snapshot.translate.z"
+					],
+					"outputs": [
+						"ball1/set/transform.translate.xyz",
+						"ball1/set/transform_snapshot.translate.xyz"
+					],
+					"set_value": [0, 0, 0]
+				}
+			},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": [
+							"transform.translate.xyz",
+							"transform_snapshot.translate.xyz"
+						]
+					}
+				},
+				{
+					"parameters": {
+						"source": "interactive"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "ball3",
+			"transform": {
+				"scale": 0.04,
+				"translate": [-0.3, 1.1, -1]
+			},
+			"renderable": {
+				"model": "sphere"
+			},
+			"physics": {
+				"mass": 1,
+				"shapes": {
+					"dynamic_friction": 0.08,
+					"restitution": 0.5,
+					"sphere": 0.5,
+					"static_friction": 0.1
+				}
+			},
+			"trigger_group": "Object",
+			"event_bindings": {
+				"/script/respawn": {
+					"modify": [
+						"pellet_dropper#transform_snapshot.translate.x",
+						"pellet_dropper#transform_snapshot.translate.y",
+						"pellet_dropper#transform_snapshot.translate.z"
+					],
+					"outputs": [
+						"ball1/set/transform.translate.xyz",
+						"ball1/set/transform_snapshot.translate.xyz"
+					],
+					"set_value": [0, 0, 0]
+				}
+			},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": [
+							"transform.translate.xyz",
+							"transform_snapshot.translate.xyz"
+						]
+					}
+				},
+				{
+					"parameters": {
+						"source": "interactive"
+					},
+					"prefab": "template"
+				}
+			]
+		},
+		{
+			"name": "reactor_center",
+			"transform": {
+				"translate": [0, 1, 0]
+			}
+		},
+		{
+			"name": "reactor_wall1",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": [0.87, 1.05, 0.1],
+				"translate": [0, -0.475, -1]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall2",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": [0.1, 2.1, 0.87],
+				"translate": [-1, 0.05, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall3",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": [0.1, 2.1, 0.87],
+				"translate": [1, 0.05, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall4",
+			"transform": {
+				"parent": "reactor_center",
+				"scale": [0.87, 2.1, 0.1],
+				"translate": [0, 0.05, 1]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall5",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [45, 0, 1, 0],
+				"scale": [0.87, 2.1, 0.1],
+				"translate": [-0.7071, 0.05, -0.7071]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall6",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [45, 0, 1, 0],
+				"scale": [0.87, 2.1, 0.1],
+				"translate": [0.7071, 0.05, 0.7071]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall7",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [45, 0, -1, 0],
+				"scale": [0.87, 2.1, 0.1],
+				"translate": [0.7071, 0.05, -0.7071]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "reactor_wall8",
+			"transform": {
+				"parent": "reactor_center",
+				"rotate": [45, 0, -1, 0],
+				"scale": [0.87, 2.1, 0.1],
+				"translate": [-0.7071, 0.05, 0.7071]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "table",
+			"transform": {
+				"translate": [3, 0, 0]
+			},
+			"script": {
+				"parameters": {
+					"source": "table/1x1"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "sensor_piston",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.14, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.1_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "sensor_gate",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.14, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.1_4.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_4.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_0",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.78, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.9_1.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 5,
+				"charge_level": 1000,
+				"discharging": 1,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.9_1.socket"
+					}
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 1000,
+						"charge_signal_b": "charge_cell_0.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "charge_cell_0.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "charge_cell_0.input-sensor.Icosphere/light_value_r",
+						"discharging": true,
+						"max_charge_level": 1000,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_1",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, -0, -1, 0],
+				"translate": [0.78, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.9_2.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 0,
+				"charge_level": 0,
+				"discharging": 0,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.9_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_0",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.7, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.8_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_0",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, -0, 1, -0],
+				"translate": [0.62, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.7_2.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.7_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_2",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.94, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.11_1.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.11_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_0",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, -0, 1, -0],
+				"translate": [0.7, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.8_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.8_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_1",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.86, 0.9, 0.14]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.10_1.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.10_1.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "mirror_0",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, -0, 1, -0],
+				"translate": [0.86, 0.9, 0.22]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.10_2.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/mirror"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.10_2.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_1",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.94, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.11_4.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_gate_2",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.86, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.10_4.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_gate"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_gate_2.optic-forward",
+			"optic": {
+				"pass_tint": [1, 1, 1]
+			}
+		},
+		{
+			"name": "mirror_1",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.86, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.10_5.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/mirror"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "splitter_1",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.7, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.8_4.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/splitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_gate_3",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.7, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.8_5.socket"
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_gate"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "laser_emitter_3",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.62, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.7_5.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/laser_emitter"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "charge_cell_2",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, -1, 0],
+				"translate": [0.78, 0.9, 0.46]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.9_5.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 5,
+				"charge_level": 500,
+				"discharging": 1,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 500,
+						"charge_signal_b": "charge_cell_2.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "charge_cell_2.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "charge_cell_2.input-sensor.Icosphere/light_value_r",
+						"discharging": true,
+						"max_charge_level": 1000,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "charge_cell_3",
+			"transform": {
+				"parent": "table",
+				"rotate": [90, 0, 1, 0],
+				"translate": [0.78, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.9_4.socket"
+			},
+			"signal_output": {
+				"cell_output_b": 0,
+				"cell_output_g": 0,
+				"cell_output_r": 0,
+				"charge_level": 500,
+				"discharging": 0,
+				"max_charge_level": 1000
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/charge_cell"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "charge_cell",
+					"parameters": {
+						"charge_level": 500,
+						"charge_signal_b": "charge_cell_3.input-sensor.Icosphere/light_value_b",
+						"charge_signal_g": "charge_cell_3.input-sensor.Icosphere/light_value_g",
+						"charge_signal_r": "charge_cell_3.input-sensor.Icosphere/light_value_r",
+						"max_charge_level": 1000,
+						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "global:spawn",
+			"transform": {}
+		},
+		{
+			"transform": {
+				"rotate": [90, -1, 0, 0],
+				"translate": [0, 5, 0]
+			},
+			"light": {
+				"intensity": 15,
+				"shadowMapClip": [0.1, 10],
+				"shadowMapSize": 10,
+				"spotAngle": 60,
+				"tint": [1, 1, 1]
+			}
+		}
+	]
+}

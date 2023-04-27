@@ -11,3 +11,5 @@ target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     PhysicsScripts.cc
     VrHandScript.cc
 )
+
+add_executable(fusion_test FusionReactor.cc)

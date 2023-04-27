@@ -38,7 +38,7 @@
 					}
 				},
 				{
-					"onTick": "camera_view"
+					"onTick": "physics_camera_view"
 				},
 				{
 					"onTick": "interact_handler",

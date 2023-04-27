@@ -230,10 +230,12 @@ namespace sp::scripts {
                 }
 
                 void *compPtr = comp->Access(lock, ent);
-                Assertf(compPtr,
-                    "ComponentFromEvent %s access returned null data: %s",
-                    componentName,
-                    ecs::ToString(lock, ent));
+                if (!compPtr) {
+                    Errorf("ComponentFromEvent %s access returned null data: %s",
+                        componentName,
+                        ecs::ToString(lock, ent));
+                    continue;
+                }
                 std::visit(
                     [&](auto &&arg) {
                         using T = std::decay_t<decltype(arg)>;
@@ -242,6 +244,25 @@ namespace sp::scripts {
                             ecs::WriteStructField(compPtr, *field, [&arg](double &value) {
                                 value = (double)arg;
                             });
+                        } else if constexpr (sp::is_glm_vec<T>()) {
+                            if constexpr (T::length() == 2) {
+                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec2 &value) {
+                                    value = (glm::dvec2)arg;
+                                });
+                            } else if constexpr (T::length() == 3) {
+                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec3 &value) {
+                                    value = (glm::dvec3)arg;
+                                });
+                            } else if constexpr (T::length() == 4) {
+                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec4 &value) {
+                                    value = (glm::dvec4)arg;
+                                });
+                            } else {
+                                Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
+                                    event.name,
+                                    typeid(T).name(),
+                                    comp->metadata.type.name());
+                            }
                         } else {
                             Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
                                 event.name,
