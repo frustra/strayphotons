@@ -24,7 +24,7 @@ namespace ecs {
 
     static std::atomic_size_t nextInstanceId;
 
-    std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
+    std::array<std::recursive_mutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
 
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const ScriptState &other)

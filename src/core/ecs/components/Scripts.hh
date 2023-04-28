@@ -12,6 +12,7 @@
 #include <any>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <variant>
 #include <vector>
 
@@ -239,7 +240,7 @@ namespace ecs {
     };
 
     // Scripts share one global mutex per callback type
-    extern std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
+    extern std::array<std::recursive_mutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
 
     static StructMetadata MetadataScripts(typeid(Scripts), StructField::New(&Scripts::scripts, FieldAction::AutoLoad));
     static Component<Scripts> ComponentScripts("script", MetadataScripts);
