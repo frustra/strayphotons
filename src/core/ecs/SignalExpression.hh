@@ -106,23 +106,8 @@ namespace ecs {
             }
         }
 
-        template<typename LockType>
-        double Evaluate(const LockType &lock, size_t depth = 0) const {
-            if constexpr (LockType::template has_permissions<ReadAll>()) {
-                return evaluate((Lock<ReadAll>)lock, depth);
-            } else {
-                return evaluate((DynamicLock<ReadSignalsLock>)lock, depth);
-            }
-        }
-
-        template<typename LockType>
-        double EvaluateEvent(const LockType &lock, const EventData &input) const {
-            if constexpr (LockType::template has_permissions<ReadAll>()) {
-                return evaluateEvent((Lock<ReadAll>)lock, input);
-            } else {
-                return evaluateEvent((DynamicLock<ReadSignalsLock>)lock, input);
-            }
-        }
+        double Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth = 0) const;
+        double EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const;
 
         bool operator==(const SignalExpression &other) const {
             return expr == other.expr && scope == other.scope;
@@ -144,11 +129,6 @@ namespace ecs {
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
 
         bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock) const;
-
-        double evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
-        double evaluate(const Lock<ReadAll> &lock, size_t depth) const;
-        double evaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const;
-        double evaluateEvent(const Lock<ReadAll> &lock, const EventData &input) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

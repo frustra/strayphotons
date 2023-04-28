@@ -31,6 +31,8 @@ namespace ecs {
         bool Parse(Lock<AddRemove> lock) {
             if (sourceName.empty()) return false;
 
+            ZoneScoped;
+
             if (rootEnt.Has<Name>(lock)) {
                 rootScope = rootEnt.Get<Name>(lock);
             } else {
@@ -73,9 +75,13 @@ namespace ecs {
             std::string name,
             ecs::EntityScope scope,
             Transform offset = {}) {
+            ZoneScoped;
             Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, name, scope);
             for (auto &comp : source) {
                 if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
+
+                ZoneScopedN("ApplyComponents::Comp");
+                ZoneStr(comp.first);
 
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
@@ -99,6 +105,7 @@ namespace ecs {
         // Add defined entities as sub-entities of the template root
         void AddEntities(Lock<AddRemove> lock, ecs::EntityScope scope, Transform offset = {}) {
             if (!entityList) return;
+            ZoneScoped;
 
             std::vector<ecs::Entity> entities;
             for (auto &value : *entityList) {

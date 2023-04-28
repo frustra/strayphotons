@@ -143,6 +143,7 @@ namespace sp {
     void PhysxManager::PreFrame() {
         ZoneScoped;
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
+            ZoneScopedN("PreloadScenePhysics");
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
                 if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
