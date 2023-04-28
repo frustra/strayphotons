@@ -706,18 +706,22 @@ namespace ecs {
         size_t depth = 0;
 
         ExpressionEvaluator(const SignalExpression &expr, size_t depth = 0) : expr(expr), depth(depth) {
+            ZoneScoped;
             cache.resize(expr.nodes.size());
             cache.fill(-std::numeric_limits<double>::infinity());
         }
 
         template<typename InputType>
         double EvaluateNode(const DynamicLock<ReadSignalsLock> &lock, int nodeIndex, const InputType &input) {
+            ZoneScoped;
             if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
             if (cache[nodeIndex] != -std::numeric_limits<double>::infinity()) return cache[nodeIndex];
 
             double result = std::visit(
                 [&](auto &node) {
                     using T = std::decay_t<decltype(node)>;
+                    // ZoneScopedN("EvaluateNodeVisit");
+                    // ZoneStr(typeid(T).name());
                     if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                         return node.value;
                     } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
@@ -805,32 +809,31 @@ namespace ecs {
     };
 
     double SignalExpression::evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        // ZoneScoped;
+        ZoneScopedN("SignalExpression::evaluateDynamic");
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this, depth);
+        ZoneNamedN(ctx2, "SignalExpression::evaluateDynamic::EvaluateNode", true);
         return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluate(const Lock<ReadAll> &lock, size_t depth) const {
-        // ZoneScoped;
+        ZoneScopedN("SignalExpression::evaluate");
         // ZoneStr(expr);
         ZoneNamedN(ctx1, "SignalExpression::evaluate", true);
         ExpressionEvaluator eval(*this, depth);
-        ZoneNamedN(ctx2, "SignalExpression::evaluate::DynamicLock", true);
-        DynamicLock<ReadSignalsLock> dynamicLock = lock;
-        ZoneNamedN(ctx3, "SignalExpression::evaluate::EvaluateNode", true);
-        return eval.EvaluateNode(dynamicLock, rootIndex, 0.0);
+        ZoneNamedN(ctx2, "SignalExpression::evaluate::EvaluateNode", true);
+        return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
     double SignalExpression::evaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
-        // ZoneScoped;
+        ZoneScopedN("SignalExpression::evaluateEventDynamic");
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this);
         return eval.EvaluateNode(lock, rootIndex, input);
     }
 
     double SignalExpression::evaluateEvent(const Lock<ReadAll> &lock, const EventData &input) const {
-        // ZoneScoped;
+        ZoneScopedN("SignalExpression::evaluateEvent");
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this);
         return eval.EvaluateNode(lock, rootIndex, input);

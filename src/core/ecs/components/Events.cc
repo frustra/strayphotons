@@ -277,7 +277,7 @@ namespace ecs {
         }
     }
 
-    void modifyEvent(DynamicLock<ReadSignalsLock> lock,
+    void modifyEvent(const DynamicLock<ReadSignalsLock> &lock,
         EventData &output,
         const EventData &input,
         const EventBinding &binding) {
@@ -317,7 +317,7 @@ namespace ecs {
             output);
     }
 
-    bool detail::FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
+    bool detail::FilterAndModifyEvent(const DynamicLock<ReadSignalsLock> &lock,
         sp::AsyncPtr<EventData> &asyncOutput,
         const sp::AsyncPtr<EventData> &asyncInput,
         const EventBinding &binding) {

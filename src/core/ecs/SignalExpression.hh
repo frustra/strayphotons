@@ -96,7 +96,7 @@ namespace ecs {
         bool Parse();
 
         template<typename LockType>
-        bool CanEvaluate(LockType lock) const {
+        bool CanEvaluate(const LockType &lock) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return true;
             } else if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {

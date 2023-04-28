@@ -104,9 +104,12 @@ namespace ecs {
         void Unbind(std::string source, EntityRef target, std::string dest);
 
         template<typename LockType>
-        static size_t SendEvent(LockType &lock, const EntityRef &target, const Event &event, size_t depth = 0);
+        static size_t SendEvent(const LockType &lock, const EntityRef &target, const Event &event, size_t depth = 0);
         template<typename LockType>
-        static size_t SendEvent(LockType &lock, const EntityRef &target, const AsyncEvent &event, size_t depth = 0);
+        static size_t SendEvent(const LockType &lock,
+            const EntityRef &target,
+            const AsyncEvent &event,
+            size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
@@ -123,21 +126,26 @@ namespace ecs {
     std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
 
     namespace detail {
-        bool FilterAndModifyEvent(DynamicLock<ReadSignalsLock> lock,
+        bool FilterAndModifyEvent(const DynamicLock<ReadSignalsLock> &lock,
             sp::AsyncPtr<EventData> &output,
             const sp::AsyncPtr<EventData> &input,
             const EventBinding &binding);
     }
 
     template<typename LockType>
-    size_t EventBindings::SendEvent(LockType &lock, const EntityRef &target, const Event &event, size_t depth) {
+    size_t EventBindings::SendEvent(const LockType &lock, const EntityRef &target, const Event &event, size_t depth) {
         AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
         asyncEvent.transactionId = lock.GetTransactionId();
         return SendEvent(lock, target, asyncEvent, depth);
     }
 
     template<typename LockType>
-    size_t EventBindings::SendEvent(LockType &lock, const EntityRef &target, const AsyncEvent &event, size_t depth) {
+    size_t EventBindings::SendEvent(const LockType &lock,
+        const EntityRef &target,
+        const AsyncEvent &event,
+        size_t depth) {
+        ZoneScoped;
+        ZoneValue(depth);
         if (depth > MAX_EVENT_BINDING_DEPTH) {
             Errorf("Max event binding depth exceeded: %s %s", target.Name().String(), event.name);
             return 0;

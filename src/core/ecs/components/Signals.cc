@@ -38,6 +38,7 @@ namespace ecs {
     }
 
     double SignalOutput::GetSignal(const std::string &name) const {
+        ZoneScoped;
         auto signal = signals.find(name);
         if (signal != signals.end()) return signal->second;
         return 0.0;
@@ -62,6 +63,7 @@ namespace ecs {
     }
 
     const SignalExpression &SignalBindings::GetBinding(const std::string &name) const {
+        ZoneScoped;
         auto list = bindings.find(name);
         if (list != bindings.end()) {
             return list->second;
