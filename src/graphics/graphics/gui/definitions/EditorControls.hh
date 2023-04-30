@@ -328,7 +328,7 @@ namespace sp {
         }
         return false;
     }
-    template<>
+    /*template<>
     bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
@@ -461,7 +461,7 @@ namespace sp {
             }
         }
         return changed;
-    }
+    }*/
 
     template<typename T>
     void EditorContext::AddFieldControls(const ecs::StructField &field,

@@ -5,148 +5,20 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptManager.hh"
 #include "ecs/components/Events.hh"
 #include "ecs/components/Signals.hh"
 #include "game/SceneRef.hh"
 
-#include <any>
-#include <functional>
-#include <map>
-#include <mutex>
-#include <variant>
 #include <vector>
 
 namespace ecs {
-    class ScriptState;
-
-    using PhysicsUpdateLock = Lock<SendEventsLock,
-        ReadSignalsLock,
-        Read<TransformSnapshot>,
-        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, SignalOutput, LaserLine, VoxelArea>>;
-
-    using ScriptInitFunc = std::function<void(ScriptState &)>;
-    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
-    using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
-    using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc>;
-
-    template<typename T>
-    struct ScriptCallbackIndex : std::integral_constant<size_t, 0> {};
-    template<>
-    struct ScriptCallbackIndex<OnTickFunc> : std::integral_constant<size_t, 1> {};
-    template<>
-    struct ScriptCallbackIndex<OnPhysicsUpdateFunc> : std::integral_constant<size_t, 2> {};
-    template<>
-    struct ScriptCallbackIndex<PrefabFunc> : std::integral_constant<size_t, 3> {};
-
-    struct InternalScriptBase {
-        const StructMetadata &metadata;
-        InternalScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
-        virtual const void *GetDefault() const = 0;
-        virtual void *Access(ScriptState &state) const = 0;
-        virtual const void *Access(const ScriptState &state) const = 0;
-    };
-
-    struct ScriptDefinition {
-        std::string name;
-        std::vector<std::string> events;
-        bool filterOnEvent = false;
-        const InternalScriptBase *context = nullptr;
-        std::optional<ScriptInitFunc> initFunc;
-        ScriptCallback callback;
-    };
-
-    struct ScriptDefinitions {
-        std::map<std::string, ScriptDefinition> scripts;
-        std::map<std::string, ScriptDefinition> prefabs;
-
-        void RegisterScript(ScriptDefinition &&definition);
-        void RegisterPrefab(ScriptDefinition &&definition);
-    };
-
-    ScriptDefinitions &GetScriptDefinitions();
-
-    class ScriptState {
-    public:
-        using ParameterType = typename std::variant<bool,
-            double,
-            std::string,
-            glm::vec3,
-            std::vector<bool>,
-            std::vector<double>,
-            std::vector<std::string>>;
-
-        ScriptState();
-        ScriptState(const ScriptState &other);
-        ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
-
-        template<typename T>
-        void SetParam(std::string name, const T &value) {
-            if (definition.context) {
-                void *dataPtr = definition.context->Access(*this);
-                Assertf(dataPtr, "ScriptState::SetParam access returned null data: %s", definition.name);
-                for (auto &field : definition.context->metadata.fields) {
-                    if (field.name == name) {
-                        field.Access<T>(dataPtr) = value;
-                        break;
-                    }
-                }
-            } else {
-                Errorf("ScriptState::SetParam called on definition without context: %s", definition.name);
-            }
-        }
-
-        template<typename T>
-        T GetParam(std::string name) const {
-            if (definition.context) {
-                const void *dataPtr = definition.context->Access(*this);
-                Assertf(dataPtr, "ScriptState::GetParam access returned null data: %s", definition.name);
-                for (auto &field : definition.context->metadata.fields) {
-                    if (field.name == name) {
-                        return field.Access<T>(dataPtr);
-                    }
-                }
-                Errorf("ScriptState::GetParam field not found: %s on %s", name, definition.name);
-                return {};
-            } else {
-                Errorf("ScriptState::GetParam called on definition without context: %s", definition.name);
-                return {};
-            }
-        }
-
-        explicit operator bool() const {
-            return !std::holds_alternative<std::monostate>(definition.callback);
-        }
-
-        // Compare script definition and parameters
-        bool operator==(const ScriptState &other) const;
-
-        // Returns true if the two scripts should represent the same instance
-        bool CompareOverride(const ScriptState &other) const;
-
-        size_t GetInstanceId() const {
-            return instanceId;
-        }
-
-        EntityScope scope;
-        ScriptDefinition definition;
-        ecs::EventQueueRef eventQueue;
-
-        std::any userData;
-
-    private:
-        size_t instanceId;
-
-        friend class StructMetadata;
-        friend class ScriptInstance;
-    };
-    static StructMetadata MetadataScriptState(typeid(ScriptState));
-
     class ScriptInstance {
     public:
         ScriptInstance() {}
+        ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
-            : state(std::make_shared<ScriptState>(scope, definition)) {}
+            : ScriptInstance(GetScriptManager().NewScriptInstance(scope, definition)) {}
         ScriptInstance(const EntityScope &scope, OnTickFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
         ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
@@ -190,63 +62,30 @@ namespace ecs {
 
     struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
-            auto &newState = *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
-            callbackMask.set(newState.definition.callback.index());
-            return newState;
+            return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
         ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
-            auto &newState = *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
-            callbackMask.set(newState.definition.callback.index());
-            return newState;
+            return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
         }
 
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
-            callbackMask.set(ScriptCallbackIndex<OnTickFunc>());
             return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
-            callbackMask.set(ScriptCallbackIndex<OnPhysicsUpdateFunc>());
             return *(scripts.emplace_back(scope, callback).state);
         }
         ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
-            callbackMask.set(ScriptCallbackIndex<PrefabFunc>());
             return *(scripts.emplace_back(scope, callback).state);
         }
 
-        static void Init(Lock<Read<Name, Scripts>, Write<EventInput>> lock, const Entity &ent);
-        void OnTick(Lock<WriteAll> lock, const Entity &ent, chrono_clock::duration interval) const;
-        void OnPhysicsUpdate(PhysicsUpdateLock lock, const Entity &ent, chrono_clock::duration interval) const;
-
-        // RunPrefabs should only be run from the SceneManager thread
-        static void RunPrefabs(Lock<AddRemove> lock, Entity ent);
-
         const ScriptState *FindScript(size_t instanceId) const;
 
-        inline bool HasOnTick() const {
-            return callbackMask.test(ScriptCallbackIndex<OnTickFunc>());
-        }
-
-        inline bool HasOnPhysicsUpdate() const {
-            return callbackMask.test(ScriptCallbackIndex<OnPhysicsUpdateFunc>());
-        }
-
-        inline bool HasPrefab() const {
-            return callbackMask.test(ScriptCallbackIndex<PrefabFunc>());
-        }
-
-        // Bitmask caches callback types so iteration can to quickly check if a callback type is present
-        std::bitset<std::variant_size_v<ScriptCallback>> callbackMask;
         std::vector<ScriptInstance> scripts;
     };
-
-    // Scripts share one global mutex per callback type
-    extern std::array<std::recursive_mutex, std::variant_size_v<ScriptCallback>> ScriptTypeMutex;
 
     static StructMetadata MetadataScripts(typeid(Scripts), StructField::New(&Scripts::scripts, FieldAction::AutoLoad));
     static Component<Scripts> ComponentScripts("script", MetadataScripts);
 
-    template<>
-    bool StructMetadata::Load<Scripts>(const EntityScope &scope, Scripts &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<Scripts>(const EntityScope &scope,
         picojson::value &dst,

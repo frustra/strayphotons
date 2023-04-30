@@ -1,6 +1,6 @@
 target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     GltfPrefab.cc
-    Life.cc
+    LifePrefab.cc
     TemplatePrefab.cc
     WallPrefab.cc
 )

@@ -70,7 +70,7 @@ namespace sp::scripts {
                         auto &scripts = newEntity.Set<Scripts>(lock);
                         auto &prefab = scripts.AddPrefab(Name(scene->data->name, ""), "template");
                         prefab.SetParam("source", source);
-                        ecs::Scripts::RunPrefabs(lock, newEntity);
+                        ecs::GetScriptManager().RunPrefabs(lock, newEntity);
 
                         *sharedEntity = newEntity;
                     });

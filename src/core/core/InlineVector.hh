@@ -27,6 +27,15 @@ namespace sp {
         using ArrayT::operator[];
         using ArrayT::ArrayT;
 
+        InlineVector(size_t initialSize = 0) {
+            resize(initialSize);
+        }
+
+        InlineVector(size_t initialSize, const T &value) {
+            resize(initialSize);
+            fill(value);
+        }
+
         InlineVector(std::initializer_list<T> init) {
             for (auto it = init.begin(); it != init.end(); it++) {
                 push_back(*it);

@@ -10,7 +10,7 @@ namespace ecs {
         SceneInfo() {}
         SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene);
 
-        SceneInfo(Entity rootStagingId, Entity prefabStagingId, size_t prefabScriptId, const SceneInfo &rootSceneInfo)
+        SceneInfo(Entity rootStagingId, Entity prefabStagingId, uint64_t prefabScriptId, const SceneInfo &rootSceneInfo)
             : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), prefabScriptId(prefabScriptId),
               priority(rootSceneInfo.priority), scene(rootSceneInfo.scene) {
             Assertf(IsStaging(rootStagingId), "Invalid rootStagingId in SceneInfo: %s", std::to_string(rootStagingId));
@@ -33,7 +33,7 @@ namespace ecs {
         Entity rootStagingId, nextStagingId;
 
         Entity prefabStagingId;
-        size_t prefabScriptId = 0;
+        uint64_t prefabScriptId = 0;
 
         sp::ScenePriority priority = sp::ScenePriority::Scene;
         sp::SceneRef scene;

@@ -13,7 +13,8 @@ namespace sp::scene {
     // The result includes staging components from the provided entity and all lower priority entities.
     // Transform components will have their scene root transforms applied to their poses.
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    auto BuildEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging, Entity e) {
+    auto BuildEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> &staging, const Entity &e) {
+        ZoneScoped;
         std::tuple<std::optional<AllComponentTypes>...> flatEntity;
         if (!e.Has<SceneInfo>(staging)) return flatEntity;
 
@@ -88,6 +89,7 @@ namespace sp::scene {
         auto &flatTransform = std::get<std::optional<TransformTree>>(flatEntity);
         auto &flatAnimation = std::get<std::optional<Animation>>(flatEntity);
         if (flatTransform) {
+            ZoneScopedN("ApplySceneTransform");
             stagingId = e;
             while (stagingId.Has<SceneInfo>(staging)) {
                 auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
@@ -122,10 +124,11 @@ namespace sp::scene {
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    void BuildAndApplyEntity(Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> staging,
-        Lock<AddRemove> live,
-        Entity e,
+    void BuildAndApplyEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> &staging,
+        const Lock<AddRemove> &live,
+        const Entity &e,
         bool resetLive) {
+        ZoneScoped;
         Assert(e.Has<SceneInfo>(staging), "Expected entity to have valid SceneInfo");
         const SceneInfo &rootSceneInfo = e.Get<SceneInfo>(staging);
         Assert(rootSceneInfo.liveId.Has<SceneInfo>(live), "Expected liveId to have valid SceneInfo");

@@ -9,6 +9,7 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/ScriptManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 
@@ -585,13 +586,14 @@ namespace sp {
 
                 if (sceneInfo.prefabStagingId) scene->RemovePrefabEntity(lock, e);
             }
+            auto &scriptManager = ecs::GetScriptManager();
             for (auto &e : lock.EntitiesWith<ecs::Scripts>()) {
                 if (!e.Has<ecs::Scripts, ecs::SceneInfo>(lock)) continue;
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                 if (sceneInfo.scene != scene) continue;
                 if (sceneInfo.prefabStagingId) continue;
 
-                ecs::Scripts::RunPrefabs(lock, e);
+                scriptManager.RunPrefabs(lock, e);
             }
         }
     }
@@ -664,10 +666,10 @@ namespace sp {
                 entities.emplace_back(entity);
             }
 
+            auto &scriptManager = ecs::GetScriptManager();
             for (auto &e : entities) {
-                if (e.Has<ecs::Scripts>(lock)) {
-                    ecs::Scripts::RunPrefabs(lock, e);
-                }
+                if (!e.Has<ecs::Scripts>(lock)) continue;
+                scriptManager.RunPrefabs(lock, e);
             }
         }
         return scene;

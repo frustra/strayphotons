@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
@@ -122,10 +123,10 @@ namespace ecs {
                 entities.emplace_back(newEntity);
             }
 
+            auto &scriptManager = ecs::GetScriptManager();
             for (auto &e : entities) {
-                if (e.Has<ecs::Scripts>(lock)) {
-                    ecs::Scripts::RunPrefabs(lock, e);
-                }
+                if (!e.Has<ecs::Scripts>(lock)) continue;
+                scriptManager.RunPrefabs(lock, e);
             }
         }
     };
@@ -146,7 +147,7 @@ namespace ecs {
             }
             parser.AddEntities(lock, parser.rootScope);
             if (rootOverride.Has<ecs::Scripts>(lock)) {
-                ecs::Scripts::RunPrefabs(lock, rootOverride);
+                ecs::GetScriptManager().RunPrefabs(lock, rootOverride);
             }
         }
     };
@@ -249,7 +250,7 @@ namespace ecs {
                         }
                     }
                     if (tileEnt.Has<ecs::Scripts>(lock)) {
-                        ecs::Scripts::RunPrefabs(lock, tileEnt);
+                        ecs::GetScriptManager().RunPrefabs(lock, tileEnt);
                     }
                 }
             }

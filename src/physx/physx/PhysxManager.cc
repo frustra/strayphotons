@@ -12,6 +12,7 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "physx/ForceConstraint.hh"
@@ -334,15 +335,7 @@ namespace sp {
             laserSystem.Frame(lock);
             UpdateDebugLines(lock);
 
-            {
-                ZoneScopedN("Scripts::OnPhysicsUpdate");
-                std::lock_guard l(ecs::ScriptTypeMutex[ecs::ScriptCallbackIndex<ecs::OnPhysicsUpdateFunc>()]);
-                for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
-                    auto &scripts = entity.Get<ecs::Scripts>(lock);
-                    if (!scripts.HasOnPhysicsUpdate()) continue;
-                    scripts.OnPhysicsUpdate(lock, entity, interval);
-                }
-            }
+            ecs::GetScriptManager().RunOnPhysicsUpdate(lock, interval);
         }
 
         { // Simulate 1 physics frame (blocking)

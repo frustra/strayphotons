@@ -11,7 +11,7 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    struct LifeCell {
+    struct LifeCellPrefab {
         glm::uvec2 boardSize = glm::uvec2(32, 32);
 
         void Prefab(const ScriptState &state,
@@ -19,7 +19,7 @@ namespace sp::scripts {
             Lock<AddRemove> lock,
             Entity ent) {
             if (!ent.Has<Name, SignalBindings, EventBindings>(lock)) {
-                Errorf("LifeCell requires Name, SignalBindings, and EventBindings: %s", ToString(lock, ent));
+                Errorf("LifeCellPrefab requires Name, SignalBindings, and EventBindings: %s", ToString(lock, ent));
                 return;
             }
 
@@ -46,6 +46,7 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataLifeCell(typeid(LifeCell), StructField::New("board_size", &LifeCell::boardSize));
-    PrefabScript<LifeCell> lifeCell("life_cell", MetadataLifeCell);
+    StructMetadata MetadataLifeCellPrefab(typeid(LifeCellPrefab),
+        StructField::New("board_size", &LifeCellPrefab::boardSize));
+    PrefabScript<LifeCellPrefab> lifeCell("life_cell", MetadataLifeCellPrefab);
 } // namespace sp::scripts

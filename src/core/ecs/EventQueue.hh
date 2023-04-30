@@ -1,6 +1,7 @@
 #pragma once
 
 #include "assets/Async.hh"
+#include "core/InlineVector.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
@@ -63,7 +64,14 @@ namespace ecs {
      */
     class EventQueue {
     public:
-        EventQueue(uint32_t maxQueueSize) : events(maxQueueSize), state({0, 0}) {}
+        static const size_t MAX_QUEUE_SIZE = 1000;
+
+        EventQueue(uint32_t maxQueueSize) : events(maxQueueSize), state({0, 0}) {
+            Assertf(maxQueueSize <= MAX_QUEUE_SIZE,
+                "EventQueue size %u exceeds max size %u",
+                maxQueueSize,
+                MAX_QUEUE_SIZE);
+        }
 
         // Returns false if the queue is full
         bool Add(const AsyncEvent &event);
@@ -76,7 +84,9 @@ namespace ecs {
         bool Empty();
         size_t Size();
 
-        size_t Capacity() {
+        // Not thread safe, drops all events in queue
+        void Resize(uint32_t newSize);
+        size_t Capacity() const {
             return events.size();
         }
 
@@ -88,11 +98,11 @@ namespace ecs {
             uint32_t tail;
         };
 
-        std::vector<AsyncEvent> events;
+        sp::InlineVector<AsyncEvent, MAX_QUEUE_SIZE> events;
         std::atomic<State> state;
     };
 
     using EventQueueRef = std::shared_ptr<EventQueue>;
 
-    EventQueueRef NewEventQueue(uint32_t maxQueueSize = 1000);
+    EventQueueRef NewEventQueue(uint32_t maxQueueSize = EventQueue::MAX_QUEUE_SIZE);
 } // namespace ecs

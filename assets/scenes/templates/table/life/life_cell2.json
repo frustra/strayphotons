@@ -1,28 +1,11 @@
 {
 	"components": {
 		"transform": {},
-		"signal_output": {
-			"neighbor_count": 0,
-			"alive": 0
-		},
-		"signal_bindings": {
-			"life_eval": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)",
-			"next_alive": "scoperoot/force_toggle ? !scoperoot/alive : scoperoot/life_eval"
-		},
+		"signal_output": {},
+		"signal_bindings": {},
 		"event_input": {},
 		"event_bindings": {
-			"/life/neighbor_alive": {
-				"outputs": ["scoperoot/signal/add/neighbor_count"],
-				"modify": "event ? 1 : -1"
-			},
-			"/life/toggle_alive": {
-				"outputs": ["scoperoot/signal/set/alive", "scoperoot/signal/clear/force_toggle"],
-				"modify": "scoperoot/next_alive"
-			},
-			"/signal/set/alive": {
-				"outputs": ["scoperoot/life/notify_neighbors", "light/set/renderable.emissive"],
-				"filter": "event != scoperoot/alive"
-			}
+			"/life/notify_neighbors": "light/set/renderable.emissive"
 		},
 		"script": [
 			{
@@ -32,16 +15,7 @@
 				}
 			},
 			{
-				"onTick": "signal_from_event",
-				"parameters": {
-					"outputs": ["alive", "neighbor_count", "force_toggle"]
-				}
-			},
-			{
-				"onTick": "event_from_signal",
-				"parameters": {
-					"/life/toggle_alive": "scoperoot/alive != scoperoot/next_alive"
-				}
+				"onTick": "life_cell"
 			}
 		]
 	},
