@@ -5,7 +5,8 @@
 		"signal_bindings": {},
 		"event_input": {},
 		"event_bindings": {
-			"/life/notify_neighbors": "light/set/renderable.emissive"
+			"/life/notify_neighbors": "light/set/renderable.emissive",
+			"/physics/collision/force_found": "scoperoot/life/toggle_alive"
 		},
 		"script": [
 			{

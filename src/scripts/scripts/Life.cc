@@ -30,7 +30,7 @@ namespace sp::scripts {
                     auto *neighborAlive = std::get_if<bool>(&event.data);
                     if (neighborAlive == nullptr) continue;
                     neighborCount += *neighborAlive ? 1 : -1;
-                } else if (event.name == "/physics/collision/force_found") {
+                } else if (event.name == "/life/toggle_alive") {
                     forceToggle = true;
                 }
             }
@@ -47,5 +47,5 @@ namespace sp::scripts {
         MetadataLifeCell,
         false,
         "/life/neighbor_alive",
-        "/physics/collision/force_found");
+        "/life/toggle_alive");
 } // namespace sp::scripts

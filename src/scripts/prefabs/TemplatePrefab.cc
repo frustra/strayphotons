@@ -81,9 +81,6 @@ namespace ecs {
             for (auto &comp : source) {
                 if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
-                ZoneScopedN("ApplyComponents::Comp");
-                ZoneStr(comp.first);
-
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
                     if (!componentType->LoadEntity(lock, scope, newEntity, comp.second)) {

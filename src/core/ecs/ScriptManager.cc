@@ -151,7 +151,7 @@ namespace ecs {
             if (!ent) continue;
             auto &callback = std::get<OnTickFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-            ZoneScopedN("OnTick");
+            // ZoneScopedN("OnTick");
             // ZoneStr(ecs::ToString(lock, ent));
             callback(state, lock, ent, interval);
         }
@@ -164,8 +164,8 @@ namespace ecs {
             if (!ent) continue;
             auto &callback = std::get<OnPhysicsUpdateFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-            ZoneScopedN("OnPhysicsUpdate");
-            ZoneStr(ecs::ToString(lock, ent));
+            // ZoneScopedN("OnPhysicsUpdate");
+            // ZoneStr(ecs::ToString(lock, ent));
             callback(state, lock, ent, interval);
         }
     }
@@ -176,7 +176,7 @@ namespace ecs {
         // if (!ent.Get<const Scripts>(lock).HasPrefab()) return;
 
         ZoneScopedN("RunPrefabs");
-        ZoneStr(ecs::ToString(lock, ent));
+        // ZoneStr(ecs::ToString(lock, ent));
 
         auto scene = ent.Get<const SceneInfo>(lock).scene;
         Assertf(scene, "RunPrefabs entity has null scene: %s", ecs::ToString(lock, ent));
