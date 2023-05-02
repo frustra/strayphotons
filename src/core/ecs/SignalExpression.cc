@@ -720,8 +720,6 @@ namespace ecs {
             double result = std::visit(
                 [&](auto &node) {
                     using T = std::decay_t<decltype(node)>;
-                    // ZoneScopedN("EvaluateNodeVisit");
-                    // ZoneStr(typeid(T).name());
                     if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                         return node.value;
                     } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
