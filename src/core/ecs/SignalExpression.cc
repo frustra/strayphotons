@@ -702,18 +702,16 @@ namespace ecs {
 
     struct ExpressionEvaluator {
         const SignalExpression &expr;
-        sp::InlineVector<double, 128> cache;
+        sp::InlineVector<double, 256> cache;
         size_t depth = 0;
 
         ExpressionEvaluator(const SignalExpression &expr, size_t depth = 0) : expr(expr), depth(depth) {
-            ZoneScoped;
             cache.resize(expr.nodes.size());
             cache.fill(-std::numeric_limits<double>::infinity());
         }
 
         template<typename InputType>
         double EvaluateNode(const DynamicLock<ReadSignalsLock> &lock, int nodeIndex, const InputType &input) {
-            ZoneScoped;
             if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
             if (cache[nodeIndex] != -std::numeric_limits<double>::infinity()) return cache[nodeIndex];
 
@@ -811,14 +809,14 @@ namespace ecs {
     };
 
     double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        ZoneScoped;
+        // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this, depth);
         return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
     double SignalExpression::EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
-        ZoneScoped;
+        // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this);
         return eval.EvaluateNode(lock, rootIndex, input);
