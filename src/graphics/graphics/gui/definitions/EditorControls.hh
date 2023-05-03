@@ -328,17 +328,16 @@ namespace sp {
         }
         return false;
     }
-    /*template<>
+    template<>
     bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
         for (auto &instance : value) {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
-            std::lock_guard l(ecs::ScriptTypeMutex[state.definition.callback.index()]);
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-            bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback) ||
-                            std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);
+            bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback);
+            bool isOnPhysicsUpdate = std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);
             bool isPrefab = std::holds_alternative<ecs::PrefabFunc>(state.definition.callback);
             std::string scriptLabel;
             if (isOnTick) {
@@ -346,6 +345,12 @@ namespace sp {
                     scriptLabel = "OnEvent: " + state.definition.name;
                 } else {
                     scriptLabel = "OnTick: " + state.definition.name;
+                }
+            } else if (isOnPhysicsUpdate) {
+                if (state.definition.filterOnEvent) {
+                    scriptLabel = "OnPhysicsUpdateEvent: " + state.definition.name;
+                } else {
+                    scriptLabel = "OnPhysicsUpdate: " + state.definition.name;
                 }
             } else if (isPrefab) {
                 if (state.definition.name == "template") {
@@ -356,6 +361,9 @@ namespace sp {
                     scriptLabel = "Prefab: " + state.definition.name;
                 }
             }
+
+            std::lock_guard l(ecs::GetScriptManager().mutexes[state.definition.callback.index()]);
+
             if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_DefaultOpen, "%s", scriptLabel.c_str())) {
                 if (ecs::IsLive(target) && isPrefab) {
                     ImGui::BeginDisabled();
@@ -365,11 +373,13 @@ namespace sp {
                     }
                     ImGui::SameLine();
                 }
-                if (isOnTick) {
+                if (isOnTick || isOnPhysicsUpdate) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
                         auto &scripts = ecs::GetScriptDefinitions().scripts;
                         for (auto &[scriptName, definition] : scripts) {
+                            // Don't allow changing the callback type, it will break ScriptManager's index
+                            if (definition.callback.index() != state.definition.callback.index()) continue;
                             const bool isSelected = state.definition.name == scriptName;
                             if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
                                 state.definition = definition;
@@ -452,16 +462,24 @@ namespace sp {
                 changed = true;
             }
             ImGui::SameLine();
-            if (ImGui::Button("Add Script")) {
+            if (ImGui::Button("Add OnTick")) {
                 ecs::EntityScope scope = ecs::Name(scene.data->name, "");
                 ecs::ScriptDefinition definition;
                 definition.callback = ecs::OnTickFunc();
                 value.emplace_back(scope, definition);
                 changed = true;
             }
+            ImGui::SameLine();
+            if (ImGui::Button("Add OnPhysicsUpdate")) {
+                ecs::EntityScope scope = ecs::Name(scene.data->name, "");
+                ecs::ScriptDefinition definition;
+                definition.callback = ecs::OnPhysicsUpdateFunc();
+                value.emplace_back(scope, definition);
+                changed = true;
+            }
         }
         return changed;
-    }*/
+    }
 
     template<typename T>
     void EditorContext::AddFieldControls(const ecs::StructField &field,

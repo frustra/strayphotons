@@ -12,6 +12,10 @@
 #include <memory>
 #include <variant>
 
+namespace sp {
+    struct EditorContext;
+}
+
 namespace ecs {
     class ScriptState;
     class ScriptInstance;
@@ -26,6 +30,15 @@ namespace ecs {
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
     using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc>;
+
+    template<typename T>
+    struct ScriptCallbackIndex : std::integral_constant<size_t, 0> {};
+    template<>
+    struct ScriptCallbackIndex<OnTickFunc> : std::integral_constant<size_t, 1> {};
+    template<>
+    struct ScriptCallbackIndex<OnPhysicsUpdateFunc> : std::integral_constant<size_t, 2> {};
+    template<>
+    struct ScriptCallbackIndex<PrefabFunc> : std::integral_constant<size_t, 3> {};
 
     struct InternalScriptBase {
         const StructMetadata &metadata;
@@ -149,11 +162,13 @@ namespace ecs {
             const Entity &ent,
             const ScriptState &state) const;
 
-        sp::LockFreeMutex eventQueueMutex, scriptsMutex;
         std::deque<EventQueue> eventQueues;
         std::deque<std::pair<Entity, ScriptState>> onTickScripts;
         std::deque<std::pair<Entity, ScriptState>> onPhysicsUpdateScripts;
         std::deque<std::pair<Entity, ScriptState>> prefabScripts;
+
+        // Mutex index 0 is for eventQeuues, 1+ are for script lists
+        std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> mutexes;
 
         const std::array<decltype(onTickScripts) *, std::variant_size_v<ScriptCallback>> scriptLists = {
             nullptr,
@@ -163,6 +178,7 @@ namespace ecs {
         };
 
         friend class StructMetadata;
+        friend struct sp::EditorContext;
     };
 
     ScriptDefinitions &GetScriptDefinitions();

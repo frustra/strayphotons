@@ -76,25 +76,16 @@ namespace ecs {
         const std::string &name,
         size_t depth) {
         ZoneScoped;
-        {
-            ZoneScopedN("SignalOutput");
-            if (ent.Has<SignalOutput>(lock)) {
-                auto &signalOutput = ent.Get<const SignalOutput>(lock);
-                auto signal = signalOutput.signals.find(name);
-                if (signal != signalOutput.signals.end()) return signal->second;
-            }
-            if (!ent.Has<SignalBindings>(lock)) return 0.0;
+        if (ent.Has<SignalOutput>(lock)) {
+            auto &signalOutput = ent.Get<const SignalOutput>(lock);
+            auto signal = signalOutput.signals.find(name);
+            if (signal != signalOutput.signals.end()) return signal->second;
         }
+        if (!ent.Has<SignalBindings>(lock)) return 0.0;
 
-        const ecs::SignalExpression *expr = nullptr;
-        {
-            ZoneScopedN("SignalBindingLookup");
-            auto &bindings = ent.Get<const SignalBindings>(lock).bindings;
-            auto list = bindings.find(name);
-            if (list == bindings.end()) return 0.0;
-
-            expr = &list->second;
-        }
-        return expr->Evaluate(lock, depth);
+        auto &bindings = ent.Get<const SignalBindings>(lock).bindings;
+        auto list = bindings.find(name);
+        if (list == bindings.end()) return 0.0;
+        return list->second.Evaluate(lock, depth);
     }
 } // namespace ecs

@@ -101,7 +101,7 @@ namespace sp {
 
     ecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
         ecs::Entity prefabRoot,
-        uint64_t prefabScriptId,
+        size_t prefabScriptId,
         std::string relativeName,
         ecs::EntityScope scope) {
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
@@ -318,6 +318,14 @@ namespace sp {
                 ecs::GetEntityRefs().Set(ref.Name(), remainingId);
             }
             e.Destroy(staging);
+        }
+        for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
+            if (!e.Has<ecs::SceneInfo>(live)) continue;
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
+            if (sceneInfo.scene != *this || sceneInfo.rootStagingId) continue;
+
+            // Remove non-staging entities that were created by a script after scene load.
+            e.Destroy(live);
         }
 
         auto liveSceneId = data->sceneEntity.Get(live);

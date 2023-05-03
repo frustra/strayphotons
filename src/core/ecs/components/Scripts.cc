@@ -88,7 +88,6 @@ namespace ecs {
         const ScriptInstance &src,
         const ScriptInstance &def) {
         if (!src.state) return;
-        std::shared_lock l(GetScriptManager().scriptsMutex);
         const auto &state = *src.state;
         if (state.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
@@ -102,6 +101,8 @@ namespace ecs {
             }
 
             if (state.definition.context) {
+                std::lock_guard l(GetScriptManager().mutexes[state.definition.callback.index()]);
+
                 const void *dataPtr = state.definition.context->Access(state);
                 const void *defaultPtr = state.definition.context->GetDefault();
                 Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
