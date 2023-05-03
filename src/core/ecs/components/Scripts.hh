@@ -18,7 +18,7 @@ namespace ecs {
         ScriptInstance() {}
         ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
-            : ScriptInstance(GetScriptManager().NewScriptInstance(scope, definition)) {}
+            : ScriptInstance(std::make_shared<ScriptState>(scope, definition)) {}
         ScriptInstance(const EntityScope &scope, OnTickFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
         ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)

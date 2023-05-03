@@ -42,7 +42,10 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataLifeCell(typeid(LifeCell), StructField::New("alive", &LifeCell::alive));
+    StructMetadata MetadataLifeCell(typeid(LifeCell),
+        StructField::New("alive", &LifeCell::alive),
+        StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
+        StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
     InternalScript<LifeCell> lifeCell("life_cell",
         MetadataLifeCell,
         false,
