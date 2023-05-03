@@ -4,6 +4,8 @@
 #include "core/Defer.hh"
 #include "ecs/EcsImpl.hh"
 
+#include <shared_mutex>
+
 namespace ecs {
 
     static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",
