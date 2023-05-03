@@ -40,8 +40,6 @@ namespace ecs {
             return state && other.state && state->CompareOverride(*other.state);
         }
 
-        ScriptInstance Copy() const;
-
         size_t GetInstanceId() const {
             if (!state) return 0;
             return state->instanceId;

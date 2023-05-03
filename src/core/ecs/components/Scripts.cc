@@ -171,13 +171,6 @@ namespace ecs {
         return !definition.name.empty();
     }
 
-    ScriptInstance ScriptInstance::Copy() const {
-        Assert(state, "ScriptInstance::Copy called on empty instance");
-        ScriptInstance newInstance = *this;
-        newInstance.state = std::make_shared<ScriptState>(*state);
-        return newInstance;
-    }
-
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         if (liveTarget) {
