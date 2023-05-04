@@ -48,5 +48,5 @@ namespace sp::scripts {
     };
     StructMetadata MetadataLifeCellPrefab(typeid(LifeCellPrefab),
         StructField::New("board_size", &LifeCellPrefab::boardSize));
-    PrefabScript<LifeCellPrefab> lifeCell("life_cell", MetadataLifeCellPrefab);
+    PrefabScript<LifeCellPrefab> lifeCellPrefab("life_cell", MetadataLifeCellPrefab);
 } // namespace sp::scripts
