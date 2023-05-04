@@ -133,21 +133,23 @@ namespace sp::scripts {
                 auto action = eventName.substr(0, delimiter);
                 std::string signalName(eventName.substr(delimiter + 1));
                 if (signalName.empty()) continue;
+                // TODO: Cache this handle so the lookup only happens once
+                StringHandle signalHandle = GetStringHandler().Get(signalName);
 
                 if (action == "toggle") {
-                    double currentValue = SignalBindings::GetSignal(lock, ent, signalName);
+                    double currentValue = SignalBindings::GetSignal(lock, ent, signalHandle);
 
                     if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
-                        signalOutput.SetSignal(signalName, 0);
+                        signalOutput.SetSignal(signalHandle, 0);
                     } else {
-                        signalOutput.SetSignal(signalName, eventValue);
+                        signalOutput.SetSignal(signalHandle, eventValue);
                     }
                 } else if (action == "set") {
-                    signalOutput.SetSignal(signalName, eventValue);
+                    signalOutput.SetSignal(signalHandle, eventValue);
                 } else if (action == "add") {
-                    signalOutput.SetSignal(signalName, signalOutput.GetSignal(signalName) + eventValue);
+                    signalOutput.SetSignal(signalHandle, signalOutput.GetSignal(signalHandle) + eventValue);
                 } else if (action == "clear") {
-                    signalOutput.ClearSignal(signalName);
+                    signalOutput.ClearSignal(signalHandle);
                 } else {
                     Errorf("Unknown signal action: '%s'", std::string(action));
                 }

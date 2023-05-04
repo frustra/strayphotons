@@ -2,6 +2,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/StringHandle.hh"
 
 namespace sp {
     class PhysxManager;
@@ -17,5 +18,8 @@ namespace sp {
 
     private:
         const double frameInterval;
+
+        const ecs::StringHandle animationStateHandle = ecs::GetStringHandler().Get("animation_state");
+        const ecs::StringHandle animationTargetHandle = ecs::GetStringHandler().Get("animation_target");
     };
 } // namespace sp

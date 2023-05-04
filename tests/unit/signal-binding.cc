@@ -1,6 +1,7 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/StringHandle.hh"
 
 #include <glm/glm.hpp>
 #include <tests.hh>
@@ -8,17 +9,22 @@
 namespace SignalBindingTests {
     using namespace testing;
 
-    const std::string TEST_SOURCE_BUTTON = "device1_button";
-    const std::string TEST_SOURCE_KEY = "device2_key";
-    const std::string TEST_SIGNAL_ACTION1 = "test-action1";
-    const std::string TEST_SIGNAL_ACTION2 = "test-action2";
-    const std::string TEST_SIGNAL_ACTION3 = "test-action3";
-    const std::string TEST_SIGNAL_ACTION4 = "test-action4";
-    const std::string TEST_SIGNAL_ACTION5 = "test-action5";
-    const std::string TEST_SIGNAL_ACTION6 = "test-action6";
-    const std::string TEST_SIGNAL_ACTION7 = "test-action7";
-
     void TrySetSignals() {
+        const ecs::StringHandle TEST_SOURCE_BUTTON = ecs::GetStringHandler().Get("device1_button");
+        const ecs::StringHandle TEST_SOURCE_KEY = ecs::GetStringHandler().Get("device2_key");
+        const ecs::StringHandle TEST_SIGNAL_ACTION1 = ecs::GetStringHandler().Get("test-action1");
+        const ecs::StringHandle TEST_SIGNAL_ACTION2 = ecs::GetStringHandler().Get("test-action2");
+        const ecs::StringHandle TEST_SIGNAL_ACTION3 = ecs::GetStringHandler().Get("test-action3");
+        const ecs::StringHandle TEST_SIGNAL_ACTION4 = ecs::GetStringHandler().Get("test-action4");
+        const ecs::StringHandle TEST_SIGNAL_ACTION5 = ecs::GetStringHandler().Get("test-action5");
+        const ecs::StringHandle TEST_SIGNAL_ACTION6 = ecs::GetStringHandler().Get("test-action6");
+        const ecs::StringHandle TEST_SIGNAL_ACTION7 = ecs::GetStringHandler().Get("test-action7");
+        const ecs::StringHandle TEST_SIGNAL = ecs::GetStringHandler().Get("test");
+        const ecs::StringHandle TEST_SIGNAL_A = ecs::GetStringHandler().Get("test_a");
+        const ecs::StringHandle TEST_SIGNAL_B = ecs::GetStringHandler().Get("test_b");
+        const ecs::StringHandle TEST_SIGNAL_FIB = ecs::GetStringHandler().Get("test_fib");
+        const ecs::StringHandle TEST_SIGNAL_RECURSE = ecs::GetStringHandler().Get("test_recurse");
+
         Tecs::Entity player, hand, unknown;
         {
             Timer t("Create a basic scene with SignalBindings and SignalOutput components");
@@ -30,8 +36,8 @@ namespace SignalBindingTests {
             auto &signalOutput = player.Set<ecs::SignalOutput>(lock);
             signalOutput.SetSignal(TEST_SOURCE_BUTTON, 1.0);
             signalOutput.SetSignal(TEST_SOURCE_KEY, 2.0);
-            signalOutput.SetSignal("test_a", 0.0);
-            signalOutput.SetSignal("test_b", 1.0);
+            signalOutput.SetSignal(TEST_SIGNAL_A, 0.0);
+            signalOutput.SetSignal(TEST_SIGNAL_B, 1.0);
 
             hand = lock.NewEntity();
             ecs::EntityRef handRef(ecs::Name("player", "hand"), hand);
@@ -55,21 +61,21 @@ namespace SignalBindingTests {
                 ecs::Name("player", ""));
 
             // Test a bunch of invalid expressions to make sure they don't crash the parser
-            playerBindings.SetBinding("test", "cos(");
-            playerBindings.SetBinding("test", "max(signal,");
-            playerBindings.SetBinding("test", "-");
-            playerBindings.SetBinding("test", "50 10");
-            playerBindings.SetBinding("test", "42 max(5, 2)");
-            playerBindings.SetBinding("test", "(hello) world");
-            playerBindings.SetBinding("test", "1 + (");
-            playerBindings.SetBinding("test", ")");
-            playerBindings.SetBinding("test", "()");
-            playerBindings.SetBinding("test", "sin()");
-            playerBindings.SetBinding("test", "");
-            playerBindings.ClearBinding("test");
+            playerBindings.SetBinding(TEST_SIGNAL, "cos(");
+            playerBindings.SetBinding(TEST_SIGNAL, "max(signal,");
+            playerBindings.SetBinding(TEST_SIGNAL, "-");
+            playerBindings.SetBinding(TEST_SIGNAL, "50 10");
+            playerBindings.SetBinding(TEST_SIGNAL, "42 max(5, 2)");
+            playerBindings.SetBinding(TEST_SIGNAL, "(hello) world");
+            playerBindings.SetBinding(TEST_SIGNAL, "1 + (");
+            playerBindings.SetBinding(TEST_SIGNAL, ")");
+            playerBindings.SetBinding(TEST_SIGNAL, "()");
+            playerBindings.SetBinding(TEST_SIGNAL, "sin()");
+            playerBindings.SetBinding(TEST_SIGNAL, "");
+            playerBindings.ClearBinding(TEST_SIGNAL);
 
-            playerBindings.SetBinding("test_fib", "player/test_a + player/test_b", ecs::Name("player", ""));
-            playerBindings.SetBinding("test_recurse", "player/test_recurse + 1", ecs::Name("player", ""));
+            playerBindings.SetBinding(TEST_SIGNAL_FIB, "player/test_a + player/test_b", ecs::Name("player", ""));
+            playerBindings.SetBinding(TEST_SIGNAL_RECURSE, "player/test_recurse + 1", ecs::Name("player", ""));
 
             auto &handBindings = hand.Set<ecs::SignalBindings>(lock);
             handBindings.SetBinding(TEST_SIGNAL_ACTION1, "player/device1_button", ecs::Name("player", ""));
@@ -149,7 +155,7 @@ namespace SignalBindingTests {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
             Timer t("Try reading recursive signal binding");
-            double val = ecs::SignalBindings::GetSignal(lock, player, "test_recurse");
+            double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_RECURSE);
             AssertEqual(val,
                 (double)ecs::MAX_SIGNAL_BINDING_DEPTH + 1.0,
                 "Expected invalid signal due to depth overflow");
@@ -162,11 +168,11 @@ namespace SignalBindingTests {
             {
                 Timer t("Test calculate the fibonacci sequence");
                 for (size_t i = 0; i < 1000; i++) {
-                    double val = ecs::SignalBindings::GetSignal(lock, player, "test_fib");
-                    signals.SetSignal("test_a", signals.GetSignal("test_b"));
-                    signals.SetSignal("test_b", val);
+                    double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_FIB);
+                    signals.SetSignal(TEST_SIGNAL_A, signals.GetSignal(TEST_SIGNAL_B));
+                    signals.SetSignal(TEST_SIGNAL_B, val);
                 }
-                double fib = signals.GetSignal("test_a");
+                double fib = signals.GetSignal(TEST_SIGNAL_A);
                 Logf("1000th fibonacci number: %e", fib);
             }
         }
@@ -188,14 +194,14 @@ namespace SignalBindingTests {
             AssertEqual(val, 1.0, "Expected signal to match comparison expression");
             val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION7);
             AssertEqual(val, 1.0, "Expected signal to match comparison expression");
-            val = ecs::SignalBindings::GetSignal(lock, player, "foo");
+            val = ecs::SignalBindings::GetSignal(lock, player, ecs::GetStringHandler().Get("foo"));
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");
 
             val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION1);
             AssertEqual(val, 1.0, "Expected signal to match button source");
             val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 0.0, "Expected binding to missing entity to read as 0");
-            val = ecs::SignalBindings::GetSignal(lock, hand, "foo");
+            val = ecs::SignalBindings::GetSignal(lock, hand, ecs::GetStringHandler().Get("foo"));
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");
         }
         {

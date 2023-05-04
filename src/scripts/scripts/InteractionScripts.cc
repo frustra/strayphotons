@@ -182,6 +182,8 @@ namespace sp::scripts {
         Entity grabEntity, pointEntity, pressEntity;
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
+        const StringHandle interactRotateHandle = GetStringHandler().Get("interact_rotate");
+
         void UpdateGrabTarget(Lock<Write<PhysicsJoints>> lock, Entity newGrabEntity) {
             auto noclipEnt = noclipEntity.Get(lock);
             if (!noclipEnt.Has<PhysicsJoints>(lock)) return;
@@ -219,7 +221,7 @@ namespace sp::scripts {
                             PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
                 }
 
-                bool rotating = SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
+                bool rotating = SignalBindings::GetSignal(lock, ent, interactRotateHandle) >= 0.5;
 
                 Event event;
                 while (EventInput::Poll(lock, state.eventQueue, event)) {

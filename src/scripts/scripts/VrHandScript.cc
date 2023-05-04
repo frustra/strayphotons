@@ -84,6 +84,7 @@ namespace sp::scripts {
         EntityRef inputRootRef, physicsRootRef, controllerRef, laserPointerRef;
         Entity grabEntity, pointEntity, pressEntity;
         std::string actionPrefix;
+        StringHandle indexCurlHandle, middleCurlHandle;
 
         PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;
 
@@ -112,6 +113,8 @@ namespace sp::scripts {
                 Errorf("Invalid hand specified for VrHand script: %s", handStr);
                 return false;
             }
+            indexCurlHandle = GetStringHandler().Get(actionPrefix + "_curl_index");
+            middleCurlHandle = GetStringHandler().Get(actionPrefix + "_curl_middle");
             inputRootRef = inputScope;
             if (!inputRootRef) {
                 Errorf("VrHand script has invalid input root: %s", inputScope.String());
@@ -355,7 +358,7 @@ namespace sp::scripts {
             }
 
             // Handle interaction events
-            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_index");
+            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, indexCurlHandle);
             auto grabSignal = indexCurl;
             auto grabTarget = grabEntity;
             if (teleported || grabSignal < 0.18) {
@@ -364,7 +367,7 @@ namespace sp::scripts {
                 grabTarget = groupOverlaps[BoneGroup::Index];
             }
 
-            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_middle");
+            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, middleCurlHandle);
             bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
             HandlePointing(state, lock, ent, isPointing);
 

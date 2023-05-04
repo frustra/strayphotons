@@ -17,5 +17,10 @@ namespace sp {
 
     private:
         PhysxManager &manager;
+
+        const ecs::StringHandle laserColorRHandle = ecs::GetStringHandler().Get("laser_color_r");
+        const ecs::StringHandle laserColorGHandle = ecs::GetStringHandler().Get("laser_color_g");
+        const ecs::StringHandle laserColorBHandle = ecs::GetStringHandler().Get("laser_color_b");
+        const ecs::StringHandle laserValueHandle = ecs::GetStringHandler().Get("value");
     };
 } // namespace sp

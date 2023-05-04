@@ -127,7 +127,7 @@ namespace sp::xr {
     }
 
     void InputBindings::Frame() {
-        std::array<vr::VRInputValueHandle_t, vr::k_unMaxTrackedDeviceCount> origins;
+        /*std::array<vr::VRInputValueHandle_t, vr::k_unMaxTrackedDeviceCount> origins;
 
         bool missingEntities = false;
         {
@@ -460,6 +460,6 @@ namespace sp::xr {
                         }
                     }
                 });
-        }
+        }*/
     }
 } // namespace sp::xr

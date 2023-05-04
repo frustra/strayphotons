@@ -4,7 +4,9 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/StringHandle.hh"
 
+#include <ankerl/unordered_dense.h>
 #include <limits>
 #include <map>
 #include <robin_hood.h>
@@ -14,27 +16,29 @@ namespace ecs {
     static const size_t MAX_SIGNAL_BINDING_DEPTH = 10;
 
     struct SignalOutput {
-        void SetSignal(const std::string &name, double value);
-        void ClearSignal(const std::string &name);
-        bool HasSignal(const std::string &name) const;
-        double GetSignal(const std::string &name) const;
+        void SetSignal(const StringHandle &name, double value);
+        void ClearSignal(const StringHandle &name);
+        bool HasSignal(const StringHandle &name) const;
+        double GetSignal(const StringHandle &name) const;
 
-        robin_hood::unordered_map<std::string, double> signals;
+        // robin_hood::unordered_map<std::string, double> signals;
+        robin_hood::unordered_map<StringHandle, double> signals;
     };
 
     struct SignalBindings {
-        void SetBinding(const std::string &name, const std::string &expr, const Name &scope = Name());
-        void SetBinding(const std::string &name, EntityRef entity, const std::string &signalName);
-        void ClearBinding(const std::string &name);
-        bool HasBinding(const std::string &name) const;
-        const SignalExpression &GetBinding(const std::string &name) const;
+        void SetBinding(const StringHandle &name, const std::string &expr, const Name &scope = Name());
+        void SetBinding(const StringHandle &name, EntityRef entity, const StringHandle &signalName);
+        void ClearBinding(const StringHandle &name);
+        bool HasBinding(const StringHandle &name) const;
+        const SignalExpression &GetBinding(const StringHandle &name) const;
 
         static double GetSignal(const DynamicLock<ReadSignalsLock> &lock,
             const Entity &ent,
-            const std::string &name,
+            const StringHandle &name,
             size_t depth = 0);
 
-        robin_hood::unordered_map<std::string, SignalExpression> bindings;
+        // robin_hood::unordered_map<std::string, SignalExpression> bindings;
+        robin_hood::unordered_map<StringHandle, SignalExpression> bindings;
     };
 
     static StructMetadata MetadataSignalOutput(typeid(SignalOutput), StructField::New(&SignalOutput::signals));

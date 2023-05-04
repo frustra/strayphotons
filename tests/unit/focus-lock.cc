@@ -7,12 +7,13 @@
 namespace FocusLockTests {
     using namespace testing;
 
-    const std::string TEST_SIGNAL_BUTTON = "device1_button";
     const std::string TEST_EVENT_KEY = "/device2/key";
-    const std::string TEST_SIGNAL_ACTION = "test_signal_action";
     const std::string TEST_EVENT_ACTION = "/test/event/action";
 
     void TestSendingEventsAndSignals() {
+        const ecs::StringHandle TEST_SIGNAL_BUTTON = ecs::GetStringHandler().Get("device1_button");
+        const ecs::StringHandle TEST_SIGNAL_ACTION = ecs::GetStringHandler().Get("test_signal_action");
+
         Tecs::Entity player, keyboard, mouse;
         ecs::EventQueueRef playerQueue = ecs::NewEventQueue();
         {

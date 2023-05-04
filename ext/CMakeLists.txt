@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(magic_enum)
 add_subdirectory(robin-hood-hashing)
+add_subdirectory(unordered_dense)
 add_subdirectory(physx)
 
 # These projects require more configuration that is encapsulated their own CMake files

@@ -286,7 +286,8 @@ namespace sp {
             }
             // Logf("Start headRelativePlayer pos: %s", glm::to_string(headRelativePlayer.GetPosition()));
 
-            bool noclip = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_NOCLIP) >= 0.5;
+            static const ecs::StringHandle noclipHandle = ecs::GetStringHandler().Get(INPUT_SIGNAL_MOVE_NOCLIP);
+            bool noclip = ecs::SignalBindings::GetSignal(lock, entity, noclipHandle) >= 0.5;
             if (userData->noclipping != noclip) {
                 manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 userData->noclipping = noclip;
@@ -405,12 +406,17 @@ namespace sp {
                 }
             }
 
+            static const ecs::StringHandle moveRelXHandle = ecs::GetStringHandler().Get(INPUT_SIGNAL_MOVE_RELATIVE_X);
+            static const ecs::StringHandle moveRelYHandle = ecs::GetStringHandler().Get(INPUT_SIGNAL_MOVE_RELATIVE_Y);
+            static const ecs::StringHandle moveRelZHandle = ecs::GetStringHandler().Get(INPUT_SIGNAL_MOVE_RELATIVE_Z);
+            static const ecs::StringHandle moveSprintHandle = ecs::GetStringHandler().Get(INPUT_SIGNAL_MOVE_SPRINT);
+
             // Read character movement inputs
             glm::vec3 movementInput = glm::vec3(0);
-            movementInput.x = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RELATIVE_X);
-            movementInput.y = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RELATIVE_Y);
-            movementInput.z = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RELATIVE_Z);
-            bool sprint = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
+            movementInput.x = ecs::SignalBindings::GetSignal(lock, entity, moveRelXHandle);
+            movementInput.y = ecs::SignalBindings::GetSignal(lock, entity, moveRelYHandle);
+            movementInput.z = ecs::SignalBindings::GetSignal(lock, entity, moveRelZHandle);
+            bool sprint = ecs::SignalBindings::GetSignal(lock, entity, moveSprintHandle) >= 0.5;
 
             bool jump = false;
             ecs::Event event;

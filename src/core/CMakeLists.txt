@@ -11,6 +11,7 @@ target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     murmurhash
     picojson
     robin_hood
+    unordered_dense
     Tecs
     tinygltf
     TracyClient

@@ -77,7 +77,9 @@ namespace sp {
 
                     if (keyboard.Has<ecs::SignalOutput>(lock)) {
                         auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
-                        signalOutput.SetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName, 1.0);
+                        // TODO: Cache this string handle
+                        signalOutput.SetSignal(ecs::GetStringHandler().Get(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName),
+                            1.0);
                     }
                 } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
                     auto &keyName = std::get<std::string>(event.data);
@@ -86,7 +88,8 @@ namespace sp {
 
                     if (keyboard.Has<ecs::SignalOutput>(lock)) {
                         auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
-                        signalOutput.ClearSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
+                        // TODO: Cache this string handle
+                        signalOutput.ClearSignal(ecs::GetStringHandler().Get(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName));
                     }
                 } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
                     auto &mousePos = std::get<glm::vec2>(event.data);
@@ -95,36 +98,50 @@ namespace sp {
                         ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - prevMousePos});
                     prevMousePos = mousePos;
 
+                    static const ecs::StringHandle cursorXHandle = ecs::GetStringHandler().Get(
+                        INPUT_SIGNAL_MOUSE_CURSOR_X);
+                    static const ecs::StringHandle cursorYHandle = ecs::GetStringHandler().Get(
+                        INPUT_SIGNAL_MOUSE_CURSOR_Y);
+
                     if (mouse.Has<ecs::SignalOutput>(lock)) {
                         auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-                        signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_X, mousePos.x);
-                        signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_Y, mousePos.y);
+                        signalOutput.SetSignal(cursorXHandle, mousePos.x);
+                        signalOutput.SetSignal(cursorYHandle, mousePos.y);
                     }
                 } else if (event.name == INPUT_EVENT_MOUSE_LEFT_CLICK) {
                     if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        static const ecs::StringHandle buttonHandle = ecs::GetStringHandler().Get(
+                            INPUT_SIGNAL_MOUSE_BUTTON_LEFT);
+
                         auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
                         if (std::get<bool>(event.data)) {
-                            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_BUTTON_LEFT, 1.0);
+                            signalOutput.SetSignal(buttonHandle, 1.0);
                         } else {
-                            signalOutput.ClearSignal(INPUT_SIGNAL_MOUSE_BUTTON_LEFT);
+                            signalOutput.ClearSignal(buttonHandle);
                         }
                     }
                 } else if (event.name == INPUT_EVENT_MOUSE_MIDDLE_CLICK) {
                     if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        static const ecs::StringHandle buttonHandle = ecs::GetStringHandler().Get(
+                            INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE);
+
                         auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
                         if (std::get<bool>(event.data)) {
-                            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE, 1.0);
+                            signalOutput.SetSignal(buttonHandle, 1.0);
                         } else {
-                            signalOutput.ClearSignal(INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE);
+                            signalOutput.ClearSignal(buttonHandle);
                         }
                     }
                 } else if (event.name == INPUT_EVENT_MOUSE_RIGHT_CLICK) {
                     if (mouse.Has<ecs::SignalOutput>(lock)) {
+                        static const ecs::StringHandle buttonHandle = ecs::GetStringHandler().Get(
+                            INPUT_SIGNAL_MOUSE_BUTTON_RIGHT);
+
                         auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
                         if (std::get<bool>(event.data)) {
-                            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_BUTTON_RIGHT, 1.0);
+                            signalOutput.SetSignal(buttonHandle, 1.0);
                         } else {
-                            signalOutput.ClearSignal(INPUT_SIGNAL_MOUSE_BUTTON_RIGHT);
+                            signalOutput.ClearSignal(buttonHandle);
                         }
                     }
                 }

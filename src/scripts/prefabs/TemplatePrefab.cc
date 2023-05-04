@@ -151,6 +151,9 @@ namespace ecs {
     StructMetadata MetadataTemplatePrefab(typeid(TemplatePrefab), StructField::New("source", &TemplatePrefab::source));
     PrefabScript<TemplatePrefab> templatePrefab("template", MetadataTemplatePrefab);
 
+    static const StringHandle tileXHandle = GetStringHandler().Get("tile.x");
+    static const StringHandle tileYHandle = GetStringHandler().Get("tile.y");
+
     struct TilePrefab {
         glm::ivec2 count = {1, 1};
         glm::vec2 stride = {1, 1};
@@ -206,8 +209,8 @@ namespace ecs {
                     }
                     Assertf(tileEnt, "Failed to create tile entity: %s", ToString(lock, ent));
                     auto &signalOutput = tileEnt.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal("tile.x", x);
-                    signalOutput.SetSignal("tile.y", y);
+                    signalOutput.SetSignal(tileXHandle, x);
+                    signalOutput.SetSignal(tileYHandle, y);
                     surface.AddEntities(lock, scope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);

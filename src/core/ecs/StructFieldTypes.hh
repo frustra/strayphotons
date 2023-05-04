@@ -7,7 +7,9 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/StringHandle.hh"
 
+#include <ankerl/unordered_dense.h>
 #include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <type_traits>
@@ -72,6 +74,8 @@ namespace ecs {
         robin_hood::unordered_map<std::string, PhysicsJoint>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
         robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
+        robin_hood::unordered_map<StringHandle, double>,
+        robin_hood::unordered_map<StringHandle, SignalExpression>,
 
         // Enums
         FocusLayer,

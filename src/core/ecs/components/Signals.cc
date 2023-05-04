@@ -25,43 +25,43 @@ namespace ecs {
         }
     }
 
-    void SignalOutput::SetSignal(const std::string &name, double value) {
+    void SignalOutput::SetSignal(const StringHandle &name, double value) {
         signals[name] = value;
     }
 
-    void SignalOutput::ClearSignal(const std::string &name) {
+    void SignalOutput::ClearSignal(const StringHandle &name) {
         signals.erase(name);
     }
 
-    bool SignalOutput::HasSignal(const std::string &name) const {
+    bool SignalOutput::HasSignal(const StringHandle &name) const {
         return signals.count(name) > 0;
     }
 
-    double SignalOutput::GetSignal(const std::string &name) const {
+    double SignalOutput::GetSignal(const StringHandle &name) const {
         auto signal = signals.find(name);
         if (signal != signals.end()) return signal->second;
         return 0.0;
     }
 
-    void SignalBindings::SetBinding(const std::string &name, const std::string &expr, const Name &scope) {
+    void SignalBindings::SetBinding(const StringHandle &name, const std::string &expr, const Name &scope) {
         Tracef("SetBinding %s = %s", name, expr);
         bindings.emplace(name, SignalExpression{expr, scope});
     }
 
-    void SignalBindings::SetBinding(const std::string &name, EntityRef entity, const std::string &signalName) {
+    void SignalBindings::SetBinding(const StringHandle &name, EntityRef entity, const StringHandle &signalName) {
         Tracef("SetBinding %s = %s/%s", name, entity.Name().String(), signalName);
         bindings.emplace(name, SignalExpression{entity.Name(), signalName});
     }
 
-    void SignalBindings::ClearBinding(const std::string &name) {
+    void SignalBindings::ClearBinding(const StringHandle &name) {
         bindings.erase(name);
     }
 
-    bool SignalBindings::HasBinding(const std::string &name) const {
+    bool SignalBindings::HasBinding(const StringHandle &name) const {
         return bindings.count(name) > 0;
     }
 
-    const SignalExpression &SignalBindings::GetBinding(const std::string &name) const {
+    const SignalExpression &SignalBindings::GetBinding(const StringHandle &name) const {
         ZoneScoped;
         auto list = bindings.find(name);
         if (list != bindings.end()) {
@@ -73,7 +73,7 @@ namespace ecs {
 
     double SignalBindings::GetSignal(const DynamicLock<ReadSignalsLock> &lock,
         const Entity &ent,
-        const std::string &name,
+        const StringHandle &name,
         size_t depth) {
         ZoneScoped;
         if (ent.Has<SignalOutput>(lock)) {

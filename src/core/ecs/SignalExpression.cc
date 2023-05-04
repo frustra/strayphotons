@@ -9,15 +9,15 @@
 #include "ecs/SignalStructAccess.hh"
 
 namespace ecs {
-    std::pair<ecs::Name, std::string> ParseSignalString(std::string_view str, const EntityScope &scope) {
+    std::pair<ecs::Name, StringHandle> ParseSignalString(std::string_view str, const EntityScope &scope) {
         size_t delimiter = str.find('/');
         ecs::Name entityName(str.substr(0, delimiter), scope);
         if (entityName) {
             std::string signalName = "value";
             if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
-            return std::make_pair(entityName, signalName);
+            return std::make_pair(entityName, GetStringHandler().Get(signalName));
         } else {
-            return std::make_pair(ecs::Name(), "");
+            return std::make_pair(ecs::Name(), nullptr);
         }
     }
 
@@ -564,7 +564,7 @@ namespace ecs {
                 } else if (token[delimiter] == '/') {
                     ecs::Name entityName(token.substr(0, delimiter), this->scope);
                     std::string signalName(token.substr(delimiter + 1));
-                    nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
+                    nodes.emplace_back(SignalExpression::SignalNode{entityName, GetStringHandler().Get(signalName)},
                         tokenIndex,
                         tokenIndex + 1);
                     nodeStrings.emplace_back(entityName.String() + "/" + signalName);
@@ -608,11 +608,11 @@ namespace ecs {
         return deduplicateNode(index);
     }
 
-    SignalExpression::SignalExpression(const EntityRef &entity, const std::string &signalName)
-        : scope(entity.Name().scene, ""), expr(entity.Name().String() + "/" + signalName) {
+    SignalExpression::SignalExpression(const EntityRef &entity, const StringHandle &signal)
+        : scope(entity.Name().scene, ""), expr(entity.Name().String() + (signal ? "/" + *signal : "/")) {
         tokens.emplace_back(expr);
         rootIndex = nodes.size();
-        nodes.emplace_back(SignalNode{entity, signalName}, 0, 0);
+        nodes.emplace_back(SignalNode{entity, signal}, 0, 0);
         nodeStrings.emplace_back(expr);
     }
 

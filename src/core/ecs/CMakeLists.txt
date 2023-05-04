@@ -8,6 +8,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     ScriptManager.cc
     SignalExpression.cc
     SignalStructAccess.cc
+    StringHandle.cc
     StructMetadata.cc
 )
 
