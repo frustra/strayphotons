@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
@@ -30,6 +31,8 @@ namespace ecs {
 
         bool Parse(Lock<AddRemove> lock) {
             if (sourceName.empty()) return false;
+
+            ZoneScoped;
 
             if (rootEnt.Has<Name>(lock)) {
                 rootScope = rootEnt.Get<Name>(lock);
@@ -73,6 +76,7 @@ namespace ecs {
             std::string name,
             ecs::EntityScope scope,
             Transform offset = {}) {
+            ZoneScoped;
             Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, name, scope);
             for (auto &comp : source) {
                 if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
@@ -99,6 +103,7 @@ namespace ecs {
         // Add defined entities as sub-entities of the template root
         void AddEntities(Lock<AddRemove> lock, ecs::EntityScope scope, Transform offset = {}) {
             if (!entityList) return;
+            ZoneScoped;
 
             std::vector<ecs::Entity> entities;
             for (auto &value : *entityList) {
@@ -115,10 +120,10 @@ namespace ecs {
                 entities.emplace_back(newEntity);
             }
 
+            auto &scriptManager = ecs::GetScriptManager();
             for (auto &e : entities) {
-                if (e.Has<ecs::Scripts>(lock)) {
-                    ecs::Scripts::RunPrefabs(lock, e);
-                }
+                if (!e.Has<ecs::Scripts>(lock)) continue;
+                scriptManager.RunPrefabs(lock, e);
             }
         }
     };
@@ -139,7 +144,7 @@ namespace ecs {
             }
             parser.AddEntities(lock, parser.rootScope);
             if (rootOverride.Has<ecs::Scripts>(lock)) {
-                ecs::Scripts::RunPrefabs(lock, rootOverride);
+                ecs::GetScriptManager().RunPrefabs(lock, rootOverride);
             }
         }
     };
@@ -242,7 +247,7 @@ namespace ecs {
                         }
                     }
                     if (tileEnt.Has<ecs::Scripts>(lock)) {
-                        ecs::Scripts::RunPrefabs(lock, tileEnt);
+                        ecs::GetScriptManager().RunPrefabs(lock, tileEnt);
                     }
                 }
             }

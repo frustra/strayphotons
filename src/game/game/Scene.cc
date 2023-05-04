@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/ScriptManager.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
 
@@ -273,18 +274,7 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        {
-            ZoneScopedN("ScriptInit");
-            for (auto &e : live.EntitiesWith<ecs::Scripts>()) {
-                // TODO: Figure out a better criteria for when to re-init scripts
-                // Player bindings break on reload if we filter by scene
-
-                // if (!e.Has<ecs::SceneInfo>(live)) continue;
-                // auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
-                // if (sceneInfo.scene != *this) continue;
-                ecs::Scripts::Init(live, e);
-            }
-        }
+        ecs::GetScriptManager().RegisterEvents(live);
         {
             ZoneScopedN("TransformSnapshot");
             for (auto &e : live.EntitiesWith<ecs::TransformTree>()) {
@@ -328,6 +318,14 @@ namespace sp {
                 ecs::GetEntityRefs().Set(ref.Name(), remainingId);
             }
             e.Destroy(staging);
+        }
+        for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
+            if (!e.Has<ecs::SceneInfo>(live)) continue;
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
+            if (sceneInfo.scene != *this || sceneInfo.rootStagingId) continue;
+
+            // Remove non-staging entities that were created by a script after scene load.
+            e.Destroy(live);
         }
 
         auto liveSceneId = data->sceneEntity.Get(live);

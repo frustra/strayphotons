@@ -55,7 +55,7 @@ namespace sp::scripts {
                     gltfState.SetParam<std::string>("model", "wall-4-corner");
                     gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
-                    ecs::Scripts::RunPrefabs(lock, newEnt);
+                    ecs::GetScriptManager().RunPrefabs(lock, newEnt);
                 }
                 lastDir = dir;
 
@@ -80,7 +80,7 @@ namespace sp::scripts {
                     gltfState.SetParam<std::string>("model", model);
                     gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
-                    ecs::Scripts::RunPrefabs(lock, newEnt);
+                    ecs::GetScriptManager().RunPrefabs(lock, newEnt);
 
                     point += dir * stride;
                 }

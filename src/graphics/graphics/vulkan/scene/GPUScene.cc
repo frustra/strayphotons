@@ -234,9 +234,12 @@ namespace sp::vulkan {
             })
             .Execute([this, viewMask, viewPosition, bufferIDs, instanceCount, reverseSort](rg::Resources &resources,
                          CommandContext &cmd) {
-                InlineVector<VkDrawIndexedIndirectCommand, 10 * 1024> drawCommands;
-                InlineVector<GPUDrawParams, 10 * 1024> drawParams;
-                InlineVector<float, 10 * 1024> primitiveDepth;
+                static InlineVector<VkDrawIndexedIndirectCommand, 256 * 1024> drawCommands;
+                static InlineVector<GPUDrawParams, 256 * 1024> drawParams;
+                static InlineVector<float, 256 * 1024> primitiveDepth;
+                drawCommands.clear();
+                drawParams.clear();
+                primitiveDepth.clear();
 
                 for (size_t i = 0; i < renderables.size(); i++) {
                     auto &renderable = renderables[i];

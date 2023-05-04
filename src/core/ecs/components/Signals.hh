@@ -29,22 +29,10 @@ namespace ecs {
         bool HasBinding(const std::string &name) const;
         const SignalExpression &GetBinding(const std::string &name) const;
 
-        template<typename LockType>
-        static inline double GetSignal(LockType lock, Entity ent, const std::string &name, size_t depth = 0) {
-            if (depth > MAX_SIGNAL_BINDING_DEPTH) {
-                Errorf("Max signal binding depth exceeded: %s", name);
-                return 0.0f;
-            }
-
-            if (ent.Has<SignalOutput>(lock)) {
-                auto &signalOutput = ent.Get<const SignalOutput>(lock);
-                if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
-            }
-            if (!ent.Has<SignalBindings>(lock)) return 0.0;
-
-            auto &bindings = ent.Get<const SignalBindings>(lock);
-            return bindings.GetBinding(name).Evaluate(lock, depth);
-        }
+        static double GetSignal(const DynamicLock<ReadSignalsLock> &lock,
+            const Entity &ent,
+            const std::string &name,
+            size_t depth = 0);
 
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };

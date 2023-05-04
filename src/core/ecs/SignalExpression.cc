@@ -664,7 +664,7 @@ namespace ecs {
         return true;
     }
 
-    bool SignalExpression::canEvaluate(DynamicLock<ReadSignalsLock> lock) const {
+    bool SignalExpression::canEvaluate(const DynamicLock<ReadSignalsLock> &lock) const {
         for (auto &node : nodes) {
             bool success = std::visit(
                 [&lock](auto &&node) {
@@ -702,7 +702,7 @@ namespace ecs {
 
     struct ExpressionEvaluator {
         const SignalExpression &expr;
-        sp::InlineVector<double, 1024> cache;
+        sp::InlineVector<double, 256> cache;
         size_t depth = 0;
 
         ExpressionEvaluator(const SignalExpression &expr, size_t depth = 0) : expr(expr), depth(depth) {
@@ -716,7 +716,7 @@ namespace ecs {
             if (cache[nodeIndex] != -std::numeric_limits<double>::infinity()) return cache[nodeIndex];
 
             double result = std::visit(
-                [&](auto &&node) {
+                [&](auto &node) {
                     using T = std::decay_t<decltype(node)>;
                     if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
                         return node.value;
@@ -732,6 +732,10 @@ namespace ecs {
                         return ecs::ReadStructField(&input, node.field);
                     } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                         // ZoneScopedN("SignalNode:evaluate");
+                        if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                            Errorf("Max signal binding depth exceeded: %s -> %s", expr.expr, node.signalName);
+                            return 0.0;
+                        }
                         return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
@@ -789,7 +793,7 @@ namespace ecs {
                         static_assert(!sizeof(T), "Invalid signal expression node type");
                     }
                 },
-                (SignalExpression::NodeVariant)expr.nodes[nodeIndex]);
+                (const SignalExpression::NodeVariant &)expr.nodes[nodeIndex]);
 
             // if (!std::holds_alternative<SignalExpression::ConstantNode>(nodes[nodeIndex]) && nodes.size() > 2) {
             //     Debugf("     '%s' = %f", nodeStrings[nodeIndex], result);
@@ -804,28 +808,14 @@ namespace ecs {
         };
     };
 
-    double SignalExpression::evaluate(DynamicLock<ReadSignalsLock> lock, size_t depth) const {
+    double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this, depth);
         return eval.EvaluateNode(lock, rootIndex, 0.0);
     }
 
-    double SignalExpression::evaluate(Lock<ReadAll> lock, size_t depth) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
-        ExpressionEvaluator eval(*this, depth);
-        return eval.EvaluateNode(lock, rootIndex, 0.0);
-    }
-
-    double SignalExpression::evaluateEvent(DynamicLock<ReadSignalsLock> lock, const EventData &input) const {
-        // ZoneScoped;
-        // ZoneStr(expr);
-        ExpressionEvaluator eval(*this);
-        return eval.EvaluateNode(lock, rootIndex, input);
-    }
-
-    double SignalExpression::evaluateEvent(Lock<ReadAll> lock, const EventData &input) const {
+    double SignalExpression::EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
         // ZoneScoped;
         // ZoneStr(expr);
         ExpressionEvaluator eval(*this);

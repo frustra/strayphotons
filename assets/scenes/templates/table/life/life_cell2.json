@@ -1,0 +1,45 @@
+{
+	"components": {
+		"transform": {},
+		"signal_output": {},
+		"signal_bindings": {},
+		"event_input": {},
+		"event_bindings": {
+			"/life/notify_neighbors": "light/set/renderable.emissive",
+			"/physics/collision/force_found": "scoperoot/life/toggle_alive"
+		},
+		"script": [
+			{
+				"prefab": "life_cell",
+				"parameters": {
+					"board_size": [128, 128]
+				}
+			},
+			{
+				"onTick": "life_cell"
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "light",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.015, 0],
+				"scale": 0.008
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "component_from_event",
+					"parameters": {
+						"outputs": "renderable.emissive"
+					}
+				}
+			]
+		}
+	]
+}

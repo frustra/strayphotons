@@ -12,6 +12,7 @@
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "physx/ForceConstraint.hh"
@@ -143,6 +144,7 @@ namespace sp {
     void PhysxManager::PreFrame() {
         ZoneScoped;
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
+            ZoneScopedN("PreloadScenePhysics");
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
                 if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
@@ -186,7 +188,8 @@ namespace sp {
                     ecs::EventInput,
                     ecs::TriggerGroup,
                     ecs::CharacterController,
-                    ecs::SceneProperties>,
+                    ecs::SceneProperties,
+                    ecs::Scripts>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
@@ -197,8 +200,7 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::SignalOutput,
-                    ecs::Scripts>,
+                    ecs::SignalOutput>,
                 ecs::PhysicsUpdateLock>();
 
             characterControlSystem.Frame(lock);
@@ -304,20 +306,26 @@ namespace sp {
                 }
             }
 
-            // Update actors with latest entity data
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.type == ecs::PhysicsActorType::SubActor) continue;
-                UpdateActor(lock, ent);
+            {
+                ZoneScopedN("UpdateActors");
+                // Update actors with latest entity data
+                for (auto &ent : lock.EntitiesWith<ecs::Physics>()) {
+                    if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+                    auto &ph = ent.Get<ecs::Physics>(lock);
+                    if (ph.type == ecs::PhysicsActorType::SubActor) continue;
+                    UpdateActor(lock, ent);
+                }
             }
 
-            // Update sub actors once all parent actors are complete
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.type != ecs::PhysicsActorType::SubActor) continue;
-                UpdateActor(lock, ent);
+            {
+                ZoneScopedN("UpdateSubActors");
+                // Update sub actors once all parent actors are complete
+                for (auto &ent : lock.EntitiesWith<ecs::Physics>()) {
+                    if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+                    auto &ph = ent.Get<ecs::Physics>(lock);
+                    if (ph.type != ecs::PhysicsActorType::SubActor) continue;
+                    UpdateActor(lock, ent);
+                }
             }
 
             constraintSystem.Frame(lock);
@@ -327,13 +335,7 @@ namespace sp {
             laserSystem.Frame(lock);
             UpdateDebugLines(lock);
 
-            {
-                ZoneScopedN("Scripts::OnPhysicsUpdate");
-                for (auto &entity : lock.EntitiesWith<ecs::Scripts>()) {
-                    auto &scripts = entity.Get<ecs::Scripts>(lock);
-                    scripts.OnPhysicsUpdate(lock, entity, interval);
-                }
-            }
+            ecs::GetScriptManager().RunOnPhysicsUpdate(lock, interval);
         }
 
         { // Simulate 1 physics frame (blocking)
@@ -703,7 +705,7 @@ namespace sp {
 
     void PhysxManager::UpdateActor(
         ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
-        ecs::Entity &e) {
+        const ecs::Entity &e) {
         ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);

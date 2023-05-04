@@ -36,7 +36,6 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            ZoneScoped;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (outputEvent.empty()) continue;
@@ -68,7 +67,6 @@ namespace sp::scripts {
 
         template<typename LockType>
         void updateEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
-            ZoneScoped;
             robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {

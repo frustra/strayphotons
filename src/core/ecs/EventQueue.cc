@@ -108,6 +108,11 @@ namespace ecs {
         }
     }
 
+    void EventQueue::Resize(uint32_t newSize) {
+        events.resize(newSize);
+        state.store({0, 0});
+    }
+
     EventQueueRef NewEventQueue(uint32_t maxQueueSize) {
         return make_shared<EventQueue>(maxQueueSize);
     }

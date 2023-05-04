@@ -114,7 +114,7 @@ namespace sp {
             physx::PxRigidActor *actor,
             const ecs::Transform &offset);
         void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
-            ecs::Entity &e);
+            const ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
         void SetCollisionGroup(physx::PxShape *shape, ecs::PhysicsGroup group);

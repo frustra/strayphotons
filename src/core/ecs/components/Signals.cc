@@ -62,11 +62,30 @@ namespace ecs {
     }
 
     const SignalExpression &SignalBindings::GetBinding(const std::string &name) const {
+        ZoneScoped;
         auto list = bindings.find(name);
         if (list != bindings.end()) {
             return list->second;
         }
         static const SignalExpression defaultExpr = {};
         return defaultExpr;
+    }
+
+    double SignalBindings::GetSignal(const DynamicLock<ReadSignalsLock> &lock,
+        const Entity &ent,
+        const std::string &name,
+        size_t depth) {
+        ZoneScoped;
+        if (ent.Has<SignalOutput>(lock)) {
+            auto &signalOutput = ent.Get<const SignalOutput>(lock);
+            auto signal = signalOutput.signals.find(name);
+            if (signal != signalOutput.signals.end()) return signal->second;
+        }
+        if (!ent.Has<SignalBindings>(lock)) return 0.0;
+
+        auto &bindings = ent.Get<const SignalBindings>(lock).bindings;
+        auto list = bindings.find(name);
+        if (list == bindings.end()) return 0.0;
+        return list->second.Evaluate(lock, depth);
     }
 } // namespace ecs

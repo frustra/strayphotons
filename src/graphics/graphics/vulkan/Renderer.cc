@@ -608,6 +608,7 @@ namespace sp::vulkan {
         guiRenderer->Tick();
 
         GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
+            ZoneScopedN("PreloadSceneGraphics");
             bool complete = true;
             for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Renderable>()) {
                 if (!ent.Has<ecs::SceneInfo>(lock)) continue;
