@@ -8,9 +8,8 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
+#include "ecs/ReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
-#include "ecs/StringHandle.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 
@@ -450,8 +449,7 @@ namespace sp {
             scene->RemoveScene(stagingLock, liveLock);
             scene.reset();
         });
-        ecs::GetEntityRefs().Tick(this->interval);
-        ecs::GetStringHandler().Tick(this->interval);
+        ecs::GetRefManager().Tick(this->interval);
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditSceneCallback callback) {

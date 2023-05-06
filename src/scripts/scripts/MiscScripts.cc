@@ -2,7 +2,6 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "game/Scene.hh"
@@ -188,13 +187,6 @@ namespace sp::scripts {
         SignalExpression chargeSignalBlue;
         bool discharging = false;
 
-        const StringHandle dischargingHandle = GetStringHandler().Get("discharging");
-        const StringHandle chargeLevelHandle = GetStringHandler().Get("charge_level");
-        const StringHandle maxChargeLevelHandle = GetStringHandler().Get("max_charge_level");
-        const StringHandle cellOutputRHandle = GetStringHandler().Get("cell_output_r");
-        const StringHandle cellOutputGHandle = GetStringHandler().Get("cell_output_g");
-        const StringHandle cellOutputBHandle = GetStringHandler().Get("cell_output_b");
-
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
 
@@ -226,12 +218,12 @@ namespace sp::scripts {
             chargeLevel = std::clamp(chargeLevel, 0.0, maxChargeLevel);
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            signalOutput.SetSignal(dischargingHandle, discharging);
-            signalOutput.SetSignal(chargeLevelHandle, chargeLevel);
-            signalOutput.SetSignal(maxChargeLevelHandle, maxChargeLevel);
-            signalOutput.SetSignal(cellOutputRHandle, outputColor.r);
-            signalOutput.SetSignal(cellOutputGHandle, outputColor.g);
-            signalOutput.SetSignal(cellOutputBHandle, outputColor.b);
+            signalOutput.SetSignal(SignalRef(ent, "discharging"), discharging);
+            signalOutput.SetSignal(SignalRef(ent, "charge_level"), chargeLevel);
+            signalOutput.SetSignal(SignalRef(ent, "max_charge_level"), maxChargeLevel);
+            signalOutput.SetSignal(SignalRef(ent, "cell_output_r"), outputColor.r);
+            signalOutput.SetSignal(SignalRef(ent, "cell_output_g"), outputColor.g);
+            signalOutput.SetSignal(SignalRef(ent, "cell_output_b"), outputColor.b);
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
@@ -312,13 +304,11 @@ namespace sp::scripts {
         void updateSignal(LockType lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
 
-            // TODO: Cache this
-            StringHandle outputHandle = GetStringHandler().Get(output);
-
             auto &signalOutput = ent.Get<SignalOutput>(lock);
-            if (!lastSignal || !signalOutput.HasSignal(outputHandle)) {
-                lastSignal = signalOutput.GetSignal(outputHandle);
-                signalOutput.SetSignal(outputHandle, *lastSignal);
+            SignalRef ref(ent, output);
+            if (!lastSignal || !signalOutput.HasSignal(ref)) {
+                lastSignal = signalOutput.GetSignal(ref);
+                signalOutput.SetSignal(ref, *lastSignal);
             }
             auto currentInput = input.Evaluate(lock);
             if ((currentInput >= 0.5) == (*lastSignal >= 0.5)) {
@@ -328,7 +318,7 @@ namespace sp::scripts {
                 lastSignal = currentInput;
             }
             if (frameCount >= std::max(delayFrames, (size_t)(std::chrono::milliseconds(delayMs) / interval))) {
-                signalOutput.SetSignal(outputHandle, currentInput);
+                signalOutput.SetSignal(ref, currentInput);
             }
         }
 
@@ -364,14 +354,12 @@ namespace sp::scripts {
 
             auto &signalOutput = ent.Get<SignalOutput>(lock);
             for (auto &name : names) {
-                // TODO: Cache these
-                StringHandle timerNameHandle = GetStringHandler().Get(name);
-                StringHandle timerEnableHandle = GetStringHandler().Get(name + "_enable");
-                double timerValue = SignalBindings::GetSignal(lock, ent, timerNameHandle);
-                bool timerEnable = SignalBindings::GetSignal(lock, ent, timerEnableHandle) >= 0.5;
+                SignalRef valueRef(ent, name);
+                double timerValue = SignalBindings::GetSignal(lock, valueRef);
+                bool timerEnable = SignalBindings::GetSignal(lock, SignalRef(ent, name + "_enable")) >= 0.5;
                 if (timerEnable) {
                     timerValue += interval.count() / 1e9;
-                    signalOutput.SetSignal(timerNameHandle, timerValue);
+                    signalOutput.SetSignal(valueRef, timerValue);
                 }
             }
 
@@ -400,9 +388,7 @@ namespace sp::scripts {
                     continue;
                 }
 
-                // TODO: cache this
-                StringHandle timerNameHandle = GetStringHandler().Get(timerName);
-                signalOutput.SetSignal(timerNameHandle, eventValue);
+                signalOutput.SetSignal(SignalRef(ent, timerName), eventValue);
             }
         }
 

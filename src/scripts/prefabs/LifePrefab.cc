@@ -2,8 +2,6 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
-#include "ecs/StringHandle.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -11,10 +9,6 @@
 
 namespace sp::scripts {
     using namespace ecs;
-
-    static const StringHandle tileXHandle = GetStringHandler().Get("tile.x");
-    static const StringHandle tileYHandle = GetStringHandler().Get("tile.y");
-    static const StringHandle aliveHandle = GetStringHandler().Get("alive");
 
     struct LifeCellPrefab {
         glm::uvec2 boardSize = glm::uvec2(32, 32);
@@ -33,8 +27,8 @@ namespace sp::scripts {
             auto &eventBindings = ent.Get<EventBindings>(lock);
 
             auto prefix = Name(name.scene, name.entity.substr(0, name.entity.find_last_of('.')));
-            glm::uvec2 pos = glm::uvec2(SignalBindings::GetSignal(lock, ent, tileXHandle),
-                SignalBindings::GetSignal(lock, ent, tileYHandle));
+            glm::uvec2 pos = glm::uvec2(SignalBindings::GetSignal(lock, SignalRef(ent, "tile.x")),
+                SignalBindings::GetSignal(lock, SignalRef(ent, "tile.y")));
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -44,7 +38,7 @@ namespace sp::scripts {
                     EntityRef neighbor = Name(std::to_string(wrapped.x) + "_" + std::to_string(wrapped.y), prefix);
 
                     std::string bindingName = "neighbor[" + std::to_string(dx) + "][" + std::to_string(dy) + "]";
-                    signalBindings.SetBinding(GetStringHandler().Get(bindingName), neighbor, aliveHandle);
+                    signalBindings.SetBinding(SignalRef(ent, bindingName), SignalRef(neighbor, "alive"));
 
                     eventBindings.Bind("/life/notify_neighbors", neighbor, "/life/neighbor_alive");
                 }

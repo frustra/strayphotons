@@ -34,6 +34,6 @@ namespace ecs {
     private:
         std::shared_ptr<Ref> ptr;
 
-        friend class EntityReferenceManager;
+        friend class ReferenceManager;
     };
 } // namespace ecs

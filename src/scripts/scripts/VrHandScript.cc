@@ -84,7 +84,7 @@ namespace sp::scripts {
         EntityRef inputRootRef, physicsRootRef, controllerRef, laserPointerRef;
         Entity grabEntity, pointEntity, pressEntity;
         std::string actionPrefix;
-        StringHandle indexCurlHandle, middleCurlHandle;
+        SignalRef indexCurlRef, middleCurlRef;
 
         PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;
 
@@ -113,8 +113,8 @@ namespace sp::scripts {
                 Errorf("Invalid hand specified for VrHand script: %s", handStr);
                 return false;
             }
-            indexCurlHandle = GetStringHandler().Get(actionPrefix + "_curl_index");
-            middleCurlHandle = GetStringHandler().Get(actionPrefix + "_curl_middle");
+            indexCurlRef = SignalRef(controllerRef, actionPrefix + "_curl_index");
+            middleCurlRef = SignalRef(controllerRef, actionPrefix + "_curl_middle");
             inputRootRef = inputScope;
             if (!inputRootRef) {
                 Errorf("VrHand script has invalid input root: %s", inputScope.String());
@@ -298,7 +298,6 @@ namespace sp::scripts {
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
             auto inputRoot = inputRootRef.Get(lock);
-            auto controllerEnt = controllerRef.Get(lock);
 
             // Read and update overlap queries
             EnumArray<Entity, BoneGroup> groupOverlaps = {};
@@ -358,7 +357,7 @@ namespace sp::scripts {
             }
 
             // Handle interaction events
-            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, indexCurlHandle);
+            auto indexCurl = SignalBindings::GetSignal(lock, indexCurlRef);
             auto grabSignal = indexCurl;
             auto grabTarget = grabEntity;
             if (teleported || grabSignal < 0.18) {
@@ -367,7 +366,7 @@ namespace sp::scripts {
                 grabTarget = groupOverlaps[BoneGroup::Index];
             }
 
-            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, middleCurlHandle);
+            auto middleCurl = SignalBindings::GetSignal(lock, middleCurlRef);
             bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
             HandlePointing(state, lock, ent, isPointing);
 

@@ -221,26 +221,26 @@ namespace sp {
         [](std::string signalStr) {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
-            auto [originName, signalName] = ecs::ParseSignalString(signalStr);
-            if (!originName) {
+            ecs::SignalRef signal(signalStr);
+            if (!signal) {
                 Errorf("Invalid signal name: %s", signalStr);
                 return;
             }
 
-            auto ent = ecs::EntityRef(originName).Get(lock);
-            auto value = ecs::SignalBindings::GetSignal(lock, ent, signalName);
-            Logf("%s/%s = %.4f", originName.String(), signalName, value);
+            auto value = ecs::SignalBindings::GetSignal(lock, signal);
+            Logf("%s = %.4f", signal.Get().String(), value);
 
+            ecs::Entity ent = signal.Get().entity.Get(lock);
             if (ent.Has<ecs::SignalOutput>(lock)) {
                 auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
-                if (signalOutput.HasSignal(signalName)) {
-                    Logf("  Signal output: %.4f", signalOutput.GetSignal(signalName));
+                if (signalOutput.HasSignal(signal)) {
+                    Logf("  Signal output: %.4f", signalOutput.GetSignal(signal));
                 }
             }
             if (ent.Has<ecs::SignalBindings>(lock)) {
                 auto &bindings = ent.Get<ecs::SignalBindings>(lock);
-                if (bindings.HasBinding(signalName)) {
-                    auto &binding = bindings.GetBinding(signalName);
+                if (bindings.HasBinding(signal)) {
+                    auto &binding = bindings.GetBinding(signal);
                     if (binding.nodes.empty() || binding.rootIndex < 0) {
                         Logf("  Signal binding: nil");
                     } else {

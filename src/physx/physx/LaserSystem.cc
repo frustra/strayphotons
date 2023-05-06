@@ -93,9 +93,9 @@ namespace sp {
             segments.clear();
 
             color_t signalColor = glm::vec3{
-                ecs::SignalBindings::GetSignal(lock, entity, laserColorRHandle),
-                ecs::SignalBindings::GetSignal(lock, entity, laserColorGHandle),
-                ecs::SignalBindings::GetSignal(lock, entity, laserColorBHandle),
+                ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(entity, "laser_color_r")),
+                ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(entity, "laser_color_g")),
+                ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(entity, "laser_color_b")),
             };
 
             std::array<physx::PxRaycastHit, 128> hitBuffer;
@@ -224,10 +224,11 @@ namespace sp {
             if (!entity.Has<ecs::SignalOutput>(lock)) continue;
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
             auto &output = entity.Get<ecs::SignalOutput>(lock);
-            output.SetSignal(laserColorRHandle, sensor.illuminance.r);
-            output.SetSignal(laserColorGHandle, sensor.illuminance.g);
-            output.SetSignal(laserColorBHandle, sensor.illuminance.b);
-            output.SetSignal(laserValueHandle, glm::all(glm::greaterThanEqual(sensor.illuminance, sensor.threshold)));
+            output.SetSignal(ecs::SignalRef(entity, "laser_color_r"), sensor.illuminance.r);
+            output.SetSignal(ecs::SignalRef(entity, "laser_color_g"), sensor.illuminance.g);
+            output.SetSignal(ecs::SignalRef(entity, "laser_color_b"), sensor.illuminance.b);
+            output.SetSignal(ecs::SignalRef(entity, "value"),
+                glm::all(glm::greaterThanEqual(sensor.illuminance, sensor.threshold)));
         }
     }
 } // namespace sp

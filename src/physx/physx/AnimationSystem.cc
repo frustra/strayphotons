@@ -18,8 +18,9 @@ namespace sp {
             auto &animation = ent.Get<ecs::Animation>(lock);
             if (animation.states.empty()) continue;
 
-            double currentState = ecs::SignalBindings::GetSignal(lock, ent, animationStateHandle);
-            double targetState = ecs::SignalBindings::GetSignal(lock, ent, animationTargetHandle);
+            ecs::SignalRef stateRef(ent, "animation_state");
+            double currentState = ecs::SignalBindings::GetSignal(lock, stateRef);
+            double targetState = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "animation_target"));
             double originalState = currentState;
             currentState = std::clamp(currentState, 0.0, animation.states.size() - 1.0);
             targetState = std::clamp(targetState, 0.0, animation.states.size() - 1.0);
@@ -40,7 +41,7 @@ namespace sp {
             if (ent.Has<ecs::SignalOutput>(lock)) {
                 if (originalState != currentState) {
                     auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal(animationStateHandle, currentState);
+                    signalOutput.SetSignal(stateRef, currentState);
                 }
             } else {
                 Warnf("Entity %s has animation component but no signal output", ecs::ToString(lock, ent));

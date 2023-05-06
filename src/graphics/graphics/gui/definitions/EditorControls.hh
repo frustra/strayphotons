@@ -4,7 +4,7 @@
 #include "core/Common.hh"
 #include "core/Defer.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
+#include "ecs/ReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
@@ -85,7 +85,7 @@ namespace sp {
             ImGui::SetNextItemWidth(listWidth);
             ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
             if (ImGui::BeginListBox(listLabel.c_str(), ImVec2(listWidth, listHeight))) {
-                auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
+                auto entityNames = ecs::GetRefManager().GetEntityNames(entitySearch);
                 for (auto &entName : entityNames) {
                     if (ImGui::Selectable(entName.String().c_str())) {
                         selected = entName;
@@ -854,7 +854,7 @@ namespace sp {
             }
             if (ImGui::CollapsingHeader("Scene Entities", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginListBox("##scene_entities", ImVec2(-FLT_MIN, -FLT_MIN))) {
-                    auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
+                    auto entityNames = ecs::GetRefManager().GetEntityNames(entitySearch);
                     for (auto &ent : lock.EntitiesWith<ecs::SceneInfo>()) {
                         if (!ent.Has<ecs::SceneInfo, ecs::Name>(lock)) continue;
                         auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);

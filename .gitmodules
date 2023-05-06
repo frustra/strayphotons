@@ -73,6 +73,3 @@
 [submodule "ext/fpng"]
 	path = ext/fpng
 	url = https://github.com/richgel999/fpng.git
-[submodule "ext/unordered_dense"]
-	path = ext/unordered_dense
-	url = https://github.com/martinus/unordered_dense.git

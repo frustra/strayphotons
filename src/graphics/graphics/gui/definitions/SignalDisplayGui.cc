@@ -27,21 +27,15 @@ namespace sp {
         ZoneScoped;
         auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
-        static const ecs::StringHandle maxValueHandle = ecs::GetStringHandler().Get("max_value");
-        static const ecs::StringHandle valueHandle = ecs::GetStringHandler().Get("value");
-        static const ecs::StringHandle textColorRHandle = ecs::GetStringHandler().Get("text_color_r");
-        static const ecs::StringHandle textColorGHandle = ecs::GetStringHandler().Get("text_color_g");
-        static const ecs::StringHandle textColorBHandle = ecs::GetStringHandler().Get("text_color_b");
-
         auto ent = signalEntity.Get(lock);
         std::string text = "error";
         ImVec4 textColor(1, 0, 0, 1);
         if (ent.Exists(lock)) {
-            auto maxValue = ecs::SignalBindings::GetSignal(lock, ent, maxValueHandle);
-            auto value = ecs::SignalBindings::GetSignal(lock, ent, valueHandle);
-            textColor.x = ecs::SignalBindings::GetSignal(lock, ent, textColorRHandle);
-            textColor.y = ecs::SignalBindings::GetSignal(lock, ent, textColorGHandle);
-            textColor.z = ecs::SignalBindings::GetSignal(lock, ent, textColorBHandle);
+            auto maxValue = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "max_value"));
+            auto value = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "value"));
+            textColor.x = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "text_color_r"));
+            textColor.y = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "text_color_g"));
+            textColor.z = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "text_color_b"));
             std::stringstream ss;
             if (maxValue != 0.0) {
                 ss << std::fixed << std::setprecision(2) << (value / maxValue * 100.0) << "%";

@@ -2,7 +2,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
-#include "ecs/StringHandle.hh"
+#include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Focus.hh"
 
@@ -19,7 +19,7 @@ namespace ecs {
     class SignalExpression {
     public:
         SignalExpression() {}
-        SignalExpression(const EntityRef &entity, const StringHandle &signal);
+        SignalExpression(const SignalRef &signal);
         SignalExpression(std::string_view expr, const Name &scope = Name());
 
         SignalExpression(const SignalExpression &other)
@@ -37,8 +37,7 @@ namespace ecs {
             bool operator==(const IdentifierNode &) const = default;
         };
         struct SignalNode {
-            EntityRef entity;
-            StringHandle signalName;
+            SignalRef signal;
 
             bool operator==(const SignalNode &) const = default;
         };
@@ -133,8 +132,6 @@ namespace ecs {
 
         std::vector<std::string_view> tokens; // string_views into expr
     };
-
-    std::pair<Name, StringHandle> ParseSignalString(std::string_view str, const EntityScope &scope = Name());
 
     static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
     template<>

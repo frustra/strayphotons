@@ -6,7 +6,6 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/StructMetadata.hh"
 
-#include <ankerl/unordered_dense.h>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
 #include <robin_hood.h>
@@ -193,30 +192,6 @@ namespace sp::json {
         }
         return true;
     }
-    template<typename T>
-    inline bool Load(const ecs::EntityScope &s, robin_hood::unordered_flat_map<ecs::StringHandle, T> &dst, const picojson::value &src) {
-        if (!src.is<picojson::object>()) return false;
-        dst.clear();
-        for (auto &p : src.get<picojson::object>()) {
-            auto handle = ecs::GetStringHandler().Get(p.first);
-            if (!sp::json::Load(s, dst[handle], p.second)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    template<typename T>
-    inline bool Load(const ecs::EntityScope &s, robin_hood::unordered_node_map<ecs::StringHandle, T> &dst, const picojson::value &src) {
-        if (!src.is<picojson::object>()) return false;
-        dst.clear();
-        for (auto &p : src.get<picojson::object>()) {
-            auto handle = ecs::GetStringHandler().Get(p.first);
-            if (!sp::json::Load(s, dst[handle], p.second)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     // Default Save handler for enums, and all integer and float types
     template<typename T>
@@ -339,28 +314,6 @@ namespace sp::json {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
             Save(s, obj[key], value);
-        }
-        dst = picojson::value(obj);
-    }
-    template<typename T>
-    inline void Save(const ecs::EntityScope &s,
-        picojson::value &dst,
-        const robin_hood::unordered_flat_map<ecs::StringHandle, T> &src) {
-        picojson::object obj = {};
-        for (auto &[key, value] : src) {
-            if (!key) continue;
-            Save(s, obj[*key], value);
-        }
-        dst = picojson::value(obj);
-    }
-    template<typename T>
-    inline void Save(const ecs::EntityScope &s,
-        picojson::value &dst,
-        const robin_hood::unordered_node_map<ecs::StringHandle, T> &src) {
-        picojson::object obj = {};
-        for (auto &[key, value] : src) {
-            if (!key) continue;
-            Save(s, obj[*key], value);
         }
         dst = picojson::value(obj);
     }

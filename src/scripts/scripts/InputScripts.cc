@@ -2,7 +2,6 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -38,26 +37,16 @@ namespace sp::scripts {
     struct RelativeMovement {
         EntityRef targetEntity, referenceEntity;
 
-        const StringHandle moveLeftHandle = GetStringHandler().Get("move_left");
-        const StringHandle moveRightHandle = GetStringHandler().Get("move_right");
-        const StringHandle moveUpHandle = GetStringHandler().Get("move_up");
-        const StringHandle moveDownHandle = GetStringHandler().Get("move_down");
-        const StringHandle moveForwardHandle = GetStringHandler().Get("move_forward");
-        const StringHandle moveBackHandle = GetStringHandler().Get("move_back");
-        const StringHandle moveRelativeXHandle = GetStringHandler().Get("move_relative_x");
-        const StringHandle moveRelativeYHandle = GetStringHandler().Get("move_relative_y");
-        const StringHandle moveRelativeZHandle = GetStringHandler().Get("move_relative_z");
-
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<SignalOutput>(lock)) return;
 
             glm::vec3 movementInput = glm::vec3(0);
-            movementInput.x -= SignalBindings::GetSignal(lock, ent, moveLeftHandle);
-            movementInput.x += SignalBindings::GetSignal(lock, ent, moveRightHandle);
-            movementInput.y += SignalBindings::GetSignal(lock, ent, moveUpHandle);
-            movementInput.y -= SignalBindings::GetSignal(lock, ent, moveDownHandle);
-            movementInput.z -= SignalBindings::GetSignal(lock, ent, moveForwardHandle);
-            movementInput.z += SignalBindings::GetSignal(lock, ent, moveBackHandle);
+            movementInput.x -= SignalBindings::GetSignal(lock, SignalRef(ent, "move_left"));
+            movementInput.x += SignalBindings::GetSignal(lock, SignalRef(ent, "move_right"));
+            movementInput.y += SignalBindings::GetSignal(lock, SignalRef(ent, "move_up"));
+            movementInput.y -= SignalBindings::GetSignal(lock, SignalRef(ent, "move_down"));
+            movementInput.z -= SignalBindings::GetSignal(lock, SignalRef(ent, "move_forward"));
+            movementInput.z += SignalBindings::GetSignal(lock, SignalRef(ent, "move_back"));
 
             movementInput.x = std::clamp(movementInput.x, -1.0f, 1.0f);
             movementInput.y = std::clamp(movementInput.y, -1.0f, 1.0f);
@@ -90,9 +79,9 @@ namespace sp::scripts {
             }
 
             auto &outputComp = ent.Get<SignalOutput>(lock);
-            outputComp.SetSignal(moveRelativeXHandle, output.x);
-            outputComp.SetSignal(moveRelativeYHandle, output.y);
-            outputComp.SetSignal(moveRelativeZHandle, output.z);
+            outputComp.SetSignal(SignalRef(ent, "move_relative_x"), output.x);
+            outputComp.SetSignal(SignalRef(ent, "move_relative_y"), output.y);
+            outputComp.SetSignal(SignalRef(ent, "move_relative_z"), output.z);
         }
     };
     StructMetadata MetadataRelativeMovement(typeid(RelativeMovement),
@@ -103,8 +92,6 @@ namespace sp::scripts {
     struct PlayerRotation {
         EntityRef targetEntity;
         bool enableSmoothRotation = false;
-
-        const StringHandle smoothRotationHandle = GetStringHandler().Get("smooth_rotation");
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
@@ -119,7 +106,7 @@ namespace sp::scripts {
             bool changed = false;
 
             if (enableSmoothRotation) {
-                auto smoothRotation = SignalBindings::GetSignal(lock, ent, smoothRotationHandle);
+                auto smoothRotation = SignalBindings::GetSignal(lock, SignalRef(ent, "smooth_rotation"));
                 if (smoothRotation != 0.0f) {
                     // smooth_rotation unit is RPM
                     transform.pose.Rotate(smoothRotation * M_PI * 2.0 / 60.0 * interval.count() / 1e9,
@@ -154,8 +141,6 @@ namespace sp::scripts {
         "/action/snap_rotate");
 
     struct CameraView {
-        const StringHandle interactRotateHandle = GetStringHandler().Get("interact_rotate");
-
         template<typename LockType>
         void updateCamera(ScriptState &state, LockType &lock, Entity ent) {
             if (!ent.Has<TransformTree>(lock)) return;
@@ -165,7 +150,7 @@ namespace sp::scripts {
                 if (event.name != "/script/camera_rotate") continue;
 
                 auto angleDiff = std::get<glm::vec2>(event.data);
-                if (SignalBindings::GetSignal(lock, ent, interactRotateHandle) < 0.5) {
+                if (SignalBindings::GetSignal(lock, SignalRef(ent, "interact_rotate")) < 0.5) {
                     // Apply pitch/yaw rotations
                     auto &transform = ent.Get<TransformTree>(lock);
                     auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *

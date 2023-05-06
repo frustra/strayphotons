@@ -12,10 +12,6 @@ namespace sp {
     TriggerSystem::TriggerSystem() {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
         triggerGroupObserver = lock.Watch<ecs::ComponentEvent<ecs::TriggerGroup>>();
-
-        for (auto &group : magic_enum::enum_values<ecs::TriggerGroup>()) {
-            triggerGroupSignalHandles[group] = ecs::GetStringHandler().Get(ecs::TriggerGroupSignalNames[group]);
-        }
     }
 
     TriggerSystem::~TriggerSystem() {
@@ -96,7 +92,8 @@ namespace sp {
                 auto entityCount = area.containedEntities[triggerGroup].size();
                 if (entity.Has<ecs::SignalOutput>(lock)) {
                     auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal(triggerGroupSignalHandles[triggerGroup], (double)entityCount);
+                    signalOutput.SetSignal(ecs::SignalRef(entity, ecs::TriggerGroupSignalNames[triggerGroup]),
+                        (double)entityCount);
                 }
             }
         }

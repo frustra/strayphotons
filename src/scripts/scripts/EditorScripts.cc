@@ -2,7 +2,6 @@
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
@@ -93,9 +92,6 @@ namespace sp::scripts {
         glm::vec3 lastToolPosition, faceNormal;
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        const StringHandle editModeHandle = GetStringHandler().Get("edit_mode");
-        const StringHandle snapModeHandle = GetStringHandler().Get("snap_mode");
-
         bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode, bool snapToFace) {
             auto deltaDepth = toolDepth;
             if (!snapToFace) {
@@ -166,12 +162,12 @@ namespace sp::scripts {
             auto position = globalTransform.GetPosition();
             auto forward = globalTransform.GetForward();
 
-            auto editMode = (int)SignalBindings::GetSignal(lock, ent, editModeHandle);
+            auto editMode = (int)SignalBindings::GetSignal(lock, SignalRef(ent, "edit_mode"));
             editMode = std::clamp(editMode, 0, 2);
             if (ent.Has<SignalOutput>(lock)) {
-                ent.Get<SignalOutput>(lock).SetSignal(editModeHandle, editMode);
+                ent.Get<SignalOutput>(lock).SetSignal(SignalRef(ent, "edit_mode"), editMode);
             }
-            auto snapMode = SignalBindings::GetSignal(lock, ent, snapModeHandle) >= 0.5;
+            auto snapMode = SignalBindings::GetSignal(lock, SignalRef(ent, "snap_mode")) >= 0.5;
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {

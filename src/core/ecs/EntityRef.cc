@@ -1,7 +1,7 @@
 #include "EntityRef.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
+#include "ecs/ReferenceManager.hh"
 
 #include <atomic>
 
@@ -20,15 +20,15 @@ namespace ecs {
 
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
-        ptr = GetEntityRefs().Get(ent).ptr;
+        ptr = GetRefManager().GetEntity(ent).ptr;
     }
 
     EntityRef::EntityRef(const ecs::Name &name, const Entity &ent) {
         if (!name) return;
         if (ent) {
-            ptr = GetEntityRefs().Set(name, ent).ptr;
+            ptr = GetRefManager().SetEntity(name, ent).ptr;
         } else {
-            ptr = GetEntityRefs().Get(name).ptr;
+            ptr = GetRefManager().GetEntity(name).ptr;
         }
         Assertf(ptr, "EntityRef(%s, %s) is invalid", name.String(), std::to_string(ent));
     }

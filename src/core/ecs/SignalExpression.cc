@@ -9,18 +9,6 @@
 #include "ecs/SignalStructAccess.hh"
 
 namespace ecs {
-    std::pair<ecs::Name, StringHandle> ParseSignalString(std::string_view str, const EntityScope &scope) {
-        size_t delimiter = str.find('/');
-        ecs::Name entityName(str.substr(0, delimiter), scope);
-        if (entityName) {
-            std::string signalName = "value";
-            if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
-            return std::make_pair(entityName, GetStringHandler().Get(signalName));
-        } else {
-            return std::make_pair(ecs::Name(), nullptr);
-        }
-    }
-
     struct PrecedenceTable {
         constexpr PrecedenceTable() {
             // Right associative unary operators (-X and !X)
@@ -562,12 +550,15 @@ namespace ecs {
                         nodeStrings.emplace_back(token);
                     }
                 } else if (token[delimiter] == '/') {
-                    ecs::Name entityName(token.substr(0, delimiter), this->scope);
-                    std::string signalName(token.substr(delimiter + 1));
-                    nodes.emplace_back(SignalExpression::SignalNode{entityName, GetStringHandler().Get(signalName)},
-                        tokenIndex,
-                        tokenIndex + 1);
-                    nodeStrings.emplace_back(entityName.String() + "/" + signalName);
+                    SignalRef signalRef(token, this->scope);
+                    if (!signalRef) {
+                        Errorf("Failed to parse signal expression, invalid signal '%s': %s",
+                            std::string(token),
+                            joinTokens(nodeStart, tokenIndex));
+                        return -1;
+                    }
+                    nodes.emplace_back(SignalExpression::SignalNode{signalRef}, tokenIndex, tokenIndex + 1);
+                    nodeStrings.emplace_back(signalRef.Get().String());
                 } else if (token[delimiter] == '#') {
                     ecs::Name entityName(token.substr(0, delimiter), this->scope);
                     std::string componentPath(token.substr(delimiter + 1));
@@ -608,12 +599,14 @@ namespace ecs {
         return deduplicateNode(index);
     }
 
-    SignalExpression::SignalExpression(const EntityRef &entity, const StringHandle &signal)
-        : scope(entity.Name().scene, ""), expr(entity.Name().String() + (signal ? "/" + *signal : "/")) {
-        tokens.emplace_back(expr);
-        rootIndex = nodes.size();
-        nodes.emplace_back(SignalNode{entity, signal}, 0, 0);
-        nodeStrings.emplace_back(expr);
+    SignalExpression::SignalExpression(const SignalRef &signal) {
+        auto &key = signal.Get();
+        this->scope = EntityScope(key.entity.Name().scene, "");
+        this->expr = key.String();
+        this->tokens.emplace_back(expr);
+        this->rootIndex = nodes.size();
+        this->nodes.emplace_back(SignalNode{signal}, 0, 0);
+        this->nodeStrings.emplace_back(expr);
     }
 
     SignalExpression::SignalExpression(std::string_view expr, const Name &scope) : scope(scope), expr(expr) {
@@ -670,11 +663,11 @@ namespace ecs {
                 [&lock](auto &&node) {
                     using T = std::decay_t<decltype(node)>;
                     if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                        Entity ent = node.entity.Get(lock);
+                        Entity ent = node.signal.Get().entity.Get(lock);
                         if (!ent.Has<SignalBindings>(lock)) return true;
 
                         auto &bindings = ent.Get<const SignalBindings>(lock);
-                        return bindings.GetBinding(node.signalName).canEvaluate(lock);
+                        return bindings.GetBinding(node.signal).canEvaluate(lock);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
                         if (!base) return true;
@@ -733,10 +726,12 @@ namespace ecs {
                     } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                         // ZoneScopedN("SignalNode:evaluate");
                         if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
-                            Errorf("Max signal binding depth exceeded: %s -> %s", expr.expr, node.signalName);
+                            Errorf("Max signal binding depth exceeded: %s -> %s",
+                                expr.expr,
+                                node.signal.Get().String());
                             return 0.0;
                         }
-                        return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
+                        return SignalBindings::GetSignal(lock, node.signal, depth + 1);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
                         if (!base) return 0.0;

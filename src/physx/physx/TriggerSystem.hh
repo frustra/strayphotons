@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/StringHandle.hh"
 
 namespace sp {
     class PhysxManager;
@@ -16,6 +15,5 @@ namespace sp {
             ecs::SendEventsLock> lock);
 
         ecs::ComponentObserver<ecs::TriggerGroup> triggerGroupObserver;
-        sp::EnumArray<ecs::StringHandle, ecs::TriggerGroup> triggerGroupSignalHandles;
     };
 } // namespace sp

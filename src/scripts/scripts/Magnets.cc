@@ -15,8 +15,6 @@ namespace sp::scripts {
         robin_hood::unordered_flat_set<Entity> grabEntities;
         robin_hood::unordered_flat_set<Entity> socketEntities;
 
-        const StringHandle snapAngleHandle = GetStringHandler().Get("snap_angle");
-
         glm::quat CalcSnapRotation(glm::quat plug, glm::quat socket, float snapAngle) {
             auto plugRelativeSocket = (glm::inverse(socket) * plug) * glm::vec3(0, 0, -1);
             if (std::abs(plugRelativeSocket.y) > 0.999) {
@@ -72,7 +70,8 @@ namespace sp::scripts {
                                 if (nearestSocket.Has<TransformSnapshot>(lock)) {
                                     auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock);
 
-                                    float snapAngle = SignalBindings::GetSignal(lock, nearestSocket, snapAngleHandle);
+                                    float snapAngle = SignalBindings::GetSignal(lock,
+                                        SignalRef(nearestSocket, "snap_angle"));
 
                                     PhysicsJoint joint;
                                     joint.target = nearestSocket;
