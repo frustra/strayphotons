@@ -188,8 +188,6 @@ namespace sp::scripts {
         bool discharging = false;
 
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock)) return;
-
             glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
                 std::max(0.0, chargeSignalGreen.Evaluate(lock)),
                 std::max(0.0, chargeSignalBlue.Evaluate(lock))};
@@ -217,13 +215,12 @@ namespace sp::scripts {
 
             chargeLevel = std::clamp(chargeLevel, 0.0, maxChargeLevel);
 
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
-            signalOutput.SetSignal(SignalRef(ent, "discharging"), discharging);
-            signalOutput.SetSignal(SignalRef(ent, "charge_level"), chargeLevel);
-            signalOutput.SetSignal(SignalRef(ent, "max_charge_level"), maxChargeLevel);
-            signalOutput.SetSignal(SignalRef(ent, "cell_output_r"), outputColor.r);
-            signalOutput.SetSignal(SignalRef(ent, "cell_output_g"), outputColor.g);
-            signalOutput.SetSignal(SignalRef(ent, "cell_output_b"), outputColor.b);
+            SignalRef(ent, "discharging").SetValue(lock, discharging);
+            SignalRef(ent, "charge_level").SetValue(lock, chargeLevel);
+            SignalRef(ent, "max_charge_level").SetValue(lock, maxChargeLevel);
+            SignalRef(ent, "cell_output_r").SetValue(lock, outputColor.r);
+            SignalRef(ent, "cell_output_g").SetValue(lock, outputColor.g);
+            SignalRef(ent, "cell_output_b").SetValue(lock, outputColor.b);
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
@@ -302,13 +299,12 @@ namespace sp::scripts {
 
         template<typename LockType>
         void updateSignal(LockType lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
+            if (output.empty()) return;
 
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
             SignalRef ref(ent, output);
-            if (!lastSignal || !signalOutput.HasSignal(ref)) {
-                lastSignal = signalOutput.GetSignal(ref);
-                signalOutput.SetSignal(ref, *lastSignal);
+            if (!lastSignal || !ref.HasValue(lock)) {
+                lastSignal = ref.GetValue(lock);
+                ref.SetValue(lock, *lastSignal);
             }
             auto currentInput = input.Evaluate(lock);
             if ((currentInput >= 0.5) == (*lastSignal >= 0.5)) {
@@ -318,7 +314,7 @@ namespace sp::scripts {
                 lastSignal = currentInput;
             }
             if (frameCount >= std::max(delayFrames, (size_t)(std::chrono::milliseconds(delayMs) / interval))) {
-                signalOutput.SetSignal(ref, currentInput);
+                ref.SetValue(lock, currentInput);
             }
         }
 
@@ -350,16 +346,14 @@ namespace sp::scripts {
 
         template<typename LockType>
         void updateTimer(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock)) return;
 
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
             for (auto &name : names) {
                 SignalRef valueRef(ent, name);
-                double timerValue = SignalBindings::GetSignal(lock, valueRef);
-                bool timerEnable = SignalBindings::GetSignal(lock, SignalRef(ent, name + "_enable")) >= 0.5;
+                double timerValue = valueRef.GetSignal(lock);
+                bool timerEnable = SignalRef(ent, name + "_enable").GetSignal(lock) >= 0.5;
                 if (timerEnable) {
                     timerValue += interval.count() / 1e9;
-                    signalOutput.SetSignal(valueRef, timerValue);
+                    valueRef.SetValue(lock, timerValue);
                 }
             }
 
@@ -388,7 +382,7 @@ namespace sp::scripts {
                     continue;
                 }
 
-                signalOutput.SetSignal(SignalRef(ent, timerName), eventValue);
+                SignalRef(ent, timerName).SetValue(lock, eventValue);
             }
         }
 

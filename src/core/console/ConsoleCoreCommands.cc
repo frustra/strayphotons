@@ -138,20 +138,15 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 return;
             }
 
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Signals>>();
             auto &entityRef = signal.GetEntity();
             ecs::Entity entity = entityRef.Get(lock);
             if (!entity) {
                 Logf("Signal entity %s not found", entityRef.Name().String());
                 return;
             }
-            if (!entity.Has<ecs::SignalOutput>(lock)) {
-                Logf("%s is not a signal output", entityRef.Name().String());
-                return;
-            }
 
-            auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
-            signalComp.SetSignal(signal, value);
+            signal.SetValue(lock, value);
         });
 
     funcs.Register<string, string>("togglesignal",
@@ -163,15 +158,11 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 return;
             }
 
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::Signals>>();
             auto &entityRef = signal.GetEntity();
             ecs::Entity entity = entityRef.Get(lock);
             if (!entity) {
                 Logf("Signal entity %s not found", entityRef.Name().String());
-                return;
-            }
-            if (!entity.Has<ecs::SignalOutput>(lock)) {
-                Logf("%s is not a signal output", entityRef.Name().String());
                 return;
             }
 
@@ -182,10 +173,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 values.push_back(value);
             }
 
-            auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
-            auto signalValue = signalComp.GetSignal(signal);
+            auto signalValue = signal.GetSignal(lock);
             ToggleBetweenValues(signalValue, values.data(), values.size());
-            signalComp.SetSignal(signal, signalValue);
+            signal.SetValue(lock, signalValue);
         });
 
     funcs.Register<string>("clearsignal", "Clear a signal value (clearsignal <entity>/<signal>)", [](string signalStr) {
@@ -195,20 +185,15 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             return;
         }
 
-        auto lock = ecs::StartTransaction<ecs::Write<ecs::SignalOutput>>();
+        auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>>();
         auto &entityRef = signal.GetEntity();
         ecs::Entity entity = entityRef.Get(lock);
         if (!entity) {
             Logf("Signal entity %s not found", entityRef.Name().String());
             return;
         }
-        if (!entity.Has<ecs::SignalOutput>(lock)) {
-            Logf("%s is not a signal output", entityRef.Name().String());
-            return;
-        }
 
-        auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
-        signalComp.ClearSignal(signal);
+        signal.ClearValue(lock);
     });
 
     funcs.Register<string, string>("sendevent",

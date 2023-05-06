@@ -13,7 +13,7 @@ namespace sp {
 
         void Frame(ecs::Lock<ecs::ReadSignalsLock,
             ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
-            ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock);
+            ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::Signals>> lock);
 
     private:
         PhysxManager &manager;

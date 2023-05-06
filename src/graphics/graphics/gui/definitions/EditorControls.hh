@@ -4,7 +4,7 @@
 #include "core/Common.hh"
 #include "core/Defer.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/ReferenceManager.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
@@ -29,7 +29,7 @@ namespace sp {
         ecs::Entity target;
 
         // Temporary context
-        ecs::Lock<ecs::ReadAll> *lock = nullptr;
+        const ecs::Lock<ecs::ReadAll> *lock = nullptr;
         std::string fieldName, fieldId;
 
         void RefreshEntityTree() {
@@ -85,7 +85,7 @@ namespace sp {
             ImGui::SetNextItemWidth(listWidth);
             ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
             if (ImGui::BeginListBox(listLabel.c_str(), ImVec2(listWidth, listHeight))) {
-                auto entityNames = ecs::GetRefManager().GetEntityNames(entitySearch);
+                auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
                 for (auto &entName : entityNames) {
                     if (ImGui::Selectable(entName.String().c_str())) {
                         selected = entName;
@@ -96,8 +96,9 @@ namespace sp {
             return selected;
         }
 
-        void ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity);
-        void ShowSceneControls(ecs::Lock<ecs::ReadAll> lock);
+        void AddSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
+        void ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
+        void ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock);
 
         template<typename T>
         bool AddImGuiElement(const std::string &name, T &value);
@@ -519,7 +520,7 @@ namespace sp {
 
         if (valueChanged) {
             if (ecs::IsLive(target)) {
-                ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto lock) {
+                ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
                     void *component = comp.Access(lock, target);
                     field.Access<T>(component) = value;
                 });
@@ -608,7 +609,112 @@ namespace sp {
             ...);
     }
 
-    void EditorContext::ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity) {
+    void EditorContext::AddSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        Assertf(ecs::IsLive(lock), "AddSignalControls must be called with a live lock");
+        if (ImGui::CollapsingHeader("Signals", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
+                                    ImGuiTableFlags_SizingStretchSame;
+            if (ImGui::BeginTable("##SignalTable", 4, flags)) {
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+                ImGui::TableSetupColumn("Signal");
+                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+                ImGui::TableSetupColumn("Binding");
+                ImGui::TableHeadersRow();
+
+                auto &signalManager = ecs::GetSignalManager();
+                std::vector<ecs::SignalRef> signals = signalManager.GetSignals(targetEntity);
+                for (size_t i = 0; i < signals.size(); i++) {
+                    auto &ref = signals[i];
+                    if (!ref) continue;
+                    bool hasValue = ref.HasValue(lock);
+                    if (!hasValue && !ref.HasBinding(lock)) continue;
+
+                    // Access reference to keep it active while editor is open
+                    signalManager.GetRef(ref.GetEntity(), ref.GetSignalName());
+
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    if (ImGui::Button("-", ImVec2(20, 0))) {
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref](auto &lock) {
+                            ref.ClearValue(lock);
+                            ref.ClearBinding(lock);
+                        });
+                    }
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    auto signalName = ref.GetSignalName();
+                    if (AddImGuiElement("##" + fieldId + ".name" + std::to_string(i), signalName)) {
+                        ecs::SignalRef newRef(ref.GetEntity(), signalName);
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef](auto &lock) {
+                            if (ref.HasValue(lock)) {
+                                newRef.SetValue(lock, ref.GetValue(lock));
+                            }
+                            if (ref.HasBinding(lock)) {
+                                newRef.SetBinding(lock, ref.GetBinding(lock));
+                            }
+                        });
+                    }
+                    ImGui::TableSetColumnIndex(2);
+                    if (ImGui::Checkbox("", &hasValue)) {
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([hasValue, ref = ref](auto &lock) {
+                            if (hasValue) {
+                                ref.SetValue(lock, 0.0);
+                            } else {
+                                ref.ClearValue(lock);
+                                if (!ref.HasBinding(lock)) ref.SetBinding(lock, "0.0");
+                            };
+                        });
+                    }
+                    ImGui::TableSetColumnIndex(3);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    if (hasValue) {
+                        double signalValue = ref.GetValue(lock);
+                        if (AddImGuiElement(fieldId + ".value" + std::to_string(i), signalValue)) {
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, signalValue](auto &lock) {
+                                ref.SetValue(lock, signalValue);
+                            });
+                        }
+                    } else {
+                        ecs::SignalExpression expression = ref.GetBinding(lock);
+                        if (AddImGuiElement(fieldId + ".binding" + std::to_string(i), expression)) {
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, expression](auto &lock) {
+                                ref.SetBinding(lock, expression);
+                            });
+                        }
+                    }
+                }
+            }
+            ImGui::EndTable();
+
+            if (ImGui::Button("Add Signal")) {
+                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([targetEntity](auto &lock) {
+                    for (size_t i = 0;; i++) {
+                        std::string signalName = i > 0 ? ("value" + std::to_string(i)) : "value";
+                        ecs::SignalRef newRef(targetEntity, signalName);
+                        if (!newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                            newRef.SetValue(lock, 0.0);
+                            break;
+                        }
+                    }
+                });
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Add Binding")) {
+                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([targetEntity](auto &lock) {
+                    for (size_t i = 0;; i++) {
+                        std::string signalName = i > 0 ? ("binding" + std::to_string(i)) : "binding";
+                        ecs::SignalRef newRef(targetEntity, signalName);
+                        if (!newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                            newRef.SetBinding(lock, "0 + 0");
+                            break;
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    void EditorContext::ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
         if (!targetEntity) {
             this->target = {};
             return;
@@ -742,6 +848,8 @@ namespace sp {
 
         ImGui::Separator();
 
+        if (ecs::IsLive(lock)) AddSignalControls(lock, targetEntity);
+
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (!comp.HasComponent(lock, this->target)) return;
             auto flags = (name == "scene_properties") ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_DefaultOpen;
@@ -757,7 +865,7 @@ namespace sp {
         });
     }
 
-    void EditorContext::ShowSceneControls(ecs::Lock<ecs::ReadAll> lock) {
+    void EditorContext::ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock) {
         ImGui::Text("Active Scene List:");
         if (ImGui::BeginListBox("##ActiveScenes", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
             auto sceneList = GetSceneManager().GetActiveScenes();
@@ -854,7 +962,7 @@ namespace sp {
             }
             if (ImGui::CollapsingHeader("Scene Entities", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginListBox("##scene_entities", ImVec2(-FLT_MIN, -FLT_MIN))) {
-                    auto entityNames = ecs::GetRefManager().GetEntityNames(entitySearch);
+                    auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
                     for (auto &ent : lock.EntitiesWith<ecs::SceneInfo>()) {
                         if (!ent.Has<ecs::SceneInfo, ecs::Name>(lock)) continue;
                         auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);

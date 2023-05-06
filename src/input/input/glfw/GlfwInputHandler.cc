@@ -31,11 +31,9 @@ namespace sp {
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto keyboard = scene->NewSystemEntity(lock, scene, keyboardEntity.Name());
                 keyboard.Set<ecs::EventBindings>(lock);
-                keyboard.Set<ecs::SignalOutput>(lock);
 
                 auto mouse = scene->NewSystemEntity(lock, scene, mouseEntity.Name());
                 mouse.Set<ecs::EventBindings>(lock);
-                mouse.Set<ecs::SignalOutput>(lock);
             });
     }
 
@@ -56,7 +54,7 @@ namespace sp {
         }
         if (!glfwEventQueue.Empty()) {
             ZoneScopedN("GlfwCommitEvents");
-            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::SignalOutput>>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::Signals>>();
 
             auto keyboard = keyboardEntity.Get(lock);
             auto mouse = mouseEntity.Get(lock);
@@ -74,21 +72,15 @@ namespace sp {
                     std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
                     ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, true});
 
-                    if (keyboard.Has<ecs::SignalOutput>(lock)) {
-                        auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
-                        // TODO: Cache this string handle
-                        signalOutput.SetSignal(ecs::SignalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName), 1.0);
-                    }
+                    ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
+                    signalRef.SetValue(lock, 1.0);
                 } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
                     auto &keyName = std::get<std::string>(event.data);
                     std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
                     ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
 
-                    if (keyboard.Has<ecs::SignalOutput>(lock)) {
-                        auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
-                        // TODO: Cache this string handle
-                        signalOutput.ClearSignal(ecs::SignalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName));
-                    }
+                    ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
+                    signalRef.ClearValue(lock);
                 } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
                     auto &mousePos = std::get<glm::vec2>(event.data);
                     ecs::EventBindings::SendEvent(lock,
@@ -96,37 +88,30 @@ namespace sp {
                         ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - prevMousePos});
                     prevMousePos = mousePos;
 
-                    if (mouse.Has<ecs::SignalOutput>(lock)) {
-                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-                        signalOutput.SetSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_CURSOR_X), mousePos.x);
-                        signalOutput.SetSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_CURSOR_Y), mousePos.y);
-                    }
+                    ecs::SignalRef refX(mouse, INPUT_SIGNAL_MOUSE_CURSOR_X);
+                    ecs::SignalRef refY(mouse, INPUT_SIGNAL_MOUSE_CURSOR_Y);
+                    refX.SetValue(lock, mousePos.x);
+                    refY.SetValue(lock, mousePos.y);
                 } else if (event.name == INPUT_EVENT_MOUSE_LEFT_CLICK) {
-                    if (mouse.Has<ecs::SignalOutput>(lock)) {
-                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-                        if (std::get<bool>(event.data)) {
-                            signalOutput.SetSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_LEFT), 1.0);
-                        } else {
-                            signalOutput.ClearSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_LEFT));
-                        }
+                    ecs::SignalRef signalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_LEFT);
+                    if (std::get<bool>(event.data)) {
+                        signalRef.SetValue(lock, 1.0);
+                    } else {
+                        signalRef.ClearValue(lock);
                     }
                 } else if (event.name == INPUT_EVENT_MOUSE_MIDDLE_CLICK) {
-                    if (mouse.Has<ecs::SignalOutput>(lock)) {
-                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-                        if (std::get<bool>(event.data)) {
-                            signalOutput.SetSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE), 1.0);
-                        } else {
-                            signalOutput.ClearSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE));
-                        }
+                    ecs::SignalRef signalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE);
+                    if (std::get<bool>(event.data)) {
+                        signalRef.SetValue(lock, 1.0);
+                    } else {
+                        signalRef.ClearValue(lock);
                     }
                 } else if (event.name == INPUT_EVENT_MOUSE_RIGHT_CLICK) {
-                    if (mouse.Has<ecs::SignalOutput>(lock)) {
-                        auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
-                        if (std::get<bool>(event.data)) {
-                            signalOutput.SetSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_RIGHT), 1.0);
-                        } else {
-                            signalOutput.ClearSignal(ecs::SignalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_RIGHT));
-                        }
+                    ecs::SignalRef signalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_RIGHT);
+                    if (std::get<bool>(event.data)) {
+                        signalRef.SetValue(lock, 1.0);
+                    } else {
+                        signalRef.ClearValue(lock);
                     }
                 }
             }

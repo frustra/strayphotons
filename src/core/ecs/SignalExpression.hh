@@ -12,8 +12,6 @@
 #include <variant>
 
 namespace ecs {
-    using ReadSignalsLock = Lock<Read<Name, SignalOutput, SignalBindings, FocusLock>>;
-
     class ComponentBase;
 
     class SignalExpression {
@@ -96,11 +94,11 @@ namespace ecs {
         bool Parse();
 
         template<typename LockType>
-        bool CanEvaluate(const LockType &lock) const {
+        bool CanEvaluate(const LockType &lock, size_t depth = 0) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return true;
             } else if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
-                return canEvaluate(lock);
+                return canEvaluate(lock, depth);
             } else {
                 return false;
             }
@@ -128,7 +126,7 @@ namespace ecs {
         int deduplicateNode(int index);
         int parseNode(size_t &tokenIndex, uint8_t precedence = '\x0');
 
-        bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock) const;
+        bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
 
         std::vector<std::string_view> tokens; // string_views into expr
     };

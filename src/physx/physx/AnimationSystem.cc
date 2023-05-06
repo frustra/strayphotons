@@ -10,8 +10,7 @@ namespace sp {
     AnimationSystem::AnimationSystem(PhysxManager &manager) : frameInterval(manager.interval.count() / 1e9) {}
 
     void AnimationSystem::Frame(
-        ecs::Lock<ecs::ReadSignalsLock, ecs::Read<ecs::Animation>, ecs::Write<ecs::SignalOutput, ecs::TransformTree>>
-            lock) {
+        ecs::Lock<ecs::ReadSignalsLock, ecs::Read<ecs::Animation>, ecs::Write<ecs::Signals, ecs::TransformTree>> lock) {
         ZoneScoped;
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation>(lock)) continue;
@@ -19,8 +18,8 @@ namespace sp {
             if (animation.states.empty()) continue;
 
             ecs::SignalRef stateRef(ent, "animation_state");
-            double currentState = ecs::SignalBindings::GetSignal(lock, stateRef);
-            double targetState = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(ent, "animation_target"));
+            double currentState = stateRef.GetSignal(lock);
+            double targetState = ecs::SignalRef(ent, "animation_target").GetSignal(lock);
             double originalState = currentState;
             currentState = std::clamp(currentState, 0.0, animation.states.size() - 1.0);
             targetState = std::clamp(targetState, 0.0, animation.states.size() - 1.0);
@@ -38,13 +37,8 @@ namespace sp {
 
             ecs::Animation::UpdateTransform(lock, ent);
 
-            if (ent.Has<ecs::SignalOutput>(lock)) {
-                if (originalState != currentState) {
-                    auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal(stateRef, currentState);
-                }
-            } else {
-                Warnf("Entity %s has animation component but no signal output", ecs::ToString(lock, ent));
+            if (originalState != currentState) {
+                stateRef.SetValue(lock, currentState);
             }
         }
     }

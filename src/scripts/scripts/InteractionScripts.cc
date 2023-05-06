@@ -219,7 +219,7 @@ namespace sp::scripts {
                             PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
                 }
 
-                bool rotating = SignalBindings::GetSignal(lock, SignalRef(ent, "interact_rotate")) >= 0.5;
+                bool rotating = SignalRef(ent, "interact_rotate").GetSignal(lock) >= 0.5;
 
                 Event event;
                 while (EventInput::Poll(lock, state.eventQueue, event)) {

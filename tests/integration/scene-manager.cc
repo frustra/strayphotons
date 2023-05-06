@@ -66,8 +66,6 @@ namespace SceneManagerTests {
         ent.Set<ecs::Name>(lock, "player", "player");
         ent.Set<ecs::SceneInfo>(lock, ent, scene);
         ent.Set<ecs::TransformSnapshot>(lock, glm::vec3(1, 2, 3));
-        ent.Set<ecs::SignalOutput>(lock);
-        ent.Set<ecs::SignalBindings>(lock);
         ent.Set<ecs::EventInput>(lock);
         ent.Set<ecs::EventBindings>(lock);
         ent.Set<ecs::Scripts>(lock);

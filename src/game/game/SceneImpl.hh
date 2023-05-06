@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalManager.hh"
 
 #include <bitset>
 
@@ -115,10 +116,6 @@ namespace sp::scene {
                 stagingId = stagingInfo.nextStagingId;
             }
         }
-        auto &flatSignalOutput = std::get<std::optional<SignalOutput>>(flatEntity);
-        if (!flatSignalOutput && flatAnimation) {
-            flatSignalOutput = LookupComponent<SignalOutput>().StagingDefault();
-        }
 
         return flatEntity;
     }
@@ -147,6 +144,11 @@ namespace sp::scene {
                     }
                 } else if constexpr (std::is_same_v<T, SceneInfo>) {
                     // Ignore, this should always be set
+
+                } else if constexpr (std::is_same_v<T, SignalOutput>) {
+                    // Skip, this is handled bellow
+                } else if constexpr (std::is_same_v<T, SignalBindings>) {
+                    // Skip, this is handled bellow
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     auto &component = std::get<std::optional<T>>(flatEntity);
                     if (component) {
@@ -169,5 +171,22 @@ namespace sp::scene {
                 }
             }(),
             ...);
+
+        if (resetLive) {
+            GetSignalManager().ClearEntity(live, rootSceneInfo.liveId);
+        }
+
+        auto &signalOutput = std::get<std::optional<SignalOutput>>(flatEntity);
+        if (signalOutput) {
+            for (auto &[signalName, value] : signalOutput.value().signals) {
+                SignalRef(rootSceneInfo.liveId, signalName).SetValue(live, value);
+            }
+        }
+        auto &signalBindings = std::get<std::optional<SignalBindings>>(flatEntity);
+        if (signalBindings) {
+            for (auto &[signalName, binding] : signalBindings.value().bindings) {
+                SignalRef(rootSceneInfo.liveId, signalName).SetBinding(live, binding);
+            }
+        }
     }
 } // namespace sp::scene

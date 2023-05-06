@@ -107,9 +107,6 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock)) return;
-
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
@@ -136,19 +133,18 @@ namespace sp::scripts {
 
                 SignalRef ref(ent, signalName);
                 if (action == "toggle") {
-                    double currentValue = SignalBindings::GetSignal(lock, ref);
-
+                    auto &currentValue = ref.GetValue(lock);
                     if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
-                        signalOutput.SetSignal(ref, 0);
+                        ref.SetValue(lock, 0);
                     } else {
-                        signalOutput.SetSignal(ref, eventValue);
+                        ref.SetValue(lock, eventValue);
                     }
                 } else if (action == "set") {
-                    signalOutput.SetSignal(ref, eventValue);
+                    ref.SetValue(lock, eventValue);
                 } else if (action == "add") {
-                    signalOutput.SetSignal(ref, signalOutput.GetSignal(ref) + eventValue);
+                    ref.SetValue(lock, ref.GetValue(lock) + eventValue);
                 } else if (action == "clear") {
-                    signalOutput.ClearSignal(ref);
+                    ref.ClearValue(lock);
                 } else {
                     Errorf("Unknown signal action: '%s'", std::string(action));
                 }

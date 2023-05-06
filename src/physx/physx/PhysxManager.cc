@@ -199,7 +199,7 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::SignalOutput>,
+                    ecs::Signals>,
                 ecs::PhysicsUpdateLock>();
 
             characterControlSystem.Frame(lock);

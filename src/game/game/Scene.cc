@@ -2,7 +2,7 @@
 
 #include "core/Common.hh"
 #include "core/Tracing.hh"
-#include "ecs/ReferenceManager.hh"
+#include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
@@ -200,7 +200,7 @@ namespace sp {
         if (!liveSceneId.Exists(live)) {
             liveSceneId = live.NewEntity();
             liveSceneId.Set<ecs::Name>(live, data->sceneEntity.Name());
-            ecs::GetRefManager().SetEntity(data->sceneEntity.Name(), liveSceneId);
+            ecs::GetEntityRefs().Set(data->sceneEntity.Name(), liveSceneId);
         }
         auto &properties = liveSceneId.Set<ecs::SceneProperties>(live,
             ecs::SceneProperties::Get(staging, stagingSceneId));
@@ -261,8 +261,8 @@ namespace sp {
                 sceneInfo.liveId.Set<ecs::Name>(live, entityName);
                 sceneInfo.SetLiveId(staging, sceneInfo.liveId);
                 sceneInfo.liveId.Set<ecs::SceneInfo>(live, sceneInfo.rootStagingId.Get<ecs::SceneInfo>(staging));
-                ecs::GetRefManager().SetEntity(entityName, e);
-                ecs::GetRefManager().SetEntity(entityName, sceneInfo.liveId);
+                ecs::GetEntityRefs().Set(entityName, e);
+                ecs::GetEntityRefs().Set(entityName, sceneInfo.liveId);
                 scene::BuildAndApplyEntity(ecs::Lock<ecs::ReadAll>(staging), live, e, resetLive);
             }
         }
@@ -315,7 +315,7 @@ namespace sp {
             }
             ecs::EntityRef ref = e;
             if (ref.GetStaging() == e && remainingId) {
-                ecs::GetRefManager().SetEntity(ref.Name(), remainingId);
+                ecs::GetEntityRefs().Set(ref.Name(), remainingId);
             }
             e.Destroy(staging);
         }

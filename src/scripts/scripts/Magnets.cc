@@ -70,8 +70,7 @@ namespace sp::scripts {
                                 if (nearestSocket.Has<TransformSnapshot>(lock)) {
                                     auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock);
 
-                                    float snapAngle = SignalBindings::GetSignal(lock,
-                                        SignalRef(nearestSocket, "snap_angle"));
+                                    float snapAngle = SignalRef(nearestSocket, "snap_angle").GetSignal(lock);
 
                                     PhysicsJoint joint;
                                     joint.target = nearestSocket;

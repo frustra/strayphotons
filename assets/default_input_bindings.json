@@ -162,12 +162,12 @@
             "/keyboard/key/z": {
                 "outputs": "console:input/action/run_command",
                 "filter": "is_focused(Game) && event",
-                "set_value": "togglesignal menu:articulating_arm.arm.Knob 0.5 1"
+                "set_value": "togglesignal menu:articulating_arm.arm.Knob/value 0.5 1"
             },
             "/keyboard/key/b": {
                 "outputs": "console:input/action/run_command",
                 "filter": "is_focused(Game) && event",
-                "set_value": "togglesignal menu:articulating_arm_1.arm.Knob 0.5 1"
+                "set_value": "togglesignal menu:articulating_arm_1.arm.Knob/value 0.5 1"
             }
         }
     },
@@ -176,19 +176,19 @@
             "rotation_rpm": 40
         },
         "signal_bindings": {
-            "smooth_rotation": "(vr:controller_left/actions_main_in_rotation_x + vr:controller_right/actions_main_in_rotation_x) * vr:origin/rotation_rpm"
+            "smooth_rotation": "(vr:controller_left/actions_main_in_rotation.x + vr:controller_right/actions_main_in_rotation.x) * vr:origin/rotation_rpm"
         }
     },
     "vr:left_hand": {
         "signal_bindings": {
-            "move_forward": "vr:controller_left/actions_main_in_movement_y",
-            "move_right": "vr:controller_left/actions_main_in_movement_x"
+            "move_forward": "vr:controller_left/actions_main_in_movement.y",
+            "move_right": "vr:controller_left/actions_main_in_movement.x"
         }
     },
     "vr:right_hand": {
         "signal_bindings": {
-            "move_forward": "vr:controller_right/actions_main_in_movement_y",
-            "move_right": "vr:controller_right/actions_main_in_movement_x"
+            "move_forward": "vr:controller_right/actions_main_in_movement.y",
+            "move_right": "vr:controller_right/actions_main_in_movement.x"
         }
     },
     "vr:controller_left": {
@@ -225,9 +225,9 @@
     },
     "player:player": {
         "signal_bindings": {
-            "move_relative_x": "player:flatview/move_relative_x + vr:left_hand/move_relative_x + vr:right_hand/move_relative_x",
-            "move_relative_y": "player:flatview/move_relative_y",
-            "move_relative_z": "player:flatview/move_relative_z + vr:left_hand/move_relative_z + vr:right_hand/move_relative_z",
+            "move_relative.x": "player:flatview/move_relative.x + vr:left_hand/move_relative.x + vr:right_hand/move_relative.x",
+            "move_relative.y": "player:flatview/move_relative.y",
+            "move_relative.z": "player:flatview/move_relative.z + vr:left_hand/move_relative.z + vr:right_hand/move_relative.z",
             "move_sprint": "input:keyboard/key_left_shift"
         }
     },

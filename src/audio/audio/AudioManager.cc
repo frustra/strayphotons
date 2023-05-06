@@ -141,7 +141,7 @@ namespace sp {
             if (compEvent.type == Tecs::EventType::ADDED) {
                 if (!compEvent.entity.Has<ecs::EventInput, ecs::Sounds>(lock)) continue;
                 ecs::QueueTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>(
-                    [this, ent = compEvent.entity](auto lock) {
+                    [this, ent = compEvent.entity](auto &lock) {
                         if (!ent.Has<ecs::EventInput, ecs::Sounds>(lock)) return;
 
                         auto &sounds = ent.Get<ecs::Sounds>(lock);

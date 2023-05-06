@@ -286,7 +286,7 @@ namespace sp {
             }
             // Logf("Start headRelativePlayer pos: %s", glm::to_string(headRelativePlayer.GetPosition()));
 
-            bool noclip = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_NOCLIP)) >= 0.5;
+            bool noclip = ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_NOCLIP).GetSignal(lock) >= 0.5;
             if (userData->noclipping != noclip) {
                 manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 userData->noclipping = noclip;
@@ -407,13 +407,10 @@ namespace sp {
 
             // Read character movement inputs
             glm::vec3 movementInput = glm::vec3(0);
-            movementInput.x = ecs::SignalBindings::GetSignal(lock,
-                ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_RELATIVE_X));
-            movementInput.y = ecs::SignalBindings::GetSignal(lock,
-                ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_RELATIVE_Y));
-            movementInput.z = ecs::SignalBindings::GetSignal(lock,
-                ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_RELATIVE_Z));
-            bool sprint = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_SPRINT)) >= 0.5;
+            movementInput.x = ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_RELATIVE_X).GetSignal(lock);
+            movementInput.y = ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_RELATIVE_Y).GetSignal(lock);
+            movementInput.z = ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_RELATIVE_Z).GetSignal(lock);
+            bool sprint = ecs::SignalRef(entity, INPUT_SIGNAL_MOVE_SPRINT).GetSignal(lock) >= 0.5;
 
             bool jump = false;
             ecs::Event event;

@@ -15,7 +15,7 @@ namespace sp {
         : GuiWindow(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto lock) {
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
             ecs::Entity inspector = inspectorEntity.Get(lock);
             if (!inspector.Has<ecs::EventInput>(lock)) return;
 

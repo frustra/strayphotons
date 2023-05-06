@@ -14,14 +14,22 @@
 namespace ecs {
     static const size_t MAX_SIGNAL_BINDING_DEPTH = 10;
 
+    struct Signals {
+        std::vector<std::tuple<double, SignalExpression>> signals;
+        std::set<size_t> freeIndexes;
+
+        size_t NewSignal(double value);
+        size_t NewSignal(const SignalExpression &expr);
+        void FreeSignal(size_t index);
+    };
+
     struct SignalKey {
         EntityRef entity;
         std::string signalName;
 
         SignalKey() {}
+        SignalKey(const EntityRef &entity, const std::string_view &signalName);
         SignalKey(const std::string_view &str, const EntityScope &scope = Name());
-        SignalKey(const EntityRef &entity, const std::string_view &signalName)
-            : entity(entity), signalName(signalName) {}
 
         bool Parse(const std::string_view &str, const EntityScope &scope);
 
@@ -43,6 +51,8 @@ namespace ecs {
     std::ostream &operator<<(std::ostream &out, const SignalKey &v);
 } // namespace ecs
 
+TECS_GLOBAL_COMPONENT(ecs::Signals);
+
 namespace std {
     template<>
     struct hash<ecs::SignalKey> {
@@ -52,22 +62,22 @@ namespace std {
 
 namespace ecs {
     struct SignalOutput {
-        void SetSignal(const SignalRef &name, double value);
-        void ClearSignal(const SignalRef &name);
-        bool HasSignal(const SignalRef &name) const;
-        double GetSignal(const SignalRef &name) const;
+        // void SetSignal(const SignalRef &name, double value);
+        // void ClearSignal(const SignalRef &name);
+        // bool HasSignal(const SignalRef &name) const;
+        // double GetSignal(const SignalRef &name) const;
 
         robin_hood::unordered_map<std::string, double> signals;
     };
 
     struct SignalBindings {
-        void SetBinding(const SignalRef &name, const std::string &expr, const Name &scope = Name());
-        void SetBinding(const SignalRef &name, const SignalRef &signal);
-        void ClearBinding(const SignalRef &name);
-        bool HasBinding(const SignalRef &name) const;
-        const SignalExpression &GetBinding(const SignalRef &name) const;
+        // void SetBinding(const SignalRef &name, const std::string &expr, const Name &scope = Name());
+        // void SetBinding(const SignalRef &name, const SignalRef &signal);
+        // void ClearBinding(const SignalRef &name);
+        // bool HasBinding(const SignalRef &name) const;
+        // const SignalExpression &GetBinding(const SignalRef &name) const;
 
-        static double GetSignal(const DynamicLock<ReadSignalsLock> &lock, const SignalRef &name, size_t depth = 0);
+        // static double GetSignal(const DynamicLock<ReadSignalsLock> &lock, const SignalRef &name, size_t depth = 0);
 
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };

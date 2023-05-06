@@ -31,9 +31,7 @@ namespace FocusLockTests {
             player.Set<ecs::Name>(lock, "player", "player");
             auto &eventInput = player.Set<ecs::EventInput>(lock);
             eventInput.Register(lock, playerQueue, TEST_EVENT_ACTION);
-            auto &signalBindings = player.Set<ecs::SignalBindings>(lock);
-            signalBindings.SetBinding(ecs::SignalRef(player, TEST_SIGNAL_ACTION),
-                "if_focused(Game, input:mouse/device1_button)");
+            ecs::SignalRef(player, TEST_SIGNAL_ACTION).SetBinding(lock, "if_focused(Game, input:mouse/device1_button)");
 
             keyboard.Set<ecs::Name>(lock, "input", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
@@ -41,8 +39,7 @@ namespace FocusLockTests {
             binding.actions.filterExpr = ecs::SignalExpression("is_focused(Game)");
 
             mouse.Set<ecs::Name>(lock, "input", "mouse");
-            auto &signalOutput = mouse.Set<ecs::SignalOutput>(lock);
-            signalOutput.SetSignal(ecs::SignalRef(mouse, TEST_SIGNAL_BUTTON), 42.0);
+            ecs::SignalRef(mouse, TEST_SIGNAL_BUTTON).SetValue(lock, 42.0);
         }
         {
             Timer t("Try sending events and reading signals with Game focus");
@@ -51,7 +48,7 @@ namespace FocusLockTests {
             auto sentCount = ecs::EventBindings::SendEvent(lock, keyboard, ecs::Event{TEST_EVENT_KEY, keyboard, 42});
             AssertEqual(sentCount, 1, "Expected to successfully queue 1 event");
 
-            double val = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(player, TEST_SIGNAL_ACTION));
+            double val = ecs::SignalRef(player, TEST_SIGNAL_ACTION).GetSignal(lock);
             AssertEqual(val, 42.0, "Expected signal to match button source");
 
             ecs::Event event;
@@ -95,7 +92,7 @@ namespace FocusLockTests {
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
-            double val = ecs::SignalBindings::GetSignal(lock, ecs::SignalRef(player, TEST_SIGNAL_ACTION));
+            double val = ecs::SignalRef(player, TEST_SIGNAL_ACTION).GetSignal(lock);
             AssertEqual(val, 0.0, "Expected zero signal when out of focus");
         }
     }

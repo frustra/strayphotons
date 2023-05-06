@@ -93,7 +93,6 @@ namespace sp::xr {
                     auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
                     ent.Set<ecs::TransformTree>(lock);
                     ent.Set<ecs::EventBindings>(lock);
-                    ent.Set<ecs::SignalOutput>(lock);
                 }
 
                 for (size_t i = 0; i < reservedEntities.size(); i++) {
@@ -240,7 +239,6 @@ namespace sp::xr {
                             auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);
-                            ent.Set<ecs::SignalOutput>(lock);
                         }
                     }
                 });

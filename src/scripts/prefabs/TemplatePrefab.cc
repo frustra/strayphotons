@@ -205,9 +205,8 @@ namespace ecs {
                         tileEnt = surface.ApplyComponents(empty, lock, "scoperoot", scope, offset3D);
                     }
                     Assertf(tileEnt, "Failed to create tile entity: %s", ToString(lock, ent));
-                    auto &signalOutput = tileEnt.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal(SignalRef(tileEnt, "tile.x"), x);
-                    signalOutput.SetSignal(SignalRef(tileEnt, "tile.y"), y);
+                    SignalRef(tileEnt, "tile.x").SetValue(lock, x);
+                    SignalRef(tileEnt, "tile.y").SetValue(lock, y);
                     surface.AddEntities(lock, scope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);

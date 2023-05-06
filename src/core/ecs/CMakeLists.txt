@@ -3,10 +3,11 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Components.cc
     Ecs.cc
     EntityRef.cc
-    ReferenceManager.cc
+    EntityReferenceManager.cc
     EventQueue.cc
     ScriptManager.cc
     SignalExpression.cc
+    SignalManager.cc
     SignalRef.cc
     SignalStructAccess.cc
     StructMetadata.cc

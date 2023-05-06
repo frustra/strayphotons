@@ -114,7 +114,6 @@ namespace sp::xr {
                             action.poseEntity = ecs::Name("input", inputName);
                             auto ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
-                            ent.Set<ecs::SignalOutput>(lock);
                         }
                     }
                 }
@@ -126,12 +125,22 @@ namespace sp::xr {
     }
 
     void InputBindings::Frame() {
-        /*std::array<vr::VRInputValueHandle_t, vr::k_unMaxTrackedDeviceCount> origins;
+        std::array<vr::VRInputValueHandle_t, vr::k_unMaxTrackedDeviceCount> origins;
+
+        static const std::array curlSuffix = {"_curl_thumb",
+            "_curl_index",
+            "_curl_middle",
+            "_curl_ring",
+            "_curl_pinky"};
+        static const std::array splaySuffix = {"_splay_thumb_index",
+            "_splay_index_middle",
+            "_splay_middle_ring",
+            "_splay_ring_pinky"};
 
         bool missingEntities = false;
         {
             ZoneScopedN("InputBindings Sync to ECS");
-            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::SignalOutput, ecs::TransformTree>>();
+            auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::Write<ecs::Signals, ecs::TransformTree>>();
 
             for (auto &actionSet : actionSets) {
                 vr::VRActiveActionSet_t activeActionSet = {};
@@ -196,14 +205,10 @@ namespace sp::xr {
                                     ecs::Event{action.name, originEntity, digitalActionData.bState});
                             }
 
-                            if (originEntity.Has<ecs::SignalOutput>(lock)) {
-                                auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
-
-                                if (digitalActionData.bActive) {
-                                    signalOutput.SetSignal(actionSignal, digitalActionData.bState);
-                                } else {
-                                    signalOutput.ClearSignal(actionSignal);
-                                }
+                            if (digitalActionData.bActive) {
+                                ecs::SignalRef(originEntity, actionSignal).SetValue(lock, digitalActionData.bState);
+                            } else {
+                                ecs::SignalRef(originEntity, actionSignal).ClearValue(lock);
                             }
                             break;
                         case Action::DataType::Vec1:
@@ -244,26 +249,25 @@ namespace sp::xr {
                                 }
                             }
 
-                            if (originEntity.Has<ecs::SignalOutput>(lock)) {
-                                auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
-
-                                if (analogActionData.bActive) {
-                                    switch (action.type) {
-                                    case Action::DataType::Vec3:
-                                        signalOutput.SetSignal(actionSignal + "_z", analogActionData.z);
-                                    case Action::DataType::Vec2:
-                                        signalOutput.SetSignal(actionSignal + "_y", analogActionData.y);
-                                    case Action::DataType::Vec1:
-                                        signalOutput.SetSignal(actionSignal + "_x", analogActionData.x);
-                                        break;
-                                    default:
-                                        break;
-                                    }
-                                } else {
-                                    signalOutput.ClearSignal(actionSignal + "_x");
-                                    signalOutput.ClearSignal(actionSignal + "_y");
-                                    signalOutput.ClearSignal(actionSignal + "_z");
+                            if (analogActionData.bActive) {
+                                switch (action.type) {
+                                case Action::DataType::Vec3:
+                                    ecs::SignalRef(originEntity, actionSignal + ".z")
+                                        .SetValue(lock, analogActionData.z);
+                                case Action::DataType::Vec2:
+                                    ecs::SignalRef(originEntity, actionSignal + ".y")
+                                        .SetValue(lock, analogActionData.y);
+                                case Action::DataType::Vec1:
+                                    ecs::SignalRef(originEntity, actionSignal + ".x")
+                                        .SetValue(lock, analogActionData.x);
+                                    break;
+                                default:
+                                    break;
                                 }
+                            } else {
+                                ecs::SignalRef(originEntity, actionSignal + ".x").ClearValue(lock);
+                                ecs::SignalRef(originEntity, actionSignal + ".y").ClearValue(lock);
+                                ecs::SignalRef(originEntity, actionSignal + ".z").ClearValue(lock);
                             }
                             break;
                         case Action::DataType::Pose:
@@ -304,33 +308,20 @@ namespace sp::xr {
                                 "Failed to read OpenVR skeleton action: %s",
                                 action.name);
 
-                            if (originEntity.Has<ecs::SignalOutput>(lock)) {
-                                auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
-                                static const std::array curlSuffix = {"_curl_thumb",
-                                    "_curl_index",
-                                    "_curl_middle",
-                                    "_curl_ring",
-                                    "_curl_pinky"};
-                                static const std::array splaySuffix = {"_splay_thumb_index",
-                                    "_splay_index_middle",
-                                    "_splay_middle_ring",
-                                    "_splay_ring_pinky"};
-
-                                for (size_t i = 0; i < vr::VRFinger_Count; i++) {
-                                    if (skeletalActionData.bActive) {
-                                        signalOutput.SetSignal(actionSignal + curlSuffix[i],
-                                            skeletalSummaryData.flFingerCurl[i]);
-                                    } else {
-                                        signalOutput.ClearSignal(actionSignal + curlSuffix[i]);
-                                    }
+                            for (size_t i = 0; i < vr::VRFinger_Count; i++) {
+                                if (skeletalActionData.bActive) {
+                                    ecs::SignalRef(originEntity, actionSignal + curlSuffix[i])
+                                        .SetValue(lock, skeletalSummaryData.flFingerCurl[i]);
+                                } else {
+                                    ecs::SignalRef(originEntity, actionSignal + curlSuffix[i]).ClearValue(lock);
                                 }
-                                for (size_t i = 0; i < vr::VRFingerSplay_Count; i++) {
-                                    if (skeletalActionData.bActive) {
-                                        signalOutput.SetSignal(actionSignal + splaySuffix[i],
-                                            skeletalSummaryData.flFingerSplay[i]);
-                                    } else {
-                                        signalOutput.ClearSignal(actionSignal + splaySuffix[i]);
-                                    }
+                            }
+                            for (size_t i = 0; i < vr::VRFingerSplay_Count; i++) {
+                                if (skeletalActionData.bActive) {
+                                    ecs::SignalRef(originEntity, actionSignal + splaySuffix[i])
+                                        .SetValue(lock, skeletalSummaryData.flFingerSplay[i]);
+                                } else {
+                                    ecs::SignalRef(originEntity, actionSignal + splaySuffix[i]).ClearValue(lock);
                                 }
                             }
 
@@ -453,12 +444,11 @@ namespace sp::xr {
                                     if (scene->GetStagingEntity(boneEnt.Name())) continue;
                                     auto ent = scene->NewSystemEntity(lock, scene, boneEnt.Name());
                                     ent.Set<ecs::TransformTree>(lock);
-                                    ent.Set<ecs::SignalOutput>(lock);
                                 }
                             }
                         }
                     }
                 });
-        }*/
+        }
     }
 } // namespace sp::xr

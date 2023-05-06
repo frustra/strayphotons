@@ -357,7 +357,7 @@ namespace sp::scripts {
             }
 
             // Handle interaction events
-            auto indexCurl = SignalBindings::GetSignal(lock, indexCurlRef);
+            auto indexCurl = indexCurlRef.GetSignal(lock);
             auto grabSignal = indexCurl;
             auto grabTarget = grabEntity;
             if (teleported || grabSignal < 0.18) {
@@ -366,7 +366,7 @@ namespace sp::scripts {
                 grabTarget = groupOverlaps[BoneGroup::Index];
             }
 
-            auto middleCurl = SignalBindings::GetSignal(lock, middleCurlRef);
+            auto middleCurl = middleCurlRef.GetSignal(lock);
             bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
             HandlePointing(state, lock, ent, isPointing);
 

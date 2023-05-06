@@ -15,28 +15,22 @@
 #include <robin_hood.h>
 
 namespace ecs {
-    class ReferenceManager {
+    class EntityReferenceManager {
     public:
-        ReferenceManager() {}
+        EntityReferenceManager() {}
 
-        EntityRef GetEntity(const Name &name);
-        EntityRef GetEntity(const Entity &entity);
-        EntityRef SetEntity(const Name &name, const Entity &entity);
-        std::set<Name> GetEntityNames(const std::string &search = "");
-
-        SignalRef GetSignal(const SignalKey &signal);
-        std::set<SignalKey> GetSignals(const std::string &search = "");
+        EntityRef Get(const Name &name);
+        EntityRef Get(const Entity &entity);
+        EntityRef Set(const Name &name, const Entity &entity);
+        std::set<Name> GetNames(const std::string &search = "");
 
         void Tick(chrono_clock::duration maxTickInterval);
 
     private:
-        sp::LockFreeMutex entityMutex;
+        sp::LockFreeMutex mutex;
         sp::PreservingMap<Name, EntityRef::Ref, 1000> entityRefs;
         sp::EntityMap<std::weak_ptr<EntityRef::Ref>> stagingRefs;
         sp::EntityMap<std::weak_ptr<EntityRef::Ref>> liveRefs;
-
-        sp::LockFreeMutex signalMutex;
-        sp::PreservingMap<SignalKey, SignalKey, 1000> signalRefs;
     };
 
     struct EntityRef::Ref {
@@ -45,8 +39,7 @@ namespace ecs {
         std::atomic<Entity> liveEntity;
 
         Ref(const ecs::Name &name) : name(name) {}
-        Ref(const Entity &ent);
     };
 
-    ReferenceManager &GetRefManager();
+    EntityReferenceManager &GetEntityRefs();
 } // namespace ecs

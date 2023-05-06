@@ -558,7 +558,7 @@ namespace ecs {
                         return -1;
                     }
                     nodes.emplace_back(SignalExpression::SignalNode{signalRef}, tokenIndex, tokenIndex + 1);
-                    nodeStrings.emplace_back(signalRef.Get().String());
+                    nodeStrings.emplace_back(signalRef.String());
                 } else if (token[delimiter] == '#') {
                     ecs::Name entityName(token.substr(0, delimiter), this->scope);
                     std::string componentPath(token.substr(delimiter + 1));
@@ -600,9 +600,8 @@ namespace ecs {
     }
 
     SignalExpression::SignalExpression(const SignalRef &signal) {
-        auto &key = signal.Get();
-        this->scope = EntityScope(key.entity.Name().scene, "");
-        this->expr = key.String();
+        this->scope = EntityScope(signal.GetEntity().Name().scene, "");
+        this->expr = signal.String();
         this->tokens.emplace_back(expr);
         this->rootIndex = nodes.size();
         this->nodes.emplace_back(SignalNode{signal}, 0, 0);
@@ -657,17 +656,18 @@ namespace ecs {
         return true;
     }
 
-    bool SignalExpression::canEvaluate(const DynamicLock<ReadSignalsLock> &lock) const {
+    bool SignalExpression::canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         for (auto &node : nodes) {
             bool success = std::visit(
-                [&lock](auto &&node) {
+                [&](auto &node) {
                     using T = std::decay_t<decltype(node)>;
                     if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                        Entity ent = node.signal.Get().entity.Get(lock);
-                        if (!ent.Has<SignalBindings>(lock)) return true;
-
-                        auto &bindings = ent.Get<const SignalBindings>(lock);
-                        return bindings.GetBinding(node.signal).canEvaluate(lock);
+                        if (node.signal.HasValue(lock)) return true;
+                        if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                            Errorf("Max signal binding depth exceeded: %s -> %s", expr, node.signal.String());
+                            return false;
+                        }
+                        return node.signal.GetBinding(lock).canEvaluate(lock, depth + 1);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
                         if (!base) return true;
@@ -687,7 +687,7 @@ namespace ecs {
                         return true;
                     }
                 },
-                (SignalExpression::NodeVariant)node);
+                (const SignalExpression::NodeVariant &)node);
             if (!success) return false;
         }
         return true;
@@ -726,12 +726,10 @@ namespace ecs {
                     } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
                         // ZoneScopedN("SignalNode:evaluate");
                         if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
-                            Errorf("Max signal binding depth exceeded: %s -> %s",
-                                expr.expr,
-                                node.signal.Get().String());
+                            Errorf("Max signal binding depth exceeded: %s -> %s", expr.expr, node.signal.String());
                             return 0.0;
                         }
-                        return SignalBindings::GetSignal(lock, node.signal, depth + 1);
+                        return node.signal.GetSignal(lock, depth + 1);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
                         if (!base) return 0.0;

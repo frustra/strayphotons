@@ -1,34 +1,22 @@
 #include "EntityRef.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "ecs/ReferenceManager.hh"
+#include "ecs/EntityReferenceManager.hh"
 
 #include <atomic>
 
 namespace ecs {
-    EntityRef::Ref::Ref(const Entity &ent) {
-        if (!ent) return;
-
-        if (IsLive(ent)) {
-            liveEntity = ent;
-        } else if (IsStaging(ent)) {
-            stagingEntity = ent;
-        } else {
-            Abortf("Invalid EntityRef entity: %s", std::to_string(ent));
-        }
-    }
-
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
-        ptr = GetRefManager().GetEntity(ent).ptr;
+        ptr = GetEntityRefs().Get(ent).ptr;
     }
 
     EntityRef::EntityRef(const ecs::Name &name, const Entity &ent) {
         if (!name) return;
         if (ent) {
-            ptr = GetRefManager().SetEntity(name, ent).ptr;
+            ptr = GetEntityRefs().Set(name, ent).ptr;
         } else {
-            ptr = GetRefManager().GetEntity(name).ptr;
+            ptr = GetEntityRefs().Get(name).ptr;
         }
         Assertf(ptr, "EntityRef(%s, %s) is invalid", name.String(), std::to_string(ent));
     }
