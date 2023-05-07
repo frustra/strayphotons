@@ -62,29 +62,35 @@ namespace ecs {
         return results;
     }
 
-    std::vector<SignalRef> SignalManager::GetSignals(const EntityRef &entity) {
-        std::vector<SignalRef> results;
+    std::set<SignalRef> SignalManager::GetSignals(const EntityRef &entity) {
+        std::set<SignalRef> results;
         signalRefs.ForEach([&](const SignalKey &signal, std::shared_ptr<SignalRef::Ref> &refPtr) {
             if (signal.entity == entity) {
-                results.emplace_back(refPtr);
+                results.emplace(refPtr);
             }
         });
         return results;
     }
 
     void SignalManager::Tick(chrono_clock::duration maxTickInterval) {
-        signalRefs.Tick(maxTickInterval, [this](std::shared_ptr<SignalRef::Ref> &refPtr) {
+        ZoneScoped;
+        setValues.clear();
+        auto stagingLock = ecs::StagingWorld().StartTransaction<Write<Signals>>();
+        auto liveLock = ecs::World().StartTransaction<Write<Signals>>();
+        signalRefs.ForEach([&](const SignalKey &signal, std::shared_ptr<SignalRef::Ref> &refPtr) {
+            if (!signal || !refPtr) return;
+            SignalRef ref(refPtr);
+            if (ref.HasValue(liveLock) || ref.HasBinding(liveLock) || ref.HasValue(stagingLock) ||
+                ref.HasBinding(stagingLock)) {
+                setValues.emplace_back(refPtr);
+            }
+        });
+        signalRefs.Tick(maxTickInterval, [&](std::shared_ptr<SignalRef::Ref> &refPtr) {
             if (!refPtr) return;
-            auto liveIndex = refPtr->liveIndex.exchange(std::numeric_limits<size_t>::max());
             auto stagingIndex = refPtr->stagingIndex.exchange(std::numeric_limits<size_t>::max());
-            ecs::QueueStagingTransaction<Write<Signals>>([stagingIndex](auto &lock) {
-                auto &signals = lock.Get<Signals>();
-                signals.FreeSignal(stagingIndex);
-            });
-            ecs::QueueTransaction<Write<Signals>>([liveIndex](auto &lock) {
-                auto &signals = lock.Get<Signals>();
-                signals.FreeSignal(liveIndex);
-            });
+            auto liveIndex = refPtr->liveIndex.exchange(std::numeric_limits<size_t>::max());
+            stagingLock.Get<Signals>().FreeSignal(stagingIndex);
+            liveLock.Get<Signals>().FreeSignal(liveIndex);
         });
     }
 } // namespace ecs

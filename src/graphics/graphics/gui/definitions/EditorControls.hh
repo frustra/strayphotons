@@ -6,6 +6,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/SignalRef.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
@@ -27,10 +28,13 @@ namespace sp {
         std::map<ecs::Name, TreeNode> entityTree;
         SceneRef scene;
         ecs::Entity target;
+        std::string followFocus;
+        int followFocusPos;
 
         // Temporary context
         const ecs::Lock<ecs::ReadAll> *lock = nullptr;
         std::string fieldName, fieldId;
+        int signalNameCursorPos;
 
         void RefreshEntityTree() {
             entityTree.clear();
@@ -622,15 +626,14 @@ namespace sp {
                 ImGui::TableHeadersRow();
 
                 auto &signalManager = ecs::GetSignalManager();
-                std::vector<ecs::SignalRef> signals = signalManager.GetSignals(targetEntity);
-                for (size_t i = 0; i < signals.size(); i++) {
-                    auto &ref = signals[i];
+                std::set<ecs::SignalRef> signals = signalManager.GetSignals(targetEntity);
+                auto parentFieldId = fieldId;
+                for (auto &ref : signals) {
                     if (!ref) continue;
                     bool hasValue = ref.HasValue(lock);
                     if (!hasValue && !ref.HasBinding(lock)) continue;
 
-                    // Access reference to keep it active while editor is open
-                    signalManager.GetRef(ref.GetEntity(), ref.GetSignalName());
+                    ImGui::PushID(ref.GetSignalName().c_str());
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
@@ -642,17 +645,48 @@ namespace sp {
                     }
                     ImGui::TableSetColumnIndex(1);
                     ImGui::SetNextItemWidth(-FLT_MIN);
+                    // A custom callback to track cursor position
+                    // The field id changes when the signal is renamed, so we need to manually
+                    // move the focus to the new field id
+                    auto focusTracker = [](ImGuiInputTextCallbackData *data) -> int {
+                        auto *ctx = (EditorContext *)data->UserData;
+                        if (ctx->followFocus == ctx->fieldId) {
+                            data->SelectionStart = data->SelectionEnd = data->CursorPos = ctx->followFocusPos;
+                            ctx->followFocus = "";
+                        } else if (ImGui::IsItemFocused()) {
+                            ctx->signalNameCursorPos = data->CursorPos;
+                        }
+                        return 0;
+                    };
+
                     auto signalName = ref.GetSignalName();
-                    if (AddImGuiElement("##" + fieldId + ".name" + std::to_string(i), signalName)) {
+                    fieldId = "##SignalName." + ref.GetSignalName();
+                    if (followFocus == fieldId) {
+                        ImGui::SetKeyboardFocusHere();
+                    }
+                    if (ImGui::InputText(fieldId.c_str(),
+                            &signalName,
+                            ImGuiInputTextFlags_CallbackAlways,
+                            focusTracker,
+                            this)) {
                         ecs::SignalRef newRef(ref.GetEntity(), signalName);
-                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef](auto &lock) {
-                            if (ref.HasValue(lock)) {
-                                newRef.SetValue(lock, ref.GetValue(lock));
+                        if (newRef && !newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                            if (ImGui::IsItemFocused()) {
+                                followFocus = "##SignalName." + signalName;
+                                followFocusPos = signalNameCursorPos;
                             }
-                            if (ref.HasBinding(lock)) {
-                                newRef.SetBinding(lock, ref.GetBinding(lock));
-                            }
-                        });
+
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef, this](auto &lock) {
+                                if (ref.HasValue(lock)) {
+                                    newRef.SetValue(lock, ref.GetValue(lock));
+                                    ref.ClearValue(lock);
+                                }
+                                if (ref.HasBinding(lock)) {
+                                    newRef.SetBinding(lock, ref.GetBinding(lock));
+                                    ref.ClearBinding(lock);
+                                }
+                            });
+                        }
                     }
                     ImGui::TableSetColumnIndex(2);
                     if (ImGui::Checkbox("", &hasValue)) {
@@ -669,20 +703,23 @@ namespace sp {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (hasValue) {
                         double signalValue = ref.GetValue(lock);
-                        if (AddImGuiElement(fieldId + ".value" + std::to_string(i), signalValue)) {
+                        if (AddImGuiElement("##SignalValue." + ref.GetSignalName(), signalValue)) {
                             ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, signalValue](auto &lock) {
                                 ref.SetValue(lock, signalValue);
                             });
                         }
                     } else {
                         ecs::SignalExpression expression = ref.GetBinding(lock);
-                        if (AddImGuiElement(fieldId + ".binding" + std::to_string(i), expression)) {
+                        if (AddImGuiElement("##SignalBinding." + ref.GetSignalName(), expression)) {
                             ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, expression](auto &lock) {
                                 ref.SetBinding(lock, expression);
                             });
                         }
                     }
+
+                    ImGui::PopID();
                 }
+                fieldId = parentFieldId;
             }
             ImGui::EndTable();
 

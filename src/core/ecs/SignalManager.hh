@@ -23,13 +23,14 @@ namespace ecs {
         SignalRef GetRef(const std::string_view &str, const EntityScope &scope = Name());
         void ClearEntity(const Lock<Write<Signals>> &lock, const EntityRef &entity);
         std::set<SignalRef> GetSignals(const std::string &search = "");
-        std::vector<SignalRef> GetSignals(const EntityRef &entity);
+        std::set<SignalRef> GetSignals(const EntityRef &entity);
 
         void Tick(chrono_clock::duration maxTickInterval);
 
     private:
         sp::LockFreeMutex mutex;
         sp::PreservingMap<SignalKey, SignalRef::Ref, 1000> signalRefs;
+        std::vector<std::shared_ptr<SignalRef::Ref>> setValues;
     };
 
     struct SignalRef::Ref {
