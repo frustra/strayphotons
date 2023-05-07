@@ -36,20 +36,12 @@ namespace ecs {
     }
 
     void SignalManager::ClearEntity(const Lock<Write<Signals>> &lock, const EntityRef &entity) {
-        signalRefs.ForEach([&](const SignalKey &signal, std::shared_ptr<SignalRef::Ref> &refPtr) {
-            if (refPtr && signal.entity == entity) {
-                size_t index;
-                if (IsLive(lock)) {
-                    index = refPtr->liveIndex.exchange(std::numeric_limits<size_t>::max());
-                } else if (IsStaging(lock)) {
-                    index = refPtr->stagingIndex.exchange(std::numeric_limits<size_t>::max());
-                } else {
-                    Abortf("Invalid SignalManager::ClearEntity lock: %u", lock.GetInstance().GetInstanceId());
-                }
-                auto &signals = lock.Get<Signals>();
-                signals.FreeSignal(index);
+        auto &signals = lock.Get<Signals>();
+        for (auto &signal : signals.signals) {
+            if (signal.ref == entity) {
+                signal = Signals::Signal();
             }
-        });
+        }
     }
 
     std::set<SignalRef> SignalManager::GetSignals(const std::string &search) {
@@ -73,24 +65,30 @@ namespace ecs {
     }
 
     void SignalManager::Tick(chrono_clock::duration maxTickInterval) {
-        ZoneScoped;
-        setValues.clear();
-        auto stagingLock = ecs::StagingWorld().StartTransaction<Write<Signals>>();
-        auto liveLock = ecs::World().StartTransaction<Write<Signals>>();
-        signalRefs.ForEach([&](const SignalKey &signal, std::shared_ptr<SignalRef::Ref> &refPtr) {
-            if (!signal || !refPtr) return;
-            SignalRef ref(refPtr);
-            if (ref.HasValue(liveLock) || ref.HasBinding(liveLock) || ref.HasValue(stagingLock) ||
-                ref.HasBinding(stagingLock)) {
-                setValues.emplace_back(refPtr);
-            }
-        });
+        std::vector<std::shared_ptr<SignalRef::Ref>> refsToFree;
         signalRefs.Tick(maxTickInterval, [&](std::shared_ptr<SignalRef::Ref> &refPtr) {
             if (!refPtr) return;
-            auto stagingIndex = refPtr->stagingIndex.exchange(std::numeric_limits<size_t>::max());
-            auto liveIndex = refPtr->liveIndex.exchange(std::numeric_limits<size_t>::max());
-            stagingLock.Get<Signals>().FreeSignal(stagingIndex);
-            liveLock.Get<Signals>().FreeSignal(liveIndex);
+            refsToFree.emplace_back(refPtr);
         });
+        if (!refsToFree.empty()) {
+            {
+                ZoneScopedN("FreeStagingSignals");
+                auto lock = ecs::StartStagingTransaction<Write<Signals>>();
+                auto &signals = lock.Get<Signals>();
+                for (auto &refPtr : refsToFree) {
+                    auto index = refPtr->stagingIndex.exchange(std::numeric_limits<size_t>::max());
+                    signals.FreeSignal(index);
+                }
+            }
+            {
+                ZoneScopedN("FreeLiveSignals");
+                auto lock = ecs::StartTransaction<Write<Signals>>();
+                auto &signals = lock.Get<Signals>();
+                for (auto &refPtr : refsToFree) {
+                    auto index = refPtr->liveIndex.exchange(std::numeric_limits<size_t>::max());
+                    signals.FreeSignal(index);
+                }
+            }
+        }
     }
 } // namespace ecs

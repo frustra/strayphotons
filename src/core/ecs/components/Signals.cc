@@ -54,37 +54,37 @@ namespace std {
 } // namespace std
 
 namespace ecs {
-    size_t Signals::NewSignal(double value) {
+    size_t Signals::NewSignal(const SignalRef &ref, double value) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
-            signals.emplace_back(value, SignalExpression{});
+            signals.emplace_back(value, ref);
         } else {
             auto it = freeIndexes.begin();
             index = *it;
             freeIndexes.erase(it);
-            signals[index] = std::make_tuple(value, SignalExpression{});
+            signals[index] = Signal(value, ref);
         }
         return index;
     }
 
-    size_t Signals::NewSignal(const SignalExpression &expr) {
+    size_t Signals::NewSignal(const SignalRef &ref, const SignalExpression &expr) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
-            signals.emplace_back(-std::numeric_limits<double>::infinity(), expr);
+            signals.emplace_back(expr, ref);
         } else {
             auto it = freeIndexes.begin();
             index = *it;
             freeIndexes.erase(it);
-            signals[index] = std::make_tuple(-std::numeric_limits<double>::infinity(), expr);
+            signals[index] = Signal(expr, ref);
         }
         return index;
     }
 
     void Signals::FreeSignal(size_t index) {
         if (index >= signals.size()) return;
-        signals[index] = std::make_tuple(-std::numeric_limits<double>::infinity(), SignalExpression{});
+        signals[index] = Signal();
         freeIndexes.insert(index);
     }
 

@@ -7,7 +7,7 @@
 #include "ecs/SignalRef.hh"
 
 #include <limits>
-#include <map>
+#include <set>
 #include <robin_hood.h>
 #include <string>
 
@@ -15,11 +15,26 @@ namespace ecs {
     static const size_t MAX_SIGNAL_BINDING_DEPTH = 10;
 
     struct Signals {
-        std::vector<std::tuple<double, SignalExpression>> signals;
+        struct Signal {
+            double value;
+            SignalExpression expr;
+            SignalRef ref;
+
+            Signal() : value(-std::numeric_limits<double>::infinity()) {}
+            Signal(double value, const SignalRef &ref) : value(value) {
+                if (!std::isinf(value)) this->ref = ref;
+            }
+            Signal(const SignalExpression &expr, const SignalRef &ref)
+                : value(-std::numeric_limits<double>::infinity()), expr(expr) {
+                if (expr) this->ref = ref;
+            }
+        };
+
+        std::vector<Signal> signals;
         std::set<size_t> freeIndexes;
 
-        size_t NewSignal(double value);
-        size_t NewSignal(const SignalExpression &expr);
+        size_t NewSignal(const SignalRef &ref, double value);
+        size_t NewSignal(const SignalRef &ref, const SignalExpression &expr);
         void FreeSignal(size_t index);
     };
 

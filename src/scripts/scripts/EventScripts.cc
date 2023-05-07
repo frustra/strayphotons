@@ -161,8 +161,12 @@ namespace sp::scripts {
         template<typename LockType>
         void sendOutputEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
+                ZoneScopedN("EventFromSignal::sendOutputEvents");
                 auto value = expr.Evaluate(lock);
-                if (value >= 0.5) EventBindings::SendEvent(lock, ent, Event{name, ent, value});
+                if (value >= 0.5) {
+                    ZoneScopedN("EventFromSignal::SendEvent");
+                    EventBindings::SendEvent(lock, ent, Event{name, ent, value});
+                }
             }
         }
 

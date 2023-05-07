@@ -705,6 +705,7 @@ namespace ecs {
 
         template<typename InputType>
         double EvaluateNode(const DynamicLock<ReadSignalsLock> &lock, int nodeIndex, const InputType &input) {
+            ZoneScoped;
             if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
             if (cache[nodeIndex] != -std::numeric_limits<double>::infinity()) return cache[nodeIndex];
 

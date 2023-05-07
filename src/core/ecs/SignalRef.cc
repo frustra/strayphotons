@@ -54,13 +54,16 @@ namespace ecs {
 
     void SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
+        Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
         auto &signals = lock.Get<Signals>();
         auto &index = GetIndex(lock);
         size_t i = index.load();
         if (i < signals.signals.size()) {
-            std::get<double>(signals.signals[i]) = value;
+            auto &signal = signals.signals[i];
+            signal.value = value;
+            signal.ref = *this;
         } else {
-            index = signals.NewSignal(value);
+            index = signals.NewSignal(*this, value);
         }
     }
 
@@ -70,7 +73,9 @@ namespace ecs {
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return; // Noop
 
-        std::get<double>(signals[index]) = -std::numeric_limits<double>::infinity();
+        auto &signal = signals[index];
+        signal.value = -std::numeric_limits<double>::infinity();
+        if (!signal.expr) signal.ref = {};
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
@@ -79,7 +84,7 @@ namespace ecs {
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return false;
 
-        return !std::isinf(std::get<double>(signals[index]));
+        return !std::isinf(signals[index].value);
     }
 
     const double &SignalRef::GetValue(const Lock<Read<Signals>> &lock) const {
@@ -89,19 +94,22 @@ namespace ecs {
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return empty;
 
-        return std::get<double>(signals[index]);
+        return signals[index].value;
     }
 
     void SignalRef::SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &expr) const {
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
+        if (!expr) return ClearBinding(lock);
         auto &signals = lock.Get<Signals>();
         auto &index = GetIndex(lock);
         size_t i = index.load();
 
         if (i < signals.signals.size()) {
-            std::get<SignalExpression>(signals.signals[i]) = expr;
+            auto &signal = signals.signals[i];
+            signal.expr = expr;
+            signal.ref = *this;
         } else {
-            index = signals.NewSignal(expr);
+            index = signals.NewSignal(*this, expr);
         }
     }
 
@@ -117,7 +125,9 @@ namespace ecs {
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return; // Noop
 
-        std::get<SignalExpression>(signals[index]) = SignalExpression();
+        auto &signal = signals[index];
+        signal.expr = SignalExpression();
+        if (std::isinf(signal.value)) signal.ref = {};
     }
 
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
@@ -126,7 +136,7 @@ namespace ecs {
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return false;
 
-        return (bool)std::get<SignalExpression>(signals[index]);
+        return (bool)signals[index].expr;
     }
 
     const SignalExpression &SignalRef::GetBinding(const Lock<Read<Signals>> &lock) const {
@@ -136,22 +146,25 @@ namespace ecs {
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return empty;
 
-        return std::get<SignalExpression>(signals[index]);
+        return signals[index].expr;
     }
 
     double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        ZoneScoped;
+        ZoneNamedN(tracyCtx1, "SignalRef::GetSignal", true);
         if (!ptr) return 0.0;
         auto &signals = lock.Get<Signals>().signals;
         size_t index = GetIndex(lock);
         if (index >= signals.size()) return 0.0;
 
-        auto &[value, expression] = signals[index];
-        if (!std::isinf(value)) return value;
-        return expression.Evaluate(lock, depth);
+        ZoneNamedN(tracyCtx2, "SignalRef::GetSignalLookup", true);
+
+        auto &signal = signals[index];
+        if (!std::isinf(signal.value)) return signal.value;
+        ZoneNamedN(tracyCtx3, "SignalRef::GetSignalEval", true);
+        return signal.expr.Evaluate(lock, depth);
     }
 
-    bool SignalRef::operator==(const Entity &other) const {
+    bool SignalRef::operator==(const EntityRef &other) const {
         if (!ptr || !other) return false;
         return ptr->signal.entity == other;
     }

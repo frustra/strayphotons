@@ -100,7 +100,7 @@ namespace sp {
             return selected;
         }
 
-        void AddSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
+        void AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
         void ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
         void ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock);
 
@@ -613,8 +613,8 @@ namespace sp {
             ...);
     }
 
-    void EditorContext::AddSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
-        Assertf(ecs::IsLive(lock), "AddSignalControls must be called with a live lock");
+    void EditorContext::AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        Assertf(ecs::IsLive(lock), "AddLiveSignalControls must be called with a live lock");
         if (ImGui::CollapsingHeader("Signals", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
                                     ImGuiTableFlags_SizingStretchSame;
@@ -885,7 +885,7 @@ namespace sp {
 
         ImGui::Separator();
 
-        if (ecs::IsLive(lock)) AddSignalControls(lock, targetEntity);
+        if (ecs::IsLive(lock)) AddLiveSignalControls(lock, targetEntity);
 
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (!comp.HasComponent(lock, this->target)) return;
