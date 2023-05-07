@@ -7,8 +7,8 @@
 #include "ecs/SignalRef.hh"
 
 #include <limits>
-#include <set>
 #include <robin_hood.h>
+#include <set>
 #include <string>
 
 namespace ecs {
@@ -76,24 +76,13 @@ namespace std {
 } // namespace std
 
 namespace ecs {
+    // SignalOutput is used for staging entities only. See SignalManager for live signals.
     struct SignalOutput {
-        // void SetSignal(const SignalRef &name, double value);
-        // void ClearSignal(const SignalRef &name);
-        // bool HasSignal(const SignalRef &name) const;
-        // double GetSignal(const SignalRef &name) const;
-
         robin_hood::unordered_map<std::string, double> signals;
     };
 
+    // SignalBindings is used for staging entities only. See SignalManager for live signals.
     struct SignalBindings {
-        // void SetBinding(const SignalRef &name, const std::string &expr, const Name &scope = Name());
-        // void SetBinding(const SignalRef &name, const SignalRef &signal);
-        // void ClearBinding(const SignalRef &name);
-        // bool HasBinding(const SignalRef &name) const;
-        // const SignalExpression &GetBinding(const SignalRef &name) const;
-
-        // static double GetSignal(const DynamicLock<ReadSignalsLock> &lock, const SignalRef &name, size_t depth = 0);
-
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };
 
