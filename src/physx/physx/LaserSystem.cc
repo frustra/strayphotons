@@ -222,9 +222,9 @@ namespace sp {
         }
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
-            ecs::SignalRef(entity, "laser_color_r").SetValue(lock, sensor.illuminance.r);
-            ecs::SignalRef(entity, "laser_color_g").SetValue(lock, sensor.illuminance.g);
-            ecs::SignalRef(entity, "laser_color_b").SetValue(lock, sensor.illuminance.b);
+            ecs::SignalRef(entity, "light_value_r").SetValue(lock, sensor.illuminance.r);
+            ecs::SignalRef(entity, "light_value_g").SetValue(lock, sensor.illuminance.g);
+            ecs::SignalRef(entity, "light_value_b").SetValue(lock, sensor.illuminance.b);
             ecs::SignalRef(entity, "value")
                 .SetValue(lock, glm::all(glm::greaterThanEqual(sensor.illuminance, sensor.threshold)));
         }
