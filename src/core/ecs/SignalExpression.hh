@@ -14,6 +14,8 @@
 namespace ecs {
     class ComponentBase;
 
+    static const size_t MAX_SIGNAL_EXPRESSION_NODES = 256;
+
     class SignalExpression {
     public:
         SignalExpression() {}
@@ -24,19 +26,39 @@ namespace ecs {
             : scope(other.scope), expr(other.expr), nodes(other.nodes), nodeStrings(other.nodeStrings),
               rootIndex(other.rootIndex) {}
 
+        struct Node;
+        using Storage = std::array<double, MAX_SIGNAL_EXPRESSION_NODES>;
+
+        struct Context {
+            const DynamicLock<ReadSignalsLock> &lock;
+            const SignalExpression &expr;
+            Storage &cache;
+            const EventData &input;
+
+            Context(const DynamicLock<ReadSignalsLock> &lock,
+                const SignalExpression &expr,
+                Storage &cache,
+                const EventData &input)
+                : lock(lock), expr(expr), cache(cache), input(input) {}
+        };
+        using CompiledFunc = double (*)(const Context &, const Node &, size_t);
+
         struct ConstantNode {
             double value = 0.0f;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const ConstantNode &) const = default;
         };
         struct IdentifierNode {
             StructField field;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const IdentifierNode &) const = default;
         };
         struct SignalNode {
             SignalRef signal;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const SignalNode &) const = default;
         };
         struct ComponentNode {
@@ -44,32 +66,42 @@ namespace ecs {
             const ComponentBase *component;
             StructField field;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const ComponentNode &) const = default;
         };
         struct FocusCondition {
             FocusLayer ifFocused;
             int inputIndex = -1;
+            CompiledFunc inputFunc = nullptr;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const FocusCondition &) const = default;
         };
         struct OneInputOperation {
             int inputIndex = -1;
             double (*evaluate)(double) = nullptr;
+            CompiledFunc inputFunc = nullptr;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const OneInputOperation &) const = default;
         };
         struct TwoInputOperation {
             int inputIndexA = -1;
             int inputIndexB = -1;
             double (*evaluate)(double, double) = nullptr;
+            CompiledFunc inputFuncA = nullptr;
+            CompiledFunc inputFuncB = nullptr;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const TwoInputOperation &) const = default;
         };
         struct DeciderOperation {
             int ifIndex = -1;
             int trueIndex = -1;
             int falseIndex = -1;
+            CompiledFunc ifFunc = nullptr;
 
+            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const DeciderOperation &) const = default;
         };
 
@@ -84,14 +116,18 @@ namespace ecs {
         struct Node : public NodeVariant {
             size_t startToken = 0;
             size_t endToken = 0;
+            size_t index = std::numeric_limits<size_t>::max();
+            CompiledFunc evaluate = nullptr;
 
             template<typename T>
-            Node(T &&arg, size_t startToken, size_t endToken)
-                : NodeVariant(arg), startToken(startToken), endToken(endToken) {}
+            Node(T &&arg, size_t startToken, size_t endToken, size_t index)
+                : NodeVariant(arg), startToken(startToken), endToken(endToken), index(index) {}
+
+            CompiledFunc compile(SignalExpression &expr);
         };
 
         // Called automatically by constructor. Should be called when expression string is changed.
-        bool Parse();
+        bool Compile();
 
         template<typename LockType>
         bool CanEvaluate(const LockType &lock, size_t depth = 0) const {

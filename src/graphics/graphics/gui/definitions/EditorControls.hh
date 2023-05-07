@@ -263,7 +263,7 @@ namespace sp {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
         }
         bool changed = ImGui::InputText(name.c_str(), &value.expr);
-        if (changed) value.Parse();
+        if (changed) value.Compile();
         if (borderEnable) {
             ImGui::PopStyleVar();
             ImGui::PopStyleColor();

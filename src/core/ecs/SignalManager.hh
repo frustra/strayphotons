@@ -9,7 +9,6 @@
 #include "ecs/components/Name.hh"
 #include "ecs/components/Signals.hh"
 
-#include <atomic>
 #include <limits>
 #include <memory>
 
@@ -35,12 +34,10 @@ namespace ecs {
 
     struct SignalRef::Ref {
         SignalKey signal;
-        std::atomic_size_t liveIndex;
-        std::atomic_size_t stagingIndex;
+        size_t liveIndex = std::numeric_limits<size_t>::max();
+        size_t stagingIndex = std::numeric_limits<size_t>::max();
 
-        Ref(const SignalKey &signal)
-            : signal(signal), liveIndex(std::numeric_limits<size_t>::max()),
-              stagingIndex(std::numeric_limits<size_t>::max()) {}
+        Ref(const SignalKey &signal) : signal(signal) {}
     };
 
     SignalManager &GetSignalManager();

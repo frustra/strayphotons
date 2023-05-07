@@ -2,7 +2,6 @@
 
 #include "ecs/Ecs.hh"
 
-#include <atomic>
 #include <memory>
 #include <string_view>
 
@@ -23,9 +22,9 @@ namespace ecs {
         SignalRef(const SignalRef &ref) : ptr(ref.ptr) {}
         SignalRef(const std::shared_ptr<Ref> &ptr) : ptr(ptr) {}
 
-        std::atomic_size_t &GetIndex(const Lock<> &lock) const;
-        std::atomic_size_t &GetLiveIndex() const;
-        std::atomic_size_t &GetStagingIndex() const;
+        size_t &GetIndex(const Lock<> &lock) const;
+        size_t &GetLiveIndex() const;
+        size_t &GetStagingIndex() const;
 
         const EntityRef &GetEntity() const;
         const std::string &GetSignalName() const;

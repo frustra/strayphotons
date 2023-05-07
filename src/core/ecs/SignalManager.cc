@@ -76,8 +76,8 @@ namespace ecs {
                 auto lock = ecs::StartStagingTransaction<Write<Signals>>();
                 auto &signals = lock.Get<Signals>();
                 for (auto &refPtr : refsToFree) {
-                    auto index = refPtr->stagingIndex.exchange(std::numeric_limits<size_t>::max());
-                    signals.FreeSignal(index);
+                    signals.FreeSignal(refPtr->stagingIndex);
+                    refPtr->stagingIndex = std::numeric_limits<size_t>::max();
                 }
             }
             {
@@ -85,8 +85,8 @@ namespace ecs {
                 auto lock = ecs::StartTransaction<Write<Signals>>();
                 auto &signals = lock.Get<Signals>();
                 for (auto &refPtr : refsToFree) {
-                    auto index = refPtr->liveIndex.exchange(std::numeric_limits<size_t>::max());
-                    signals.FreeSignal(index);
+                    signals.FreeSignal(refPtr->liveIndex);
+                    refPtr->liveIndex = std::numeric_limits<size_t>::max();
                 }
             }
         }

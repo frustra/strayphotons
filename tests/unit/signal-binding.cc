@@ -179,6 +179,7 @@ namespace SignalBindingTests {
             val = ecs::SignalRef(player, TEST_SIGNAL_ACTION3).GetSignal(lock);
             AssertEqual(val, 1.8, "Expected signal to match complex expression");
             val = ecs::SignalRef(player, TEST_SIGNAL_ACTION4).GetSignal(lock);
+            // NaN and Inf values are converted to 0 to prevent poisoning all signals
             AssertEqual(val, 13.0 / 3.0, "Expected signal to match constants expression");
             val = ecs::SignalRef(player, TEST_SIGNAL_ACTION5).GetSignal(lock);
             AssertEqual(val, 42.0, "Expected signal to match trig expression");

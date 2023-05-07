@@ -3,7 +3,6 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
 
-#include <atomic>
 #include <limits>
 
 namespace ecs {
@@ -17,7 +16,7 @@ namespace ecs {
         ptr = GetSignalManager().GetRef(str, scope).ptr;
     }
 
-    std::atomic_size_t &SignalRef::GetIndex(const Lock<> &lock) const {
+    size_t &SignalRef::GetIndex(const Lock<> &lock) const {
         if (IsLive(lock)) {
             return GetLiveIndex();
         } else if (IsStaging(lock)) {
@@ -27,12 +26,12 @@ namespace ecs {
         }
     }
 
-    std::atomic_size_t &SignalRef::GetLiveIndex() const {
+    size_t &SignalRef::GetLiveIndex() const {
         Assert(ptr, "SignalRef::GetLiveIndex() called on null SignalRef");
         return ptr->liveIndex;
     }
 
-    std::atomic_size_t &SignalRef::GetStagingIndex() const {
+    size_t &SignalRef::GetStagingIndex() const {
         Assert(ptr, "SignalRef::GetStagingIndex() called on null SignalRef");
         return ptr->stagingIndex;
     }
@@ -56,10 +55,9 @@ namespace ecs {
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
         auto &signals = lock.Get<Signals>();
-        auto &index = GetIndex(lock);
-        size_t i = index.load();
-        if (i < signals.signals.size()) {
-            auto &signal = signals.signals[i];
+        size_t &index = GetIndex(lock);
+        if (index < signals.signals.size()) {
+            auto &signal = signals.signals[index];
             signal.value = value;
             signal.ref = *this;
         } else {
@@ -70,7 +68,7 @@ namespace ecs {
     void SignalRef::ClearValue(const Lock<Write<Signals>> &lock) const {
         Assertf(ptr, "SignalRef::ClearValue() called on null SignalRef");
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return; // Noop
 
         auto &signal = signals[index];
@@ -81,7 +79,7 @@ namespace ecs {
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return false;
 
         return !std::isinf(signals[index].value);
@@ -91,7 +89,7 @@ namespace ecs {
         static const double empty = 0.0;
         if (!ptr) return empty;
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return empty;
 
         return signals[index].value;
@@ -101,11 +99,10 @@ namespace ecs {
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
         if (!expr) return ClearBinding(lock);
         auto &signals = lock.Get<Signals>();
-        auto &index = GetIndex(lock);
-        size_t i = index.load();
+        size_t &index = GetIndex(lock);
 
-        if (i < signals.signals.size()) {
-            auto &signal = signals.signals[i];
+        if (index < signals.signals.size()) {
+            auto &signal = signals.signals[index];
             signal.expr = expr;
             signal.ref = *this;
         } else {
@@ -122,7 +119,7 @@ namespace ecs {
     void SignalRef::ClearBinding(const Lock<Write<Signals>> &lock) const {
         Assertf(ptr, "SignalRef::ClearBinding() called on null SignalRef");
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return; // Noop
 
         auto &signal = signals[index];
@@ -133,7 +130,7 @@ namespace ecs {
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return false;
 
         return (bool)signals[index].expr;
@@ -143,24 +140,21 @@ namespace ecs {
         static const SignalExpression empty = {};
         if (!ptr) return empty;
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return empty;
 
         return signals[index].expr;
     }
 
     double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        ZoneNamedN(tracyCtx1, "SignalRef::GetSignal", true);
+        ZoneScoped;
         if (!ptr) return 0.0;
         auto &signals = lock.Get<Signals>().signals;
-        size_t index = GetIndex(lock);
+        const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return 0.0;
-
-        ZoneNamedN(tracyCtx2, "SignalRef::GetSignalLookup", true);
 
         auto &signal = signals[index];
         if (!std::isinf(signal.value)) return signal.value;
-        ZoneNamedN(tracyCtx3, "SignalRef::GetSignalEval", true);
         return signal.expr.Evaluate(lock, depth);
     }
 
