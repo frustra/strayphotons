@@ -676,7 +676,7 @@ namespace sp {
                                 followFocusPos = signalNameCursorPos;
                             }
 
-                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef, this](auto &lock) {
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef](auto &lock) {
                                 if (ref.HasValue(lock)) {
                                     newRef.SetValue(lock, ref.GetValue(lock));
                                     ref.ClearValue(lock);
