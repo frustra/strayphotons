@@ -76,7 +76,13 @@ namespace ecs {
     }
 
     int SignalExpression::parseNode(size_t &tokenIndex, uint8_t precedence) {
-        if (tokenIndex >= tokens.size()) {
+        if (tokens.empty() && tokenIndex == 0) {
+            // Treat an empty string as a constant 0.0
+            int index = nodes.size();
+            nodes.emplace_back(SignalExpression::ConstantNode{0.0}, 0, 0, index);
+            nodeStrings.emplace_back("0.0");
+            return index;
+        } else if (tokenIndex >= tokens.size()) {
             Errorf("Failed to parse signal expression, unexpected end of expression: %s", expr);
             return -1;
         }
@@ -714,6 +720,8 @@ namespace ecs {
                 nodes.size(),
                 MAX_SIGNAL_EXPRESSION_NODES,
                 expr);
+            nodes.clear();
+            nodeStrings.clear();
             return false;
         }
 

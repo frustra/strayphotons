@@ -206,7 +206,7 @@ namespace sp {
                         binding.Evaluate(lock),
                         binding.nodeStrings[binding.rootIndex]);
                 } else {
-                    Logf("  %s = nil", signal.String());
+                    Logf("  %s = 0.0 (unset)", signal.String());
                 }
             }
         });

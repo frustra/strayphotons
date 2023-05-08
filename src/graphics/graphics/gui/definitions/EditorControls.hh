@@ -257,7 +257,7 @@ namespace sp {
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::SignalExpression &value) {
-        bool borderEnable = !value && !value.expr.empty();
+        bool borderEnable = !value;
         if (borderEnable) {
             ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
@@ -711,9 +711,11 @@ namespace sp {
                     } else {
                         ecs::SignalExpression expression = ref.GetBinding(lock);
                         if (AddImGuiElement("##SignalBinding." + ref.GetSignalName(), expression)) {
-                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, expression](auto &lock) {
-                                ref.SetBinding(lock, expression);
-                            });
+                            if (expression) {
+                                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, expression](auto &lock) {
+                                    ref.SetBinding(lock, expression);
+                                });
+                            }
                         }
                     }
 

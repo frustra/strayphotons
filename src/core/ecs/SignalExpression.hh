@@ -147,8 +147,16 @@ namespace ecs {
             return expr == other.expr && scope == other.scope;
         }
 
+        // True if the expression is valid and can be evaluated.
+        // An empty expression is valid and evaluates to 0.
         explicit operator bool() const {
-            return !expr.empty() && rootIndex >= 0 && rootIndex < nodes.size();
+            return rootIndex >= 0 && rootIndex < nodes.size();
+        }
+
+        // Returns true if this expression is default constructed.
+        // Both empty expressions and invalid expressions are considered set (not null).
+        bool IsNull() const {
+            return expr.empty() && rootIndex < 0;
         }
 
         EntityScope scope;

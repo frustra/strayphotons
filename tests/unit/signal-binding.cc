@@ -16,6 +16,7 @@ namespace SignalBindingTests {
     const std::string TEST_SIGNAL_ACTION5 = "test-action5";
     const std::string TEST_SIGNAL_ACTION6 = "test-action6";
     const std::string TEST_SIGNAL_ACTION7 = "test-action7";
+    const std::string TEST_SIGNAL_ACTION8 = "test-action8";
 
     void TrySetSignals() {
         Tecs::Entity player, hand, unknown;
@@ -49,20 +50,34 @@ namespace SignalBindingTests {
             ecs::SignalRef(player, TEST_SIGNAL_ACTION6).SetBinding(lock, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
             ecs::SignalRef(player, TEST_SIGNAL_ACTION7)
                 .SetBinding(lock, "! 10 + 1 || !player/device2_key != !0", ecs::Name("player", ""));
+            ecs::SignalRef(player, TEST_SIGNAL_ACTION8).SetBinding(lock, "");
 
             // Test a bunch of invalid expressions to make sure they don't crash the parser
             ecs::SignalRef testRef(player, "test");
-            testRef.SetBinding(lock, "cos(");
-            testRef.SetBinding(lock, "max(signal,");
-            testRef.SetBinding(lock, "-");
-            testRef.SetBinding(lock, "50 10");
-            testRef.SetBinding(lock, "42 max(5, 2)");
-            testRef.SetBinding(lock, "(hello) world");
-            testRef.SetBinding(lock, "1 + (");
-            testRef.SetBinding(lock, ")");
-            testRef.SetBinding(lock, "()");
-            testRef.SetBinding(lock, "sin()");
-            testRef.SetBinding(lock, "");
+            static const std::array invalidTestExpressions = {
+                "cos(",
+                "max(signal,",
+                "-",
+                "50 10",
+                "42 max(5, 2)",
+                "(hello) world",
+                "1 + (",
+                ")",
+                "()",
+                "sin()",
+            };
+            for (auto &exprString : invalidTestExpressions) {
+                auto &expr = testRef.SetBinding(lock, exprString);
+                Assertf(!expr, "Expected expression to be invalid: %s", exprString);
+                AssertEqual(expr.expr, exprString, "Expected expression to be set");
+            }
+            std::string exprStr = "1";
+            for (int i = 0; i < ecs::MAX_SIGNAL_EXPRESSION_NODES; i++) {
+                exprStr += " + 1";
+            }
+            auto &expr = testRef.SetBinding(lock, exprStr);
+            Assertf(!expr, "Expected expression node overflow to be invalid: %u", expr.nodes.size());
+            AssertEqual(expr.expr, exprStr, "Expected expression to be set");
             testRef.ClearBinding(lock);
 
             ecs::SignalRef(player, "test_fib")
@@ -79,6 +94,7 @@ namespace SignalBindingTests {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Signals>>();
 
             auto &expr1 = ecs::SignalRef(player, TEST_SIGNAL_ACTION1).GetBinding(lock);
+            Assert((bool)expr1, "Expected expression to be valid");
             AssertEqual(expr1.expr, "player/device2_key", "Expected expression to be set");
             AssertEqual(expr1.nodes.size(), 1u, "Expected a single expression node");
             AssertEqual(expr1.rootIndex, 0, "Expected expression root node to be 0");
@@ -87,6 +103,7 @@ namespace SignalBindingTests {
                 "Expected expression node to be signal");
 
             auto &expr2 = ecs::SignalRef(player, TEST_SIGNAL_ACTION2).GetBinding(lock);
+            Assert((bool)expr2, "Expected expression to be valid");
             AssertEqual(expr2.expr, "player/device2_key + player/device1_button", "Expected expression to be set");
             AssertEqual(expr2.nodes.size(), 3u, "Expected 3 expression nodes");
             AssertEqual(expr2.rootIndex, 2, "Expected expression root node to be 2");
@@ -102,7 +119,17 @@ namespace SignalBindingTests {
             AssertTrue(std::holds_alternative<ecs::SignalExpression::TwoInputOperation>(expr2.nodes[2]),
                 "Expected expression node to an add operator");
 
+            auto &expr3 = ecs::SignalRef(hand, TEST_SIGNAL_ACTION3).GetBinding(lock);
+            Assert((bool)expr3, "Expected expression to be valid");
+            AssertEqual(expr3.expr, "foo:unknown/device1_button", "Expected expression to be set");
+            AssertEqual(expr3.nodes.size(), 1u, "Expected a single expression node");
+            AssertEqual(expr3.rootIndex, 0, "Expected expression root node to be 0");
+            AssertEqual(expr3.nodeStrings[0], "foo:unknown/device1_button", "Unexpected expression node");
+            AssertTrue(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
+                "Expected expression node to be signal");
+
             auto &expr4 = ecs::SignalRef(player, TEST_SIGNAL_ACTION4).GetBinding(lock);
+            Assert((bool)expr4, "Expected expression to be valid");
             AssertEqual(expr4.expr, "3 +4 *2 /(1 - -5)+1 /0");
             AssertEqual(expr4.nodes.size(), 13u, "Expected 13 expression nodes");
             AssertEqual(expr4.rootIndex, 12, "Expected expression root node to be 12");
@@ -111,6 +138,7 @@ namespace SignalBindingTests {
                 "Unexpected expression node");
 
             auto &expr5 = ecs::SignalRef(player, TEST_SIGNAL_ACTION5).GetBinding(lock);
+            Assert((bool)expr5, "Expected expression to be valid");
             AssertEqual(expr5.expr, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
             AssertEqual(expr5.nodes.size(), 13u, "Expected 13 expression nodes");
             AssertEqual(expr5.rootIndex, 12, "Expected expression root node to be 12");
@@ -119,6 +147,7 @@ namespace SignalBindingTests {
                 "Unexpected expression node");
 
             auto &expr6 = ecs::SignalRef(player, TEST_SIGNAL_ACTION6).GetBinding(lock);
+            Assert((bool)expr6, "Expected expression to be valid");
             AssertEqual(expr6.expr, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
             AssertEqual(expr6.nodes.size(), 13u, "Expected 15 expression nodes with 2 optimized out");
             AssertEqual(expr6.rootIndex, 12, "Expected expression root node to be 14");
@@ -127,6 +156,7 @@ namespace SignalBindingTests {
                 "Unexpected expression node");
 
             auto &expr7 = ecs::SignalRef(player, TEST_SIGNAL_ACTION7).GetBinding(lock);
+            Assert((bool)expr7, "Expected expression to be valid");
             AssertEqual(expr7.expr, "! 10 + 1 || !player/device2_key != !0");
             AssertEqual(expr7.nodes.size(), 8u, "Expected 8 expression nodes");
             AssertEqual(expr7.rootIndex, 7, "Expected expression root node to be 7");
@@ -134,13 +164,18 @@ namespace SignalBindingTests {
                 "!10 + 1 || !player:player/device2_key != 1",
                 "Unexpected expression node");
 
-            auto &expr3 = ecs::SignalRef(hand, TEST_SIGNAL_ACTION3).GetBinding(lock);
-            AssertEqual(expr3.expr, "foo:unknown/device1_button", "Expected expression to be set");
-            AssertEqual(expr3.nodes.size(), 1u, "Expected a single expression node");
-            AssertEqual(expr3.rootIndex, 0, "Expected expression root node to be 0");
-            AssertEqual(expr3.nodeStrings[0], "foo:unknown/device1_button", "Unexpected expression node");
-            AssertTrue(std::holds_alternative<ecs::SignalExpression::SignalNode>(expr3.nodes[0]),
-                "Expected expression node to be signal");
+            auto &expr8 = ecs::SignalRef(player, TEST_SIGNAL_ACTION8).GetBinding(lock);
+            Assert((bool)expr8, "Expected expression to be valid");
+            AssertEqual(expr8.expr, "");
+            AssertEqual(expr8.nodes.size(), 1u, "Expected 1 expression node");
+            AssertEqual(expr8.rootIndex, 0, "Expected expression root node to be 0");
+            AssertEqual(expr8.nodeStrings[expr8.rootIndex], "0.0", "Unexpected expression node");
+
+            ecs::SignalExpression emptyExpr;
+            Assert(!emptyExpr, "Expected expression to be invalid");
+            AssertEqual(emptyExpr.expr, "", "Expected expression to be empty");
+            AssertEqual(emptyExpr.nodes.size(), 0u, "Expected 0 expression nodes");
+            AssertEqual(emptyExpr.rootIndex, -1, "Expected expression root node to be -1");
         }
         {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();

@@ -51,7 +51,7 @@ namespace ecs {
         return ptr->signal.String();
     }
 
-    void SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
+    double &SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
         auto &signals = lock.Get<Signals>();
@@ -60,8 +60,10 @@ namespace ecs {
             auto &signal = signals.signals[index];
             signal.value = value;
             signal.ref = *this;
+            return signal.value;
         } else {
             index = signals.NewSignal(*this, value);
+            return signals.signals[index].value;
         }
     }
 
@@ -73,7 +75,7 @@ namespace ecs {
 
         auto &signal = signals[index];
         signal.value = -std::numeric_limits<double>::infinity();
-        if (!signal.expr) signal.ref = {};
+        if (signal.expr.IsNull()) signal.ref = {};
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
@@ -95,9 +97,9 @@ namespace ecs {
         return signals[index].value;
     }
 
-    void SignalRef::SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &expr) const {
+    SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &expr) const {
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
-        if (!expr) return ClearBinding(lock);
+        Assertf(!expr.IsNull(), "SignalRef::SetBinding() called with null SignalExpression");
         auto &signals = lock.Get<Signals>();
         size_t &index = GetIndex(lock);
 
@@ -105,15 +107,17 @@ namespace ecs {
             auto &signal = signals.signals[index];
             signal.expr = expr;
             signal.ref = *this;
+            return signal.expr;
         } else {
             index = signals.NewSignal(*this, expr);
+            return signals.signals[index].expr;
         }
     }
 
-    void SignalRef::SetBinding(const Lock<Write<Signals>> &lock,
+    SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>> &lock,
         const std::string_view &expr,
         const EntityScope &scope) const {
-        SetBinding(lock, SignalExpression{expr, scope});
+        return SetBinding(lock, SignalExpression{expr, scope});
     }
 
     void SignalRef::ClearBinding(const Lock<Write<Signals>> &lock) const {
@@ -133,7 +137,7 @@ namespace ecs {
         const size_t &index = GetIndex(lock);
         if (index >= signals.size()) return false;
 
-        return (bool)signals[index].expr;
+        return !signals[index].expr.IsNull();
     }
 
     const SignalExpression &SignalRef::GetBinding(const Lock<Read<Signals>> &lock) const {

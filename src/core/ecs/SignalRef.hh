@@ -31,12 +31,12 @@ namespace ecs {
 
         std::string String() const;
 
-        void SetValue(const Lock<Write<Signals>> &lock, double value) const;
+        double &SetValue(const Lock<Write<Signals>> &lock, double value) const;
         void ClearValue(const Lock<Write<Signals>> &lock) const;
         bool HasValue(const Lock<Read<Signals>> &lock) const;
         const double &GetValue(const Lock<Read<Signals>> &lock) const;
-        void SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &signal) const;
-        void SetBinding(const Lock<Write<Signals>> &lock,
+        SignalExpression &SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &signal) const;
+        SignalExpression &SetBinding(const Lock<Write<Signals>> &lock,
             const std::string_view &expr,
             const EntityScope &scope = Name()) const;
         void ClearBinding(const Lock<Write<Signals>> &lock) const;
