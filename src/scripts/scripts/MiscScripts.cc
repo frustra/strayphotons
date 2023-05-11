@@ -239,7 +239,7 @@ namespace sp::scripts {
         robin_hood::unordered_map<std::string, SignalExpression> mapping;
 
         template<typename LockType>
-        void updateComponentFromSignal(LockType lock, Entity ent) {
+        void updateComponentFromSignal(const LockType &lock, Entity ent) {
             for (auto &[fieldPath, signalExpr] : mapping) {
                 size_t delimiter = fieldPath.find('.');
                 if (delimiter == std::string::npos) {
@@ -298,12 +298,12 @@ namespace sp::scripts {
         size_t frameCount = 0;
 
         template<typename LockType>
-        void updateSignal(LockType lock, Entity ent, chrono_clock::duration interval) {
+        void updateSignal(const LockType &lock, Entity ent, chrono_clock::duration interval) {
             if (output.empty()) return;
 
             SignalRef ref(ent, output);
             if (!lastSignal || !ref.HasValue(lock)) {
-                lastSignal = ref.GetValue(lock);
+                lastSignal = ref.GetSignal(lock);
                 ref.SetValue(lock, *lastSignal);
             }
             auto currentInput = input.Evaluate(lock);

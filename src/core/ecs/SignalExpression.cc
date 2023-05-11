@@ -749,7 +749,7 @@ namespace ecs {
                     node.inputFuncB = expr.nodes[node.inputIndexB].compile(expr);
                 } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
                     node.ifFunc = expr.nodes[node.ifIndex].compile(expr);
-                    // Branches call the taret node directly, so no cache is used
+                    // TODO: Taking the false branch can reference uninitialized cache values set during true branch
                     expr.nodes[node.trueIndex].compile(expr);
                     expr.nodes[node.falseIndex].compile(expr);
                 }

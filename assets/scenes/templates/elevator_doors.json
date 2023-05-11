@@ -61,13 +61,11 @@
 			"signal_bindings": {
 				"left_requested": "(station-center:elevator1/up_requested && scoperoot/floor == 0) || (station-center:elevator1/down_requested && scoperoot/floor == 3)",
 				"right_requested": "(station-center:elevator2/up_requested && scoperoot/floor == 0) || (station-center:elevator2/down_requested && scoperoot/floor == 3)",
-				"left_target_distance": "abs(station-center:elevator1/animation_target - scoperoot/floor)",
-				"left_state_distance": "abs(station-center:elevator1/animation_state - scoperoot/floor)",
-				"right_target_distance": "abs(station-center:elevator2/animation_target - scoperoot/floor)",
-				"right_state_distance": "abs(station-center:elevator2/animation_state - scoperoot/floor)",
-				"left_is_closest": "call_button/left_target_distance < call_button/right_target_distance || (call_button/left_target_distance == call_button/right_target_distance && call_button/left_state_distance < call_button/right_state_distance)",
-				"right_is_closest": "call_button/right_target_distance < call_button/left_target_distance || (call_button/left_target_distance == call_button/right_target_distance && call_button/right_state_distance < call_button/left_state_distance)",
-				"light": "call_button/button_pressed || call_button/left_requested || call_button/right_requested"
+				"light": "call_button/button_pressed || call_button/left_requested || call_button/right_requested",
+				"left_travel_distance": "abs(station-center:elevator1/animation_target - station-center:elevator1/animation_state) + abs(station-center:elevator1/animation_target - scoperoot/floor)",
+				"right_travel_distance": "abs(station-center:elevator2/animation_target - station-center:elevator2/animation_state) + abs(station-center:elevator2/animation_target - scoperoot/floor)",
+				"left_is_closest": "call_button/left_travel_distance <= call_button/right_travel_distance",
+				"right_is_closest": "call_button/right_travel_distance < call_button/left_travel_distance"
 			},
 			"script": {
 				"prefab": "template",
