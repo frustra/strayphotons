@@ -17,6 +17,7 @@ namespace SignalBindingTests {
     const std::string TEST_SIGNAL_ACTION6 = "test-action6";
     const std::string TEST_SIGNAL_ACTION7 = "test-action7";
     const std::string TEST_SIGNAL_ACTION8 = "test-action8";
+    const std::string TEST_SIGNAL_ACTION9 = "test-action9";
 
     void TrySetSignals() {
         Tecs::Entity player, hand, unknown;
@@ -50,7 +51,9 @@ namespace SignalBindingTests {
             ecs::SignalRef(player, TEST_SIGNAL_ACTION6).SetBinding(lock, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
             ecs::SignalRef(player, TEST_SIGNAL_ACTION7)
                 .SetBinding(lock, "! 10 + 1 || !player/device2_key != !0", ecs::Name("player", ""));
-            ecs::SignalRef(player, TEST_SIGNAL_ACTION8).SetBinding(lock, "");
+            ecs::SignalRef(player, TEST_SIGNAL_ACTION8)
+                .SetBinding(lock, "0 != 0.0 ? (1 ? 1 : (3 + 0.14)) : (3 + 0.14)");
+            ecs::SignalRef(player, TEST_SIGNAL_ACTION9).SetBinding(lock, "");
 
             // Test a bunch of invalid expressions to make sure they don't crash the parser
             ecs::SignalRef testRef(player, "test");
@@ -166,10 +169,26 @@ namespace SignalBindingTests {
 
             auto &expr8 = ecs::SignalRef(player, TEST_SIGNAL_ACTION8).GetBinding(lock);
             Assert((bool)expr8, "Expected expression to be valid");
-            AssertEqual(expr8.expr, "");
-            AssertEqual(expr8.nodes.size(), 1u, "Expected 1 expression node");
-            AssertEqual(expr8.rootIndex, 0, "Expected expression root node to be 0");
-            AssertEqual(expr8.nodeStrings[expr8.rootIndex], "0.0", "Unexpected expression node");
+            AssertEqual(expr8.expr, "0 != 0.0 ? (1 ? 1 : (3 + 0.14)) : (3 + 0.14)");
+            AssertEqual(expr8.nodes.size(), 8u, "Expected 8 expression node");
+            AssertEqual(expr8.rootIndex, 7, "Expected expression root node to be 0");
+            AssertEqual(expr8.nodeStrings[0], "0", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[1], "0 != 0", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[2], "1", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[3], "3", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[4], "0.14", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[5], "( ( 3 + 0.14 ) )", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[6], "( 1 ? 1 : ( 3 + 0.14 ) )", "Unexpected expression node");
+            AssertEqual(expr8.nodeStrings[7],
+                "0 != 0 ? ( 1 ? 1 : ( 3 + 0.14 ) ) : ( ( 3 + 0.14 ) )",
+                "Unexpected expression node");
+
+            auto &expr9 = ecs::SignalRef(player, TEST_SIGNAL_ACTION9).GetBinding(lock);
+            Assert((bool)expr9, "Expected expression to be valid");
+            AssertEqual(expr9.expr, "");
+            AssertEqual(expr9.nodes.size(), 1u, "Expected 1 expression node");
+            AssertEqual(expr9.rootIndex, 0, "Expected expression root node to be 0");
+            AssertEqual(expr9.nodeStrings[expr9.rootIndex], "0.0", "Unexpected expression node");
 
             ecs::SignalExpression emptyExpr;
             Assert(!emptyExpr, "Expected expression to be invalid");
@@ -222,6 +241,10 @@ namespace SignalBindingTests {
             AssertEqual(val, 1.0, "Expected signal to match comparison expression");
             val = ecs::SignalRef(player, TEST_SIGNAL_ACTION7).GetSignal(lock);
             AssertEqual(val, 1.0, "Expected signal to match comparison expression");
+            val = ecs::SignalRef(player, TEST_SIGNAL_ACTION8).GetSignal(lock);
+            AssertEqual(val, 3.14, "Expected signal to match comparison expression");
+            val = ecs::SignalRef(player, TEST_SIGNAL_ACTION9).GetSignal(lock);
+            AssertEqual(val, 0.0, "Expected signal to match comparison expression");
             val = ecs::SignalRef(player, "foo").GetSignal(lock);
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");
 

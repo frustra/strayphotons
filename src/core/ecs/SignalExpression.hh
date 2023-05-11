@@ -100,6 +100,8 @@ namespace ecs {
             int trueIndex = -1;
             int falseIndex = -1;
             CompiledFunc ifFunc = nullptr;
+            CompiledFunc trueFunc = nullptr;
+            CompiledFunc falseFunc = nullptr;
 
             static double Evaluate(const Context &ctx, const Node &node, size_t depth);
             bool operator==(const DeciderOperation &) const = default;
@@ -123,7 +125,7 @@ namespace ecs {
             Node(T &&arg, size_t startToken, size_t endToken, size_t index)
                 : NodeVariant(arg), startToken(startToken), endToken(endToken), index(index) {}
 
-            CompiledFunc compile(SignalExpression &expr);
+            CompiledFunc compile(SignalExpression &expr, bool noCacheWrite);
         };
 
         // Called automatically by constructor. Should be called when expression string is changed.

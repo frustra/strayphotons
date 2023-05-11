@@ -726,7 +726,7 @@ namespace ecs {
         }
 
         // Compile the parsed expression tree into a lambda function
-        nodes[rootIndex].compile(*this);
+        nodes[rootIndex].compile(*this, false);
         Assertf(nodes[rootIndex].evaluate, "Failed to compile expression: %s", expr);
         return true;
     }
@@ -735,32 +735,38 @@ namespace ecs {
         return ctx.cache[node.index];
     }
 
-    SignalExpression::CompiledFunc SignalExpression::Node::compile(SignalExpression &expr) {
+    SignalExpression::CompiledFunc SignalExpression::Node::compile(SignalExpression &expr, bool noCacheWrite) {
         return std::visit(
             [&](auto &node) {
                 using T = std::decay_t<decltype(node)>;
 
-                if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
-                    node.inputFunc = node.inputIndex >= 0 ? expr.nodes[node.inputIndex].compile(expr) : &T::Evaluate;
-                } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
-                    node.inputFunc = expr.nodes[node.inputIndex].compile(expr);
-                } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
-                    node.inputFuncA = expr.nodes[node.inputIndexA].compile(expr);
-                    node.inputFuncB = expr.nodes[node.inputIndexB].compile(expr);
-                } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
-                    node.ifFunc = expr.nodes[node.ifIndex].compile(expr);
-                    // TODO: Taking the false branch can reference uninitialized cache values set during true branch
-                    expr.nodes[node.trueIndex].compile(expr);
-                    expr.nodes[node.falseIndex].compile(expr);
-                }
-
                 if (evaluate) {
                     return &cacheLookup;
                 } else {
-                    evaluate = [](const Context &ctx, const Node &node, size_t depth) {
-                        return (ctx.cache[node.index] = T::Evaluate(ctx, node, depth));
-                    };
-                    return evaluate;
+                    if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
+                        // Force no cache writes for branching nodes
+                        node.inputFunc = node.inputIndex >= 0 ? expr.nodes[node.inputIndex].compile(expr, true)
+                                                              : nullptr;
+                    } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
+                        node.inputFunc = expr.nodes[node.inputIndex].compile(expr, noCacheWrite);
+                    } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
+                        node.inputFuncA = expr.nodes[node.inputIndexA].compile(expr, noCacheWrite);
+                        node.inputFuncB = expr.nodes[node.inputIndexB].compile(expr, noCacheWrite);
+                    } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
+                        node.ifFunc = expr.nodes[node.ifIndex].compile(expr, noCacheWrite);
+                        // Force no cache writes for branching nodes
+                        node.trueFunc = expr.nodes[node.trueIndex].compile(expr, true);
+                        node.falseFunc = expr.nodes[node.falseIndex].compile(expr, true);
+                    }
+
+                    if (noCacheWrite) {
+                        return &T::Evaluate;
+                    } else {
+                        evaluate = [](const Context &ctx, const Node &node, size_t depth) {
+                            return (ctx.cache[node.index] = T::Evaluate(ctx, node, depth));
+                        };
+                        return evaluate;
+                    }
                 }
             },
             (SignalExpression::NodeVariant &)*this);
@@ -862,10 +868,10 @@ namespace ecs {
         auto &inputIfNode = ctx.expr.nodes[opNode.ifIndex];
         if (opNode.ifFunc(ctx, inputIfNode, depth) >= 0.5) {
             auto &inputTrueNode = ctx.expr.nodes[opNode.trueIndex];
-            return inputTrueNode.evaluate(ctx, inputTrueNode, depth);
+            return opNode.trueFunc(ctx, inputTrueNode, depth);
         } else {
             auto &inputFalseNode = ctx.expr.nodes[opNode.falseIndex];
-            return inputFalseNode.evaluate(ctx, inputFalseNode, depth);
+            return opNode.falseFunc(ctx, inputFalseNode, depth);
         }
     }
 
