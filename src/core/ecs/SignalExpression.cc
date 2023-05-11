@@ -9,18 +9,6 @@
 #include "ecs/SignalStructAccess.hh"
 
 namespace ecs {
-    std::pair<ecs::Name, std::string> ParseSignalString(std::string_view str, const EntityScope &scope) {
-        size_t delimiter = str.find('/');
-        ecs::Name entityName(str.substr(0, delimiter), scope);
-        if (entityName) {
-            std::string signalName = "value";
-            if (delimiter != std::string::npos) signalName = str.substr(delimiter + 1);
-            return std::make_pair(entityName, signalName);
-        } else {
-            return std::make_pair(ecs::Name(), "");
-        }
-    }
-
     struct PrecedenceTable {
         constexpr PrecedenceTable() {
             // Right associative unary operators (-X and !X)
@@ -88,7 +76,13 @@ namespace ecs {
     }
 
     int SignalExpression::parseNode(size_t &tokenIndex, uint8_t precedence) {
-        if (tokenIndex >= tokens.size()) {
+        if (tokens.empty() && tokenIndex == 0) {
+            // Treat an empty string as a constant 0.0
+            int index = nodes.size();
+            nodes.emplace_back(SignalExpression::ConstantNode{0.0}, 0, 0, index);
+            nodeStrings.emplace_back("0.0");
+            return index;
+        } else if (tokenIndex >= tokens.size()) {
             Errorf("Failed to parse signal expression, unexpected end of expression: %s", expr);
             return -1;
         }
@@ -136,7 +130,8 @@ namespace ecs {
                 index = nodes.size();
                 nodes.emplace_back(SignalExpression::DeciderOperation{ifIndex, trueIndex, falseIndex},
                     startToken,
-                    tokenIndex);
+                    tokenIndex,
+                    index);
                 nodeStrings.emplace_back(
                     nodeStrings[ifIndex] + " ? " + nodeStrings[trueIndex] + " : " + nodeStrings[falseIndex]);
             } else if (token == "(") {
@@ -180,7 +175,8 @@ namespace ecs {
                         index = nodes.size();
                         nodes.emplace_back(SignalExpression::ConstantNode{constantNode->value * -1},
                             startToken,
-                            tokenIndex);
+                            tokenIndex,
+                            index);
                         nodeStrings.emplace_back("-" + nodeStrings[inputIndex]);
                     } else {
                         index = nodes.size();
@@ -189,7 +185,8 @@ namespace ecs {
                                                    return -input;
                                                }},
                             startToken,
-                            tokenIndex);
+                            tokenIndex,
+                            index);
                         nodeStrings.emplace_back("-" + nodeStrings[inputIndex]);
                     }
                 } else if (token == "!") {
@@ -197,7 +194,8 @@ namespace ecs {
                         index = nodes.size();
                         nodes.emplace_back(SignalExpression::ConstantNode{constantNode->value >= 0.5 ? 0.0 : 1.0},
                             startToken,
-                            tokenIndex);
+                            tokenIndex,
+                            index);
                         nodeStrings.emplace_back("!" + nodeStrings[inputIndex]);
                     } else {
                         index = nodes.size();
@@ -206,7 +204,8 @@ namespace ecs {
                                                    return input >= 0.5 ? 0.0 : 1.0;
                                                }},
                             startToken,
-                            tokenIndex);
+                            tokenIndex,
+                            index);
                         nodeStrings.emplace_back("!" + nodeStrings[inputIndex]);
                     }
                 }
@@ -258,49 +257,55 @@ namespace ecs {
                     } else {
                         Errorf("Blank focus layer specified for is_focused: %s", std::string(focusStr));
                     }
-                    nodes.emplace_back(SignalExpression::FocusCondition{focus, -1}, startToken, tokenIndex);
+                    nodes.emplace_back(SignalExpression::FocusCondition{focus, -1}, startToken, tokenIndex, index);
                 } else if (token == "sin") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) -> double {
                                                return std::sin(input);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "cos") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) -> double {
                                                return std::cos(input);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "tan") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) -> double {
                                                return std::tan(input);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "floor") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) -> double {
                                                return std::floor(input);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "ceil") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) -> double {
                                                return std::ceil(input);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "abs") {
                     nodes.emplace_back(SignalExpression::OneInputOperation{inputIndex,
                                            [](double input) -> double {
                                                return std::abs(input);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else {
                     Abortf("Invalid function token: %s", std::string(token));
                 }
@@ -367,7 +372,7 @@ namespace ecs {
                     } else {
                         Errorf("Blank focus layer specified for if_focused: %s", std::string(focusStr));
                     }
-                    nodes.emplace_back(SignalExpression::FocusCondition{focus, bIndex}, startToken, tokenIndex);
+                    nodes.emplace_back(SignalExpression::FocusCondition{focus, bIndex}, startToken, tokenIndex, index);
                 } else if (token == "min") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -375,7 +380,8 @@ namespace ecs {
                                                return std::min(a, b);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "max") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -383,7 +389,8 @@ namespace ecs {
                                                return std::max(a, b);
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else {
                     Abortf("Invalid function token: %s", std::string(token));
                 }
@@ -414,37 +421,65 @@ namespace ecs {
 
                 index = nodes.size();
                 if (token == "+") {
-                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                           bIndex,
-                                           [](double a, double b) -> double {
-                                               return a + b;
-                                           }},
+                    nodes.emplace_back(
+                        SignalExpression::TwoInputOperation{aIndex,
+                            bIndex,
+                            [](double a, double b) -> double {
+                                double result = a + b;
+                                if (!std::isfinite(result)) {
+                                    Warnf("Signal expression evaluation error: %f + %f = %f", a, b, result);
+                                    return 0.0;
+                                }
+                                return result;
+                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "-") {
-                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                           bIndex,
-                                           [](double a, double b) -> double {
-                                               return a - b;
-                                           }},
+                    nodes.emplace_back(
+                        SignalExpression::TwoInputOperation{aIndex,
+                            bIndex,
+                            [](double a, double b) -> double {
+                                double result = a - b;
+                                if (!std::isfinite(result)) {
+                                    Warnf("Signal expression evaluation error: %f - %f = %f", a, b, result);
+                                    return 0.0;
+                                }
+                                return result;
+                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "*") {
-                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                           bIndex,
-                                           [](double a, double b) -> double {
-                                               return a * b;
-                                           }},
+                    nodes.emplace_back(
+                        SignalExpression::TwoInputOperation{aIndex,
+                            bIndex,
+                            [](double a, double b) -> double {
+                                double result = a * b;
+                                if (!std::isfinite(result)) {
+                                    Warnf("Signal expression evaluation error: %f * %f = %f", a, b, result);
+                                    return 0.0;
+                                }
+                                return result;
+                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "/") {
-                    nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
-                                           bIndex,
-                                           [](double a, double b) -> double {
-                                               return a / b;
-                                           }},
+                    nodes.emplace_back(
+                        SignalExpression::TwoInputOperation{aIndex,
+                            bIndex,
+                            [](double a, double b) -> double {
+                                double result = a / b;
+                                if (!std::isfinite(result)) {
+                                    Warnf("Signal expression evaluation error: %f / %f = %f", a, b, result);
+                                    return 0.0;
+                                }
+                                return result;
+                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "&&") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -452,7 +487,8 @@ namespace ecs {
                                                return a >= 0.5 && b >= 0.5;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "||") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -460,7 +496,8 @@ namespace ecs {
                                                return a >= 0.5 || b >= 0.5;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == ">") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -468,7 +505,8 @@ namespace ecs {
                                                return a > b;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == ">=") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -476,7 +514,8 @@ namespace ecs {
                                                return a >= b;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "<") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -484,7 +523,8 @@ namespace ecs {
                                                return a < b;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "<=") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -492,7 +532,8 @@ namespace ecs {
                                                return a <= b;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "==") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -500,7 +541,8 @@ namespace ecs {
                                                return a == b;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else if (token == "!=") {
                     nodes.emplace_back(SignalExpression::TwoInputOperation{aIndex,
                                            bIndex,
@@ -508,7 +550,8 @@ namespace ecs {
                                                return a != b;
                                            }},
                         startToken,
-                        tokenIndex);
+                        tokenIndex,
+                        index);
                 } else {
                     Abortf("Invalid operator token: %s", std::string(token));
                 }
@@ -525,7 +568,8 @@ namespace ecs {
                 index = nodes.size();
                 nodes.emplace_back(SignalExpression::ConstantNode{std::stod(std::string(token))},
                     tokenIndex,
-                    tokenIndex + 1);
+                    tokenIndex + 1,
+                    index);
                 nodeStrings.emplace_back(token);
                 tokenIndex++;
             } else if (token == ")" || token == "," || token == ":") {
@@ -548,7 +592,10 @@ namespace ecs {
                     if (token == "event" || sp::starts_with(token, "event.")) {
                         auto field = GetStructField(typeid(EventData), token);
                         if (field) {
-                            nodes.emplace_back(SignalExpression::IdentifierNode{*field}, tokenIndex, tokenIndex + 1);
+                            nodes.emplace_back(SignalExpression::IdentifierNode{*field},
+                                tokenIndex,
+                                tokenIndex + 1,
+                                index);
                             nodeStrings.emplace_back(token);
                         } else {
                             Errorf("Failed to parse signal expression, unexpected identifier '%s': %s",
@@ -558,16 +605,19 @@ namespace ecs {
                         }
                     } else {
                         StructField field(std::string(token), typeid(double), 0, FieldAction::None);
-                        nodes.emplace_back(SignalExpression::IdentifierNode{field}, tokenIndex, tokenIndex + 1);
+                        nodes.emplace_back(SignalExpression::IdentifierNode{field}, tokenIndex, tokenIndex + 1, index);
                         nodeStrings.emplace_back(token);
                     }
                 } else if (token[delimiter] == '/') {
-                    ecs::Name entityName(token.substr(0, delimiter), this->scope);
-                    std::string signalName(token.substr(delimiter + 1));
-                    nodes.emplace_back(SignalExpression::SignalNode{entityName, signalName},
-                        tokenIndex,
-                        tokenIndex + 1);
-                    nodeStrings.emplace_back(entityName.String() + "/" + signalName);
+                    SignalRef signalRef(token, this->scope);
+                    if (!signalRef) {
+                        Errorf("Failed to parse signal expression, invalid signal '%s': %s",
+                            std::string(token),
+                            joinTokens(nodeStart, tokenIndex));
+                        return -1;
+                    }
+                    nodes.emplace_back(SignalExpression::SignalNode{signalRef}, tokenIndex, tokenIndex + 1, index);
+                    nodeStrings.emplace_back(signalRef.String());
                 } else if (token[delimiter] == '#') {
                     ecs::Name entityName(token.substr(0, delimiter), this->scope);
                     std::string componentPath(token.substr(delimiter + 1));
@@ -589,7 +639,8 @@ namespace ecs {
                     }
                     nodes.emplace_back(SignalExpression::ComponentNode{entityName, componentBase, *componentField},
                         tokenIndex,
-                        tokenIndex + 1);
+                        tokenIndex + 1,
+                        index);
                     nodeStrings.emplace_back(entityName.String() + "#" + componentPath);
                 } else {
                     Abortf("Unexpected delimiter: '%c' %s", token[delimiter], std::string(token));
@@ -608,20 +659,21 @@ namespace ecs {
         return deduplicateNode(index);
     }
 
-    SignalExpression::SignalExpression(const EntityRef &entity, const std::string &signalName)
-        : scope(entity.Name().scene, ""), expr(entity.Name().String() + "/" + signalName) {
-        tokens.emplace_back(expr);
-        rootIndex = nodes.size();
-        nodes.emplace_back(SignalNode{entity, signalName}, 0, 0);
-        nodeStrings.emplace_back(expr);
+    SignalExpression::SignalExpression(const SignalRef &signal) {
+        this->scope = EntityScope(signal.GetEntity().Name().scene, "");
+        this->expr = signal.String();
+        this->tokens.emplace_back(expr);
+        this->rootIndex = nodes.size();
+        this->nodes.emplace_back(SignalNode{signal}, 0, 0, this->rootIndex);
+        this->nodeStrings.emplace_back(expr);
     }
 
     SignalExpression::SignalExpression(std::string_view expr, const Name &scope) : scope(scope), expr(expr) {
-        Parse();
+        Compile();
     }
 
-    bool SignalExpression::Parse() {
-        // Tokenize the expression before parsing
+    bool SignalExpression::Compile() {
+        // Tokenize the expression
         std::string_view exprView = this->expr;
         tokens.clear();
         size_t tokenStart = 0;
@@ -652,6 +704,7 @@ namespace ecs {
         //     Debugf("  %s", std::string(token));
         // }
 
+        // Parse the expression into a deduplicated tree of nodes
         nodes.clear();
         nodeStrings.clear();
         size_t tokenIndex = 0;
@@ -661,20 +714,179 @@ namespace ecs {
             return false;
         }
         Assertf(tokenIndex == tokens.size(), "Failed to parse signal expression, incomplete parse: %s", exprView);
+
+        if (nodes.size() > MAX_SIGNAL_EXPRESSION_NODES) {
+            Errorf("Failed to parse expression, too many nodes %u > %u: %s",
+                nodes.size(),
+                MAX_SIGNAL_EXPRESSION_NODES,
+                expr);
+            nodes.clear();
+            nodeStrings.clear();
+            return false;
+        }
+
+        // Compile the parsed expression tree into a lambda function
+        nodes[rootIndex].compile(*this, false);
+        Assertf(nodes[rootIndex].evaluate, "Failed to compile expression: %s", expr);
         return true;
     }
 
-    bool SignalExpression::canEvaluate(const DynamicLock<ReadSignalsLock> &lock) const {
+    double cacheLookup(const SignalExpression::Context &ctx, const SignalExpression::Node &node, size_t depth) {
+        return ctx.cache[node.index];
+    }
+
+    SignalExpression::CompiledFunc SignalExpression::Node::compile(SignalExpression &expr, bool noCacheWrite) {
+        return std::visit(
+            [&](auto &node) {
+                using T = std::decay_t<decltype(node)>;
+
+                if (evaluate) {
+                    return &cacheLookup;
+                } else {
+                    if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
+                        // Force no cache writes for branching nodes
+                        node.inputFunc = node.inputIndex >= 0 ? expr.nodes[node.inputIndex].compile(expr, true)
+                                                              : nullptr;
+                    } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
+                        node.inputFunc = expr.nodes[node.inputIndex].compile(expr, noCacheWrite);
+                    } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
+                        node.inputFuncA = expr.nodes[node.inputIndexA].compile(expr, noCacheWrite);
+                        node.inputFuncB = expr.nodes[node.inputIndexB].compile(expr, noCacheWrite);
+                    } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
+                        node.ifFunc = expr.nodes[node.ifIndex].compile(expr, noCacheWrite);
+                        // Force no cache writes for branching nodes
+                        node.trueFunc = expr.nodes[node.trueIndex].compile(expr, true);
+                        node.falseFunc = expr.nodes[node.falseIndex].compile(expr, true);
+                    }
+
+                    if (noCacheWrite) {
+                        return &T::Evaluate;
+                    } else {
+                        evaluate = [](const Context &ctx, const Node &node, size_t depth) {
+                            return (ctx.cache[node.index] = T::Evaluate(ctx, node, depth));
+                        };
+                        return evaluate;
+                    }
+                }
+            },
+            (SignalExpression::NodeVariant &)*this);
+    }
+
+    double SignalExpression::ConstantNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        return std::get<SignalExpression::ConstantNode>(node).value;
+    }
+
+    double SignalExpression::IdentifierNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &identNode = std::get<SignalExpression::IdentifierNode>(node);
+        if (identNode.field.type != typeid(EventData)) {
+            Warnf("SignalExpression can't convert %s from %s to EventData",
+                ctx.expr.nodeStrings[node.index],
+                identNode.field.type.name());
+            return 0.0;
+        }
+        return ecs::ReadStructField(&ctx.input, identNode.field);
+    }
+
+    double SignalExpression::SignalNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &signalNode = std::get<SignalExpression::SignalNode>(node);
+        if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+            Errorf("Max signal binding depth exceeded: %s -> %s", ctx.expr.expr, signalNode.signal.String());
+            return 0.0;
+        }
+        return signalNode.signal.GetSignal(ctx.lock, depth + 1);
+    }
+
+    double SignalExpression::ComponentNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &componentNode = std::get<SignalExpression::ComponentNode>(node);
+        if (!componentNode.component) return 0.0;
+        Entity ent = componentNode.entity.Get(ctx.lock);
+        if (!ent) return 0.0;
+        return GetFieldType(componentNode.component->metadata.type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
+                return 0.0;
+            } else if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
+                auto &component = ent.Get<const T>(ctx.lock);
+                return ecs::ReadStructField(&component, componentNode.field);
+            } else {
+                auto tryLock = ctx.lock.TryLock<Read<T>>();
+                if (tryLock) {
+                    auto &component = ent.Get<const T>(*tryLock);
+                    return ecs::ReadStructField(&component, componentNode.field);
+                } else {
+                    Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
+                        componentNode.field.name,
+                        typeid(T).name());
+                    return 0.0;
+                }
+            }
+        });
+    }
+
+    double SignalExpression::FocusCondition::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &focusNode = std::get<SignalExpression::FocusCondition>(node);
+        if (!ctx.lock.Has<FocusLock>() || !ctx.lock.Get<FocusLock>().HasPrimaryFocus(focusNode.ifFocused)) {
+            return 0.0;
+        } else if (focusNode.inputIndex < 0) {
+            return 1.0;
+        } else {
+            auto &inputNode = ctx.expr.nodes[focusNode.inputIndex];
+            return focusNode.inputFunc(ctx, inputNode, depth);
+        }
+    }
+
+    double SignalExpression::OneInputOperation::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &opNode = std::get<SignalExpression::OneInputOperation>(node);
+
+        auto &inputNode = ctx.expr.nodes[opNode.inputIndex];
+        return opNode.evaluate(opNode.inputFunc(ctx, inputNode, depth));
+    }
+
+    double SignalExpression::TwoInputOperation::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &opNode = std::get<SignalExpression::TwoInputOperation>(node);
+
+        auto &inputNodeA = ctx.expr.nodes[opNode.inputIndexA];
+        auto &inputNodeB = ctx.expr.nodes[opNode.inputIndexB];
+        // Argument execution order is undefined, so args must be evaluated before
+        double inputA = opNode.inputFuncA(ctx, inputNodeA, depth);
+        double inputB = opNode.inputFuncB(ctx, inputNodeB, depth);
+        return opNode.evaluate(inputA, inputB);
+    }
+
+    double SignalExpression::DeciderOperation::Evaluate(const Context &ctx, const Node &node, size_t depth) {
+        // ZoneScoped;
+        auto &opNode = std::get<SignalExpression::DeciderOperation>(node);
+
+        auto &inputIfNode = ctx.expr.nodes[opNode.ifIndex];
+        if (opNode.ifFunc(ctx, inputIfNode, depth) >= 0.5) {
+            auto &inputTrueNode = ctx.expr.nodes[opNode.trueIndex];
+            return opNode.trueFunc(ctx, inputTrueNode, depth);
+        } else {
+            auto &inputFalseNode = ctx.expr.nodes[opNode.falseIndex];
+            return opNode.falseFunc(ctx, inputFalseNode, depth);
+        }
+    }
+
+    bool SignalExpression::canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         for (auto &node : nodes) {
             bool success = std::visit(
-                [&lock](auto &&node) {
+                [&](auto &node) {
                     using T = std::decay_t<decltype(node)>;
                     if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                        Entity ent = node.entity.Get(lock);
-                        if (!ent.Has<SignalBindings>(lock)) return true;
-
-                        auto &bindings = ent.Get<const SignalBindings>(lock);
-                        return bindings.GetBinding(node.signalName).canEvaluate(lock);
+                        if (node.signal.HasValue(lock)) return true;
+                        if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                            Errorf("Max signal binding depth exceeded: %s -> %s", expr, node.signal.String());
+                            return false;
+                        }
+                        return node.signal.GetBinding(lock).canEvaluate(lock, depth + 1);
                     } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
                         const ComponentBase *base = node.component;
                         if (!base) return true;
@@ -694,132 +906,30 @@ namespace ecs {
                         return true;
                     }
                 },
-                (SignalExpression::NodeVariant)node);
+                (const SignalExpression::NodeVariant &)node);
             if (!success) return false;
         }
         return true;
     }
 
-    struct ExpressionEvaluator {
-        const SignalExpression &expr;
-        sp::InlineVector<double, 256> cache;
-        size_t depth = 0;
-
-        ExpressionEvaluator(const SignalExpression &expr, size_t depth = 0) : expr(expr), depth(depth) {
-            cache.resize(expr.nodes.size());
-            cache.fill(-std::numeric_limits<double>::infinity());
-        }
-
-        template<typename InputType>
-        double EvaluateNode(const DynamicLock<ReadSignalsLock> &lock, int nodeIndex, const InputType &input) {
-            if (nodeIndex < 0 || (size_t)nodeIndex >= expr.nodes.size()) return 0.0f;
-            if (cache[nodeIndex] != -std::numeric_limits<double>::infinity()) return cache[nodeIndex];
-
-            double result = std::visit(
-                [&](auto &node) {
-                    using T = std::decay_t<decltype(node)>;
-                    if constexpr (std::is_same_v<T, SignalExpression::ConstantNode>) {
-                        return node.value;
-                    } else if constexpr (std::is_same_v<T, SignalExpression::IdentifierNode>) {
-                        // ZoneScopedN("IdentifierNode:evaluate");
-                        if (node.field.type != typeid(InputType)) {
-                            Warnf("SignalExpression can't convert %s from %s to %s",
-                                expr.nodeStrings[nodeIndex],
-                                node.field.type.name(),
-                                typeid(InputType).name());
-                            return 0.0;
-                        }
-                        return ecs::ReadStructField(&input, node.field);
-                    } else if constexpr (std::is_same_v<T, SignalExpression::SignalNode>) {
-                        // ZoneScopedN("SignalNode:evaluate");
-                        if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
-                            Errorf("Max signal binding depth exceeded: %s -> %s", expr.expr, node.signalName);
-                            return 0.0;
-                        }
-                        return SignalBindings::GetSignal(lock, node.entity.Get(lock), node.signalName, depth + 1);
-                    } else if constexpr (std::is_same_v<T, SignalExpression::ComponentNode>) {
-                        const ComponentBase *base = node.component;
-                        if (!base) return 0.0;
-                        Entity ent = node.entity.Get(lock);
-                        if (!ent) return 0.0;
-                        // ZoneScopedN("ComponentNode:evaluate");
-                        return GetFieldType(base->metadata.type, [&](auto *typePtr) {
-                            using T = std::remove_pointer_t<decltype(typePtr)>;
-                            if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
-                                Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
-                                return 0.0;
-                            } else if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
-                                auto &component = ent.Get<const T>(lock);
-                                return ecs::ReadStructField(&component, node.field);
-                            } else {
-                                auto tryLock = lock.template TryLock<Read<T>>();
-                                if (tryLock) {
-                                    auto &component = ent.Get<const T>(*tryLock);
-                                    return ecs::ReadStructField(&component, node.field);
-                                } else {
-                                    Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
-                                        node.field.name,
-                                        typeid(T).name());
-                                    return 0.0;
-                                }
-                            }
-                        });
-                    } else if constexpr (std::is_same_v<T, SignalExpression::FocusCondition>) {
-                        // ZoneScopedN("FocusCondition:evaluate");
-                        if (!lock.template Has<FocusLock>() ||
-                            !lock.template Get<FocusLock>().HasPrimaryFocus(node.ifFocused)) {
-                            return 0.0;
-                        } else if (node.inputIndex < 0) {
-                            return 1.0;
-                        } else {
-                            return EvaluateNode(lock, node.inputIndex, input);
-                        }
-                    } else if constexpr (std::is_same_v<T, SignalExpression::OneInputOperation>) {
-                        // ZoneScopedN("OneInputOperation:evaluate");
-                        return node.evaluate(EvaluateNode(lock, node.inputIndex, input));
-                    } else if constexpr (std::is_same_v<T, SignalExpression::TwoInputOperation>) {
-                        // ZoneScopedN("TwoInputOperation:evaluate");
-                        return node.evaluate(EvaluateNode(lock, node.inputIndexA, input),
-                            EvaluateNode(lock, node.inputIndexB, input));
-                    } else if constexpr (std::is_same_v<T, SignalExpression::DeciderOperation>) {
-                        // ZoneScopedN("DeciderOperation:evaluate");
-                        double ifValue = EvaluateNode(lock, node.ifIndex, input);
-                        if (ifValue >= 0.5) {
-                            return EvaluateNode(lock, node.trueIndex, input);
-                        } else {
-                            return EvaluateNode(lock, node.falseIndex, input);
-                        }
-                    } else {
-                        static_assert(!sizeof(T), "Invalid signal expression node type");
-                    }
-                },
-                (const SignalExpression::NodeVariant &)expr.nodes[nodeIndex]);
-
-            // if (!std::holds_alternative<SignalExpression::ConstantNode>(nodes[nodeIndex]) && nodes.size() > 2) {
-            //     Debugf("     '%s' = %f", nodeStrings[nodeIndex], result);
-            // }
-            if (!std::isfinite(result)) {
-                Warnf("Signal expression evaluation error: %s = %f", expr.nodeStrings[nodeIndex], result);
-                return 0.0;
-            } else {
-                cache[nodeIndex] = result;
-                return result;
-            }
-        };
-    };
-
     double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
-        ExpressionEvaluator eval(*this, depth);
-        return eval.EvaluateNode(lock, rootIndex, 0.0);
+        if (rootIndex < 0 || rootIndex >= nodes.size()) return 0.0;
+        Storage cache;
+        auto &rootNode = nodes[rootIndex];
+        Context ctx(lock, *this, cache, 0.0);
+        return rootNode.evaluate(ctx, rootNode, depth);
     }
 
     double SignalExpression::EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
         // ZoneScoped;
         // ZoneStr(expr);
-        ExpressionEvaluator eval(*this);
-        return eval.EvaluateNode(lock, rootIndex, input);
+        if (rootIndex < 0 || rootIndex >= nodes.size()) return 0.0;
+        Storage cache;
+        auto &rootNode = nodes[rootIndex];
+        Context ctx(lock, *this, cache, input);
+        return rootNode.evaluate(ctx, rootNode, 0);
     }
 
     template<>

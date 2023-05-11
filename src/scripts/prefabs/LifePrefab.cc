@@ -2,7 +2,6 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -18,18 +17,17 @@ namespace sp::scripts {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            if (!ent.Has<Name, SignalBindings, EventBindings>(lock)) {
-                Errorf("LifeCellPrefab requires Name, SignalBindings, and EventBindings: %s", ToString(lock, ent));
+            if (!ent.Has<Name, EventBindings>(lock)) {
+                Errorf("LifeCellPrefab requires Name, and EventBindings: %s", ToString(lock, ent));
                 return;
             }
 
             auto &name = ent.Get<const Name>(lock);
-            auto &signalBindings = ent.Get<SignalBindings>(lock);
             auto &eventBindings = ent.Get<EventBindings>(lock);
 
             auto prefix = Name(name.scene, name.entity.substr(0, name.entity.find_last_of('.')));
-            glm::uvec2 pos = glm::uvec2(SignalBindings::GetSignal(lock, ent, "tile.x"),
-                SignalBindings::GetSignal(lock, ent, "tile.y"));
+            glm::uvec2 pos = glm::uvec2(SignalRef(ent, "tile.x").GetSignal(lock),
+                SignalRef(ent, "tile.y").GetSignal(lock));
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -39,7 +37,7 @@ namespace sp::scripts {
                     EntityRef neighbor = Name(std::to_string(wrapped.x) + "_" + std::to_string(wrapped.y), prefix);
 
                     std::string bindingName = "neighbor[" + std::to_string(dx) + "][" + std::to_string(dy) + "]";
-                    signalBindings.SetBinding(bindingName, neighbor, "alive");
+                    SignalRef(ent, bindingName).SetBinding(lock, SignalRef(neighbor, "alive"));
 
                     eventBindings.Bind("/life/notify_neighbors", neighbor, "/life/neighbor_alive");
                 }

@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
@@ -182,72 +183,57 @@ namespace sp {
         }
     });
 
-    CFunc<void> CFuncPrintSignals("printsignals", "Print out the values and bindings of signals", []() {
-        auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
-        Logf("Signals:");
-        static const auto printEntity = [&lock](ecs::Entity ent) {
-            Logf("  %s:", ecs::ToString(lock, ent));
-            if (ent.Has<ecs::SignalOutput>(lock)) {
-                auto &output = ent.Get<ecs::SignalOutput>(lock);
-                for (auto &signal : output.signals) {
-                    Logf("    %s = %.4f", signal.first, signal.second);
-                }
+    CFunc<std::string> CFuncPrintSignals("printsignals",
+        "Print out the values and bindings of signals (optionally filtered by argument)",
+        [](std::string filterStr) {
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
+            if (filterStr.empty()) {
+                Logf("Signals:");
+            } else {
+                Logf("Signals containing '%s':", filterStr);
             }
-            if (ent.Has<ecs::SignalBindings>(lock)) {
-                auto &bindings = ent.Get<ecs::SignalBindings>(lock);
-                for (auto &pair : bindings.bindings) {
-                    auto &binding = pair.second;
-                    if (binding.nodes.empty() || binding.rootIndex < 0) {
-                        Logf("    %s = nil", pair.first);
-                    } else {
-                        Logf("    %s = %.4f = %s",
-                            pair.first,
-                            binding.Evaluate(lock),
-                            binding.nodeStrings[binding.rootIndex]);
+            auto signals = ecs::GetSignalManager().GetSignals(filterStr);
+            for (auto &signal : signals) {
+                if (signal.HasValue(lock)) {
+                    Logf("  %s = %.4f", signal.String(), signal.GetValue(lock));
+                    if (signal.HasBinding(lock)) {
+                        Logf("   ^ overrides binding = %s", signal.GetBinding(lock).expr);
                     }
+                } else if (signal.HasBinding(lock)) {
+                    auto &binding = signal.GetBinding(lock);
+                    Logf("  %s = %.4f = %s",
+                        signal.String(),
+                        binding.Evaluate(lock),
+                        binding.nodeStrings[binding.rootIndex]);
+                } else {
+                    Logf("  %s = 0.0 (unset)", signal.String());
                 }
             }
-        };
-        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
-            printEntity(ent);
-        }
-        for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
-            if (!ent.Has<ecs::SignalOutput>(lock)) printEntity(ent);
-        }
-    });
+        });
 
     CFunc<std::string> CFuncPrintSignal("printsignal",
         "Print out the value and bindings of a specific signal",
         [](std::string signalStr) {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
-            auto [originName, signalName] = ecs::ParseSignalString(signalStr);
-            if (!originName) {
+            ecs::SignalRef signal(signalStr);
+            if (!signal) {
                 Errorf("Invalid signal name: %s", signalStr);
                 return;
             }
 
-            auto ent = ecs::EntityRef(originName).Get(lock);
-            auto value = ecs::SignalBindings::GetSignal(lock, ent, signalName);
-            Logf("%s/%s = %.4f", originName.String(), signalName, value);
+            auto value = signal.GetSignal(lock);
+            Logf("%s = %.4f", signal.String(), value);
 
-            if (ent.Has<ecs::SignalOutput>(lock)) {
-                auto &signalOutput = ent.Get<ecs::SignalOutput>(lock);
-                if (signalOutput.HasSignal(signalName)) {
-                    Logf("  Signal output: %.4f", signalOutput.GetSignal(signalName));
-                }
+            if (signal.HasValue(lock)) {
+                Logf("  Signal value: %.4f", signal.GetValue(lock));
             }
-            if (ent.Has<ecs::SignalBindings>(lock)) {
-                auto &bindings = ent.Get<ecs::SignalBindings>(lock);
-                if (bindings.HasBinding(signalName)) {
-                    auto &binding = bindings.GetBinding(signalName);
-                    if (binding.nodes.empty() || binding.rootIndex < 0) {
-                        Logf("  Signal binding: nil");
-                    } else {
-                        Logf("  Signal binding: %.4f = %s",
-                            binding.Evaluate(lock),
-                            binding.nodeStrings[binding.rootIndex]);
-                    }
+            if (signal.HasBinding(lock)) {
+                auto &binding = signal.GetBinding(lock);
+                if (binding.nodes.empty() || binding.rootIndex < 0) {
+                    Logf("  Signal binding: nil");
+                } else {
+                    Logf("  Signal binding: %.4f = %s", binding.Evaluate(lock), binding.nodeStrings[binding.rootIndex]);
                 }
             }
         });

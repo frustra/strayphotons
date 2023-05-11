@@ -11,7 +11,7 @@
 
 namespace sp {
     WorldGuiManager::WorldGuiManager(ecs::Entity gui, const std::string &name) : GuiContext(name), guiEntity(gui) {
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto lock) {
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
             ecs::Entity gui = guiEntity.Get(lock);
             if (!gui.Has<ecs::EventInput>(lock)) return;
 

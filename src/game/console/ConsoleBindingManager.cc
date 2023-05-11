@@ -2,7 +2,6 @@
 
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"

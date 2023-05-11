@@ -6,7 +6,6 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -94,7 +93,6 @@ namespace sp::xr {
                     auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
                     ent.Set<ecs::TransformTree>(lock);
                     ent.Set<ecs::EventBindings>(lock);
-                    ent.Set<ecs::SignalOutput>(lock);
                 }
 
                 for (size_t i = 0; i < reservedEntities.size(); i++) {
@@ -241,7 +239,6 @@ namespace sp::xr {
                             auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);
-                            ent.Set<ecs::SignalOutput>(lock);
                         }
                     }
                 });

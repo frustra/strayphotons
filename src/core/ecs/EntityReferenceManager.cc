@@ -1,6 +1,7 @@
 #include "EntityReferenceManager.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalRef.hh"
 
 #include <mutex>
 #include <shared_mutex>
@@ -12,14 +13,16 @@ namespace ecs {
     }
 
     EntityRef EntityReferenceManager::Get(const Name &name) {
-        EntityRef ref = nameRefs.Load(name);
+        if (!name) return EntityRef();
+
+        EntityRef ref = entityRefs.Load(name);
         if (!ref) {
             std::lock_guard lock(mutex);
-            ref = nameRefs.Load(name);
+            ref = entityRefs.Load(name);
             if (ref) return ref;
 
             ref = make_shared<EntityRef::Ref>(name);
-            nameRefs.Register(name, ref.ptr);
+            entityRefs.Register(name, ref.ptr);
         }
         return ref;
     }
@@ -58,7 +61,7 @@ namespace ecs {
 
     std::set<Name> EntityReferenceManager::GetNames(const std::string &search) {
         std::set<Name> results;
-        nameRefs.ForEach([&](auto &name, auto &) {
+        entityRefs.ForEach([&](auto &name, auto &) {
             if (search.empty() || name.String().find(search) != std::string::npos) {
                 results.emplace(name);
             }
@@ -67,7 +70,7 @@ namespace ecs {
     }
 
     void EntityReferenceManager::Tick(chrono_clock::duration maxTickInterval) {
-        nameRefs.Tick(maxTickInterval, [this](std::shared_ptr<EntityRef::Ref> &refPtr) {
+        entityRefs.Tick(maxTickInterval, [this](std::shared_ptr<EntityRef::Ref> &refPtr) {
             EntityRef ref(refPtr);
             auto staging = ref.GetStaging();
             auto live = ref.GetLive();

@@ -6,6 +6,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/SignalRef.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
@@ -27,10 +28,13 @@ namespace sp {
         std::map<ecs::Name, TreeNode> entityTree;
         SceneRef scene;
         ecs::Entity target;
+        std::string followFocus;
+        int followFocusPos;
 
         // Temporary context
-        ecs::Lock<ecs::ReadAll> *lock = nullptr;
+        const ecs::Lock<ecs::ReadAll> *lock = nullptr;
         std::string fieldName, fieldId;
+        int signalNameCursorPos;
 
         void RefreshEntityTree() {
             entityTree.clear();
@@ -96,8 +100,9 @@ namespace sp {
             return selected;
         }
 
-        void ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity);
-        void ShowSceneControls(ecs::Lock<ecs::ReadAll> lock);
+        void AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
+        void ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
+        void ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock);
 
         template<typename T>
         bool AddImGuiElement(const std::string &name, T &value);
@@ -252,13 +257,13 @@ namespace sp {
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, ecs::SignalExpression &value) {
-        bool borderEnable = !value && !value.expr.empty();
+        bool borderEnable = !value;
         if (borderEnable) {
             ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
         }
         bool changed = ImGui::InputText(name.c_str(), &value.expr);
-        if (changed) value.Parse();
+        if (changed) value.Compile();
         if (borderEnable) {
             ImGui::PopStyleVar();
             ImGui::PopStyleColor();
@@ -519,7 +524,7 @@ namespace sp {
 
         if (valueChanged) {
             if (ecs::IsLive(target)) {
-                ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto lock) {
+                ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
                     void *component = comp.Access(lock, target);
                     field.Access<T>(component) = value;
                 });
@@ -608,7 +613,171 @@ namespace sp {
             ...);
     }
 
-    void EditorContext::ShowEntityControls(ecs::Lock<ecs::ReadAll> lock, ecs::EntityRef targetEntity) {
+    void EditorContext::AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        Assertf(ecs::IsLive(lock), "AddLiveSignalControls must be called with a live lock");
+        if (ImGui::CollapsingHeader("Signals", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
+                                    ImGuiTableFlags_SizingStretchSame;
+            if (ImGui::BeginTable("##SignalTable", 4, flags)) {
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+                ImGui::TableSetupColumn("Signal", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+                ImGui::TableSetupColumn("Value/Binding");
+                ImGui::TableHeadersRow();
+
+                auto &signalManager = ecs::GetSignalManager();
+                std::set<ecs::SignalRef> signals = signalManager.GetSignals(targetEntity);
+
+                // Make a best guess at the scope of this entity
+                ecs::EntityScope scope(targetEntity.Name().scene, "");
+                bool foundExact = false;
+                for (auto &ref : signals) {
+                    if (!ref) continue;
+                    if (ref.HasBinding(lock)) {
+                        scope = ref.GetBinding(lock).scope;
+                        foundExact = true;
+                        break;
+                    }
+                }
+                if (!foundExact && target.Has<ecs::SceneInfo>(lock)) {
+                    auto &sceneInfo = target.Get<ecs::SceneInfo>(lock);
+                    if (sceneInfo.prefabStagingId.Has<ecs::Name>(lock)) {
+                        scope = sceneInfo.prefabStagingId.Get<ecs::Name>(lock);
+                    }
+                }
+
+                auto parentFieldId = fieldId;
+                for (auto &ref : signals) {
+                    if (!ref) continue;
+                    bool hasValue = ref.HasValue(lock);
+                    if (!hasValue && !ref.HasBinding(lock)) continue;
+
+                    ImGui::PushID(ref.GetSignalName().c_str());
+
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    if (ImGui::Button("-", ImVec2(20, 0))) {
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref](auto &lock) {
+                            ref.ClearValue(lock);
+                            ref.ClearBinding(lock);
+                        });
+                    }
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    // A custom callback to track cursor position
+                    // The field id changes when the signal is renamed, so we need to manually
+                    // move the focus to the new field id
+                    auto focusTracker = [](ImGuiInputTextCallbackData *data) -> int {
+                        auto *ctx = (EditorContext *)data->UserData;
+                        if (ctx->followFocus == ctx->fieldId) {
+                            data->SelectionStart = data->SelectionEnd = data->CursorPos = ctx->followFocusPos;
+                            ctx->followFocus = "";
+                        } else if (ImGui::IsItemFocused()) {
+                            ctx->signalNameCursorPos = data->CursorPos;
+                        }
+                        return 0;
+                    };
+
+                    auto signalName = ref.GetSignalName();
+                    fieldId = "##SignalName." + ref.GetSignalName();
+                    if (followFocus == fieldId) {
+                        ImGui::SetKeyboardFocusHere();
+                    }
+                    if (ImGui::InputText(fieldId.c_str(),
+                            &signalName,
+                            ImGuiInputTextFlags_CallbackAlways,
+                            focusTracker,
+                            this)) {
+                        ecs::SignalRef newRef(ref.GetEntity(), signalName);
+                        if (newRef && !newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                            if (ImGui::IsItemFocused()) {
+                                followFocus = "##SignalName." + signalName;
+                                followFocusPos = signalNameCursorPos;
+                            }
+
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef](auto &lock) {
+                                if (ref.HasValue(lock)) {
+                                    newRef.SetValue(lock, ref.GetValue(lock));
+                                    ref.ClearValue(lock);
+                                }
+                                if (ref.HasBinding(lock)) {
+                                    newRef.SetBinding(lock, ref.GetBinding(lock));
+                                    ref.ClearBinding(lock);
+                                }
+                            });
+                        }
+                    }
+                    ImGui::TableSetColumnIndex(2);
+                    if (ImGui::Checkbox("", &hasValue)) {
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([hasValue, ref = ref, scope](auto &lock) {
+                            if (hasValue) {
+                                ref.SetValue(lock, 0.0);
+                            } else {
+                                ref.ClearValue(lock);
+                                if (!ref.HasBinding(lock)) ref.SetBinding(lock, "0.0", scope);
+                            };
+                        });
+                    }
+                    ImGui::TableSetColumnIndex(3);
+                    if (hasValue) {
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        double signalValue = ref.GetValue(lock);
+                        if (AddImGuiElement("##SignalValue." + ref.GetSignalName(), signalValue)) {
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, signalValue](auto &lock) {
+                                ref.SetValue(lock, signalValue);
+                            });
+                        }
+                    } else {
+                        ImGui::SetNextItemWidth(-80.0f);
+                        ecs::SignalExpression expression = ref.GetBinding(lock);
+                        if (AddImGuiElement("##SignalBinding." + ref.GetSignalName(), expression)) {
+                            if (expression) {
+                                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, expression](auto &lock) {
+                                    ref.SetBinding(lock, expression);
+                                });
+                            }
+                        }
+                        ImGui::SameLine();
+                        double value = expression.Evaluate(lock);
+                        ImGui::Text("= %.4f", value);
+                        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%.16g", value);
+                    }
+
+                    ImGui::PopID();
+                }
+                fieldId = parentFieldId;
+
+                if (ImGui::Button("Add Signal")) {
+                    ecs::QueueTransaction<ecs::Write<ecs::Signals>>([targetEntity](auto &lock) {
+                        for (size_t i = 0;; i++) {
+                            std::string signalName = i > 0 ? ("value" + std::to_string(i)) : "value";
+                            ecs::SignalRef newRef(targetEntity, signalName);
+                            if (!newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                                newRef.SetValue(lock, 0.0);
+                                break;
+                            }
+                        }
+                    });
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Add Binding")) {
+                    ecs::QueueTransaction<ecs::Write<ecs::Signals>>([targetEntity, scope](auto &lock) {
+                        for (size_t i = 0;; i++) {
+                            std::string signalName = i > 0 ? ("binding" + std::to_string(i)) : "binding";
+                            ecs::SignalRef newRef(targetEntity, signalName);
+                            if (!newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                                newRef.SetBinding(lock, "0 + 0", scope);
+                                break;
+                            }
+                        }
+                    });
+                }
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    void EditorContext::ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
         if (!targetEntity) {
             this->target = {};
             return;
@@ -742,6 +911,8 @@ namespace sp {
 
         ImGui::Separator();
 
+        if (ecs::IsLive(lock)) AddLiveSignalControls(lock, targetEntity);
+
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
             if (!comp.HasComponent(lock, this->target)) return;
             auto flags = (name == "scene_properties") ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_DefaultOpen;
@@ -757,7 +928,7 @@ namespace sp {
         });
     }
 
-    void EditorContext::ShowSceneControls(ecs::Lock<ecs::ReadAll> lock) {
+    void EditorContext::ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock) {
         ImGui::Text("Active Scene List:");
         if (ImGui::BeginListBox("##ActiveScenes", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
             auto sceneList = GetSceneManager().GetActiveScenes();

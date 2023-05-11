@@ -107,9 +107,6 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock)) return;
-
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
@@ -134,20 +131,20 @@ namespace sp::scripts {
                 std::string signalName(eventName.substr(delimiter + 1));
                 if (signalName.empty()) continue;
 
+                SignalRef ref(ent, signalName);
                 if (action == "toggle") {
-                    double currentValue = SignalBindings::GetSignal(lock, ent, signalName);
-
+                    auto &currentValue = ref.GetValue(lock);
                     if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
-                        signalOutput.SetSignal(signalName, 0);
+                        ref.SetValue(lock, 0);
                     } else {
-                        signalOutput.SetSignal(signalName, eventValue);
+                        ref.SetValue(lock, eventValue);
                     }
                 } else if (action == "set") {
-                    signalOutput.SetSignal(signalName, eventValue);
+                    ref.SetValue(lock, eventValue);
                 } else if (action == "add") {
-                    signalOutput.SetSignal(signalName, signalOutput.GetSignal(signalName) + eventValue);
+                    ref.SetValue(lock, ref.GetValue(lock) + eventValue);
                 } else if (action == "clear") {
-                    signalOutput.ClearSignal(signalName);
+                    ref.ClearValue(lock);
                 } else {
                     Errorf("Unknown signal action: '%s'", std::string(action));
                 }
@@ -164,8 +161,12 @@ namespace sp::scripts {
         template<typename LockType>
         void sendOutputEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
+                ZoneScopedN("EventFromSignal::sendOutputEvents");
                 auto value = expr.Evaluate(lock);
-                if (value >= 0.5) EventBindings::SendEvent(lock, ent, Event{name, ent, value});
+                if (value >= 0.5) {
+                    ZoneScopedN("EventFromSignal::SendEvent");
+                    EventBindings::SendEvent(lock, ent, Event{name, ent, value});
+                }
             }
         }
 

@@ -2,7 +2,6 @@
 
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"

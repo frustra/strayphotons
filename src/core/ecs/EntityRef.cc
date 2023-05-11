@@ -6,18 +6,6 @@
 #include <atomic>
 
 namespace ecs {
-    EntityRef::Ref::Ref(const Entity &ent) {
-        if (!ent) return;
-
-        if (IsLive(ent)) {
-            liveEntity = ent;
-        } else if (IsStaging(ent)) {
-            stagingEntity = ent;
-        } else {
-            Abortf("Invalid EntityRef entity: %s", std::to_string(ent));
-        }
-    }
-
     EntityRef::EntityRef(const Entity &ent) {
         if (!ent) return;
         ptr = GetEntityRefs().Get(ent).ptr;

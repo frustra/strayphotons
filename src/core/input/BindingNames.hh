@@ -37,9 +37,9 @@ namespace sp {
     static const std::string INPUT_EVENT_MENU_KEY_UP = "/action/menu/key_up"; // string
 
     // CharacterController
-    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_X = "move_relative_x";
-    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_Y = "move_relative_y";
-    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_Z = "move_relative_z";
+    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_X = "move_relative.x";
+    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_Y = "move_relative.y";
+    static const std::string INPUT_SIGNAL_MOVE_RELATIVE_Z = "move_relative.z";
     static const std::string INPUT_SIGNAL_MOVE_SPRINT = "move_sprint";
     static const std::string INPUT_SIGNAL_MOVE_NOCLIP = "move_noclip";
 

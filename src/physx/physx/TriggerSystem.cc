@@ -20,7 +20,7 @@ namespace sp {
     }
 
     void TriggerSystem::Frame(ecs::Lock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
-        ecs::Write<ecs::TriggerArea, ecs::SignalOutput>,
+        ecs::Write<ecs::TriggerArea, ecs::Signals>,
         ecs::SendEventsLock> lock) {
         ZoneScoped;
 
@@ -90,10 +90,7 @@ namespace sp {
 
             for (auto &triggerGroup : magic_enum::enum_values<ecs::TriggerGroup>()) {
                 auto entityCount = area.containedEntities[triggerGroup].size();
-                if (entity.Has<ecs::SignalOutput>(lock)) {
-                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal(ecs::TriggerGroupSignalNames[triggerGroup], (double)entityCount);
-                }
+                ecs::SignalRef(entity, ecs::TriggerGroupSignalNames[triggerGroup]).SetValue(lock, (double)entityCount);
             }
         }
     }

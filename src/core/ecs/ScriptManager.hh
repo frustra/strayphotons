@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/LockFreeMutex.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/SignalRef.hh"
 
 #include <any>
 #include <deque>
@@ -23,7 +24,7 @@ namespace ecs {
     using PhysicsUpdateLock = Lock<SendEventsLock,
         ReadSignalsLock,
         Read<TransformSnapshot>,
-        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, SignalOutput, LaserLine, VoxelArea>>;
+        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
     using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;

@@ -2,7 +2,6 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "game/Scene.hh"
@@ -189,8 +188,6 @@ namespace sp::scripts {
         bool discharging = false;
 
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock)) return;
-
             glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
                 std::max(0.0, chargeSignalGreen.Evaluate(lock)),
                 std::max(0.0, chargeSignalBlue.Evaluate(lock))};
@@ -218,13 +215,12 @@ namespace sp::scripts {
 
             chargeLevel = std::clamp(chargeLevel, 0.0, maxChargeLevel);
 
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
-            signalOutput.SetSignal("discharging", discharging);
-            signalOutput.SetSignal("charge_level", chargeLevel);
-            signalOutput.SetSignal("max_charge_level", maxChargeLevel);
-            signalOutput.SetSignal("cell_output_r", outputColor.r);
-            signalOutput.SetSignal("cell_output_g", outputColor.g);
-            signalOutput.SetSignal("cell_output_b", outputColor.b);
+            SignalRef(ent, "discharging").SetValue(lock, discharging);
+            SignalRef(ent, "charge_level").SetValue(lock, chargeLevel);
+            SignalRef(ent, "max_charge_level").SetValue(lock, maxChargeLevel);
+            SignalRef(ent, "cell_output_r").SetValue(lock, outputColor.r);
+            SignalRef(ent, "cell_output_g").SetValue(lock, outputColor.g);
+            SignalRef(ent, "cell_output_b").SetValue(lock, outputColor.b);
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
@@ -243,7 +239,7 @@ namespace sp::scripts {
         robin_hood::unordered_map<std::string, SignalExpression> mapping;
 
         template<typename LockType>
-        void updateComponentFromSignal(LockType lock, Entity ent) {
+        void updateComponentFromSignal(const LockType &lock, Entity ent) {
             for (auto &[fieldPath, signalExpr] : mapping) {
                 size_t delimiter = fieldPath.find('.');
                 if (delimiter == std::string::npos) {
@@ -302,13 +298,13 @@ namespace sp::scripts {
         size_t frameCount = 0;
 
         template<typename LockType>
-        void updateSignal(LockType lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock) || output.empty()) return;
+        void updateSignal(const LockType &lock, Entity ent, chrono_clock::duration interval) {
+            if (output.empty()) return;
 
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
-            if (!lastSignal || !signalOutput.HasSignal(output)) {
-                lastSignal = signalOutput.GetSignal(output);
-                signalOutput.SetSignal(output, *lastSignal);
+            SignalRef ref(ent, output);
+            if (!lastSignal || !ref.HasValue(lock)) {
+                lastSignal = ref.GetSignal(lock);
+                ref.SetValue(lock, *lastSignal);
             }
             auto currentInput = input.Evaluate(lock);
             if ((currentInput >= 0.5) == (*lastSignal >= 0.5)) {
@@ -318,7 +314,7 @@ namespace sp::scripts {
                 lastSignal = currentInput;
             }
             if (frameCount >= std::max(delayFrames, (size_t)(std::chrono::milliseconds(delayMs) / interval))) {
-                signalOutput.SetSignal(output, currentInput);
+                ref.SetValue(lock, currentInput);
             }
         }
 
@@ -350,15 +346,14 @@ namespace sp::scripts {
 
         template<typename LockType>
         void updateTimer(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<SignalOutput>(lock)) return;
 
-            auto &signalOutput = ent.Get<SignalOutput>(lock);
             for (auto &name : names) {
-                double timerValue = SignalBindings::GetSignal(lock, ent, name);
-                bool timerEnable = SignalBindings::GetSignal(lock, ent, name + "_enable") >= 0.5;
+                SignalRef valueRef(ent, name);
+                double timerValue = valueRef.GetSignal(lock);
+                bool timerEnable = SignalRef(ent, name + "_enable").GetSignal(lock) >= 0.5;
                 if (timerEnable) {
                     timerValue += interval.count() / 1e9;
-                    signalOutput.SetSignal(name, timerValue);
+                    valueRef.SetValue(lock, timerValue);
                 }
             }
 
@@ -387,7 +382,7 @@ namespace sp::scripts {
                     continue;
                 }
 
-                signalOutput.SetSignal(timerName, eventValue);
+                SignalRef(ent, timerName).SetValue(lock, eventValue);
             }
         }
 

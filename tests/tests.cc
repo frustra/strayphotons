@@ -18,6 +18,12 @@ using namespace testing;
 int main(int argc, char **argv) {
     std::cout << "Running " << registeredTests.size() << " " << TEST_TYPE << " tests" << std::endl;
     {
+        auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+        auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
+        stagingLock.Set<ecs::Signals>();
+        liveLock.Set<ecs::Signals>();
+    }
+    {
         Timer t("Running tests");
         for (auto &test : registeredTests) {
             test();
@@ -31,6 +37,8 @@ int main(int argc, char **argv) {
                 for (auto &ent : liveLock.Entities()) {
                     ent.Destroy(liveLock);
                 }
+                stagingLock.Set<ecs::Signals>();
+                liveLock.Set<ecs::Signals>();
             }
         }
     }

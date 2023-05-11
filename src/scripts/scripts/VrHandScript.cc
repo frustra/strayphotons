@@ -84,6 +84,7 @@ namespace sp::scripts {
         EntityRef inputRootRef, physicsRootRef, controllerRef, laserPointerRef;
         Entity grabEntity, pointEntity, pressEntity;
         std::string actionPrefix;
+        SignalRef indexCurlRef, middleCurlRef;
 
         PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;
 
@@ -112,6 +113,8 @@ namespace sp::scripts {
                 Errorf("Invalid hand specified for VrHand script: %s", handStr);
                 return false;
             }
+            indexCurlRef = SignalRef(controllerRef, actionPrefix + "_curl_index");
+            middleCurlRef = SignalRef(controllerRef, actionPrefix + "_curl_middle");
             inputRootRef = inputScope;
             if (!inputRootRef) {
                 Errorf("VrHand script has invalid input root: %s", inputScope.String());
@@ -295,7 +298,6 @@ namespace sp::scripts {
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
             auto inputRoot = inputRootRef.Get(lock);
-            auto controllerEnt = controllerRef.Get(lock);
 
             // Read and update overlap queries
             EnumArray<Entity, BoneGroup> groupOverlaps = {};
@@ -355,7 +357,7 @@ namespace sp::scripts {
             }
 
             // Handle interaction events
-            auto indexCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_index");
+            auto indexCurl = indexCurlRef.GetSignal(lock);
             auto grabSignal = indexCurl;
             auto grabTarget = grabEntity;
             if (teleported || grabSignal < 0.18) {
@@ -364,7 +366,7 @@ namespace sp::scripts {
                 grabTarget = groupOverlaps[BoneGroup::Index];
             }
 
-            auto middleCurl = SignalBindings::GetSignal(lock, controllerEnt, actionPrefix + "_curl_middle");
+            auto middleCurl = middleCurlRef.GetSignal(lock);
             bool isPointing = indexCurl < 0.05 && middleCurl > 0.5;
             HandlePointing(state, lock, ent, isPointing);
 

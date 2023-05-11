@@ -11,7 +11,6 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
@@ -200,7 +199,7 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::SignalOutput>,
+                    ecs::Signals>,
                 ecs::PhysicsUpdateLock>();
 
             characterControlSystem.Frame(lock);

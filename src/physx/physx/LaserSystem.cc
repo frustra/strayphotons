@@ -60,7 +60,7 @@ namespace sp {
 
     void LaserSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
         ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::OpticalElement>,
-        ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock) {
+        ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::Signals>> lock) {
         ZoneScoped;
 
         struct LaserStart {
@@ -93,9 +93,9 @@ namespace sp {
             segments.clear();
 
             color_t signalColor = glm::vec3{
-                ecs::SignalBindings::GetSignal(lock, entity, "laser_color_r"),
-                ecs::SignalBindings::GetSignal(lock, entity, "laser_color_g"),
-                ecs::SignalBindings::GetSignal(lock, entity, "laser_color_b"),
+                ecs::SignalRef(entity, "laser_color_r").GetSignal(lock),
+                ecs::SignalRef(entity, "laser_color_g").GetSignal(lock),
+                ecs::SignalRef(entity, "laser_color_b").GetSignal(lock),
             };
 
             std::array<physx::PxRaycastHit, 128> hitBuffer;
@@ -221,13 +221,12 @@ namespace sp {
             }
         }
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
-            if (!entity.Has<ecs::SignalOutput>(lock)) continue;
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
-            auto &output = entity.Get<ecs::SignalOutput>(lock);
-            output.SetSignal("light_value_r", sensor.illuminance.r);
-            output.SetSignal("light_value_g", sensor.illuminance.g);
-            output.SetSignal("light_value_b", sensor.illuminance.b);
-            output.SetSignal("value", glm::all(glm::greaterThanEqual(sensor.illuminance, sensor.threshold)));
+            ecs::SignalRef(entity, "light_value_r").SetValue(lock, sensor.illuminance.r);
+            ecs::SignalRef(entity, "light_value_g").SetValue(lock, sensor.illuminance.g);
+            ecs::SignalRef(entity, "light_value_b").SetValue(lock, sensor.illuminance.b);
+            ecs::SignalRef(entity, "value")
+                .SetValue(lock, glm::all(glm::greaterThanEqual(sensor.illuminance, sensor.threshold)));
         }
     }
 } // namespace sp

@@ -6,7 +6,9 @@
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
+#include "ecs/components/Signals.hh"
 
 #include <atomic>
 #include <memory>
@@ -26,7 +28,7 @@ namespace ecs {
 
     private:
         sp::LockFreeMutex mutex;
-        sp::PreservingMap<Name, EntityRef::Ref, 1000> nameRefs;
+        sp::PreservingMap<Name, EntityRef::Ref, 1000> entityRefs;
         sp::EntityMap<std::weak_ptr<EntityRef::Ref>> stagingRefs;
         sp::EntityMap<std::weak_ptr<EntityRef::Ref>> liveRefs;
     };
@@ -37,7 +39,6 @@ namespace ecs {
         std::atomic<Entity> liveEntity;
 
         Ref(const ecs::Name &name) : name(name) {}
-        Ref(const Entity &ent);
     };
 
     EntityReferenceManager &GetEntityRefs();

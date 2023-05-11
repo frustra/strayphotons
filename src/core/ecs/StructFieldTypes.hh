@@ -7,6 +7,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/SignalRef.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>

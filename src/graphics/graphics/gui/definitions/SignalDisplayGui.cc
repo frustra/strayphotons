@@ -31,11 +31,11 @@ namespace sp {
         std::string text = "error";
         ImVec4 textColor(1, 0, 0, 1);
         if (ent.Exists(lock)) {
-            auto maxValue = ecs::SignalBindings::GetSignal(lock, ent, "max_value");
-            auto value = ecs::SignalBindings::GetSignal(lock, ent, "value");
-            textColor.x = ecs::SignalBindings::GetSignal(lock, ent, "text_color_r");
-            textColor.y = ecs::SignalBindings::GetSignal(lock, ent, "text_color_g");
-            textColor.z = ecs::SignalBindings::GetSignal(lock, ent, "text_color_b");
+            auto maxValue = ecs::SignalRef(ent, "max_value").GetSignal(lock);
+            auto value = ecs::SignalRef(ent, "value").GetSignal(lock);
+            textColor.x = ecs::SignalRef(ent, "text_color_r").GetSignal(lock);
+            textColor.y = ecs::SignalRef(ent, "text_color_g").GetSignal(lock);
+            textColor.z = ecs::SignalRef(ent, "text_color_b").GetSignal(lock);
             std::stringstream ss;
             if (maxValue != 0.0) {
                 ss << std::fixed << std::setprecision(2) << (value / maxValue * 100.0) << "%";

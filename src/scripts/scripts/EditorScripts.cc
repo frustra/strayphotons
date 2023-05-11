@@ -2,7 +2,7 @@
 #include "core/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
-#include "ecs/EntityReferenceManager.hh"
+#include "ecs/SignalManager.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
@@ -36,8 +36,8 @@ namespace sp::scripts {
                 if (!ent.Has<Name, TransformTree>(lock)) continue;
                 auto &sourceName = ent.Get<Name>(lock);
                 auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
-                std::optional<SignalOutput> signals;
-                if (ent.Has<SignalOutput>(lock)) signals = ent.Get<SignalOutput>(lock);
+
+                auto signals = GetSignalManager().GetSignals(ent);
 
                 SceneRef scene;
                 if (lock.Has<ActiveScene>()) {
@@ -64,8 +64,14 @@ namespace sp::scripts {
 
                         auto newEntity = scene->NewRootEntity(lock, scene, name.entity);
                         newEntity.Set<TransformTree>(lock, transform);
-                        if (signals) {
-                            newEntity.Set<SignalOutput>(lock, *signals);
+                        for (auto &signal : signals) {
+                            SignalRef dstRef(newEntity, signal.GetSignalName());
+                            if (signal.HasValue(lock)) {
+                                dstRef.SetValue(lock, signal.GetValue(lock));
+                            }
+                            if (signal.HasBinding(lock)) {
+                                dstRef.SetBinding(lock, signal.GetBinding(lock));
+                            }
                         }
                         auto &scripts = newEntity.Set<Scripts>(lock);
                         auto &prefab = scripts.AddPrefab(Name(scene->data->name, ""), "template");
@@ -163,12 +169,11 @@ namespace sp::scripts {
             auto position = globalTransform.GetPosition();
             auto forward = globalTransform.GetForward();
 
-            auto editMode = (int)SignalBindings::GetSignal(lock, ent, "edit_mode");
+            SignalRef editModeRef(ent, "edit_mode");
+            auto editMode = (int)editModeRef.GetSignal(lock);
             editMode = std::clamp(editMode, 0, 2);
-            if (ent.Has<SignalOutput>(lock)) {
-                ent.Get<SignalOutput>(lock).SetSignal("edit_mode", editMode);
-            }
-            auto snapMode = SignalBindings::GetSignal(lock, ent, "snap_mode") >= 0.5;
+            editModeRef.SetValue(lock, editMode);
+            auto snapMode = SignalRef(ent, "snap_mode").GetSignal(lock) >= 0.5;
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {

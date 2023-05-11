@@ -38,8 +38,8 @@ namespace ecs {
 
         auto &transform = ent.Get<TransformTree>(lock);
 
-        double currentState = SignalBindings::GetSignal(lock, ent, "animation_state");
-        double targetState = SignalBindings::GetSignal(lock, ent, "animation_target");
+        double currentState = SignalRef(ent, "animation_state").GetSignal(lock);
+        double targetState = SignalRef(ent, "animation_target").GetSignal(lock);
         currentState = std::clamp(currentState, 0.0, animation.states.size() - 1.0);
         targetState = std::clamp(targetState, 0.0, animation.states.size() - 1.0);
         auto state = animation.GetCurrNextState(currentState, targetState);

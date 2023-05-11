@@ -1,7 +1,6 @@
 #include "Scene.hh"
 
 #include "core/Tracing.hh"
-#include "ecs/EntityReferenceManager.hh"
 
 #include <memory>
 

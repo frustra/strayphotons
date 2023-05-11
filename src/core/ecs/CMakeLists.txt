@@ -7,6 +7,8 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     EventQueue.cc
     ScriptManager.cc
     SignalExpression.cc
+    SignalManager.cc
+    SignalRef.cc
     SignalStructAccess.cc
     StructMetadata.cc
 )

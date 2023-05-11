@@ -73,6 +73,11 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
             lock.Set<ecs::FocusLock>();
             lock.Set<ecs::ActiveScene>();
+            lock.Set<ecs::Signals>();
+        }
+        {
+            auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
+            lock.Set<ecs::Signals>();
         }
 
 #if RUST_CXX

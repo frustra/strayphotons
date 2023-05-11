@@ -5,7 +5,7 @@
 #include "core/Logging.hh"
 
 namespace ecs {
-    Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {
+    Name::Name(const std::string_view &scene, const std::string_view &entity) : scene(scene), entity(entity) {
         Assertf(scene.find_first_of(",():/# ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
         Assertf(entity.find_first_of(",():/# ") == std::string::npos,
             "Entity name has invalid character: '%s'",
@@ -14,11 +14,11 @@ namespace ecs {
         Assertf(entity.find('-') != 0, "Entity name must not start with '-': '%s'", entity);
     }
 
-    Name::Name(std::string_view relativeName, const EntityScope &scope) {
+    Name::Name(const std::string_view &relativeName, const EntityScope &scope) {
         Parse(relativeName, scope);
     }
 
-    bool Name::Parse(std::string_view relativeName, const EntityScope &scope) {
+    bool Name::Parse(const std::string_view &relativeName, const EntityScope &scope) {
         size_t i = relativeName.find(':');
         if (i != std::string::npos) {
             scene = relativeName.substr(0, i);

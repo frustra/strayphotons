@@ -15,7 +15,8 @@
 namespace ecs {
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
-    using SendEventsLock = Lock<Read<Name, FocusLock, EventBindings, EventInput, SignalBindings, SignalOutput>>;
+    using SendEventsLock =
+        Lock<Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
 
     struct EventInput {
         EventInput() {}
@@ -33,7 +34,7 @@ namespace ecs {
         size_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::unordered_map<std::string, std::vector<std::shared_ptr<EventQueue>>> events;
+        robin_hood::unordered_map<std::string, std::vector<EventQueueRef>> events;
     };
 
     static StructMetadata MetadataEventInput(typeid(EventInput));

@@ -42,6 +42,7 @@ namespace ecs {
     struct SceneProperties;
     struct Screen;
     struct Scripts;
+    struct Signals;
     struct SignalOutput;
     struct SignalBindings;
     struct Sounds;
@@ -86,6 +87,7 @@ namespace ecs {
 
         EventInput,
         EventBindings,
+        Signals,
         SignalOutput,
         SignalBindings,
         Scripts>;
@@ -145,10 +147,26 @@ namespace ecs {
      *  QueueTransaction<Write<FocusLock>>([ent](auto lock) { Assert(ent.Ready()); lock.Set<FocusLock>(); });
      */
     template<typename... Permissions, typename Fn>
-    inline auto QueueTransaction(Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, Lock<Permissions...>>> {
-        using ReturnType = std::invoke_result_t<Fn, Lock<Permissions...>>;
+    inline auto QueueTransaction(Fn &&callback)
+        -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
+        using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
         return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
             Lock<Permissions...> lock = World().StartTransaction<Permissions...>();
+            if constexpr (std::is_void_v<ReturnType>) {
+                callback(lock);
+            } else {
+                return std::make_shared<ReturnType>(callback(lock));
+            }
+        });
+    }
+
+    // See QueueTransaction() for usage.
+    template<typename... Permissions, typename Fn>
+    inline auto QueueStagingTransaction(Fn &&callback)
+        -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
+        using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
+        return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
+            Lock<Permissions...> lock = StagingWorld().StartTransaction<Permissions...>();
             if constexpr (std::is_void_v<ReturnType>) {
                 callback(lock);
             } else {
@@ -161,7 +179,7 @@ namespace ecs {
         return Tecs::IdentifierFromGeneration(e.generation) == World().GetInstanceId();
     }
 
-    static inline bool IsLive(Lock<> lock) {
+    static inline bool IsLive(const Lock<> &lock) {
         return lock.GetInstance().GetInstanceId() == World().GetInstanceId();
     }
 
@@ -169,7 +187,7 @@ namespace ecs {
         return Tecs::IdentifierFromGeneration(e.generation) == StagingWorld().GetInstanceId();
     }
 
-    static inline bool IsStaging(Lock<> lock) {
+    static inline bool IsStaging(const Lock<> &lock) {
         return lock.GetInstance().GetInstanceId() == StagingWorld().GetInstanceId();
     }
 }; // namespace ecs
