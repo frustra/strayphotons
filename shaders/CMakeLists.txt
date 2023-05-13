@@ -15,10 +15,8 @@ file(GLOB_RECURSE SHADERS
     ${SHADER_DIR}/*.rchit
     ${SHADER_DIR}/*.rmiss
 )
-list(FILTER SHADERS EXCLUDE REGEX "shaders/opengl")
 
 file(GLOB_RECURSE SHADERS_LIB ${SHADER_DIR}/*.glsl)
-list(FILTER SHADERS_LIB EXCLUDE REGEX "shaders/opengl")
 
 find_package(Vulkan REQUIRED)
 
