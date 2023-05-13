@@ -41,6 +41,32 @@ namespace ecs {
     ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
 
+    ScriptManager::~ScriptManager() {
+        // Remove any ScriptStates and EventQueues that are still in use
+        {
+            auto lock = StartStagingTransaction<Write<Scripts>>();
+            for (auto &ent : lock.EntitiesWith<Scripts>()) {
+                auto &scripts = ent.Get<Scripts>(lock).scripts;
+                for (auto &script : scripts) {
+                    script.state.reset();
+                }
+            }
+        }
+        {
+            auto lock = StartTransaction<Write<Scripts, EventInput>>();
+            for (auto &ent : lock.EntitiesWith<Scripts>()) {
+                auto &scripts = ent.Get<Scripts>(lock).scripts;
+                for (auto &script : scripts) {
+                    script.state.reset();
+                }
+            }
+            for (auto &ent : lock.EntitiesWith<EventInput>()) {
+                auto &eventInput = ent.Get<EventInput>(lock);
+                eventInput.events.clear();
+            }
+        }
+    }
+
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const ScriptState &state) {
         ZoneScoped;
         auto *scriptListPtr = scriptLists[state.definition.callback.index()];

@@ -24,9 +24,10 @@
 
 namespace sp {
     SceneManager &GetSceneManager() {
-        // Ensure the ECS and AssetManager are constructed first so they are destructed in the right order.
+        // Ensure ECS, ScriptManager, and AssetManager are constructed first so they are destructed in the right order.
         ecs::World();
         ecs::StagingWorld();
+        ecs::GetScriptManager();
         sp::Assets();
         static SceneManager sceneManager;
         return sceneManager;

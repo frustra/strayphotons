@@ -122,27 +122,6 @@ namespace ecs {
         }
     }
 
-    template<>
-    void StructMetadata::Save<Scripts>(const EntityScope &scope,
-        picojson::value &dst,
-        const Scripts &src,
-        const Scripts &def) {
-        picojson::array arrayOut;
-        for (auto &instance : src.scripts) {
-            // Skip if the script is the same as the default
-            if (!instance || sp::contains(def.scripts, instance)) continue;
-
-            picojson::value val;
-            sp::json::Save(scope, val, instance);
-            arrayOut.emplace_back(val);
-        }
-        if (arrayOut.size() > 1) {
-            dst = picojson::value(arrayOut);
-        } else if (arrayOut.size() == 1) {
-            dst = arrayOut.front();
-        }
-    }
-
     bool ScriptState::operator==(const ScriptState &other) const {
         if (definition.name.empty() || !definition.context) return instanceId == other.instanceId;
         if (definition.name != other.definition.name) return false;

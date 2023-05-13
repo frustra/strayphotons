@@ -56,14 +56,9 @@ namespace ecs {
     };
 
     static StructMetadata MetadataPhysicsJoints(typeid(PhysicsJoints),
-        StructField::New(&PhysicsJoints::joints, FieldAction::AutoLoad));
+        StructField::New(&PhysicsJoints::joints, ~FieldAction::AutoApply));
     static Component<PhysicsJoints> ComponentPhysicsJoints("physics_joints", MetadataPhysicsJoints);
 
-    template<>
-    void StructMetadata::Save<PhysicsJoints>(const EntityScope &scope,
-        picojson::value &dst,
-        const PhysicsJoints &src,
-        const PhysicsJoints &def);
     template<>
     void Component<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget);
 } // namespace ecs

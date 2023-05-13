@@ -180,14 +180,16 @@ namespace sp::scene {
         if (signalOutput) {
             for (auto &[signalName, value] : signalOutput.value().signals) {
                 if (!std::isfinite(value)) continue;
-                SignalRef(rootSceneInfo.liveId, signalName).SetValue(live, value);
+                SignalRef ref(rootSceneInfo.liveId, signalName);
+                if (!ref.HasValue(live)) ref.SetValue(live, value);
             }
         }
         auto &signalBindings = std::get<std::optional<SignalBindings>>(flatEntity);
         if (signalBindings) {
             for (auto &[signalName, binding] : signalBindings.value().bindings) {
                 if (!binding) continue;
-                SignalRef(rootSceneInfo.liveId, signalName).SetBinding(live, binding);
+                SignalRef ref(rootSceneInfo.liveId, signalName);
+                if (!ref.HasBinding(live)) ref.SetBinding(live, binding);
             }
         }
     }
