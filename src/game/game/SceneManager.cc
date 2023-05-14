@@ -856,13 +856,11 @@ namespace sp {
     }
 
     void SceneManager::PrintScene(std::string filterName) {
-        to_lower(filterName);
-
         {
             auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
             auto liveLock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
 
-            if (filterName.empty() || filterName == "player") {
+            if (filterName.empty() || sp::iequals(filterName, "player")) {
                 Logf("Player scene entities:");
                 for (auto &e : liveLock.EntitiesWith<ecs::Name>()) {
                     if (!e.Has<ecs::Name, ecs::SceneInfo>(liveLock)) continue;
@@ -880,7 +878,7 @@ namespace sp {
                 }
             }
 
-            if (filterName.empty() || filterName == "bindings") {
+            if (filterName.empty() || sp::iequals(filterName, "bindings")) {
                 Logf("Binding scene entities:");
                 for (auto &e : liveLock.EntitiesWith<ecs::Name>()) {
                     if (!e.Has<ecs::Name, ecs::SceneInfo>(liveLock)) continue;
@@ -901,9 +899,8 @@ namespace sp {
             for (size_t sceneTypeI = 0; sceneTypeI < scenes.size(); sceneTypeI++) {
                 auto sceneType = static_cast<SceneType>(sceneTypeI);
                 std::string typeName(magic_enum::enum_name<SceneType>(sceneType));
-                to_lower(typeName);
 
-                if (filterName.empty() || filterName == typeName) {
+                if (filterName.empty() || sp::iequals(filterName, typeName)) {
                     for (auto scene : scenes[sceneType]) {
                         Logf("Entities from %s scene: %s", typeName, scene->data->name);
                         for (auto &e : liveLock.EntitiesWith<ecs::Name>()) {

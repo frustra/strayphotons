@@ -236,6 +236,7 @@ namespace sp {
         string to_upper(string &str);
         string to_lower_copy(const string &str);
         string to_upper_copy(const string &str);
+        bool iequals(const string &str1, const string &str2);
         void trim(string &str);
         void trim_left(string &str);
         void trim_right(string &str);
