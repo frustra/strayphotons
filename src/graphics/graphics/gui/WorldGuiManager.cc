@@ -55,7 +55,6 @@ namespace sp {
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
-                Logf("Window receiving event: %s", event.toString());
                 auto existingState = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
                     return state.sourceEntity == event.source;
                 });
@@ -78,7 +77,6 @@ namespace sp {
                         }
                     } else if (std::holds_alternative<glm::vec2>(event.data)) {
                         glm::vec2 &mousePos = std::get<glm::vec2>(event.data);
-                        Logf("Pointing at vec2 %f, %f", mousePos.x, mousePos.y);
                         if (existingState != pointingStack.end()) {
                             existingState->mousePos = mousePos;
                         } else {
