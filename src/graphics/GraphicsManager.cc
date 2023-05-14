@@ -198,6 +198,11 @@ namespace sp {
         renderer->EndFrame();
     #endif
         context->EndFrame();
+
+        if (stepMode) {
+            // Wait for graphics queue to complete so GPU readback is deterministic
+            context->WaitIdle();
+        }
     }
 
     GraphicsContext *GraphicsManager::GetContext() {

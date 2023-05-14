@@ -139,10 +139,6 @@ namespace sp {
                         }
 
                         graphics.Step(1);
-
-                        // Wait for graphics queue to complete so GPU readback is deterministic
-                        auto *context = graphics.GetContext();
-                        if (context) context->WaitIdle();
                     }
                 });
 
