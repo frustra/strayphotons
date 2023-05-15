@@ -51,6 +51,7 @@ namespace sp {
                 ImGui::PopStyleVar();
                 ImGui::EndChild();
 
+                bool reclaimInputFocus = ImGui::IsWindowAppearing();
                 ImGuiInputTextFlags iflags = ImGuiInputTextFlags_EnterReturnsTrue |
                                              ImGuiInputTextFlags_CallbackCompletion |
                                              ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackAlways;
@@ -88,12 +89,8 @@ namespace sp {
                 skipEditCheck = false;
 
                 ImGui::SetItemDefaultFocus();
-                if (reclaimInputFocus) {
-                    ImGui::SetKeyboardFocusHere(-1);
-                    reclaimInputFocus = false;
-                }
+                if (reclaimInputFocus) ImGui::SetKeyboardFocusHere(-1);
 
-                reclaimInputFocus |= ImGui::IsWindowAppearing();
                 popupPos = ImGui::GetItemRectMin();
             }
             ImGui::End();
@@ -107,9 +104,9 @@ namespace sp {
             }
 
             if (completionPopupVisible) {
-                ImGuiWindowFlags popupFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                              ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar |
-                                              ImGuiWindowFlags_NoSavedSettings;
+                ImGuiWindowFlags popupFlags = ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_NoTitleBar |
+                                              ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                                              ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings;
 
                 ImVec2 size = {400, 200};
                 size.y = std::min(size.y, 12 + completionEntries.size() * ImGui::GetTextLineHeightWithSpacing());
@@ -118,8 +115,6 @@ namespace sp {
                 ImGui::SetNextWindowSize(size);
                 ImGui::Begin("completion_popup", nullptr, popupFlags);
                 ImGui::PushAllowKeyboardFocus(false);
-
-                if (completionSelectionChanged) reclaimInputFocus = true;
 
                 for (int index = completionEntries.size() - 1; index >= 0; index--) {
                     bool active = completionSelectedIndex == index;
@@ -200,7 +195,7 @@ namespace sp {
 
         float lastScrollMaxY = 0.0f;
         char inputBuf[1024];
-        bool skipEditCheck = false, reclaimInputFocus = false;
+        bool skipEditCheck = false;
 
         CompletionMode completionMode = COMPLETION_NONE;
         bool completionPopupVisible = false, completionSelectionChanged = false, syncInputFromCompletion = false,

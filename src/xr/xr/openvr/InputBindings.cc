@@ -67,21 +67,20 @@ namespace sp::xr {
                             "Failed to load OpenVR input action set: %s",
                             action.name);
                     } else if (param.first == "type") {
-                        auto typeStr = param.second.get<string>();
-                        to_lower(typeStr);
-                        if (typeStr == "boolean") {
+                        auto &typeStr = param.second.get<string>();
+                        if (sp::iequals(typeStr, "boolean")) {
                             action.type = Action::DataType::Bool;
-                        } else if (typeStr == "vector1") {
+                        } else if (sp::iequals(typeStr, "vector1")) {
                             action.type = Action::DataType::Vec1;
-                        } else if (typeStr == "vector2") {
+                        } else if (sp::iequals(typeStr, "vector2")) {
                             action.type = Action::DataType::Vec2;
-                        } else if (typeStr == "vector3") {
+                        } else if (sp::iequals(typeStr, "vector3")) {
                             action.type = Action::DataType::Vec3;
-                        } else if (typeStr == "vibration") {
+                        } else if (sp::iequals(typeStr, "vibration")) {
                             action.type = Action::DataType::Haptic;
-                        } else if (typeStr == "pose") {
+                        } else if (sp::iequals(typeStr, "pose")) {
                             action.type = Action::DataType::Pose;
-                        } else if (typeStr == "skeleton") {
+                        } else if (sp::iequals(typeStr, "skeleton")) {
                             action.type = Action::DataType::Skeleton;
                         } else {
                             Errorf("OpenVR action manifest contains unknown action type: %s", typeStr);

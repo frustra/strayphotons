@@ -61,7 +61,7 @@ namespace sp {
 
                 if (event.name == INTERACT_EVENT_INTERACT_POINT) {
                     if (std::holds_alternative<ecs::Transform>(event.data)) {
-                        auto pointWorld = std::get<ecs::Transform>(event.data).GetPosition();
+                        auto &pointWorld = std::get<ecs::Transform>(event.data).GetPosition();
                         auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
                         pointOnScreen += 0.5f;
 
@@ -70,6 +70,13 @@ namespace sp {
                             (1.0f - pointOnScreen.y) * io.DisplaySize.y,
                         };
 
+                        if (existingState != pointingStack.end()) {
+                            existingState->mousePos = mousePos;
+                        } else {
+                            pointingStack.emplace_back(PointingState{event.source, mousePos});
+                        }
+                    } else if (std::holds_alternative<glm::vec2>(event.data)) {
+                        glm::vec2 &mousePos = std::get<glm::vec2>(event.data);
                         if (existingState != pointingStack.end()) {
                             existingState->mousePos = mousePos;
                         } else {
@@ -87,11 +94,15 @@ namespace sp {
                     if (std::holds_alternative<bool>(event.data)) {
                         bool mouseDown = std::get<bool>(event.data);
                         if (existingState != pointingStack.end()) {
-                            if (!mouseDown && existingState->mousePos == glm::vec2(-FLT_MAX, -FLT_MAX)) {
-                                // If mouse is released while off screen, remove the state
-                                pointingStack.erase(existingState);
-                            } else {
+                            if (mouseDown != existingState->mouseDown) {
+                                // Send previous mouse event immediately so fast clicks aren't missed
+                                io.AddMousePosEvent(existingState->mousePos.x, existingState->mousePos.y);
+                                io.AddMouseButtonEvent(ImGuiMouseButton_Left, existingState->mouseDown);
                                 existingState->mouseDown = mouseDown;
+                            }
+                            if (!mouseDown && existingState->mousePos == glm::vec2(-FLT_MAX, -FLT_MAX)) {
+                                // Remove the state if the mouse is released off screen
+                                pointingStack.erase(existingState);
                             }
                         } else {
                             Warnf("Entity %s sent press event to world gui %s without point event",

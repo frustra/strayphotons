@@ -203,10 +203,40 @@ void sp::ConsoleManager::RegisterCoreCommands() {
 
             ecs::Event event(eventName, ecs::Entity(), true);
             if (!value.empty()) {
-                if (is_float(value)) {
+                if (sp::iequals(value, "true")) {
+                    event.data = true;
+                } else if (sp::iequals(value, "false")) {
+                    event.data = false;
+                } else if (is_float(value)) {
                     event.data = std::stof(value);
                 } else {
-                    event.data = value;
+                    // Try splitting the value by whitespace to convert to a glm::vecN
+                    std::stringstream stream(value);
+                    std::array<string, 5> values;
+                    int count = 0;
+                    for (auto &field : values) {
+                        if (!(stream >> field)) break;
+                        if (is_float(field)) {
+                            count++;
+                        } else {
+                            // If any field is not a float, treat the value as a string
+                            count = -1;
+                            break;
+                        }
+                    }
+
+                    if (count == 2) {
+                        event.data = glm::vec2(std::stof(values[0]), std::stof(values[1]));
+                    } else if (count == 3) {
+                        event.data = glm::vec3(std::stof(values[0]), std::stof(values[1]), std::stof(values[2]));
+                    } else if (count == 4) {
+                        event.data = glm::vec4(std::stof(values[0]),
+                            std::stof(values[1]),
+                            std::stof(values[2]),
+                            std::stof(values[3]));
+                    } else {
+                        event.data = value;
+                    }
                 }
             }
 

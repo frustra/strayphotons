@@ -89,20 +89,18 @@ namespace sp::scripts {
         PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;
 
         bool Init(ScriptState &state, Lock<Read<ecs::Name>> lock, const Entity &ent) {
-            to_lower(handStr);
-
             laserPointerRef = ecs::Name("vr", "laser_pointer");
 
             char handChar = 'l';
             ecs::Name inputScope("input", "");
-            if (handStr == "left") {
+            if (sp::iequals(handStr, "left")) {
                 handChar = 'l';
                 inputScope.entity = "vr_actions_main_in_lefthand_anim";
                 controllerRef = ecs::Name("vr", "controller_left");
                 actionPrefix = "actions_main_in_lefthand_anim";
                 collisionMask = (PhysicsGroupMask)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER_RIGHT_HAND |
                                                    ecs::PHYSICS_GROUP_HELD_OBJECT | ecs::PHYSICS_GROUP_USER_INTERFACE);
-            } else if (handStr == "right") {
+            } else if (sp::iequals(handStr, "right")) {
                 handChar = 'r';
                 inputScope.entity = "vr_actions_main_in_righthand_anim";
                 controllerRef = ecs::Name("vr", "controller_right");

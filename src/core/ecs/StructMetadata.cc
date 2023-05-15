@@ -123,24 +123,20 @@ namespace ecs {
         auto *field = static_cast<const char *>(srcStruct) + offset;
         auto *defaultField = defaultStruct ? static_cast<const char *>(defaultStruct) + offset : nullptr;
 
-        if (!name.empty()) {
-            GetFieldType(type, field, [&](auto &value) {
-                using T = std::decay_t<decltype(value)>;
+        GetFieldType(type, field, [&](auto &value) {
+            using T = std::decay_t<decltype(value)>;
 
-                if (defaultField) {
-                    auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-                    sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
-                } else {
-                    if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
-                    auto &obj = dst.get<picojson::object>();
-                    sp::json::Save(scope, obj[name], value);
-                }
-            });
-        } else {
-            GetFieldType(type, field, [&](auto &value) {
+            if (defaultField) {
+                auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
+                sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
+            } else if (!name.empty()) {
+                if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+                auto &obj = dst.get<picojson::object>();
+                sp::json::Save(scope, obj[name], value);
+            } else {
                 sp::json::Save(scope, dst, value);
-            });
-        }
+            }
+        });
     }
 
     void StructField::Apply(void *dstStruct, const void *srcStruct, const void *defaultStruct) const {

@@ -2,6 +2,7 @@
 
 #include "core/Common.hh"
 #include "core/LockFreeMutex.hh"
+#include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/SignalRef.hh"
 
@@ -144,8 +145,11 @@ namespace ecs {
     static StructMetadata MetadataScriptState(typeid(ScriptState));
 
     class ScriptManager {
+        sp::LogOnExit logOnExit = "Scripts shut down =====================================================";
+
     public:
         ScriptManager() {}
+        ~ScriptManager();
 
         std::shared_ptr<ScriptState> NewScriptInstance(const ScriptState &state);
         std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope, const ScriptDefinition &definition);

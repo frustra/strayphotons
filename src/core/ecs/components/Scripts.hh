@@ -81,14 +81,10 @@ namespace ecs {
         std::vector<ScriptInstance> scripts;
     };
 
-    static StructMetadata MetadataScripts(typeid(Scripts), StructField::New(&Scripts::scripts, FieldAction::AutoLoad));
+    static StructMetadata MetadataScripts(typeid(Scripts),
+        StructField::New(&Scripts::scripts, ~FieldAction::AutoApply));
     static Component<Scripts> ComponentScripts("script", MetadataScripts);
 
-    template<>
-    void StructMetadata::Save<Scripts>(const EntityScope &scope,
-        picojson::value &dst,
-        const Scripts &src,
-        const Scripts &def);
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
 

@@ -158,6 +158,11 @@ namespace sp::json {
             }
             return true;
         } else {
+            if (src.is<picojson::object>()) {
+                auto &obj = src.get<picojson::object>();
+                // Empty object should represent an empty array, not a single default-initialized array entry
+                if (obj.empty()) return true;
+            }
             T entry;
             if (!sp::json::Load(s, entry, src)) {
                 return false;
@@ -356,6 +361,39 @@ namespace sp::json {
             dst.get<picojson::object>()[field] = value;
         } else {
             dst = value;
+        }
+        return true;
+    }
+
+    template<typename T>
+    inline bool SaveIfChanged(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const std::string &field,
+        const std::vector<T> &src,
+        const std::vector<T> &def) {
+        picojson::array arrayOut;
+        for (auto &val : src) {
+            // Skip if the value is the same as the default
+            if (sp::contains(def, val)) continue;
+
+            picojson::value dstVal;
+            Save(s, dstVal, val);
+            if (dstVal.is<picojson::null>()) continue;
+            arrayOut.emplace_back(dstVal);
+        }
+        if (arrayOut.empty()) return false;
+
+        picojson::value valueOut;
+        if (arrayOut.size() == 1) {
+            valueOut = arrayOut.front();
+        } else {
+            valueOut = picojson::value(arrayOut);
+        }
+        if (!field.empty()) {
+            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+            dst.get<picojson::object>()[field] = valueOut;
+        } else {
+            dst = valueOut;
         }
         return true;
     }

@@ -86,7 +86,8 @@ namespace ecs {
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };
 
-    static StructMetadata MetadataSignalOutput(typeid(SignalOutput), StructField::New(&SignalOutput::signals));
+    static StructMetadata MetadataSignalOutput(typeid(SignalOutput),
+        StructField::New(&SignalOutput::signals, ~FieldAction::AutoApply));
     static Component<SignalOutput> ComponentSignalReceiver("signal_output", MetadataSignalOutput);
     template<>
     void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget);
