@@ -37,7 +37,7 @@ namespace ecs {
         StructField::New("play_on_load", &Sound::playOnLoad),
         StructField::New("volume", &Sound::volume));
     template<>
-    bool StructMetadata::Load<Sound>(const EntityScope &scope, Sound &dst, const picojson::value &src);
+    bool StructMetadata::Load<Sound>(Sound &dst, const picojson::value &src);
 
     struct Sounds {
         std::vector<Sound> sounds;

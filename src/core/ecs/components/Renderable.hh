@@ -70,7 +70,7 @@ namespace ecs {
     static Component<Renderable> ComponentRenderable("renderable", MetadataRenderable);
 
     template<>
-    bool StructMetadata::Load<Renderable>(const EntityScope &scope, Renderable &dst, const picojson::value &src);
+    bool StructMetadata::Load<Renderable>(Renderable &dst, const picojson::value &src);
     template<>
     void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget);
 } // namespace ecs

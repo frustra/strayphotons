@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<Sound>(const EntityScope &scope, Sound &sound, const picojson::value &src) {
+    bool StructMetadata::Load<Sound>(Sound &sound, const picojson::value &src) {
         if (!sound.filePath.empty()) {
             sound.file = sp::Assets().Load("audio/" + sound.filePath);
         }

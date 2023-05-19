@@ -69,6 +69,14 @@ namespace ecs {
         });
     }
 
+    void StructField::SetScope(void *dstStruct, const EntityScope &scope) const {
+        auto *field = static_cast<char *>(dstStruct) + offset;
+
+        return GetFieldType(type, field, [&](auto &dstValue) {
+            scope::SetScope(dstValue, scope);
+        });
+    }
+
     bool StructField::Compare(const void *a, const void *b) const {
         auto *fieldA = static_cast<const char *>(a) + offset;
         auto *fieldB = static_cast<const char *>(b) + offset;
@@ -85,7 +93,7 @@ namespace ecs {
         });
     }
 
-    bool StructField::Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const {
+    bool StructField::Load(void *dstStruct, const picojson::value &src) const {
         if (!(actions & FieldAction::AutoLoad)) return true;
 
         auto *dstfield = static_cast<char *>(dstStruct) + offset;
@@ -106,7 +114,7 @@ namespace ecs {
         }
 
         return GetFieldType(type, dstfield, [&](auto &dstValue) {
-            if (!sp::json::Load(scope, dstValue, *srcField)) {
+            if (!sp::json::Load(dstValue, *srcField)) {
                 Errorf("Invalid %s field value: %s", type.name(), src.to_str());
                 return false;
             }

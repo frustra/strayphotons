@@ -79,7 +79,7 @@ namespace ecs {
 
         ScriptState();
         ScriptState(const ScriptState &other);
-        ScriptState(const EntityScope &scope, const ScriptDefinition &definition);
+        ScriptState(const ScriptDefinition &definition, const EntityScope &scope = {});
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
@@ -183,6 +183,7 @@ namespace ecs {
         };
 
         friend class StructMetadata;
+        friend class ScriptInstance;
         friend struct sp::EditorContext;
     };
 

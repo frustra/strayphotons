@@ -10,7 +10,9 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
+#include <tuple>
 #include <type_traits>
 #include <typeindex>
 
@@ -113,6 +115,19 @@ namespace ecs {
     using ComponentObserver = Tecs::Observer<ECS, Tecs::ComponentEvent<T>>;
     template<typename T>
     using ComponentEvent = Tecs::ComponentEvent<T>;
+
+    namespace detail {
+        template<typename>
+        struct make_flat_components {
+            using type = std::tuple<>;
+        };
+        template<typename... Tn>
+        struct make_flat_components<Tecs::ECS<Tn...>> {
+            using type = std::tuple<std::optional<Tn>...>;
+        };
+    } // namespace detail
+
+    using FlatEntity = detail::make_flat_components<ECS>::type;
 
     std::string ToString(Lock<Read<Name>> lock, Entity e);
 

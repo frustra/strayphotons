@@ -29,7 +29,7 @@ namespace sp::scripts {
 
         template<typename LockType>
         void updateEdgeTrigger(ScriptState &state, const LockType &lock, const Entity &ent) {
-            if (expr.expr != inputExpr) {
+            if (expr.expr != inputExpr || state.scope != expr.scope) {
                 expr = SignalExpression(inputExpr, state.scope);
                 if (!previousValue) previousValue = expr.Evaluate(lock);
             }

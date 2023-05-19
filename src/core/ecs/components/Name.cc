@@ -10,12 +10,21 @@ namespace ecs {
         Assertf(entity.find_first_of(",():/# ") == std::string::npos,
             "Entity name has invalid character: '%s'",
             entity);
-        Assertf(scene.find('-') != 0, "Scene name must not start with '-': '%s'", scene);
-        Assertf(entity.find('-') != 0, "Entity name must not start with '-': '%s'", entity);
+        Assertf(scene.rfind('-', 0) == std::string::npos, "Scene name must not start with '-': '%s'", scene);
+        Assertf(entity.rfind('-', 0) == std::string::npos, "Entity name must not start with '-': '%s'", entity);
     }
 
     Name::Name(const std::string_view &relativeName, const EntityScope &scope) {
         Parse(relativeName, scope);
+    }
+
+    Name::Name(const Name &other, const EntityScope &scope) {
+        if (other.scene.empty()) {
+            Parse(other.entity, scope);
+        } else {
+            scene = other.scene;
+            entity = other.entity;
+        }
     }
 
     bool Name::Parse(const std::string_view &relativeName, const EntityScope &scope) {
@@ -29,7 +38,7 @@ namespace ecs {
                 if (scope.entity.empty()) {
                     scene.clear();
                     entity.clear();
-                    Errorf("Invalid scope root name has invalid scope: %s", scope.String());
+                    Errorf("Entity name has invalid scope: %s", scope.String());
                     return false;
                 } else {
                     entity = scope.entity;
@@ -43,16 +52,20 @@ namespace ecs {
             }
         } else {
             scene.clear();
-            entity.clear();
-            Errorf("Invalid name has no scene: %s", std::string(relativeName));
-            return false;
+            if (scope.entity.empty()) {
+                entity = relativeName;
+            } else if (relativeName == "scoperoot") {
+                entity = scope.entity;
+            } else {
+                entity = scope.entity + "." + std::string(relativeName);
+            }
         }
         if (scene.find_first_of(",():/# ") != std::string::npos) {
             scene.clear();
             entity.clear();
             Errorf("Scene name has invalid character: '%s'", scene);
             return false;
-        } else if (scene.find('-') == 0) {
+        } else if (scene.rfind('-', 0) == 0) {
             scene.clear();
             entity.clear();
             Errorf("Scene name must not start with '-': '%s'", scene);
@@ -63,7 +76,7 @@ namespace ecs {
             entity.clear();
             Errorf("Entity name has invalid character: '%s'", entity);
             return false;
-        } else if (entity.find('-') == 0) {
+        } else if (entity.rfind('-', 0) == 0) {
             scene.clear();
             entity.clear();
             Errorf("Entity name must not start with '-': '%s'", entity);

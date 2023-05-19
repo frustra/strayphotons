@@ -7,7 +7,7 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<Renderable>(const EntityScope &scope,
+    bool StructMetadata::Load<Renderable>(
         Renderable &renderable,
         const picojson::value &src) {
         if (!renderable.modelName.empty()) {

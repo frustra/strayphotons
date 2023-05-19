@@ -34,7 +34,7 @@ namespace ecs {
     }
 
     template<>
-    bool StructMetadata::Load<SceneProperties>(const EntityScope &scope,
+    bool StructMetadata::Load<SceneProperties>(
         SceneProperties &dst,
         const picojson::value &src) {
         if (!src.is<picojson::object>()) {

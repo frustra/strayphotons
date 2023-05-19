@@ -23,6 +23,8 @@ namespace ecs {
         Entity GetLive() const;
         Entity GetStaging() const;
 
+        void SetScope(const EntityScope &scope);
+
         explicit operator bool() const {
             return !!ptr;
         }

@@ -43,7 +43,7 @@ namespace sp {
                 }
 
                 if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f) {
-                    ImGui::SetScrollHereY();
+                    ImGui::SetScrollHereY(1.0f);
                 }
 
                 lastScrollMaxY = ImGui::GetScrollMaxY();

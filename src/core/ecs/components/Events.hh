@@ -49,12 +49,14 @@ namespace ecs {
 
     static StructMetadata MetadataEventDest(typeid(EventDest));
     template<>
-    bool StructMetadata::Load<EventDest>(const EntityScope &scope, EventDest &dst, const picojson::value &src);
+    bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<EventDest>(const EntityScope &scope,
         picojson::value &dst,
         const EventDest &src,
         const EventDest &def);
+    template<>
+    void StructMetadata::SetScope<EventDest>(EventDest &dst, const EntityScope &scope);
 
     struct EventBindingActions {
         std::optional<SignalExpression> filterExpr;
@@ -68,9 +70,7 @@ namespace ecs {
         StructField::New("filter", &EventBindingActions::filterExpr),
         StructField::New("modify", &EventBindingActions::modifyExprs));
     template<>
-    bool StructMetadata::Load<EventBindingActions>(const EntityScope &scope,
-        EventBindingActions &dst,
-        const picojson::value &src);
+    bool StructMetadata::Load<EventBindingActions>(EventBindingActions &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<EventBindingActions>(const EntityScope &scope,
         picojson::value &dst,
@@ -89,7 +89,7 @@ namespace ecs {
         StructField::New("outputs", &EventBinding::outputs),
         StructField::New(&EventBinding::actions));
     template<>
-    bool StructMetadata::Load<EventBinding>(const EntityScope &scope, EventBinding &dst, const picojson::value &src);
+    bool StructMetadata::Load<EventBinding>(EventBinding &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<EventBinding>(const EntityScope &scope,
         picojson::value &dst,
@@ -121,9 +121,9 @@ namespace ecs {
         StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave));
     static Component<EventBindings> ComponentEventBindings("event_bindings", MetadataEventBindings);
     template<>
-    bool StructMetadata::Load<EventBindings>(const EntityScope &scope, EventBindings &dst, const picojson::value &src);
+    bool StructMetadata::Load<EventBindings>(EventBindings &dst, const picojson::value &src);
     template<>
     void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope = Name());
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str);
 } // namespace ecs

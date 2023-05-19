@@ -7,8 +7,8 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<PhysicsShape>(const EntityScope &scope, PhysicsShape &shape, const picojson::value &src) {
-        for (auto param : src.get<picojson::object>()) {
+    bool StructMetadata::Load<PhysicsShape>(PhysicsShape &shape, const picojson::value &src) {
+        for (auto &param : src.get<picojson::object>()) {
             if (param.first == "model") {
                 if (shape) {
                     Errorf("PhysicShape defines multiple shapes: model");
@@ -33,7 +33,7 @@ namespace ecs {
                 }
                 if (param.second.is<picojson::object>()) {
                     PhysicsShape::Capsule capsule;
-                    for (auto capsuleParam : param.second.get<picojson::object>()) {
+                    for (auto &capsuleParam : param.second.get<picojson::object>()) {
                         if (capsuleParam.first == "radius") {
                             capsule.radius = capsuleParam.second.get<double>();
                         } else if (capsuleParam.first == "height") {
@@ -57,7 +57,7 @@ namespace ecs {
                 if (param.second.is<double>()) {
                     sphere.radius = param.second.get<double>();
                 } else if (param.second.is<picojson::object>()) {
-                    for (auto sphereParam : param.second.get<picojson::object>()) {
+                    for (auto &sphereParam : param.second.get<picojson::object>()) {
                         if (sphereParam.first == "radius") {
                             sphere.radius = sphereParam.second.get<double>();
                         } else {
@@ -77,7 +77,7 @@ namespace ecs {
                 }
                 PhysicsShape::Box box;
                 if (param.second.is<picojson::array>()) {
-                    if (!sp::json::Load(scope, box.extents, param.second)) {
+                    if (!sp::json::Load(box.extents, param.second)) {
                         Errorf("Invalid physics box extents: %s", param.second.to_str());
                         return false;
                     }
@@ -88,24 +88,24 @@ namespace ecs {
                 }
             } else if (param.first == "transform") {
                 Transform shapeTransform;
-                if (sp::json::Load(scope, shapeTransform, param.second)) {
+                if (sp::json::Load(shapeTransform, param.second)) {
                     shape.transform = shapeTransform;
                 } else {
                     Errorf("Couldn't parse PhysicsShape transform");
                     return false;
                 }
             } else if (param.first == "static_friction") {
-                if (!sp::json::Load(scope, shape.material.staticFriction, param.second)) {
+                if (!sp::json::Load(shape.material.staticFriction, param.second)) {
                     Errorf("Couldn't parse PhysicsShape static_friction");
                     return false;
                 }
             } else if (param.first == "dynamic_friction") {
-                if (!sp::json::Load(scope, shape.material.dynamicFriction, param.second)) {
+                if (!sp::json::Load(shape.material.dynamicFriction, param.second)) {
                     Errorf("Couldn't parse PhysicsShape dynamic_friction");
                     return false;
                 }
             } else if (param.first == "restitution") {
-                if (!sp::json::Load(scope, shape.material.restitution, param.second)) {
+                if (!sp::json::Load(shape.material.restitution, param.second)) {
                     Errorf("Couldn't parse PhysicsShape restitution");
                     return false;
                 }

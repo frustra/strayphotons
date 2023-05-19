@@ -58,8 +58,11 @@ namespace ecs {
                     nodes.pop_front();
                     continue;
                 }
-                Entity newEntity =
-                    scene->NewPrefabEntity(lock, ent, state.GetInstanceId(), getNodeName(nodeId), prefixName);
+                Entity newEntity = scene->NewPrefabEntity(lock,
+                    ent,
+                    state.GetInstanceId(),
+                    getNodeName(nodeId),
+                    prefixName);
 
                 auto &transform = newEntity.Set<TransformTree>(lock, node.transform);
                 if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;

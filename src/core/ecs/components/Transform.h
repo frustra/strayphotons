@@ -103,7 +103,7 @@ namespace ecs {
             FieldAction::AutoApply),
         StructField::New("scale", &Transform::scale, FieldAction::AutoApply));
     template<>
-    bool StructMetadata::Load<Transform>(const EntityScope &scope, Transform &dst, const picojson::value &src);
+    bool StructMetadata::Load<Transform>(Transform &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<Transform>(const EntityScope &scope,
         picojson::value &dst,

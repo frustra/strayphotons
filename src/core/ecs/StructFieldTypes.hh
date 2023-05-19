@@ -161,4 +161,4 @@ namespace ecs {
             return detail::GetComponentType<const int &>((ECS *)nullptr, type, ptr, std::forward<Func>(func));
         }
     }
-}; // namespace ecs
+} // namespace ecs

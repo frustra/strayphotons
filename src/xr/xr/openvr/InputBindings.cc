@@ -37,10 +37,10 @@ namespace sp::xr {
             return;
         }
 
-        auto actionSetList = root.get<picojson::object>()["action_sets"];
+        auto &actionSetList = root.get<picojson::object>()["action_sets"];
         if (actionSetList.is<picojson::array>()) {
-            for (auto actionSet : actionSetList.get<picojson::array>()) {
-                for (auto param : actionSet.get<picojson::object>()) {
+            for (auto &actionSet : actionSetList.get<picojson::array>()) {
+                for (auto &param : actionSet.get<picojson::object>()) {
                     if (param.first == "name") {
                         auto name = param.second.get<string>();
                         vr::VRActionSetHandle_t actionSetHandle;
@@ -55,11 +55,11 @@ namespace sp::xr {
             }
         }
 
-        auto actionList = root.get<picojson::object>()["actions"];
+        auto &actionList = root.get<picojson::object>()["actions"];
         if (actionList.is<picojson::array>()) {
-            for (auto actionObj : actionList.get<picojson::array>()) {
+            for (auto &actionObj : actionList.get<picojson::array>()) {
                 Action action;
-                for (auto param : actionObj.get<picojson::object>()) {
+                for (auto &param : actionObj.get<picojson::object>()) {
                     if (param.first == "name") {
                         action.name = param.second.get<string>();
                         error = vr::VRInput()->GetActionHandle(action.name.c_str(), &action.handle);

@@ -8,9 +8,7 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<ScriptInstance>(const EntityScope &scope,
-        ScriptInstance &instance,
-        const picojson::value &src) {
+    bool StructMetadata::Load<ScriptInstance>(ScriptInstance &instance, const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
         const ScriptDefinition *definition = nullptr;
         if (!src.is<picojson::object>()) {
@@ -62,7 +60,7 @@ namespace ecs {
             return false;
         }
 
-        auto state = ScriptState(scope, *definition);
+        auto state = ScriptState(*definition);
         if (definition->context) {
             // Access will initialize default parameters
             void *dataPtr = state.definition.context->Access(state);
@@ -71,7 +69,7 @@ namespace ecs {
             auto it = srcObj.find("parameters");
             if (it != srcObj.end()) {
                 for (auto &field : state.definition.context->metadata.fields) {
-                    if (!field.Load(scope, dataPtr, it->second)) {
+                    if (!field.Load(dataPtr, it->second)) {
                         Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
                         return false;
                     }
@@ -118,6 +116,23 @@ namespace ecs {
                         field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
                     }
                 }
+            }
+        }
+    }
+
+    template<>
+    void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope) {
+        if (!dst.state) return;
+        auto &state = *dst.state;
+        Logf("Setting scope for script %s to %s", state.definition.name, scope.String());
+        state.scope = scope;
+        if (state.definition.context) {
+            std::lock_guard l(GetScriptManager().mutexes[state.definition.callback.index()]);
+
+            void *dataPtr = state.definition.context->Access(state);
+            Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
+            for (auto &field : state.definition.context->metadata.fields) {
+                field.SetScope(dataPtr, scope);
             }
         }
     }

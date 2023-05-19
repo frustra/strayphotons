@@ -7,7 +7,6 @@
 #include <shared_mutex>
 
 namespace ecs {
-
     static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",
         EventQueue::MAX_QUEUE_SIZE,
         "Maximum number of event queue size for scripts");
@@ -38,7 +37,7 @@ namespace ecs {
     ScriptState::ScriptState(const ScriptState &other)
         : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), userData(other.userData),
           instanceId(other.instanceId), index(other.index) {}
-    ScriptState::ScriptState(const EntityScope &scope, const ScriptDefinition &definition)
+    ScriptState::ScriptState(const ScriptDefinition &definition, const EntityScope &scope)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
 
     ScriptManager::~ScriptManager() {
@@ -124,7 +123,7 @@ namespace ecs {
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const EntityScope &scope,
         const ScriptDefinition &definition) {
-        return NewScriptInstance(ScriptState(scope, definition));
+        return NewScriptInstance(ScriptState(definition, scope));
     }
 
     void ScriptManager::internalRegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock,

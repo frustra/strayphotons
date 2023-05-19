@@ -41,6 +41,7 @@ namespace sp {
             const std::string &name,
             SceneType type,
             ScenePriority priority,
+            const ecs::SceneProperties &properties,
             std::shared_ptr<const Asset> asset = nullptr);
 
         // Should only be called from SceneManager thread
@@ -51,7 +52,7 @@ namespace sp {
         // Should only be called from SceneManager thread
         ecs::Entity NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
-            std::string relativeName = "");
+            ecs::Name name = ecs::Name());
 
         // Should only be called from SceneManager thread
         ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
@@ -63,10 +64,11 @@ namespace sp {
         // Should only be called from SceneManager thread
         void RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);
 
+        using SceneApplyCallback = std::function<void(const ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> &,
+            const ecs::Lock<ecs::AddRemove> &)>;
+
         // Should only be called from SceneManager thread
-        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
-            ecs::Lock<ecs::AddRemove> live,
-            bool resetLive = false);
+        void ApplyScene(bool resetLive = false, SceneApplyCallback callback = nullptr);
 
         // Should only be called from SceneManager thread
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
