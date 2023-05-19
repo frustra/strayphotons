@@ -123,17 +123,23 @@ namespace ecs {
     template<>
     void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope) {
         if (!dst.state) return;
-        auto &state = *dst.state;
-        Logf("Setting scope for script %s to %s", state.definition.name, scope.String());
-        state.scope = scope;
-        if (state.definition.context) {
-            std::lock_guard l(GetScriptManager().mutexes[state.definition.callback.index()]);
+        if (dst.state->scope != scope) {
+            auto &oldState = *dst.state;
+            // Duplicate the script so that other instances of the same script are not affected
+            auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
 
-            void *dataPtr = state.definition.context->Access(state);
-            Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
-            for (auto &field : state.definition.context->metadata.fields) {
-                field.SetScope(dataPtr, scope);
+            if (oldState.definition.context) {
+                const void *defaultPtr = oldState.definition.context->GetDefault();
+                void *oldPtr = oldState.definition.context->Access(oldState);
+                void *newPtr = newState->definition.context->Access(*newState);
+                Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
+                Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
+                for (auto &field : oldState.definition.context->metadata.fields) {
+                    field.Apply(newPtr, oldPtr, defaultPtr);
+                    field.SetScope(newPtr, scope);
+                }
             }
+            dst.state = std::move(newState);
         }
     }
 
