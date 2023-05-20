@@ -180,7 +180,6 @@ namespace ecs {
                     return arg.GetInstanceId() == instance.GetInstanceId();
                 });
                 if (existing == dst.scripts.end()) {
-                    // dst.scripts.emplace_back(GetScriptManager().NewScriptInstance(*instance.state));
                     dst.scripts.emplace_back(instance);
                 }
             }
