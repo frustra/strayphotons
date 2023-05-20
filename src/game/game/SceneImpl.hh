@@ -13,6 +13,7 @@ namespace sp::scene {
     // Build a flattened set of components from the staging ECS.
     // The result includes staging components from the provided entity and all lower priority entities.
     // Transform components will have their scene root transforms applied to their poses.
+    // Scripts will be initialized and their event queues will be created.
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     FlatEntity BuildEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> &staging, const Entity &e) {
         ZoneScoped;
@@ -76,6 +77,16 @@ namespace sp::scene {
                             }
 
                             LookupComponent<TransformTree>().ApplyComponent(component.value(), transform, false);
+                        } else if constexpr (std::is_same_v<T, Scripts>) {
+                            auto scripts = stagingId.Get<Scripts>(staging);
+
+                            // Create a new script instance for each staging definition
+                            for (auto &script : scripts.scripts) {
+                                if (!script.state) continue;
+                                script.state = GetScriptManager().NewScriptInstance(*script.state);
+                            }
+
+                            LookupComponent<Scripts>().ApplyComponent(component.value(), scripts, false);
                         } else {
                             auto &srcComp = stagingId.Get<T>(staging);
                             LookupComponent<T>().ApplyComponent(component.value(), srcComp, false);

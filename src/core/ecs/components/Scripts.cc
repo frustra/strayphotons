@@ -125,7 +125,7 @@ namespace ecs {
         if (!dst.state) return;
         if (dst.state->scope != scope) {
             auto &oldState = *dst.state;
-            // Duplicate the script so that other instances of the same script are not affected
+            // Create a new script instance so references to the old scope remain valid.
             auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
 
             if (oldState.definition.context) {
@@ -180,7 +180,8 @@ namespace ecs {
                     return arg.GetInstanceId() == instance.GetInstanceId();
                 });
                 if (existing == dst.scripts.end()) {
-                    dst.scripts.emplace_back(GetScriptManager().NewScriptInstance(*instance.state));
+                    // dst.scripts.emplace_back(GetScriptManager().NewScriptInstance(*instance.state));
+                    dst.scripts.emplace_back(instance);
                 }
             }
         } else {
