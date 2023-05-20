@@ -107,6 +107,7 @@ float LinearDepthBias(vec3 viewPos, mat4 projMat, float bias) {
     return ViewPosToScreenPos(viewPos + vec3(0, 0, bias), projMat).z;
 }
 
+// http://jcgt.org/published/0003/02/01/paper.pdf
 vec2 SignNotZero(vec2 v) {
     return vec2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
 }
@@ -121,6 +122,7 @@ vec2 EncodeNormal(vec3 v) {
 }
 
 // Decodes a normal vector from EncodeNormal
+// http://jcgt.org/published/0003/02/01/paper.pdf
 vec3 DecodeNormal(vec2 e) {
     vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));
     if (v.z < 0) v.xy = (1.0 - abs(v.yx)) * SignNotZero(v.xy);

@@ -9,7 +9,8 @@
 #define hash(x) fract(sin(x) * 43758.543123)
 
 float rand2(inout vec4 state) {
-    // Hachisuka 2015
+    // PRNG parameters from: http://web.archive.org/web/20101217080108/http://gpgpu.org/forums/viewtopic.php?t=2591
+    // GLSL Implementation from: https://www.ci.i.u-tokyo.ac.jp/~hachisuka/tdf2015.pdf
     const vec4 q = vec4(1225.0, 1585.0, 2457.0, 2098.0);
     const vec4 r = vec4(1112.0, 367.0, 92.0, 265.0);
     const vec4 a = vec4(3423.0, 2646.0, 1707.0, 1999.0);
