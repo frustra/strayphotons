@@ -56,13 +56,14 @@ namespace sp::scripts {
                         ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
                         Name name(scene->data->name, "");
+                        EntityScope scope = name;
                         for (size_t i = 0;; i++) {
                             name.entity = baseName + "_" + std::to_string(i);
                             if (!scene->GetStagingEntity(name)) break;
                         }
                         Logf("TraySpawner new entity: %s", name.String());
 
-                        auto newEntity = scene->NewRootEntity(lock, scene, name.entity);
+                        auto newEntity = scene->NewRootEntity(lock, scene, name);
                         newEntity.Set<TransformTree>(lock, transform);
                         for (auto &signal : signals) {
                             SignalRef dstRef(newEntity, signal.GetSignalName());
@@ -74,7 +75,7 @@ namespace sp::scripts {
                             }
                         }
                         auto &scripts = newEntity.Set<Scripts>(lock);
-                        auto &prefab = scripts.AddPrefab(Name(scene->data->name, ""), "template");
+                        auto &prefab = scripts.AddPrefab(scope, "template");
                         prefab.SetParam("source", source);
                         ecs::GetScriptManager().RunPrefabs(lock, newEntity);
 

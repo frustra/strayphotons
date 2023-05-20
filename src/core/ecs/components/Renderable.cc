@@ -7,9 +7,7 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<Renderable>(const EntityScope &scope,
-        Renderable &renderable,
-        const picojson::value &src) {
+    bool StructMetadata::Load<Renderable>(Renderable &renderable, const picojson::value &src) {
         if (!renderable.modelName.empty()) {
             renderable.model = sp::Assets().LoadGltf(renderable.modelName);
         }

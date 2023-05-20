@@ -10,21 +10,21 @@ namespace ecs {
     }
 
     template<>
-    bool StructMetadata::Load<LaserLine>(const EntityScope &scope, LaserLine &dst, const picojson::value &src) {
+    bool StructMetadata::Load<LaserLine>(LaserLine &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
             Errorf("Invalid laser line: %s", src.to_str());
             return false;
         }
 
         ecs::LaserLine::Line line;
-        for (auto param : src.get<picojson::object>()) {
+        for (auto &param : src.get<picojson::object>()) {
             if (param.first == "color") {
-                if (!sp::json::Load(scope, line.color, param.second)) {
+                if (!sp::json::Load(line.color, param.second)) {
                     Errorf("Invalid line color: %s", param.second.to_str());
                     return false;
                 }
             } else if (param.first == "points") {
-                if (!sp::json::Load(scope, line.points, param.second)) {
+                if (!sp::json::Load(line.points, param.second)) {
                     Errorf("Invalid line points: %s", param.second.to_str());
                     return false;
                 }

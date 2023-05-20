@@ -31,18 +31,20 @@ namespace ecs {
     public:
         ComponentBase(const char *name, const StructMetadata &metadata) : name(name), metadata(metadata) {}
 
-        virtual bool LoadEntity(Lock<AddRemove> lock,
-            const EntityScope &scope,
-            Entity &dst,
-            const picojson::value &src) const = 0;
-        virtual void SaveEntity(Lock<ReadAll> lock,
+        virtual bool LoadEntity(FlatEntity &dst, const picojson::value &src) const = 0;
+        virtual void SaveEntity(const Lock<ReadAll> &lock,
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const = 0;
-        virtual bool HasComponent(Lock<> lock, Entity ent) const = 0;
-        virtual const void *Access(Lock<ReadAll> lock, Entity ent) const = 0;
-        virtual void *Access(Lock<WriteAll> lock, Entity ent) const = 0;
-        virtual void *Access(PhysicsWriteLock lock, Entity ent) const = 0;
+        virtual void SetComponent(const Lock<AddRemove> &lock,
+            const EntityScope &scope,
+            const Entity &dst,
+            const FlatEntity &src) const = 0;
+        virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
+        virtual bool HasComponent(const FlatEntity &ent) const = 0;
+        virtual const void *Access(const Lock<ReadAll> &lock, Entity ent) const = 0;
+        virtual void *Access(const Lock<WriteAll> &lock, Entity ent) const = 0;
+        virtual void *Access(const PhysicsWriteLock &lock, Entity ent) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
 
@@ -101,9 +103,9 @@ namespace ecs {
             }
         }
 
-        bool LoadFields(const EntityScope &scope, CompType &dst, const picojson::value &src) const {
+        bool LoadFields(CompType &dst, const picojson::value &src) const {
             for (auto &field : metadata.fields) {
-                if (!field.Load(scope, &dst, src)) {
+                if (!field.Load(&dst, src)) {
                     Errorf("Component %s has invalid field: %s", name, field.name);
                     return false;
                 }
@@ -111,18 +113,17 @@ namespace ecs {
             return true;
         }
 
-        bool LoadEntity(Lock<AddRemove> lock,
-            const EntityScope &scope,
-            Entity &dst,
-            const picojson::value &src) const override {
-            DebugAssert(IsStaging(lock), "LoadEntity should only be called with a staging lock");
-
-            auto &dstComp = dst.Set<CompType>(lock, defaultStagingComponent);
-            if (!LoadFields(scope, dstComp, src)) return false;
-            return StructMetadata::Load<CompType>(scope, dstComp, src);
+        bool LoadEntity(FlatEntity &dst, const picojson::value &src) const override {
+            CompType comp = defaultStagingComponent;
+            if (!LoadFields(comp, src)) return false;
+            if (StructMetadata::Load<CompType>(comp, src)) {
+                std::get<std::optional<CompType>>(dst) = comp;
+                return true;
+            }
+            return false;
         }
 
-        void SaveEntity(Lock<ReadAll> lock,
+        void SaveEntity(const Lock<ReadAll> &lock,
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const override {
@@ -150,19 +151,34 @@ namespace ecs {
             Apply(dst, src, liveTarget);
         }
 
-        bool HasComponent(Lock<> lock, Entity ent) const override {
+        void SetComponent(const Lock<AddRemove> &lock,
+            const EntityScope &scope,
+            const Entity &dst,
+            const FlatEntity &src) const override {
+            auto &opt = std::get<std::optional<CompType>>(src);
+            if (opt) {
+                auto &comp = dst.Set<CompType>(lock, *opt);
+                scope::SetScope(comp, scope);
+            }
+        }
+
+        bool HasComponent(const Lock<> &lock, Entity ent) const override {
             return ent.Has<CompType>(lock);
         }
 
-        const void *Access(Lock<ReadAll> lock, Entity ent) const override {
+        bool HasComponent(const FlatEntity &ent) const override {
+            return std::get<std::optional<CompType>>(ent).has_value();
+        }
+
+        const void *Access(const Lock<ReadAll> &lock, Entity ent) const override {
             return &ent.Get<CompType>(lock);
         }
 
-        void *Access(Lock<WriteAll> lock, Entity ent) const override {
+        void *Access(const Lock<WriteAll> &lock, Entity ent) const override {
             return &ent.Get<CompType>(lock);
         }
 
-        void *Access(PhysicsWriteLock lock, Entity ent) const override {
+        void *Access(const PhysicsWriteLock &lock, Entity ent) const override {
             if constexpr (Tecs::is_write_allowed<CompType, PhysicsWriteLock>()) {
                 return &ent.Get<CompType>(lock);
             } else {

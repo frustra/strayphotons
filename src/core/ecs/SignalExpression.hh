@@ -161,6 +161,8 @@ namespace ecs {
             return expr.empty() && rootIndex < 0;
         }
 
+        void SetScope(const EntityScope &scope);
+
         EntityScope scope;
         std::string expr;
         std::vector<Node> nodes;
@@ -179,12 +181,12 @@ namespace ecs {
 
     static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
     template<>
-    bool StructMetadata::Load<SignalExpression>(const EntityScope &scope,
-        SignalExpression &dst,
-        const picojson::value &src);
+    bool StructMetadata::Load<SignalExpression>(SignalExpression &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
         picojson::value &dst,
         const SignalExpression &src,
         const SignalExpression &def);
+    template<>
+    void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope);
 } // namespace ecs

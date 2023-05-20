@@ -73,8 +73,11 @@ void main() {
         vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
         if (any(greaterThan(directSpecularColor, vec3(0.0))) && roughness < 1.0) {
             float specularConeRatio = roughness * 0.8;
-            vec4 sampleColor =
-                ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, worldNormal, gl_FragCoord.xy);
+            vec4 sampleColor = ConeTraceGrid(specularConeRatio,
+                worldPosition,
+                rayReflectDir,
+                worldNormal,
+                gl_FragCoord.xy);
 
             vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor,
                 roughness,

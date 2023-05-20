@@ -4,6 +4,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
 
 #include <glm/glm.hpp>
@@ -47,7 +48,7 @@ namespace sp::json {
 
     // Default Load handler for enums, and all integer and float types
     template<typename T>
-    inline bool Load(const ecs::EntityScope &s, T &dst, const picojson::value &src) {
+    inline bool Load(T &dst, const picojson::value &src) {
         if constexpr (std::is_enum<T>()) {
             if (!src.is<std::string>()) return false;
             auto name = src.get<std::string>();
@@ -74,72 +75,79 @@ namespace sp::json {
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
             for (auto &field : metadata.fields) {
-                if (!field.Load(s, &dst, src)) {
+                if (!field.Load(&dst, src)) {
                     Errorf("Struct metadata %s has invalid field: %s", typeid(T).name(), field.name);
                     return false;
                 }
             }
-            ecs::StructMetadata::Load(s, dst, src);
+            ecs::StructMetadata::Load(dst, src);
             return true;
         }
     }
 
     // Load() specializations for native and complex types
     template<>
-    inline bool Load(const ecs::EntityScope &s, bool &dst, const picojson::value &src) {
+    inline bool Load(bool &dst, const picojson::value &src) {
         if (!src.is<bool>()) return false;
         dst = src.get<bool>();
         return true;
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, angle_t &dst, const picojson::value &src) {
+    inline bool Load(angle_t &dst, const picojson::value &src) {
         if (!src.is<double>()) return false;
         dst = glm::radians(src.get<double>());
         return true;
     }
     template<glm::length_t L, typename T, glm::qualifier Q>
-    inline bool Load(const ecs::EntityScope &s, glm::vec<L, T, Q> &dst, const picojson::value &src) {
+    inline bool Load(glm::vec<L, T, Q> &dst, const picojson::value &src) {
         return detail::LoadVec<L, T, Q>(dst, src);
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, color_t &dst, const picojson::value &src) {
+    inline bool Load(color_t &dst, const picojson::value &src) {
         return detail::LoadVec<3>(dst.color, src);
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, color_alpha_t &dst, const picojson::value &src) {
+    inline bool Load(color_alpha_t &dst, const picojson::value &src) {
         return detail::LoadVec<4>(dst.color, src);
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, glm::quat &dst, const picojson::value &src) {
+    inline bool Load(glm::quat &dst, const picojson::value &src) {
         glm::vec4 r;
         if (!detail::LoadVec<4>(r, src)) return false;
         dst = glm::angleAxis(glm::radians(r[0]), glm::normalize(glm::vec3(r[1], r[2], r[3])));
         return true;
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, std::string &dst, const picojson::value &src) {
+    inline bool Load(std::string &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         dst = src.get<std::string>();
         return true;
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, ecs::Name &dst, const picojson::value &src) {
+    inline bool Load(ecs::Name &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         auto name = src.get<std::string>();
-        dst = ecs::Name(name, s);
+        dst = ecs::Name(name, ecs::Name());
         return name.empty() == !dst;
     }
     template<>
-    inline bool Load(const ecs::EntityScope &s, ecs::EntityRef &dst, const picojson::value &src) {
+    inline bool Load(ecs::EntityRef &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
-        auto name = src.get<std::string>();
-        dst = ecs::Name(name, s);
+        auto &name = src.get<std::string>();
+        dst = ecs::Name(name, ecs::Name());
         return name.empty() == !dst;
     }
+    template<>
+    inline bool Load(ecs::SignalRef &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        auto &signalStr = src.get<std::string>();
+        dst = ecs::SignalRef(signalStr);
+        return signalStr.empty() == !dst;
+    }
     template<typename T>
-    inline bool Load(const ecs::EntityScope &s, std::optional<T> &dst, const picojson::value &src) {
+    inline bool Load(std::optional<T> &dst, const picojson::value &src) {
         T entry;
-        if (!sp::json::Load(s, entry, src)) {
+        if (!sp::json::Load(entry, src)) {
             dst.reset();
             return false;
         }
@@ -147,12 +155,12 @@ namespace sp::json {
         return true;
     }
     template<typename T>
-    inline bool Load(const ecs::EntityScope &s, std::vector<T> &dst, const picojson::value &src) {
+    inline bool Load(std::vector<T> &dst, const picojson::value &src) {
         dst.clear();
         if (src.is<picojson::array>()) {
             for (auto &p : src.get<picojson::array>()) {
                 auto &entry = dst.emplace_back();
-                if (!sp::json::Load(s, entry, p)) {
+                if (!sp::json::Load(entry, p)) {
                     return false;
                 }
             }
@@ -164,7 +172,7 @@ namespace sp::json {
                 if (obj.empty()) return true;
             }
             T entry;
-            if (!sp::json::Load(s, entry, src)) {
+            if (!sp::json::Load(entry, src)) {
                 return false;
             }
             dst.emplace_back(entry);
@@ -172,26 +180,22 @@ namespace sp::json {
         }
     }
     template<typename T>
-    inline bool Load(const ecs::EntityScope &s,
-        robin_hood::unordered_flat_map<std::string, T> &dst,
-        const picojson::value &src) {
+    inline bool Load(robin_hood::unordered_flat_map<std::string, T> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
-            if (!sp::json::Load(s, dst[p.first], p.second)) {
+            if (!sp::json::Load(dst[p.first], p.second)) {
                 return false;
             }
         }
         return true;
     }
     template<typename T>
-    inline bool Load(const ecs::EntityScope &s,
-        robin_hood::unordered_node_map<std::string, T> &dst,
-        const picojson::value &src) {
+    inline bool Load(robin_hood::unordered_node_map<std::string, T> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
-            if (!sp::json::Load(s, dst[p.first], p.second)) {
+            if (!sp::json::Load(dst[p.first], p.second)) {
                 return false;
             }
         }
@@ -277,6 +281,10 @@ namespace sp::json {
             return;
         }
         Save(s, dst, refName);
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::SignalRef &src) {
+        Save(s, dst, src.String());
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::optional<T> &src) {

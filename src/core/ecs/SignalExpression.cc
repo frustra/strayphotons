@@ -932,12 +932,23 @@ namespace ecs {
         return rootNode.evaluate(ctx, rootNode, 0);
     }
 
+    void SignalExpression::SetScope(const EntityScope &scope) {
+        this->scope = scope;
+        for (auto &node : nodes) {
+            if (std::holds_alternative<SignalNode>(node)) {
+                auto &signalNode = std::get<SignalNode>(node);
+                signalNode.signal.SetScope(scope);
+            } else if (std::holds_alternative<ComponentNode>(node)) {
+                auto &componentNode = std::get<ComponentNode>(node);
+                componentNode.entity.SetScope(scope);
+            }
+        }
+    }
+
     template<>
-    bool StructMetadata::Load<SignalExpression>(const EntityScope &scope,
-        SignalExpression &dst,
-        const picojson::value &src) {
+    bool StructMetadata::Load<SignalExpression>(SignalExpression &dst, const picojson::value &src) {
         if (src.is<std::string>()) {
-            dst = ecs::SignalExpression(src.get<std::string>(), scope);
+            dst = ecs::SignalExpression(src.get<std::string>());
             return !dst.nodes.empty();
         } else {
             Errorf("Invalid signal expression: %s", src.to_str());
@@ -963,5 +974,10 @@ namespace ecs {
         } else {
             dst = picojson::value(src.expr);
         }
+    }
+
+    template<>
+    void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope) {
+        dst.SetScope(scope);
     }
 } // namespace ecs

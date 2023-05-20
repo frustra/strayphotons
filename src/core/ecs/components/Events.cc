@@ -10,9 +10,10 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<EventDest>(const EntityScope &scope, EventDest &dst, const picojson::value &src) {
+    bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
-        auto [targetName, eventName] = ParseEventString(src.get<std::string>(), scope);
+        ;
+        auto [targetName, eventName] = ParseEventString(src.get<std::string>());
         if (targetName) {
             dst.target = targetName;
             dst.queueName = eventName;
@@ -35,6 +36,11 @@ namespace ecs {
         }
     }
 
+    template<>
+    void StructMetadata::SetScope<EventDest>(EventDest &dst, const EntityScope &scope) {
+        dst.target.SetScope(scope);
+    }
+
     bool parseEventData(EventData &data, const picojson::value &src) {
         if (src.is<bool>()) {
             data = src.get<bool>();
@@ -46,21 +52,21 @@ namespace ecs {
             auto &arr = src.get<picojson::array>();
             if (arr.size() == 2) {
                 glm::vec2 vec;
-                if (!sp::json::Load({}, vec, src)) {
+                if (!sp::json::Load(vec, src)) {
                     Errorf("Unsupported EventData value: %s", src.to_str());
                     return false;
                 }
                 data = vec;
             } else if (arr.size() == 3) {
                 glm::vec3 vec;
-                if (!sp::json::Load({}, vec, src)) {
+                if (!sp::json::Load(vec, src)) {
                     Errorf("Unsupported EventData value: %s", src.to_str());
                     return false;
                 }
                 data = vec;
             } else if (arr.size() == 4) {
                 glm::vec4 vec;
-                if (!sp::json::Load({}, vec, src)) {
+                if (!sp::json::Load(vec, src)) {
                     Errorf("Unsupported EventData value: %s", src.to_str());
                     return false;
                 }
@@ -77,9 +83,7 @@ namespace ecs {
     }
 
     template<>
-    bool StructMetadata::Load<EventBindingActions>(const EntityScope &scope,
-        EventBindingActions &dst,
-        const picojson::value &src) {
+    bool StructMetadata::Load<EventBindingActions>(EventBindingActions &dst, const picojson::value &src) {
         if (src.is<picojson::object>()) {
             auto &obj = src.get<picojson::object>();
             if (obj.count("set_value") > 0) {
@@ -110,11 +114,9 @@ namespace ecs {
     }
 
     template<>
-    bool StructMetadata::Load<EventBinding>(const EntityScope &scope,
-        EventBinding &binding,
-        const picojson::value &src) {
+    bool StructMetadata::Load<EventBinding>(EventBinding &binding, const picojson::value &src) {
         if (src.is<std::string>()) {
-            if (!sp::json::Load(scope, binding.outputs, src)) {
+            if (!sp::json::Load(binding.outputs, src)) {
                 Errorf("Invalid event binding output: %s", src.get<std::string>());
                 return false;
             }
@@ -136,7 +138,7 @@ namespace ecs {
     }
 
     template<>
-    bool StructMetadata::Load<EventBindings>(const EntityScope &scope, EventBindings &dst, const picojson::value &src) {
+    bool StructMetadata::Load<EventBindings>(EventBindings &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
             Errorf("Invalid event bindings: %s", src.to_str());
             return false;
@@ -144,14 +146,14 @@ namespace ecs {
         for (auto &param : src.get<picojson::object>()) {
             if (param.second.is<std::string>()) {
                 EventBinding binding;
-                if (!sp::json::Load(scope, binding, param.second)) {
+                if (!sp::json::Load(binding, param.second)) {
                     Errorf("Invalid event binding: %s", param.second.get<std::string>());
                     return false;
                 }
                 dst.Bind(param.first, binding);
             } else if (param.second.is<picojson::object>()) {
                 EventBinding binding;
-                if (!sp::json::Load(scope, binding, param.second)) {
+                if (!sp::json::Load(binding, param.second)) {
                     Errorf("Invalid event binding: %s", src.to_str());
                     return false;
                 }
@@ -159,7 +161,7 @@ namespace ecs {
             } else if (param.second.is<picojson::array>()) {
                 for (auto &entry : param.second.get<picojson::array>()) {
                     EventBinding binding;
-                    if (!sp::json::Load(scope, binding, entry)) {
+                    if (!sp::json::Load(binding, entry)) {
                         Errorf("Invalid event binding: %s", src.to_str());
                         return false;
                     }
@@ -182,9 +184,9 @@ namespace ecs {
         }
     }
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str, const EntityScope &scope) {
+    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str) {
         size_t delimiter = str.find('/');
-        ecs::Name entityName(str.substr(0, delimiter), scope);
+        ecs::Name entityName(str.substr(0, delimiter), ecs::Name());
         if (entityName && delimiter != std::string::npos) {
             return std::make_pair(entityName, str.substr(delimiter));
         } else {

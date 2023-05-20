@@ -5,10 +5,13 @@
 #include "core/EnumTypes.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 
+#include <robin_hood.h>
 #include <type_traits>
 #include <typeindex>
+#include <vector>
 
 namespace picojson {
     class value;
@@ -128,8 +131,9 @@ namespace ecs {
         bool operator==(const StructField &) const = default;
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        void SetScope(void *dstStruct, const EntityScope &scope) const;
         bool Compare(const void *a, const void *b) const;
-        bool Load(const EntityScope &scope, void *dstStruct, const picojson::value &src) const;
+        bool Load(void *dstStruct, const picojson::value &src) const;
         // If defaultStruct is nullptr, the field value is always saved
         void Save(const EntityScope &scope,
             picojson::value &dst,
@@ -169,7 +173,12 @@ namespace ecs {
         }
 
         template<typename T>
-        static bool Load(const EntityScope &scope, T &dst, const picojson::value &src) {
+        static void SetScope(T &dst, const EntityScope &scope) {
+            // Custom field SetScope is always called, default to no-op.
+        }
+
+        template<typename T>
+        static bool Load(T &dst, const picojson::value &src) {
             // Custom field serialization is always called, default to no-op.
             return true;
         }
@@ -182,4 +191,54 @@ namespace ecs {
     private:
         static void Register(const std::type_index &idx, const StructMetadata *comp);
     };
+
+    namespace scope {
+        template<typename T>
+        inline void SetScope(T &dst, const EntityScope &scope) {
+            auto *metadata = StructMetadata::Get(typeid(T));
+            if (metadata) {
+                for (auto &field : metadata->fields) {
+                    if (field.name.empty() && field.type == metadata->type) continue;
+                    field.SetScope(&dst, scope);
+                }
+                StructMetadata::SetScope(dst, scope);
+            }
+        }
+
+        template<>
+        inline void SetScope(EntityRef &dst, const EntityScope &scope) {
+            dst.SetScope(scope);
+        }
+
+        template<>
+        inline void SetScope(SignalRef &dst, const EntityScope &scope) {
+            dst.SetScope(scope);
+        }
+
+        template<typename T>
+        inline void SetScope(std::vector<T> &dst, const EntityScope &scope) {
+            for (auto &item : dst) {
+                SetScope(item, scope);
+            }
+        }
+
+        template<typename T>
+        inline void SetScope(std::optional<T> &dst, const EntityScope &scope) {
+            if (dst) SetScope(*dst, scope);
+        }
+
+        template<typename T>
+        inline void SetScope(robin_hood::unordered_flat_map<std::string, T> &dst, const EntityScope &scope) {
+            for (auto &item : dst) {
+                SetScope(item.second, scope);
+            }
+        }
+
+        template<typename T>
+        inline void SetScope(robin_hood::unordered_node_map<std::string, T> &dst, const EntityScope &scope) {
+            for (auto &item : dst) {
+                SetScope(item.second, scope);
+            }
+        }
+    } // namespace scope
 }; // namespace ecs

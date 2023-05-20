@@ -177,8 +177,10 @@ namespace sp::xr {
         eventHandler.Frame();
 
         vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
-        vr::EVRCompositorError error =
-            vr::VRCompositor()->GetLastPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+        vr::EVRCompositorError error = vr::VRCompositor()->GetLastPoses(trackedDevicePoses,
+            vr::k_unMaxTrackedDeviceCount,
+            NULL,
+            0);
         if (error != vr::VRCompositorError_None) return;
 
         for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
@@ -255,8 +257,10 @@ namespace sp::xr {
     }
 
     void OpenVrSystem::RegisterModels() {
-        auto modelPathLen =
-            vr::VRResources()->GetResourceFullPath("vr_glove_left_model.glb", "rendermodels/vr_glove/", NULL, 0);
+        auto modelPathLen = vr::VRResources()->GetResourceFullPath("vr_glove_left_model.glb",
+            "rendermodels/vr_glove/",
+            NULL,
+            0);
         std::vector<char> modelPathStr(modelPathLen);
         vr::VRResources()->GetResourceFullPath("vr_glove_left_model.glb",
             "rendermodels/vr_glove/",
@@ -264,8 +268,10 @@ namespace sp::xr {
             modelPathStr.size());
         Assets().RegisterExternalGltf("vr_glove_left", modelPathStr.data());
 
-        modelPathLen =
-            vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb", "rendermodels/vr_glove/", NULL, 0);
+        modelPathLen = vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb",
+            "rendermodels/vr_glove/",
+            NULL,
+            0);
         modelPathStr.resize(modelPathLen);
         vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb",
             "rendermodels/vr_glove/",

@@ -145,7 +145,11 @@ namespace sp {
                     if (!scene) {
                         {
                             auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
-                            scene = Scene::New(stagingLock, item.sceneName, SceneType::System, ScenePriority::System);
+                            scene = Scene::New(stagingLock,
+                                item.sceneName,
+                                SceneType::System,
+                                ScenePriority::System,
+                                ecs::SceneProperties{});
                         }
                         stagedScenes.Register(item.sceneName, scene);
                         scenes[SceneType::System].emplace_back(scene);
@@ -155,12 +159,8 @@ namespace sp {
                         auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                         item.editSceneCallback(stagingLock, scene);
                     }
-                    {
-                        Tracef("Applying system scene: %s", scene->data->name);
-                        auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-                        auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
-                        scene->ApplyScene(stagingLock, liveLock);
-                    }
+                    Tracef("Applying system scene: %s", scene->data->name);
+                    scene->ApplyScene();
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::EditStagingScene) {
@@ -374,10 +374,7 @@ namespace sp {
 
                 bindingsScene = LoadBindingsJson();
                 if (bindingsScene) {
-                    auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-                    auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
-
-                    bindingsScene->ApplyScene(stagingLock, liveLock);
+                    bindingsScene->ApplyScene();
                 } else {
                     Errorf("Failed to load bindings scene!");
                 }
@@ -559,20 +556,13 @@ namespace sp {
             }
         }
 
-        {
-            Tracef("Applying scene: %s", scene->data->name);
-            auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-            auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
-
-            scene->ApplyScene(stagingLock, liveLock, resetLive);
-
+        scene->ApplyScene(resetLive, [&](auto &stagingLock, auto &liveLock) {
             if (callback) callback(stagingLock, liveLock, scene);
-
             {
                 std::lock_guard lock(preloadMutex);
                 preloadScene.reset();
             }
-        }
+        });
     }
 
     void SceneManager::RefreshPrefabs(const std::shared_ptr<Scene> &scene) {
@@ -625,55 +615,69 @@ namespace sp {
         ScenePriority priority = sceneType == SceneType::System ? ScenePriority::System : ScenePriority::Scene;
         ecs::EntityScope scope(sceneName, "");
         if (sceneObj.count("priority")) {
-            json::Load(scope, priority, sceneObj["priority"]);
+            json::Load(priority, sceneObj["priority"]);
         }
 
-        auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
-        auto scene = Scene::New(lock, sceneName, sceneType, priority, asset);
-
-        auto &sceneProperties = scene->data->sceneEntity.Get(lock).Get<ecs::SceneProperties>(lock);
+        ecs::SceneProperties sceneProperties = {};
         if (sceneObj.count("properties")) {
-            if (!json::Load(scope, sceneProperties, sceneObj["properties"])) {
+            if (!json::Load(sceneProperties, sceneObj["properties"])) {
                 Errorf("Scene contains invalid properties: %s", sceneName);
             }
         }
 
+        std::vector<ecs::FlatEntity> entities;
         if (sceneObj.count("entities")) {
             auto &entityList = sceneObj["entities"];
-            std::vector<ecs::Entity> entities;
             for (auto &value : entityList.get<picojson::array>()) {
-                auto ent = value.get<picojson::object>();
+                auto &entSrc = value.get<picojson::object>();
+                auto &entDst = entities.emplace_back();
 
-                bool hasName = ent.count("name") && ent["name"].is<string>();
-                auto relativeName = hasName ? ent["name"].get<string>() : "";
-                ecs::Entity entity = scene->NewRootEntity(lock, scene, relativeName);
-                if (!entity) {
-                    // Most llkely a duplicate or invalid name
-                    Errorf("LoadScene(%s): Failed to create entity, ignoring: %s", sceneName, relativeName);
-                    continue;
+                if (entSrc.count("name") && entSrc["name"].is<string>()) {
+                    ecs::Name name(entSrc["name"].get<string>(), scope);
+                    if (name) std::get<std::optional<ecs::Name>>(entDst) = name;
                 }
 
-                for (auto comp : ent) {
+                for (auto &comp : entSrc) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
                     auto componentType = ecs::LookupComponent(comp.first);
                     if (componentType != nullptr) {
-                        if (!componentType->LoadEntity(lock, scope, entity, comp.second)) {
+                        if (!componentType->LoadEntity(entDst, comp.second)) {
                             Errorf("LoadScene(%s): Failed to load component, ignoring: %s", sceneName, comp.first);
                         }
                     } else {
                         Errorf("LoadScene(%s): Unknown component, ignoring: %s", sceneName, comp.first);
                     }
                 }
+            }
+        }
 
-                entities.emplace_back(entity);
+        auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
+        auto scene = Scene::New(lock, sceneName, sceneType, priority, sceneProperties, asset);
+
+        std::vector<ecs::Entity> scriptEntities;
+        for (auto &flatEnt : entities) {
+            auto name = std::get<std::optional<ecs::Name>>(flatEnt).value_or(ecs::Name());
+
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
+            if (!entity) {
+                // Most llkely a duplicate entity definition
+                Errorf("LoadScene(%s): Failed to create entity, ignoring: '%s'", sceneName, name.String());
+                continue;
             }
 
-            auto &scriptManager = ecs::GetScriptManager();
-            for (auto &e : entities) {
-                if (!e.Has<ecs::Scripts>(lock)) continue;
-                scriptManager.RunPrefabs(lock, e);
+            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                comp.SetComponent(lock, scope, entity, flatEnt);
+            });
+
+            if (entity.Has<ecs::Scripts>(lock)) {
+                scriptEntities.push_back(entity);
             }
+        }
+
+        auto &scriptManager = ecs::GetScriptManager();
+        for (auto &e : scriptEntities) {
+            scriptManager.RunPrefabs(lock, e);
         }
         return scene;
     }
@@ -772,30 +776,58 @@ namespace sp {
             Abortf("Failed to parse input binding json: %s", root.to_str());
         }
 
-        auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
-        auto scene = Scene::New(lock, "bindings", SceneType::System, ScenePriority::Bindings, bindingConfig);
-        ecs::EntityScope scope(scene->data->name, "");
+        ecs::EntityScope scope("bindings", "");
 
-        for (auto &param : root.get<picojson::object>()) {
-            Tracef("Loading input for: %s", param.first);
-            if (param.first.find(':') == std::string::npos) {
-                Abortf("Binding entity does not have scene name: %s", param.first);
+        // Only allow signal_output, signal_bindings, and event_bindings to be defined in bindings scene
+        static const std::array<const ecs::ComponentBase *, 3> allowedComponents = {
+            &ecs::LookupComponent<ecs::SignalOutput>(),
+            &ecs::LookupComponent<ecs::SignalBindings>(),
+            &ecs::LookupComponent<ecs::EventBindings>(),
+        };
+
+        std::vector<ecs::FlatEntity> entities;
+        for (auto &[nameStr, value] : root.get<picojson::object>()) {
+            ecs::Name name(nameStr, ecs::Name());
+            if (!name) {
+                Errorf("Binding entity has invalid name, ignoring: %s", nameStr);
+                continue;
+            } else if (!value.is<picojson::object>()) {
+                Errorf("Binding entity has invalid value, ignoring: %s = %s", nameStr, value.to_str());
+                continue;
             }
-            auto entity = scene->NewRootEntity(lock, scene, param.first);
-            if (entity) {
-                for (auto &comp : param.second.get<picojson::object>()) {
-                    if (comp.first[0] == '_') continue;
 
-                    auto componentType = ecs::LookupComponent(comp.first);
-                    if (componentType != nullptr) {
-                        bool result = componentType->LoadEntity(lock, scope, entity, comp.second);
-                        Assertf(result, "Failed to load component type: %s", comp.first);
-                    } else {
-                        Errorf("Unknown component, ignoring: %s", comp.first);
-                    }
+            auto &entSrc = value.get<picojson::object>();
+            auto &entDst = entities.emplace_back();
+            std::get<std::optional<ecs::Name>>(entDst) = name;
+
+            for (auto *comp : allowedComponents) {
+                Assertf(comp,
+                    "Missing allowedComponents definition at index: %d",
+                    std::find(allowedComponents.begin(), allowedComponents.end(), comp) - allowedComponents.begin());
+                if (!entSrc.count(comp->name)) continue;
+
+                if (!comp->LoadEntity(entDst, entSrc[comp->name])) {
+                    Errorf("Failed to load binding entity component for '%s', ignoring: %s", nameStr, comp->name);
                 }
-            } else {
-                Errorf("Invalid binding entity name: %s", param.first);
+            }
+        }
+
+        auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
+        auto scene = Scene::New(lock, "bindings", SceneType::System, ScenePriority::Bindings, {}, bindingConfig);
+
+        for (auto &flatEnt : entities) {
+            auto name = std::get<std::optional<ecs::Name>>(flatEnt).value_or(ecs::Name());
+            if (!name) continue;
+
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
+            if (!entity) {
+                // Most llkely a duplicate entity definition
+                Errorf("Failed to create binding entity, ignoring: '%s'", name.String());
+                continue;
+            }
+
+            for (auto *comp : allowedComponents) {
+                if (comp) comp->SetComponent(lock, scope, entity, flatEnt);
             }
         }
         return scene;

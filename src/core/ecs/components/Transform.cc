@@ -11,7 +11,7 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<Transform>(const EntityScope &scope, Transform &transform, const picojson::value &src) {
+    bool StructMetadata::Load<Transform>(Transform &transform, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
             Errorf("Invalid transform: %s", src.to_str());
             return false;
@@ -23,7 +23,7 @@ namespace ecs {
                     transform.SetScale(glm::vec3(param.second.get<double>()));
                 } else {
                     glm::vec3 scale(1);
-                    if (!sp::json::Load(scope, scale, param.second)) {
+                    if (!sp::json::Load(scale, param.second)) {
                         Errorf("Invalid transform scale: %s", param.second.to_str());
                         return false;
                     }
@@ -40,7 +40,7 @@ namespace ecs {
                     glm::quat orientation = glm::identity<glm::quat>();
                     for (auto &r : paramSecond) {
                         glm::quat rotation;
-                        if (!sp::json::Load(scope, rotation, r)) {
+                        if (!sp::json::Load(rotation, r)) {
                             Errorf("Invalid transform rotation: %s", param.second.to_str());
                             return false;
                         }
@@ -50,7 +50,7 @@ namespace ecs {
                 } else {
                     // A single rotation was given
                     glm::quat rotation;
-                    if (!sp::json::Load(scope, rotation, param.second)) {
+                    if (!sp::json::Load(rotation, param.second)) {
                         Errorf("Invalid transform rotation: %s", param.second.to_str());
                         return false;
                     }
@@ -58,7 +58,7 @@ namespace ecs {
                 }
             } else if (param.first == "translate") {
                 glm::vec3 translate(0);
-                if (!sp::json::Load(scope, translate, param.second)) {
+                if (!sp::json::Load(translate, param.second)) {
                     Errorf("Invalid transform translation: %s", param.second.to_str());
                     return false;
                 }

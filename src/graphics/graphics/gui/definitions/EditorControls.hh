@@ -574,6 +574,7 @@ namespace sp {
         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
 
         auto flatParentEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
+        ecs::FlatEntity flatStagingEntity;
 
         ( // For each component:
             [&] {
@@ -601,10 +602,12 @@ namespace sp {
                     ecs::EntityScope scope(targetScene.data->name, "");
                     auto changed = json::SaveIfChanged(scope, tmp, "", liveComp, compareComp);
                     if (changed) {
-                        if (!comp.LoadEntity(staging, scope, stagingId, tmp)) {
+                        if (!comp.LoadEntity(flatStagingEntity, tmp)) {
                             Errorf("Failed to save %s component on entity: %s",
                                 comp.name,
                                 ecs::ToString(staging, stagingId));
+                        } else {
+                            comp.SetComponent(staging, scope, stagingId, flatStagingEntity);
                         }
                     } else if (existingComp) {
                         if (stagingId.Has<T>(staging)) stagingId.Unset<T>(staging);

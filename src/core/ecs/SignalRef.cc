@@ -51,6 +51,17 @@ namespace ecs {
         return ptr->signal.String();
     }
 
+    void SignalRef::SetScope(const EntityScope &scope) {
+        if (!ptr) return;
+        ecs::EntityRef newRef = ptr->signal.entity;
+        newRef.SetScope(scope);
+        if (!newRef) {
+            ptr = nullptr;
+        } else if (newRef != ptr->signal.entity) {
+            ptr = GetSignalManager().GetRef(newRef, ptr->signal.signalName).ptr;
+        }
+    }
+
     double &SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);

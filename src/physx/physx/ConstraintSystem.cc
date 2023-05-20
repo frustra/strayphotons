@@ -352,29 +352,47 @@ namespace sp {
                 joint->ecsJoint = ecsJoint;
                 switch (ecsJoint.type) {
                 case ecs::PhysicsJointType::Fixed:
-                    joint->pxJoint =
-                        PxFixedJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    joint->pxJoint = PxFixedJointCreate(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Distance:
-                    joint->pxJoint =
-                        PxDistanceJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    joint->pxJoint = PxDistanceJointCreate(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Spherical:
-                    joint->pxJoint =
-                        PxSphericalJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    joint->pxJoint = PxSphericalJointCreate(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Hinge:
-                    joint->pxJoint =
-                        PxRevoluteJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    joint->pxJoint = PxRevoluteJointCreate(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Slider:
-                    joint->pxJoint =
-                        PxPrismaticJointCreate(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    joint->pxJoint = PxPrismaticJointCreate(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     break;
                 case ecs::PhysicsJointType::Force:
                     // Free'd automatically on release()
-                    joint->forceConstraint =
-                        new ForceConstraint(*manager.pxPhysics, actor, localTransform, targetActor, remoteTransform);
+                    joint->forceConstraint = new ForceConstraint(*manager.pxPhysics,
+                        actor,
+                        localTransform,
+                        targetActor,
+                        remoteTransform);
                     UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
                     break;
                 case ecs::PhysicsJointType::NoClip:
@@ -411,8 +429,12 @@ namespace sp {
                         joint->forceConstraint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
                     }
 
-                    wakeUp |=
-                        UpdateForceConstraint(actor, joint, currentTransform, targetTransform, targetVelocity, gravity);
+                    wakeUp |= UpdateForceConstraint(actor,
+                        joint,
+                        currentTransform,
+                        targetTransform,
+                        targetVelocity,
+                        gravity);
                 } else if (joint->noclipConstraint) {
                     if (UpdateNoClipConstraint(joint, actor, targetActor)) {
                         return true;

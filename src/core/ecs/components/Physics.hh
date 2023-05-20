@@ -120,7 +120,7 @@ namespace ecs {
 
     static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape));
     template<>
-    bool StructMetadata::Load<PhysicsShape>(const EntityScope &scope, PhysicsShape &dst, const picojson::value &src);
+    bool StructMetadata::Load<PhysicsShape>(PhysicsShape &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<PhysicsShape>(const EntityScope &scope,
         picojson::value &dst,

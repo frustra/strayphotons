@@ -17,6 +17,7 @@
 			},
 			"/life/neighbor_alive": {
 				"outputs": ["scoperoot/signal/add/neighbor_count"],
+				"set_value": 0,
 				"modify": "event ? 1 : -1"
 			},
 			"/life/toggle_alive": {

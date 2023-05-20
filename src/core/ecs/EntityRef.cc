@@ -43,6 +43,16 @@ namespace ecs {
         return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
+    void EntityRef::SetScope(const EntityScope &scope) {
+        if (!ptr) return;
+        ecs::Name newName(ptr->name, scope);
+        if (!newName) {
+            ptr = nullptr;
+        } else if (newName != ptr->name) {
+            ptr = GetEntityRefs().Get(newName).ptr;
+        }
+    }
+
     bool EntityRef::operator==(const EntityRef &other) const {
         if (!ptr || !other.ptr) return ptr == other.ptr;
         if (ptr == other.ptr) return true;

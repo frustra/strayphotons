@@ -19,6 +19,7 @@ namespace ecs {
         Name() {}
         Name(const std::string_view &scene, const std::string_view &entity);
         Name(const std::string_view &relativeName, const EntityScope &scope);
+        Name(const Name &other, const EntityScope &scope);
 
         bool Parse(const std::string_view &relativeName, const EntityScope &scope);
 

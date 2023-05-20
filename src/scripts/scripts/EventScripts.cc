@@ -7,7 +7,6 @@ namespace sp::scripts {
     using namespace ecs;
 
     struct InitEvent {
-        EntityRef target;
         std::vector<std::string> outputs;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {

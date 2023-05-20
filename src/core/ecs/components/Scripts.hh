@@ -18,7 +18,7 @@ namespace ecs {
         ScriptInstance() {}
         ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
-            : ScriptInstance(std::make_shared<ScriptState>(scope, definition)) {}
+            : ScriptInstance(GetScriptManager().NewScriptInstance(scope, definition)) {}
         ScriptInstance(const EntityScope &scope, OnTickFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
         ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
@@ -45,18 +45,20 @@ namespace ecs {
             return state->instanceId;
         }
 
+        void SetScope(const EntityScope &scope);
+
         std::shared_ptr<ScriptState> state;
     };
     static StructMetadata MetadataScriptInstance(typeid(ScriptInstance));
     template<>
-    bool StructMetadata::Load<ScriptInstance>(const EntityScope &scope,
-        ScriptInstance &dst,
-        const picojson::value &src);
+    bool StructMetadata::Load<ScriptInstance>(ScriptInstance &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<ScriptInstance>(const EntityScope &scope,
         picojson::value &dst,
         const ScriptInstance &src,
         const ScriptInstance &def);
+    template<>
+    void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope);
 
     struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {

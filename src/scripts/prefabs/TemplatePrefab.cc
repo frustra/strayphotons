@@ -16,80 +16,137 @@ namespace ecs {
         size_t prefabScriptId;
         std::string sourceName;
 
-        ecs::EntityScope rootScope;
-        std::shared_ptr<sp::Asset> asset;
-        picojson::value root;
+        sp::AsyncPtr<sp::Asset> assetPtr;
 
-        picojson::object *rootObj = nullptr, *componentsObj = nullptr;
-        picojson::array *entityList = nullptr;
+        bool hasRootOverride = false; // True if "components" field is defined
+        FlatEntity rootComponents; // Represented by the "components" template field
+        std::vector<std::pair<std::string, FlatEntity>> entityList; // Represented by the "entities" template field
 
         TemplateParser(const std::shared_ptr<sp::Scene> &scene,
-            Entity rootEnt,
+            const Entity &rootEnt,
             size_t prefabScriptId,
             std::string source)
-            : scene(scene), rootEnt(rootEnt), prefabScriptId(prefabScriptId), sourceName(source) {}
+            : scene(scene), rootEnt(rootEnt), prefabScriptId(prefabScriptId), sourceName(source) {
+            if (sourceName.empty()) return;
+            assetPtr = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true);
+        }
 
-        bool Parse(Lock<AddRemove> lock) {
-            if (sourceName.empty()) return false;
-
+        // The provided scope is used for debug logging only, the real scope of the resulting entities
+        // is provided to the ApplyComponents() and AddEntities() functions
+        bool Parse(const EntityScope &parseScope) {
+            if (!assetPtr) return false;
             ZoneScoped;
 
-            if (rootEnt.Has<Name>(lock)) {
-                rootScope = rootEnt.Get<Name>(lock);
-            } else {
-                rootScope = ecs::Name(scene->data->name, "");
-            }
+            Debugf("Parsing template: %s in scope '%s'", sourceName, parseScope.String());
 
-            Debugf("Loading template: %s with scope '%s'", sourceName, rootScope.String());
-
-            asset = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true)->Get();
+            auto asset = assetPtr->Get();
             if (!asset) {
                 Errorf("Template not found: %s", sourceName);
                 return false;
             }
 
-            string err = picojson::parse(root, asset->String());
+            picojson::value rootValue;
+            string err = picojson::parse(rootValue, asset->String());
             if (!err.empty()) {
                 Errorf("Failed to parse template (%s): %s", sourceName, err);
                 return false;
             }
 
-            if (!root.is<picojson::object>()) {
+            if (!rootValue.is<picojson::object>()) {
                 Errorf("Template parameters must be an object (%s)", sourceName);
                 return false;
             }
 
-            rootObj = &root.get<picojson::object>();
+            auto &root = rootValue.get<picojson::object>();
 
-            auto entitiesIter = rootObj->find("entities");
-            if (entitiesIter != rootObj->end()) entityList = &entitiesIter->second.get<picojson::array>();
+            auto entitiesIter = root.find("entities");
+            if (entitiesIter != root.end()) {
+                if (!entitiesIter->second.is<picojson::array>()) {
+                    Errorf("Template 'entities' field must be array (%s): %s",
+                        sourceName,
+                        entitiesIter->second.to_str());
+                    return false;
+                }
 
-            auto componentsIter = rootObj->find("components");
-            if (componentsIter != rootObj->end()) componentsObj = &componentsIter->second.get<picojson::object>();
+                for (auto &entityObj : entitiesIter->second.get<picojson::array>()) {
+                    if (!entityObj.is<picojson::object>()) {
+                        Errorf("Template 'entities' entry must be object (%s), ignoring: %s",
+                            sourceName,
+                            entityObj.to_str());
+                        continue;
+                    }
 
+                    auto &entSrc = entityObj.get<picojson::object>();
+                    const std::string *relativeName = nullptr;
+                    if (entSrc.count("name") && entSrc["name"].is<string>()) {
+                        relativeName = &entSrc["name"].get<string>();
+                        if (*relativeName == "scoperoot") {
+                            Errorf("Entity name 'scoperoot' in template not allowed (%s), ignoring", sourceName);
+                            continue;
+                        }
+                    }
+                    auto &entDst = entityList.emplace_back();
+                    if (relativeName) entDst.first = *relativeName;
+
+                    for (auto &comp : entSrc) {
+                        if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
+
+                        auto componentType = ecs::LookupComponent(comp.first);
+                        if (componentType != nullptr) {
+                            if (!componentType->LoadEntity(entDst.second, comp.second)) {
+                                Errorf("Failed to load component in template (%s), ignoring: %s",
+                                    sourceName,
+                                    comp.first);
+                            }
+                        } else {
+                            Errorf("Unknown component in template (%s), ignoring: %s", sourceName, comp.first);
+                        }
+                    }
+                }
+            }
+
+            auto componentsIter = root.find("components");
+            if (componentsIter != root.end()) {
+                auto &componentsObj = componentsIter->second;
+                if (!componentsObj.is<picojson::object>()) {
+                    Errorf("Template 'components' field must be object (%s): %s", sourceName, componentsObj.to_str());
+                    return false;
+                }
+
+                hasRootOverride = true;
+
+                auto &entSrc = componentsObj.get<picojson::object>();
+                if (entSrc.count("name")) {
+                    Errorf("Template 'components' field cannot override 'name' (%s), ignoring: %s",
+                        sourceName,
+                        entSrc["name"].to_str());
+                }
+
+                for (auto &comp : entSrc) {
+                    if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
+
+                    auto componentType = ecs::LookupComponent(comp.first);
+                    if (componentType != nullptr) {
+                        if (!componentType->LoadEntity(rootComponents, comp.second)) {
+                            Errorf("Failed to load component in template (%s), ignoring: %s", sourceName, comp.first);
+                        }
+                    } else {
+                        Errorf("Unknown component in template (%s), ignoring: %s", sourceName, comp.first);
+                    }
+                }
+            }
             return true;
         }
 
         // Add defined components to the template root entity with the given name
-        Entity ApplyComponents(const picojson::object &source,
-            Lock<AddRemove> lock,
-            std::string name,
-            ecs::EntityScope scope,
-            Transform offset = {}) {
+        Entity ApplyComponents(const Lock<AddRemove> &lock, EntityScope scope, Transform offset = {}) {
             ZoneScoped;
-            Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, name, scope);
-            for (auto &comp : source) {
-                if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
-                auto componentType = ecs::LookupComponent(comp.first);
-                if (componentType != nullptr) {
-                    if (!componentType->LoadEntity(lock, scope, newEntity, comp.second)) {
-                        Errorf("LoadTemplate(%s): Failed to load component, ignoring: %s", sourceName, comp.first);
-                    }
-                } else {
-                    Errorf("LoadTemplate(%s): Unknown component, ignoring: %s", sourceName, comp.first);
-                }
-            }
+            Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", scope);
+            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                comp.SetComponent(lock, scope, newEntity, rootComponents);
+            });
+
             if (newEntity.Has<ecs::TransformTree>(lock)) {
                 auto &transform = newEntity.Get<ecs::TransformTree>(lock);
                 if (!transform.parent) {
@@ -101,28 +158,36 @@ namespace ecs {
         }
 
         // Add defined entities as sub-entities of the template root
-        void AddEntities(Lock<AddRemove> lock, ecs::EntityScope scope, Transform offset = {}) {
-            if (!entityList) return;
+        void AddEntities(const Lock<AddRemove> &lock, EntityScope scope, Transform offset = {}) {
             ZoneScoped;
 
-            std::vector<ecs::Entity> entities;
-            for (auto &value : *entityList) {
-                auto &obj = value.get<picojson::object>();
-
-                bool hasName = obj.count("name") && obj["name"].is<string>();
-                auto relativeName = hasName ? obj["name"].get<string>() : "";
-                if (relativeName == "scoperoot") {
-                    Errorf("Entity name 'scoperoot' in template not allowed, ignoring");
+            std::vector<ecs::Entity> scriptEntities;
+            for (auto &[relativeName, flatEnt] : entityList) {
+                ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope);
+                if (!newEntity) {
+                    // Most llkely a duplicate entity or invalid name
+                    Errorf("Failed to create template entity (%s), ignoring: '%s'", sourceName, relativeName);
                     continue;
                 }
 
-                Entity newEntity = ApplyComponents(obj, lock, relativeName, scope, offset);
-                entities.emplace_back(newEntity);
+                ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                    comp.SetComponent(lock, scope, newEntity, flatEnt);
+                });
+
+                if (newEntity.Has<ecs::TransformTree>(lock)) {
+                    auto &transform = newEntity.Get<ecs::TransformTree>(lock);
+                    if (!transform.parent) {
+                        if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
+                        transform.pose = offset * transform.pose.Get();
+                    }
+                }
+                if (newEntity.Has<ecs::Scripts>(lock)) {
+                    scriptEntities.push_back(newEntity);
+                }
             }
 
             auto &scriptManager = ecs::GetScriptManager();
-            for (auto &e : entities) {
-                if (!e.Has<ecs::Scripts>(lock)) continue;
+            for (auto &e : scriptEntities) {
                 scriptManager.RunPrefabs(lock, e);
             }
         }
@@ -135,14 +200,17 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            TemplateParser parser(scene, ent, state.GetInstanceId(), source);
-            if (!parser.Parse(lock)) return;
+            ZoneScoped;
+            ZoneStr(source);
 
-            Entity rootOverride;
-            if (parser.componentsObj) {
-                rootOverride = parser.ApplyComponents(*parser.componentsObj, lock, "scoperoot", parser.rootScope);
-            }
-            parser.AddEntities(lock, parser.rootScope);
+            EntityScope scope = ecs::Name(scene->data->name, "");
+            if (ent.Has<Name>(lock)) scope = ent.Get<Name>(lock);
+
+            TemplateParser parser(scene, ent, state.GetInstanceId(), source);
+            if (!parser.Parse(scope)) return;
+
+            Entity rootOverride = parser.ApplyComponents(lock, scope);
+            parser.AddEntities(lock, scope);
             if (rootOverride.Has<ecs::Scripts>(lock)) {
                 ecs::GetScriptManager().RunPrefabs(lock, rootOverride);
             }
@@ -161,6 +229,8 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
+            ZoneScoped;
+
             if (axes.size() != 2) {
                 Errorf("'%s' axes are invalid, must tile on 2 unique axes: %s", axes, ToString(lock, ent));
                 return;
@@ -174,14 +244,17 @@ namespace ecs {
                 return;
             }
 
+            EntityScope rootScope = ecs::Name(scene->data->name, "");
+            if (ent.Has<Name>(lock)) rootScope = ent.Get<Name>(lock);
+
             TemplateParser surface(scene, ent, state.GetInstanceId(), surfaceTemplate);
-            if (!surface.Parse(lock)) return;
+            if (!surface.Parse(rootScope)) return;
 
             TemplateParser edge(scene, ent, state.GetInstanceId(), edgeTemplate);
-            auto haveEdge = edge.Parse(lock);
+            auto haveEdge = edge.Parse(rootScope);
 
             TemplateParser corner(scene, ent, state.GetInstanceId(), cornerTemplate);
-            auto haveCorner = corner.Parse(lock);
+            auto haveCorner = corner.Parse(rootScope);
 
             glm::vec3 normal{1, 1, 1};
             normal[axesIndex.first] = 0;
@@ -195,19 +268,20 @@ namespace ecs {
                     offset3D[axesIndex.first] = offset2D.x;
                     offset3D[axesIndex.second] = offset2D.y;
 
-                    ecs::EntityScope scope = ecs::Name(std::to_string(x) + "_" + std::to_string(y), surface.rootScope);
+                    ecs::EntityScope tileScope = ecs::Name(std::to_string(x) + "_" + std::to_string(y), rootScope);
 
-                    ecs::Entity tileEnt;
-                    if (surface.componentsObj) {
-                        tileEnt = surface.ApplyComponents(*surface.componentsObj, lock, "scoperoot", scope, offset3D);
-                    } else {
-                        static const picojson::object empty = {};
-                        tileEnt = surface.ApplyComponents(empty, lock, "scoperoot", scope, offset3D);
+                    ecs::Entity tileEnt = surface.ApplyComponents(lock, tileScope, offset3D);
+                    if (!tileEnt) {
+                        // Most llkely a duplicate entity or invalid name
+                        Errorf("Failed to create tiled template entity (%s), ignoring: '%s'",
+                            surface.sourceName,
+                            tileScope.String());
+                        continue;
                     }
-                    Assertf(tileEnt, "Failed to create tile entity: %s", ToString(lock, ent));
+
                     SignalRef(tileEnt, "tile.x").SetValue(lock, x);
                     SignalRef(tileEnt, "tile.y").SetValue(lock, y);
-                    surface.AddEntities(lock, scope, offset3D);
+                    surface.AddEntities(lock, tileScope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);
                     auto yEdge = y == 0 || y == (count.y - 1);
@@ -223,10 +297,8 @@ namespace ecs {
                                 transform.Rotate(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
-                            if (corner.componentsObj) {
-                                corner.ApplyComponents(*corner.componentsObj, lock, "scoperoot", scope, transform);
-                            }
-                            corner.AddEntities(lock, scope, transform);
+                            corner.ApplyComponents(lock, tileScope, transform);
+                            corner.AddEntities(lock, tileScope, transform);
                         }
                     } else if (xEdge || yEdge) {
                         if (haveEdge) {
@@ -239,10 +311,8 @@ namespace ecs {
                                 transform.Rotate(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
-                            if (edge.componentsObj) {
-                                edge.ApplyComponents(*edge.componentsObj, lock, "scoperoot", scope, transform);
-                            }
-                            edge.AddEntities(lock, scope, transform);
+                            edge.ApplyComponents(lock, tileScope, transform);
+                            edge.AddEntities(lock, tileScope, transform);
                         }
                     }
                     if (tileEnt.Has<ecs::Scripts>(lock)) {

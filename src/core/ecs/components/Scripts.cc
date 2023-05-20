@@ -8,9 +8,7 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<ScriptInstance>(const EntityScope &scope,
-        ScriptInstance &instance,
-        const picojson::value &src) {
+    bool StructMetadata::Load<ScriptInstance>(ScriptInstance &instance, const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
         const ScriptDefinition *definition = nullptr;
         if (!src.is<picojson::object>()) {
@@ -62,7 +60,7 @@ namespace ecs {
             return false;
         }
 
-        auto state = ScriptState(scope, *definition);
+        auto state = ScriptState(*definition);
         if (definition->context) {
             // Access will initialize default parameters
             void *dataPtr = state.definition.context->Access(state);
@@ -71,7 +69,7 @@ namespace ecs {
             auto it = srcObj.find("parameters");
             if (it != srcObj.end()) {
                 for (auto &field : state.definition.context->metadata.fields) {
-                    if (!field.Load(scope, dataPtr, it->second)) {
+                    if (!field.Load(dataPtr, it->second)) {
                         Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
                         return false;
                     }
@@ -122,6 +120,29 @@ namespace ecs {
         }
     }
 
+    template<>
+    void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope) {
+        if (!dst.state) return;
+        if (dst.state->scope != scope) {
+            auto &oldState = *dst.state;
+            // Create a new script instance so references to the old scope remain valid.
+            auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
+
+            if (oldState.definition.context) {
+                const void *defaultPtr = oldState.definition.context->GetDefault();
+                void *oldPtr = oldState.definition.context->Access(oldState);
+                void *newPtr = newState->definition.context->Access(*newState);
+                Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
+                Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
+                for (auto &field : oldState.definition.context->metadata.fields) {
+                    field.Apply(newPtr, oldPtr, defaultPtr);
+                    field.SetScope(newPtr, scope);
+                }
+            }
+            dst.state = std::move(newState);
+        }
+    }
+
     bool ScriptState::operator==(const ScriptState &other) const {
         if (definition.name.empty() || !definition.context) return instanceId == other.instanceId;
         if (definition.name != other.definition.name) return false;
@@ -159,7 +180,7 @@ namespace ecs {
                     return arg.GetInstanceId() == instance.GetInstanceId();
                 });
                 if (existing == dst.scripts.end()) {
-                    dst.scripts.emplace_back(GetScriptManager().NewScriptInstance(*instance.state));
+                    dst.scripts.emplace_back(instance);
                 }
             }
         } else {

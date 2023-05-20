@@ -31,6 +31,8 @@ namespace ecs {
 
         std::string String() const;
 
+        void SetScope(const EntityScope &scope);
+
         double &SetValue(const Lock<Write<Signals>> &lock, double value) const;
         void ClearValue(const Lock<Write<Signals>> &lock) const;
         bool HasValue(const Lock<Read<Signals>> &lock) const;
