@@ -501,8 +501,10 @@ namespace sp {
 
                 auto oldPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
 
-                auto moveResult =
-                    controller.pxController->move(GlmVec3ToPxVec3(displacement + headInput), 0, dt, moveQueryFilter);
+                auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(displacement + headInput),
+                    0,
+                    dt,
+                    moveQueryFilter);
 
                 controller.pxController->getState(state);
 

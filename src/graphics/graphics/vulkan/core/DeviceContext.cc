@@ -702,8 +702,10 @@ namespace sp::vulkan {
         if (swapchain) {
             try {
                 ZoneScopedN("AcquireNextImage");
-                auto acquireResult =
-                    device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
+                auto acquireResult = device->acquireNextImageKHR(*swapchain,
+                    UINT64_MAX,
+                    *Frame().imageAvailableSemaphore,
+                    nullptr);
                 swapchainImageIndex = acquireResult.value;
                 ZoneValue(swapchainImageIndex);
             } catch (const vk::OutOfDateKHRError &) {
