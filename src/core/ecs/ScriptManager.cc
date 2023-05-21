@@ -76,13 +76,13 @@ namespace ecs {
         auto it = scriptList.end();
         EventQueue *eventQueuePtr = nullptr;
         {
-            ZoneScopedN("InitEventQueue");
+            // ZoneScopedN("InitEventQueue");
             std::lock_guard l(mutexes[0]);
             auto queueIt = std::find_if(eventQueues.begin(), eventQueues.end(), [](auto &arg) {
                 return arg.Capacity() == 0;
             });
             if (queueIt == eventQueues.end()) {
-                ZoneScopedN("NewEventQueue");
+                // ZoneScopedN("NewEventQueue");
                 eventQueuePtr = &eventQueues.emplace_back(CVarMaxScriptQueueSize.Get());
             } else {
                 ZoneScopedN("ResizeEventQueue");
@@ -99,7 +99,7 @@ namespace ecs {
             it->Resize(0);
         });
         {
-            ZoneScopedN("InitScriptState");
+            // ZoneScopedN("InitScriptState");
             std::lock_guard l(scriptMutex);
             it = std::find_if(scriptList.begin(), scriptList.end(), [](auto &arg) {
                 return arg.second.index == std::numeric_limits<size_t>::max();
