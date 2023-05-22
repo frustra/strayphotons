@@ -1,300 +1,69 @@
-0884f29190846b325b86d234504cbe8a    audio/click1.ogg
-5e619b4c2544b450419f6e8e2a34ffe8    audio/click2.ogg
-c8592dd4fa6a0e474199904b71db5452    audio/door_open.ogg
-4c3930a4636d2fa48940144a51e784c7    audio/dryer.ogg
-d898941580ba0847b81732689c07b44e    audio/quack.ogg
-184dd045ca32e7a45f28b864e42c246f    audio/test.ogg
-e7a79c4f28caaba8978fc4b7fdec313c    logos/credits-frustra.png
-c3ba21cbcb3bdb05096b0b2a220b63c6    logos/loading.png
-86ffd365ff0d067a7900b697f4815795    logos/sp-laser-black.svg
-bde4a1c707d403b1fc31d4c695b2dec1    logos/sp-laser-caution.xcf
-0e1592831b9a601899c40b404c96349e    logos/sp-laser-caution-cropped.png
-3eeccdda995a4b8f4039666135eb4239    logos/sp-loading.xcf
-01a601eb57e062bab742d6cfddbae9bf    logos/sp-menu.png
-b4232088a57166a5591cb561e2294319    models/01-outside/01-outside.bin
-103602b543295cb18999f32a35c2e586    models/01-outside/01-outside.gltf
-2b316570a1b330ed743225607c4dcfac    models/01-outside/01-outside.mtl
-a7839a76099b7b751f9f5af0f3cbcc85    models/01-outside/01-outside.obj
-9f6470dddbec9e97db0c1955473a6812    models/01-outside/Brick_Base_Color.png
-553ca033d7416c4c2fe1a834b57e5f42    models/01-outside/Brick_Height.png
-5b877927bc02fe38debb071a672e2ad0    models/01-outside/Brick_Roughness.png
-2fecb536934d44dcb00c21a3e1a3111c    models/01-outside/Concrete_Base_Color.png
-17043b2567d50cac9388cc467434b0a5    models/01-outside/Concrete_Height.png
-671efae21b5b5333539e0c6bb3c70e21    models/01-outside/Concrete_Roughness.png
-c5bc48dedd2acd4a805056ddd11177c3    models/01-outside/Pavement_Base_Color.png
-5c5501644f8293bb963ab81478c7db5a    models/01-outside/Pavement_Height.png
-146c96b3d5c5ad19432b4d0d6c4e44d5    models/01-outside/Pavement_Metallic.png
-81d1e61f598744efe82f03a32ebb65a1    models/01-outside/Pavement_Roughness.png
-26bdbe472d5d5eeeaddcc80d4642d4d4    models/01-outside/Steps_Base_Color.png
-e40dd502497ecf4453a6babeb1da831e    models/01-outside/Steps_Height.png
-8da78610261bdb3dac0cc0abb2de7ccc    models/01-outside/Steps_Roughness.png
-05a269fcc918c98d704f3ac379fe8a07    models/airlock/airlock.gltf
-debf7c25075d9b9d1e46ab96b34dac0b    models/airlock/airlock.mtl
-802c707c8a4ed8debf47a26e72dabb3e    models/airlock/airlock.obj
-afc60ede2426f851d153da95f354cb12    models/airlock/AirlockFloor_Base_Color.png
-4b047fa9f75f1a501dfba38496ec606a    models/airlock/AirlockFloor_Height.png
-bfa4700e8572921fd8519d2078848b46    models/airlock/AirlockFloor_Metallic.png
-150b96e37d8f68685a91c41a3edb247f    models/airlock/AirlockFloor_Roughness.png
-d10b4dfbe694e3ea8ab67940b758ef95    models/airlock/AirlockInterior_Base_Color.png
-3dd42aabfa4094af38126b2ff0bee384    models/airlock/AirlockInterior_Height.png
-9b417d7c8a8ab13ae9996f6990e17044    models/airlock/AirlockInterior_Metallic.png
-abeb983346476d60bf60938c00d2dea2    models/airlock/AirlockInterior_Roughness.png
-cca8a80569b451dd5139fb058940e6d5    models/articulating-arm.glb
-a8542bca71645613252a6b4acc96b889    models/box.gltf
-d71748db7321a116b49ca9eb0ce7c879    models/breadboard_corner.glb
-948925d131e0b7759947799dd4c47fa3    models/breadboard_edge.glb
-cb628010e38380757a322fdb690dc078    models/breadboard_surface.glb
-27c237412eb3064b17afd3313076cd7f    models/cardboard-box/cardboard-box.gltf
-6c2e1cbfb8754ed7a0347f6f47e9cd78    models/cardboard-box/cardboard-box.mtl
-98c6e50d2da732bb3f96b1950859eef3    models/cardboard-box/cardboard-box.obj
-433f2d6af63c091d3988c4c021be7e11    models/cardboard-box/Material_Base_Color.png
-cb751c6354f519c4a045621131d96d87    models/cardboard-box/Material_Height.png
-82b66422343e255daa6a27cbfcdef63c    models/cardboard-box/Material_Roughness.png
-cb01b0ff319b956d0730d4bc908f5f72    models/ceiling-3x3/ceiling-3x3.gltf
-56ec3ea2a001d41b84b6136675fa781d    models/ceiling-3x3/ceiling-3x3.mtl
-a13f74657d0dd22d21d8018b48707cd3    models/ceiling-3x3/ceiling-3x3.obj
-1e261e7d34ada572c1f5832599b6bb3f    models/ceiling-3x3/Material_Base_Color.png
-920480972b8cb61d54bf191972735d00    models/ceiling-3x3/Material_Height.png
-d4086398b443c7d3be268ddc5ecff898    models/ceiling-3x3/Material_Metallic.png
-58e9289359f0fa0985ec53ba6139dbee    models/ceiling-3x3/Material_Roughness.png
-609e045860b1c9918a41376d2f523a27    models/colorfilter.gltf
-ccf2848cc2242bee66b6272ef46d7a5d    models/cornell-box-1.gltf
-8419e7aa5b30a308cd5e409e2318129c    models/cornell-box-2.gltf
-a2a2fa0b54b13ff4e03b33208fe8c3d8    models/cornell-box-3.gltf
-2bce7262a043546d50e5c438a5bcbd47    models/dodecahedron/dodecahedron.bin
-5ad82baf568557a43b383fe78c628b94    models/dodecahedron/dodecahedron.gltf
-923517b9f47bbdbdcbf181e2c1c4ff02    models/dodecahedron/dodecahedron.obj
-afb023e1ed5100a10e0c46518d2b2ed3    models/door-frame/door-frame.gltf
-91fb2f3fb81e2bf4b7eb0ba1a4aee93c    models/door-frame/door-frame.mtl
-2518f0cad5feb813935cf13bc2582944    models/door-frame/door-frame.obj
-5e69b608989c6c87124380040ef268d7    models/door-frame/DoorFrame_Base_Color.png
-b67753ea686a0428c85a0eab25f38a09    models/door-frame/DoorFrame_Height.png
-bfa4700e8572921fd8519d2078848b46    models/door-frame/DoorFrame_Metallic.png
-6aa08d5f238ac6a0e4b72a83753bde8a    models/door-frame/DoorFrame_Roughness.png
-8319d8520b9040f522e18c1b16f6e5a2    models/door-frame-1.5x2/door-frame-1.5x2.bin
-ad14a51e4c667ac377196cfcf263a613    models/door-frame-1.5x2/door-frame-1.5x2.blend
-4fbccd3ca6bd51b4694c21e7e9bf81b7    models/door-frame-1.5x2/door-frame-1.5x2.gltf
-368e75158228ab739fb6761d404dfe48    models/door-frame-1.5x2/door-frame-1.5x2.mtl
-e8427a7e02661e0051581cd88ae6eac5    models/door-frame-1.5x2/door-frame-1.5x2.obj
-21920b4fcd7bf9508d78d751cad0aa03    models/door-hex-1x2/door-hex-1x2.bin
-8d87ba67b1d8e382bb8f804b527925ae    models/door-hex-1x2/door-hex-1x2.gltf
-573cec018c02499f76c316aab94e36e1    models/door-hex-1x2/door-hex-1x2.mtl
-ca60b4964c83471055109c30e7e4fff9    models/door-hex-1x2/door-hex-1x2.obj
-1cccb65077272f1f6b25cf7f7e035a3b    models/door-hex-frame-1x2/door-hex-frame-1x2.bin
-458e6857ddca0ed654e30f571aaf448c    models/door-hex-frame-1x2/door-hex-frame-1x2.gltf
-c37523269254c221e730620301b33c5a    models/door-hex-frame-1x2/door-hex-frame-1x2.mtl
-399d2152e98e9acf786fdcb3df2cd24a    models/door-hex-frame-1x2/door-hex-frame-1x2.obj
-e483d7d9cde396982261e2594d2aa74b    models/door-panel/door-panel.gltf
-39ff78ca648706a6532ba326fe5ae675    models/door-panel/door-panel.mtl
-062bd8f340fffa168414ce97519d7fa1    models/door-panel/door-panel.obj
-b7ef892598cb0ad38b5bff5e68fa635d    models/door-panel/DoorPanel_Base_Color.png
-b00c14739a95781c0daab270746ca928    models/door-panel/DoorPanel_Height.png
-9b417d7c8a8ab13ae9996f6990e17044    models/door-panel/DoorPanel_Metallic.png
-28c2f8f772500d5c93f9f0dba6b9325b    models/door-panel/DoorPanel_Roughness.png
-6877233e77056cbce1b4b23ab50f5d81    models/door-panel-l-1.5x2/door-panel-l-1.5x2.bin
-66fc37695b8dd4fb4407dfecb71d8784    models/door-panel-l-1.5x2/door-panel-l-1.5x2.blend
-a6a1d202bdc44baecebd2698137490db    models/door-panel-l-1.5x2/door-panel-l-1.5x2.gltf
-10c9bc71099c402c0f2fc6a949c023ee    models/door-panel-l-1.5x2/door-panel-l-1.5x2.mtl
-37befc515667f5f9c020aeb0e47c4a4b    models/door-panel-l-1.5x2/door-panel-l-1.5x2.obj
-e6dcf486a116d7a7c8f18838d4c53c81    models/door-panel-r-1.5x2/door-panel-r-1.5x2.bin
-e607aa0ab90e22f6749cb27ec36aadcd    models/door-panel-r-1.5x2/door-panel-r-1.5x2.blend
-2adb24ad8db7217680b9975a2a76e182    models/door-panel-r-1.5x2/door-panel-r-1.5x2.gltf
-629824f3e0c6e31ddd2670d81efc1dfe    models/door-panel-r-1.5x2/door-panel-r-1.5x2.mtl
-8fe06f13c952be7ba6ece148d01230ca    models/door-panel-r-1.5x2/door-panel-r-1.5x2.obj
-9f676a6ec94bd31ba5e17bdf0f89631a    models/duck/duck.gltf
-44d6d3e0f2bf1b623023897c40391a34    models/duck/Duck0.bin
-d68914109658ec1fc4fd09d8a954fe7f    models/duck/duckCM.png
-45df0c6862b1206c45c47457bb806f7e    models/duck/screenshot/screenshot.png
-b9efa01538a25b9cc219bb8359c42406    models/extrusion.glb
-9b03d8fd268344f700e686181e3ac717    models/ground-1x1x1/ground-1x1x1.bin
-4f757bb55168b03046859109677cab92    models/ground-1x1x1/ground-1x1x1.gltf
-2455b2d3987f10df36114a9f0c7d1955    models/ground-1x1x1/ground-1x1x1.obj
-906e709f5c7d32fbe0348eea66b68384    models/ground-3x3/Concrete_Base_Color.png
-545c184c43bbe4f24a630bc7684f3e82    models/ground-3x3/Concrete_Height.png
-15fb776ee0fb324ed0d7e6570548e3fc    models/ground-3x3/Concrete_Roughness.png
-b67e4c2ed71bb8441c2a55fe6da9d294    models/ground-3x3/ground-3x3.gltf
-aa95568f5f7dea1aa58d0083da7355a1    models/ground-3x3/ground-3x3.mtl
-5d504b5392a911a51a44b81e0a75cdda    models/ground-3x3/ground-3x3.obj
-b950bca1f3708d53494a4dff80b9f118    models/laser-plug.glb
-3000dfb30813452012abc6648a0ec131    models/laser-plug-mount.glb
-c10b4f86eaab066cd79ff910081a62f5    models/laser-socket.glb
-999fc11888892c457fdad9016901eae5    models/ledge-caged-1x0.5/ledge-caged-1x0.5.bin
-9b748eefcc87d00cb79897048cbca197    models/ledge-caged-1x0.5/ledge-caged-1x0.5.gltf
-70e55960224729ea1f80b2dda9039b68    models/ledge-caged-1x0.5/ledge-caged-1x0.5.mtl
-91eef656a4fd3a59d637a5b79cd4549e    models/ledge-caged-1x0.5/ledge-caged-1x0.5.obj
-1eed6b5dc507749cf0f0f8f8ad5832d8    models/level1/buffer_0.bin
-9ebddecaa4e88b43a39800a84fe71bc4    models/level1/Ceiling_Base_Color.png
-655bc99327f3328f475f90adb5874e7f    models/level1/Ceiling_Height.png
-1ca771bd5aa26902c4f195dd4234048e    models/level1/Ceiling_Metallic.png
-7df27eea6d987f38d270d1132facd144    models/level1/Ceiling_Roughness.png
-9dd6bc43fd34a879cbe47252ac02b741    models/level1/Floor_Base_Color.png
-801226469f1a07ebdfb263d141b0a3a0    models/level1/Floor_Height.png
-4aa6ea42a9bcdc5e7a181dc6f87e4a74    models/level1/Floor_Roughness.png
-8807b6f8697a3c8fb40e568f8e32330a    models/level1/level1.fbx
-ad9963c00b590616930ac9f47a57d83f    models/level1/level1.gltf
-87d2a7aa37c93e053113f72dc728c335    models/level1/level1.mtl
-6d9d7d96801d7710ee938c966acf7e5c    models/level1/level1.obj
-23482e84d34342eb9031e153562492c6    models/level1/Pillar_Base_Color.png
-826477802053009bc57e0c852ef35f89    models/level1/Pillar_Height.png
-d99165dd72e8c55054020a5dfb2fd307    models/level1/Pillar_Roughness.png
-cbbe4f5c0a8ebebee486ae2c1bfa6528    models/level1/Walls_Base_Color.png
-348140d545bb0bd5f9f0de10d2045869    models/level1/Walls_Height.png
-15eb3cffb37af22a00925c2dd6a1d800    models/level1/Walls_Roughness.png
-ea0f3016bb87523b5b93091822554b07    models/mcube/Material.001_Base_Color.png
-1705699ec611faded01a5ab8263fb3ef    models/mcube/Material.001_Height.png
-1a2e3067c89738ccb7a36805ba8292a5    models/mcube/Material.001_Metallic.png
-96f3218e49edd7a045f63ab62942b3c9    models/mcube/Material.001_Roughness.png
-37b4a28116b46bb74881fb4e8d809ecb    models/mcube/mcube.gltf
-655e622e91b2c6e10965b046b75d11c7    models/mcube/mcube.mtl
-fb70d29a0c936a19ac73f89a0cdbb3e2    models/mcube/mcube.obj
-6cbfc97fea0ecf2f192c4c20f7e50c89    models/mcube-physx.gltf
-cfa55365c8008b63b5baabc16e891b04    models/mirror.gltf
-3b012fc43776f6936c17296624e1666e    models/occluder.gltf
-7a091401b56603a6f84c7d231dc11e09    models/octagon.glb
-0122eaebb7ade69513befbadb8f3793e    models/optic-plug.glb
-851e2a4a58551a69a125d22421a7e552    models/optic-socket.glb
-f7e77c0df12aba797e819c642e093a5b    models/optic-tube-3mm-flat-one-side.glb
-6847cd312e922b1851a93322a87f2ee1    models/optic-tube-end-5mm.glb
-f1a15bd5a12b8bd2e67bb1a7c90a22bf    models/parking-block/None_Base_Color.png
-ba99e944c2be1665691764eafc74c13b    models/parking-block/None_Height.png
-5604ab36692384bc31f4c6b52f591f94    models/parking-block/None_Roughness.png
-d3fe38a95809a9146a484fa5c32e2ec8    models/parking-block/parking-block.gltf
-adb2137a7401a0e8edf92c928f4e6bfa    models/parking-block/parking-block.mtl
-d86e2a8cd78b802fc56023c325eda5e4    models/parking-block/parking-block.obj
-dda1db854788f61794759ec8e25fc44a    models/pbr-cube/Material_Base_Color.png
-59bcdcff88a029a30d032aa696f9d735    models/pbr-cube/Material_Height.png
-733fef6f100d10e75eab12e5cef79513    models/pbr-cube/Material_Metallic.png
-15aa11b1927453f64c9e61e13ebd370a    models/pbr-cube/Material_Roughness.png
-bc1eaf5e563e66c3a7a9df2f22a4dc04    models/pbr-cube/pbr-cube.bin
-fa544ade3faa1c7e1ce70b9f29f940bb    models/pbr-cube/pbr-cube.gltf
-5628c2163c9228fa80c40e11d89cd2e3    models/pbr-cube/pbr-cube.mtl
-657c7285cc510099db1f2f26cbf34c0e    models/pbr-cube/pbr-cube.obj
-68fe1dc740c960f2b7e6277ec1825644    models/red_led.glb
-570ee7268a95d80b2ad861d882deb28b    models/round-mirror-mounted.glb
-51a1772db7aa8cdd713d81fd8951e463    models/sensor/sensor.gltf
-9470767dbd586095e6a0bb1a36e6ebe7    models/sensor/sensor.mtl
-587aada821be0734cd19ecd9f5ce697d    models/sensor/sensor.obj
-836283860c6d07de425458910b4e9049    models/sensor/Sensor_Base_Color.png
-88c726663422e313fdeae76a09a2d77c    models/sensor/Sensor_Height.png
-42ff98c68b8d11922da209f8a8c6a30b    models/sensor/Sensor_Metallic.png
-43d008a8ae775605b0f04b20d539e044    models/sensor/Sensor_Roughness.png
-777434720df3bf36f38ea61feb519d0b    models/sensor-plate-dark/DarkPlate_Base_Color.png
-03b087c2519ebce98c091018755ad577    models/sensor-plate-dark/DarkPlate_Height.png
-c5ed88427cca6189da9d2bc81331b1b3    models/sensor-plate-dark/DarkPlate_Metallic.png
-49800efe4e7ec264933465fed55d5586    models/sensor-plate-dark/DarkPlate_Roughness.png
-757841e9653e4079ed549d950a261f17    models/sensor-plate-dark/sensor-plate-dark.gltf
-f659b821e7bdc46d81da967ea7b4bc6e    models/sensor-plate-dark/sensor-plate-dark.mtl
-3a9776a0f9f24abe08e588463a4c5647    models/sensor-plate-dark/sensor-plate-dark.obj
-4475bbfbfeaacd982c67ed4047d39a42    models/sensor-plate-light/LightPlate_Base_Color.png
-03b087c2519ebce98c091018755ad577    models/sensor-plate-light/LightPlate_Height.png
-c5ed88427cca6189da9d2bc81331b1b3    models/sensor-plate-light/LightPlate_Metallic.png
-49800efe4e7ec264933465fed55d5586    models/sensor-plate-light/LightPlate_Roughness.png
-b446dad68d58be26078dd0f9e641bf0f    models/sensor-plate-light/sensor-plate-light.gltf
-13bb5bb2e988564c00e11a25a8041bf6    models/sensor-plate-light/sensor-plate-light.mtl
-ef9d89bb4e15442c7632d4847368bb65    models/sensor-plate-light/sensor-plate-light.obj
-4aafc7ee0f2087442d4b487493bc80af    models/sphere.gltf
-f78e1363ad6b59bcf703fcc40fd969fa    models/sponza/10381718147657362067.jpg
-3ebd847216b0825992794f4854f62289    models/sponza/10388182081421875623.jpg
-e7834a045687d783e0ef836b0421a34e    models/sponza/11474523244911310074.jpg
-f3c8851a291e46c00458c7f14994c2c2    models/sponza/11490520546946913238.jpg
-c53d7e1568a743a4693856489725c07e    models/sponza/11872827283454512094.jpg
-aa758ab86917e5c36fd7294c77b05e00    models/sponza/11968150294050148237.jpg
-2ee30ac916d452c7ea8e5b683241ac7a    models/sponza/1219024358953944284.jpg
-ee1f2d8f2a91dcf15fd467915f6fd045    models/sponza/12501374198249454378.jpg
-446c41a9c83d4c9206859271a7c88635    models/sponza/13196865903111448057.jpg
-88a5e7021dae177f7b56e519c45dfaa9    models/sponza/13824894030729245199.jpg
-c6593734fb156b514c5d91c733d585ba    models/sponza/13982482287905699490.jpg
-d75dc279738e0ad404d55f124ab266e5    models/sponza/14118779221266351425.jpg
-82b9fb0b9d833ab06b0f219e54551647    models/sponza/14170708867020035030.jpg
-f6205109df24fae43d94bb80df6a5b27    models/sponza/14267839433702832875.jpg
-d4a956ad785e0bb94b757feb36bc4db0    models/sponza/14650633544276105767.jpg
-63ac3401928f2b71f0c1b18938b33b99    models/sponza/15295713303328085182.jpg
-e7f4e7c17888ef2625a6af69aec69b40    models/sponza/15722799267630235092.jpg
-68fa48fded29440bb3d37f0da2742ea5    models/sponza/16275776544635328252.png
-94e656f5d0181aa52dddc00c3ebb2840    models/sponza/16299174074766089871.jpg
-593cd1e16b454b2765c9084e42f8afb2    models/sponza/16885566240357350108.jpg
-bab7200c235bc05112cf30eae3bbc1f7    models/sponza/17556969131407844942.jpg
-0c505301f5c572196e456f44f8dda7ff    models/sponza/17876391417123941155.jpg
-e521b3a108327bc6107e15f8f61507b5    models/sponza/2051777328469649772.jpg
-4a419229d9e4230230130ec0b27af245    models/sponza/2185409758123873465.jpg
-88a3ed2780c799612e226545e84904c2    models/sponza/2299742237651021498.jpg
-8324f84867c3933d57ca9485db4281d5    models/sponza/2374361008830720677.jpg
-ef22a948ceb4ec2b72544e6772d034cc    models/sponza/2411100444841994089.jpg
-9ebdeb497ad67f14f83fa4801f3bdee7    models/sponza/2775690330959970771.jpg
-879b27df2750944e7e1807387ada3a0c    models/sponza/2969916736137545357.jpg
-8324f84867c3933d57ca9485db4281d5    models/sponza/332936164838540657.jpg
-97e30510343b3731ecf31a640e17b36b    models/sponza/3371964815757888145.jpg
-ca15c6a959d58fd66d978c90d1c8df7f    models/sponza/3455394979645218238.jpg
-d2923eb7b1a131e84853040cc7760f6f    models/sponza/3628158980083700836.jpg
-f15877f3f28b6d040de768a9401eacc8    models/sponza/3827035219084910048.jpg
-f9b47b17f4db7cad3392c03255243ddb    models/sponza/4477655471536070370.jpg
-f24e01d09b0735c829b9124dc9bc3d04    models/sponza/4601176305987539675.jpg
-15ce360baf5bb351697675f56f27f17d    models/sponza/466164707995436622.jpg
-de9b4ef505e22070ca76f14c32dffa70    models/sponza/4675343432951571524.jpg
-1a8dbc150d6dc724b9c1b50671ecc8ff    models/sponza/4871783166746854860.jpg
-f24e01d09b0735c829b9124dc9bc3d04    models/sponza/4910669866631290573.jpg
-6aa04e8ce770dbe47d87720be4e1d943    models/sponza/4975155472559461469.jpg
-cf8ea57468b34fa1a91cf94395aa2d9a    models/sponza/5061699253647017043.png
-692ecd1e6c414e5a85b0fda6462d1ede    models/sponza/5792855332885324923.jpg
-9fb92b0be67cd680875f3b54a71128a2    models/sponza/5823059166183034438.jpg
-998ac7c94b116041d573e97b8b24da69    models/sponza/6047387724914829168.jpg
-12365d5d242a543782b9045e40227f12    models/sponza/6151467286084645207.jpg
-f24e01d09b0735c829b9124dc9bc3d04    models/sponza/6593109234861095314.jpg
-d423533ec77fb18bb16ace0e298d9e8d    models/sponza/6667038893015345571.jpg
-2f7e0d29ac8c71a5a1677615e5160540    models/sponza/6772804448157695701.jpg
-8324f84867c3933d57ca9485db4281d5    models/sponza/7056944414013900257.jpg
-3b9f24be69d993a458870ccdf6951b38    models/sponza/715093869573992647.jpg
-144ab56e449cf9d61ba134e1962be4b3    models/sponza/7268504077753552595.jpg
-b28426cd02161c4659cd591fb5d0ae86    models/sponza/7441062115984513793.jpg
-c25d3f68a70351a6a477f7ce194ce6da    models/sponza/755318871556304029.jpg
-4672ca1ab7aeafc12e51100d2f6ae7c1    models/sponza/759203620573749278.jpg
-67e4dde2998e2734fdd2f22be97c8e9e    models/sponza/7645212358685992005.jpg
-e73d62830878592a45a407badeda9a72    models/sponza/7815564343179553343.jpg
-fcc91669799fd74342fee5dc6852fcb7    models/sponza/8006627369776289000.png
-92508db1420ad6368d42009579e4082f    models/sponza/8051790464816141987.jpg
-6b67345bc7ab6efb57197d42bda8e5dd    models/sponza/8114461559286000061.jpg
-83fd8e4d8ddbf21d11213fd4c4e6518a    models/sponza/8481240838833932244.jpg
-7a09e90761eb34be3d57d0dc8e11cbb2    models/sponza/8503262930880235456.jpg
-01daa0bc20aeb10e19ecf22aec805636    models/sponza/8747919177698443163.jpg
-289859f5b507fb98b3226a1f82ef2539    models/sponza/8750083169368950601.jpg
-66f3f4dd45c228e615edac2389fbf6c2    models/sponza/8773302468495022225.jpg
-b442bd0c1836565ae7c5f6c93a56c6d5    models/sponza/8783994986360286082.jpg
-242cd4e0a688d38169dd2758276fd394    models/sponza/9288698199695299068.jpg
-488b0a10d1de524d1325d46a72a55b2e    models/sponza/9916269861720640319.jpg
-3b67ffc5f6fb3344af32e7edfd99607e    models/sponza/sponza.bin
-99f735daa53b1f15a131521ba3a706c9    models/sponza/sponza.gltf
-9d944fa4d6cf48ba48a4422163283092    models/sponza/white.png
-fc46e63ace3613ebcb64db59f8dcffb0    models/sponza2/sponza2.gltf
-96d9f220e9ab4e30b42583d38123f89f    models/spotlight-01/spotlight-01.bin
-64ef9dcd30c285d5b9168984e172cbd7    models/spotlight-01/spotlight-01.gltf
-652b0dcde78910bda91233725d2713b1    models/spotlight-01/spotlight-01.mtl
-11d83b9570c18d0eef1616606301e0b2    models/spotlight-01/spotlight-01.obj
-72bc0f9087a28de5387f946d0669b36d    models/station-segment/station-segment.gltf
-ec23e7dd6ff7a8e00388e218ad38dad4    models/wall-1x1/wall-1x1.bin
-3551a233b2ca61e8b5c908029ac721b9    models/wall-1x1/wall-1x1.gltf
-1b7a4e83f50ca1773c502abb368566a0    models/wall-1x1/wall-1x1.obj
-ee896700b836ec174fec03faacfa2582    models/wall-4-corner/Material_Base_Color.png
-7d195931ad3224da9c7de89ac8deba8c    models/wall-4-corner/Material_Height.png
-92fd5a97af2a69c5bd17fe71ac7f3795    models/wall-4-corner/Material_Roughness.png
-77e35455a924825434ded782b19be091    models/wall-4-corner/wall-4-corner.gltf
-dc9caf562e89bae1cb2cace4a494ef71    models/wall-4-corner/wall-4-corner.mtl
-7c00a0d2394fdd4a1c21bd4e2d406901    models/wall-4-corner/wall-4-corner.obj
-ee896700b836ec174fec03faacfa2582    models/wall-4x3/Material_Base_Color.png
-7d195931ad3224da9c7de89ac8deba8c    models/wall-4x3/Material_Height.png
-92fd5a97af2a69c5bd17fe71ac7f3795    models/wall-4x3/Material_Roughness.png
-7f38ea570e931417ec73fe67eefaba52    models/wall-4x3/wall-4x3.gltf
-7e26f254afd4e298779361c40f4b5d05    models/wall-4x3/wall-4x3.mtl
-7648a7eba2d247030ed32829953be2ce    models/wall-4x3/wall-4x3.obj
-11e82ae16e19da185821887d0b00107d    models/wall-4x3-door/Material_Base_Color.png
-f8dbaaab681708166bcd67154ad3da70    models/wall-4x3-door/Material_Height.png
-9b417d7c8a8ab13ae9996f6990e17044    models/wall-4x3-door/Material_Metallic.png
-d575c2e2f135db63bb8f32b535d5a721    models/wall-4x3-door/Material_Roughness.png
-85e637b0f9607249686ecafb0d2f979f    models/wall-4x3-door/wall-4x3-door.gltf
-452cabfd0e48c9d628b4d063817d9200    models/wall-4x3-door/wall-4x3-door.mtl
-558ba8138f8be5b013682b3a8418c8df    models/wall-4x3-door/wall-4x3-door.obj
-7392d4c1cc880bb1f77d46a7dc73bbb8    textures/flashlight.jpg
-9f9ab4d877271bae6f8644f55cb16af2    textures/flashlight.png
-d505e2f46236ab748c3550864796e837    textures/smaa/AreaTex.tga
-520aaaa56035d0218d4e4aa45e75c96f    textures/smaa/AreaTexDX10.dds
-a2ba3f918f066a66f449923f4e49c085    textures/smaa/SearchTex.dds
-3a9b7bebc3f33757fa9a6d95c19a3bab    textures/smaa/SearchTex.tga
+0884f29190846b325b86d234504cbe8a    https://assets.strayphotons.net/audio/click1.ogg    audio/click1.ogg
+5e619b4c2544b450419f6e8e2a34ffe8    https://assets.strayphotons.net/audio/click2.ogg    audio/click2.ogg
+c8592dd4fa6a0e474199904b71db5452    https://assets.strayphotons.net/audio/door_open.ogg    audio/door_open.ogg
+4c3930a4636d2fa48940144a51e784c7    https://assets.strayphotons.net/audio/dryer.ogg    audio/dryer.ogg
+d898941580ba0847b81732689c07b44e    https://assets.strayphotons.net/audio/quack.ogg    audio/quack.ogg
+184dd045ca32e7a45f28b864e42c246f    https://assets.strayphotons.net/audio/test.ogg    audio/test.ogg
+e7a79c4f28caaba8978fc4b7fdec313c    https://assets.strayphotons.net/logos/credits-frustra.png    logos/credits-frustra.png
+01a601eb57e062bab742d6cfddbae9bf    https://assets.strayphotons.net/logos/sp-menu.png    logos/sp-menu.png
+103602b543295cb18999f32a35c2e586    https://assets.strayphotons.net/models/01-outside/01-outside.gltf    models/01-outside/01-outside.gltf
+05a269fcc918c98d704f3ac379fe8a07    https://assets.strayphotons.net/models/airlock/airlock.gltf    models/airlock/airlock.gltf
+cca8a80569b451dd5139fb058940e6d5    https://assets.strayphotons.net/models/articulating-arm.glb    models/articulating-arm.glb
+a8542bca71645613252a6b4acc96b889    https://assets.strayphotons.net/models/box.gltf    models/box.gltf
+d71748db7321a116b49ca9eb0ce7c879    https://assets.strayphotons.net/models/breadboard_corner.glb    models/breadboard_corner.glb
+948925d131e0b7759947799dd4c47fa3    https://assets.strayphotons.net/models/breadboard_edge.glb    models/breadboard_edge.glb
+cb628010e38380757a322fdb690dc078    https://assets.strayphotons.net/models/breadboard_surface.glb    models/breadboard_surface.glb
+27c237412eb3064b17afd3313076cd7f    https://assets.strayphotons.net/models/cardboard-box/cardboard-box.gltf    models/cardboard-box/cardboard-box.gltf
+cb01b0ff319b956d0730d4bc908f5f72    https://assets.strayphotons.net/models/ceiling-3x3/ceiling-3x3.gltf    models/ceiling-3x3/ceiling-3x3.gltf
+609e045860b1c9918a41376d2f523a27    https://assets.strayphotons.net/models/colorfilter.gltf    models/colorfilter.gltf
+ccf2848cc2242bee66b6272ef46d7a5d    https://assets.strayphotons.net/models/cornell-box-1.gltf    models/cornell-box-1.gltf
+8419e7aa5b30a308cd5e409e2318129c    https://assets.strayphotons.net/models/cornell-box-2.gltf    models/cornell-box-2.gltf
+a2a2fa0b54b13ff4e03b33208fe8c3d8    https://assets.strayphotons.net/models/cornell-box-3.gltf    models/cornell-box-3.gltf
+5ad82baf568557a43b383fe78c628b94    https://assets.strayphotons.net/models/dodecahedron/dodecahedron.gltf    models/dodecahedron/dodecahedron.gltf
+afb023e1ed5100a10e0c46518d2b2ed3    https://assets.strayphotons.net/models/door-frame/door-frame.gltf    models/door-frame/door-frame.gltf
+4fbccd3ca6bd51b4694c21e7e9bf81b7    https://assets.strayphotons.net/models/door-frame-1.5x2/door-frame-1.5x2.gltf    models/door-frame-1.5x2/door-frame-1.5x2.gltf
+8d87ba67b1d8e382bb8f804b527925ae    https://assets.strayphotons.net/models/door-hex-1x2/door-hex-1x2.gltf    models/door-hex-1x2/door-hex-1x2.gltf
+458e6857ddca0ed654e30f571aaf448c    https://assets.strayphotons.net/models/door-hex-frame-1x2/door-hex-frame-1x2.gltf    models/door-hex-frame-1x2/door-hex-frame-1x2.gltf
+e483d7d9cde396982261e2594d2aa74b    https://assets.strayphotons.net/models/door-panel/door-panel.gltf    models/door-panel/door-panel.gltf
+a6a1d202bdc44baecebd2698137490db    https://assets.strayphotons.net/models/door-panel-l-1.5x2/door-panel-l-1.5x2.gltf    models/door-panel-l-1.5x2/door-panel-l-1.5x2.gltf
+2adb24ad8db7217680b9975a2a76e182    https://assets.strayphotons.net/models/door-panel-r-1.5x2/door-panel-r-1.5x2.gltf    models/door-panel-r-1.5x2/door-panel-r-1.5x2.gltf
+9f676a6ec94bd31ba5e17bdf0f89631a    https://assets.strayphotons.net/models/duck/duck.gltf    models/duck/duck.gltf
+b9efa01538a25b9cc219bb8359c42406    https://assets.strayphotons.net/models/extrusion.glb    models/extrusion.glb
+4f757bb55168b03046859109677cab92    https://assets.strayphotons.net/models/ground-1x1x1/ground-1x1x1.gltf    models/ground-1x1x1/ground-1x1x1.gltf
+b67e4c2ed71bb8441c2a55fe6da9d294    https://assets.strayphotons.net/models/ground-3x3/ground-3x3.gltf    models/ground-3x3/ground-3x3.gltf
+b950bca1f3708d53494a4dff80b9f118    https://assets.strayphotons.net/models/laser-plug.glb    models/laser-plug.glb
+3000dfb30813452012abc6648a0ec131    https://assets.strayphotons.net/models/laser-plug-mount.glb    models/laser-plug-mount.glb
+c10b4f86eaab066cd79ff910081a62f5    https://assets.strayphotons.net/models/laser-socket.glb    models/laser-socket.glb
+9b748eefcc87d00cb79897048cbca197    https://assets.strayphotons.net/models/ledge-caged-1x0.5/ledge-caged-1x0.5.gltf    models/ledge-caged-1x0.5/ledge-caged-1x0.5.gltf
+ad9963c00b590616930ac9f47a57d83f    https://assets.strayphotons.net/models/level1/level1.gltf    models/level1/level1.gltf
+37b4a28116b46bb74881fb4e8d809ecb    https://assets.strayphotons.net/models/mcube/mcube.gltf    models/mcube/mcube.gltf
+6cbfc97fea0ecf2f192c4c20f7e50c89    https://assets.strayphotons.net/models/mcube-physx.gltf    models/mcube-physx.gltf
+cfa55365c8008b63b5baabc16e891b04    https://assets.strayphotons.net/models/mirror.gltf    models/mirror.gltf
+3b012fc43776f6936c17296624e1666e    https://assets.strayphotons.net/models/occluder.gltf    models/occluder.gltf
+7a091401b56603a6f84c7d231dc11e09    https://assets.strayphotons.net/models/octagon.glb    models/octagon.glb
+0122eaebb7ade69513befbadb8f3793e    https://assets.strayphotons.net/models/optic-plug.glb    models/optic-plug.glb
+851e2a4a58551a69a125d22421a7e552    https://assets.strayphotons.net/models/optic-socket.glb    models/optic-socket.glb
+f7e77c0df12aba797e819c642e093a5b    https://assets.strayphotons.net/models/optic-tube-3mm-flat-one-side.glb    models/optic-tube-3mm-flat-one-side.glb
+6847cd312e922b1851a93322a87f2ee1    https://assets.strayphotons.net/models/optic-tube-end-5mm.glb    models/optic-tube-end-5mm.glb
+d3fe38a95809a9146a484fa5c32e2ec8    https://assets.strayphotons.net/models/parking-block/parking-block.gltf    models/parking-block/parking-block.gltf
+fa544ade3faa1c7e1ce70b9f29f940bb    https://assets.strayphotons.net/models/pbr-cube/pbr-cube.gltf    models/pbr-cube/pbr-cube.gltf
+68fe1dc740c960f2b7e6277ec1825644    https://assets.strayphotons.net/models/red_led.glb    models/red_led.glb
+570ee7268a95d80b2ad861d882deb28b    https://assets.strayphotons.net/models/round-mirror-mounted.glb    models/round-mirror-mounted.glb
+51a1772db7aa8cdd713d81fd8951e463    https://assets.strayphotons.net/models/sensor/sensor.gltf    models/sensor/sensor.gltf
+757841e9653e4079ed549d950a261f17    https://assets.strayphotons.net/models/sensor-plate-dark/sensor-plate-dark.gltf    models/sensor-plate-dark/sensor-plate-dark.gltf
+b446dad68d58be26078dd0f9e641bf0f    https://assets.strayphotons.net/models/sensor-plate-light/sensor-plate-light.gltf    models/sensor-plate-light/sensor-plate-light.gltf
+4aafc7ee0f2087442d4b487493bc80af    https://assets.strayphotons.net/models/sphere.gltf    models/sphere.gltf
+99f735daa53b1f15a131521ba3a706c9    https://assets.strayphotons.net/models/sponza/sponza.gltf    models/sponza/sponza.gltf
+fc46e63ace3613ebcb64db59f8dcffb0    https://assets.strayphotons.net/models/sponza2/sponza2.gltf    models/sponza2/sponza2.gltf
+64ef9dcd30c285d5b9168984e172cbd7    https://assets.strayphotons.net/models/spotlight-01/spotlight-01.gltf    models/spotlight-01/spotlight-01.gltf
+72bc0f9087a28de5387f946d0669b36d    https://assets.strayphotons.net/models/station-segment/station-segment.gltf    models/station-segment/station-segment.gltf
+3551a233b2ca61e8b5c908029ac721b9    https://assets.strayphotons.net/models/wall-1x1/wall-1x1.gltf    models/wall-1x1/wall-1x1.gltf
+77e35455a924825434ded782b19be091    https://assets.strayphotons.net/models/wall-4-corner/wall-4-corner.gltf    models/wall-4-corner/wall-4-corner.gltf
+7f38ea570e931417ec73fe67eefaba52    https://assets.strayphotons.net/models/wall-4x3/wall-4x3.gltf    models/wall-4x3/wall-4x3.gltf
+85e637b0f9607249686ecafb0d2f979f    https://assets.strayphotons.net/models/wall-4x3-door/wall-4x3-door.gltf    models/wall-4x3-door/wall-4x3-door.gltf
+7392d4c1cc880bb1f77d46a7dc73bbb8    https://assets.strayphotons.net/textures/flashlight.jpg    textures/flashlight.jpg
+9f9ab4d877271bae6f8644f55cb16af2    https://assets.strayphotons.net/textures/flashlight.png    textures/flashlight.png
+d505e2f46236ab748c3550864796e837    https://assets.strayphotons.net/textures/smaa/AreaTex.tga    textures/smaa/AreaTex.tga
+520aaaa56035d0218d4e4aa45e75c96f    https://assets.strayphotons.net/textures/smaa/AreaTexDX10.dds    textures/smaa/AreaTexDX10.dds
+a2ba3f918f066a66f449923f4e49c085    https://assets.strayphotons.net/textures/smaa/SearchTex.dds    textures/smaa/SearchTex.dds
+3a9b7bebc3f33757fa9a6d95c19a3bab    https://assets.strayphotons.net/textures/smaa/SearchTex.tga    textures/smaa/SearchTex.tga

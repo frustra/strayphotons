@@ -26,11 +26,11 @@ if len(sys.argv) == 2:
                 for line in lines:
                     parts = line.split()
                     if os.path.exists(asset_cache_path + '/' + parts[0]):
-                        print('    assets/' + parts[1])
-                        dirPath = os.path.dirname('assets/' + parts[1])
+                        print('    assets/' + parts[2])
+                        dirPath = os.path.dirname('assets/' + parts[2])
                         if not os.path.exists(dirPath):
                             os.makedirs(dirPath)
-                        shutil.copyfile(asset_cache_path + '/' + parts[0], 'assets/' + parts[1])
+                        shutil.copyfile(asset_cache_path + '/' + parts[0], 'assets/' + parts[2])
     elif sys.argv[1] == '--save':
         if not os.path.exists(asset_cache_path):
             os.makedirs(asset_cache_path)
@@ -40,10 +40,10 @@ if len(sys.argv) == 2:
             lines = assetList.readlines()
             for line in lines:
                 parts = line.split()
-                if os.path.exists('assets/' + parts[1]):
-                    hash = md5sum('assets/' + parts[1])
-                    print('    assets/' + parts[1] + '\t' + hash)
-                    shutil.copyfile('assets/' + parts[1], asset_cache_path + '/' + hash)
+                if os.path.exists('assets/' + parts[2]):
+                    hash = md5sum('assets/' + parts[2])
+                    print('    assets/' + parts[2] + '\t' + hash)
+                    shutil.copyfile('assets/' + parts[2], asset_cache_path + '/' + hash)
     else:
         print('Usage:')
         print('    ' + sys.argv[0] + ' --save')
