@@ -1,6 +1,6 @@
 # Stray Photons [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg?branch=master)](https://buildkite.com/frustra/strayphotons)
 
-Stray Photons is an open-source sandbox game engine, designed with a focus on high quality VR interactions. The engine features a high-performance voxel-based lighting system, seamless asynchronous scene loading, full-hand physics interactions, powerful game logic signalling and scripting capabilities, and much more.
+Stray Photons is an open-source sandbox game engine built on top of the [Tecs Entity Component System](https://github.com/xthexder/Tecs). Designed with a focus on high quality VR interactions, Stray Photons features a high-performance voxel-based lighting system, seamless asynchronous scene loading, full-hand physics interactions, powerful game logic signalling and scripting capabilities, and much more.
 
 ## Dependencies
 
