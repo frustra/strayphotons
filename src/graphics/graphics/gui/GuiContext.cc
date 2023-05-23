@@ -10,10 +10,10 @@
 
 namespace sp {
     static std::array fontList = {
-        FontDef{Font::Primary, "DroidSans.ttf", 16.0f},
-        FontDef{Font::Primary, "DroidSans.ttf", 32.0f},
-        FontDef{Font::Monospace, "3270Medium.ttf", 25.0f},
-        FontDef{Font::Monospace, "3270Medium.ttf", 32.0f},
+        FontDef{Font::Primary, "DroidSans-Regular.ttf", 16.0f},
+        FontDef{Font::Primary, "DroidSans-Regular.ttf", 32.0f},
+        FontDef{Font::Monospace, "3270SemiCondensed-Regular.ttf", 25.0f},
+        FontDef{Font::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f},
     };
 
     std::span<FontDef> GetFontList() {

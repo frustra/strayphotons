@@ -2,9 +2,8 @@
 /bin
 /.vscode
 /assets/audio
-/assets/models/*/
-/assets/models/*.glb
-/assets/models/*.gltf
+/assets/models/**/*.glb
+/assets/models/**/*.gltf
 /assets/logos
 /assets/textures
 /assets/gltf-process
