@@ -521,7 +521,7 @@ namespace sp::vulkan {
 
     void Renderer::AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock) {
         MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
-        if (!menuManager) return;
+        if (!menuManager || !menuManager->MenuOpen()) return;
 
         rg::ResourceID mipmapID = rg::InvalidResource;
 
@@ -531,17 +531,12 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 desc.extent = vk::Extent3D(1024, 1024, 1);
 
-                if (menuManager->RenderMode() == MenuRenderMode::Pause) {
-                    ecs::Entity windowEntity = device.GetActiveView();
-                    if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
-                        auto view = windowEntity.Get<ecs::View>(lock);
-                        desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
-                    }
-                    desc.sampler = SamplerType::BilinearClampEdge;
-                } else {
-                    desc.sampler = SamplerType::TrilinearClampEdge;
-                    desc.mipLevels = CalculateMipmapLevels(desc.extent);
+                ecs::Entity windowEntity = device.GetActiveView();
+                if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
+                    auto view = windowEntity.Get<ecs::View>(lock);
+                    desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                 }
+                desc.sampler = SamplerType::BilinearClampEdge;
 
                 auto res = builder.OutputColorAttachment(0, "menu_gui", desc, {LoadOp::Clear, StoreOp::Store});
 
@@ -575,7 +570,7 @@ namespace sp::vulkan {
 
     void Renderer::AddMenuOverlay() {
         MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
-        if (!menuManager || menuManager->RenderMode() != MenuRenderMode::Pause) return;
+        if (!menuManager || !menuManager->MenuOpen()) return;
 
         auto inputID = graph.LastOutputID();
         {

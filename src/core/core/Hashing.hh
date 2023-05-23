@@ -10,12 +10,9 @@ namespace sp {
         return input[0] + 0x9e3779b9 + (input[1] << 6) + (input[1] >> 2);
     }
 
-    template<typename T>
-    void hash_combine(uint64 &seed, const T &val) {
-        // std::hash returns size_t, which is compatible with uint64 on 64 bit systems
-        // We always want 64 bit hashes, so this code explicitly uses uint64 to cause
-        // a warning on 32 bit builds.
-        seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    template<typename T, typename U>
+    void hash_combine(T &seed, const U &val) {
+        seed ^= std::hash<U>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
 
     template<typename T>
@@ -72,9 +69,13 @@ namespace sp {
     struct StringEqual {
         using is_transparent = void;
 
-        bool operator()(std::string_view lhs, const std::string &rhs) const {
+        bool operator()(const std::string_view &lhs, const std::string &rhs) const {
             const std::string_view view = rhs;
             return lhs == view;
+        }
+        bool operator()(const std::string &lhs, const std::string_view &rhs) const {
+            const std::string_view view = lhs;
+            return view == rhs;
         }
         bool operator()(const char *lhs, const std::string &rhs) const {
             return std::strcmp(lhs, rhs.c_str()) == 0;
