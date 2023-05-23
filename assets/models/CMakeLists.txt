@@ -40,22 +40,16 @@ add_custom_command(
 add_custom_target(models)
 
 # Add all the model directories
-set(OBJ_MODEL_FOLDERS
+set(GLTF_MODEL_FOLDERS
     01-outside
     airlock
     cardboard-box
     ceiling-3x3
     dodecahedron
     door-frame
-    door-frame-1.5x2
-    door-hex-1x2
-    door-hex-frame-1x2
     door-panel
-    door-panel-l-1.5x2
-    door-panel-r-1.5x2
-    ground-1x1x1
+    duck
     ground-3x3
-    ledge-caged-1x0.5
     level1
     mcube
     parking-block
@@ -64,20 +58,15 @@ set(OBJ_MODEL_FOLDERS
     sensor-plate-dark
     sensor-plate-light
     spotlight-01
-    wall-1x1
+    sponza
+    sponza2
+    station-segment
     wall-4-corner
     wall-4x3
     wall-4x3-door
 )
 
-set(RAW_MODEL_FOLDERS
-    sponza
-    sponza2
-    duck
-    station-segment
-)
-
-set(RAW_MODELS
+set(GLTF_MODELS
     box
     sphere
     cornell-box-1
@@ -89,7 +78,25 @@ set(RAW_MODELS
     colorfilter
 )
 
-foreach(_model ${OBJ_MODEL_FOLDERS})
+set(GLB_MODELS
+    articulating-arm
+    breadboard_corner
+    breadboard_edge
+    breadboard_surface
+    extrusion
+    laser-plug-mount
+    laser-plug
+    laser-socket
+    octagon
+    optic-plug
+    optic-socket
+    optic-tube-3mm-flat-one-side
+    optic-tube-end-5mm
+    red_led
+    round-mirror-mounted
+)
+
+foreach(_model ${GLTF_MODEL_FOLDERS})
     process_model_folder(
         TARGET
             models
@@ -100,28 +107,7 @@ foreach(_model ${OBJ_MODEL_FOLDERS})
     )
 endforeach()
 
-foreach(_model ${RAW_MODEL_FOLDERS})
-    process_gltf_to_glb(
-        TARGET
-            models
-        MODEL
-            ${_model}
-        GLTF
-            ${CMAKE_CURRENT_LIST_DIR}/${_model}/${_model}.gltf
-        GLB
-            ${CMAKE_CURRENT_LIST_DIR}/${_model}/${_model}.glb
-        NODE_EXE
-            ${NODE_JS_EXE}
-    )
-    update_physics_cache(
-        TARGET
-            models
-        MODEL
-            ${_model}
-    )
-endforeach()
-
-foreach(_model ${RAW_MODELS})
+foreach(_model ${GLTF_MODELS})
     process_gltf_to_glb(
         TARGET
             models
@@ -135,6 +121,15 @@ foreach(_model ${RAW_MODELS})
             ${NODE_JS_EXE}
     )
     
+    update_physics_cache(
+        TARGET
+            models
+        MODEL
+            ${_model}
+    )
+endforeach()
+
+foreach(_model ${GLB_MODELS})
     update_physics_cache(
         TARGET
             models
