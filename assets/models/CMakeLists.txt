@@ -1,141 +1,92 @@
-if(SP_NO_MODEL_COMPILE)
-    message(WARNING "!!! Model compiling is disabled !!!")
-    return()
-endif()
-
-include(ModelProcessing.cmake)
-
-# Make sure Node.js and NPM are installed
-find_program(NODE_JS_EXE node)
-find_program(NPM_EXE npm)
-
-if (${NODE_JS_EXE} STREQUAL NODE_JS_EXE-NOTFOUND)
-    message(FATAL_ERROR "Node.js is not installed. It is required for model compiling.")
-endif()
-
-if (${NPM_EXE} STREQUAL NPM_EXE-NOTFOUND)
-    message(FATAL_ERROR "NPM is not installed. It is required for model compiling.")
-endif()
-
-# Custom commands to make sure gltf-pipeline and obj2gltf dependencies are installed
-
-add_custom_command(
-    COMMAND
-        ${NPM_EXE} install
-    OUTPUT
-        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
-    WORKING_DIRECTORY
-        ${PROJECT_SOURCE_DIR}/ext/obj2gltf
-)
-
-add_custom_command(
-    COMMAND
-        ${NPM_EXE} install
-    OUTPUT
-        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
-    WORKING_DIRECTORY
-        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline
-)
-
-add_custom_target(models)
-
-# Add all the model directories
-set(GLTF_MODEL_FOLDERS
+# Add all the model names to process collision caches
+set(GLTF_MODELS
     01-outside
     airlock
+    articulating-arm
+    box
+    breadboard_corner
+    breadboard_edge
+    breadboard_surface
     cardboard-box
     ceiling-3x3
+    colorfilter
+    cornell-box-1
+    cornell-box-2
+    cornell-box-3
     dodecahedron
     door-frame
     door-panel
     duck
+    extrusion
     ground-3x3
+    laser-plug
+    laser-plug-mount
+    laser-socket
     level1
     mcube
+    mcube-physx
+    mirror
+    occluder
+    octagon
+    optic-plug
+    optic-socket
+    optic-tube-3mm-flat-one-side
+    optic-tube-end-5mm
     parking-block
     pbr-cube
+    red_led
+    round-mirror-mounted
     sensor
     sensor-plate-dark
     sensor-plate-light
-    spotlight-01
+    sphere
     sponza
     sponza2
+    spotlight-01
     station-segment
     wall-4-corner
     wall-4x3
     wall-4x3-door
 )
 
-set(GLTF_MODELS
-    box
-    sphere
-    cornell-box-1
-    cornell-box-2
-    cornell-box-3
-    mcube-physx
-    mirror
-    occluder
-    colorfilter
-)
+add_custom_target(models)
 
-set(GLB_MODELS
-    articulating-arm
-    breadboard_corner
-    breadboard_edge
-    breadboard_surface
-    extrusion
-    laser-plug-mount
-    laser-plug
-    laser-socket
-    octagon
-    optic-plug
-    optic-socket
-    optic-tube-3mm-flat-one-side
-    optic-tube-end-5mm
-    red_led
-    round-mirror-mounted
-)
-
-foreach(_model ${GLTF_MODEL_FOLDERS})
-    process_model_folder(
-        TARGET
-            models
-        MODEL
-            ${_model}
-        NODE_EXE
-            ${NODE_JS_EXE}
-    )
-endforeach()
-
+# Update the physics collision cache for each model if a physics.json is present.
 foreach(_model ${GLTF_MODELS})
-    process_gltf_to_glb(
-        TARGET
-            models
-        MODEL
-            ${_model}
-        GLTF
-            ${CMAKE_CURRENT_LIST_DIR}/${_model}.gltf
-        GLB
-            ${CMAKE_CURRENT_LIST_DIR}/${_model}.glb
-        NODE_EXE
-            ${NODE_JS_EXE}
-    )
-    
-    update_physics_cache(
-        TARGET
-            models
-        MODEL
-            ${_model}
-    )
-endforeach()
+    set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${_model}/${_model}.physics.json")
+    if(NOT EXISTS "${physics_path}")
+        set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${_model}/physics.json")
+        if(NOT EXISTS "${physics_path}")
+            set(physics_path "${PROJECT_SOURCE_DIR}/assets/models/${_model}.physics.json")
+            if(NOT EXISTS "${physics_path}")
+                set(physics_path "")
+            endif()
+        endif()
+    endif()
 
-foreach(_model ${GLB_MODELS})
-    update_physics_cache(
-        TARGET
-            models
-        MODEL
-            ${_model}
+    set(model_path "${PROJECT_SOURCE_DIR}/assets/models/${_model}/${_model}.glb")
+    if(NOT EXISTS "${model_path}")
+        set(model_path "${PROJECT_SOURCE_DIR}/assets/models/${_model}.glb")
+        if(NOT EXISTS "${model_path}")
+            set(model_path "")
+        endif()
+    endif()
+
+    add_custom_command(
+        COMMAND
+            hull_compiler ${_model}
+        WORKING_DIRECTORY
+            ${PROJECT_SOURCE_DIR}/bin
+        OUTPUT
+            "${PROJECT_SOURCE_DIR}/assets/cache/collision/${_model}"
+        DEPENDS
+            hull_compiler
+            ${model_path}
+            ${physics_path}
     )
+
+    add_custom_target(${_model}-physics DEPENDS "${PROJECT_SOURCE_DIR}/assets/cache/collision/${_model}")
+    add_dependencies(models ${_model}-physics)
 endforeach()
 
 # Make the project exe depend on having up to date models

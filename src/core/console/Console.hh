@@ -29,8 +29,16 @@ namespace sp {
         ConsoleInputLine(string text, chrono_clock::time_point wait_until, std::condition_variable *handled)
             : text(text), wait_until(wait_until), handled(handled) {}
 
-        auto operator<=>(const ConsoleInputLine &other) const {
-            return this->wait_until <=> other.wait_until;
+        bool operator==(const ConsoleInputLine &other) const {
+            return this->wait_until == other.wait_until;
+        }
+
+        bool operator<(const ConsoleInputLine &other) const {
+            return this->wait_until < other.wait_until;
+        }
+
+        bool operator>(const ConsoleInputLine &other) const {
+            return this->wait_until > other.wait_until;
         }
     };
 

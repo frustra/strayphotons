@@ -7,13 +7,13 @@ set(SP_VERSION_MAJOR "${CMAKE_PROJECT_VERSION_MAJOR}")
 set(SP_VERSION_MINOR "${CMAKE_PROJECT_VERSION_MINOR}")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
-option(SP_PACKAGE_RELEASE "Build packaged release" off)
-option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
-set(SP_BUILD_RUST_DEFAULT on)
+option(SP_PACKAGE_RELEASE "Build packaged release" OFF)
+set(SP_BUILD_RUST_DEFAULT ON)
 if(DEFINED ENV{SP_BUILD_RUST})
     set(SP_BUILD_RUST_DEFAULT $ENV{SP_BUILD_RUST})
 endif()
 option(SP_BUILD_RUST "Build and link against rust modules" ${SP_BUILD_RUST_DEFAULT})
+option(SP_ENABLE_TRACY "Enable Tracy profiler" ON)
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
     message(STATUS "sp target is Release")
@@ -37,6 +37,7 @@ if(SP_PACKAGE_RELEASE)
     add_compile_definitions(SP_PACKAGE_RELEASE=1)
     add_compile_definitions(CATCH_GLOBAL_EXCEPTIONS=1)
 endif()
+add_compile_definitions(_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS=1)
 
 # Tell cmake we need C++20
 set(CMAKE_CXX_STANDARD 20)
@@ -72,7 +73,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
 
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
     set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fgnuc-version=5")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")

@@ -255,9 +255,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             return;
         }
 
-        static std::atomic_bool tracing(false);
-        bool current = tracing;
-        if (current || !tracing.compare_exchange_strong(current, true)) {
+        static std::atomic_bool tracingStarted(false);
+        bool current = tracingStarted;
+        if (current || !tracingStarted.compare_exchange_strong(current, true)) {
             Logf("A performance trace is already in progress");
             return;
         }
@@ -282,7 +282,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             traceFile.close();
 
             Logf("Tecs performance trace complete");
-            tracing = false;
+            tracingStarted = false;
         }).detach();
     });
 }
