@@ -124,10 +124,6 @@
                     "filter": "is_focused(Menu) && event"
                 }
             ],
-            "/keyboard/key/enter": {
-                "outputs": "gui:menu/action/menu/enter",
-                "filter": "is_focused(Menu) && event"
-            },
             "/keyboard/key/space": {
                 "outputs": "player:player/action/jump",
                 "filter": "is_focused(Game) && event"

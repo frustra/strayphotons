@@ -7,9 +7,7 @@ namespace sp {
     class GraphicsManager;
     class GpuTexture;
 
-    enum class MenuScreen { Splash, Main, Options, SceneSelect, Credits };
-
-    enum class MenuRenderMode : int { None = 0, Pause = 1, Gel = 2 };
+    enum class MenuScreen { Main, Options, SceneSelect };
 
     class MenuGuiManager : public SystemGuiManager {
     public:
@@ -19,19 +17,15 @@ namespace sp {
         void BeforeFrame() override;
         void DefineWindows() override;
 
-        MenuRenderMode RenderMode() const;
         bool MenuOpen() const;
-        void SetRenderMode(MenuRenderMode mode);
 
     private:
         GraphicsManager &graphics;
 
         ecs::EventQueueRef events = ecs::NewEventQueue();
 
-        MenuScreen selectedScreen = MenuScreen::Splash;
+        MenuScreen selectedScreen = MenuScreen::Main;
 
-        shared_ptr<GpuTexture> logoTex, frustraLogoTex;
-
-        float creditsScroll = 0.0f;
+        shared_ptr<GpuTexture> logoTex;
     };
 } // namespace sp

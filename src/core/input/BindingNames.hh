@@ -27,7 +27,6 @@ namespace sp {
     static const std::string INPUT_EVENT_TOGGLE_CONSOLE = "/action/console/toggle"; // bool
     static const std::string INPUT_EVENT_MENU_OPEN = "/action/menu/open"; // bool
     static const std::string INPUT_EVENT_MENU_BACK = "/action/menu/back"; // bool
-    static const std::string INPUT_EVENT_MENU_ENTER = "/action/menu/enter"; // bool
     static const std::string INPUT_EVENT_MENU_SCROLL = "/action/menu/scroll"; // glm::vec2
     static const std::string INPUT_EVENT_MENU_CURSOR = "/action/menu/cursor"; // glm::vec2
     static const std::string INPUT_EVENT_MENU_PRIMARY_TRIGGER = "/action/menu/primary_trigger"; // bool

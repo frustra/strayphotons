@@ -551,14 +551,15 @@
 		},
 		{
 			"transform": {
-				"translate": [0, 1.8, 0]
+				"translate": [0, 1.8, 0],
+				"scale": [1, 0.25, 1]
 			},
 			"light": {
-				"gel": "graph:menu_gui",
+				"gel": "asset:logos/sp-menu.png",
 				"intensity": 300,
 				"shadowMapClip": [0.1, 10],
 				"shadowMapSize": 10,
-				"spotAngle": 45,
+				"spotAngle": 30,
 				"tint": [1, 1, 1]
 			}
 		},

@@ -15,7 +15,7 @@
 #include <sstream>
 
 namespace sp {
-    static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
+    static CVar<bool> CVarMenuOpen("g.MenuOpen", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : SystemGuiManager("menu"), graphics(graphics) {
@@ -30,7 +30,6 @@ namespace sp {
             auto &eventInput = gui.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
             eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_ENTER);
         }
     }
 
@@ -49,15 +48,13 @@ namespace sp {
             while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name == INPUT_EVENT_MENU_OPEN) {
                     selectedScreen = MenuScreen::Main;
-                    SetRenderMode(MenuRenderMode::Pause);
+                    CVarMenuOpen.Set(true);
                 } else if (event.name == INPUT_EVENT_MENU_BACK) {
                     if (selectedScreen == MenuScreen::Main) {
-                        if (RenderMode() == MenuRenderMode::Pause) SetRenderMode(MenuRenderMode::None);
+                        CVarMenuOpen.Set(false);
                     } else {
                         selectedScreen = MenuScreen::Main;
                     }
-                } else if (event.name == INPUT_EVENT_MENU_ENTER) {
-                    if (selectedScreen == MenuScreen::Splash) selectedScreen = MenuScreen::Main;
                 }
             }
 
@@ -65,8 +62,7 @@ namespace sp {
             focusChanged = MenuOpen() != focusLock.HasFocus(ecs::FocusLayer::Menu);
         }
 
-        io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
-        io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
+        io.MouseDrawCursor = CVarMenuDebugCursor.Get();
 
         if (focusChanged) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
@@ -137,14 +133,7 @@ namespace sp {
         if (!logoTex) logoTex = graphics.GetContext()->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
         ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
-        if (selectedScreen == MenuScreen::Splash) {
-            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                ImGuiCond_Always,
-                ImVec2(0.5f, 0.5f));
-            ImGui::Begin("MenuSplash", nullptr, flags);
-            ImGui::Text("Press Enter");
-            ImGui::End();
-        } else if (selectedScreen == MenuScreen::Main) {
+        if (selectedScreen == MenuScreen::Main) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
                 ImGuiCond_Always,
                 ImVec2(0.5f, 0.5f));
@@ -152,8 +141,8 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
-            if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game")) {
-                SetRenderMode(MenuRenderMode::None);
+            if (ImGui::Button("Resume")) {
+                CVarMenuOpen.Set(false);
             }
 
             if (ImGui::Button("Scene Select")) {
@@ -162,11 +151,6 @@ namespace sp {
 
             if (ImGui::Button("Options")) {
                 selectedScreen = MenuScreen::Options;
-            }
-
-            if (RenderMode() != MenuRenderMode::Pause && ImGui::Button("Credits")) {
-                selectedScreen = MenuScreen::Credits;
-                creditsScroll = 0.0f;
             }
 
             if (ImGui::Button("Quit")) {
@@ -189,9 +173,8 @@ namespace sp {
 
 #define LEVEL_BUTTON(name, file)                                     \
     if (ImGui::Button(name)) {                                       \
-        SetRenderMode(MenuRenderMode::None);                         \
+        CVarMenuOpen.Set(false);                                     \
         selectedScreen = MenuScreen::Main;                           \
-        GetConsoleManager().QueueParseAndExecute("g.MenuDisplay 0"); \
         GetConsoleManager().QueueParseAndExecute("loadscene " file); \
     }
 
@@ -280,70 +263,6 @@ namespace sp {
             }
 
             ImGui::End();
-        } else if (selectedScreen == MenuScreen::Credits) {
-            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                ImGuiCond_Always,
-                ImVec2(0.5f, 0.5f));
-            ImGui::Begin("MenuCredits", nullptr, flags);
-
-            if (!frustraLogoTex) {
-                frustraLogoTex = graphics.GetContext()->LoadTexture(
-                    Assets().LoadImage("logos/credits-frustra.png")->Get());
-            }
-            ImVec2 frLogoSize(frustraLogoTex->GetWidth() * 0.5f, frustraLogoTex->GetHeight() * 0.5f);
-
-            ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);
-            ImGui::SetScrollY(creditsScroll);
-
-#define CenteredText(str)                        \
-    {                                            \
-        auto size = ImGui::CalcTextSize((str));  \
-        ImGui::Indent(300.0f - size.x / 2.0f);   \
-        ImGui::Text((str));                      \
-        ImGui::Unindent(300.0f - size.x / 2.0f); \
-    }
-
-            ImGui::Dummy({1, 500});
-            CenteredText("STRAY PHOTONS");
-            CenteredText(" ");
-            CenteredText("Copyright © 2017 Frustra Software");
-            CenteredText(" ");
-
-            ImGui::Indent(300.0f - frLogoSize.x / 2.0f);
-            ImGui::Image((void *)frustraLogoTex->GetHandle(), frLogoSize);
-            ImGui::Unindent(300.0f - frLogoSize.x / 2.0f);
-
-            CenteredText(" ");
-            CenteredText(" ");
-
-            CenteredText("Development Team");
-            CenteredText(" ");
-            CenteredText("Jacob Wirth");
-            CenteredText("Justin Li");
-            CenteredText("Cory Stegelmeier");
-            CenteredText("Kevin Jeong");
-            CenteredText("Michael Noukhovitch");
-
-            ImGui::Dummy({1, 100});
-
-            PushFont(Font::Monospace, 32);
-            CenteredText("NVIDIA GameWorks™ Technology provided under");
-            CenteredText("license from NVIDIA Corporation.");
-            CenteredText("Copyright © 2002-2015 NVIDIA Corporation.");
-            CenteredText("All rights reserved.");
-            ImGui::PopFont();
-
-            ImGui::Dummy({1, 600});
-
-            creditsScroll += io.DeltaTime * 20.0f;
-            if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100) {
-                selectedScreen = MenuScreen::Main;
-            }
-
-#undef CenteredText
-
-            ImGui::EndChild();
-            ImGui::End();
         }
 
         ImGui::PopFont();
@@ -351,27 +270,7 @@ namespace sp {
         ImGui::PopStyleColor(8);
     }
 
-    MenuRenderMode MenuGuiManager::RenderMode() const {
-        switch (CVarMenuDisplay.Get()) {
-        case 1:
-            return MenuRenderMode::Pause;
-        case 2:
-            return MenuRenderMode::Gel;
-        }
-        return MenuRenderMode::None;
-    }
-
     bool MenuGuiManager::MenuOpen() const {
-        switch (RenderMode()) {
-        case MenuRenderMode::Pause:
-        case MenuRenderMode::Gel:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    void MenuGuiManager::SetRenderMode(MenuRenderMode mode) {
-        CVarMenuDisplay.Set((int)mode);
+        return CVarMenuOpen.Get();
     }
 } // namespace sp
