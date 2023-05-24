@@ -8,10 +8,14 @@ Stray Photons is a high performance sandbox game engine built on top of the [Tec
 - Vulkan >= 1.2 is required. Get the SDK from https://www.vulkan.org/tools.
 - CMake and a C++20 compiler (Windows: MSVC, Linux: Clang or GCC).
 - Git submodules must be checked out using `git submodule update --init --recursive`
-- Python is used for build scripts and CI
-- Node.js is used for model GLTF conversion
+- Python is used for CI automation
 - Rust is optional for building the test linked library
 - VSCode is recommended, most of the workspace config is included
+
+## Getting Started
+
+For a guide to getting started with Stray Photons, check out the Wiki:
+https://github.com/frustra/strayphotons/wiki
 
 ## License
 
