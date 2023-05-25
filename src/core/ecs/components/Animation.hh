@@ -52,7 +52,9 @@ namespace ecs {
         };
 
         CurrNextState GetCurrNextState(double currentState, double targetState) const;
-        static void UpdateTransform(Lock<ReadSignalsLock, Read<Animation>, Write<TransformTree>> lock, Entity ent);
+        static void UpdateTransform(
+            Lock<ReadSignalsLock, Read<Animation, ecs::LightSensor, ecs::LaserSensor>, Write<TransformTree>> lock,
+            Entity ent);
     };
 
     static StructMetadata MetadataAnimation(typeid(Animation),

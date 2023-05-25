@@ -30,7 +30,9 @@ namespace ecs {
         return std::isnormal(scale.x) && std::isnormal(scale.y) && std::isnormal(scale.z);
     }
 
-    void Animation::UpdateTransform(Lock<ReadSignalsLock, Read<Animation>, Write<TransformTree>> lock, Entity ent) {
+    void Animation::UpdateTransform(
+        Lock<ReadSignalsLock, Read<Animation, ecs::LightSensor, ecs::LaserSensor>, Write<TransformTree>> lock,
+        Entity ent) {
         if (!ent.Has<Animation, TransformTree>(lock)) return;
 
         auto &animation = ent.Get<Animation>(lock);
