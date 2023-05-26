@@ -1,0 +1,99 @@
+{
+    "entities": [
+        {
+            "name": "global:spawn",
+            "transform": {}
+        },
+        {
+            "name": "platform",
+            "transform": {
+                "scale": [10, 1, 10],
+                "translate": [0, -0.5, 0]
+            },
+            "renderable": {
+                "model": "box"
+            },
+            "physics": {
+                "shapes": {
+                    "model": "box"
+                },
+                "type": "Static"
+            }
+        },
+        {
+            "transform": {
+                "rotate": [90, -1, 0, 0],
+                "translate": [0, 10, 0]
+            },
+            "light": {
+                "intensity": 100,
+                "spotAngle": 35,
+                "tint": [1, 0.5, 0.5]
+            }
+        },
+        {
+            "name": "interactive-box",
+            "transform": {
+                "rotate": [45, 0, -1, 0],
+                "translate": [1, 0, -3]
+            },
+            "renderable": {
+                "model": "cardboard-box"
+            },
+            "physics": {
+                "mass": 1,
+                "shapes": {
+                    "model": "cardboard-box"
+                }
+            },
+            "physics_joints": {},
+            "physics_query": {},
+            "event_input": {},
+            "script": {
+                "onTick": "interactive_object"
+            }
+        },
+        {
+            "transform": {
+                "parent": "interactive-box",
+                "translate": [-0.35, 0.925, 0],
+                "scale": 0.1
+            },
+            "renderable": {
+                "model": "box",
+                "color_override": [1, 0, 0, 1]
+            },
+            "physics": {
+                "shapes": {
+                    "model": "box"
+                },
+                "type": "SubActor"
+            }
+        },
+        {
+            "transform": {
+                "parent": "interactive-box",
+                "translate": [0.35, 0.925, 0],
+                "scale": 0.1
+            },
+            "renderable": {
+                "model": "box",
+                "color_override": [0, 0, 1, 1]
+            },
+            "physics": {
+                "shapes": {
+                    "model": "box"
+                },
+                "type": "Dynamic"
+            },
+            "physics_joints": {
+                "type": "Slider",
+                "limit": [-0.1, 0.6],
+                "remote_offset": {
+                    "translate": [0.35, 0.925, 0]
+                },
+                "target": "interactive-box"
+            }
+        }
+    ]
+}
