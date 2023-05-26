@@ -72,17 +72,4 @@ namespace sp::scripts {
     };
     StructMetadata MetadataSunScript(typeid(SunScript));
     InternalScript<SunScript> sun("sun", MetadataSunScript);
-
-    struct LightSensorScript {
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<LightSensor>(lock)) return;
-
-            auto &sensorComp = ent.Get<LightSensor>(lock);
-            SignalRef(ent, "light_value_r").SetValue(lock, sensorComp.illuminance.r);
-            SignalRef(ent, "light_value_g").SetValue(lock, sensorComp.illuminance.g);
-            SignalRef(ent, "light_value_b").SetValue(lock, sensorComp.illuminance.b);
-        }
-    };
-    StructMetadata MetadataLightSensorScript(typeid(LightSensorScript));
-    InternalScript<LightSensorScript> lightSensor("light_sensor", MetadataLightSensorScript);
 } // namespace sp::scripts

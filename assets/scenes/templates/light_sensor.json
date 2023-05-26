@@ -8,9 +8,11 @@
 			"sensitivity": 0.5
 		},
 		"signal_bindings": {
+			"light_value_r": "scoperoot#light_sensor.color_value.r",
+			"light_value_g": "scoperoot#light_sensor.color_value.g",
+			"light_value_b": "scoperoot#light_sensor.color_value.b",
 			"value": "min(min(scoperoot/light_value_r, scoperoot/light_value_g), scoperoot/light_value_b) >= scoperoot/sensitivity"
-		},
-		"script": { "onTick": "light_sensor" }
+		}
 	},
 	"entities": [
 		{

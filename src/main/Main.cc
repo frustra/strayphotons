@@ -42,20 +42,21 @@ int main(int argc, char **argv)
 // #endif
 {
 #ifdef SP_TEST_MODE
-    cxxopts::Options options("STRAYPHOTONS-TEST", "");
-    options.positional_help("/path/to/script.txt");
+    cxxopts::Options options("sp-test", "Stray Photons Game Engine Test Environment\n");
+    options.positional_help("<script-file>");
 #else
-    cxxopts::Options options("STRAYPHOTONS", "");
+    cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
 #endif
 
     // clang-format off
     options.add_options()
         ("h,help", "Display help")
-        ("m,map", "Initial scene to load", value<string>())
-        ("size", "Initial window size", value<string>())
 #ifdef SP_TEST_MODE
         ("script-file", "", value<string>())
+#else
+        ("m,map", "Initial scene to load", value<string>())
 #endif
+        ("size", "Initial window size", value<string>())
 #ifdef SP_XR_SUPPORT
         ("no-vr", "Disable automatic XR/VR system loading")
 #endif
@@ -65,7 +66,7 @@ int main(int argc, char **argv)
 #ifdef SP_GRAPHICS_SUPPORT_VK
         ("with-validation-layers", "Enable Vulkan validation layers")
 #endif
-        ("c,cvar", "Set cvar to initial value", value<vector<string>>());
+        ("c,command", "Run a console command on init", value<vector<string>>());
     // clang-format on
 
 #ifdef SP_TEST_MODE

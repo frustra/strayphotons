@@ -116,11 +116,9 @@
 				"position": [0, 0, -1],
 				"direction": [0, 0, -1]
 			},
-			"signal_output": {},
 			"signal_bindings": {
-				"value": "min(min(sensor1/light_value_r, sensor1/light_value_g), sensor1/light_value_b)"
-			},
-			"script": { "onTick": "light_sensor" }
+				"value": "min(min(sensor1#light_sensor.color_value.r, sensor1#light_sensor.color_value.g), sensor1#light_sensor.color_value.b)"
+			}
 		},
 		{
 			"name": "door1",

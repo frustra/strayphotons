@@ -84,14 +84,14 @@ namespace sp {
         sp::rust::print_hello();
 #endif
 
-        if (options.count("cvar")) {
-            for (auto cvarline : options["cvar"].as<vector<string>>()) {
-                GetConsoleManager().ParseAndExecute(cvarline);
+        if (options.count("command")) {
+            for (auto &cmdline : options["command"].as<vector<string>>()) {
+                GetConsoleManager().ParseAndExecute(cmdline);
             }
         }
 
 #ifdef SP_GRAPHICS_SUPPORT
-        if (options["headless"].count() == 0) {
+        if (!options["headless"].count()) {
             graphics.Init();
 
             debugGui = std::make_unique<DebugGuiManager>();
@@ -106,8 +106,12 @@ namespace sp {
 #endif
 
         auto &scenes = GetSceneManager();
-#ifndef SP_GRAPHICS_SUPPORT
-        scenes.DisableGraphicsPreload();
+#ifdef SP_GRAPHICS_SUPPORT
+        if (options["headless"].count()) {
+#endif
+            scenes.DisableGraphicsPreload();
+#ifdef SP_GRAPHICS_SUPPORT
+        }
 #endif
 #ifndef SP_PHYSICS_SUPPORT_PHYSX
         scenes.DisablePhysicsPreload();

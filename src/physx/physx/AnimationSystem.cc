@@ -9,8 +9,9 @@
 namespace sp {
     AnimationSystem::AnimationSystem(PhysxManager &manager) : frameInterval(manager.interval.count() / 1e9) {}
 
-    void AnimationSystem::Frame(
-        ecs::Lock<ecs::ReadSignalsLock, ecs::Read<ecs::Animation>, ecs::Write<ecs::Signals, ecs::TransformTree>> lock) {
+    void AnimationSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
+        ecs::Read<ecs::Animation, ecs::LightSensor, ecs::LaserSensor>,
+        ecs::Write<ecs::Signals, ecs::TransformTree>> lock) {
         ZoneScoped;
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation>(lock)) continue;

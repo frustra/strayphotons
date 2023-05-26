@@ -11,9 +11,9 @@ namespace sp {
         AnimationSystem(PhysxManager &manager);
         ~AnimationSystem() {}
 
-        void Frame(
-            ecs::Lock<ecs::ReadSignalsLock, ecs::Read<ecs::Animation>, ecs::Write<ecs::Signals, ecs::TransformTree>>
-                lock);
+        void Frame(ecs::Lock<ecs::ReadSignalsLock,
+            ecs::Read<ecs::Animation, ecs::LightSensor, ecs::LaserSensor>,
+            ecs::Write<ecs::Signals, ecs::TransformTree>> lock);
 
     private:
         const double frameInterval;

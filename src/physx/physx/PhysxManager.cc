@@ -182,6 +182,7 @@ namespace sp {
             ZoneScopedN("Sync ECS");
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
                 ecs::Read<ecs::LaserEmitter,
+                    ecs::LightSensor,
                     ecs::EventBindings,
                     ecs::Physics,
                     ecs::EventInput,
