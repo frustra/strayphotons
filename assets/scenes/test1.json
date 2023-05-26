@@ -22,7 +22,7 @@
 			},
 			"animation": {
 				"interpolation": "Cubic",
-				"tension": 0.05,
+				"cubic_tension": 0.05,
 				"states": [
 					{
 						"delay": 0.5,

@@ -60,7 +60,7 @@ namespace ecs {
     static StructMetadata MetadataAnimation(typeid(Animation),
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
         StructField::New("interpolation", &Animation::interpolation),
-        StructField::New("tension", &Animation::tension));
+        StructField::New("cubic_tension", &Animation::tension));
     static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
 
     template<>
