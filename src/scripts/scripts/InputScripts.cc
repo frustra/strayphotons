@@ -11,30 +11,6 @@
 namespace sp::scripts {
     using namespace ecs;
 
-    struct JoystickCalibration {
-        glm::vec2 scaleFactor = {1, 1};
-
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name != "/action/joystick_in") continue;
-
-                auto data = std::get_if<glm::vec2>(&event.data);
-                if (data) {
-                    EventBindings::SendEvent(lock, ent, Event{"/script/joystick_out", ent, *data * scaleFactor});
-                } else {
-                    Errorf("Unsupported joystick_in event type: %s", event.toString());
-                }
-            }
-        }
-    };
-    StructMetadata MetadataJoystickCalibration(typeid(JoystickCalibration),
-        StructField::New("scale", &JoystickCalibration::scaleFactor));
-    InternalScript<JoystickCalibration> joystickCalibration("joystick_calibration",
-        MetadataJoystickCalibration,
-        true,
-        "/action/joystick_in");
-
     struct RelativeMovement {
         EntityRef targetEntity, referenceEntity;
 
