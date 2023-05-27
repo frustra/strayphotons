@@ -12,7 +12,6 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
-        ;
         auto [targetName, eventName] = ParseEventString(src.get<std::string>());
         if (targetName) {
             dst.target = targetName;
@@ -27,7 +26,7 @@ namespace ecs {
     void StructMetadata::Save<EventDest>(const EntityScope &scope,
         picojson::value &dst,
         const EventDest &src,
-        const EventDest &def) {
+        const EventDest *def) {
         sp::json::Save(scope, dst, src.target);
         if (dst.is<std::string>()) {
             dst = picojson::value(dst.get<std::string>() + src.queueName);
@@ -39,78 +38,6 @@ namespace ecs {
     template<>
     void StructMetadata::SetScope<EventDest>(EventDest &dst, const EntityScope &scope) {
         dst.target.SetScope(scope);
-    }
-
-    bool parseEventData(EventData &data, const picojson::value &src) {
-        if (src.is<bool>()) {
-            data = src.get<bool>();
-        } else if (src.is<double>()) {
-            data = src.get<double>();
-        } else if (src.is<std::string>()) {
-            data = src.get<std::string>();
-        } else if (src.is<picojson::array>()) {
-            auto &arr = src.get<picojson::array>();
-            if (arr.size() == 2) {
-                glm::vec2 vec;
-                if (!sp::json::Load(vec, src)) {
-                    Errorf("Unsupported EventData value: %s", src.to_str());
-                    return false;
-                }
-                data = vec;
-            } else if (arr.size() == 3) {
-                glm::vec3 vec;
-                if (!sp::json::Load(vec, src)) {
-                    Errorf("Unsupported EventData value: %s", src.to_str());
-                    return false;
-                }
-                data = vec;
-            } else if (arr.size() == 4) {
-                glm::vec4 vec;
-                if (!sp::json::Load(vec, src)) {
-                    Errorf("Unsupported EventData value: %s", src.to_str());
-                    return false;
-                }
-                data = vec;
-            } else {
-                Errorf("Unsupported EventData array size: %u", arr.size());
-                return false;
-            }
-        } else {
-            Errorf("Unsupported EventData value: %s", src.to_str());
-            return false;
-        }
-        return true;
-    }
-
-    template<>
-    bool StructMetadata::Load<EventBindingActions>(EventBindingActions &dst, const picojson::value &src) {
-        if (src.is<picojson::object>()) {
-            auto &obj = src.get<picojson::object>();
-            if (obj.count("set_value") > 0) {
-                EventData eventData;
-                if (parseEventData(eventData, obj.at("set_value"))) {
-                    dst.setValue = eventData;
-                } else {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-    template<>
-    void StructMetadata::Save<EventBindingActions>(const EntityScope &scope,
-        picojson::value &dst,
-        const EventBindingActions &src,
-        const EventBindingActions &def) {
-        if (src.setValue) {
-            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
-            auto &obj = dst.get<picojson::object>();
-            std::visit(
-                [&](auto &&value) {
-                    sp::json::Save(scope, obj["set_value"], value);
-                },
-                *src.setValue);
-        }
     }
 
     template<>
@@ -131,9 +58,10 @@ namespace ecs {
     void StructMetadata::Save<EventBinding>(const EntityScope &scope,
         picojson::value &dst,
         const EventBinding &src,
-        const EventBinding &def) {
-        if (src.actions == def.actions) {
-            sp::json::SaveIfChanged(scope, dst, "", src.outputs, def.outputs);
+        const EventBinding *def) {
+        if (!src.actions && dst.is<picojson::object>()) {
+            auto &obj = dst.get<picojson::object>();
+            dst = obj["outputs"];
         }
     }
 

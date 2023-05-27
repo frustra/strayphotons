@@ -186,7 +186,7 @@ namespace ecs {
     void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
         picojson::value &dst,
         const SignalExpression &src,
-        const SignalExpression &def);
+        const SignalExpression *def);
     template<>
     void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope);
 } // namespace ecs

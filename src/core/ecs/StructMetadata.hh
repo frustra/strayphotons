@@ -184,7 +184,7 @@ namespace ecs {
         }
 
         template<typename T>
-        static void Save(const EntityScope &scope, picojson::value &dst, const T &src, const T &def) {
+        static void Save(const EntityScope &scope, picojson::value &dst, const T &src, const T *def) {
             // Custom field serialization is always called, default to no-op.
         }
 

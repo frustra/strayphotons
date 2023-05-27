@@ -219,7 +219,7 @@ namespace sp::json {
             for (auto &field : metadata.fields) {
                 field.Save(s, dst, &src, &defaultValue);
             }
-            ecs::StructMetadata::Save(s, dst, src, defaultValue);
+            ecs::StructMetadata::Save(s, dst, src, &defaultValue);
         }
     }
 
@@ -349,18 +349,24 @@ namespace sp::json {
         picojson::value &dst,
         const std::string &field,
         const T &src,
-        const T &def) {
-        if (Compare(src, def)) return false;
+        const T *def) {
+        if (def && Compare(src, *def)) return false;
 
         picojson::value value;
-        auto *metadata = ecs::StructMetadata::Get(typeid(T));
-        if (metadata) {
-            for (auto &f : metadata->fields) {
-                f.Save(s, value, &src, &def);
-            }
-            ecs::StructMetadata::Save(s, value, src, def);
-        } else {
+        if constexpr (std::is_enum<T>()) {
             Save(s, value, src);
+        } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+            Save(s, value, src);
+        } else {
+            auto *metadata = ecs::StructMetadata::Get(typeid(T));
+            if (metadata) {
+                for (auto &f : metadata->fields) {
+                    f.Save(s, value, &src, def);
+                }
+                ecs::StructMetadata::Save(s, value, src, def);
+            } else {
+                Save(s, value, src);
+            }
         }
 
         if (value.is<picojson::null>()) return false;
@@ -378,18 +384,18 @@ namespace sp::json {
         picojson::value &dst,
         const std::string &field,
         const std::vector<T> &src,
-        const std::vector<T> &def) {
+        const std::vector<T> *def) {
         picojson::array arrayOut;
         for (auto &val : src) {
             // Skip if the value is the same as the default
-            if (sp::contains(def, val)) continue;
+            if (def && sp::contains(*def, val)) continue;
 
             picojson::value dstVal;
             Save(s, dstVal, val);
             if (dstVal.is<picojson::null>()) continue;
             arrayOut.emplace_back(dstVal);
         }
-        if (arrayOut.empty()) return false;
+        if (def && arrayOut.empty()) return false;
 
         picojson::value valueOut;
         if (arrayOut.size() == 1) {
@@ -411,8 +417,8 @@ namespace sp::json {
         picojson::object &obj,
         const std::string &field,
         const T &src,
-        const T &def) {
-        if (Compare(src, def)) return false;
+        const T *def) {
+        if (def && Compare(src, *def)) return false;
         Assertf(!field.empty(), "json::SaveIfChanged provided object with no field");
         return SaveIfChanged(s, obj[field], "", src, def);
     }

@@ -9,6 +9,62 @@
 #include <sstream>
 
 namespace ecs {
+    template<>
+    bool StructMetadata::Load<EventData>(EventData &data, const picojson::value &src) {
+        if (src.is<bool>()) {
+            data = src.get<bool>();
+        } else if (src.is<double>()) {
+            data = src.get<double>();
+        } else if (src.is<std::string>()) {
+            data = src.get<std::string>();
+        } else if (src.is<picojson::array>()) {
+            auto &arr = src.get<picojson::array>();
+            if (arr.size() == 2) {
+                glm::vec2 vec;
+                if (!sp::json::Load(vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else if (arr.size() == 3) {
+                glm::vec3 vec;
+                if (!sp::json::Load(vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else if (arr.size() == 4) {
+                glm::vec4 vec;
+                if (!sp::json::Load(vec, src)) {
+                    Errorf("Unsupported EventData value: %s", src.to_str());
+                    return false;
+                }
+                data = vec;
+            } else {
+                Errorf("Unsupported EventData array size: %u", arr.size());
+                return false;
+            }
+        } else {
+            Errorf("Unsupported EventData value: %s", src.to_str());
+            return false;
+        }
+        return true;
+    }
+
+    template<>
+    void StructMetadata::Save<EventData>(const EntityScope &scope,
+        picojson::value &dst,
+        const EventData &src,
+        const EventData *def) {
+        if (def && src == *def) return;
+
+        std::visit(
+            [&](auto &&value) {
+                sp::json::Save(scope, dst, value);
+            },
+            src);
+    }
+
     std::string Event::toString() const {
         std::stringstream ss;
         ss << this->name << ":" << this->data;

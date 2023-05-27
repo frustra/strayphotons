@@ -134,16 +134,8 @@ namespace ecs {
         GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
-            if (defaultField) {
-                auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-                sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
-            } else if (!name.empty()) {
-                if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
-                auto &obj = dst.get<picojson::object>();
-                sp::json::Save(scope, obj[name], value);
-            } else {
-                sp::json::Save(scope, dst, value);
-            }
+            auto *defaultValue = reinterpret_cast<const T *>(defaultField);
+            sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
         });
     }
 

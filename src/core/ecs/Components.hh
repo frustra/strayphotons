@@ -133,12 +133,12 @@ namespace ecs {
                 for (auto &field : metadata.fields) {
                     field.Save(scope, dst, &comp, &defaultLiveComponent);
                 }
-                StructMetadata::Save<CompType>(scope, dst, comp, defaultLiveComponent);
+                StructMetadata::Save<CompType>(scope, dst, comp, &defaultLiveComponent);
             } else {
                 for (auto &field : metadata.fields) {
                     field.Save(scope, dst, &comp, &defaultStagingComponent);
                 }
-                StructMetadata::Save<CompType>(scope, dst, comp, defaultStagingComponent);
+                StructMetadata::Save<CompType>(scope, dst, comp, &defaultStagingComponent);
             }
         }
 

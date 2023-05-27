@@ -54,7 +54,7 @@ namespace ecs {
     void StructMetadata::Save<EventDest>(const EntityScope &scope,
         picojson::value &dst,
         const EventDest &src,
-        const EventDest &def);
+        const EventDest *def);
     template<>
     void StructMetadata::SetScope<EventDest>(EventDest &dst, const EntityScope &scope);
 
@@ -63,19 +63,17 @@ namespace ecs {
         std::vector<SignalExpression> modifyExprs;
         std::optional<EventData> setValue;
 
+        explicit operator bool() const {
+            return filterExpr.has_value() || !modifyExprs.empty() || setValue.has_value();
+        }
+
         bool operator==(const EventBindingActions &) const = default;
     };
 
     static StructMetadata MetadataEventBindingActions(typeid(EventBindingActions),
         StructField::New("filter", &EventBindingActions::filterExpr),
-        StructField::New("modify", &EventBindingActions::modifyExprs));
-    template<>
-    bool StructMetadata::Load<EventBindingActions>(EventBindingActions &dst, const picojson::value &src);
-    template<>
-    void StructMetadata::Save<EventBindingActions>(const EntityScope &scope,
-        picojson::value &dst,
-        const EventBindingActions &src,
-        const EventBindingActions &def);
+        StructField::New("modify", &EventBindingActions::modifyExprs),
+        StructField::New("set_value", &EventBindingActions::setValue));
 
     struct EventBinding {
         std::vector<EventDest> outputs;
@@ -94,7 +92,7 @@ namespace ecs {
     void StructMetadata::Save<EventBinding>(const EntityScope &scope,
         picojson::value &dst,
         const EventBinding &src,
-        const EventBinding &def);
+        const EventBinding *def);
 
     class EventBindings {
     public:

@@ -125,7 +125,7 @@ namespace ecs {
     void StructMetadata::Save<PhysicsShape>(const EntityScope &scope,
         picojson::value &dst,
         const PhysicsShape &src,
-        const PhysicsShape &def) {
+        const PhysicsShape *def) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
@@ -137,8 +137,8 @@ namespace ecs {
 
             auto &capsule = std::get<PhysicsShape::Capsule>(src.shape);
             picojson::object capsuleObj = {};
-            sp::json::SaveIfChanged(scope, capsuleObj, "radius", capsule.radius, defaultCapsule.radius);
-            sp::json::SaveIfChanged(scope, capsuleObj, "height", capsule.height, defaultCapsule.height);
+            sp::json::SaveIfChanged(scope, capsuleObj, "radius", capsule.radius, &defaultCapsule.radius);
+            sp::json::SaveIfChanged(scope, capsuleObj, "height", capsule.height, &defaultCapsule.height);
             obj["capsule"] = picojson::value(capsuleObj);
         } else if (std::holds_alternative<PhysicsShape::Box>(src.shape)) {
             auto &box = std::get<PhysicsShape::Box>(src.shape);
@@ -153,18 +153,22 @@ namespace ecs {
         } else {
             Abortf("Unknown PhysicsShape type: %u", src.shape.index());
         }
-        sp::json::SaveIfChanged(scope, obj, "transform", src.transform, def.transform);
+        sp::json::SaveIfChanged(scope, obj, "transform", src.transform, def ? &def->transform : nullptr);
         sp::json::SaveIfChanged(scope,
             obj,
             "static_friction",
             src.material.staticFriction,
-            def.material.staticFriction);
+            def ? &def->material.staticFriction : nullptr);
         sp::json::SaveIfChanged(scope,
             obj,
             "dynamic_friction",
             src.material.dynamicFriction,
-            def.material.dynamicFriction);
-        sp::json::SaveIfChanged(scope, obj, "restitution", src.material.restitution, def.material.restitution);
+            def ? &def->material.dynamicFriction : nullptr);
+        sp::json::SaveIfChanged(scope,
+            obj,
+            "restitution",
+            src.material.restitution,
+            def ? &def->material.restitution : nullptr);
     }
 
     PhysicsShape::ConvexMesh::ConvexMesh(const std::string &fullMeshName) {

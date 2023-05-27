@@ -125,7 +125,7 @@ namespace ecs {
     void StructMetadata::Save<PhysicsShape>(const EntityScope &scope,
         picojson::value &dst,
         const PhysicsShape &src,
-        const PhysicsShape &def);
+        const PhysicsShape *def);
 
     enum class PhysicsActorType : uint8_t {
         Static,

@@ -733,8 +733,9 @@ namespace sp {
             };
             picojson::object sceneObj(sceneOrderFunc);
             static const ecs::SceneProperties defaultProperties = {};
-            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), defaultProperties);
-            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, ScenePriority::Scene);
+            static const ScenePriority defaultPriority = ScenePriority::Scene;
+            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
+            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, &defaultPriority);
             sceneObj["entities"] = picojson::value(entities);
             auto val = picojson::value(sceneObj);
             auto scenePath = scene->asset->path;

@@ -56,7 +56,7 @@ namespace ecs {
     void StructMetadata::Save<ScriptInstance>(const EntityScope &scope,
         picojson::value &dst,
         const ScriptInstance &src,
-        const ScriptInstance &def);
+        const ScriptInstance *def);
     template<>
     void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope);
 

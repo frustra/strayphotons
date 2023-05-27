@@ -108,7 +108,7 @@ namespace ecs {
     void StructMetadata::Save<Transform>(const EntityScope &scope,
         picojson::value &dst,
         const Transform &src,
-        const Transform &def);
+        const Transform *def);
 
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),

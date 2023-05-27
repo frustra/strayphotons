@@ -960,7 +960,7 @@ namespace ecs {
     void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
         picojson::value &dst,
         const SignalExpression &src,
-        const SignalExpression &def) {
+        const SignalExpression *def) {
         if (src.scope != scope) {
             // TODO: Remap signal names to new scope instead of converting to fully qualified names
             // Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
