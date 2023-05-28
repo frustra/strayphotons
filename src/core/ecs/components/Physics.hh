@@ -48,6 +48,7 @@ namespace ecs {
         bool operator==(const PhysicsMaterial &) const = default;
     };
     static StructMetadata MetadataPhysicsMaterial(typeid(PhysicsMaterial),
+        "PhysicsMaterial",
         StructField::New("static_friction", &PhysicsMaterial::staticFriction),
         StructField::New("dynamic_friction", &PhysicsMaterial::dynamicFriction),
         StructField::New("restitution", &PhysicsMaterial::restitution));
@@ -118,7 +119,7 @@ namespace ecs {
         bool operator==(const PhysicsShape &) const = default;
     };
 
-    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape));
+    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape), "PhysicsShape");
     template<>
     bool StructMetadata::Load<PhysicsShape>(PhysicsShape &dst, const picojson::value &src);
     template<>
@@ -157,6 +158,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataPhysics(typeid(Physics),
+        "physics",
         StructField::New("shapes", &Physics::shapes),
         StructField::New("group", &Physics::group),
         StructField::New("type", &Physics::type),
@@ -167,5 +169,5 @@ namespace ecs {
         StructField::New("linear_damping", &Physics::linearDamping),
         StructField::New("contact_report_force", &Physics::contactReportThreshold),
         StructField::New("force", &Physics::constantForce));
-    static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
+    static Component<Physics> ComponentPhysics(MetadataPhysics);
 } // namespace ecs

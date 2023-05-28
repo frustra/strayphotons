@@ -142,7 +142,7 @@ namespace ecs {
         friend class ScriptInstance;
         friend class ScriptManager;
     };
-    static StructMetadata MetadataScriptState(typeid(ScriptState));
+    static StructMetadata MetadataScriptState(typeid(ScriptState), "ScriptState");
 
     class ScriptManager {
         sp::LogOnExit logOnExit = "Scripts shut down =====================================================";

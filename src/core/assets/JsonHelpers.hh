@@ -68,7 +68,7 @@ namespace sp::json {
             }
             dst = *opt;
             return true;
-        } else if constexpr (std::is_convertible_v<double, T>) {
+        } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             if (!src.is<double>()) return false;
             dst = (T)src.get<double>();
             return true;
@@ -76,7 +76,10 @@ namespace sp::json {
             auto &metadata = ecs::StructMetadata::Get<T>();
             for (auto &field : metadata.fields) {
                 if (!field.Load(&dst, src)) {
-                    Errorf("Struct metadata %s has invalid field: %s", typeid(T).name(), field.name);
+                    Errorf("Struct metadata %s has invalid field: %s = %s",
+                        typeid(T).name(),
+                        field.name,
+                        src.serialize());
                     return false;
                 }
             }

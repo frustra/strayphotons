@@ -27,7 +27,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataCharacterController(typeid(CharacterController),
+        "character_controller",
         StructField::New("head", &CharacterController::head));
-    static Component<CharacterController> ComponenCharacterController("character_controller",
-        MetadataCharacterController);
+    static Component<CharacterController> ComponenCharacterController(MetadataCharacterController);
 } // namespace ecs

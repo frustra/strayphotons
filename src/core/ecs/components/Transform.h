@@ -97,6 +97,7 @@ namespace ecs {
 
     #ifndef SP_WASM_BUILD
     static StructMetadata MetadataTransform(typeid(Transform),
+        "Transform",
         StructField("translate",
             typeid(glm::vec3),
             StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
@@ -111,12 +112,14 @@ namespace ecs {
         const Transform *def);
 
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
+        "TransformTree",
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
         StructField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
-    static Component<TransformTree> ComponentTransformTree("transform", MetadataTransformTree);
+    static Component<TransformTree> ComponentTransformTree(MetadataTransformTree, "transform");
     static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
+        "TransformSnapshot",
         StructField::New<Transform>(FieldAction::AutoSave));
-    static Component<TransformSnapshot> ComponentTransformSnapshot("transform_snapshot", MetadataTransformSnapshot);
+    static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
 
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);

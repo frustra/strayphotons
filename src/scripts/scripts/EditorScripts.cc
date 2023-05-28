@@ -91,7 +91,9 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataTraySpawner(typeid(TraySpawner), StructField::New("source", &TraySpawner::templateSource));
+    StructMetadata MetadataTraySpawner(typeid(TraySpawner),
+        "TraySpawner",
+        StructField::New("source", &TraySpawner::templateSource));
     InternalScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
 
     struct EditTool {
@@ -250,6 +252,6 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataEditTool(typeid(EditTool));
+    StructMetadata MetadataEditTool(typeid(EditTool), "EditTool");
     InternalScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

@@ -44,6 +44,6 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion));
+    StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), "SoundOcclusion");
     InternalScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
 } // namespace sp::scripts

@@ -93,7 +93,7 @@ namespace ecs {
         }
 
     public:
-        Component(const char *name, const StructMetadata &metadata)
+        Component(const StructMetadata &metadata, const char *name)
             : ComponentBase(name, metadata), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
             auto existing = dynamic_cast<const Component<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
@@ -102,6 +102,8 @@ namespace ecs {
                 throw std::runtime_error("Duplicate component type registered: " + std::string(name));
             }
         }
+
+        Component(const StructMetadata &metadata) : Component(metadata, metadata.name) {}
 
         bool LoadFields(CompType &dst, const picojson::value &src) const {
             for (auto &field : metadata.fields) {
@@ -213,8 +215,10 @@ namespace ecs {
     };
 
     // Define these special components here to solve circular includes
-    static StructMetadata MetadataName(typeid(Name));
-    static Component<Name> ComponentName("name", MetadataName);
-    static StructMetadata MetadataSceneInfo(typeid(SceneInfo));
-    static Component<SceneInfo> ComponentSceneInfo("scene_info", MetadataSceneInfo);
+    static StructMetadata MetadataName(typeid(Name), "name");
+    static Component<Name> ComponentName(MetadataName);
+    static StructMetadata MetadataSceneInfo(typeid(SceneInfo), "SceneInfo");
+    static Component<SceneInfo> ComponentSceneInfo(MetadataSceneInfo);
+
+    StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef");
 }; // namespace ecs

@@ -28,6 +28,7 @@ namespace ecs {
         sp::angle_t,
         float,
         double,
+        std::string,
 
         // Vector types
         glm::vec2,
@@ -47,13 +48,14 @@ namespace ecs {
         glm::quat,
 
         // Structs
-        std::string,
         EntityRef,
         EventData,
         Transform,
         SignalExpression,
         EventBindingActions,
+        AnimationState,
         PhysicsMaterial,
+        PhysicsShape,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
@@ -65,6 +67,7 @@ namespace ecs {
         std::vector<ScriptInstance>,
         std::vector<Sound>,
         std::optional<double>,
+        std::optional<EventData>,
         std::optional<SignalExpression>,
         std::optional<PhysicsActorType>,
         robin_hood::unordered_map<std::string, double>,

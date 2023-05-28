@@ -42,6 +42,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataLifeCell(typeid(LifeCell),
+        "LifeCell",
         StructField::New("alive", &LifeCell::alive),
         StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
         StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));

@@ -32,6 +32,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataAnimationState(typeid(AnimationState),
+        "AnimationState",
         StructField::New("delay", &AnimationState::delay),
         StructField::New("translate", &AnimationState::pos),
         StructField::New("scale", &AnimationState::scale),
@@ -58,10 +59,11 @@ namespace ecs {
     };
 
     static StructMetadata MetadataAnimation(typeid(Animation),
+        "animation",
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
         StructField::New("interpolation", &Animation::interpolation),
         StructField::New("cubic_tension", &Animation::tension));
-    static Component<Animation> ComponentAnimation("animation", MetadataAnimation);
+    static Component<Animation> ComponentAnimation(MetadataAnimation);
 
     template<>
     void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget);

@@ -13,8 +13,9 @@ namespace ecs {
     };
 
     static StructMetadata MetadataOpticalElement(typeid(OpticalElement),
+        "optic",
         StructField::New("pass_tint", &OpticalElement::passTint),
         StructField::New("reflect_tint", &OpticalElement::reflectTint),
         StructField::New("single_direction", &OpticalElement::singleDirection));
-    static Component<OpticalElement> ComponentOpticalElement("optic", MetadataOpticalElement);
+    static Component<OpticalElement> ComponentOpticalElement(MetadataOpticalElement);
 } // namespace ecs

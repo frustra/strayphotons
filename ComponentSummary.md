@@ -1,76 +1,78 @@
-## `scene_properties` Component
+## `SceneProperties` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **root_transform** | struct ecs::Transform | null | No description |
-| **gravity_transform** | struct ecs::Transform | {"gravity_transform":{"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]}} | No description |
-| **gravity** | struct glm::vec<3,float,0> | {"gravity":[0, -9.81, 0]} | No description |
+| **root_transform** | `Transform` | null | No description |
+| **gravity_transform** | `Transform` | {"gravity_transform":{"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]}} | No description |
+| **gravity** | vec3 | {"gravity":[0, -9.81, 0]} | No description |
 
 
 ## `transform_snapshot` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **translate** | vec3 | null | No description |
+| **scale** | vec3 | null | No description |
 
 
 ## `transform` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **translate** | struct glm::vec<3,float,0> | null | No description |
-| **scale** | struct glm::vec<3,float,0> | null | No description |
-| **parent** | class ecs::EntityRef | {"parent":""} | No description |
+| **translate** | vec3 | null | No description |
+| **scale** | vec3 | null | No description |
+| **parent** | `EntityRef` | null | No description |
 
 
 ## `renderable` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **model** | class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > | {"model":""} | No description |
-| **mesh_index** | unsigned __int64 | {"mesh_index":0} | No description |
-| **visibility** | enum ecs::VisibilityMask | {"visibility":"DirectCamera|DirectEye|LightingShadow|LightingVoxel"} | No description |
+| **model** | string | {"model":""} | No description |
+| **mesh_index** | size_t | {"mesh_index":0} | No description |
+| **visibility** | flags "DirectCamera|DirectEye|Transparent|LightingShadow|LightingVoxel|Optics|OutlineSelection" | {"visibility":"DirectCamera|DirectEye|LightingShadow|LightingVoxel"} | No description |
 | **emissive** | float | {"emissive":0} | No description |
-| **color_override** | struct sp::color_alpha_t | {"color_override":[-1, -1, -1, -1]} | No description |
-| **metallic_roughness_override** | struct glm::vec<2,float,0> | {"metallic_roughness_override":[-1, -1]} | No description |
+| **color_override** | vec4 (red, green, blue, alpha) | {"color_override":[-1, -1, -1, -1]} | No description |
+| **metallic_roughness_override** | vec2 | {"metallic_roughness_override":[-1, -1]} | No description |
 
 
 ## `physics` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **shapes** | class std::vector<struct ecs::PhysicsShape,class std::allocator<struct ecs::PhysicsShape> > | {"shapes":[]} | No description |
-| **group** | enum ecs::PhysicsGroup | {"group":"World"} | No description |
-| **type** | enum ecs::PhysicsActorType | {"type":"Dynamic"} | No description |
-| **parent_actor** | class ecs::EntityRef | {"parent_actor":""} | No description |
+| **shapes** | vector<`PhysicsShape`> | {"shapes":[]} | No description |
+| **group** | enum "NoClip", "World", "Interactive", "HeldObject", "Player", "PlayerLeftHand", "PlayerRightHand", or "UserInterface" | {"group":"World"} | No description |
+| **type** | enum "Static", "Dynamic", "Kinematic", or "SubActor" | {"type":"Dynamic"} | No description |
+| **parent_actor** | `EntityRef` | null | No description |
 | **mass** | float | {"mass":0} | No description |
 | **density** | float | {"density":1000} | No description |
 | **angular_damping** | float | {"angular_damping":0.05} | No description |
 | **linear_damping** | float | {"linear_damping":0} | No description |
 | **contact_report_force** | float | {"contact_report_force":-1} | No description |
-| **force** | struct glm::vec<3,float,0> | {"force":[0, 0, 0]} | No description |
+| **force** | vec3 | {"force":[0, 0, 0]} | No description |
 
 
 ## `animation` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **states** | class std::vector<struct ecs::AnimationState,class std::allocator<struct ecs::AnimationState> > | {"states":[]} | No description |
-| **interpolation** | enum ecs::InterpolationMode | {"interpolation":"Linear"} | No description |
+| **states** | vector<`AnimationState`> | {"states":[]} | No description |
+| **interpolation** | enum "Step", "Linear", or "Cubic" | {"interpolation":"Linear"} | No description |
 | **cubic_tension** | float | {"cubic_tension":0.5} | No description |
 
 
 ## `character_controller` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **head** | class ecs::EntityRef | {"head":""} | No description |
+| **head** | `EntityRef` | null | No description |
 
 
 ## `gui` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **windowName** | class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > | {"windowName":""} | No description |
-| **target** | enum ecs::GuiTarget | {"target":"World"} | No description |
+| **windowName** | string | {"windowName":""} | No description |
+| **target** | enum "None", "World", or "Debug" | {"target":"World"} | No description |
 
 
 ## `laser_emitter` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **intensity** | float | {"intensity":1} | No description |
-| **color** | struct sp::color_t | {"color":[0, 0, 0]} | No description |
+| **color** | vec3 (red, green, blue) | {"color":[0, 0, 0]} | No description |
 | **on** | bool | {"on":true} | No description |
 | **start_distance** | float | {"start_distance":0} | No description |
 
@@ -88,7 +90,7 @@
 ## `laser_sensor` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **threshold** | struct glm::vec<3,float,0> | {"threshold":[0.5, 0.5, 0.5]} | No description |
+| **threshold** | vec3 | {"threshold":[0.5, 0.5, 0.5]} | No description |
 
 
 ## `light` Component
@@ -96,33 +98,34 @@
 |------------|------|---------------|-------------|
 | **intensity** | float | {"intensity":0} | No description |
 | **illuminance** | float | {"illuminance":0} | No description |
-| **spotAngle** | class sp::angle_t | {"spotAngle":0} | No description |
-| **tint** | struct sp::color_t | {"tint":[1, 1, 1]} | No description |
-| **gel** | class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > | {"gel":""} | No description |
+| **spotAngle** | float (degrees) | {"spotAngle":0} | No description |
+| **tint** | vec3 (red, green, blue) | {"tint":[1, 1, 1]} | No description |
+| **gel** | string | {"gel":""} | No description |
 | **on** | bool | {"on":true} | No description |
-| **shadowMapSize** | unsigned int | {"shadowMapSize":9} | No description |
-| **shadowMapClip** | struct glm::vec<2,float,0> | {"shadowMapClip":[0.1, 256]} | No description |
+| **shadowMapSize** | uint32_t | {"shadowMapSize":9} | No description |
+| **shadowMapClip** | vec2 | {"shadowMapClip":[0.1, 256]} | No description |
 
 
 ## `light_sensor` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **position** | struct glm::vec<3,float,0> | {"position":[0, 0, 0]} | No description |
-| **direction** | struct glm::vec<3,float,0> | {"direction":[0, 0, -1]} | No description |
-| **color_value** | struct glm::vec<3,float,0> | {"color_value":[0, 0, 0]} | No description |
+| **position** | vec3 | {"position":[0, 0, 0]} | No description |
+| **direction** | vec3 | {"direction":[0, 0, -1]} | No description |
+| **color_value** | vec3 | {"color_value":[0, 0, 0]} | No description |
 
 
 ## `optic` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **pass_tint** | struct sp::color_t | {"pass_tint":[0, 0, 0]} | No description |
-| **reflect_tint** | struct sp::color_t | {"reflect_tint":[1, 1, 1]} | No description |
+| **pass_tint** | vec3 (red, green, blue) | {"pass_tint":[0, 0, 0]} | No description |
+| **reflect_tint** | vec3 (red, green, blue) | {"reflect_tint":[1, 1, 1]} | No description |
 | **single_direction** | bool | {"single_direction":false} | No description |
 
 
 ## `physics_joints` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **physics_joints** | vector<`PhysicsJoint`> | [] | No description |
 
 
 ## `physics_query` Component
@@ -138,44 +141,48 @@
 ## `screen` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **target** | class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > | {"target":""} | No description |
-| **luminance** | struct glm::vec<3,float,0> | {"luminance":[1, 1, 1]} | No description |
+| **target** | string | {"target":""} | No description |
+| **luminance** | vec3 | {"luminance":[1, 1, 1]} | No description |
 
 
 ## `sound` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **Sounds** | vector<`Sound`> | [] | No description |
 
 
 ## `trigger_area` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **trigger_area** | enum "Box", or "Sphere" | "Box" | No description |
 
 
 ## `trigger_group` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **trigger_group** | enum "Player", "Object", or "Magnetic" | "Player" | No description |
 
 
 ## `view` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **offset** | struct glm::vec<2,int,0> | {"offset":[0, 0]} | No description |
-| **extents** | struct glm::vec<2,int,0> | {"extents":[0, 0]} | No description |
-| **fov** | class sp::angle_t | {"fov":0} | No description |
-| **clip** | struct glm::vec<2,float,0> | {"clip":[0.1, 256]} | No description |
-| **visibilityMask** | enum ecs::VisibilityMask | {"visibilityMask":""} | No description |
+| **offset** | ivec2 | {"offset":[0, 0]} | No description |
+| **extents** | ivec2 | {"extents":[0, 0]} | No description |
+| **fov** | float (degrees) | {"fov":0} | No description |
+| **clip** | vec2 | {"clip":[0.1, 256]} | No description |
+| **visibilityMask** | flags "DirectCamera|DirectEye|Transparent|LightingShadow|LightingVoxel|Optics|OutlineSelection" | {"visibilityMask":""} | No description |
 
 
 ## `voxel_area` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **extents** | struct glm::vec<3,int,0> | {"extents":[128, 128, 128]} | No description |
+| **extents** | ivec3 | {"extents":[128, 128, 128]} | No description |
 
 
 ## `xr_view` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **xr_view** | enum "Left", or "Right" | "Left" | No description |
 
 
 ## `event_input` Component
@@ -201,5 +208,6 @@
 ## `script` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **Scripts** | vector<`ScriptInstance`> | [] | No description |
 
 

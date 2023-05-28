@@ -115,7 +115,7 @@ namespace ecs {
 
         return GetFieldType(type, dstfield, [&](auto &dstValue) {
             if (!sp::json::Load(dstValue, *srcField)) {
-                Errorf("Invalid %s field value: %s", type.name(), src.to_str());
+                Errorf("Invalid %s field value: %s", type.name(), srcField->serialize());
                 return false;
             }
             return true;

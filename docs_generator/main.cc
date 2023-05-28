@@ -6,29 +6,105 @@
 #include <cxxopts.hpp>
 #include <fstream>
 
-void saveFields(std::ofstream &file, const ecs::StructMetadata &metadata) {
-    ecs::GetFieldType(metadata.type, [&](auto *typePtr) {
-        using T = std::remove_pointer_t<decltype(typePtr)>;
+template<typename T>
+std::string fieldTypeName() {
+    if constexpr (std::is_same_v<T, bool>) {
+        return "bool";
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+        return "int32_t";
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        return "uint32_t";
+    } else if constexpr (std::is_same_v<T, size_t>) {
+        return "size_t";
+    } else if constexpr (std::is_same_v<T, sp::angle_t>) {
+        return "float (degrees)";
+    } else if constexpr (std::is_same_v<T, float>) {
+        return "float";
+    } else if constexpr (std::is_same_v<T, double>) {
+        return "double";
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        return "string";
+    } else if constexpr (std::is_same_v<T, sp::color_t>) {
+        return "vec3 (red, green, blue)";
+    } else if constexpr (std::is_same_v<T, sp::color_alpha_t>) {
+        return "vec4 (red, green, blue, alpha)";
+    } else if constexpr (std::is_same_v<T, glm::quat>) {
+        return "vec4 (angle_degrees, axis_x, axis_y, axis_z)";
+    } else if constexpr (sp::is_glm_vec<T>()) {
+        using U = typename T::value_type;
 
-        static const T defaultValue = {};
+        if constexpr (std::is_same_v<U, float>) {
+            return "vec" + std::to_string(T::length());
+        } else if constexpr (std::is_same_v<U, double>) {
+            return "dvec" + std::to_string(T::length());
+        } else if constexpr (std::is_same_v<U, int>) {
+            return "ivec" + std::to_string(T::length());
+        } else if constexpr (std::is_same_v<U, unsigned int>) {
+            return "uvec" + std::to_string(T::length());
+        } else {
+            return typeid(T).name();
+        }
+    } else if constexpr (sp::is_vector<T>()) {
+        return "vector<" + fieldTypeName<typename T::value_type>() + ">";
+    } else if constexpr (std::is_enum<T>()) {
+        if constexpr (is_flags_enum<T>()) {
+            return "flags \"" + magic_enum::enum_flags_name(~(T)0) + "\"";
+        } else {
+            std::string result = "enum ";
+            static const auto names = magic_enum::enum_names<T>();
+            for (size_t i = 0; i < names.size(); i++) {
+                if (i == 0) {
+                    result += "\"" + std::string(names[i]) + "\"";
+                } else if (i + 1 == names.size()) {
+                    result += ", or \"" + std::string(names[i]) + "\"";
+                } else {
+                    result += ", \"" + std::string(names[i]) + "\"";
+                }
+            }
+            return result;
+        }
+    } else {
+        auto &metadata = ecs::StructMetadata::Get<T>();
+        return "`"s + metadata.name + "`";
+    }
+}
 
-        for (auto &field : metadata.fields) {
-            picojson::value output;
-            field.Save(ecs::EntityScope(), output, &defaultValue, nullptr);
+template<typename T>
+void saveFields(std::ofstream &file) {
+    static const T defaultValue = {};
+
+    auto *metadataPtr = ecs::StructMetadata::Get(typeid(T));
+    if (!metadataPtr) {
+        Errorf("Unknown saveFields metadata: %s", typeid(T).name());
+        return;
+    }
+    auto &metadata = *metadataPtr;
+
+    for (auto &field : metadata.fields) {
+        picojson::value output;
+        field.Save(ecs::EntityScope(), output, &defaultValue, nullptr);
+
+        ecs::GetFieldType(field.type, [&](auto *typePtr) {
+            using U = std::remove_pointer_t<decltype(typePtr)>;
 
             if (field.name.empty()) {
-                auto *subMetadata = ecs::StructMetadata::Get(field.type);
-                if (subMetadata && field.type != metadata.type) {
-                    saveFields(file, *subMetadata);
+                if constexpr (std::is_enum<U>()) {
+                    file << "| **" << metadata.name << "** | " << fieldTypeName<U>() << " | " << output.serialize()
+                         << " | No description |" << std::endl;
+                } else if constexpr (sp::is_vector<U>()) {
+                    file << "| **" << metadata.name << "** | " << fieldTypeName<U>() << " | " << output.serialize()
+                         << " | No description |" << std::endl;
+                } else if constexpr (!std::is_same_v<T, U>) {
+                    saveFields<U>(file);
                 } else {
-                    Logf("Unsupported field overload: %s", field.type.name());
+                    Abortf("Unknown self reference state: %s", metadata.name);
                 }
             } else {
-                file << "| **" << field.name << "** | " << field.type.name() << " | " << output.serialize()
+                file << "| **" << field.name << "** | " << fieldTypeName<U>() << " | " << output.serialize()
                      << " | No description |" << std::endl;
             }
-        }
-    });
+        });
+    }
 }
 
 int main(int argc, char **argv) {
@@ -61,7 +137,10 @@ int main(int argc, char **argv) {
         file << "| Field Name | Type | Default Value | Description |" << std::endl;
         file << "|------------|------|---------------|-------------|" << std::endl;
 
-        saveFields(file, comp.metadata);
+        ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            saveFields<T>(file);
+        });
 
         file << std::endl << std::endl;
     });

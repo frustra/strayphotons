@@ -82,7 +82,7 @@ namespace ecs {
             } else if (param.second.is<picojson::object>()) {
                 EventBinding binding;
                 if (!sp::json::Load(binding, param.second)) {
-                    Errorf("Invalid event binding: %s", src.to_str());
+                    Errorf("Invalid event binding: %s", param.second.serialize());
                     return false;
                 }
                 dst.Bind(param.first, binding);
@@ -90,7 +90,7 @@ namespace ecs {
                 for (auto &entry : param.second.get<picojson::array>()) {
                     EventBinding binding;
                     if (!sp::json::Load(binding, entry)) {
-                        Errorf("Invalid event binding: %s", src.to_str());
+                        Errorf("Invalid event binding: %s", param.second.serialize());
                         return false;
                     }
                     dst.Bind(param.first, binding);

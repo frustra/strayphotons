@@ -19,6 +19,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataLight(typeid(Light),
+        "light",
         StructField::New("intensity", &Light::intensity),
         StructField::New("illuminance", &Light::illuminance),
         StructField::New("spotAngle", &Light::spotAngle),
@@ -27,5 +28,5 @@ namespace ecs {
         StructField::New("on", &Light::on),
         StructField::New("shadowMapSize", &Light::shadowMapSize),
         StructField::New("shadowMapClip", &Light::shadowMapClip));
-    static Component<Light> ComponentLight("light", MetadataLight);
+    static Component<Light> ComponentLight(MetadataLight);
 } // namespace ecs

@@ -53,12 +53,13 @@ namespace ecs {
     };
 
     static StructMetadata MetadataView(typeid(View),
+        "view",
         StructField::New("offset", &View::offset),
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),
         StructField::New("clip", &View::clip),
         StructField::New("visibilityMask", &View::visibilityMask));
-    static Component<View> ComponentView("view", MetadataView);
+    static Component<View> ComponentView(MetadataView);
 
     template<>
     void Component<View>::Apply(View &dst, const View &src, bool liveTarget);

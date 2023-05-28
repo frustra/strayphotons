@@ -99,6 +99,7 @@ namespace ecs {
         }
     };
     StructMetadata MetadataGltfPrefab(typeid(GltfPrefab),
+        "GltfPrefab",
         StructField::New("model", &GltfPrefab::modelName),
         StructField::New("skip_nodes", &GltfPrefab::skipNames),
         StructField::New("physics_group", &GltfPrefab::physicsGroup),

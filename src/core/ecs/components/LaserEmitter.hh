@@ -15,9 +15,10 @@ namespace ecs {
     };
 
     static StructMetadata MetadataLaserEmitter(typeid(LaserEmitter),
+        "laser_emitter",
         StructField::New("intensity", &LaserEmitter::intensity),
         StructField::New("color", &LaserEmitter::color),
         StructField::New("on", &LaserEmitter::on),
         StructField::New("start_distance", &LaserEmitter::startDistance));
-    static Component<LaserEmitter> ComponentLaserEmitter("laser_emitter", MetadataLaserEmitter);
+    static Component<LaserEmitter> ComponentLaserEmitter(MetadataLaserEmitter);
 } // namespace ecs

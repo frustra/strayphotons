@@ -47,6 +47,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVoxelController(typeid(VoxelController),
+        "VoxelController",
         StructField::New("voxel_scale", &VoxelController::voxelScale),
         StructField::New("voxel_stride", &VoxelController::voxelStride),
         StructField::New("voxel_offset", &VoxelController::voxelOffset),
@@ -69,6 +70,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotatePhysics(typeid(RotatePhysics),
+        "RotatePhysics",
         StructField::New("axis", &RotatePhysics::rotationAxis),
         StructField::New("speed", &RotatePhysics::rotationSpeedRpm));
     InternalPhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
@@ -181,6 +183,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataPhysicsJointFromEvent(typeid(PhysicsJointFromEvent),
+        "PhysicsJointFromEvent",
         StructField::New(&PhysicsJointFromEvent::definedJoints));
     InternalPhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
         MetadataPhysicsJointFromEvent);

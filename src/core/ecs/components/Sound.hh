@@ -31,6 +31,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataSound(typeid(Sound),
+        "Sound",
         StructField::New("type", &Sound::type),
         StructField::New("file", &Sound::filePath),
         StructField::New("loop", &Sound::loop),
@@ -47,8 +48,10 @@ namespace ecs {
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static StructMetadata MetadataSounds(typeid(Sounds), StructField::New(&Sounds::sounds, ~FieldAction::AutoApply));
-    static Component<Sounds> ComponentSound("sound", MetadataSounds);
+    static StructMetadata MetadataSounds(typeid(Sounds),
+        "Sounds",
+        StructField::New(&Sounds::sounds, ~FieldAction::AutoApply));
+    static Component<Sounds> ComponentSound(MetadataSounds, "sound");
 
     template<>
     void Component<Sounds>::Apply(Sounds &dst, const Sounds &src, bool liveTarget);

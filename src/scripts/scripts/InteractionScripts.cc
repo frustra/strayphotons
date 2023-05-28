@@ -168,6 +168,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractiveObject(typeid(InteractiveObject),
+        "InteractiveObject",
         StructField::New("disabled", &InteractiveObject::disabled));
     InternalScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
@@ -294,6 +295,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractHandler(typeid(InteractHandler),
+        "InteractHandler",
         StructField::New("grab_distance", &InteractHandler::grabDistance),
         StructField::New("noclip_entity", &InteractHandler::noclipEntity));
     InternalScript<InteractHandler> interactHandler("interact_handler",
