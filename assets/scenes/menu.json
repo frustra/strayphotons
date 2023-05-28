@@ -56,7 +56,7 @@
 				"translate": [-4.9, 1, 0]
 			},
 			"physics_query": {},
-			"sound": {
+			"audio": {
 				"file": "test.ogg",
 				"loop": true,
 				"play_on_load": true,
@@ -74,7 +74,7 @@
 				"translate": [3.8, 1.1, -2.8]
 			},
 			"gui": {
-				"windowName": "lobby"
+				"window_name": "lobby"
 			},
 			"screen": {
 				"luminance": [3, 1, 3]
@@ -307,7 +307,7 @@
 				"translate": [4.94, 1.35, 2.35]
 			},
 			"gui": {
-				"windowName": "signal_display"
+				"window_name": "signal_display"
 			},
 			"screen": {
 				"luminance": [3, 3, 3]

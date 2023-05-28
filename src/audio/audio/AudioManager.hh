@@ -69,7 +69,7 @@ namespace sp {
         LockFreeAudioSet<SoundSource, 65535> sounds;
         LockFreeEventQueue<SoundEvent> soundEvents;
 
-        ecs::ComponentObserver<ecs::Sounds> soundObserver;
+        ecs::ComponentObserver<ecs::Audio> soundObserver;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
         static void AudioErrorCallback(SoundIoOutStream *outstream, int error);

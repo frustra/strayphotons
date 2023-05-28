@@ -1,6 +1,6 @@
 {
 	"components": {
-		"sound": {
+		"audio": {
 			"file": "dryer.ogg",
 			"type": "Ambisonic",
 			"volume": 0.1

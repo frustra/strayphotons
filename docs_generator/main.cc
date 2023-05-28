@@ -121,13 +121,15 @@ void saveFields(std::stringstream &ss) {
             if (field.name.empty()) {
                 if constexpr (std::is_enum<U>()) {
                     ss << "|   | " << fieldTypeName<U>() << " | " << escapeMarkdownString(output.serialize())
-                       << " | No description |" << std::endl;
+                       << " | The `" << metadata.name << "` component is serialized directly as an enum string |"
+                       << std::endl;
                 } else if constexpr (sp::is_vector<U>()) {
                     ss << "|   | " << fieldTypeName<U>() << " | " << escapeMarkdownString(output.serialize())
-                       << " | No description |" << std::endl;
+                       << " | The `" << metadata.name << "` component is serialized directly as an array |"
+                       << std::endl;
                 } else if constexpr (is_unordered_map<U>()) {
                     ss << "|   | " << fieldTypeName<U>() << " | " << escapeMarkdownString(output.serialize())
-                       << " | No description |" << std::endl;
+                       << " | The `" << metadata.name << "` component is serialized directly as a map |" << std::endl;
                 } else if constexpr (!std::is_same_v<T, U>) {
                     saveFields<U>(ss);
                 } else {
@@ -135,7 +137,7 @@ void saveFields(std::stringstream &ss) {
                 }
             } else {
                 ss << "| **" << field.name << "** | " << fieldTypeName<U>() << " | "
-                   << escapeMarkdownString(output.serialize()) << " | No description |" << std::endl;
+                   << escapeMarkdownString(output.serialize()) << " | " << field.desc << " |" << std::endl;
             }
         });
     }

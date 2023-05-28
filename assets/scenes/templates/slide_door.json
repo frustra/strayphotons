@@ -32,7 +32,7 @@
 					}
 				}
 			],
-			"sound": [{
+			"audio": [{
 				"file": "door_open.ogg",
 				"volume": 0.5
 			}],

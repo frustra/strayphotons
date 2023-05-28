@@ -604,7 +604,7 @@ namespace ecs {
                             return -1;
                         }
                     } else {
-                        StructField field(std::string(token), typeid(double), 0, FieldAction::None);
+                        StructField field(std::string(token), "", typeid(double), 0, FieldAction::None);
                         nodes.emplace_back(SignalExpression::IdentifierNode{field}, tokenIndex, tokenIndex + 1, index);
                         nodeStrings.emplace_back(token);
                     }

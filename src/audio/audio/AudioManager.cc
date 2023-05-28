@@ -25,7 +25,7 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sounds>>();
+            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Audio>>();
         }
 
         StartThread();
@@ -125,7 +125,7 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::Sounds, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Audio, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
 
         auto head = entities::Head.Get(lock);
         if (head.Has<ecs::TransformSnapshot>(lock)) {
@@ -136,21 +136,21 @@ namespace sp {
             resonance->SetHeadRotation(rot.x, rot.y, rot.z, rot.w);
         }
 
-        ecs::ComponentEvent<ecs::Sounds> compEvent;
+        ecs::ComponentEvent<ecs::Audio> compEvent;
         while (soundObserver.Poll(lock, compEvent)) {
             if (compEvent.type == Tecs::EventType::ADDED) {
-                if (!compEvent.entity.Has<ecs::EventInput, ecs::Sounds>(lock)) continue;
-                ecs::QueueTransaction<ecs::Write<ecs::Sounds, ecs::EventInput>>(
+                if (!compEvent.entity.Has<ecs::EventInput, ecs::Audio>(lock)) continue;
+                ecs::QueueTransaction<ecs::Write<ecs::Audio, ecs::EventInput>>(
                     [this, ent = compEvent.entity](auto &lock) {
-                        if (!ent.Has<ecs::EventInput, ecs::Sounds>(lock)) return;
+                        if (!ent.Has<ecs::EventInput, ecs::Audio>(lock)) return;
 
-                        auto &sounds = ent.Get<ecs::Sounds>(lock);
-                        if (!sounds.eventQueue) sounds.eventQueue = ecs::NewEventQueue();
+                        auto &audio = ent.Get<ecs::Audio>(lock);
+                        if (!audio.eventQueue) audio.eventQueue = ecs::NewEventQueue();
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                        eventInput.Register(lock, sounds.eventQueue, "/sound/play");
-                        eventInput.Register(lock, sounds.eventQueue, "/sound/resume");
-                        eventInput.Register(lock, sounds.eventQueue, "/sound/pause");
-                        eventInput.Register(lock, sounds.eventQueue, "/sound/stop");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/play");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/resume");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/pause");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/stop");
                     });
             } else if (compEvent.type == Tecs::EventType::REMOVED) {
 
@@ -169,10 +169,10 @@ namespace sp {
         auto globalVolumeChanged = CVarVolume.Changed();
         auto globalVolume = std::min(10.0f, CVarVolume.Get(true));
 
-        for (auto ent : lock.EntitiesWith<ecs::Sounds>()) {
+        for (auto &ent : lock.EntitiesWith<ecs::Audio>()) {
             vector<size_t> *soundIDs;
 
-            auto &sources = ent.Get<ecs::Sounds>(lock);
+            auto &sources = ent.Get<ecs::Audio>(lock);
             if (soundEntityMap.count(ent) == 0) {
                 soundIDs = &soundEntityMap[ent];
                 for (auto &source : sources.sounds) {

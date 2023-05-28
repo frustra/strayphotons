@@ -1,7 +1,7 @@
 {
 	"components": {
 		"transform": {},
-		"sound": [{
+		"audio": [{
 			"file": "click1.ogg",
 			"volume": 0.3
 		}, {
@@ -131,7 +131,7 @@
 					"model": "box"
 				},
 				"group": "Interactive",
-				"force": [-0.2, 0, 0],
+				"constant_force": [-0.2, 0, 0],
 				"linear_damping": 10,
 				"angular_damping": 100,
 				"mass": 0.01

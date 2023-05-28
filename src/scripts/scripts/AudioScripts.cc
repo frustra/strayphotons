@@ -11,10 +11,10 @@ namespace sp::scripts {
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<Sounds, PhysicsQuery, TransformSnapshot>(lock)) return;
+            if (!ent.Has<Audio, PhysicsQuery, TransformSnapshot>(lock)) return;
 
-            auto &constSounds = ent.Get<const Sounds>(lock);
-            if (constSounds.occlusionWeight <= 0.0f) return;
+            auto &constAudio = ent.Get<const Audio>(lock);
+            if (constAudio.occlusionWeight <= 0.0f) return;
 
             auto listener = sp::entities::Head.Get(lock);
             if (listener.Has<TransformSnapshot>(lock)) {
@@ -36,8 +36,8 @@ namespace sp::scripts {
                 } else {
                     auto &query = physicsQuery.Lookup(raycastQuery);
                     if (query.result) {
-                        auto &sounds = ent.Get<Sounds>(lock);
-                        sounds.occlusion = query.result->hits;
+                        auto &audio = ent.Get<Audio>(lock);
+                        audio.occlusion = query.result->hits;
                         query = nextQuery;
                     }
                 }

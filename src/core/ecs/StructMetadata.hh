@@ -39,14 +39,18 @@ namespace ecs {
     };
 
     struct StructField {
-        std::string name;
+        std::string name, desc;
         std::type_index type;
         size_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
 
-        StructField(const std::string &name, std::type_index type, size_t offset, FieldAction actions)
-            : name(name), type(type), offset(offset), actions(actions) {}
+        StructField(const std::string &name,
+            const std::string &desc,
+            std::type_index type,
+            size_t offset,
+            FieldAction actions)
+            : name(name), desc(desc), type(type), offset(offset), actions(actions) {}
 
         template<typename T, typename F>
         static size_t OffsetOf(const F T::*M) {
@@ -67,7 +71,19 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
+            return StructField(name,
+                "No description",
+                std::type_index(typeid(std::remove_cv_t<F>)),
+                OffsetOf(M),
+                actions);
+        }
+
+        template<typename T, typename F>
+        static const StructField New(const std::string &name,
+            const std::string &desc,
+            const F T::*M,
+            FieldAction actions = ~FieldAction::None) {
+            return StructField(name, desc, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
         }
 
         /**
@@ -83,7 +99,7 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField::New("", M, actions);
+            return StructField::New("", "No description", M, actions);
         }
 
         /**
@@ -99,7 +115,7 @@ namespace ecs {
          */
         template<typename T>
         static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField("", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+            return StructField("", "No description", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
         }
 
         void *Access(void *structPtr) const {

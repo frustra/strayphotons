@@ -99,11 +99,23 @@ namespace ecs {
     static StructMetadata MetadataTransform(typeid(Transform),
         "Transform",
         StructField("translate",
+            "Specifies the entity's position in 3D space. "
+            "The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
             typeid(glm::vec3),
             StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
             FieldAction::None),
-        StructField("rotate", typeid(glm::mat3), StructField::OffsetOf(&Transform::offset), FieldAction::None),
-        StructField::New("scale", &Transform::scale, FieldAction::None));
+        StructField("rotate",
+            "Specifies the entity's orientation in 3D space. "
+            "Multiple rotations can be automatically combined by specifying an array of rotations: "
+            "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+            typeid(glm::mat3),
+            StructField::OffsetOf(&Transform::offset),
+            FieldAction::None),
+        StructField::New("scale",
+            "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. "
+            "If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
+            &Transform::scale,
+            FieldAction::None));
     template<>
     bool StructMetadata::Load<Transform>(Transform &dst, const picojson::value &src);
     template<>
@@ -115,7 +127,11 @@ namespace ecs {
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         "TransformTree",
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
-        StructField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
+        StructField::New("parent",
+            "Specifies a parent entity that this transform is relative to. "
+            "If empty, the transform is relative to the scene root.",
+            &TransformTree::parent,
+            ~FieldAction::AutoApply));
     static Component<TransformTree> ComponentTransformTree(MetadataTransformTree, "transform");
     static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
         "TransformSnapshot",

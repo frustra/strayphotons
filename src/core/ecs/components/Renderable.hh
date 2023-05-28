@@ -62,12 +62,25 @@ namespace ecs {
 
     static StructMetadata MetadataRenderable(typeid(Renderable),
         "renderable",
-        StructField::New("model", &Renderable::modelName),
-        StructField::New("mesh_index", &Renderable::meshIndex),
-        StructField::New("visibility", &Renderable::visibility),
-        StructField::New("emissive", &Renderable::emissiveScale),
-        StructField::New("color_override", &Renderable::colorOverride),
-        StructField::New("metallic_roughness_override", &Renderable::metallicRoughnessOverride));
+        StructField::New("model",
+            "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
+            &Renderable::modelName),
+        StructField::New("mesh_index",
+            "The index of the mesh to render from the GLTF model. "
+            "Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab.",
+            &Renderable::meshIndex),
+        StructField::New("visibility", "Visibility mask for different render passes.", &Renderable::visibility),
+        StructField::New("emissive",
+            "Emissive multiplier to turn this model into a light source",
+            &Renderable::emissiveScale),
+        StructField::New("color_override",
+            "Override the mesh's texture to a flat RGBA color. "
+            "Values are in the range 0.0 to 1.0. -1 means the original color is used.",
+            &Renderable::colorOverride),
+        StructField::New("metallic_roughness_override",
+            "Override the mesh's metallic and roughness material properties. "
+            "Values are in the range 0.0 to 1.0. -1 means the original material is used.",
+            &Renderable::metallicRoughnessOverride));
     static Component<Renderable> ComponentRenderable(MetadataRenderable);
 
     template<>

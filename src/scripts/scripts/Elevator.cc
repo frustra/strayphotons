@@ -18,9 +18,9 @@ namespace sp::scripts {
         float avgSpeed = 0.0f;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<TransformSnapshot, Sounds>(lock)) return;
+            if (!ent.Has<TransformSnapshot, Audio>(lock)) return;
             auto &transform = ent.Get<TransformSnapshot>(lock);
-            auto &sounds = ent.Get<Sounds>(lock);
+            auto &audio = ent.Get<Audio>(lock);
 
             if (!init) {
                 lastTransform = transform;
@@ -41,7 +41,7 @@ namespace sp::scripts {
                 lastTransform = transform;
                 frames = 0;
                 avgSpeed = 0.9 * avgSpeed + 0.1 * delta;
-                sounds.sounds[0].volume = std::min(1.0f, abs(avgSpeed) / 0.5f);
+                audio.sounds[0].volume = std::min(1.0f, abs(avgSpeed) / 0.5f);
             }
         }
     };
