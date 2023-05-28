@@ -5,15 +5,38 @@
 
 #include <cxxopts.hpp>
 #include <fstream>
+#include <sstream>
+
+inline std::string escapeMarkdownString(const std::string &input) {
+    size_t escapeCount = std::count(input.begin(), input.end(), '|');
+    if (escapeCount == 0) return input;
+    std::string result;
+    result.reserve(input.length() + escapeCount);
+    for (auto &ch : input) {
+        if (ch == '|') {
+            result += '\\';
+        }
+        result += ch;
+    }
+    return result;
+}
+
+template<typename T>
+struct is_unordered_map : std::false_type {};
+
+template<typename K, typename V>
+struct is_unordered_map<robin_hood::unordered_flat_map<K, V>> : std::true_type {};
+template<typename K, typename V>
+struct is_unordered_map<robin_hood::unordered_node_map<K, V>> : std::true_type {};
 
 template<typename T>
 std::string fieldTypeName() {
     if constexpr (std::is_same_v<T, bool>) {
         return "bool";
     } else if constexpr (std::is_same_v<T, int32_t>) {
-        return "int32_t";
+        return "int32";
     } else if constexpr (std::is_same_v<T, uint32_t>) {
-        return "uint32_t";
+        return "uint32";
     } else if constexpr (std::is_same_v<T, size_t>) {
         return "size_t";
     } else if constexpr (std::is_same_v<T, sp::angle_t>) {
@@ -30,6 +53,8 @@ std::string fieldTypeName() {
         return "vec4 (red, green, blue, alpha)";
     } else if constexpr (std::is_same_v<T, glm::quat>) {
         return "vec4 (angle_degrees, axis_x, axis_y, axis_z)";
+    } else if constexpr (std::is_same_v<T, glm::mat3>) {
+        return "vec4 (angle_degrees, axis_x, axis_y, axis_z)";
     } else if constexpr (sp::is_glm_vec<T>()) {
         using U = typename T::value_type;
 
@@ -45,10 +70,13 @@ std::string fieldTypeName() {
             return typeid(T).name();
         }
     } else if constexpr (sp::is_vector<T>()) {
-        return "vector<" + fieldTypeName<typename T::value_type>() + ">";
+        return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
+    } else if constexpr (is_unordered_map<T>()) {
+        return "map&lt;" + fieldTypeName<typename T::key_type>() + ", " + fieldTypeName<typename T::mapped_type>() +
+               "&gt;";
     } else if constexpr (std::is_enum<T>()) {
         if constexpr (is_flags_enum<T>()) {
-            return "flags \"" + magic_enum::enum_flags_name(~(T)0) + "\"";
+            return escapeMarkdownString("flags \""s + magic_enum::enum_flags_name(~(T)0) + "\"");
         } else {
             std::string result = "enum ";
             static const auto names = magic_enum::enum_names<T>();
@@ -70,8 +98,8 @@ std::string fieldTypeName() {
 }
 
 template<typename T>
-void saveFields(std::ofstream &file) {
-    static const T defaultValue = {};
+void saveFields(std::stringstream &ss) {
+    static const T defaultStruct = {};
 
     auto *metadataPtr = ecs::StructMetadata::Get(typeid(T));
     if (!metadataPtr) {
@@ -81,27 +109,33 @@ void saveFields(std::ofstream &file) {
     auto &metadata = *metadataPtr;
 
     for (auto &field : metadata.fields) {
-        picojson::value output;
-        field.Save(ecs::EntityScope(), output, &defaultValue, nullptr);
+        const void *fieldPtr = field.Access(&defaultStruct);
 
-        ecs::GetFieldType(field.type, [&](auto *typePtr) {
-            using U = std::remove_pointer_t<decltype(typePtr)>;
+        ecs::GetFieldType(field.type, fieldPtr, [&](auto &defaultValue) {
+            using U = std::decay_t<decltype(defaultValue)>;
+
+            picojson::value output;
+            output.set<picojson::object>({});
+            sp::json::Save(ecs::EntityScope(), output, defaultValue);
 
             if (field.name.empty()) {
                 if constexpr (std::is_enum<U>()) {
-                    file << "| **" << metadata.name << "** | " << fieldTypeName<U>() << " | " << output.serialize()
-                         << " | No description |" << std::endl;
+                    ss << "|   | " << fieldTypeName<U>() << " | " << escapeMarkdownString(output.serialize())
+                       << " | No description |" << std::endl;
                 } else if constexpr (sp::is_vector<U>()) {
-                    file << "| **" << metadata.name << "** | " << fieldTypeName<U>() << " | " << output.serialize()
-                         << " | No description |" << std::endl;
+                    ss << "|   | " << fieldTypeName<U>() << " | " << escapeMarkdownString(output.serialize())
+                       << " | No description |" << std::endl;
+                } else if constexpr (is_unordered_map<U>()) {
+                    ss << "|   | " << fieldTypeName<U>() << " | " << escapeMarkdownString(output.serialize())
+                       << " | No description |" << std::endl;
                 } else if constexpr (!std::is_same_v<T, U>) {
-                    saveFields<U>(file);
+                    saveFields<U>(ss);
                 } else {
                     Abortf("Unknown self reference state: %s", metadata.name);
                 }
             } else {
-                file << "| **" << field.name << "** | " << fieldTypeName<U>() << " | " << output.serialize()
-                     << " | No description |" << std::endl;
+                ss << "| **" << field.name << "** | " << fieldTypeName<U>() << " | "
+                   << escapeMarkdownString(output.serialize()) << " | No description |" << std::endl;
             }
         });
     }
@@ -134,13 +168,19 @@ int main(int argc, char **argv) {
     ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
         file << "## `" << name << "` Component" << std::endl;
 
-        file << "| Field Name | Type | Default Value | Description |" << std::endl;
-        file << "|------------|------|---------------|-------------|" << std::endl;
-
+        std::stringstream ss;
         ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
-            saveFields<T>(file);
+            saveFields<T>(ss);
         });
+
+        if (ss.view().empty()) {
+            file << "This component has no public fields" << std::endl;
+        } else {
+            file << "| Field Name | Type | Default Value | Description |" << std::endl;
+            file << "|------------|------|---------------|-------------|" << std::endl;
+            file << ss.view();
+        }
 
         file << std::endl << std::endl;
     });

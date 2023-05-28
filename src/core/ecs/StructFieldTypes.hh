@@ -46,6 +46,7 @@ namespace ecs {
         sp::color_t,
         sp::color_alpha_t,
         glm::quat,
+        glm::mat3,
 
         // Structs
         EntityRef,

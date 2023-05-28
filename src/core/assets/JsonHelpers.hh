@@ -121,6 +121,13 @@ namespace sp::json {
         return true;
     }
     template<>
+    inline bool Load(glm::mat3 &dst, const picojson::value &src) {
+        glm::quat q;
+        if (!Load(q, src)) return false;
+        dst = glm::mat3_cast(q);
+        return true;
+    }
+    template<>
     inline bool Load(std::string &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         dst = src.get<std::string>();
@@ -255,6 +262,10 @@ namespace sp::json {
         if (r[0] > 180.0f) r[0] -= 360.0f;
         if (r[0] < 0) r = -r;
         detail::SaveVec<4>(dst, r);
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::mat3 &src) {
+        Save(s, dst, glm::quat_cast(src));
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::string &src) {

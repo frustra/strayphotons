@@ -101,8 +101,9 @@ namespace ecs {
         StructField("translate",
             typeid(glm::vec3),
             StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
-            FieldAction::AutoApply),
-        StructField::New("scale", &Transform::scale, FieldAction::AutoApply));
+            FieldAction::None),
+        StructField("rotate", typeid(glm::mat3), StructField::OffsetOf(&Transform::offset), FieldAction::None),
+        StructField::New("scale", &Transform::scale, FieldAction::None));
     template<>
     bool StructMetadata::Load<Transform>(Transform &dst, const picojson::value &src);
     template<>
