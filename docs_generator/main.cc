@@ -183,6 +183,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    std::set<std::string> savedDocs;
+
     ecs::EntityScope scope;
     ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
         file << "## `" << name << "` Component" << std::endl;
@@ -208,11 +210,10 @@ int main(int argc, char **argv) {
         }
 
         if (!docs.references.empty()) {
-            std::set<std::string> savedRefs;
-            std::vector<std::string> seeAlso;
+            std::set<std::string> seeAlso;
 
             auto saveReferencedType = [&](const std::string &refName, const std::type_index &refType, auto &selfFunc) {
-                savedRefs.emplace(refName);
+                savedDocs.emplace(refName);
 
                 DocsContext refDocs;
                 bool isEnumFlags = false;
@@ -236,7 +237,7 @@ int main(int argc, char **argv) {
                 });
 
                 if (refDocs.fields.empty()) {
-                    seeAlso.emplace_back(refName);
+                    seeAlso.emplace(refName);
                     return;
                 }
 
@@ -263,8 +264,10 @@ int main(int argc, char **argv) {
                 }
 
                 for (auto &[subRefName, subRefType] : refDocs.references) {
-                    if (!savedRefs.count(subRefName)) {
+                    if (!savedDocs.count(subRefName)) {
                         selfFunc(subRefName, subRefType, selfFunc);
+                    } else {
+                        seeAlso.emplace(subRefName);
                     }
                 }
             };
