@@ -137,7 +137,7 @@
 			"light": {
 				"tint": [1, 0.8, 0.8],
 				"intensity": 500,
-				"spotAngle": 20
+				"spot_angle": 20
 			},
 			"script": {
 				"prefab": "template",
@@ -191,7 +191,7 @@
 			"light": {
 				"tint": [0.8, 0.8, 1],
 				"intensity": 500,
-				"spotAngle": 20
+				"spot_angle": 20
 			},
 			"script": {
 				"prefab": "template",

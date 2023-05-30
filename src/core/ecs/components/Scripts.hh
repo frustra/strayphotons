@@ -84,9 +84,9 @@ namespace ecs {
     };
 
     static StructMetadata MetadataScripts(typeid(Scripts),
-        "script",
+        "Scripts",
         StructField::New(&Scripts::scripts, ~FieldAction::AutoApply));
-    static Component<Scripts> ComponentScripts(MetadataScripts);
+    static Component<Scripts> ComponentScripts(MetadataScripts, "script");
 
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);

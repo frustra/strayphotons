@@ -179,12 +179,12 @@ namespace ecs {
             "Only used for \"SubActor\" type. If empty, the parent actor is determined by the `transform` parent.",
             &Physics::parentActor),
         StructField::New("mass",
-            "The weight of the physics actor in Kilograms (kg). If set to 0, **density** is used instead. "
+            "The weight of the physics actor in Kilograms (kg). Overrides **density** field. "
             "Only used for \"Dynamic\" objects.",
             &Physics::mass),
         StructField::New("density",
-            "The density of the physics actor in Kilograms per Cubic Meter (kg/m^3). Overriden if **mass** != 0."
-            "Only used for \"Dynamic\" objects.",
+            "The density of the physics actor in Kilograms per Cubic Meter (kg/m^3). "
+            "This value is ignored if **mass** != 0. Only used for \"Dynamic\" objects.",
             &Physics::density),
         StructField::New("angular_damping",
             "Resistance to changes in rotational velocity. Affects how quickly the entity will stop spinning. (>= 0.0)",

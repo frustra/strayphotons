@@ -62,8 +62,8 @@
 			"light": {
 				"tint": [1, 0.7, 0.235],
 				"intensity": 100,
-				"spotAngle": 85,
-				"shadowMapSize": 9
+				"spot_angle": 85,
+				"shadow_map_size": 9
 			},
 			"transform": {
 				"translate": [0, 4.2, 0],
@@ -74,8 +74,8 @@
 			"light": {
 				"tint": [1, 0.7, 0.235],
 				"intensity": 100,
-				"spotAngle": 30,
-				"shadowMapSize": 9
+				"spot_angle": 30,
+				"shadow_map_size": 9
 			},
 			"transform": {
 				"translate": [0, 3.0, 0],

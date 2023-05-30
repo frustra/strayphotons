@@ -60,9 +60,9 @@
 			"light": {
 				"tint": [0.5, 0.5, 1],
 				"intensity": 10,
-				"spotAngle": 60,
-				"shadowMapSize": 11,
-				"shadowMapClip": [0.1, 70]
+				"spot_angle": 60,
+				"shadow_map_size": 11,
+				"shadow_map_clip": [0.1, 70]
 			},
 			"transform": {
 				"parent": "scoperoot",

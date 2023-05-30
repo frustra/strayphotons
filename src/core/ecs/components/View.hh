@@ -58,7 +58,7 @@ namespace ecs {
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),
         StructField::New("clip", &View::clip),
-        StructField::New("visibilityMask", &View::visibilityMask));
+        StructField::New("visibility_mask", &View::visibilityMask));
     static Component<View> ComponentView(MetadataView);
 
     template<>

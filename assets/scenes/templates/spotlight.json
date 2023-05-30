@@ -3,10 +3,10 @@
 		"light": {
 			"tint": [1, 0.8, 0.8],
 			"intensity": 300,
-			"spotAngle": 50,
+			"spot_angle": 50,
 			"bulb": "bulb",
-			"shadowMapSize": 10,
-			"shadowMapClip": [0.01, 70]
+			"shadow_map_size": 10,
+			"shadow_map_clip": [0.01, 70]
 		}
 	},
 	"entities": [

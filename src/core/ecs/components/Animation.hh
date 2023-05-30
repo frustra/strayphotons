@@ -19,7 +19,7 @@ namespace ecs {
         double delay = 0.0;
 
         glm::vec3 pos = glm::vec3(0);
-        glm::vec3 scale = glm::vec3(-INFINITY);
+        glm::vec3 scale = glm::vec3(0);
 
         // derivative vectors, used for cubic interpolation only
         glm::vec3 tangentPos = glm::vec3(0);
@@ -33,11 +33,19 @@ namespace ecs {
 
     static StructMetadata MetadataAnimationState(typeid(AnimationState),
         "AnimationState",
-        StructField::New("delay", &AnimationState::delay),
-        StructField::New("translate", &AnimationState::pos),
-        StructField::New("scale", &AnimationState::scale),
-        StructField::New("translate_tangent", &AnimationState::tangentPos),
-        StructField::New("scale_tangent", &AnimationState::tangentScale));
+        StructField::New("delay",
+            "The time it takes to move to this state from any other state (in seconds)",
+            &AnimationState::delay),
+        StructField::New("translate", "A new position to override this entity's `transform`", &AnimationState::pos),
+        StructField::New("scale",
+            "A new scale to override this entity's `transform`. A scale of 0 will leave the transform unchanged.",
+            &AnimationState::scale),
+        StructField::New("translate_tangent",
+            "Cubic interpolation tangent vector for **translate** (represents speed)",
+            &AnimationState::tangentPos),
+        StructField::New("scale_tangent",
+            "Cubic interpolation tangent vector for **scale** (represents rate of scaling)",
+            &AnimationState::tangentScale));
 
     class Animation {
     public:

@@ -25,7 +25,7 @@
 			"physics_query": {},
 			"view": {
 				"clip": [0.05, 350],
-				"visibilityMask": "DirectCamera"
+				"visibility_mask": "DirectCamera"
 			},
 			"event_input": {},
 			"signal_output": {},
@@ -69,8 +69,8 @@
 			},
 			"light": {
 				"gel": "asset:textures/flashlight.png",
-				"shadowMapClip": [0.1, 64],
-				"shadowMapSize": 11,
+				"shadow_map_clip": [0.1, 64],
+				"shadow_map_size": 11,
 				"tint": [1, 1, 1]
 			},
 			"event_input": {},
