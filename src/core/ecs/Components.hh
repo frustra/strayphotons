@@ -220,5 +220,5 @@ namespace ecs {
     static StructMetadata MetadataSceneInfo(typeid(SceneInfo), "SceneInfo");
     static Component<SceneInfo> ComponentSceneInfo(MetadataSceneInfo);
 
-    StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef");
+    static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef");
 }; // namespace ecs

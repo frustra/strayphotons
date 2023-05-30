@@ -24,7 +24,7 @@ namespace sp {
     using namespace physx;
 
     static CVar<float> CVarCharacterMovementSpeed("p.CharacterMovementSpeed",
-        1.0,
+        3.0,
         "Character controller movement speed (m/s)");
     static CVar<float> CVarCharacterSprintSpeed("p.CharacterSprintSpeed",
         5.0,
