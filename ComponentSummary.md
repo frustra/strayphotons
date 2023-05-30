@@ -1,4 +1,4 @@
-## `SceneProperties` Component
+## `scene_properties` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **root_transform** | `Transform` | {} | No description |

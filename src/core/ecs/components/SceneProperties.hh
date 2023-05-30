@@ -26,7 +26,7 @@ namespace ecs {
         StructField::New("root_transform", &SceneProperties::rootTransform, FieldAction::AutoApply),
         StructField::New("gravity_transform", &SceneProperties::gravityTransform),
         StructField::New("gravity", &SceneProperties::fixedGravity));
-    static Component<SceneProperties> ComponentSceneProperties(MetadataSceneProperties);
+    static Component<SceneProperties> ComponentSceneProperties(MetadataSceneProperties, "scene_properties");
 
     template<>
     bool StructMetadata::Load<SceneProperties>(SceneProperties &dst, const picojson::value &src);
