@@ -1,0 +1,1096 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"definitions": {
+		"AnimationState": {
+			"properties": {
+				"delay": {
+					"default": 0,
+					"description": "The time it takes to move to this state from any other state (in seconds)",
+					"type": "number"
+				},
+				"scale": {
+					"default": [0, 0, 0],
+					"description": "A new scale to override this entity's `transform`. A scale of 0 will leave the transform unchanged.",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array"
+				},
+				"scale_tangent": {
+					"default": [0, 0, 0],
+					"description": "Cubic interpolation tangent vector for **scale** (represents rate of scaling)",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array"
+				},
+				"translate": {
+					"default": [0, 0, 0],
+					"description": "A new position to override this entity's `transform`",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array"
+				},
+				"translate_tangent": {
+					"default": [0, 0, 0],
+					"description": "Cubic interpolation tangent vector for **translate** (represents speed)",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array"
+				}
+			},
+			"type": "object"
+		},
+		"EntityRef": {
+			"type": "string"
+		},
+		"EventBinding": {
+			"properties": {
+				"filter": {
+					"$ref": "#/definitions/SignalExpression",
+					"default": null,
+					"description": "No description"
+				},
+				"modify": {
+					"anyOf": [
+						{
+							"$ref": "#/definitions/SignalExpression"
+						},
+						{
+							"items": {
+								"$ref": "#/definitions/SignalExpression"
+							},
+							"type": "array"
+						}
+					],
+					"default": [],
+					"description": "No description"
+				},
+				"outputs": {
+					"anyOf": [
+						{
+							"$ref": "#/definitions/EventDest"
+						},
+						{
+							"items": {
+								"$ref": "#/definitions/EventDest"
+							},
+							"type": "array"
+						}
+					],
+					"default": [],
+					"description": "No description"
+				},
+				"set_value": {
+					"$ref": "#/definitions/EventData",
+					"default": null,
+					"description": "No description"
+				}
+			},
+			"type": "object"
+		},
+		"EventData": {},
+		"EventDest": {
+			"type": "string"
+		},
+		"GuiTarget": {
+			"enum": [
+				"None",
+				"World",
+				"Debug"
+			],
+			"type": "string"
+		},
+		"InterpolationMode": {
+			"enum": [
+				"Step",
+				"Linear",
+				"Cubic"
+			],
+			"type": "string"
+		},
+		"PhysicsActorType": {
+			"enum": [
+				"Static",
+				"Dynamic",
+				"Kinematic",
+				"SubActor"
+			],
+			"type": "string"
+		},
+		"PhysicsGroup": {
+			"enum": [
+				"NoClip",
+				"World",
+				"Interactive",
+				"HeldObject",
+				"Player",
+				"PlayerLeftHand",
+				"PlayerRightHand",
+				"UserInterface"
+			],
+			"type": "string"
+		},
+		"PhysicsJoint": {
+			"properties": {
+				"limit": {
+					"default": [0, 0],
+					"description": "No description",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 2,
+					"minItems": 2,
+					"type": "array"
+				},
+				"local_offset": {
+					"$ref": "#/definitions/Transform",
+					"default": {
+						"rotate": [0, 0, 0, 1],
+						"scale": [1, 1, 1],
+						"translate": [0, 0, 0]
+					},
+					"description": "No description"
+				},
+				"remote_offset": {
+					"$ref": "#/definitions/Transform",
+					"default": {
+						"rotate": [0, 0, 0, 1],
+						"scale": [1, 1, 1],
+						"translate": [0, 0, 0]
+					},
+					"description": "No description"
+				},
+				"target": {
+					"$ref": "#/definitions/EntityRef",
+					"default": null,
+					"description": "No description"
+				},
+				"type": {
+					"$ref": "#/definitions/PhysicsJointType",
+					"default": "Fixed",
+					"description": "No description"
+				}
+			},
+			"type": "object"
+		},
+		"PhysicsJointType": {
+			"enum": [
+				"Fixed",
+				"Distance",
+				"Spherical",
+				"Hinge",
+				"Slider",
+				"Force",
+				"NoClip",
+				"TemporaryNoClip"
+			],
+			"type": "string"
+		},
+		"PhysicsShape": {},
+		"ScriptInstance": {},
+		"SignalExpression": {
+			"type": "string"
+		},
+		"Sound": {
+			"properties": {
+				"file": {
+					"default": "",
+					"description": "No description",
+					"type": "string"
+				},
+				"loop": {
+					"default": false,
+					"description": "No description",
+					"type": "boolean"
+				},
+				"play_on_load": {
+					"default": false,
+					"description": "No description",
+					"type": "boolean"
+				},
+				"type": {
+					"$ref": "#/definitions/SoundType",
+					"default": "Object",
+					"description": "No description"
+				},
+				"volume": {
+					"default": 1,
+					"description": "No description",
+					"type": "number"
+				}
+			},
+			"type": "object"
+		},
+		"SoundType": {
+			"enum": [
+				"Object",
+				"Stereo",
+				"Ambisonic"
+			],
+			"type": "string"
+		},
+		"Transform": {
+			"properties": {
+				"rotate": {
+					"default": [0, 0, 0, 1],
+					"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+					"maxItems": 4,
+					"minItems": 4,
+					"prefixItems": [
+						{
+							"exclusiveMaximum": 360,
+							"exclusiveMinimum": -360,
+							"type": "number"
+						},
+						{
+							"maximum": 1,
+							"minimum": -1,
+							"type": "number"
+						},
+						{
+							"maximum": 1,
+							"minimum": -1,
+							"type": "number"
+						},
+						{
+							"maximum": 1,
+							"minimum": -1,
+							"type": "number"
+						}
+					],
+					"type": "array"
+				},
+				"scale": {
+					"default": [1, 1, 1],
+					"description": "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array"
+				},
+				"translate": {
+					"default": [0, 0, 0],
+					"description": "Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
+					"items": {
+						"type": "number"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array"
+				}
+			},
+			"type": "object"
+		},
+		"TriggerGroup": {
+			"enum": [
+				"Player",
+				"Object",
+				"Magnetic"
+			],
+			"type": "string"
+		},
+		"TriggerShape": {
+			"enum": [
+				"Box",
+				"Sphere"
+			],
+			"type": "string"
+		},
+		"VisibilityMask": {
+			"type": "string"
+		},
+		"XrEye": {
+			"enum": [
+				"Left",
+				"Right"
+			],
+			"type": "string"
+		},
+		"name": {}
+	},
+	"properties": {
+		"entities": {
+			"items": {
+				"properties": {
+					"animation": {
+						"default": {},
+						"properties": {
+							"cubic_tension": {
+								"default": 0.5,
+								"description": "No description",
+								"type": "number"
+							},
+							"interpolation": {
+								"$ref": "#/definitions/InterpolationMode",
+								"default": "Linear",
+								"description": "No description"
+							},
+							"states": {
+								"anyOf": [
+									{
+										"$ref": "#/definitions/AnimationState"
+									},
+									{
+										"items": {
+											"$ref": "#/definitions/AnimationState"
+										},
+										"type": "array"
+									}
+								],
+								"default": [],
+								"description": "No description"
+							}
+						},
+						"type": "object"
+					},
+					"audio": {
+						"anyOf": [
+							{
+								"$ref": "#/definitions/Sound"
+							},
+							{
+								"items": {
+									"$ref": "#/definitions/Sound"
+								},
+								"type": "array"
+							}
+						],
+						"default": [],
+						"description": "The `audio` component is serialized directly as an array",
+						"properties": {}
+					},
+					"character_controller": {
+						"default": {},
+						"properties": {
+							"head": {
+								"$ref": "#/definitions/EntityRef",
+								"default": null,
+								"description": "No description"
+							}
+						},
+						"type": "object"
+					},
+					"event_bindings": {
+						"additionalProperties": {
+							"anyOf": [
+								{
+									"$ref": "#/definitions/EventBinding"
+								},
+								{
+									"items": {
+										"$ref": "#/definitions/EventBinding"
+									},
+									"type": "array"
+								}
+							]
+						},
+						"default": {},
+						"description": "The `event_bindings` component is serialized directly as a map",
+						"properties": {},
+						"type": "object"
+					},
+					"event_input": {
+						"default": {},
+						"properties": {},
+						"type": "object"
+					},
+					"gui": {
+						"default": {},
+						"properties": {
+							"target": {
+								"$ref": "#/definitions/GuiTarget",
+								"default": "World",
+								"description": "No description"
+							},
+							"window_name": {
+								"default": "",
+								"description": "No description",
+								"type": "string"
+							}
+						},
+						"type": "object"
+					},
+					"laser_emitter": {
+						"default": {},
+						"properties": {
+							"color": {
+								"default": [0, 0, 0],
+								"description": "No description",
+								"items": {
+									"maximum": 1,
+									"minimum": 0,
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"intensity": {
+								"default": 1,
+								"description": "No description",
+								"type": "number"
+							},
+							"on": {
+								"default": true,
+								"description": "No description",
+								"type": "boolean"
+							},
+							"start_distance": {
+								"default": 0,
+								"description": "No description",
+								"type": "number"
+							}
+						},
+						"type": "object"
+					},
+					"laser_line": {
+						"default": {},
+						"properties": {
+							"intensity": {
+								"default": 1,
+								"description": "No description",
+								"type": "number"
+							},
+							"media_density": {
+								"default": 0.6,
+								"description": "No description",
+								"type": "number"
+							},
+							"on": {
+								"default": true,
+								"description": "No description",
+								"type": "boolean"
+							},
+							"radius": {
+								"default": 0.003,
+								"description": "No description",
+								"type": "number"
+							},
+							"relative": {
+								"default": true,
+								"description": "No description",
+								"type": "boolean"
+							}
+						},
+						"type": "object"
+					},
+					"laser_sensor": {
+						"default": {},
+						"properties": {
+							"threshold": {
+								"default": [0.5, 0.5, 0.5],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							}
+						},
+						"type": "object"
+					},
+					"light": {
+						"default": {},
+						"properties": {
+							"gel": {
+								"default": "",
+								"description": "A lighting gel (or light filter) texture to be applied to this light. Asset textures can be referenced with the format \"asset:<asset_path>.png\", or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
+								"type": "string"
+							},
+							"illuminance": {
+								"default": 0,
+								"description": "The brightness of the light measured in lux (lumens per square meter). This has the behavior of making the light's brightness independant of distance from the light. Overrides **intensity** field.",
+								"type": "number"
+							},
+							"intensity": {
+								"default": 0,
+								"description": "The brightness of the light measured in candela (lumens per solid angle). This value is ignored if **illuminance** != 0.",
+								"type": "number"
+							},
+							"on": {
+								"default": true,
+								"description": "A flag to turn this light on and off without changing the light's values.",
+								"type": "boolean"
+							},
+							"shadow_map_clip": {
+								"default": [0.1, 256],
+								"description": "The near and far clipping plane distances for this light. For example, with a clip value of `[1, 10]`, light won't start hitting objects until the near plane, 1 meter from the light. The light will then cast shadows for the next 9 meters until the far plane, 10 meters from the light.",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"shadow_map_size": {
+								"default": 9,
+								"description": "All shadow maps are square powers of 2 in resolution. Each light's shadow map resolution is defined as `2^shadow_map_size`. For example, a map size of 10 would result in a 1024x1024 shadow map resolution.",
+								"type": "integer"
+							},
+							"spot_angle": {
+								"default": 0,
+								"description": "The angle from the middle to the edge of the light's field of view cone. This will be half the light's overall field of view.",
+								"exclusiveMaximum": 360,
+								"exclusiveMinimum": -360,
+								"type": "number"
+							},
+							"tint": {
+								"default": [1, 1, 1],
+								"description": "The color of light to be emitted",
+								"items": {
+									"maximum": 1,
+									"minimum": 0,
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							}
+						},
+						"type": "object"
+					},
+					"light_sensor": {
+						"default": {},
+						"properties": {
+							"color_value": {
+								"default": [0, 0, 0],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"direction": {
+								"default": [0, 0, -1],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"position": {
+								"default": [0, 0, 0],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							}
+						},
+						"type": "object"
+					},
+					"name": {
+						"$ref": "#/definitions/name",
+						"default": "",
+						"description": "No description",
+						"properties": {}
+					},
+					"optic": {
+						"default": {},
+						"properties": {
+							"pass_tint": {
+								"default": [0, 0, 0],
+								"description": "No description",
+								"items": {
+									"maximum": 1,
+									"minimum": 0,
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"reflect_tint": {
+								"default": [1, 1, 1],
+								"description": "No description",
+								"items": {
+									"maximum": 1,
+									"minimum": 0,
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"single_direction": {
+								"default": false,
+								"description": "No description",
+								"type": "boolean"
+							}
+						},
+						"type": "object"
+					},
+					"physics": {
+						"default": {},
+						"properties": {
+							"angular_damping": {
+								"default": 0.05,
+								"description": "Resistance to changes in rotational velocity. Affects how quickly the entity will stop spinning. (>= 0.0)",
+								"type": "number"
+							},
+							"constant_force": {
+								"default": [0, 0, 0],
+								"description": "A vector defining a constant force (in Newtons, N) that should be applied to the actor. The force vector is applied relative to the actor at its center of mass.",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"contact_report_force": {
+								"default": -1,
+								"description": "The minimum collision force required to trigger a contact event. Force-based contact events are enabled if this value is >= 0.0",
+								"type": "number"
+							},
+							"density": {
+								"default": 1000,
+								"description": "The density of the physics actor in Kilograms per Cubic Meter (kg/m^3). This value is ignored if **mass** != 0. Only used for \"Dynamic\" objects.",
+								"type": "number"
+							},
+							"group": {
+								"$ref": "#/definitions/PhysicsGroup",
+								"default": "World",
+								"description": "The collision group that this actor belongs to."
+							},
+							"linear_damping": {
+								"default": 0,
+								"description": "Resistance to changes in linear velocity. Affects how quickly the entity will stop moving. (>= 0.0)",
+								"type": "number"
+							},
+							"mass": {
+								"default": 0,
+								"description": "The weight of the physics actor in Kilograms (kg). Overrides **density** field. Only used for \"Dynamic\" objects.",
+								"type": "number"
+							},
+							"parent_actor": {
+								"$ref": "#/definitions/EntityRef",
+								"default": null,
+								"description": "Only used for \"SubActor\" type. If empty, the parent actor is determined by the `transform` parent."
+							},
+							"shapes": {
+								"anyOf": [
+									{
+										"$ref": "#/definitions/PhysicsShape"
+									},
+									{
+										"items": {
+											"$ref": "#/definitions/PhysicsShape"
+										},
+										"type": "array"
+									}
+								],
+								"default": [],
+								"description": "A list of individual shapes and models that combine to form the actor's overall collision shape."
+							},
+							"type": {
+								"$ref": "#/definitions/PhysicsActorType",
+								"default": "Dynamic",
+								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor."
+							}
+						},
+						"type": "object"
+					},
+					"physics_joints": {
+						"anyOf": [
+							{
+								"$ref": "#/definitions/PhysicsJoint"
+							},
+							{
+								"items": {
+									"$ref": "#/definitions/PhysicsJoint"
+								},
+								"type": "array"
+							}
+						],
+						"default": [],
+						"description": "The `physics_joints` component is serialized directly as an array",
+						"properties": {}
+					},
+					"physics_query": {
+						"default": {},
+						"properties": {},
+						"type": "object"
+					},
+					"renderable": {
+						"default": {},
+						"properties": {
+							"color_override": {
+								"default": [-1, -1, -1, -1],
+								"description": "Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used.",
+								"items": {
+									"maximum": 1,
+									"minimum": 0,
+									"type": "number"
+								},
+								"maxItems": 4,
+								"minItems": 4,
+								"type": "array"
+							},
+							"emissive": {
+								"default": 0,
+								"description": "Emissive multiplier to turn this model into a light source",
+								"type": "number"
+							},
+							"mesh_index": {
+								"default": 0,
+								"description": "The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab.",
+								"type": "integer"
+							},
+							"metallic_roughness_override": {
+								"default": [-1, -1],
+								"description": "Override the mesh's metallic and roughness material properties. Values are in the range 0.0 to 1.0. -1 means the original material is used.",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"model": {
+								"default": "",
+								"description": "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
+								"type": "string"
+							},
+							"visibility": {
+								"$ref": "#/definitions/VisibilityMask",
+								"default": "DirectCamera|DirectEye|LightingShadow|LightingVoxel",
+								"description": "Visibility mask for different render passes."
+							}
+						},
+						"type": "object"
+					},
+					"scene_connection": {
+						"additionalProperties": {
+							"anyOf": [
+								{
+									"$ref": "#/definitions/SignalExpression"
+								},
+								{
+									"items": {
+										"$ref": "#/definitions/SignalExpression"
+									},
+									"type": "array"
+								}
+							]
+						},
+						"default": {},
+						"description": "The `scene_connection` component is serialized directly as a map",
+						"properties": {},
+						"type": "object"
+					},
+					"scene_properties": {
+						"default": {},
+						"properties": {
+							"gravity": {
+								"default": [0, -9.81, 0],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"gravity_transform": {
+								"$ref": "#/definitions/Transform",
+								"default": {
+									"rotate": [0, 0, 0, 1],
+									"scale": [1, 1, 1],
+									"translate": [0, 0, 0]
+								},
+								"description": "No description"
+							},
+							"root_transform": {
+								"$ref": "#/definitions/Transform",
+								"default": {
+									"rotate": [0, 0, 0, 1],
+									"scale": [1, 1, 1],
+									"translate": [0, 0, 0]
+								},
+								"description": "No description"
+							}
+						},
+						"type": "object"
+					},
+					"screen": {
+						"default": {},
+						"properties": {
+							"luminance": {
+								"default": [1, 1, 1],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"target": {
+								"default": "",
+								"description": "No description",
+								"type": "string"
+							}
+						},
+						"type": "object"
+					},
+					"script": {
+						"anyOf": [
+							{
+								"$ref": "#/definitions/ScriptInstance"
+							},
+							{
+								"items": {
+									"$ref": "#/definitions/ScriptInstance"
+								},
+								"type": "array"
+							}
+						],
+						"default": [],
+						"description": "The `Scripts` component is serialized directly as an array",
+						"properties": {}
+					},
+					"signal_bindings": {
+						"additionalProperties": {
+							"$ref": "#/definitions/SignalExpression"
+						},
+						"default": {},
+						"description": "The `signal_bindings` component is serialized directly as a map",
+						"properties": {},
+						"type": "object"
+					},
+					"signal_output": {
+						"additionalProperties": {
+							"type": "number"
+						},
+						"default": {},
+						"description": "The `signal_output` component is serialized directly as a map",
+						"properties": {},
+						"type": "object"
+					},
+					"transform": {
+						"default": {},
+						"properties": {
+							"parent": {
+								"$ref": "#/definitions/EntityRef",
+								"default": null,
+								"description": "Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root."
+							},
+							"rotate": {
+								"default": [0, 0, 0, 1],
+								"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+								"maxItems": 4,
+								"minItems": 4,
+								"prefixItems": [
+									{
+										"exclusiveMaximum": 360,
+										"exclusiveMinimum": -360,
+										"type": "number"
+									},
+									{
+										"maximum": 1,
+										"minimum": -1,
+										"type": "number"
+									},
+									{
+										"maximum": 1,
+										"minimum": -1,
+										"type": "number"
+									},
+									{
+										"maximum": 1,
+										"minimum": -1,
+										"type": "number"
+									}
+								],
+								"type": "array"
+							},
+							"scale": {
+								"default": [1, 1, 1],
+								"description": "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"translate": {
+								"default": [0, 0, 0],
+								"description": "Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							}
+						},
+						"type": "object"
+					},
+					"transform_snapshot": {
+						"default": {},
+						"properties": {
+							"rotate": {
+								"default": [0, 0, 0, 1],
+								"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+								"maxItems": 4,
+								"minItems": 4,
+								"prefixItems": [
+									{
+										"exclusiveMaximum": 360,
+										"exclusiveMinimum": -360,
+										"type": "number"
+									},
+									{
+										"maximum": 1,
+										"minimum": -1,
+										"type": "number"
+									},
+									{
+										"maximum": 1,
+										"minimum": -1,
+										"type": "number"
+									},
+									{
+										"maximum": 1,
+										"minimum": -1,
+										"type": "number"
+									}
+								],
+								"type": "array"
+							},
+							"scale": {
+								"default": [1, 1, 1],
+								"description": "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"translate": {
+								"default": [0, 0, 0],
+								"description": "Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							}
+						},
+						"type": "object"
+					},
+					"trigger_area": {
+						"$ref": "#/definitions/TriggerShape",
+						"default": "Box",
+						"description": "The `trigger_area` component is serialized directly as an enum string",
+						"properties": {}
+					},
+					"trigger_group": {
+						"$ref": "#/definitions/TriggerGroup",
+						"default": "Player",
+						"description": "The `trigger_group` component is serialized directly as an enum string",
+						"properties": {}
+					},
+					"view": {
+						"default": {},
+						"properties": {
+							"clip": {
+								"default": [0.1, 256],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"extents": {
+								"default": [0, 0],
+								"description": "No description",
+								"items": {
+									"type": "integer"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"fov": {
+								"default": 0,
+								"description": "No description",
+								"exclusiveMaximum": 360,
+								"exclusiveMinimum": -360,
+								"type": "number"
+							},
+							"offset": {
+								"default": [0, 0],
+								"description": "No description",
+								"items": {
+									"type": "integer"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"visibility_mask": {
+								"$ref": "#/definitions/VisibilityMask",
+								"default": "",
+								"description": "No description"
+							}
+						},
+						"type": "object"
+					},
+					"voxel_area": {
+						"default": {},
+						"properties": {
+							"extents": {
+								"default": [128, 128, 128],
+								"description": "No description",
+								"items": {
+									"type": "integer"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							}
+						},
+						"type": "object"
+					},
+					"xr_view": {
+						"$ref": "#/definitions/XrEye",
+						"default": "Left",
+						"description": "The `xr_view` component is serialized directly as an enum string",
+						"properties": {}
+					}
+				},
+				"type": "object"
+			},
+			"type": "array"
+		}
+	},
+	"title": "Scene Definition",
+	"type": "object"
+}

@@ -25,5 +25,11 @@
         "ext/**/*.cpp": true
     },
     "C_Cpp.exclusionPolicy": "checkFilesAndFolders",
-    "C_Cpp.autoAddFileAssociations": false
+    "C_Cpp.autoAddFileAssociations": false,
+    "json.schemas": [
+        {
+            "fileMatch": ["assets/scenes/**/*.json"],
+            "url": "./docs/scene.schema.json"
+        }
+    ]
 }
