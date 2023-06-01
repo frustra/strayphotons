@@ -78,7 +78,7 @@ private:
 
 public:
     template<typename T>
-    void SaveFields(bool includeSubFields) {
+    void SaveFields() {
         static const T defaultStruct = {};
 
         auto *metadataPtr = ecs::StructMetadata::Get(typeid(T));
@@ -121,11 +121,7 @@ public:
                                 typeid(U),
                                 output});
                         } else if constexpr (!std::is_same_v<T, U>) {
-                            if (includeSubFields) {
-                                SaveFields<U>(true);
-                            } else {
-                                fields.emplace_back(DocField{"", fieldTypeName<U>(), "", typeid(U), output});
-                            }
+                            SaveFields<U>();
                         } else {
                             Abortf("Unknown self reference state: %s", metadata.name);
                         }

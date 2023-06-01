@@ -90,7 +90,7 @@ namespace ecs {
     void StructField::SetScope(void *dstStruct, const EntityScope &scope) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
 
-        return GetFieldType(type, field, [&](auto &dstValue) {
+        GetFieldType(type, field, [&](auto &dstValue) {
             scope::SetScope(dstValue, scope);
         });
     }

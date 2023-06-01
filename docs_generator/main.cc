@@ -78,7 +78,7 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
         DocsContext docs;
         ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
-            docs.SaveFields<T>(true);
+            docs.SaveFields<T>();
         });
 
         if (docs.fields.empty()) {
@@ -119,7 +119,7 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
                             refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
                         }
                     } else {
-                        refDocs.SaveFields<T>(true);
+                        refDocs.SaveFields<T>();
                     }
                 });
 

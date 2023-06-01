@@ -390,6 +390,11 @@ namespace sp::json {
             auto *metadata = ecs::StructMetadata::Get(typeid(T));
             if (metadata) {
                 for (auto &f : metadata->fields) {
+                    Assertf(f.type != typeid(T),
+                        "Recursive field type found in: %s, field %s (%s)",
+                        metadata->name,
+                        f.name,
+                        f.type.name());
                     f.Save(s, value, &src, def);
                 }
                 ecs::StructMetadata::Save(s, value, src, def);
