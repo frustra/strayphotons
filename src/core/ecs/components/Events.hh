@@ -95,6 +95,8 @@ namespace ecs {
         picojson::value &dst,
         const EventBinding &src,
         const EventBinding *def);
+    template<>
+    void StructMetadata::DefineSchema<EventBinding>(picojson::value &dst, sp::json::SchemaTypeReferences *references);
 
     class EventBindings {
     public:

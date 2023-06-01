@@ -129,7 +129,9 @@ namespace ecs {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
-        if (std::holds_alternative<PhysicsShape::Sphere>(src.shape)) {
+        if (std::holds_alternative<std::monostate>(src.shape)) {
+            // Shape is null
+        } else if (std::holds_alternative<PhysicsShape::Sphere>(src.shape)) {
             auto &sphere = std::get<PhysicsShape::Sphere>(src.shape);
             sp::json::Save(scope, obj["sphere"], sphere.radius);
         } else if (std::holds_alternative<PhysicsShape::Capsule>(src.shape)) {

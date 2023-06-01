@@ -189,4 +189,7 @@ namespace ecs {
         const SignalExpression *def);
     template<>
     void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope);
+    template<>
+    void StructMetadata::DefineSchema<SignalExpression>(picojson::value &dst,
+        sp::json::SchemaTypeReferences *references);
 } // namespace ecs

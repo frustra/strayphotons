@@ -51,10 +51,41 @@
 			},
 			"type": "object"
 		},
-		"EntityRef": {
-			"type": "string"
-		},
 		"EventBinding": {
+			"oneOf": [
+				{
+					"type": "string"
+				},
+				{
+					"allOf": [
+						{
+							"$ref": "#/definitions/EventBindingActions"
+						},
+						{
+							"properties": {
+								"outputs": {
+									"anyOf": [
+										{
+											"$ref": "#/definitions/EventDest"
+										},
+										{
+											"items": {
+												"$ref": "#/definitions/EventDest"
+											},
+											"type": "array"
+										}
+									],
+									"default": [],
+									"description": "No description"
+								}
+							},
+							"type": "object"
+						}
+					]
+				}
+			]
+		},
+		"EventBindingActions": {
 			"properties": {
 				"filter": {
 					"$ref": "#/definitions/SignalExpression",
@@ -76,70 +107,15 @@
 					"default": [],
 					"description": "No description"
 				},
-				"outputs": {
-					"anyOf": [
-						{
-							"$ref": "#/definitions/EventDest"
-						},
-						{
-							"items": {
-								"$ref": "#/definitions/EventDest"
-							},
-							"type": "array"
-						}
-					],
-					"default": [],
-					"description": "No description"
-				},
 				"set_value": {
-					"$ref": "#/definitions/EventData",
 					"default": null,
 					"description": "No description"
 				}
 			},
 			"type": "object"
 		},
-		"EventData": {},
 		"EventDest": {
-			"type": "string"
-		},
-		"GuiTarget": {
-			"enum": [
-				"None",
-				"World",
-				"Debug"
-			],
-			"type": "string"
-		},
-		"InterpolationMode": {
-			"enum": [
-				"Step",
-				"Linear",
-				"Cubic"
-			],
-			"type": "string"
-		},
-		"PhysicsActorType": {
-			"enum": [
-				"Static",
-				"Dynamic",
-				"Kinematic",
-				"SubActor"
-			],
-			"type": "string"
-		},
-		"PhysicsGroup": {
-			"enum": [
-				"NoClip",
-				"World",
-				"Interactive",
-				"HeldObject",
-				"Player",
-				"PlayerLeftHand",
-				"PlayerRightHand",
-				"UserInterface"
-			],
-			"type": "string"
+			"default": ""
 		},
 		"PhysicsJoint": {
 			"properties": {
@@ -172,34 +148,35 @@
 					"description": "No description"
 				},
 				"target": {
-					"$ref": "#/definitions/EntityRef",
-					"default": null,
-					"description": "No description"
+					"default": "",
+					"description": "No description",
+					"type": "string"
 				},
 				"type": {
-					"$ref": "#/definitions/PhysicsJointType",
 					"default": "Fixed",
-					"description": "No description"
+					"description": "No description",
+					"enum": [
+						"Fixed",
+						"Distance",
+						"Spherical",
+						"Hinge",
+						"Slider",
+						"Force",
+						"NoClip",
+						"TemporaryNoClip"
+					],
+					"type": "string"
 				}
 			},
 			"type": "object"
 		},
-		"PhysicsJointType": {
-			"enum": [
-				"Fixed",
-				"Distance",
-				"Spherical",
-				"Hinge",
-				"Slider",
-				"Force",
-				"NoClip",
-				"TemporaryNoClip"
-			],
-			"type": "string"
+		"PhysicsShape": {
+			"default": {}
 		},
-		"PhysicsShape": {},
 		"ScriptInstance": {},
 		"SignalExpression": {
+			"default": "",
+			"description": "A signal expression string, e.g: \"scene:entity/signal + (other_entity/signal2 + 1)\"",
 			"type": "string"
 		},
 		"Sound": {
@@ -220,9 +197,14 @@
 					"type": "boolean"
 				},
 				"type": {
-					"$ref": "#/definitions/SoundType",
 					"default": "Object",
-					"description": "No description"
+					"description": "No description",
+					"enum": [
+						"Object",
+						"Stereo",
+						"Ambisonic"
+					],
+					"type": "string"
 				},
 				"volume": {
 					"default": 1,
@@ -231,14 +213,6 @@
 				}
 			},
 			"type": "object"
-		},
-		"SoundType": {
-			"enum": [
-				"Object",
-				"Stereo",
-				"Ambisonic"
-			],
-			"type": "string"
 		},
 		"Transform": {
 			"properties": {
@@ -249,37 +223,41 @@
 					"minItems": 4,
 					"prefixItems": [
 						{
+							"description": "An angle in degrees",
 							"exclusiveMaximum": 360,
 							"exclusiveMinimum": -360,
 							"type": "number"
 						},
 						{
-							"maximum": 1,
-							"minimum": -1,
 							"type": "number"
 						},
 						{
-							"maximum": 1,
-							"minimum": -1,
 							"type": "number"
 						},
 						{
-							"maximum": 1,
-							"minimum": -1,
 							"type": "number"
 						}
 					],
 					"type": "array"
 				},
 				"scale": {
+					"anyOf": [
+						{
+							"type": "number"
+						},
+						{
+							"items": {
+								"type": "number"
+							},
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					],
 					"default": [1, 1, 1],
 					"description": "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
-					"items": {
-						"type": "number"
-					},
 					"maxItems": 3,
-					"minItems": 3,
-					"type": "array"
+					"minItems": 3
 				},
 				"translate": {
 					"default": [0, 0, 0],
@@ -293,40 +271,13 @@
 				}
 			},
 			"type": "object"
-		},
-		"TriggerGroup": {
-			"enum": [
-				"Player",
-				"Object",
-				"Magnetic"
-			],
-			"type": "string"
-		},
-		"TriggerShape": {
-			"enum": [
-				"Box",
-				"Sphere"
-			],
-			"type": "string"
-		},
-		"VisibilityMask": {
-			"type": "string"
-		},
-		"XrEye": {
-			"enum": [
-				"Left",
-				"Right"
-			],
-			"type": "string"
-		},
-		"name": {}
+		}
 	},
 	"properties": {
 		"entities": {
 			"items": {
 				"properties": {
 					"animation": {
-						"default": {},
 						"properties": {
 							"cubic_tension": {
 								"default": 0.5,
@@ -334,9 +285,14 @@
 								"type": "number"
 							},
 							"interpolation": {
-								"$ref": "#/definitions/InterpolationMode",
 								"default": "Linear",
-								"description": "No description"
+								"description": "No description",
+								"enum": [
+									"Step",
+									"Linear",
+									"Cubic"
+								],
+								"type": "string"
 							},
 							"states": {
 								"anyOf": [
@@ -367,18 +323,14 @@
 								},
 								"type": "array"
 							}
-						],
-						"default": [],
-						"description": "The `audio` component is serialized directly as an array",
-						"properties": {}
+						]
 					},
 					"character_controller": {
-						"default": {},
 						"properties": {
 							"head": {
-								"$ref": "#/definitions/EntityRef",
-								"default": null,
-								"description": "No description"
+								"default": "",
+								"description": "No description",
+								"type": "string"
 							}
 						},
 						"type": "object"
@@ -397,23 +349,20 @@
 								}
 							]
 						},
-						"default": {},
-						"description": "The `event_bindings` component is serialized directly as a map",
-						"properties": {},
 						"type": "object"
 					},
-					"event_input": {
-						"default": {},
-						"properties": {},
-						"type": "object"
-					},
+					"event_input": {},
 					"gui": {
-						"default": {},
 						"properties": {
 							"target": {
-								"$ref": "#/definitions/GuiTarget",
 								"default": "World",
-								"description": "No description"
+								"description": "No description",
+								"enum": [
+									"None",
+									"World",
+									"Debug"
+								],
+								"type": "string"
 							},
 							"window_name": {
 								"default": "",
@@ -424,7 +373,6 @@
 						"type": "object"
 					},
 					"laser_emitter": {
-						"default": {},
 						"properties": {
 							"color": {
 								"default": [0, 0, 0],
@@ -488,7 +436,6 @@
 						"type": "object"
 					},
 					"laser_sensor": {
-						"default": {},
 						"properties": {
 							"threshold": {
 								"default": [0.5, 0.5, 0.5],
@@ -504,7 +451,6 @@
 						"type": "object"
 					},
 					"light": {
-						"default": {},
 						"properties": {
 							"gel": {
 								"default": "",
@@ -539,6 +485,7 @@
 							"shadow_map_size": {
 								"default": 9,
 								"description": "All shadow maps are square powers of 2 in resolution. Each light's shadow map resolution is defined as `2^shadow_map_size`. For example, a map size of 10 would result in a 1024x1024 shadow map resolution.",
+								"minimum": 0,
 								"type": "integer"
 							},
 							"spot_angle": {
@@ -564,7 +511,6 @@
 						"type": "object"
 					},
 					"light_sensor": {
-						"default": {},
 						"properties": {
 							"color_value": {
 								"default": [0, 0, 0],
@@ -600,13 +546,10 @@
 						"type": "object"
 					},
 					"name": {
-						"$ref": "#/definitions/name",
-						"default": "",
-						"description": "No description",
-						"properties": {}
+						"description": "An entity name in the form `<scene_name>:<entity_name>`",
+						"type": "string"
 					},
 					"optic": {
-						"default": {},
 						"properties": {
 							"pass_tint": {
 								"default": [0, 0, 0],
@@ -641,7 +584,6 @@
 						"type": "object"
 					},
 					"physics": {
-						"default": {},
 						"properties": {
 							"angular_damping": {
 								"default": 0.05,
@@ -669,9 +611,19 @@
 								"type": "number"
 							},
 							"group": {
-								"$ref": "#/definitions/PhysicsGroup",
 								"default": "World",
-								"description": "The collision group that this actor belongs to."
+								"description": "The collision group that this actor belongs to.",
+								"enum": [
+									"NoClip",
+									"World",
+									"Interactive",
+									"HeldObject",
+									"Player",
+									"PlayerLeftHand",
+									"PlayerRightHand",
+									"UserInterface"
+								],
+								"type": "string"
 							},
 							"linear_damping": {
 								"default": 0,
@@ -684,9 +636,9 @@
 								"type": "number"
 							},
 							"parent_actor": {
-								"$ref": "#/definitions/EntityRef",
-								"default": null,
-								"description": "Only used for \"SubActor\" type. If empty, the parent actor is determined by the `transform` parent."
+								"default": "",
+								"description": "Only used for \"SubActor\" type. If empty, the parent actor is determined by the `transform` parent.",
+								"type": "string"
 							},
 							"shapes": {
 								"anyOf": [
@@ -704,9 +656,15 @@
 								"description": "A list of individual shapes and models that combine to form the actor's overall collision shape."
 							},
 							"type": {
-								"$ref": "#/definitions/PhysicsActorType",
 								"default": "Dynamic",
-								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor."
+								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor.",
+								"enum": [
+									"Static",
+									"Dynamic",
+									"Kinematic",
+									"SubActor"
+								],
+								"type": "string"
 							}
 						},
 						"type": "object"
@@ -722,18 +680,10 @@
 								},
 								"type": "array"
 							}
-						],
-						"default": [],
-						"description": "The `physics_joints` component is serialized directly as an array",
-						"properties": {}
+						]
 					},
-					"physics_query": {
-						"default": {},
-						"properties": {},
-						"type": "object"
-					},
+					"physics_query": {},
 					"renderable": {
-						"default": {},
 						"properties": {
 							"color_override": {
 								"default": [-1, -1, -1, -1],
@@ -755,6 +705,7 @@
 							"mesh_index": {
 								"default": 0,
 								"description": "The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab.",
+								"minimum": 0,
 								"type": "integer"
 							},
 							"metallic_roughness_override": {
@@ -773,9 +724,9 @@
 								"type": "string"
 							},
 							"visibility": {
-								"$ref": "#/definitions/VisibilityMask",
 								"default": "DirectCamera|DirectEye|LightingShadow|LightingVoxel",
-								"description": "Visibility mask for different render passes."
+								"description": "Visibility mask for different render passes.",
+								"type": "string"
 							}
 						},
 						"type": "object"
@@ -794,13 +745,9 @@
 								}
 							]
 						},
-						"default": {},
-						"description": "The `scene_connection` component is serialized directly as a map",
-						"properties": {},
 						"type": "object"
 					},
 					"scene_properties": {
-						"default": {},
 						"properties": {
 							"gravity": {
 								"default": [0, -9.81, 0],
@@ -834,7 +781,6 @@
 						"type": "object"
 					},
 					"screen": {
-						"default": {},
 						"properties": {
 							"luminance": {
 								"default": [1, 1, 1],
@@ -865,91 +811,38 @@
 								},
 								"type": "array"
 							}
-						],
-						"default": [],
-						"description": "The `Scripts` component is serialized directly as an array",
-						"properties": {}
+						]
 					},
 					"signal_bindings": {
 						"additionalProperties": {
 							"$ref": "#/definitions/SignalExpression"
 						},
-						"default": {},
-						"description": "The `signal_bindings` component is serialized directly as a map",
-						"properties": {},
 						"type": "object"
 					},
 					"signal_output": {
 						"additionalProperties": {
 							"type": "number"
 						},
-						"default": {},
-						"description": "The `signal_output` component is serialized directly as a map",
-						"properties": {},
 						"type": "object"
 					},
 					"transform": {
-						"default": {},
-						"properties": {
-							"parent": {
-								"$ref": "#/definitions/EntityRef",
-								"default": null,
-								"description": "Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root."
+						"allOf": [
+							{
+								"$ref": "#/definitions/Transform"
 							},
-							"rotate": {
-								"default": [0, 0, 0, 1],
-								"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
-								"maxItems": 4,
-								"minItems": 4,
-								"prefixItems": [
-									{
-										"exclusiveMaximum": 360,
-										"exclusiveMinimum": -360,
-										"type": "number"
-									},
-									{
-										"maximum": 1,
-										"minimum": -1,
-										"type": "number"
-									},
-									{
-										"maximum": 1,
-										"minimum": -1,
-										"type": "number"
-									},
-									{
-										"maximum": 1,
-										"minimum": -1,
-										"type": "number"
+							{
+								"properties": {
+									"parent": {
+										"default": "",
+										"description": "Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root.",
+										"type": "string"
 									}
-								],
-								"type": "array"
-							},
-							"scale": {
-								"default": [1, 1, 1],
-								"description": "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
-								"items": {
-									"type": "number"
 								},
-								"maxItems": 3,
-								"minItems": 3,
-								"type": "array"
-							},
-							"translate": {
-								"default": [0, 0, 0],
-								"description": "Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
-								"items": {
-									"type": "number"
-								},
-								"maxItems": 3,
-								"minItems": 3,
-								"type": "array"
+								"type": "object"
 							}
-						},
-						"type": "object"
+						]
 					},
 					"transform_snapshot": {
-						"default": {},
 						"properties": {
 							"rotate": {
 								"default": [0, 0, 0, 1],
@@ -958,37 +851,41 @@
 								"minItems": 4,
 								"prefixItems": [
 									{
+										"description": "An angle in degrees",
 										"exclusiveMaximum": 360,
 										"exclusiveMinimum": -360,
 										"type": "number"
 									},
 									{
-										"maximum": 1,
-										"minimum": -1,
 										"type": "number"
 									},
 									{
-										"maximum": 1,
-										"minimum": -1,
 										"type": "number"
 									},
 									{
-										"maximum": 1,
-										"minimum": -1,
 										"type": "number"
 									}
 								],
 								"type": "array"
 							},
 							"scale": {
+								"anyOf": [
+									{
+										"type": "number"
+									},
+									{
+										"items": {
+											"type": "number"
+										},
+										"maxItems": 3,
+										"minItems": 3,
+										"type": "array"
+									}
+								],
 								"default": [1, 1, 1],
 								"description": "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
-								"items": {
-									"type": "number"
-								},
 								"maxItems": 3,
-								"minItems": 3,
-								"type": "array"
+								"minItems": 3
 							},
 							"translate": {
 								"default": [0, 0, 0],
@@ -1004,19 +901,21 @@
 						"type": "object"
 					},
 					"trigger_area": {
-						"$ref": "#/definitions/TriggerShape",
-						"default": "Box",
-						"description": "The `trigger_area` component is serialized directly as an enum string",
-						"properties": {}
+						"enum": [
+							"Box",
+							"Sphere"
+						],
+						"type": "string"
 					},
 					"trigger_group": {
-						"$ref": "#/definitions/TriggerGroup",
-						"default": "Player",
-						"description": "The `trigger_group` component is serialized directly as an enum string",
-						"properties": {}
+						"enum": [
+							"Player",
+							"Object",
+							"Magnetic"
+						],
+						"type": "string"
 					},
 					"view": {
-						"default": {},
 						"properties": {
 							"clip": {
 								"default": [0.1, 256],
@@ -1056,15 +955,14 @@
 								"type": "array"
 							},
 							"visibility_mask": {
-								"$ref": "#/definitions/VisibilityMask",
 								"default": "",
-								"description": "No description"
+								"description": "No description",
+								"type": "string"
 							}
 						},
 						"type": "object"
 					},
 					"voxel_area": {
-						"default": {},
 						"properties": {
 							"extents": {
 								"default": [128, 128, 128],
@@ -1080,10 +978,11 @@
 						"type": "object"
 					},
 					"xr_view": {
-						"$ref": "#/definitions/XrEye",
-						"default": "Left",
-						"description": "The `xr_view` component is serialized directly as an enum string",
-						"properties": {}
+						"enum": [
+							"Left",
+							"Right"
+						],
+						"type": "string"
 					}
 				},
 				"type": "object"

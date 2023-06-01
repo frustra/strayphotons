@@ -4,7 +4,7 @@
 | **shapes** | vector&lt;`PhysicsShape`&gt; | [] | A list of individual shapes and models that combine to form the actor's overall collision shape. |
 | **group** | enum `PhysicsGroup` | "World" | The collision group that this actor belongs to. |
 | **type** | enum `PhysicsActorType` | "Dynamic" | "Dynamic" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. "Static" objects are meant to be immovable and will not push objects if moved. The "SubActor" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor. |
-| **parent_actor** | `EntityRef` | null | Only used for "SubActor" type. If empty, the parent actor is determined by the `transform` parent. |
+| **parent_actor** | `EntityRef` | "" | Only used for "SubActor" type. If empty, the parent actor is determined by the `transform` parent. |
 | **mass** | float | 0 | The weight of the physics actor in Kilograms (kg). Overrides **density** field. Only used for "Dynamic" objects. |
 | **density** | float | 1000 | The density of the physics actor in Kilograms per Cubic Meter (kg/m^3). This value is ignored if **mass** != 0. Only used for "Dynamic" objects. |
 | **angular_damping** | float | 0.05 | Resistance to changes in rotational velocity. Affects how quickly the entity will stop spinning. (>= 0.0) |
@@ -45,7 +45,7 @@ The `physics_joints` component has type: vector&lt;`PhysicsJoint`&gt;
 ### `PhysicsJoint` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **target** | `EntityRef` | null | No description |
+| **target** | `EntityRef` | "" | No description |
 | **type** | enum `PhysicsJointType` | "Fixed" | No description |
 | **limit** | vec2 | [0, 0] | No description |
 | **local_offset** | `Transform` | {"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]} | No description |
@@ -107,7 +107,7 @@ Note: Enum string names are case-sensitive.
 ## `character_controller` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **head** | `EntityRef` | null | No description |
+| **head** | `EntityRef` | "" | No description |
 
 **See Also:**
 `EntityRef`

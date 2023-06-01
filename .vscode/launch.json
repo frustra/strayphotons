@@ -108,7 +108,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/docs_generator.exe",
-            "args": ["../ComponentSummary.md"],
+            "args": ["schema", "../docs/scene.schema.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

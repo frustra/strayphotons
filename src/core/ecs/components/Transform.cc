@@ -103,6 +103,19 @@ namespace ecs {
     }
 
     template<>
+    void StructMetadata::DefineSchema<Transform>(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
+        auto &typeSchema = dst.get<picojson::object>();
+        auto &properties = typeSchema["properties"].get<picojson::object>();
+        auto &scaleSchema = properties["scale"].get<picojson::object>();
+        scaleSchema.erase("type");
+        scaleSchema.erase("items");
+        picojson::array anyOfArray(2);
+        sp::json::SaveSchema<float>(anyOfArray[0]);
+        sp::json::SaveSchema<glm::vec3>(anyOfArray[1]);
+        scaleSchema["anyOf"] = picojson::value(anyOfArray);
+    }
+
+    template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst) {
         dst.pose.offset = glm::mat4x3(-INFINITY);
         dst.pose.scale = glm::vec3(-INFINITY);

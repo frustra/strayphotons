@@ -9,21 +9,27 @@
 #include "ecs/components/Name.hh"
 
 #include <robin_hood.h>
+#include <set>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
 
 namespace picojson {
     class value;
-}
-
-namespace sp {
-    class Gltf;
-}
+} // namespace picojson
 
 namespace ecs {
     enum class FieldAction;
+    class StructMetadata;
 }; // namespace ecs
+
+namespace sp {
+    class Gltf;
+
+    namespace json {
+        using SchemaTypeReferences = std::set<const ecs::StructMetadata *>;
+    }
+} // namespace sp
 
 template<>
 struct magic_enum::customize::enum_range<ecs::FieldAction> {
@@ -147,6 +153,8 @@ namespace ecs {
         bool operator==(const StructField &) const = default;
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
+        picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
         void SetScope(void *dstStruct, const EntityScope &scope) const;
         bool Compare(const void *a, const void *b) const;
         bool Load(void *dstStruct, const picojson::value &src) const;
@@ -187,6 +195,11 @@ namespace ecs {
         template<typename T>
         static void InitUndefined(T &dst) {
             // Custom field init is always called, default to no-op.
+        }
+
+        template<typename T>
+        static void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
+            // Custom field serialization is always called, default to no-op.
         }
 
         template<typename T>

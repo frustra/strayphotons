@@ -78,7 +78,7 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
         DocsContext docs;
         ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
-            docs.SaveFields<T>();
+            docs.SaveFields<T>(true);
         });
 
         if (docs.fields.empty()) {
@@ -119,7 +119,7 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
                             refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
                         }
                     } else {
-                        refDocs.SaveFields<T>();
+                        refDocs.SaveFields<T>(true);
                     }
                 });
 
@@ -179,134 +179,42 @@ void saveJsonSchema(std::ofstream &file) {
     picojson::object extraDefinitions;
     picojson::object entityProperties;
 
-    std::function<void(const std::string &, const std::type_index &)> saveReferencedType;
-    saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
-        DocsContext refDocs;
-        bool isEnumFlags = false;
-        bool isEnum = false;
-        bool isEntityRef = false;
-        bool isEventDest = false;
-        bool isSignalExpression = false;
-        ecs::GetFieldType(refType, [&](auto *typePtr) {
+    std::function<void(const ecs::StructMetadata &)> saveReferencedType;
+    saveReferencedType = [&](const ecs::StructMetadata &metadata) {
+        if (extraDefinitions.count(metadata.name)) return;
+
+        ecs::GetFieldType(metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
-            if constexpr (std::is_enum<T>()) {
-                isEnum = true;
-                if constexpr (is_flags_enum<T>()) {
-                    isEnumFlags = true;
-                }
+            sp::json::SchemaTypeReferences references;
+            picojson::value typeSchema;
+            sp::json::SaveSchema<T>(typeSchema, &references);
+            extraDefinitions.emplace(metadata.name, typeSchema.get<picojson::object>());
 
-                static const auto names = magic_enum::enum_names<T>();
-                for (auto &enumName : names) {
-                    refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
-                }
-            } else if constexpr (std::is_same_v<T, ecs::Name>) {
-                // noop
-            } else if constexpr (std::is_same_v<T, ecs::EntityRef>) {
-                isEntityRef = true;
-            } else if constexpr (std::is_same_v<T, ecs::EventDest>) {
-                isEventDest = true;
-            } else if constexpr (std::is_same_v<T, ecs::SignalExpression>) {
-                isSignalExpression = true;
-            } else {
-                refDocs.SaveFields<T>();
+            for (auto *ref : references) {
+                if (ref) saveReferencedType(*ref);
             }
         });
-
-        picojson::object typeObject;
-        if (isEntityRef) {
-            typeObject["type"] = picojson::value("string");
-            // TODO: Regex matching entity names
-        } else if (isEventDest) {
-            typeObject["type"] = picojson::value("string");
-            // TODO: Regex matching entity names + event string
-        } else if (isSignalExpression) {
-            typeObject["type"] = picojson::value("string");
-        } else if (!refDocs.fields.empty()) {
-            if (isEnum) {
-                typeObject["type"] = picojson::value("string");
-
-                if (isEnumFlags) {
-                    // TODO: Generate a regex
-                } else {
-                    picojson::array enumStrings(refDocs.fields.size());
-                    std::transform(refDocs.fields.begin(), refDocs.fields.end(), enumStrings.begin(), [](auto &field) {
-                        return picojson::value(field.name);
-                    });
-                    typeObject["enum"] = picojson::value(enumStrings);
-                }
-            } else {
-                if (refDocs.fields.size() == 1 && refDocs.fields.front().name.empty()) {
-                    auto &field = refDocs.fields.front();
-                    typeObject = refDocs.jsonDefinitions.at(field.typeString);
-                    typeObject["description"] = picojson::value(field.description);
-                } else {
-                    typeObject["type"] = picojson::value("object");
-
-                    picojson::object typeProperties;
-                    for (auto &field : refDocs.fields) {
-                        if (field.name.empty()) continue;
-
-                        picojson::object fieldObject = refDocs.jsonDefinitions.at(field.typeString);
-                        fieldObject["default"] = field.defaultValue;
-                        fieldObject["description"] = picojson::value(field.description);
-
-                        typeProperties[field.name] = picojson::value(fieldObject);
-                    }
-                    if (!typeProperties.empty()) typeObject["properties"] = picojson::value(typeProperties);
-                }
-            }
-        }
-        extraDefinitions.emplace(refName, typeObject);
-
-        for (auto &[subRefName, subRefType] : refDocs.references) {
-            if (!extraDefinitions.count(subRefName)) {
-                saveReferencedType(subRefName, subRefType);
-            }
-        }
     };
 
-    auto addComponent = [&](const std::string &name, const ecs::ComponentBase &base) {
-        DocsContext docs;
-        ecs::GetFieldType(base.metadata.type, [&](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
-            docs.SaveFields<T>();
-        });
+    auto addComponent = [&](auto &name, auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
 
-        picojson::object componentObject;
-        if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
-            auto &field = docs.fields.front();
-            componentObject = docs.jsonDefinitions.at(field.typeString);
-            componentObject["default"] = field.defaultValue;
-            componentObject["description"] = picojson::value(field.description);
-        } else {
-            componentObject["type"] = picojson::value("object");
-            componentObject["default"] = picojson::value(picojson::object());
-        }
+        sp::json::SchemaTypeReferences references;
+        sp::json::SaveSchema<T>(entityProperties[name], &references);
 
-        picojson::object componentProperties;
-        for (auto &field : docs.fields) {
-            if (field.name.empty()) continue;
-
-            picojson::object fieldObject = docs.jsonDefinitions.at(field.typeString);
-            fieldObject["default"] = field.defaultValue;
-            fieldObject["description"] = picojson::value(field.description);
-
-            componentProperties[field.name] = picojson::value(fieldObject);
-        }
-        componentObject["properties"] = picojson::value(componentProperties);
-        entityProperties[name] = picojson::value(componentObject);
-
-        for (auto &[refName, refType] : docs.references) {
-            if (!extraDefinitions.count(refName)) {
-                saveReferencedType(refName, refType);
-            }
+        for (auto *metadata : references) {
+            if (metadata) saveReferencedType(*metadata);
         }
     };
 
     auto &nameComp = ecs::LookupComponent<ecs::Name>();
-    addComponent(nameComp.name, nameComp);
-    ecs::ForEachComponent(addComponent);
+    addComponent(nameComp.name, (ecs::Name *)nullptr);
+    ecs::ForEachComponent([&](auto &name, auto &base) {
+        ecs::GetFieldType(base.metadata.type, [&](auto *typePtr) {
+            addComponent(name, typePtr);
+        });
+    });
 
     picojson::object root;
     root["$schema"] = picojson::value("http://json-schema.org/draft-07/schema#");

@@ -123,6 +123,9 @@ namespace ecs {
         picojson::value &dst,
         const Transform &src,
         const Transform *def);
+    template<>
+    void StructMetadata::DefineSchema<Transform>(picojson::value &dst,
+        sp::json::SchemaTypeReferences *references);
 
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         "TransformTree",

@@ -69,6 +69,24 @@ namespace ecs {
         });
     }
 
+    void StructField::DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const {
+        GetFieldType(type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            sp::json::SaveSchema<T>(dst, references, false);
+        });
+    }
+
+    picojson::value StructField::SaveDefault(const EntityScope &scope, const void *defaultStruct) const {
+        picojson::value result;
+        auto *field = static_cast<const char *>(defaultStruct) + offset;
+        GetFieldType(type, field, [&](auto &value) {
+            using T = std::decay_t<decltype(value)>;
+
+            sp::json::SaveIfChanged<T>(scope, result, "", value, nullptr);
+        });
+        return result;
+    }
+
     void StructField::SetScope(void *dstStruct, const EntityScope &scope) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
 

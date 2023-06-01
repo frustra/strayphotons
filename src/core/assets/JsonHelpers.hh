@@ -44,6 +44,18 @@ namespace sp::json {
             }
             dst = picojson::value(vec);
         }
+
+        template<typename T>
+        struct is_optional : std::false_type {};
+        template<typename T>
+        struct is_optional<std::optional<T>> : std::true_type {};
+
+        template<typename T>
+        struct is_unordered_map : std::false_type {};
+        template<typename K, typename V>
+        struct is_unordered_map<robin_hood::unordered_flat_map<K, V>> : std::true_type {};
+        template<typename K, typename V>
+        struct is_unordered_map<robin_hood::unordered_node_map<K, V>> : std::true_type {};
     } // namespace detail
 
     // Default Load handler for enums, and all integer and float types
@@ -369,6 +381,9 @@ namespace sp::json {
         picojson::value value;
         if constexpr (std::is_enum<T>()) {
             Save(s, value, src);
+        } else if constexpr (std::is_same_v<T, ecs::EntityRef> || std::is_same_v<T, ecs::SignalRef> ||
+                             std::is_same_v<T, ecs::SignalExpression>) {
+            Save(s, value, src);
         } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             Save(s, value, src);
         } else {
@@ -435,5 +450,228 @@ namespace sp::json {
         if (def && Compare(src, *def)) return false;
         Assertf(!field.empty(), "json::SaveIfChanged provided object with no field");
         return SaveIfChanged(s, obj[field], "", src, def);
+    }
+
+    using SchemaTypeReferences = std::set<const ecs::StructMetadata *>;
+
+    // Default JSON schema generation handler for most types
+    template<typename T>
+    inline void SaveSchema(picojson::value &dst, SchemaTypeReferences *references = nullptr, bool rootType = true) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+
+        auto *metadata = ecs::StructMetadata::Get(typeid(T));
+        if (metadata && !rootType) {
+            if (references) {
+                references->emplace(metadata);
+            }
+            typeSchema["$ref"] = picojson::value("#/definitions/"s + metadata->name);
+        } else if constexpr (std::is_enum<T>()) {
+            typeSchema["type"] = picojson::value("string");
+
+            if constexpr (is_flags_enum<T>()) {
+                // TODO: Generate a regex
+            } else {
+                static const auto names = magic_enum::enum_names<T>();
+                picojson::array enumStrings(names.size());
+                std::transform(names.begin(), names.end(), enumStrings.begin(), [](auto &name) {
+                    return picojson::value(std::string(name));
+                });
+                typeSchema["enum"] = picojson::value(enumStrings);
+            }
+        } else if constexpr (std::is_integral_v<T>) {
+            typeSchema["type"] = picojson::value("integer");
+
+            if constexpr (std::is_unsigned_v<T>) {
+                typeSchema["minimum"] = picojson::value(0.0);
+            }
+        } else if constexpr (std::is_floating_point_v<T>) {
+            typeSchema["type"] = picojson::value("number");
+        } else if constexpr (sp::is_glm_vec<T>()) {
+            typeSchema["type"] = picojson::value("array");
+            typeSchema["minItems"] = picojson::value((double)T::length());
+            typeSchema["maxItems"] = picojson::value((double)T::length());
+            SaveSchema<typename T::value_type>(typeSchema["items"], references, false);
+        } else if constexpr (detail::is_optional<T>()) {
+            typeSchema["default"] = picojson::value();
+            SaveSchema<typename T::value_type>(dst, references, false);
+        } else if constexpr (sp::is_vector<T>()) {
+            picojson::value subSchema;
+            SaveSchema<typename T::value_type>(subSchema, references, false);
+
+            picojson::object arraySchema;
+            arraySchema["type"] = picojson::value("array");
+            arraySchema["items"] = subSchema;
+            picojson::array anyOfArray(2);
+            anyOfArray[0] = subSchema;
+            anyOfArray[1] = picojson::value(arraySchema);
+            typeSchema["anyOf"] = picojson::value(anyOfArray);
+        } else if constexpr (detail::is_unordered_map<T>()) {
+            typeSchema["type"] = picojson::value("object");
+            static_assert(std::is_same_v<typename T::key_type, std::string>, "Only string map keys are supported!");
+            SaveSchema<typename T::mapped_type>(typeSchema["additionalProperties"], references, false);
+        } else if (rootType) {
+            Assertf(metadata, "Unsupported type: %s", typeid(T).name());
+
+            static const T defaultStruct = {};
+
+            picojson::array allOfSchemas;
+            picojson::object componentProperties;
+            for (auto &field : metadata->fields) {
+                picojson::value fieldSchema;
+                field.DefineSchema(fieldSchema, references);
+
+                if (field.name.empty()) {
+                    allOfSchemas.emplace_back(std::move(fieldSchema));
+                } else {
+                    Assertf(fieldSchema.is<picojson::object>(),
+                        "Expected subfield schema to be object: %s",
+                        fieldSchema.to_str());
+                    auto &fieldObj = fieldSchema.get<picojson::object>();
+                    fieldObj["default"] = field.SaveDefault(ecs::EntityScope(), &defaultStruct);
+
+                    fieldObj["description"] = picojson::value(field.desc);
+                    componentProperties[field.name] = fieldSchema;
+                }
+            }
+            if (!componentProperties.empty()) {
+                typeSchema["type"] = picojson::value("object");
+                typeSchema["properties"] = picojson::value(componentProperties);
+            }
+
+            if (!allOfSchemas.empty()) {
+                if (typeSchema.empty() && allOfSchemas.size() == 1) {
+                    typeSchema = allOfSchemas.front().get<picojson::object>();
+                } else if (!typeSchema.empty()) {
+                    allOfSchemas.emplace_back(std::move(typeSchema));
+                    Assertf(typeSchema.empty(), "Move did not clear object");
+                    typeSchema["allOf"] = picojson::value(allOfSchemas);
+                }
+            }
+            picojson::value jsonDefault;
+            Save(ecs::EntityScope(), jsonDefault, defaultStruct);
+            if (!jsonDefault.is<picojson::null>()) typeSchema["default"] = jsonDefault;
+
+            ecs::StructMetadata::DefineSchema<T>(dst, references);
+        }
+    }
+
+    // SaveSchema() specializations for native and complex types
+    template<>
+    inline void SaveSchema<bool>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("boolean");
+    }
+
+    template<>
+    inline void SaveSchema<sp::angle_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("number");
+        typeSchema["description"] = picojson::value("An angle in degrees");
+        typeSchema["exclusiveMinimum"] = picojson::value(-360.0);
+        typeSchema["exclusiveMaximum"] = picojson::value(360.0);
+    }
+
+    template<>
+    inline void SaveSchema<sp::color_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("array");
+        typeSchema["description"] = picojson::value(
+            "An RGB color vector [red, green, blue] with values from 0.0 to 1.0");
+        typeSchema["minItems"] = picojson::value(3.0);
+        typeSchema["maxItems"] = picojson::value(3.0);
+        picojson::object itemSchema;
+        itemSchema["type"] = picojson::value("number");
+        itemSchema["minimum"] = picojson::value(0.0);
+        itemSchema["maximum"] = picojson::value(1.0);
+        typeSchema["items"] = picojson::value(itemSchema);
+    }
+
+    template<>
+    inline void SaveSchema<sp::color_alpha_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("array");
+        typeSchema["description"] = picojson::value(
+            "An RGBA color vector [red, green, blue, alpha] with values from 0.0 to 1.0");
+        typeSchema["minItems"] = picojson::value(4.0);
+        typeSchema["maxItems"] = picojson::value(4.0);
+        picojson::object itemSchema;
+        itemSchema["type"] = picojson::value("number");
+        itemSchema["minimum"] = picojson::value(0.0);
+        itemSchema["maximum"] = picojson::value(1.0);
+        typeSchema["items"] = picojson::value(itemSchema);
+    }
+
+    namespace detail {
+        inline void saveRotationSchema(picojson::value &dst, SchemaTypeReferences *references) {
+            if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+            auto &typeSchema = dst.get<picojson::object>();
+            typeSchema["type"] = picojson::value("array");
+            typeSchema["description"] = picojson::value(
+                "A rotation around an axis, represented by the vector [angle_degrees, axis_x, axis_y, axis_z]. "
+                "The axis does not to be normalized. As an example `[90, 1, 0, -1]` will rotate +90 degrees "
+                "around an axis halfway between the +X and -Z directions. This is equivelent to `[-90, -1, 0, 1]`.");
+            typeSchema["minItems"] = picojson::value(4.0);
+            typeSchema["maxItems"] = picojson::value(4.0);
+            picojson::array items(4);
+            SaveSchema<sp::angle_t>(items[0], references, false);
+            SaveSchema<float>(items[1], references, false);
+            SaveSchema<float>(items[2], references, false);
+            SaveSchema<float>(items[3], references, false);
+            typeSchema["prefixItems"] = picojson::value(items);
+        }
+    } // namespace detail
+
+    template<>
+    inline void SaveSchema<glm::quat>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        detail::saveRotationSchema(dst, references);
+    }
+    template<>
+    inline void SaveSchema<glm::mat3>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        detail::saveRotationSchema(dst, references);
+    }
+
+    template<>
+    inline void SaveSchema<std::string>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+    }
+
+    template<>
+    inline void SaveSchema<ecs::Name>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value("An entity name in the form `<scene_name>:<entity_name>`");
+        // TODO: Define a regex to validate the name
+    }
+
+    template<>
+    inline void SaveSchema<ecs::EntityRef>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value("An entity name in the form `<scene_name>:<entity_name>`");
+        // TODO: Define a regex to validate the reference
+    }
+
+    template<>
+    inline void SaveSchema<ecs::SignalRef>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value(
+            "An entity name + signal name in the form `<scene_name>:<entity_name>/<signal_name>`");
+        // TODO: Define a regex to validate the reference
+    }
+
+    template<>
+    inline void SaveSchema<ecs::EventData>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
     }
 } // namespace sp::json

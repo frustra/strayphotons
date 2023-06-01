@@ -66,6 +66,18 @@ namespace ecs {
     }
 
     template<>
+    void StructMetadata::DefineSchema<EventBinding>(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
+        auto &dstSchema = dst.get<picojson::object>();
+        picojson::object stringSchema;
+        stringSchema["type"] = picojson::value("string");
+        picojson::array anyOfArray(2);
+        anyOfArray[0] = picojson::value(stringSchema);
+        anyOfArray[1] = picojson::value(std::move(dstSchema));
+        Assertf(dstSchema.empty(), "Move did not clear object");
+        dstSchema["oneOf"] = picojson::value(anyOfArray);
+    }
+
+    template<>
     bool StructMetadata::Load<EventBindings>(EventBindings &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
             Errorf("Invalid event bindings: %s", src.to_str());

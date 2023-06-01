@@ -980,4 +980,14 @@ namespace ecs {
     void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope) {
         dst.SetScope(scope);
     }
+
+    template<>
+    void StructMetadata::DefineSchema<SignalExpression>(picojson::value &dst,
+        sp::json::SchemaTypeReferences *references) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value(
+            "A signal expression string, e.g: \"scene:entity/signal + (other_entity/signal2 + 1)\"");
+    }
 } // namespace ecs
