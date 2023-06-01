@@ -62,7 +62,7 @@ namespace sp::vulkan::renderer {
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
 
                 for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
-                    if (!ent.Has<ecs::Transform>(lock)) continue;
+                    if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
 
@@ -88,7 +88,7 @@ namespace sp::vulkan::renderer {
                     Screen screen;
                     screen.id = id;
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
-                    screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).GetMatrix();
+                    screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
                     screens.push_back(std::move(screen));
                 }
             })

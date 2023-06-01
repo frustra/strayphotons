@@ -104,8 +104,8 @@ namespace sp {
             if (!player.Has<ecs::TransformSnapshot>(lock)) return;
 
             if (target.Has<ecs::TransformSnapshot>(lock)) {
-                auto targetPos = target.Get<const ecs::TransformSnapshot>(lock).GetPosition();
-                auto playerPos = player.Get<const ecs::TransformSnapshot>(lock).GetPosition();
+                auto targetPos = target.Get<const ecs::TransformSnapshot>(lock).globalPose.GetPosition();
+                auto playerPos = player.Get<const ecs::TransformSnapshot>(lock).globalPose.GetPosition();
                 auto targetDelta = glm::vec3(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z);
                 if (targetDelta != glm::vec3(0)) {
                     auto targetDir = glm::normalize(targetDelta);

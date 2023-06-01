@@ -34,7 +34,7 @@ namespace sp::scripts {
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<PhysicsJoints, TransformSnapshot>(lock)) return;
             auto &joints = ent.Get<PhysicsJoints>(lock);
-            auto &plugTransform = ent.Get<const TransformSnapshot>(lock);
+            auto &plugTransform = ent.Get<const TransformSnapshot>(lock).globalPose;
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -59,7 +59,7 @@ namespace sp::scripts {
                                 for (auto &entity : socketEntities) {
                                     if (!entity.Has<TransformSnapshot>(lock)) continue;
 
-                                    auto &socketTransform = entity.Get<const TransformSnapshot>(lock);
+                                    auto &socketTransform = entity.Get<const TransformSnapshot>(lock).globalPose;
                                     float distance = glm::length(
                                         socketTransform.GetPosition() - plugTransform.GetPosition());
                                     if (!nearestSocket.Has<TransformSnapshot>(lock) || distance < nearestDist) {
@@ -68,7 +68,7 @@ namespace sp::scripts {
                                     }
                                 }
                                 if (nearestSocket.Has<TransformSnapshot>(lock)) {
-                                    auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock);
+                                    auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock).globalPose;
 
                                     float snapAngle = SignalRef(nearestSocket, "snap_angle").GetSignal(lock);
 

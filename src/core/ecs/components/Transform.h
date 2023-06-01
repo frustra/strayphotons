@@ -70,32 +70,10 @@ namespace ecs {
     // If this changes, make sure it is the same in Rust and WASM
     static_assert(sizeof(Transform) == 60, "Wrong Transform size");
 
-    #ifndef SP_WASM_BUILD
-    typedef Transform TransformSnapshot;
-
-    struct TransformTree {
-        Transform pose;
-        EntityRef parent;
-
-        TransformTree() {}
-        TransformTree(const glm::mat4x3 &pose, glm::vec3 scale) : pose(pose, scale) {}
-        TransformTree(const Transform &pose, EntityRef parent = {}) : pose(pose), parent(parent) {}
-        TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
-
-        static void MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target);
-        static Entity GetRoot(Lock<Read<TransformTree>> lock, Entity entity);
-
-        // Returns a flattened Transform that includes all parent transforms.
-        Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
-        glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
-
-        // Returns a flatted Transform relative to the specified entity.
-        Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
-    };
-    #endif
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
+    
     static StructMetadata MetadataTransform(typeid(Transform),
         "Transform",
         StructField("translate",
@@ -124,9 +102,44 @@ namespace ecs {
         const Transform &src,
         const Transform *def);
     template<>
-    void StructMetadata::DefineSchema<Transform>(picojson::value &dst,
-        sp::json::SchemaTypeReferences *references);
+    void StructMetadata::DefineSchema<Transform>(picojson::value &dst, sp::json::SchemaTypeReferences *references);
 
+    struct TransformSnapshot {
+        Transform globalPose;
+
+        TransformSnapshot() {}
+        TransformSnapshot(const Transform &pose) : globalPose(pose) {}
+
+        operator Transform() const {
+            return globalPose;
+        }
+    };
+    
+    static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
+        "TransformSnapshot",
+        StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave));
+    static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
+
+    struct TransformTree {
+        Transform pose;
+        EntityRef parent;
+
+        TransformTree() {}
+        TransformTree(const glm::mat4x3 &pose, glm::vec3 scale) : pose(pose, scale) {}
+        TransformTree(const Transform &pose, EntityRef parent = {}) : pose(pose), parent(parent) {}
+        TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
+
+        static void MoveViaRoot(Lock<Write<TransformTree>> lock, Entity entity, Transform target);
+        static Entity GetRoot(Lock<Read<TransformTree>> lock, Entity entity);
+
+        // Returns a flattened Transform that includes all parent transforms.
+        Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
+        glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
+
+        // Returns a flatted Transform relative to the specified entity.
+        Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
+    };
+    
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         "TransformTree",
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
@@ -136,11 +149,6 @@ namespace ecs {
             &TransformTree::parent,
             ~FieldAction::AutoApply));
     static Component<TransformTree> ComponentTransformTree(MetadataTransformTree, "transform");
-    static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
-        "TransformSnapshot",
-        StructField::New<Transform>(FieldAction::AutoSave));
-    static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
-
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);
     template<>

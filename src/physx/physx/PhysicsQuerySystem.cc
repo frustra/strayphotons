@@ -29,7 +29,7 @@ namespace sp {
 
                                 if ((arg.relativePosition || arg.relativeDirection) &&
                                     entity.Has<ecs::TransformSnapshot>(lock)) {
-                                    const auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+                                    auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
                                     if (arg.relativePosition) rayStart = transform * glm::vec4(rayStart, 1);
                                     if (arg.relativeDirection) rayDir = transform * glm::vec4(rayDir, 0);
                                 }
@@ -90,7 +90,7 @@ namespace sp {
                             }
                         } else if constexpr (std::is_same<T, ecs::PhysicsQuery::Sweep>()) {
                             if (arg.maxDistance > 0.0f && entity.Has<ecs::TransformSnapshot>(lock)) {
-                                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+                                auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
                                 PxFilterData filterData;
                                 filterData.word0 = (uint32_t)arg.filterGroup;
@@ -123,7 +123,7 @@ namespace sp {
                             }
                         } else if constexpr (std::is_same<T, ecs::PhysicsQuery::Overlap>()) {
                             if (entity.Has<ecs::TransformSnapshot>(lock)) {
-                                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+                                auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
                                 PxFilterData filterData;
                                 filterData.word0 = (uint32_t)arg.filterGroup;

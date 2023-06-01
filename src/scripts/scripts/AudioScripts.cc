@@ -18,8 +18,8 @@ namespace sp::scripts {
 
             auto listener = sp::entities::Head.Get(lock);
             if (listener.Has<TransformSnapshot>(lock)) {
-                auto listenerPos = listener.Get<TransformSnapshot>(lock).GetPosition();
-                auto soundPos = ent.Get<TransformSnapshot>(lock).GetPosition();
+                auto &listenerPos = listener.Get<TransformSnapshot>(lock).globalPose.GetPosition();
+                auto &soundPos = ent.Get<TransformSnapshot>(lock).globalPose.GetPosition();
                 auto rayToListener = listenerPos - soundPos;
 
                 PhysicsQuery::Raycast nextQuery(glm::length(rayToListener),

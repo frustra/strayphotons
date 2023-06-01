@@ -201,8 +201,8 @@ namespace sp::scripts {
                     auto indexBone1 = physicsRefs[7].Get(lock);
 
                     if (indexBone0.Has<TransformSnapshot>(lock) && indexBone1.Has<TransformSnapshot>(lock)) {
-                        auto &tr0 = indexBone0.Get<TransformSnapshot>(lock);
-                        auto &tr1 = indexBone1.Get<TransformSnapshot>(lock);
+                        auto &tr0 = indexBone0.Get<TransformSnapshot>(lock).globalPose;
+                        auto &tr1 = indexBone1.Get<TransformSnapshot>(lock).globalPose;
 
                         pointOrigin = tr1.GetPosition();
                         pointDir = glm::normalize(pointOrigin - tr0.GetPosition());

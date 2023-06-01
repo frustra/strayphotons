@@ -49,7 +49,7 @@ namespace ecs {
     struct SignalOutput;
     struct SignalBindings;
     struct Transform;
-    typedef Transform TransformSnapshot;
+    struct TransformSnapshot;
     struct TransformTree;
     struct TriggerArea;
     enum class TriggerGroup : uint8_t;

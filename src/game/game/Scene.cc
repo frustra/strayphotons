@@ -375,7 +375,7 @@ namespace sp {
         }
         if (stagingConnection.Has<ecs::TransformTree>(stagingLock) &&
             liveConnection.Has<ecs::TransformSnapshot>(liveLock)) {
-            auto &liveTransform = liveConnection.Get<ecs::TransformSnapshot>(liveLock);
+            auto &liveTransform = liveConnection.Get<ecs::TransformSnapshot>(liveLock).globalPose;
             auto &stagingTree = stagingConnection.Get<ecs::TransformTree>(stagingLock);
             auto stagingTransform = stagingTree.GetGlobalTransform(stagingLock);
             glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());

@@ -19,7 +19,7 @@ namespace sp::scripts {
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformSnapshot, Audio>(lock)) return;
-            auto &transform = ent.Get<TransformSnapshot>(lock);
+            auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
             auto &audio = ent.Get<Audio>(lock);
 
             if (!init) {

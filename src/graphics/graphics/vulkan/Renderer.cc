@@ -498,7 +498,7 @@ namespace sp::vulkan {
 
                     // 1000 pixels per meter world-scale (~25 dpi)
                     desc.extent = vk::Extent3D(1000, 1000, 1);
-                    auto guiScale = gui.entity.Get<ecs::TransformSnapshot>(lock).GetScale();
+                    auto guiScale = gui.entity.Get<ecs::TransformSnapshot>(lock).globalPose.GetScale();
                     desc.extent.width *= guiScale.x;
                     desc.extent.height *= guiScale.y;
 

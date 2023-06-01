@@ -129,7 +129,7 @@ namespace sp {
 
         auto head = entities::Head.Get(lock);
         if (head.Has<ecs::TransformSnapshot>(lock)) {
-            auto transform = head.Get<ecs::TransformSnapshot>(lock);
+            auto &transform = head.Get<ecs::TransformSnapshot>(lock).globalPose;
             auto pos = transform.GetPosition();
             auto rot = transform.GetRotation();
             resonance->SetHeadPosition(pos.x, pos.y, pos.z);
@@ -235,7 +235,7 @@ namespace sp {
                     }
 
                     if (ent.Has<ecs::TransformSnapshot>(lock)) {
-                        auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
+                        auto &transform = ent.Get<ecs::TransformSnapshot>(lock).globalPose;
                         auto pos = transform.GetPosition();
                         auto rot = transform.GetRotation();
                         resonance->SetSourcePosition(resonanceID, pos.x, pos.y, pos.z);

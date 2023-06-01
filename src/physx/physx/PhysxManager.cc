@@ -213,7 +213,7 @@ namespace sp {
                     auto &ph = ent.Get<ecs::Physics>(lock);
                     if (actors.count(ent) > 0) {
                         auto const &actor = actors[ent];
-                        auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
+                        auto &transform = ent.Get<ecs::TransformSnapshot>(lock).globalPose;
 
                         auto userData = (ActorUserData *)actor->userData;
                         Assert(userData, "Physics actor is missing UserData");
