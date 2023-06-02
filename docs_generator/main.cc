@@ -266,43 +266,45 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::vector<std::string> otherGroup;
-    auto &groupFilterPtr = docGroups.at(docGroup);
-    auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
+    {
+        std::vector<std::string> otherGroup;
+        auto &groupFilterPtr = docGroups.at(docGroup);
+        auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
 
-    Logf("Parsed group: %s %llx", docGroup, groupFilterPtr);
+        Logf("Parsed group: %s %llx", docGroup, groupFilterPtr);
 
-    if (groupFilterPtr == nullptr && docGroup != "schema") {
-        // Special case for the "other" group which documents all unlisted components.
-        std::vector<std::string> allListedComponents;
-        for (auto &group : docGroups) {
-            if (group.second) {
-                allListedComponents.insert(allListedComponents.end(), group.second->begin(), group.second->end());
+        if (groupFilterPtr == nullptr && docGroup != "schema") {
+            // Special case for the "other" group which documents all unlisted components.
+            std::vector<std::string> allListedComponents;
+            for (auto &group : docGroups) {
+                if (group.second) {
+                    allListedComponents.insert(allListedComponents.end(), group.second->begin(), group.second->end());
+                }
             }
+
+            auto &nameComp = ecs::LookupComponent<ecs::Name>();
+            if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
+            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
+                if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
+            });
         }
 
-        auto &nameComp = ecs::LookupComponent<ecs::Name>();
-        if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
-        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
-            if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
-        });
-    }
+        Logf("Saving %s to %s", docGroup, outputPath);
 
-    Logf("Saving %s to %s", docGroup, outputPath);
+        std::ofstream file(outputPath);
+        if (!file) {
+            Errorf("Failed to open output file: '%s'", outputPath);
+            return 1;
+        }
 
-    std::ofstream file(outputPath);
-    if (!file) {
-        Errorf("Failed to open output file: '%s'", outputPath);
-        return 1;
-    }
+        Logf("Opened file: %s %s", outputPath, file.good() ? "true" : "false");
 
-    Logf("Opened file: %s %s", outputPath, file.good() ? "true" : "false");
-
-    if (docGroup == "schema") {
-        saveJsonSchema(file);
-    } else {
-        (void)groupFilter;
-        // saveMarkdownPage(file, groupFilter);
+        if (docGroup == "schema") {
+            saveJsonSchema(file);
+        } else {
+            (void)groupFilter;
+            // saveMarkdownPage(file, groupFilter);
+        }
     }
     Logf("Done %s", docGroup);
     return 0;
