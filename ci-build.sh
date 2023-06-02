@@ -44,7 +44,9 @@ cmake --build ./build --config RelWithDebInfo --target all 2>&1 | tee >(grep -E 
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     echo -e "\n^^^ +++"
     echo -e "\033[31mCMake Build failed\033[0m"
-    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
+    if [ -n "$BUILDKITE_BRANCH" ]; then
+        cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
+    fi
     exit 1
 fi
 
