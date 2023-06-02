@@ -304,5 +304,6 @@ int main(int argc, char **argv) {
         (void)groupFilter;
         // saveMarkdownPage(file, groupFilter);
     }
+    Logf("Done %s", docGroup);
     return 0;
 }
