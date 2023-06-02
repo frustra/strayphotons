@@ -207,6 +207,7 @@ void saveJsonSchema(std::ofstream &file) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
         auto &comp = ecs::LookupComponent<T>();
+        Logf("Saving schema for %s", comp.name);
         sp::json::SchemaTypeReferences references;
         sp::json::SaveSchema<T>(entityProperties[comp.name], &references);
 
@@ -269,6 +270,8 @@ int main(int argc, char **argv) {
     auto &groupFilterPtr = docGroups.at(docGroup);
     auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
 
+    Logf("Parsed group: %s %llx", docGroup, groupFilterPtr);
+
     if (groupFilterPtr == nullptr && docGroup != "schema") {
         // Special case for the "other" group which documents all unlisted components.
         std::vector<std::string> allListedComponents;
@@ -285,11 +288,15 @@ int main(int argc, char **argv) {
         });
     }
 
+    Logf("Saving %s to %s", docGroup, outputPath);
+
     std::ofstream file(outputPath);
     if (!file) {
         Errorf("Failed to open output file: '%s'", outputPath);
         return 1;
     }
+
+    Logf("Opened file: %s %s", outputPath, file.good() ? "true" : "false");
 
     if (docGroup == "schema") {
         saveJsonSchema(file);
