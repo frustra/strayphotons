@@ -1,6 +1,6 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-// #include "field_docs.hh"
+#include "field_docs.hh"
 #include "schema_gen.hh"
 
 #include <array>
@@ -55,126 +55,126 @@ static const std::map<std::string, const std::vector<std::string> *> docGroups =
     {"schema", nullptr},
 };
 
-// inline std::string escapeMarkdownString(const std::string &input) {
-//     size_t escapeCount = std::count(input.begin(), input.end(), '|');
-//     if (escapeCount == 0) return input;
-//     std::string result;
-//     result.reserve(input.length() + escapeCount);
-//     for (auto &ch : input) {
-//         if (ch == '|') {
-//             result += '\\';
-//         }
-//         result += ch;
-//     }
-//     return result;
-// }
+inline std::string escapeMarkdownString(const std::string &input) {
+    size_t escapeCount = std::count(input.begin(), input.end(), '|');
+    if (escapeCount == 0) return input;
+    std::string result;
+    result.reserve(input.length() + escapeCount);
+    for (auto &ch : input) {
+        if (ch == '|') {
+            result += '\\';
+        }
+        result += ch;
+    }
+    return result;
+}
 
-// void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compList) {
-//     std::set<std::string> savedDocs;
-//     for (auto &name : compList) {
-//         file << "## `" << name << "` Component" << std::endl;
+void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compList) {
+    std::set<std::string> savedDocs;
+    for (auto &name : compList) {
+        file << "## `" << name << "` Component" << std::endl;
 
-//         auto &comp = *ecs::LookupComponent(name);
+        auto &comp = *ecs::LookupComponent(name);
 
-//         DocsContext docs;
-//         ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
-//             using T = std::remove_pointer_t<decltype(typePtr)>;
-//             docs.SaveFields<T>();
-//         });
+        DocsContext docs;
+        ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            docs.SaveFields<T>();
+        });
 
-//         if (docs.fields.empty()) {
-//             file << "The `" << name << "` component has no public fields" << std::endl;
-//         } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
-//             file << "The `" << name << "` component has type: " << docs.fields.front().typeString << std::endl;
-//         } else {
-//             file << "| Field Name | Type | Default Value | Description |" << std::endl;
-//             file << "|------------|------|---------------|-------------|" << std::endl;
-//             for (auto &field : docs.fields) {
-//                 file << "| **" << field.name << "** | " << field.typeString << " | "
-//                      << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
-//                      << std::endl;
-//             }
-//         }
+        if (docs.fields.empty()) {
+            file << "The `" << name << "` component has no public fields" << std::endl;
+        } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
+            file << "The `" << name << "` component has type: " << docs.fields.front().typeString << std::endl;
+        } else {
+            file << "| Field Name | Type | Default Value | Description |" << std::endl;
+            file << "|------------|------|---------------|-------------|" << std::endl;
+            for (auto &field : docs.fields) {
+                file << "| **" << field.name << "** | " << field.typeString << " | "
+                     << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
+                     << std::endl;
+            }
+        }
 
-//         if (!docs.references.empty()) {
-//             std::set<std::string> seeAlso;
+        if (!docs.references.empty()) {
+            std::set<std::string> seeAlso;
 
-//             std::function<void(const std::string &, const std::type_index &)> saveReferencedType;
-//             saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
-//                 savedDocs.emplace(refName);
+            std::function<void(const std::string &, const std::type_index &)> saveReferencedType;
+            saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
+                savedDocs.emplace(refName);
 
-//                 DocsContext refDocs;
-//                 bool isEnumFlags = false;
-//                 bool isEnum = false;
-//                 ecs::GetFieldType(refType, [&](auto *typePtr) {
-//                     using T = std::remove_pointer_t<decltype(typePtr)>;
+                DocsContext refDocs;
+                bool isEnumFlags = false;
+                bool isEnum = false;
+                ecs::GetFieldType(refType, [&](auto *typePtr) {
+                    using T = std::remove_pointer_t<decltype(typePtr)>;
 
-//                     if constexpr (std::is_enum<T>()) {
-//                         isEnum = true;
-//                         if constexpr (is_flags_enum<T>()) {
-//                             isEnumFlags = true;
-//                         }
+                    if constexpr (std::is_enum<T>()) {
+                        isEnum = true;
+                        if constexpr (is_flags_enum<T>()) {
+                            isEnumFlags = true;
+                        }
 
-//                         static const auto names = magic_enum::enum_names<T>();
-//                         for (auto &enumName : names) {
-//                             refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
-//                         }
-//                     } else {
-//                         refDocs.SaveFields<T>();
-//                     }
-//                 });
+                        static const auto names = magic_enum::enum_names<T>();
+                        for (auto &enumName : names) {
+                            refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
+                        }
+                    } else {
+                        refDocs.SaveFields<T>();
+                    }
+                });
 
-//                 if (refDocs.fields.empty()) {
-//                     seeAlso.emplace(refName);
-//                     return;
-//                 }
+                if (refDocs.fields.empty()) {
+                    seeAlso.emplace(refName);
+                    return;
+                }
 
-//                 file << std::endl << "### `" << refName << "` Type" << std::endl;
-//                 if (isEnumFlags) {
-//                     file << "This is a flags enum type. Multiple flags can be combined using the '|' character "
-//                          << "(e.g. `\"One|Two\"` with no whitespace)." << std::endl;
-//                 }
-//                 if (isEnum) {
-//                     file << "Note: Enum string names are case-sensitive." << std::endl;
-//                     file << "| Enum Value |" << std::endl;
-//                     file << "|------------|" << std::endl;
-//                     for (auto &field : refDocs.fields) {
-//                         file << "| \"" << field.name << "\" |" << std::endl;
-//                     }
-//                 } else {
-//                     file << "| Field Name | Type | Default Value | Description |" << std::endl;
-//                     file << "|------------|------|---------------|-------------|" << std::endl;
-//                     for (auto &field : refDocs.fields) {
-//                         file << "| **" << field.name << "** | " << field.typeString << " | "
-//                              << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description
-//                              << " |" << std::endl;
-//                     }
-//                 }
+                file << std::endl << "### `" << refName << "` Type" << std::endl;
+                if (isEnumFlags) {
+                    file << "This is a flags enum type. Multiple flags can be combined using the '|' character "
+                         << "(e.g. `\"One|Two\"` with no whitespace)." << std::endl;
+                }
+                if (isEnum) {
+                    file << "Note: Enum string names are case-sensitive." << std::endl;
+                    file << "| Enum Value |" << std::endl;
+                    file << "|------------|" << std::endl;
+                    for (auto &field : refDocs.fields) {
+                        file << "| \"" << field.name << "\" |" << std::endl;
+                    }
+                } else {
+                    file << "| Field Name | Type | Default Value | Description |" << std::endl;
+                    file << "|------------|------|---------------|-------------|" << std::endl;
+                    for (auto &field : refDocs.fields) {
+                        file << "| **" << field.name << "** | " << field.typeString << " | "
+                             << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description
+                             << " |" << std::endl;
+                    }
+                }
 
-//                 for (auto &[subRefName, subRefType] : refDocs.references) {
-//                     if (!savedDocs.count(subRefName)) {
-//                         saveReferencedType(subRefName, subRefType);
-//                     } else {
-//                         seeAlso.emplace(subRefName);
-//                     }
-//                 }
-//             };
+                for (auto &[subRefName, subRefType] : refDocs.references) {
+                    if (!savedDocs.count(subRefName)) {
+                        saveReferencedType(subRefName, subRefType);
+                    } else {
+                        seeAlso.emplace(subRefName);
+                    }
+                }
+            };
 
-//             for (auto &[refName, refType] : docs.references) {
-//                 saveReferencedType(refName, refType);
-//             }
+            for (auto &[refName, refType] : docs.references) {
+                saveReferencedType(refName, refType);
+            }
 
-//             if (!seeAlso.empty()) {
-//                 file << std::endl << "**See Also:**" << std::endl;
-//                 for (auto &refName : seeAlso) {
-//                     file << "`" << refName << "`" << std::endl;
-//                 }
-//             }
-//         }
+            if (!seeAlso.empty()) {
+                file << std::endl << "**See Also:**" << std::endl;
+                for (auto &refName : seeAlso) {
+                    file << "`" << refName << "`" << std::endl;
+                }
+            }
+        }
 
-//         file << std::endl << std::endl;
-//     }
-// }
+        file << std::endl << std::endl;
+    }
+}
 
 template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
 void forEachComponentType(ECSType<AllComponentTypes...> *, Func &&callback) {
@@ -207,7 +207,6 @@ void saveJsonSchema(std::ofstream &file) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
         auto &comp = ecs::LookupComponent<T>();
-        Logf("Saving schema for %s", comp.name);
         sp::json::SchemaTypeReferences references;
         sp::json::SaveSchema<T>(entityProperties[comp.name], &references);
 
@@ -266,46 +265,36 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    {
-        std::vector<std::string> otherGroup;
-        auto &groupFilterPtr = docGroups.at(docGroup);
-        auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
+    std::vector<std::string> otherGroup;
+    auto &groupFilterPtr = docGroups.at(docGroup);
+    auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
 
-        Logf("Parsed group: %s %llx", docGroup, groupFilterPtr);
-
-        if (groupFilterPtr == nullptr && docGroup != "schema") {
-            // Special case for the "other" group which documents all unlisted components.
-            std::vector<std::string> allListedComponents;
-            for (auto &group : docGroups) {
-                if (group.second) {
-                    allListedComponents.insert(allListedComponents.end(), group.second->begin(), group.second->end());
-                }
+    if (groupFilterPtr == nullptr && docGroup != "schema") {
+        // Special case for the "other" group which documents all unlisted components.
+        std::vector<std::string> allListedComponents;
+        for (auto &group : docGroups) {
+            if (group.second) {
+                allListedComponents.insert(allListedComponents.end(), group.second->begin(), group.second->end());
             }
-
-            auto &nameComp = ecs::LookupComponent<ecs::Name>();
-            if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
-            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
-                if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
-            });
         }
 
-        Logf("Saving %s to %s", docGroup, outputPath);
-
-        std::ofstream file(outputPath);
-        if (!file) {
-            Errorf("Failed to open output file: '%s'", outputPath);
-            return 1;
-        }
-
-        Logf("Opened file: %s %s", outputPath, file.good() ? "true" : "false");
-
-        if (docGroup == "schema") {
-            saveJsonSchema(file);
-        } else {
-            (void)groupFilter;
-            // saveMarkdownPage(file, groupFilter);
-        }
+        auto &nameComp = ecs::LookupComponent<ecs::Name>();
+        if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
+        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
+            if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
+        });
     }
-    Logf("Done %s", docGroup);
+
+    std::ofstream file(outputPath);
+    if (!file) {
+        Errorf("Failed to open output file: '%s'", outputPath);
+        return 1;
+    }
+
+    if (docGroup == "schema") {
+        saveJsonSchema(file);
+    } else {
+        saveMarkdownPage(file, groupFilter);
+    }
     return 0;
 }

@@ -43,6 +43,8 @@ namespace sp {
     };
 
     class ConsoleManager : public RegisteredThread {
+        LogOnExit logOnExit = "ConsoleManager shut down ==============================================";
+
     public:
         ConsoleManager();
         void StartThread(const ConsoleScript *startupScript);
@@ -81,11 +83,13 @@ namespace sp {
         };
         Completions AllCompletions(const string &input, bool requestNewCompletions);
 
+        // Starts the command line input handler thread. Must only be called once.
+        void StartInputLoop();
+
     private:
         void Execute(const string cmd, const string &args);
 
         void Frame() override;
-        void InputLoop();
 
         void RegisterCoreCommands();
         void RegisterTracyCommands();

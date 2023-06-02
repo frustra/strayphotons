@@ -80,6 +80,8 @@ namespace sp {
             lock.Set<ecs::Signals>();
         }
 
+        GetConsoleManager().StartInputLoop();
+
 #if RUST_CXX
         sp::rust::print_hello();
 #endif
