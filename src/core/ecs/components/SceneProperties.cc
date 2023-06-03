@@ -64,7 +64,7 @@ namespace ecs {
     void StructMetadata::Save<SceneProperties>(const EntityScope &scope,
         picojson::value &dst,
         const SceneProperties &src,
-        const SceneProperties &def) {
+        const SceneProperties *def) {
         if (!src.gravityFunction) return;
 
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});

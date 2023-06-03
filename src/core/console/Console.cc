@@ -53,17 +53,10 @@ namespace sp {
         GetConsoleManager().RemoveCVar(this);
     }
 
-    ConsoleManager::ConsoleManager() : RegisteredThread("ConsoleManager", 60.0) {
-        cliInputThread = std::thread([this] {
-            tracy::SetThreadName("ConsoleManager::InputLoop");
-            InputLoop();
-        });
-        cliInputThread.detach();
-    }
+    ConsoleManager::ConsoleManager() : RegisteredThread("ConsoleManager", 60.0) {}
 
     void ConsoleManager::Shutdown() {
         StopThread();
-        Logf("ConsoleManager shut down ==============================================");
     }
 
     void ConsoleManager::AddCVar(CVarBase *cvar) {
@@ -77,48 +70,53 @@ namespace sp {
         cvars.erase(cvar->GetNameLower());
     }
 
-    void ConsoleManager::InputLoop() {
-        std::mutex wait_lock;
-        std::condition_variable condition;
-        std::unique_lock ulock(wait_lock, std::defer_lock);
+    void ConsoleManager::StartInputLoop() {
+        Assertf(cliInputThread.get_id() == std::thread::id(), "Console input thread already started");
+
+        cliInputThread = std::thread([this] {
+            tracy::SetThreadName("ConsoleManager::InputLoop");
+
+            std::mutex wait_lock;
+            std::condition_variable condition;
+            std::unique_lock ulock(wait_lock, std::defer_lock);
 
 #ifdef USE_LINENOISE_CLI
-        char *str;
+            char *str;
 
-        linenoiseHistorySetMaxLen(256);
-        linenoiseSetCompletionCallback(LinenoiseCompletionCallback);
+            linenoiseHistorySetMaxLen(256);
+            linenoiseSetCompletionCallback(LinenoiseCompletionCallback);
 
-        while ((str = linenoise("sp> ")) != nullptr) {
-            if (*str == '\0') {
+            while ((str = linenoise("sp> ")) != nullptr) {
+                if (!str) continue;
+                if (*str == '\0') {
+                    linenoiseFree(str);
+                    continue;
+                }
+
+                ulock.lock();
+                AddHistory(str);
+                QueueParseAndExecute(str, chrono_clock::now(), &condition);
+                condition.wait(ulock);
+                ulock.unlock();
+
+                linenoiseHistoryAdd(str);
                 linenoiseFree(str);
-                continue;
             }
-            string line(str);
-
-            ulock.lock();
-            AddHistory(str);
-            QueueParseAndExecute(line, chrono_clock::now(), &condition);
-            condition.wait(ulock);
-            ulock.unlock();
-
-            linenoiseHistoryAdd(str);
-            linenoiseFree(str);
-        }
 #else
-        std::string str;
+            std::string str;
 
-        while (std::getline(std::cin, str)) {
-            if (str == "") continue;
+            while (std::getline(std::cin, str)) {
+                if (str.empty()) continue;
 
-            string line(str);
-
-            ulock.lock();
-            AddHistory(str);
-            QueueParseAndExecute(line, chrono_clock::now(), &condition);
-            condition.wait(ulock);
-            ulock.unlock();
-        }
+                ulock.lock();
+                AddHistory(str);
+                QueueParseAndExecute(str, chrono_clock::now(), &condition);
+                condition.wait(ulock);
+                ulock.unlock();
+            }
 #endif
+        });
+        cliInputThread.detach();
     }
 
     void ConsoleManager::AddLog(logging::Level lvl, const string &line) {

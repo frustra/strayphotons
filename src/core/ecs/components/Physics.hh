@@ -48,9 +48,16 @@ namespace ecs {
         bool operator==(const PhysicsMaterial &) const = default;
     };
     static StructMetadata MetadataPhysicsMaterial(typeid(PhysicsMaterial),
-        StructField::New("static_friction", &PhysicsMaterial::staticFriction),
-        StructField::New("dynamic_friction", &PhysicsMaterial::dynamicFriction),
-        StructField::New("restitution", &PhysicsMaterial::restitution));
+        "PhysicsMaterial",
+        StructField::New("static_friction",
+            "This material's coefficient of static friction (>= 0.0)",
+            &PhysicsMaterial::staticFriction),
+        StructField::New("dynamic_friction",
+            "This material's coefficient of dynamic friction (>= 0.0)",
+            &PhysicsMaterial::dynamicFriction),
+        StructField::New("restitution",
+            "This material's coefficient of restitution (0.0 no bounce - 1.0 more bounce)",
+            &PhysicsMaterial::restitution));
 
     struct PhysicsShape {
         struct Sphere {
@@ -118,14 +125,14 @@ namespace ecs {
         bool operator==(const PhysicsShape &) const = default;
     };
 
-    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape));
+    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape), "PhysicsShape");
     template<>
     bool StructMetadata::Load<PhysicsShape>(PhysicsShape &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<PhysicsShape>(const EntityScope &scope,
         picojson::value &dst,
         const PhysicsShape &src,
-        const PhysicsShape &def);
+        const PhysicsShape *def);
 
     enum class PhysicsActorType : uint8_t {
         Static,
@@ -157,15 +164,41 @@ namespace ecs {
     };
 
     static StructMetadata MetadataPhysics(typeid(Physics),
-        StructField::New("shapes", &Physics::shapes),
-        StructField::New("group", &Physics::group),
-        StructField::New("type", &Physics::type),
-        StructField::New("parent_actor", &Physics::parentActor),
-        StructField::New("mass", &Physics::mass),
-        StructField::New("density", &Physics::density),
-        StructField::New("angular_damping", &Physics::angularDamping),
-        StructField::New("linear_damping", &Physics::linearDamping),
-        StructField::New("contact_report_force", &Physics::contactReportThreshold),
-        StructField::New("force", &Physics::constantForce));
-    static Component<Physics> ComponentPhysics("physics", MetadataPhysics);
+        "physics",
+        StructField::New("shapes",
+            "A list of individual shapes and models that combine to form the actor's overall collision shape.",
+            &Physics::shapes),
+        StructField::New("group", "The collision group that this actor belongs to.", &Physics::group),
+        StructField::New("type",
+            "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only "
+            "movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. "
+            "The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new "
+            "physics actor.",
+            &Physics::type),
+        StructField::New("parent_actor",
+            "Only used for \"SubActor\" type. If empty, the parent actor is determined by the `transform` parent.",
+            &Physics::parentActor),
+        StructField::New("mass",
+            "The weight of the physics actor in Kilograms (kg). Overrides **density** field. "
+            "Only used for \"Dynamic\" objects.",
+            &Physics::mass),
+        StructField::New("density",
+            "The density of the physics actor in Kilograms per Cubic Meter (kg/m^3). "
+            "This value is ignored if **mass** != 0. Only used for \"Dynamic\" objects.",
+            &Physics::density),
+        StructField::New("angular_damping",
+            "Resistance to changes in rotational velocity. Affects how quickly the entity will stop spinning. (>= 0.0)",
+            &Physics::angularDamping),
+        StructField::New("linear_damping",
+            "Resistance to changes in linear velocity. Affects how quickly the entity will stop moving. (>= 0.0)",
+            &Physics::linearDamping),
+        StructField::New("contact_report_force",
+            "The minimum collision force required to trigger a contact event. "
+            "Force-based contact events are enabled if this value is >= 0.0",
+            &Physics::contactReportThreshold),
+        StructField::New("constant_force",
+            "A vector defining a constant force (in Newtons, N) that should be applied to the actor. "
+            "The force vector is applied relative to the actor at its center of mass.",
+            &Physics::constantForce));
+    static Component<Physics> ComponentPhysics(MetadataPhysics);
 } // namespace ecs

@@ -18,7 +18,7 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataInitEvent(typeid(InitEvent), StructField::New(&InitEvent::outputs));
+    StructMetadata MetadataInitEvent(typeid(InitEvent), "InitEvent", StructField::New(&InitEvent::outputs));
     InternalScript<InitEvent> initEvent("init_event", MetadataInitEvent);
 
     struct EventGateBySignal {
@@ -47,6 +47,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEventGateBySignal(typeid(EventGateBySignal),
+        "EventGateBySignal",
         StructField::New("input_event", &EventGateBySignal::inputEvent),
         StructField::New("output_event", &EventGateBySignal::outputEvent),
         StructField::New("gate_expr", &EventGateBySignal::gateExpression));
@@ -86,7 +87,9 @@ namespace sp::scripts {
             updateEvents(state, lock, ent, interval);
         }
     };
-    StructMetadata MetadataCollapseEvents(typeid(CollapseEvents), StructField::New(&CollapseEvents::mapping));
+    StructMetadata MetadataCollapseEvents(typeid(CollapseEvents),
+        "CollapseEvents",
+        StructField::New(&CollapseEvents::mapping));
     InternalScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
     InternalPhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
 
@@ -151,6 +154,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSignalFromEvent(typeid(SignalFromEvent),
+        "SignalFromEvent",
         StructField::New("outputs", &SignalFromEvent::outputs));
     InternalScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
 
@@ -176,7 +180,9 @@ namespace sp::scripts {
             sendOutputEvents(state, lock, ent, interval);
         }
     };
-    StructMetadata MetadataEventFromSignal(typeid(EventFromSignal), StructField::New(&EventFromSignal::outputs));
+    StructMetadata MetadataEventFromSignal(typeid(EventFromSignal),
+        "EventFromSignal",
+        StructField::New(&EventFromSignal::outputs));
     InternalScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
     InternalPhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
 
@@ -280,6 +286,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataComponentFromEvent(typeid(ComponentFromEvent),
+        "ComponentFromEvent",
         StructField::New("outputs", &ComponentFromEvent::outputs));
     InternalScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
     InternalPhysicsScript<ComponentFromEvent> physicsComponentFromEvent("physics_component_from_event",

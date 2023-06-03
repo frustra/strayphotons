@@ -70,8 +70,55 @@ namespace ecs {
     // If this changes, make sure it is the same in Rust and WASM
     static_assert(sizeof(Transform) == 60, "Wrong Transform size");
 
+    } // extern "C"
+
     #ifndef SP_WASM_BUILD
-    typedef Transform TransformSnapshot;
+    
+    static StructMetadata MetadataTransform(typeid(Transform),
+        "Transform",
+        StructField("translate",
+            "Specifies the entity's position in 3D space. "
+            "The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
+            typeid(glm::vec3),
+            StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
+            FieldAction::None),
+        StructField("rotate",
+            "Specifies the entity's orientation in 3D space. "
+            "Multiple rotations can be automatically combined by specifying an array of rotations: "
+            "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+            typeid(glm::mat3),
+            StructField::OffsetOf(&Transform::offset),
+            FieldAction::None),
+        StructField::New("scale",
+            "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. "
+            "If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
+            &Transform::scale,
+            FieldAction::None));
+    template<>
+    bool StructMetadata::Load<Transform>(Transform &dst, const picojson::value &src);
+    template<>
+    void StructMetadata::Save<Transform>(const EntityScope &scope,
+        picojson::value &dst,
+        const Transform &src,
+        const Transform *def);
+    template<>
+    void StructMetadata::DefineSchema<Transform>(picojson::value &dst, sp::json::SchemaTypeReferences *references);
+
+    struct TransformSnapshot {
+        Transform globalPose;
+
+        TransformSnapshot() {}
+        TransformSnapshot(const Transform &pose) : globalPose(pose) {}
+
+        operator Transform() const {
+            return globalPose;
+        }
+    };
+    
+    static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
+        "TransformSnapshot",
+        StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave));
+    static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
 
     struct TransformTree {
         Transform pose;
@@ -92,32 +139,16 @@ namespace ecs {
         // Returns a flatted Transform relative to the specified entity.
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
     };
-    #endif
-    } // extern "C"
-
-    #ifndef SP_WASM_BUILD
-    static StructMetadata MetadataTransform(typeid(Transform),
-        StructField("translate",
-            typeid(glm::vec3),
-            StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
-            FieldAction::AutoApply),
-        StructField::New("scale", &Transform::scale, FieldAction::AutoApply));
-    template<>
-    bool StructMetadata::Load<Transform>(Transform &dst, const picojson::value &src);
-    template<>
-    void StructMetadata::Save<Transform>(const EntityScope &scope,
-        picojson::value &dst,
-        const Transform &src,
-        const Transform &def);
-
+    
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
+        "TransformTree",
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
-        StructField::New("parent", &TransformTree::parent, ~FieldAction::AutoApply));
-    static Component<TransformTree> ComponentTransformTree("transform", MetadataTransformTree);
-    static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
-        StructField::New<Transform>(FieldAction::AutoSave));
-    static Component<TransformSnapshot> ComponentTransformSnapshot("transform_snapshot", MetadataTransformSnapshot);
-
+        StructField::New("parent",
+            "Specifies a parent entity that this transform is relative to. "
+            "If empty, the transform is relative to the scene root.",
+            &TransformTree::parent,
+            ~FieldAction::AutoApply));
+    static Component<TransformTree> ComponentTransformTree(MetadataTransformTree, "transform");
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);
     template<>

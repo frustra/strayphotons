@@ -223,9 +223,9 @@
 			"light": {
 				"tint": [0.9, 0.9, 1],
 				"illuminance": 10,
-				"spotAngle": 22,
-				"shadowMapSize": 12,
-				"shadowMapClip": [20, 50]
+				"spot_angle": 22,
+				"shadow_map_size": 12,
+				"shadow_map_clip": [20, 50]
 			},
 			"transform": {
 				"translate": [7, 35, 0],

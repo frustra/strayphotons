@@ -28,12 +28,13 @@ namespace ecs {
     };
 
     static StructMetadata MetadataLaserLine(typeid(LaserLine),
+        "laser_line",
         StructField::New("intensity", &LaserLine::intensity),
         StructField::New("media_density", &LaserLine::mediaDensityFactor),
         StructField::New("on", &LaserLine::on),
         StructField::New("relative", &LaserLine::relative),
         StructField::New("radius", &LaserLine::radius));
-    static Component<LaserLine> ComponentLaserLine("laser_line", MetadataLaserLine);
+    static Component<LaserLine> ComponentLaserLine(MetadataLaserLine);
 
     template<>
     void StructMetadata::InitUndefined<LaserLine>(LaserLine &dst);
@@ -43,7 +44,7 @@ namespace ecs {
     void StructMetadata::Save<LaserLine>(const EntityScope &scope,
         picojson::value &dst,
         const LaserLine &src,
-        const LaserLine &def);
+        const LaserLine *def);
     template<>
     void Component<LaserLine>::Apply(LaserLine &dst, const LaserLine &src, bool liveTarget);
 } // namespace ecs

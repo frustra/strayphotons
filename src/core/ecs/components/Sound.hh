@@ -31,6 +31,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataSound(typeid(Sound),
+        "Sound",
         StructField::New("type", &Sound::type),
         StructField::New("file", &Sound::filePath),
         StructField::New("loop", &Sound::loop),
@@ -39,7 +40,7 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<Sound>(Sound &dst, const picojson::value &src);
 
-    struct Sounds {
+    struct Audio {
         std::vector<Sound> sounds;
         EventQueueRef eventQueue;
 
@@ -47,9 +48,11 @@ namespace ecs {
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static StructMetadata MetadataSounds(typeid(Sounds), StructField::New(&Sounds::sounds, ~FieldAction::AutoApply));
-    static Component<Sounds> ComponentSound("sound", MetadataSounds);
+    static StructMetadata MetadataAudio(typeid(Audio),
+        "audio",
+        StructField::New(&Audio::sounds, ~FieldAction::AutoApply));
+    static Component<Audio> ComponentAudio(MetadataAudio);
 
     template<>
-    void Component<Sounds>::Apply(Sounds &dst, const Sounds &src, bool liveTarget);
+    void Component<Audio>::Apply(Audio &dst, const Audio &src, bool liveTarget);
 } // namespace ecs

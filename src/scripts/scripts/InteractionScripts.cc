@@ -71,7 +71,7 @@ namespace sp::scripts {
                         if (!enableInteraction) continue;
 
                         auto &parentTransform = std::get<Transform>(event.data);
-                        auto &transform = ent.Get<TransformSnapshot>(lock);
+                        auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
                         auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
                         Entity secondary;
@@ -120,7 +120,7 @@ namespace sp::scripts {
                         if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
                         auto &input = std::get<glm::vec2>(event.data);
-                        auto &transform = event.source.Get<const TransformSnapshot>(lock);
+                        auto &transform = event.source.Get<const TransformSnapshot>(lock).globalPose;
 
                         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
                         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
@@ -168,6 +168,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractiveObject(typeid(InteractiveObject),
+        "InteractiveObject",
         StructField::New("disabled", &InteractiveObject::disabled));
     InternalScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
@@ -207,7 +208,7 @@ namespace sp::scripts {
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             if (ent.Has<TransformSnapshot, PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
-                auto &transform = ent.Get<TransformSnapshot>(lock);
+                auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
 
                 PhysicsQuery::Raycast::Result raycastResult;
                 if (raycastQuery) {
@@ -294,6 +295,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractHandler(typeid(InteractHandler),
+        "InteractHandler",
         StructField::New("grab_distance", &InteractHandler::grabDistance),
         StructField::New("noclip_entity", &InteractHandler::noclipEntity));
     InternalScript<InteractHandler> interactHandler("interact_handler",

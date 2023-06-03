@@ -179,14 +179,17 @@ namespace ecs {
         std::vector<std::string_view> tokens; // string_views into expr
     };
 
-    static StructMetadata MetadataSignalExpression(typeid(SignalExpression));
+    static StructMetadata MetadataSignalExpression(typeid(SignalExpression), "SignalExpression");
     template<>
     bool StructMetadata::Load<SignalExpression>(SignalExpression &dst, const picojson::value &src);
     template<>
     void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
         picojson::value &dst,
         const SignalExpression &src,
-        const SignalExpression &def);
+        const SignalExpression *def);
     template<>
     void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope);
+    template<>
+    void StructMetadata::DefineSchema<SignalExpression>(picojson::value &dst,
+        sp::json::SchemaTypeReferences *references);
 } // namespace ecs

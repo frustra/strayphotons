@@ -22,10 +22,11 @@ namespace ecs {
     };
 
     static StructMetadata MetadataSceneProperties(typeid(SceneProperties),
+        "SceneProperties",
         StructField::New("root_transform", &SceneProperties::rootTransform, FieldAction::AutoApply),
         StructField::New("gravity_transform", &SceneProperties::gravityTransform),
         StructField::New("gravity", &SceneProperties::fixedGravity));
-    static Component<SceneProperties> ComponentSceneProperties("scene_properties", MetadataSceneProperties);
+    static Component<SceneProperties> ComponentSceneProperties(MetadataSceneProperties, "scene_properties");
 
     template<>
     bool StructMetadata::Load<SceneProperties>(SceneProperties &dst, const picojson::value &src);
@@ -33,7 +34,7 @@ namespace ecs {
     void StructMetadata::Save<SceneProperties>(const EntityScope &scope,
         picojson::value &dst,
         const SceneProperties &src,
-        const SceneProperties &def);
+        const SceneProperties *def);
 
     template<>
     void Component<SceneProperties>::Apply(SceneProperties &dst, const SceneProperties &src, bool liveTarget);

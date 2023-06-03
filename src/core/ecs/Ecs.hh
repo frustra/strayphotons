@@ -24,6 +24,7 @@ namespace ecs {
     struct Name;
     struct ActiveScene;
     class Animation;
+    struct Audio;
     struct CharacterController;
     struct EventInput;
     class EventBindings;
@@ -47,9 +48,8 @@ namespace ecs {
     struct Signals;
     struct SignalOutput;
     struct SignalBindings;
-    struct Sounds;
     struct Transform;
-    typedef Transform TransformSnapshot;
+    struct TransformSnapshot;
     struct TransformTree;
     struct TriggerArea;
     enum class TriggerGroup : uint8_t;
@@ -67,6 +67,7 @@ namespace ecs {
 
         ActiveScene,
         Animation,
+        Audio,
         CharacterController,
         FocusLock,
         Gui,
@@ -80,7 +81,6 @@ namespace ecs {
         PhysicsQuery,
         SceneConnection,
         Screen,
-        Sounds,
         TriggerArea,
         TriggerGroup,
         View,
@@ -210,6 +210,7 @@ namespace ecs {
 TECS_NAME_COMPONENT(ecs::Name, "Name");
 TECS_NAME_COMPONENT(ecs::ActiveScene, "ActiveScene");
 TECS_NAME_COMPONENT(ecs::Animation, "Animation");
+TECS_NAME_COMPONENT(ecs::Audio, "Audio");
 TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
@@ -232,7 +233,6 @@ TECS_NAME_COMPONENT(ecs::Screen, "Screen");
 TECS_NAME_COMPONENT(ecs::Scripts, "Scripts");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
-TECS_NAME_COMPONENT(ecs::Sounds, "Sound");
 TECS_NAME_COMPONENT(ecs::TransformSnapshot, "TransformSnapshot");
 TECS_NAME_COMPONENT(ecs::TransformTree, "TransformTree");
 TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");

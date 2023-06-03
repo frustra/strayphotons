@@ -38,7 +38,7 @@ namespace sp::vulkan::renderer {
             if (!entity.Has<ecs::LightSensor, ecs::TransformSnapshot>(lock)) continue;
 
             auto &sensor = entity.Get<ecs::LightSensor>(lock);
-            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
             if (!data) data = make_shared<LightSensorData>();
 

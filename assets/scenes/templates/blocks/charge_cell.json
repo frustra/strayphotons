@@ -175,7 +175,7 @@
 				"translate": [0, 0.08, 0]
 			},
 			"gui": {
-				"windowName": "signal_display"
+				"window_name": "signal_display"
 			},
 			"screen": {
 				"luminance": [3, 3, 3]

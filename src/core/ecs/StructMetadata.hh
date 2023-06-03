@@ -9,21 +9,27 @@
 #include "ecs/components/Name.hh"
 
 #include <robin_hood.h>
+#include <set>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
 
 namespace picojson {
     class value;
-}
-
-namespace sp {
-    class Gltf;
-}
+} // namespace picojson
 
 namespace ecs {
     enum class FieldAction;
+    class StructMetadata;
 }; // namespace ecs
+
+namespace sp {
+    class Gltf;
+
+    namespace json {
+        using SchemaTypeReferences = std::set<const ecs::StructMetadata *>;
+    }
+} // namespace sp
 
 template<>
 struct magic_enum::customize::enum_range<ecs::FieldAction> {
@@ -39,14 +45,18 @@ namespace ecs {
     };
 
     struct StructField {
-        std::string name;
+        std::string name, desc;
         std::type_index type;
         size_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
 
-        StructField(const std::string &name, std::type_index type, size_t offset, FieldAction actions)
-            : name(name), type(type), offset(offset), actions(actions) {}
+        StructField(const std::string &name,
+            const std::string &desc,
+            std::type_index type,
+            size_t offset,
+            FieldAction actions)
+            : name(name), desc(desc), type(type), offset(offset), actions(actions) {}
 
         template<typename T, typename F>
         static size_t OffsetOf(const F T::*M) {
@@ -67,7 +77,19 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField(name, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
+            return StructField(name,
+                "No description",
+                std::type_index(typeid(std::remove_cv_t<F>)),
+                OffsetOf(M),
+                actions);
+        }
+
+        template<typename T, typename F>
+        static const StructField New(const std::string &name,
+            const std::string &desc,
+            const F T::*M,
+            FieldAction actions = ~FieldAction::None) {
+            return StructField(name, desc, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
         }
 
         /**
@@ -83,7 +105,7 @@ namespace ecs {
          */
         template<typename T, typename F>
         static const StructField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField::New("", M, actions);
+            return StructField::New("", "No description", M, actions);
         }
 
         /**
@@ -99,7 +121,7 @@ namespace ecs {
          */
         template<typename T>
         static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField("", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+            return StructField("", "No description", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
         }
 
         void *Access(void *structPtr) const {
@@ -131,6 +153,8 @@ namespace ecs {
         bool operator==(const StructField &) const = default;
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
+        picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
         void SetScope(void *dstStruct, const EntityScope &scope) const;
         bool Compare(const void *a, const void *b) const;
         bool Load(void *dstStruct, const picojson::value &src) const;
@@ -145,7 +169,7 @@ namespace ecs {
     class StructMetadata {
     public:
         template<typename... Fields>
-        StructMetadata(const std::type_index &idx, Fields &&...fields) : type(idx) {
+        StructMetadata(const std::type_index &idx, const char *name, Fields &&...fields) : type(idx), name(name) {
             (this->fields.emplace_back(fields), ...);
             for (int i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
@@ -163,6 +187,7 @@ namespace ecs {
         }
 
         const std::type_index type;
+        const char *name;
         std::vector<StructField> fields;
 
         // === The following functions are meant to specialized by individual structs
@@ -170,6 +195,11 @@ namespace ecs {
         template<typename T>
         static void InitUndefined(T &dst) {
             // Custom field init is always called, default to no-op.
+        }
+
+        template<typename T>
+        static void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
+            // Custom field serialization is always called, default to no-op.
         }
 
         template<typename T>
@@ -184,7 +214,7 @@ namespace ecs {
         }
 
         template<typename T>
-        static void Save(const EntityScope &scope, picojson::value &dst, const T &src, const T &def) {
+        static void Save(const EntityScope &scope, picojson::value &dst, const T &src, const T *def) {
             // Custom field serialization is always called, default to no-op.
         }
 

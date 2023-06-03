@@ -600,7 +600,7 @@ namespace sp {
 
                     picojson::value tmp;
                     ecs::EntityScope scope(targetScene.data->name, "");
-                    auto changed = json::SaveIfChanged(scope, tmp, "", liveComp, compareComp);
+                    auto changed = json::SaveIfChanged(scope, tmp, "", liveComp, &compareComp);
                     if (changed) {
                         if (!comp.LoadEntity(flatStagingEntity, tmp)) {
                             Errorf("Failed to save %s component on entity: %s",

@@ -83,7 +83,7 @@ namespace sp {
             lines.on = emitter.on;
             if (!emitter.on) continue;
 
-            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
             lines.intensity = emitter.intensity;
             lines.relative = false;
@@ -156,7 +156,7 @@ namespace sp {
                         if (!userData) continue;
                         if (!userData->owner.Has<ecs::OpticalElement, ecs::TransformSnapshot>(lock)) continue;
                         auto &optic = userData->owner.Get<ecs::OpticalElement>(lock);
-                        auto &opticTransform = userData->owner.Get<ecs::TransformSnapshot>(lock);
+                        auto &opticTransform = userData->owner.Get<ecs::TransformSnapshot>(lock).globalPose;
                         if (optic.singleDirection && glm::dot(opticTransform.GetForward(), laserStart.rayDir) > 0) {
                             continue;
                         }

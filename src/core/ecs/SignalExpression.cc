@@ -604,7 +604,7 @@ namespace ecs {
                             return -1;
                         }
                     } else {
-                        StructField field(std::string(token), typeid(double), 0, FieldAction::None);
+                        StructField field(std::string(token), "", typeid(double), 0, FieldAction::None);
                         nodes.emplace_back(SignalExpression::IdentifierNode{field}, tokenIndex, tokenIndex + 1, index);
                         nodeStrings.emplace_back(token);
                     }
@@ -960,7 +960,7 @@ namespace ecs {
     void StructMetadata::Save<SignalExpression>(const EntityScope &scope,
         picojson::value &dst,
         const SignalExpression &src,
-        const SignalExpression &def) {
+        const SignalExpression *def) {
         if (src.scope != scope) {
             // TODO: Remap signal names to new scope instead of converting to fully qualified names
             // Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
@@ -979,5 +979,15 @@ namespace ecs {
     template<>
     void StructMetadata::SetScope<SignalExpression>(SignalExpression &dst, const EntityScope &scope) {
         dst.SetScope(scope);
+    }
+
+    template<>
+    void StructMetadata::DefineSchema<SignalExpression>(picojson::value &dst,
+        sp::json::SchemaTypeReferences *references) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value(
+            "A signal expression string, e.g: \"scene:entity/signal + (other_entity/signal2 + 1)\"");
     }
 } // namespace ecs

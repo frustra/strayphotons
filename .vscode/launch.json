@@ -104,11 +104,11 @@
             ]
         },
         {
-            "name": "StrayPhotons Hull Compiler (vsdbg)",
+            "name": "StrayPhotons Docs Generator (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/hull_compiler.exe",
-            "args": ["sponza2"],
+            "program": "${workspaceFolder}/bin/docs_generator.exe",
+            "args": ["schema", "../docs/scene.schema.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

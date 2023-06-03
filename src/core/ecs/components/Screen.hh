@@ -9,7 +9,8 @@ namespace ecs {
     };
 
     static StructMetadata MetadataScreen(typeid(Screen),
+        "screen",
         StructField::New("target", &Screen::textureName),
         StructField::New("luminance", &Screen::luminanceScale));
-    static Component<Screen> ComponentScreen("screen", MetadataScreen);
+    static Component<Screen> ComponentScreen(MetadataScreen);
 } // namespace ecs

@@ -33,6 +33,7 @@ Script Example Definition
     // Script input and output parameters are defined the same as Component fields and will be saved and loaded automatically.
     // Any serializable type can be used as an input parameter, including vectors and entity references.
     StructMetadata MetadataExample(typeid(Example),
+        "Example",
         StructField::New("field_a", &Example::a),
         StructField::New("field_b", &Example::b),
         StructField::New("field_c", &Example::c),

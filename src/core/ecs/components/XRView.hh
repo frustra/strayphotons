@@ -15,6 +15,6 @@ namespace ecs {
         XRView(XrEye eye) : eye(eye) {}
     };
 
-    static StructMetadata MetadataXRView(typeid(XRView), StructField::New(&XRView::eye));
-    static Component<XRView> ComponentXRView("xr_view", MetadataXRView);
+    static StructMetadata MetadataXRView(typeid(XRView), "xr_view", StructField::New(&XRView::eye));
+    static Component<XRView> ComponentXRView(MetadataXRView);
 }; // namespace ecs

@@ -27,6 +27,15 @@ namespace ecs {
         Tecs::Entity,
         std::string>;
 
+    static StructMetadata MetadataEventData(typeid(EventData), "EventData");
+    template<>
+    bool StructMetadata::Load<EventData>(EventData &dst, const picojson::value &src);
+    template<>
+    void StructMetadata::Save<EventData>(const EntityScope &scope,
+        picojson::value &dst,
+        const EventData &src,
+        const EventData *def);
+
     struct Event {
         std::string name;
         Entity source;

@@ -212,7 +212,7 @@
 			},
 			"light": {
 				"intensity": 200,
-				"spotAngle": 50,
+				"spot_angle": 50,
 				"tint": [1, 0.5, 0.5]
 			},
 			"script": {
@@ -230,7 +230,7 @@
 			},
 			"light": {
 				"intensity": 200,
-				"spotAngle": 50,
+				"spot_angle": 50,
 				"tint": [1, 0.5, 0.5]
 			},
 			"script": {
@@ -248,7 +248,7 @@
 			},
 			"light": {
 				"intensity": 200,
-				"spotAngle": 60,
+				"spot_angle": 60,
 				"tint": [0.5, 0.5, 1]
 			},
 			"script": {

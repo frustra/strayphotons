@@ -72,7 +72,9 @@ namespace ecs {
     void StructMetadata::Save<Transform>(const EntityScope &scope,
         picojson::value &dst,
         const Transform &src,
-        const Transform &def) {
+        const Transform *def) {
+        if (def && src == *def) return;
+
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
@@ -80,18 +82,37 @@ namespace ecs {
         static const auto defaultRotation = defaultTransform.GetRotation();
         static const auto defaultScale = defaultTransform.GetScale();
 
-        sp::json::SaveIfChanged(scope, obj, "translate", src.GetPosition(), defaultTransform.GetPosition());
-        sp::json::SaveIfChanged(scope, obj, "rotate", src.GetRotation(), defaultRotation);
+        sp::json::SaveIfChanged(scope,
+            obj,
+            "translate",
+            src.GetPosition(),
+            def ? &defaultTransform.GetPosition() : nullptr);
+        sp::json::SaveIfChanged(scope, obj, "rotate", src.GetRotation(), def ? &defaultRotation : nullptr);
+
+        static const float eps = std::numeric_limits<float>::epsilon() * 5.0f;
 
         auto scale = src.GetScale();
-        if (glm::any(glm::epsilonNotEqual(scale, defaultScale, std::numeric_limits<float>::epsilon() * 5.0f))) {
+        if (!def || glm::any(glm::epsilonNotEqual(scale, defaultScale, eps))) {
             // If the scale is the same in all axes, only save a single float
-            if (glm::all(glm::epsilonEqual(scale, glm::vec3(scale.x), std::numeric_limits<float>::epsilon() * 5.0f))) {
+            if (def && glm::all(glm::epsilonEqual(scale, glm::vec3(scale.x), eps))) {
                 sp::json::Save(scope, obj["scale"], scale.x);
             } else {
                 sp::json::Save(scope, obj["scale"], scale);
             }
         }
+    }
+
+    template<>
+    void StructMetadata::DefineSchema<Transform>(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
+        auto &typeSchema = dst.get<picojson::object>();
+        auto &properties = typeSchema["properties"].get<picojson::object>();
+        auto &scaleSchema = properties["scale"].get<picojson::object>();
+        scaleSchema.erase("type");
+        scaleSchema.erase("items");
+        picojson::array anyOfArray(2);
+        sp::json::SaveSchema<float>(anyOfArray[0]);
+        sp::json::SaveSchema<glm::vec3>(anyOfArray[1]);
+        scaleSchema["anyOf"] = picojson::value(anyOfArray);
     }
 
     template<>

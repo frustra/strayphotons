@@ -38,16 +38,18 @@ namespace ecs {
     void StructMetadata::Save<LaserLine>(const EntityScope &scope,
         picojson::value &dst,
         const LaserLine &src,
-        const LaserLine &def) {
+        const LaserLine *def) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
         static const LaserLine::Line defaultLine = {};
         static const LaserLine::Segment defaultSegment = {};
 
+        // TODO: properly diff lines when "def" is non-empty
+
         if (std::holds_alternative<LaserLine::Line>(src.line)) {
             auto &line = std::get<LaserLine::Line>(src.line);
-            sp::json::SaveIfChanged(scope, obj, "color", line.color, defaultLine.color);
+            sp::json::SaveIfChanged(scope, obj, "color", line.color, &defaultLine.color);
 
             if (line.points.empty()) return;
             sp::json::Save(scope, obj["points"], line.points);
@@ -58,7 +60,7 @@ namespace ecs {
             segments.reserve(seg.size());
             for (auto &segment : seg) {
                 picojson::object segmentObj;
-                sp::json::SaveIfChanged(scope, segmentObj, "color", segment.color, defaultSegment.color);
+                sp::json::SaveIfChanged(scope, segmentObj, "color", segment.color, &defaultSegment.color);
                 sp::json::Save(scope, segmentObj["start"], segment.start);
                 sp::json::Save(scope, segmentObj["end"], segment.end);
                 segments.emplace_back(segmentObj);

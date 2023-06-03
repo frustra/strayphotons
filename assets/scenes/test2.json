@@ -99,7 +99,7 @@
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"illuminance": 50,
-				"spotAngle": 20
+				"spot_angle": 20
 			},
 			"view": {
 				"extents": [2048, 2048],

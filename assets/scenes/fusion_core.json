@@ -1163,9 +1163,9 @@
 			},
 			"light": {
 				"intensity": 15,
-				"shadowMapClip": [0.1, 10],
-				"shadowMapSize": 10,
-				"spotAngle": 60,
+				"shadow_map_clip": [0.1, 10],
+				"shadow_map_size": 10,
+				"spot_angle": 60,
 				"tint": [1, 1, 1]
 			}
 		}

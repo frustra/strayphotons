@@ -27,7 +27,7 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;
             auto &area = entity.Get<ecs::TriggerArea>(lock);
-            auto &areaTransform = entity.Get<ecs::TransformSnapshot>(lock);
+            auto &areaTransform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
             auto areaCenter = areaTransform.GetPosition();
             auto boundingRadiusSquared = glm::length2(areaTransform * glm::vec4(glm::vec3(0.5f), 0.0f));
             auto invAreaTransform = areaTransform.GetInverse();
@@ -43,7 +43,7 @@ namespace sp {
 
             for (auto &triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) continue;
-                auto &transform = triggerEnt.Get<ecs::TransformSnapshot>(lock);
+                auto &transform = triggerEnt.Get<ecs::TransformSnapshot>(lock).globalPose;
                 auto entityPos = transform.GetPosition();
                 bool inArea = false;
                 if (glm::length2(entityPos - areaCenter) <= boundingRadiusSquared) {

@@ -26,10 +26,11 @@ namespace sp::scripts {
             auto alignmentTarget = alignmentEntity.Get(lock);
             if (alignmentTarget.Has<TransformSnapshot>(lock)) {
                 glm::vec3 alignmentOffset;
+                auto &alignmentTargetPos = alignmentTarget.Get<TransformSnapshot>(lock).globalPose.GetPosition();
                 if (alignment) {
-                    alignmentOffset = alignmentTarget.Get<TransformSnapshot>(lock).GetPosition() - alignment.value();
+                    alignmentOffset = alignmentTargetPos - alignment.value();
                 } else {
-                    alignment = alignmentTarget.Get<TransformSnapshot>(lock).GetPosition();
+                    alignment = alignmentTargetPos;
                 }
                 offset += glm::mod(alignmentOffset, voxelStride * voxelScale);
             }
@@ -37,7 +38,7 @@ namespace sp::scripts {
             auto followPosition = glm::vec3(0);
             auto followTarget = followEntity.Get(lock);
             if (followTarget.Has<TransformSnapshot>(lock)) {
-                followPosition = followTarget.Get<TransformSnapshot>(lock).GetPosition();
+                followPosition = followTarget.Get<TransformSnapshot>(lock).globalPose.GetPosition();
             }
 
             followPosition = voxelRotation * followPosition;
@@ -47,6 +48,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVoxelController(typeid(VoxelController),
+        "VoxelController",
         StructField::New("voxel_scale", &VoxelController::voxelScale),
         StructField::New("voxel_stride", &VoxelController::voxelStride),
         StructField::New("voxel_offset", &VoxelController::voxelOffset),
@@ -69,6 +71,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotatePhysics(typeid(RotatePhysics),
+        "RotatePhysics",
         StructField::New("axis", &RotatePhysics::rotationAxis),
         StructField::New("speed", &RotatePhysics::rotationSpeedRpm));
     InternalPhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
@@ -154,7 +157,7 @@ namespace sp::scripts {
                         continue;
                     }
                     if (ent.Has<TransformSnapshot>(lock) && target.Has<TransformSnapshot>(lock)) {
-                        joint.localOffset = ent.Get<ecs::TransformSnapshot>(lock).GetInverse() *
+                        joint.localOffset = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetInverse() *
                                             target.Get<ecs::TransformSnapshot>(lock);
                     }
                 } else if (action == "set_local_offset") {
@@ -181,6 +184,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataPhysicsJointFromEvent(typeid(PhysicsJointFromEvent),
+        "PhysicsJointFromEvent",
         StructField::New(&PhysicsJointFromEvent::definedJoints));
     InternalPhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
         MetadataPhysicsJointFromEvent);

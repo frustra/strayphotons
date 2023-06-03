@@ -77,7 +77,7 @@ namespace sp::vulkan::renderer {
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
             auto &view = views[lights.size() - 1];
             view.extents = {extent, extent};
@@ -125,7 +125,7 @@ namespace sp::vulkan::renderer {
             auto &rbLight = readbackLights[lightIndex];
 
             if (!rbLight.source.Has<ecs::TransformSnapshot, ecs::Light>(lock)) continue;
-            auto &sourceTransform = rbLight.source.Get<ecs::TransformSnapshot>(lock);
+            auto &sourceTransform = rbLight.source.Get<ecs::TransformSnapshot>(lock).globalPose;
             auto light = rbLight.source.Get<ecs::Light>(lock);
             if (!light.on) continue;
 

@@ -51,7 +51,7 @@ namespace sp {
             auto gui = guiEntity.Get(lock);
             if (!gui.Has<ecs::TransformSnapshot, ecs::EventInput>(lock)) return;
 
-            auto screenInverseTransform = gui.Get<ecs::TransformSnapshot>(lock).GetInverse();
+            auto screenInverseTransform = gui.Get<ecs::TransformSnapshot>(lock).globalPose.GetInverse();
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {

@@ -27,7 +27,8 @@ namespace ecs {
     }
 
     bool isNormal(glm::vec3 scale) {
-        return std::isnormal(scale.x) && std::isnormal(scale.y) && std::isnormal(scale.z);
+        return std::isnormal(scale.x) && std::isnormal(scale.y) && std::isnormal(scale.z) &&
+               !glm::any(glm::equal(scale, glm::vec3(0)));
     }
 
     void Animation::UpdateTransform(
@@ -55,7 +56,7 @@ namespace ecs {
         switch (animation.interpolation) {
         case InterpolationMode::Step:
             transform.pose.SetPosition(nextState.pos);
-            if (!glm::any(glm::isinf(nextState.scale))) transform.pose.SetScale(nextState.scale);
+            if (isNormal(nextState.scale)) transform.pose.SetScale(nextState.scale);
             break;
         case InterpolationMode::Linear:
             dPos = nextState.pos - currState.pos;

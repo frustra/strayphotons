@@ -6,7 +6,7 @@
 			"mass": 1,
 			"contact_report_force": 100
 		},
-		"sound": [{
+		"audio": [{
 			"file": "quack.ogg",
 			"volume": 0.3
 		}],

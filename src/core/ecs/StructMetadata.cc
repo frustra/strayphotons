@@ -69,10 +69,28 @@ namespace ecs {
         });
     }
 
+    void StructField::DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const {
+        GetFieldType(type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            sp::json::SaveSchema<T>(dst, references, false);
+        });
+    }
+
+    picojson::value StructField::SaveDefault(const EntityScope &scope, const void *defaultStruct) const {
+        picojson::value result;
+        auto *field = static_cast<const char *>(defaultStruct) + offset;
+        GetFieldType(type, field, [&](auto &value) {
+            using T = std::decay_t<decltype(value)>;
+
+            sp::json::SaveIfChanged<T>(scope, result, "", value, nullptr);
+        });
+        return result;
+    }
+
     void StructField::SetScope(void *dstStruct, const EntityScope &scope) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
 
-        return GetFieldType(type, field, [&](auto &dstValue) {
+        GetFieldType(type, field, [&](auto &dstValue) {
             scope::SetScope(dstValue, scope);
         });
     }
@@ -115,7 +133,7 @@ namespace ecs {
 
         return GetFieldType(type, dstfield, [&](auto &dstValue) {
             if (!sp::json::Load(dstValue, *srcField)) {
-                Errorf("Invalid %s field value: %s", type.name(), src.to_str());
+                Errorf("Invalid %s field value: %s", type.name(), srcField->serialize());
                 return false;
             }
             return true;
@@ -134,16 +152,8 @@ namespace ecs {
         GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
-            if (defaultField) {
-                auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
-                sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
-            } else if (!name.empty()) {
-                if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
-                auto &obj = dst.get<picojson::object>();
-                sp::json::Save(scope, obj[name], value);
-            } else {
-                sp::json::Save(scope, dst, value);
-            }
+            auto *defaultValue = reinterpret_cast<const T *>(defaultField);
+            sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
         });
     }
 

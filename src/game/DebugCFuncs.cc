@@ -30,7 +30,7 @@ namespace sp {
             Logf("Head position: [%f, %f, %f]", position.x, position.y, position.z);
         }
         if (head.Has<ecs::TransformSnapshot>(lock)) {
-            auto &transform = head.Get<ecs::TransformSnapshot>(lock);
+            auto &transform = head.Get<ecs::TransformSnapshot>(lock).globalPose;
             auto position = transform.GetPosition();
             Logf("Head position snapshot: [%f, %f, %f]", position.x, position.y, position.z);
 
@@ -46,7 +46,7 @@ namespace sp {
             Logf("Scene has no valid player");
         }
         if (player.Has<ecs::TransformSnapshot>(lock)) {
-            auto &transform = player.Get<ecs::TransformSnapshot>(lock);
+            auto &transform = player.Get<ecs::TransformSnapshot>(lock).globalPose;
             auto position = transform.GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
             if (player.Has<ecs::CharacterController>(lock)) {

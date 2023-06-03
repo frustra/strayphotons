@@ -16,20 +16,20 @@ namespace CoreEcsTests {
 
             player = lock.NewEntity();
             player.Set<ecs::Name>(lock, "", "player");
-            auto &transform = player.Set<ecs::TransformSnapshot>(lock, glm::vec3(1, 2, 3));
+            auto &transform = player.Set<ecs::TransformSnapshot>(lock, ecs::Transform(glm::vec3(1, 2, 3))).globalPose;
             auto pos1 = transform.GetPosition();
             AssertEqual(pos1, glm::vec3(1, 2, 3), "Transform did not save correctly");
 
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
-            auto pos2 = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
+            auto pos2 = player.Get<ecs::TransformSnapshot>(lock).globalPose.GetPosition();
             AssertEqual(pos2, glm::vec3(1, 2, 3), "Transform did not read back correctly");
         }
         {
             auto lock = ecs::StartTransaction<ecs::ReadAll>();
 
-            auto pos = player.Get<ecs::TransformSnapshot>(lock).GetPosition();
+            auto pos = player.Get<ecs::TransformSnapshot>(lock).globalPose.GetPosition();
             AssertEqual(pos, glm::vec3(1, 2, 3), "Transform did not read back correctly from new transaction");
         }
     }

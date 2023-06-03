@@ -733,8 +733,9 @@ namespace sp {
             };
             picojson::object sceneObj(sceneOrderFunc);
             static const ecs::SceneProperties defaultProperties = {};
-            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), defaultProperties);
-            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, ScenePriority::Scene);
+            static const ScenePriority defaultPriority = ScenePriority::Scene;
+            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
+            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, &defaultPriority);
             sceneObj["entities"] = picojson::value(entities);
             auto val = picojson::value(sceneObj);
             auto scenePath = scene->asset->path;
@@ -868,12 +869,12 @@ namespace sp {
             return;
         }
 
-        auto spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
+        ecs::Transform spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
         spawnTransform.SetScale(glm::vec3(1));
 
         auto player = entities::Player.Get(lock);
         if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
-            auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock);
+            auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock).globalPose;
             auto &playerTree = player.Get<ecs::TransformTree>(lock);
             Assert(!playerTree.parent, "Player entity should not have a TransformTree parent");
             playerTransform = spawnTransform;
