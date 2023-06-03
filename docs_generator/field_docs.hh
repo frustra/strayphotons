@@ -10,7 +10,7 @@ struct DocField {
     picojson::value defaultValue;
 };
 
-struct DocsContext {
+struct DocsStruct {
     std::vector<DocField> fields;
     std::map<std::string, std::type_index> references;
 
@@ -77,59 +77,35 @@ private:
     }
 
 public:
-    template<typename T>
-    void SaveFields() {
-        static const T defaultStruct = {};
+    void AddField(const ecs::StructField &field, const void *defaultPtr = nullptr) {
+        ecs::GetFieldType(field.type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
 
-        auto *metadataPtr = ecs::StructMetadata::Get(typeid(T));
-        if (!metadataPtr) {
-            Errorf("Unknown saveFields metadata: %s", typeid(T).name());
-            return;
-        }
-        auto &metadata = *metadataPtr;
+            static const T defaultStruct = {};
+            auto &defaultValue = defaultPtr ? *reinterpret_cast<const T *>(defaultPtr) : defaultStruct;
 
-        if constexpr (std::is_same_v<T, ecs::Name>) {
-            fields.emplace_back(
-                DocField{"", fieldTypeName<std::string>(), "No description", typeid(ecs::Name), picojson::value("")});
-        } else {
-            for (auto &field : metadata.fields) {
-                const void *fieldPtr = field.Access(&defaultStruct);
+            picojson::value defaultJson;
+            if constexpr (!sp::json::detail::is_optional<T>()) {
+                defaultJson = picojson::value(picojson::object());
+                sp::json::Save(ecs::EntityScope(), defaultJson, defaultValue);
+            }
 
-                ecs::GetFieldType(field.type, fieldPtr, [&](auto &defaultValue) {
-                    using U = std::decay_t<decltype(defaultValue)>;
-
-                    picojson::value output;
-                    sp::json::SaveIfChanged<U>(ecs::EntityScope(), output, "", defaultValue, nullptr);
-
-                    if (field.name.empty()) {
-                        if constexpr (std::is_enum<U>()) {
-                            fields.emplace_back(DocField{"",
-                                fieldTypeName<U>(),
-                                "The `"s + metadata.name + "` component is serialized directly as an enum string",
-                                typeid(U),
-                                output});
-                        } else if constexpr (sp::is_vector<U>()) {
-                            fields.emplace_back(DocField{"",
-                                fieldTypeName<U>(),
-                                "The `"s + metadata.name + "` component is serialized directly as an array",
-                                typeid(U),
-                                output});
-                        } else if constexpr (sp::json::detail::is_unordered_map<U>()) {
-                            fields.emplace_back(DocField{"",
-                                fieldTypeName<U>(),
-                                "The `"s + metadata.name + "` component is serialized directly as a map",
-                                typeid(U),
-                                output});
-                        } else if constexpr (!std::is_same_v<T, U>) {
-                            SaveFields<U>();
-                        } else {
-                            Abortf("Unknown self reference state: %s", metadata.name);
+            if (field.name.empty()) {
+                if constexpr (std::is_enum<T>()) {
+                    fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                } else {
+                    auto *metadata = ecs::StructMetadata::Get(typeid(T));
+                    if (metadata) {
+                        for (auto &field : metadata->fields) {
+                            AddField(field, field.Access(&defaultValue));
                         }
                     } else {
-                        fields.emplace_back(DocField{field.name, fieldTypeName<U>(), field.desc, typeid(U), output});
+                        fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
                     }
-                });
+                }
+            } else {
+                fields.emplace_back(DocField{field.name, fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
             }
-        }
+        });
     }
 };

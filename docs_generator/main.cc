@@ -76,10 +76,13 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
 
         auto &comp = *ecs::LookupComponent(name);
 
-        DocsContext docs;
+        DocsStruct docs;
         ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
-            docs.SaveFields<T>();
+            static const T defaultComp = {};
+            for (auto &field : comp.metadata.fields) {
+                docs.AddField(field, field.Access(&defaultComp));
+            }
         });
 
         if (docs.fields.empty()) {
@@ -103,7 +106,7 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
             saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
                 savedDocs.emplace(refName);
 
-                DocsContext refDocs;
+                DocsStruct refDocs;
                 bool isEnumFlags = false;
                 bool isEnum = false;
                 ecs::GetFieldType(refType, [&](auto *typePtr) {
@@ -120,7 +123,11 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
                             refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
                         }
                     } else {
-                        refDocs.SaveFields<T>();
+                        static const T defaultComp = {};
+                        auto &metadata = ecs::StructMetadata::Get<T>();
+                        for (auto &field : metadata.fields) {
+                            refDocs.AddField(field, field.Access(&defaultComp));
+                        }
                     }
                 });
 

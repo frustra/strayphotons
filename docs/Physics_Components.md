@@ -48,8 +48,8 @@ The `physics_joints` component has type: vector&lt;`PhysicsJoint`&gt;
 | **target** | `EntityRef` | "" | No description |
 | **type** | enum `PhysicsJointType` | "Fixed" | No description |
 | **limit** | vec2 | [0, 0] | No description |
-| **local_offset** | `Transform` | {"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]} | No description |
-| **remote_offset** | `Transform` | {"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]} | No description |
+| **local_offset** | `Transform` | {} | No description |
+| **remote_offset** | `Transform` | {} | No description |
 
 ### `PhysicsJointType` Type
 Note: Enum string names are case-sensitive.
@@ -154,8 +154,8 @@ Note: Enum string names are case-sensitive.
 ## `scene_properties` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **root_transform** | `Transform` | {"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]} | No description |
-| **gravity_transform** | `Transform` | {"rotate":[0, 0, 0, 1],"scale":[1, 1, 1],"translate":[0, 0, 0]} | No description |
+| **root_transform** | `Transform` | {} | No description |
+| **gravity_transform** | `Transform` | {} | No description |
 | **gravity** | vec3 | [0, -9.81, 0] | No description |
 
 ### `Transform` Type
