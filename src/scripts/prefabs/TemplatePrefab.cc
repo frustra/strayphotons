@@ -218,6 +218,7 @@ namespace ecs {
     };
     StructMetadata MetadataTemplatePrefab(typeid(TemplatePrefab),
         "TemplatePrefab",
+        "",
         StructField::New("source", &TemplatePrefab::source));
     PrefabScript<TemplatePrefab> templatePrefab("template", MetadataTemplatePrefab);
 
@@ -326,6 +327,7 @@ namespace ecs {
     };
     StructMetadata MetadataTilePrefab(typeid(TilePrefab),
         "TilePrefab",
+        "",
         StructField::New("count", &TilePrefab::count),
         StructField::New("stride", &TilePrefab::stride),
         StructField::New("axes", &TilePrefab::axes),

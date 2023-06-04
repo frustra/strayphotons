@@ -49,6 +49,7 @@ namespace ecs {
     };
     static StructMetadata MetadataPhysicsMaterial(typeid(PhysicsMaterial),
         "PhysicsMaterial",
+        "",
         StructField::New("static_friction",
             "This material's coefficient of static friction (>= 0.0)",
             &PhysicsMaterial::staticFriction),
@@ -125,7 +126,7 @@ namespace ecs {
         bool operator==(const PhysicsShape &) const = default;
     };
 
-    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape), "PhysicsShape");
+    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape), "PhysicsShape", "");
     template<>
     bool StructMetadata::Load<PhysicsShape>(PhysicsShape &dst, const picojson::value &src);
     template<>
@@ -165,6 +166,7 @@ namespace ecs {
 
     static StructMetadata MetadataPhysics(typeid(Physics),
         "physics",
+        "",
         StructField::New("shapes",
             "A list of individual shapes and models that combine to form the actor's overall collision shape.",
             &Physics::shapes),

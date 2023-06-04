@@ -16,6 +16,7 @@ namespace ecs {
 
     static StructMetadata MetadataLaserEmitter(typeid(LaserEmitter),
         "laser_emitter",
+        "",
         StructField::New("intensity", &LaserEmitter::intensity),
         StructField::New("color", &LaserEmitter::color),
         StructField::New("on", &LaserEmitter::on),

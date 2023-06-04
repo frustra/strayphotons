@@ -49,7 +49,7 @@ namespace ecs {
 
         std::shared_ptr<ScriptState> state;
     };
-    static StructMetadata MetadataScriptInstance(typeid(ScriptInstance), "ScriptInstance");
+    static StructMetadata MetadataScriptInstance(typeid(ScriptInstance), "ScriptInstance", "");
     template<>
     bool StructMetadata::Load<ScriptInstance>(ScriptInstance &dst, const picojson::value &src);
     template<>
@@ -85,6 +85,7 @@ namespace ecs {
 
     static StructMetadata MetadataScripts(typeid(Scripts),
         "Scripts",
+        "",
         StructField::New(&Scripts::scripts, ~FieldAction::AutoApply));
     static Component<Scripts> ComponentScripts(MetadataScripts, "script");
 

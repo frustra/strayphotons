@@ -92,18 +92,8 @@ Note: Enum string names are case-sensitive.
 | **clip** | vec2 | [0.1, 256] | No description |
 | **visibility_mask** | enum flags `VisibilityMask` | "" | No description |
 
-### `VisibilityMask` Type
-This is a flags enum type. Multiple flags can be combined using the '|' character (e.g. `"One|Two"` with no whitespace).
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "DirectCamera" |
-| "DirectEye" |
-| "Transparent" |
-| "LightingShadow" |
-| "LightingVoxel" |
-| "Optics" |
-| "OutlineSelection" |
+**See Also:**
+`VisibilityMask`
 
 
 ## `voxel_area` Component

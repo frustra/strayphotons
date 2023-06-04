@@ -20,6 +20,7 @@ namespace ecs {
 
     static StructMetadata MetadataLight(typeid(Light),
         "light",
+        "",
         StructField::New("intensity",
             "The brightness of the light measured in candela (lumens per solid angle). This value is ignored if "
             "**illuminance** != 0.",

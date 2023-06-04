@@ -88,6 +88,7 @@ namespace ecs {
 
     static StructMetadata MetadataSignalOutput(typeid(SignalOutput),
         "signal_output",
+        "",
         StructField::New(&SignalOutput::signals, ~FieldAction::AutoApply));
     static Component<SignalOutput> ComponentSignalOutput(MetadataSignalOutput);
     template<>
@@ -95,6 +96,7 @@ namespace ecs {
 
     static StructMetadata MetadataSignalBindings(typeid(SignalBindings),
         "signal_bindings",
+        "",
         StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply));
     static Component<SignalBindings> ComponentSignalBindings(MetadataSignalBindings);
     template<>

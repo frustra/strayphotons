@@ -1,3 +1,30 @@
+## Common Types
+
+### `EntityRef` Type
+
+An `EntityRef` is a stable reference to an entity via a string name. 
+
+Referenced entities do not need to exist at the point an `EntityRef` is defined.
+The reference will be automatically tracked and updated once the referenced entity is created.
+
+Reference names are defined the same as the `name` component:
+> *<scene_name>*:*<entity_name>*
+
+References can also be defined relative to their entity scope, the same as a `name` component.
+If just a relative name is provided, the reference will be expanded based on the scope root:
+> *<scene_name>*:*<root_name>*.*<relative_name>*
+
+The special "scoperoot" alias can be used to reference the parent entity during template generation.
+
+
+### `Transform` Type
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
+| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]` |
+| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
+
+
 ## `physics` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -34,9 +61,10 @@ Note: Enum string names are case-sensitive.
 | "PlayerRightHand" |
 | "UserInterface" |
 
+### `PhysicsShape` Type
+
 **See Also:**
 `EntityRef`
-`PhysicsShape`
 
 
 ## `physics_joints` Component
@@ -64,15 +92,9 @@ Note: Enum string names are case-sensitive.
 | "NoClip" |
 | "TemporaryNoClip" |
 
-### `Transform` Type
-| Field Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
-| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]` |
-| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
-
 **See Also:**
 `EntityRef`
+`Transform`
 
 
 ## `physics_query` Component
@@ -86,6 +108,17 @@ The `physics_query` component has no public fields
 | **interpolation** | enum `InterpolationMode` | "Linear" | No description |
 | **cubic_tension** | float | 0.5 | No description |
 
+Animations control the position of an entity by moving it between a set of animation states. Animation updates happen in the physics thread before each simulation step.
+When an animation state is defined, the `transform` position is ignored except for the transform parent, using the pose from the animation.
+
+Animations read and write two signal values:
+1. **animation_state** - The current state index represented as a double from `0.0` to `N-1.0`.  
+    A state value of `0.5` represents a state half way between states 0 and 1 based on transition time.
+2. **animation_target** - The target state index. The entity will always animate towards this state.
+
+The animation is running any time these values are different, and paused when they are equal.
+
+
 ### `AnimationState` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -94,6 +127,29 @@ The `physics_query` component has no public fields
 | **scale** | vec3 | [0, 0, 0] | A new scale to override this entity's `transform`. A scale of 0 will leave the transform unchanged. |
 | **translate_tangent** | vec3 | [0, 0, 0] | Cubic interpolation tangent vector for **translate** (represents speed) |
 | **scale_tangent** | vec3 | [0, 0, 0] | Cubic interpolation tangent vector for **scale** (represents rate of scaling) |
+
+An example of a 3-state linear animation might look like this:
+```json
+"animation": {
+    "states": [
+        {
+            "delay": 0.5,
+            "translate": [0, 0, 0]
+        },
+        {
+            "delay": 0.5,
+            "translate": [0, 1, 0]
+        },
+        {
+            "delay": 0.5,
+            "translate": [0, 0, 1]
+        }
+    ]
+}
+```
+
+When moving from state `2.0` to state `0.0`, the animation will follow the path through state `1.0`, rather than moving directly to the target position. The `animation_state` signal can however be manually controlled to teleport the animation to a specific state.
+
 
 ### `InterpolationMode` Type
 Note: Enum string names are case-sensitive.
@@ -158,11 +214,7 @@ Note: Enum string names are case-sensitive.
 | **gravity_transform** | `Transform` | {} | No description |
 | **gravity** | vec3 | [0, -9.81, 0] | No description |
 
-### `Transform` Type
-| Field Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
-| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]` |
-| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
+**See Also:**
+`Transform`
 
 

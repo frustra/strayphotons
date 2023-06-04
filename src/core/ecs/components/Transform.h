@@ -73,9 +73,10 @@ namespace ecs {
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
-    
+
     static StructMetadata MetadataTransform(typeid(Transform),
         "Transform",
+        "",
         StructField("translate",
             "Specifies the entity's position in 3D space. "
             "The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
@@ -114,9 +115,10 @@ namespace ecs {
             return globalPose;
         }
     };
-    
+
     static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
         "TransformSnapshot",
+        "",
         StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave));
     static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
 
@@ -139,9 +141,10 @@ namespace ecs {
         // Returns a flatted Transform relative to the specified entity.
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
     };
-    
+
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         "TransformTree",
+        "",
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
         StructField::New("parent",
             "Specifies a parent entity that this transform is relative to. "

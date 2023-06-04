@@ -434,6 +434,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataVrHandScript(typeid(VrHandScript),
         "VrHandScript",
+        "",
         StructField::New("hand", &VrHandScript::handStr),
         StructField::New("teleport_distance", &VrHandScript::teleportDistance),
         StructField::New("point_distance", &VrHandScript::pointDistance),

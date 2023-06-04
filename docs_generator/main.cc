@@ -8,7 +8,10 @@
 #include <fstream>
 #include <sstream>
 
-static const std::vector<std::string> generalComponents = {
+using CompList = const std::vector<std::string>;
+using CommonTypes = const std::vector<std::type_index>;
+
+static CompList generalComponents = {
     "name",
     "transform",
     "transform_snapshot",
@@ -20,8 +23,12 @@ static const std::vector<std::string> generalComponents = {
     "signal_output",
     "audio",
 };
+static CommonTypes generalCommonTypes = {
+    typeid(ecs::EntityRef),
+    typeid(ecs::SignalExpression),
+};
 
-static const std::vector<std::string> renderingComponents = {
+static CompList renderingComponents = {
     "renderable",
     "gui",
     "laser_line",
@@ -33,8 +40,9 @@ static const std::vector<std::string> renderingComponents = {
     "voxel_area",
     "xr_view",
 };
+static CommonTypes renderingCommonTypes = {};
 
-static const std::vector<std::string> physicsComponents = {
+static CompList physicsComponents = {
     "physics",
     "physics_joints",
     "physics_query",
@@ -46,13 +54,23 @@ static const std::vector<std::string> physicsComponents = {
     "trigger_group",
     "scene_properties",
 };
+static CommonTypes physicsCommonTypes = {
+    typeid(ecs::EntityRef),
+    typeid(ecs::Transform),
+};
 
-static const std::map<std::string, const std::vector<std::string> *> docGroups = {
+static const std::map<std::string, CompList *> docGroups = {
     {"general", &generalComponents},
     {"rendering", &renderingComponents},
     {"physics", &physicsComponents},
     {"other", nullptr},
     {"schema", nullptr},
+};
+
+static const std::map<std::string, CommonTypes *> docGroupCommonTypes = {
+    {"general", &generalCommonTypes},
+    {"rendering", &renderingCommonTypes},
+    {"physics", &physicsCommonTypes},
 };
 
 inline std::string escapeMarkdownString(const std::string &input) {
@@ -69,8 +87,94 @@ inline std::string escapeMarkdownString(const std::string &input) {
     return result;
 }
 
-void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compList) {
+void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &commonTypes) {
     std::set<std::string> savedDocs;
+    std::set<std::string> seeAlso;
+
+    std::function<void(const std::string &, const std::type_index &)> saveReferencedType;
+    saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
+        if (savedDocs.count(refName)) {
+            seeAlso.emplace(refName);
+            return;
+        }
+        savedDocs.emplace(refName);
+
+        auto *metadata = ecs::StructMetadata::Get(refType);
+        DocsStruct refDocs;
+        bool isEnumFlags = false;
+        bool isEnum = false;
+        ecs::GetFieldType(refType, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+
+            if constexpr (std::is_enum<T>()) {
+                isEnum = true;
+                if constexpr (is_flags_enum<T>()) {
+                    isEnumFlags = true;
+                }
+
+                static const auto names = magic_enum::enum_names<T>();
+                for (auto &enumName : names) {
+                    refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
+                }
+            } else {
+                static const T defaultComp = {};
+                Assertf(metadata, "Unknown StructMetadata type %s", typeid(T).name());
+                for (auto &field : metadata->fields) {
+                    refDocs.AddField(field, field.Access(&defaultComp));
+                }
+            }
+        });
+
+        if (refDocs.fields.empty() && !metadata) {
+            seeAlso.emplace(refName);
+            return;
+        }
+
+        file << std::endl << "### `" << refName << "` Type" << std::endl;
+        if (isEnumFlags) {
+            file << "This is a flags enum type. Multiple flags can be combined using the '|' character "
+                 << "(e.g. `\"One|Two\"` with no whitespace)." << std::endl;
+        }
+        if (isEnum) {
+            file << "Note: Enum string names are case-sensitive." << std::endl;
+            file << "| Enum Value |" << std::endl;
+            file << "|------------|" << std::endl;
+            for (auto &field : refDocs.fields) {
+                file << "| \"" << field.name << "\" |" << std::endl;
+            }
+        } else if (!refDocs.fields.empty()) {
+            file << "| Field Name | Type | Default Value | Description |" << std::endl;
+            file << "|------------|------|---------------|-------------|" << std::endl;
+            for (auto &field : refDocs.fields) {
+                file << "| **" << field.name << "** | " << field.typeString << " | "
+                     << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
+                     << std::endl;
+            }
+        }
+
+        if (metadata && !metadata->description.empty()) {
+            file << metadata->description << std::endl;
+        }
+
+        for (auto &[subRefName, subRefType] : refDocs.references) {
+            if (!savedDocs.count(subRefName)) {
+                saveReferencedType(subRefName, subRefType);
+            } else {
+                seeAlso.emplace(subRefName);
+            }
+        }
+    };
+
+    if (!commonTypes.empty()) {
+        file << "## Common Types" << std::endl;
+        for (auto &type : commonTypes) {
+            auto *metadata = ecs::StructMetadata::Get(type);
+            Assertf(metadata, "Type has no metadata: %s", type.name());
+            saveReferencedType(metadata->name, metadata->type);
+        }
+        file << std::endl << std::endl;
+    }
+
     for (auto &name : compList) {
         file << "## `" << name << "` Component" << std::endl;
 
@@ -86,9 +190,17 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
         });
 
         if (docs.fields.empty()) {
-            file << "The `" << name << "` component has no public fields" << std::endl;
+            if (!comp.metadata.description.empty()) {
+                file << comp.metadata.description << std::endl;
+            } else {
+                file << "The `" << name << "` component has no public fields" << std::endl;
+            }
         } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
             file << "The `" << name << "` component has type: " << docs.fields.front().typeString << std::endl;
+
+            if (!comp.metadata.description.empty()) {
+                file << comp.metadata.description << std::endl;
+            }
         } else {
             file << "| Field Name | Type | Default Value | Description |" << std::endl;
             file << "|------------|------|---------------|-------------|" << std::endl;
@@ -97,75 +209,14 @@ void saveMarkdownPage(std::ofstream &file, const std::vector<std::string> &compL
                      << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
                      << std::endl;
             }
+
+            if (!comp.metadata.description.empty()) {
+                file << comp.metadata.description << std::endl;
+            }
         }
 
         if (!docs.references.empty()) {
-            std::set<std::string> seeAlso;
-
-            std::function<void(const std::string &, const std::type_index &)> saveReferencedType;
-            saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
-                savedDocs.emplace(refName);
-
-                DocsStruct refDocs;
-                bool isEnumFlags = false;
-                bool isEnum = false;
-                ecs::GetFieldType(refType, [&](auto *typePtr) {
-                    using T = std::remove_pointer_t<decltype(typePtr)>;
-
-                    if constexpr (std::is_enum<T>()) {
-                        isEnum = true;
-                        if constexpr (is_flags_enum<T>()) {
-                            isEnumFlags = true;
-                        }
-
-                        static const auto names = magic_enum::enum_names<T>();
-                        for (auto &enumName : names) {
-                            refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
-                        }
-                    } else {
-                        static const T defaultComp = {};
-                        auto &metadata = ecs::StructMetadata::Get<T>();
-                        for (auto &field : metadata.fields) {
-                            refDocs.AddField(field, field.Access(&defaultComp));
-                        }
-                    }
-                });
-
-                if (refDocs.fields.empty()) {
-                    seeAlso.emplace(refName);
-                    return;
-                }
-
-                file << std::endl << "### `" << refName << "` Type" << std::endl;
-                if (isEnumFlags) {
-                    file << "This is a flags enum type. Multiple flags can be combined using the '|' character "
-                         << "(e.g. `\"One|Two\"` with no whitespace)." << std::endl;
-                }
-                if (isEnum) {
-                    file << "Note: Enum string names are case-sensitive." << std::endl;
-                    file << "| Enum Value |" << std::endl;
-                    file << "|------------|" << std::endl;
-                    for (auto &field : refDocs.fields) {
-                        file << "| \"" << field.name << "\" |" << std::endl;
-                    }
-                } else {
-                    file << "| Field Name | Type | Default Value | Description |" << std::endl;
-                    file << "|------------|------|---------------|-------------|" << std::endl;
-                    for (auto &field : refDocs.fields) {
-                        file << "| **" << field.name << "** | " << field.typeString << " | "
-                             << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description
-                             << " |" << std::endl;
-                    }
-                }
-
-                for (auto &[subRefName, subRefType] : refDocs.references) {
-                    if (!savedDocs.count(subRefName)) {
-                        saveReferencedType(subRefName, subRefType);
-                    } else {
-                        seeAlso.emplace(subRefName);
-                    }
-                }
-            };
+            seeAlso.clear();
 
             for (auto &[refName, refType] : docs.references) {
                 saveReferencedType(refName, refType);
@@ -272,26 +323,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::vector<std::string> otherGroup;
-    auto &groupFilterPtr = docGroups.at(docGroup);
-    auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
-
-    if (groupFilterPtr == nullptr && docGroup != "schema") {
-        // Special case for the "other" group which documents all unlisted components.
-        std::vector<std::string> allListedComponents;
-        for (auto &group : docGroups) {
-            if (group.second) {
-                allListedComponents.insert(allListedComponents.end(), group.second->begin(), group.second->end());
-            }
-        }
-
-        auto &nameComp = ecs::LookupComponent<ecs::Name>();
-        if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
-        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
-            if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
-        });
-    }
-
     std::ofstream file(outputPath);
     if (!file) {
         Errorf("Failed to open output file: '%s'", outputPath);
@@ -301,7 +332,30 @@ int main(int argc, char **argv) {
     if (docGroup == "schema") {
         saveJsonSchema(file);
     } else {
-        saveMarkdownPage(file, groupFilter);
+        std::vector<std::string> otherGroup;
+        auto &groupFilterPtr = docGroups.at(docGroup);
+        auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
+
+        if (groupFilterPtr == nullptr) {
+            // Special case for the "other" group which documents all unlisted components.
+            std::vector<std::string> allListedComponents;
+            for (auto &[_, group] : docGroups) {
+                if (group) {
+                    allListedComponents.insert(allListedComponents.end(), group->begin(), group->end());
+                }
+            }
+
+            auto &nameComp = ecs::LookupComponent<ecs::Name>();
+            if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
+            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
+                if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
+            });
+        }
+
+        CommonTypes emptyCommonTypes;
+        auto &groupCommonTypes = docGroupCommonTypes.count(docGroup) ? *docGroupCommonTypes.at(docGroup)
+                                                                     : emptyCommonTypes;
+        saveMarkdownPage(file, groupFilter, groupCommonTypes);
     }
     return 0;
 }

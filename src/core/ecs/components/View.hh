@@ -54,6 +54,7 @@ namespace ecs {
 
     static StructMetadata MetadataView(typeid(View),
         "view",
+        "",
         StructField::New("offset", &View::offset),
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),

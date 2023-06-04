@@ -32,6 +32,7 @@ namespace ecs {
 
     static StructMetadata MetadataSound(typeid(Sound),
         "Sound",
+        "",
         StructField::New("type", &Sound::type),
         StructField::New("file", &Sound::filePath),
         StructField::New("loop", &Sound::loop),
@@ -50,6 +51,7 @@ namespace ecs {
 
     static StructMetadata MetadataAudio(typeid(Audio),
         "audio",
+        "",
         StructField::New(&Audio::sounds, ~FieldAction::AutoApply));
     static Component<Audio> ComponentAudio(MetadataAudio);
 

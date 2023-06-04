@@ -11,6 +11,7 @@ namespace ecs {
 
     static StructMetadata MetadataVoxelArea(typeid(VoxelArea),
         "voxel_area",
+        "",
         StructField::New("extents", &VoxelArea::extents));
     static Component<VoxelArea> ComponentVoxelArea(MetadataVoxelArea);
 } // namespace ecs

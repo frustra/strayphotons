@@ -62,6 +62,7 @@ namespace ecs {
 
     static StructMetadata MetadataRenderable(typeid(Renderable),
         "renderable",
+        "",
         StructField::New("model",
             "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
             &Renderable::modelName),

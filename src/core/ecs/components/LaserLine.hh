@@ -29,6 +29,7 @@ namespace ecs {
 
     static StructMetadata MetadataLaserLine(typeid(LaserLine),
         "laser_line",
+        "",
         StructField::New("intensity", &LaserLine::intensity),
         StructField::New("media_density", &LaserLine::mediaDensityFactor),
         StructField::New("on", &LaserLine::on),

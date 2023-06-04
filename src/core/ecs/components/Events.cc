@@ -41,6 +41,15 @@ namespace ecs {
     }
 
     template<>
+    void StructMetadata::DefineSchema<EventDest>(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value(
+            "An event destintation is an entity name + event queue name, in the format: \"scene:entity/event/queue\"");
+    }
+
+    template<>
     bool StructMetadata::Load<EventBinding>(EventBinding &binding, const picojson::value &src) {
         if (src.is<std::string>()) {
             if (!sp::json::Load(binding.outputs, src)) {

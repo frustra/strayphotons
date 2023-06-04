@@ -115,7 +115,9 @@
 			"type": "object"
 		},
 		"EventDest": {
-			"default": ""
+			"default": "",
+			"description": "An event destintation is an entity name + event queue name, in the format: \"scene:entity/event/queue\"",
+			"type": "string"
 		},
 		"PhysicsJoint": {
 			"properties": {
