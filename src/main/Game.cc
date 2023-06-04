@@ -41,10 +41,10 @@ namespace sp {
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this, startupScript != nullptr),
+          graphics(this, startupScript != nullptr), windowEventQueue(ecs::EventQueue::MAX_QUEUE_SIZE),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-          physics(startupScript != nullptr),
+          physics(windowEventQueue, startupScript != nullptr),
 #endif
 #ifdef SP_XR_SUPPORT
           xr(this),
@@ -52,7 +52,7 @@ namespace sp {
 #ifdef SP_AUDIO_SUPPORT
           audio(new AudioManager),
 #endif
-          logic(startupScript != nullptr) {
+          logic(windowEventQueue, startupScript != nullptr) {
     }
 
     const int64 MaxInputPollRate = 144;

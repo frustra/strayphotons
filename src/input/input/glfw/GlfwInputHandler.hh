@@ -11,7 +11,7 @@ struct GLFWwindow;
 namespace sp {
     class GlfwInputHandler {
     public:
-        GlfwInputHandler(GLFWwindow &window);
+        GlfwInputHandler(ecs::EventQueue &windowEventQueue, GLFWwindow &window);
         ~GlfwInputHandler();
 
         void Frame();
@@ -25,12 +25,10 @@ namespace sp {
         static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
     private:
+        ecs::EventQueue &outputEventQueue;
         GLFWwindow *window = nullptr;
 
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
-
-        ecs::EventQueue glfwEventQueue;
-        glm::vec2 prevMousePos;
     };
 } // namespace sp

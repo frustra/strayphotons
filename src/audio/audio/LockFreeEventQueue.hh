@@ -1,17 +1,18 @@
 #pragma once
 
+#include "core/InlineVector.hh"
 #include "core/LockFreeMutex.hh"
 
 #include <vector>
 
 namespace sp {
-    template<typename Event>
+    template<typename Event, size_t MaxQueueSize = 1000>
     class LockFreeEventQueue {
     public:
         LockFreeEventQueue() {}
 
         template<typename Fn>
-        bool TryPollEvents(Fn eventCallback) {
+        bool TryPollEvents(Fn &&eventCallback) {
             if (eventMutex.try_lock()) {
                 for (auto &event : eventBuffer) {
                     eventCallback(event);
@@ -25,11 +26,11 @@ namespace sp {
 
         void PushEvent(Event &&event) {
             std::lock_guard lock(eventMutex);
-            eventBuffer.push_back(std::move(event));
+            eventBuffer.emplace_back(std::move(event));
         }
 
     private:
         LockFreeMutex eventMutex;
-        std::vector<Event> eventBuffer;
+        InlineVector<Event, MaxQueueSize> eventBuffer;
     };
 } // namespace sp
