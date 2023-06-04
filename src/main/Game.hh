@@ -64,6 +64,8 @@ namespace sp {
         std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
         GraphicsManager graphics;
 
+        ecs::EventQueue windowEventQueue;
+
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif

@@ -65,7 +65,7 @@ namespace sp {
         context.reset(vkContext);
 
         GLFWwindow *window = vkContext->GetWindow();
-        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(*window);
+        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
     #endif
 
         if (game->options.count("size")) {

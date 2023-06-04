@@ -99,7 +99,7 @@ namespace sp {
 
     class PhysxManager : public RegisteredThread {
     public:
-        PhysxManager(bool stepMode);
+        PhysxManager(ecs::EventQueue &windowInputQueue, bool stepMode);
         virtual ~PhysxManager() override;
 
     private:
@@ -133,6 +133,8 @@ namespace sp {
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
         std::vector<uint8_t> scratchBlock;
+
+        ecs::EventQueue &windowInputQueue;
 
         SceneManager &scenes;
         CFuncCollection funcs;
