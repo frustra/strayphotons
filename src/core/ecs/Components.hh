@@ -99,11 +99,11 @@ namespace ecs {
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
             } else if (*this != *existing) {
-                throw std::runtime_error("Duplicate component type registered: " + std::string(name));
+                throw std::runtime_error("Duplicate component type registered: "s + name);
             }
         }
 
-        Component(const StructMetadata &metadata) : Component(metadata, metadata.name) {}
+        Component(const StructMetadata &metadata) : Component(metadata, metadata.name.c_str()) {}
 
         bool LoadFields(CompType &dst, const picojson::value &src) const {
             for (auto &field : metadata.fields) {
@@ -215,10 +215,12 @@ namespace ecs {
     };
 
     // Define these special components here to solve circular includes
-    static StructMetadata MetadataName(typeid(Name), "Name", StructField::New<std::string>(FieldAction::None));
+    static StructMetadata MetadataName(typeid(Name), "Name", DocsDescriptionName);
     static Component<Name> ComponentName(MetadataName, "name");
-    static StructMetadata MetadataSceneInfo(typeid(SceneInfo), "SceneInfo");
+    static StructMetadata MetadataSceneInfo(typeid(SceneInfo),
+        "SceneInfo",
+        "This is an internal component storing each entity's source scene and other creation info.");
     static Component<SceneInfo> ComponentSceneInfo(MetadataSceneInfo);
 
-    static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef");
+    static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef", DocsDescriptionEntityRef);
 }; // namespace ecs

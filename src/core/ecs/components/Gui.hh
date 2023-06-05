@@ -23,6 +23,7 @@ namespace ecs {
 
     static StructMetadata MetadataGui(typeid(Gui),
         "gui",
+        "",
         StructField::New("window_name", &Gui::windowName),
         StructField::New("target", &Gui::target));
     static Component<Gui> ComponentGui(MetadataGui);

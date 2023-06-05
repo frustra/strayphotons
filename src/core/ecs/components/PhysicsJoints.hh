@@ -42,6 +42,7 @@ namespace ecs {
 
     static StructMetadata MetadataPhysicsJoint(typeid(PhysicsJoint),
         "PhysicsJoint",
+        "",
         StructField::New("target", &PhysicsJoint::target),
         StructField::New("type", &PhysicsJoint::type),
         StructField::New("limit", &PhysicsJoint::limit),
@@ -58,6 +59,7 @@ namespace ecs {
 
     static StructMetadata MetadataPhysicsJoints(typeid(PhysicsJoints),
         "physics_joints",
+        "",
         StructField::New(&PhysicsJoints::joints, ~FieldAction::AutoApply));
     static Component<PhysicsJoints> ComponentPhysicsJoints(MetadataPhysicsJoints);
 

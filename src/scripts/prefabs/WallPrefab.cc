@@ -89,6 +89,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataWallPrefab(typeid(WallPrefab),
         "WallPrefab",
+        "",
         StructField::New("y_offset", &WallPrefab::yOffset),
         StructField::New("stride", &WallPrefab::stride),
         StructField::New("segments", &WallPrefab::segmentPoints),

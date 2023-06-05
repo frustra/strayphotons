@@ -20,6 +20,7 @@ namespace ecs {
 
     static StructMetadata MetadataLightSensor(typeid(LightSensor),
         "light_sensor",
+        "",
         StructField::New("position", &LightSensor::position),
         StructField::New("direction", &LightSensor::direction),
         StructField::New("color_value", &LightSensor::illuminance));

@@ -37,7 +37,7 @@ namespace ecs {
         robin_hood::unordered_map<std::string, std::vector<EventQueueRef>> events;
     };
 
-    static StructMetadata MetadataEventInput(typeid(EventInput), "event_input");
+    static StructMetadata MetadataEventInput(typeid(EventInput), "event_input", "");
     static Component<EventInput> ComponentEventInput(MetadataEventInput);
 
     struct EventDest {
@@ -47,7 +47,9 @@ namespace ecs {
         bool operator==(const EventDest &) const = default;
     };
 
-    static StructMetadata MetadataEventDest(typeid(EventDest), "EventDest");
+    static StructMetadata MetadataEventDest(typeid(EventDest),
+        "EventDest",
+        "An event destination in the form of a string: \"target_entity/event/input\"");
     template<>
     bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src);
     template<>
@@ -57,6 +59,8 @@ namespace ecs {
         const EventDest *def);
     template<>
     void StructMetadata::SetScope<EventDest>(EventDest &dst, const EntityScope &scope);
+    template<>
+    void StructMetadata::DefineSchema<EventDest>(picojson::value &dst, sp::json::SchemaTypeReferences *references);
 
     struct EventBindingActions {
         std::optional<SignalExpression> filterExpr;
@@ -72,6 +76,7 @@ namespace ecs {
 
     static StructMetadata MetadataEventBindingActions(typeid(EventBindingActions),
         "EventBindingActions",
+        "",
         StructField::New("filter", &EventBindingActions::filterExpr),
         StructField::New("modify", &EventBindingActions::modifyExprs),
         StructField::New("set_value", &EventBindingActions::setValue));
@@ -86,6 +91,7 @@ namespace ecs {
 
     static StructMetadata MetadataEventBinding(typeid(EventBinding),
         "EventBinding",
+        "",
         StructField::New("outputs", &EventBinding::outputs),
         StructField::New(&EventBinding::actions));
     template<>
@@ -121,6 +127,7 @@ namespace ecs {
 
     static StructMetadata MetadataEventBindings(typeid(EventBindings),
         "event_bindings",
+        "",
         StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave));
     static Component<EventBindings> ComponentEventBindings(MetadataEventBindings);
     template<>

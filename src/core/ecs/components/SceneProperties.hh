@@ -23,6 +23,7 @@ namespace ecs {
 
     static StructMetadata MetadataSceneProperties(typeid(SceneProperties),
         "SceneProperties",
+        "",
         StructField::New("root_transform", &SceneProperties::rootTransform, FieldAction::AutoApply),
         StructField::New("gravity_transform", &SceneProperties::gravityTransform),
         StructField::New("gravity", &SceneProperties::fixedGravity));

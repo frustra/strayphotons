@@ -62,6 +62,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
         "EdgeTrigger",
+        "",
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
         StructField::New("output_event", &EdgeTrigger::outputName),
         StructField::New("falling_edge", &EdgeTrigger::enableFalling),
@@ -115,6 +116,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataModelSpawner(typeid(ModelSpawner),
         "ModelSpawner",
+        "",
         StructField::New("relative_to", &ModelSpawner::targetEntity),
         StructField::New("position", &ModelSpawner::position),
         StructField::New("model", &ModelSpawner::modelName));
@@ -136,6 +138,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataRotate(typeid(Rotate),
         "Rotate",
+        "",
         StructField::New("axis", &Rotate::rotationAxis),
         StructField::New("speed", &Rotate::rotationSpeedRpm));
     InternalScript<Rotate> rotate("rotate", MetadataRotate);
@@ -175,6 +178,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataRotateToEntity(typeid(RotateToEntity),
         "RotateToEntity",
+        "",
         StructField::New("up", &RotateToEntity::upEntityRef),
         StructField::New("target", &RotateToEntity::targetEntityRef));
     InternalScript<RotateToEntity> rotateToEntity("rotate_to_entity", MetadataRotateToEntity);
@@ -229,6 +233,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
         "ChargeCell",
+        "",
         StructField::New("discharging", &ChargeCell::discharging),
         StructField::New("charge_level", &ChargeCell::chargeLevel),
         StructField::New("max_charge_level", &ChargeCell::maxChargeLevel),
@@ -289,6 +294,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataComponentFromSignal(typeid(ComponentFromSignal),
         "ComponentFromSignal",
+        "",
         StructField::New(&ComponentFromSignal::mapping));
     InternalScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
     InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
@@ -333,6 +339,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataDebounceSignal(typeid(DebounceSignal),
         "DebounceSignal",
+        "",
         StructField::New("delay_frames", &DebounceSignal::delayFrames),
         StructField::New("delay_ms", &DebounceSignal::delayMs),
         StructField::New("input", &DebounceSignal::input),
@@ -402,6 +409,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataTimerSignal(typeid(TimerSignal),
         "TimerSignal",
+        "",
         StructField::New("names", &TimerSignal::names));
     InternalScript<TimerSignal> timerScript("timer", MetadataTimerSignal);
     InternalPhysicsScript<TimerSignal> physicsTimerScript("physics_timer", MetadataTimerSignal);

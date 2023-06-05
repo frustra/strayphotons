@@ -107,6 +107,7 @@ namespace sp::scripts {
     };
     StructMetadata MetadataMagneticPlug(typeid(MagneticPlug),
         "MagneticPlug",
+        "",
         StructField::New("attach", &MagneticPlug::attachedSocketEntity),
         StructField::New("disabled", &MagneticPlug::disabled));
     InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
@@ -144,7 +145,7 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), "MagneticSocket");
+    StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), "MagneticSocket", "");
     InternalScript<MagneticSocket> magneticSocket("magnetic_socket",
         MetadataMagneticSocket,
         true,

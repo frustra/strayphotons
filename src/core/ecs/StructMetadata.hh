@@ -10,6 +10,7 @@
 
 #include <robin_hood.h>
 #include <set>
+#include <string_view>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
@@ -169,7 +170,8 @@ namespace ecs {
     class StructMetadata {
     public:
         template<typename... Fields>
-        StructMetadata(const std::type_index &idx, const char *name, Fields &&...fields) : type(idx), name(name) {
+        StructMetadata(const std::type_index &idx, const char *name, const char *desc, Fields &&...fields)
+            : type(idx), name(name), description(desc) {
             (this->fields.emplace_back(fields), ...);
             for (int i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
@@ -187,7 +189,8 @@ namespace ecs {
         }
 
         const std::type_index type;
-        const char *name;
+        const std::string name;
+        const std::string description;
         std::vector<StructField> fields;
 
         // === The following functions are meant to specialized by individual structs

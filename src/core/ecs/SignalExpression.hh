@@ -14,6 +14,27 @@
 namespace ecs {
     class ComponentBase;
 
+    static const char *DocsDescriptionSignalExpression = R"(
+Signal expressions allow math and logic to be performed including almost any entity component property.
+Expressions are defined as strings and automatically parsed and compiled for fast game logic evaluation.
+
+A basic signal expression might look like this:  
+`"(entity_name/signal_value + 1) > 10"`
+
+The above will evaluate to `1` if the condition is true, or `0` if the condition is false.
+
+Most "error" cases will evaulate to 0, such as an empty expression, missing referenced signals or entities, or division by 0.
+
+Fields can be accessed on components using the following syntax:  
+`"<entity_name>#<component_name>.<field_name>"`
+
+For example: `light#renderable.emissive` will return the `emissive` value from the `light` entity's `renderable` component.
+
+Vector fields such as position or color can be accessed as `pos.x` or `color.r`.
+
+Note: Only number-compatble fields can be referenced. All evaluation is done using double floating point numbers.
+)";
+
     static const size_t MAX_SIGNAL_EXPRESSION_NODES = 256;
 
     class SignalExpression {
@@ -179,7 +200,9 @@ namespace ecs {
         std::vector<std::string_view> tokens; // string_views into expr
     };
 
-    static StructMetadata MetadataSignalExpression(typeid(SignalExpression), "SignalExpression");
+    static StructMetadata MetadataSignalExpression(typeid(SignalExpression),
+        "SignalExpression",
+        DocsDescriptionSignalExpression);
     template<>
     bool StructMetadata::Load<SignalExpression>(SignalExpression &dst, const picojson::value &src);
     template<>

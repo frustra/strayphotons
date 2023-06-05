@@ -49,6 +49,7 @@ namespace ecs {
     };
     static StructMetadata MetadataPhysicsMaterial(typeid(PhysicsMaterial),
         "PhysicsMaterial",
+        "",
         StructField::New("static_friction",
             "This material's coefficient of static friction (>= 0.0)",
             &PhysicsMaterial::staticFriction),
@@ -125,7 +126,34 @@ namespace ecs {
         bool operator==(const PhysicsShape &) const = default;
     };
 
-    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape), "PhysicsShape");
+    static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape),
+        "PhysicsShape",
+        R"(
+Most physics shapes correlate with the underlying [PhysX Geometry Shapes](https://gameworksdocs.nvidia.com/PhysX/4.1/documentation/physxguide/Manual/Geometry.html).
+The diagrams provided in the PhysX docs may be helpful in visualizing collisions.
+
+A shape type is defined by setting one of the following additional fields:
+| Shape Field | Type    | Default Value   | Description |
+|-------------|---------|-----------------|-------------|
+| **model**   | string  | ""              | Name of the cooked physics collision mesh to load |
+| **plane**   | Plane   | {}              | Planes always face the +X axis relative to the actor |
+| **capsule** | Capsule | {"radius": 0.5, "height": 1.0} | A capsule's total length along the X axis will be equal to `height + radius * 2` |
+| **sphere**  | float   | 1.0             | Spheres are defined by their radius |
+| **box**     | vec3    | [1.0, 1.0, 1.0] | Boxes define their dimensions by specifying the total length along the X, Y, and Z axes relative to the actor |
+
+GLTF models automatically generate convex hull collision meshes.
+They can be referenced by name in the form:  
+`"<model_name>.convex<mesh_index>"`
+e.g. `"box.convex0"`
+
+If only a model name is specified, `convex0` will be used by default.
+
+If a `model_name.physics.json` file is provided alongside the GLTF, then custom physics meshes can be generated and configured.
+For example, the `duck.physics.json` physics definition defines `"duck.cooked"`,
+which decomposes the duck model into multiple convex hulls to more accurately represent its non-convex shape.
+)",
+        StructField::New("transform", &PhysicsShape::transform, FieldAction::None),
+        StructField::New(&PhysicsShape::material, FieldAction::None));
     template<>
     bool StructMetadata::Load<PhysicsShape>(PhysicsShape &dst, const picojson::value &src);
     template<>
@@ -165,6 +193,7 @@ namespace ecs {
 
     static StructMetadata MetadataPhysics(typeid(Physics),
         "physics",
+        "",
         StructField::New("shapes",
             "A list of individual shapes and models that combine to form the actor's overall collision shape.",
             &Physics::shapes),

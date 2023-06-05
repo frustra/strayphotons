@@ -34,6 +34,7 @@ Script Example Definition
     // Any serializable type can be used as an input parameter, including vectors and entity references.
     StructMetadata MetadataExample(typeid(Example),
         "Example",
+        "", // no description
         StructField::New("field_a", &Example::a),
         StructField::New("field_b", &Example::b),
         StructField::New("field_c", &Example::c),

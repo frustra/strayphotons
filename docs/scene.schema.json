@@ -115,7 +115,9 @@
 			"type": "object"
 		},
 		"EventDest": {
-			"default": ""
+			"default": "",
+			"description": "An event destintation is an entity name + event queue name, in the format: \"scene:entity/event/queue\"",
+			"type": "string"
 		},
 		"PhysicsJoint": {
 			"properties": {
@@ -170,7 +172,46 @@
 			},
 			"type": "object"
 		},
+		"PhysicsMaterial": {
+			"properties": {
+				"dynamic_friction": {
+					"default": 0.5,
+					"description": "This material's coefficient of dynamic friction (>= 0.0)",
+					"type": "number"
+				},
+				"restitution": {
+					"default": 0,
+					"description": "This material's coefficient of restitution (0.0 no bounce - 1.0 more bounce)",
+					"type": "number"
+				},
+				"static_friction": {
+					"default": 0.6,
+					"description": "This material's coefficient of static friction (>= 0.0)",
+					"type": "number"
+				}
+			},
+			"type": "object"
+		},
 		"PhysicsShape": {
+			"allOf": [
+				{
+					"$ref": "#/definitions/PhysicsMaterial"
+				},
+				{
+					"properties": {
+						"transform": {
+							"$ref": "#/definitions/Transform",
+							"default": {
+								"rotate": [0, 0, 0, 1],
+								"scale": [1, 1, 1],
+								"translate": [0, 0, 0]
+							},
+							"description": "No description"
+						}
+					},
+					"type": "object"
+				}
+			],
 			"default": {}
 		},
 		"ScriptInstance": {},
@@ -218,7 +259,7 @@
 			"properties": {
 				"rotate": {
 					"default": [0, 0, 0, 1],
-					"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+					"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized.",
 					"maxItems": 4,
 					"minItems": 4,
 					"prefixItems": [
