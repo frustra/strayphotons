@@ -85,8 +85,9 @@ namespace ecs {
             FieldAction::None),
         StructField("rotate",
             "Specifies the entity's orientation in 3D space. "
-            "Multiple rotations can be automatically combined by specifying an array of rotations: "
-            "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`",
+            "Multiple rotations can be combined by specifying an array of rotations: "
+            "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. "
+            "The rotation axis is automatically normalized.",
             typeid(glm::mat3),
             StructField::OffsetOf(&Transform::offset),
             FieldAction::None),
@@ -118,7 +119,17 @@ namespace ecs {
 
     static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
         "TransformSnapshot",
-        "",
+        R"(
+Transform snapshots should not be set directly.
+They are automatically generated for all entities with a `transform` component, and updated by the physics system.
+
+This component stores a flattened version of an entity's transform tree. 
+This represents and an entity's absolute position, orientation, and scale in the world relative to the origin.
+
+Transform snapshots are used by the render thread for drawing entities in a physics-synchronized state,
+while allowing multiple threads to independantly update entity transforms.
+Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
+)",
         StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave));
     static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
 
@@ -144,7 +155,15 @@ namespace ecs {
 
     static StructMetadata MetadataTransformTree(typeid(TransformTree),
         "TransformTree",
-        "",
+        R"(
+Multiple entities with transforms can be linked together to create a tree of entities that all move together (i.e. a transform tree).
+
+Transforms are combined in the following way:
+> scale -> rotate -> translate ( -> parent transform)
+
+Note: When combining multiple transformations together with scaling factors,
+behavior is undefined if the combinations introduce skew. (The scale should be axis-aligned to the model)
+)",
         StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
         StructField::New("parent",
             "Specifies a parent entity that this transform is relative to. "

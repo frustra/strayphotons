@@ -21,7 +21,7 @@ The special "scoperoot" alias can be used to reference the parent entity during 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
-| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be automatically combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]` |
+| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
 
 
@@ -62,9 +62,40 @@ Note: Enum string names are case-sensitive.
 | "UserInterface" |
 
 ### `PhysicsShape` Type
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **transform** | `Transform` | {} | No description |
+| **static_friction** | float | 0.6 | This material's coefficient of static friction (>= 0.0) |
+| **dynamic_friction** | float | 0.5 | This material's coefficient of dynamic friction (>= 0.0) |
+| **restitution** | float | 0 | This material's coefficient of restitution (0.0 no bounce - 1.0 more bounce) |
+
+Most physics shapes correlate with the underlying [PhysX Geometry Shapes](https://gameworksdocs.nvidia.com/PhysX/4.1/documentation/physxguide/Manual/Geometry.html).
+The diagrams provided in the PhysX docs may be helpful in visualizing collisions.
+
+A shape type is defined by setting one of the following additional fields:
+| Shape Field | Type    | Default Value   | Description |
+|-------------|---------|-----------------|-------------|
+| **model**   | string  | ""              | Name of the cooked physics collision mesh to load |
+| **plane**   | Plane   | {}              | Planes always face the +X axis relative to the actor |
+| **capsule** | Capsule | {"radius": 0.5, "height": 1.0} | A capsule's total length along the X axis will be equal to `height + radius * 2` |
+| **sphere**  | float   | 1.0             | Spheres are defined by their radius |
+| **box**     | vec3    | [1.0, 1.0, 1.0] | Boxes define their dimensions by specifying the total length along the X, Y, and Z axes relative to the actor |
+
+GLTF models automatically generate convex hull collision meshes.
+They can be referenced by name in the form:
+> <model_name>.convex<mesh_index>
+> e.g. "box.convex0"
+
+If only a model name is specified, `convex0` will be used by default.
+
+If a `model_name.physics.json` file is provided alongside the GLTF, then custom physics meshes can be generated and configured.
+For example, the `duck.physics.json` physics definition defines `duck.cooked`,
+which decomposes the duck model into multiple convex hulls to more accurately represent its non-convex shape.
+
 
 **See Also:**
 `EntityRef`
+`Transform`
 
 
 ## `physics_joints` Component

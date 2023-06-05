@@ -13,6 +13,15 @@
 #include <vector>
 
 namespace ecs {
+    static const char *DocsDescriptionScriptInstance = R"(
+Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.
+Scripts can have 2 types: 
+- "prefab": Prefab scripts such as "template" will run during scene load.
+- "onTick": OnTick scripts will run during in the GameLogic thread during it's frame.
+            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.
+            Some OnTick scripts may also define event filters to only run when events are received.
+)";
+
     class ScriptInstance {
     public:
         ScriptInstance() {}
@@ -49,7 +58,9 @@ namespace ecs {
 
         std::shared_ptr<ScriptState> state;
     };
-    static StructMetadata MetadataScriptInstance(typeid(ScriptInstance), "ScriptInstance", "");
+    static StructMetadata MetadataScriptInstance(typeid(ScriptInstance),
+        "ScriptInstance",
+        DocsDescriptionScriptInstance);
     template<>
     bool StructMetadata::Load<ScriptInstance>(ScriptInstance &dst, const picojson::value &src);
     template<>

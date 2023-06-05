@@ -20,12 +20,14 @@ Expressions are defined as strings and automatically parsed and compiled for fas
 
 A basic signal expression might look like this:
 > "(entity_name/signal_value + 1) > 10"
+
 The above will evaluate to `1` if the condition is true, or `0` if the condition is false.
 
 Most "error" cases will evaulate to 0, such as an empty expression, missing referenced signals or entities, or division by 0.
 
 Fields can be accessed on components using the following syntax:
 > "entity_name#component_name.field_name
+
 For example: `light#renderable.emissive` will return the `emissive` value from the `light` entity's `renderable` component.
 
 Vector fields such as position or color can be accessed as `pos.x` or `color.r`.
