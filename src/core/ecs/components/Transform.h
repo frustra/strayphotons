@@ -158,8 +158,8 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
         R"(
 Multiple entities with transforms can be linked together to create a tree of entities that all move together (i.e. a transform tree).
 
-Transforms are combined in the following way:
-> scale -> rotate -> translate ( -> parent transform)
+Transforms are combined in the following way:  
+`scale -> rotate -> translate ( -> parent transform)`
 
 Note: When combining multiple transformations together with scaling factors,
 behavior is undefined if the combinations introduce skew. (The scale should be axis-aligned to the model)

@@ -18,15 +18,15 @@ namespace ecs {
 Signal expressions allow math and logic to be performed including almost any entity component property.
 Expressions are defined as strings and automatically parsed and compiled for fast game logic evaluation.
 
-A basic signal expression might look like this:
-> "(entity_name/signal_value + 1) > 10"
+A basic signal expression might look like this:  
+`"(entity_name/signal_value + 1) > 10"`
 
 The above will evaluate to `1` if the condition is true, or `0` if the condition is false.
 
 Most "error" cases will evaulate to 0, such as an empty expression, missing referenced signals or entities, or division by 0.
 
-Fields can be accessed on components using the following syntax:
-> "entity_name#component_name.field_name
+Fields can be accessed on components using the following syntax:  
+`"<entity_name>#<component_name>.<field_name>"`
 
 For example: `light#renderable.emissive` will return the `emissive` value from the `light` entity's `renderable` component.
 
