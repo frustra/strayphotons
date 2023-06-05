@@ -33,7 +33,10 @@ namespace ecs {
         sp::EnumArray<robin_hood::unordered_flat_set<Entity>, TriggerGroup> containedEntities;
     };
 
-    static StructMetadata MetadataTriggerGroup(typeid(TriggerGroup), "trigger_group", "", StructField::New<TriggerGroup>());
+    static StructMetadata MetadataTriggerGroup(typeid(TriggerGroup),
+        "trigger_group",
+        "",
+        StructField::New<TriggerGroup>());
     static Component<TriggerGroup> ComponentTriggerGroup(MetadataTriggerGroup);
 
     static StructMetadata MetadataTriggerArea(typeid(TriggerArea),

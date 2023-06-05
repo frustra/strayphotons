@@ -7,14 +7,14 @@ An `EntityRef` is a stable reference to an entity via a string name.
 Referenced entities do not need to exist at the point an `EntityRef` is defined.
 The reference will be automatically tracked and updated once the referenced entity is created.
 
-Reference names are defined the same as the `name` component:
-> *<scene_name>*:*<entity_name>*
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
 
 References can also be defined relative to their entity scope, the same as a `name` component.
-If just a relative name is provided, the reference will be expanded based on the scope root:
-> *<scene_name>*:*<root_name>*.*<relative_name>*
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
 
-The special "scoperoot" alias can be used to reference the parent entity during template generation.
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
 
 ### `Transform` Type
@@ -82,14 +82,14 @@ A shape type is defined by setting one of the following additional fields:
 | **box**     | vec3    | [1.0, 1.0, 1.0] | Boxes define their dimensions by specifying the total length along the X, Y, and Z axes relative to the actor |
 
 GLTF models automatically generate convex hull collision meshes.
-They can be referenced by name in the form:
-> <model_name>.convex<mesh_index>
-> e.g. "box.convex0"
+They can be referenced by name in the form:  
+`"<model_name>.convex<mesh_index>"`
+e.g. `"box.convex0"`
 
 If only a model name is specified, `convex0` will be used by default.
 
 If a `model_name.physics.json` file is provided alongside the GLTF, then custom physics meshes can be generated and configured.
-For example, the `duck.physics.json` physics definition defines `duck.cooked`,
+For example, the `duck.physics.json` physics definition defines `"duck.cooked"`,
 which decomposes the duck model into multiple convex hulls to more accurately represent its non-convex shape.
 
 

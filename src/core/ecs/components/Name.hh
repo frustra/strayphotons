@@ -17,19 +17,19 @@ namespace ecs {
 This component is required on all entities to allow for name-based references.
 If no name is provided upon entity creation, an auto-generated name will be filled in.
 
-Names are in the form:
-> *<scene_name>*:*<entity_name>*
+Names are in the form:  
+`"<scene_name>:<entity_name>"`
 
-An example could be `hello_world:platform`.
+An example could be `"hello_world:platform"`.
 
 By leaving out the scene qualifier, names can also be defined relative to their entity scope.
-Inside the scene definiton the entity scope might be "hello_world:",
-meaning both `hello_world:platform` and `platform` would reference the same entity.
+Inside the scene definiton the entity scope might be `"hello_world:"`,
+meaning both `"hello_world:platform"` and `"platform"` would reference the same entity.
 
-Relative names specified in a template take the form:
-> *<scene_name>*:*<root_name>*.*<relative_name>*
+Relative names specified in a template take the form:  
+`"<scene_name>:<root_name>.<relative_name>"`
 
-The special `scoperoot` alias can also be used inside a template to reference the parent entity.
+The special `"scoperoot"` alias can also be used inside a template to reference the parent entity.
 )";
 
     struct Name {

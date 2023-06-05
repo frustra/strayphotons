@@ -7,14 +7,14 @@ An `EntityRef` is a stable reference to an entity via a string name.
 Referenced entities do not need to exist at the point an `EntityRef` is defined.
 The reference will be automatically tracked and updated once the referenced entity is created.
 
-Reference names are defined the same as the `name` component:
-> *<scene_name>*:*<entity_name>*
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
 
 References can also be defined relative to their entity scope, the same as a `name` component.
-If just a relative name is provided, the reference will be expanded based on the scope root:
-> *<scene_name>*:*<root_name>*.*<relative_name>*
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
 
-The special "scoperoot" alias can be used to reference the parent entity during template generation.
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
 
 ### `SignalExpression` Type
@@ -45,19 +45,19 @@ Note: Only number-compatble fields can be referenced. All evaluation is done usi
 This component is required on all entities to allow for name-based references.
 If no name is provided upon entity creation, an auto-generated name will be filled in.
 
-Names are in the form:
-> *<scene_name>*:*<entity_name>*
+Names are in the form:  
+`"<scene_name>:<entity_name>"`
 
-An example could be `hello_world:platform`.
+An example could be `"hello_world:platform"`.
 
 By leaving out the scene qualifier, names can also be defined relative to their entity scope.
-Inside the scene definiton the entity scope might be "hello_world:",
-meaning both `hello_world:platform` and `platform` would reference the same entity.
+Inside the scene definiton the entity scope might be `"hello_world:"`,
+meaning both `"hello_world:platform"` and `"platform"` would reference the same entity.
 
-Relative names specified in a template take the form:
-> *<scene_name>*:*<root_name>*.*<relative_name>*
+Relative names specified in a template take the form:  
+`"<scene_name>:<root_name>.<relative_name>"`
 
-The special `scoperoot` alias can also be used inside a template to reference the parent entity.
+The special `"scoperoot"` alias can also be used inside a template to reference the parent entity.
 
 
 

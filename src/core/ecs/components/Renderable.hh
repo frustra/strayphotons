@@ -68,6 +68,7 @@ and models can be loaded from either `assets/models/<model_name>.gltf` or `asset
 
 Note for GLTF models with multiple meshes:  
 It is usually preferred to load the model using the `gltf` prefab script to automatically generate the correct transform tree and entity structure.
+
 See the definition here: https://github.com/frustra/strayphotons/blob/master/src/scripts/prefabs/GltfPrefab.cc
 )",
         StructField::New("model",

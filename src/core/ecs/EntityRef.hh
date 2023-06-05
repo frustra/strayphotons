@@ -13,14 +13,14 @@ An `EntityRef` is a stable reference to an entity via a string name.
 Referenced entities do not need to exist at the point an `EntityRef` is defined.
 The reference will be automatically tracked and updated once the referenced entity is created.
 
-Reference names are defined the same as the `name` component:
-> *<scene_name>*:*<entity_name>*
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
 
 References can also be defined relative to their entity scope, the same as a `name` component.
-If just a relative name is provided, the reference will be expanded based on the scope root:
-> *<scene_name>*:*<root_name>*.*<relative_name>*
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
 
-The special "scoperoot" alias can be used to reference the parent entity during template generation.
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 )";
 
     class EntityRef {
