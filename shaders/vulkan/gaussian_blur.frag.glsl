@@ -1,5 +1,11 @@
-// Separable Gaussian filter, template fragment shader
+/*
+ * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
+// Separable Gaussian filter, template fragment shader
 layout(binding = 0) uniform SAMPLER_TYPE sourceTex;
 
 layout(location = 0) in vec2 inTexCoord;

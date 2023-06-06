@@ -1,3 +1,10 @@
+/*
+ * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef COLOR_UTIL_GLSL_INCLUDED
 #define COLOR_UTIL_GLSL_INCLUDED
 
@@ -40,7 +47,6 @@ vec3 FastSRGBToLinear(vec3 srgb) {
 
 // HSV-related color space functions
 // http://www.chilliant.com/rgb2hsv.html
-
 vec3 HUEtoRGB(in float H) {
     float R = abs(H * 6 - 3) - 1;
     float G = 2 - abs(H * 6 - 2);
