@@ -96,9 +96,8 @@ def main():
 
         current_build_path = os.environ.get('BUILDKITE_BUILD_URL') + '#' + os.environ.get('BUILDKITE_JOB_ID')
         master_build_path = artifacts[path]['job']['web_url']
-        master_img_link = 'https://buildkite.com/organizations/frustra/pipelines/strayphotons/builds/' + str(build_info['number'])
-        master_img_link += '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
-        master_img_src = 'https://frustra-buildkite.s3.amazonaws.com/' + artifacts[path]['job']['id'] + '/' + path
+        current_img_src = 'https://builds.strayphotons.net/' + os.environ.get('BUILDKITE_JOB_ID') + '/' + path
+        master_img_src = 'https://builds.strayphotons.net/' + artifacts[path]['job']['id'] + '/' + path
 
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
@@ -114,8 +113,8 @@ def main():
                 '<a href="' + current_build_path + '">Current Build</a> -- ' +
                 '<a href="' + master_build_path + '">Master Build</a> -- ' +
                 '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
-                '<a href="artifact://' + path + '"><img src="artifact://' + path + '" alt="Current Build" height=200></a>' +
-                '<a href="' + master_img_link + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
+                '<a href="' + current_img_src + '"><img src="' + current_img_src + '" alt="Current Build" height=200></a>' +
+                '<a href="' + master_img_src + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
                 '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a><br/>'
             )
 
