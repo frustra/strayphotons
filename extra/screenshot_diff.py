@@ -98,7 +98,7 @@ def main():
         master_build_path = artifacts[path]['job']['web_url']
         master_img_link = 'https://buildkite.com/organizations/frustra/pipelines/strayphotons/builds/' + str(build_info['number'])
         master_img_link += '/jobs/' + artifacts[path]['job']['id'] + '/artifacts/' + artifacts[path]['id']
-        master_img_src = 'https://frustra-buildkite.s3.amazonaws.com/' + artifacts[path]['job']['id'] + '/' + path
+        master_img_src = 'https://builds.strayphotons.net/' + artifacts[path]['job']['id'] + '/' + path
 
         os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
