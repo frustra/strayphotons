@@ -19,5 +19,8 @@ https://github.com/frustra/strayphotons/wiki
 
 ## License
 
-Copyright (c) 2016-2023, Frustra Software [Jacob Wirth, Justin Li]  
-All rights reserved.
+> Stray Photons is Copyright (C) 2023 Jacob Wirth & Justin Li
+> 
+> Stray Photons is licensed under the terms of the [Mozilla Public License Version 2.0](https://mozilla.org/MPL/2.0/).  
+> Dependencies are licensed under individual MPL2.0-compatible licenses.  
+> See [ADDITIONAL_LICENSES.md](https://github.com/frustra/strayphotons/blob/master/ADDITIONAL_LICENSES.md) for details.

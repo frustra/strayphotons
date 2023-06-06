@@ -1,5 +1,14 @@
+/*
+ * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef SPATIAL_UTIL_GLSL_INCLUDED
 #define SPATIAL_UTIL_GLSL_INCLUDED
+
+#include "normal_encode.glsl"
 
 const float shadowBiasDistance = 0.01;
 
@@ -105,28 +114,6 @@ float LinearDepth(vec3 viewPos, vec2 clip) {
 // Produce linear depth in (0, 1) using view space coordinates
 float LinearDepthBias(vec3 viewPos, mat4 projMat, float bias) {
     return ViewPosToScreenPos(viewPos + vec3(0, 0, bias), projMat).z;
-}
-
-// http://jcgt.org/published/0003/02/01/paper.pdf
-vec2 SignNotZero(vec2 v) {
-    return vec2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
-}
-
-// Encodes a normalized vector into a vec2 using octahedron mapping
-// http://jcgt.org/published/0003/02/01/paper.pdf
-vec2 EncodeNormal(vec3 v) {
-    // Project the sphere onto the octahedron, and then onto the xy plane
-    vec2 p = v.xy * (1.0 / (abs(v.x) + abs(v.y) + abs(v.z)));
-    // Reflect the folds of the lower hemisphere over the diagonals
-    return (v.z <= 0.0) ? ((1.0 - abs(p.yx)) * SignNotZero(p)) : p;
-}
-
-// Decodes a normal vector from EncodeNormal
-// http://jcgt.org/published/0003/02/01/paper.pdf
-vec3 DecodeNormal(vec2 e) {
-    vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));
-    if (v.z < 0) v.xy = (1.0 - abs(v.yx)) * SignNotZero(v.xy);
-    return normalize(v);
 }
 
 #endif
