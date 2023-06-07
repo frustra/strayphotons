@@ -80,10 +80,10 @@ namespace sp::vulkan::renderer {
             }
         }
 
-        // currentSetFrame = (currentSetFrame + 1) % layerDescriptorSets.size();
-        // if (!layerDescriptorSets[currentSetFrame]) {
-        //     layerDescriptorSets[currentSetFrame] = graph.Device().CreateBindlessDescriptorSet();
-        // }
+        currentSetFrame = (currentSetFrame + 1) % layerDescriptorSets.size();
+        if (!layerDescriptorSets[currentSetFrame]) {
+            layerDescriptorSets[currentSetFrame] = graph.Device().CreateBindlessDescriptorSet();
+        }
 
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
@@ -484,7 +484,7 @@ namespace sp::vulkan::renderer {
                         }
                     }
                 })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                     vk::ClearColorValue clear;
                     clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
                     vk::ImageSubresourceRange range;
@@ -504,7 +504,7 @@ namespace sp::vulkan::renderer {
                         }
                     }
 
-                    // updateDescriptorSet(resources, cmd.Device());
+                    updateDescriptorSet(resources, cmd.Device());
                 });
             return;
         }
@@ -528,7 +528,7 @@ namespace sp::vulkan::renderer {
                     }
                 }
             })
-            .Execute([clearMipmap](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, clearMipmap](rg::Resources &resources, CommandContext &cmd) {
                 if (clearMipmap) {
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
@@ -551,7 +551,7 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
-                // updateDescriptorSet(resources, cmd.Device());
+                updateDescriptorSet(resources, cmd.Device());
             });
     }
 

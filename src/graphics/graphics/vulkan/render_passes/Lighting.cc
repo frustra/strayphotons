@@ -561,8 +561,10 @@ namespace sp::vulkan::renderer {
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
 
-                for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
-                    builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                for (size_t layer = 0; layer < voxelLayerCount; layer++) {
+                    for (auto &voxelLayer : Voxels::VoxelLayers[layer]) {
+                        builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                    }
                 }
 
                 auto desc = builder.DeriveImage(gBuffer0);
@@ -606,10 +608,10 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
 
-                for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
-                    cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
-                }
-                // cmd.SetBindlessDescriptors(2, voxels.GetCurrentVoxelDescriptorSet());
+                // for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
+                //     cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
+                // }
+                cmd.SetBindlessDescriptors(2, voxels.GetCurrentVoxelDescriptorSet());
 
                 cmd.Draw(3);
             });

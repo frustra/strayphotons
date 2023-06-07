@@ -50,7 +50,7 @@ namespace sp::vulkan::renderer {
         glm::ivec3 voxelGridSize;
         uint32_t voxelLayerCount;
 
-        std::array<vk::DescriptorSet, 2> layerDescriptorSets;
+        std::array<vk::DescriptorSet, 3> layerDescriptorSets;
         uint32_t currentSetFrame = 0;
 
         void updateDescriptorSet(rg::Resources &resources, DeviceContext &device);
