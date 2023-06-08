@@ -41,7 +41,7 @@ void main() {
     ivec3 tangentAxisA = ivec3(AxisDirections[TangentAxisA[axis]]) * stride;
     ivec3 tangentAxisB = ivec3(AxisDirections[TangentAxisB[axis]]) * stride;
 
-    vec3 forwardOffset = vec3(0.5 + AxisDirections[axis] * 0.5);
+    vec3 forwardOffset = AxisDirections[axis]; // vec3(0.5 + AxisDirections[axis] * 0.5);
     vec3 gridSize = imageSize(voxelLayerOut);
     vec4[4] tangentSamples = vec4[](
         texture(baseVoxelLayers[OppositeAxis[TangentAxisA[axis]]], (voxelPos + forwardOffset) / gridSize),

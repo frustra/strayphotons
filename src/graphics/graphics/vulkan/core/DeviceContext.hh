@@ -193,7 +193,7 @@ namespace sp::vulkan {
             return SelectSupportedFormat({{}, optimalTilingFeatures, {}}, possibleFormats);
         }
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
         tracy::VkCtx *GetTracyContext(CommandContextType type);
 #endif
 
@@ -263,7 +263,7 @@ namespace sp::vulkan {
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         unique_ptr<PerfTimer> perfTimer;
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
         struct {
             vector<vk::UniqueCommandPool> cmdPools;
             vector<vk::UniqueCommandBuffer> cmdBuffers;

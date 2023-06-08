@@ -22,11 +22,12 @@ const float scatterTermMultiplier = 0.2;
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
 
+layout(constant_id = 0) const uint VOXEL_LAYERS = 1;
+
 layout(binding = 0) uniform sampler2D shadowMap;
-layout(binding = 1) uniform sampler3D voxelRadiance;
-layout(binding = 2) uniform sampler3D voxelNormals;
 
 layout(set = 2, binding = 0) uniform sampler2D textures[];
+layout(set = 3, binding = 0) uniform sampler3D voxelLayersIn[];
 
 layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -96,12 +97,23 @@ void main() {
     }
 
     vec3 directDiffuseColor = baseColor * (1 - metalness) * scatterTerm;
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) * directDiffuseColor;
+    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
+    vec3 voxelNormal = normalize(mat3(voxelInfo.worldToVoxel) * worldNormal);
+
+    vec3 indirectDiffuse = vec3(0);
+    for (int axis = 0; axis < 3; axis++) {
+        float cosWeight = dot(AxisDirections[axis], voxelNormal);
+        float axisSign = sign(cosWeight);
+        int axisIndex = axis + 3 * (1 - int(step(0, axisSign)));
+        vec4 sampleValue = texture(voxelLayersIn[(VOXEL_LAYERS - 1) * 6 + axisIndex], voxelPos / voxelInfo.gridSize);
+        indirectDiffuse += sampleValue.rgb * abs(cosWeight);
+    }
 
     vec3 directLight =
         DirectShading(worldPosition, -rayDir, baseColor, worldNormal, worldNormal, roughness, metalness, scatterTerm);
 
-    vec3 totalLight = emissive + directLight + indirectDiffuse + indirectSpecular;
+    vec3 totalLight = emissive + directLight + indirectDiffuse * directDiffuseColor + indirectSpecular;
 
     outFragColor = vec4(totalLight * exposure, 1);
     outTransparencyMask = vec4(baseColorAlpha.rgb, 1);

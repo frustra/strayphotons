@@ -14,7 +14,7 @@
 // vulkan.hpp must be included before tracy
 #include <tracy/TracyVulkan.hpp>
 
-#ifndef TRACY_ENABLE_GRAPHICS
+#if !defined(TRACY_ENABLE) || !defined(TRACY_ENABLE_GRAPHICS)
 
     #define GPUZone(device, commandContext, name)
     #define GPUZoneNamed(device, commandContext, varname, name)

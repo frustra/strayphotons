@@ -355,7 +355,7 @@ namespace sp::vulkan {
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
         tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
 #endif
 
@@ -365,7 +365,7 @@ namespace sp::vulkan {
             queues[queueType] = queue;
             queueLastSubmit[queueType] = 0;
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
             if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
 
             vk::CommandPoolCreateInfo cmdPoolInfo;
@@ -529,7 +529,7 @@ namespace sp::vulkan {
             glfwDestroyWindow(window);
         }
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
 #endif
@@ -730,7 +730,7 @@ namespace sp::vulkan {
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
         PrepareResourcesForFrame();
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
         for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
             auto prevQueueSubmitFrame = queueLastSubmit[i];
             if (prevQueueSubmitFrame < frameCounter - 1) continue;
@@ -1604,7 +1604,7 @@ namespace sp::vulkan {
         Abortf("%s", err.str());
     }
 
-#ifdef TRACY_ENABLE_GRAPHICS
+#if defined(TRACY_ENABLE) && defined(TRACY_ENABLE_GRAPHICS)
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {
         return tracing.tracyContexts[(size_t)type];
     }

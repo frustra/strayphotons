@@ -558,8 +558,6 @@ namespace sp::vulkan::renderer {
                 builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
                 builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
 
                 for (size_t layer = 0; layer < voxelLayerCount; layer++) {
                     for (auto &voxelLayer : Voxels::VoxelLayers[layer]) {
@@ -598,8 +596,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView(0, 2, resources.GetImageView("GBuffer2"));
                 cmd.SetImageView(0, 3, resources.GetImageDepthView("GBufferDepthStencil"));
                 cmd.SetImageView(0, 4, resources.GetImageView(shadowDepth));
-                cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
 
                 cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
@@ -607,10 +603,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
-
-                // for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
-                //     cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
-                // }
                 cmd.SetBindlessDescriptors(2, voxels.GetCurrentVoxelDescriptorSet());
 
                 cmd.Draw(3);

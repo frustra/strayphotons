@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "graphics/vulkan/render_passes/Voxels.hh"
 
 namespace sp::vulkan::renderer {
     void Transparency::AddPass(RenderGraph &graph, const ecs::View &view) {
@@ -21,11 +22,15 @@ namespace sp::vulkan::renderer {
             .Build([&](PassBuilder &builder) {
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
                 builder.Read("ShadowMap.Linear", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("LightState");
                 builder.ReadUniform("VoxelState");
+
+                for (size_t layer = 0; layer < voxels.GetLayerCount(); layer++) {
+                    for (auto &voxelLayer : Voxels::VoxelLayers[layer]) {
+                        builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                    }
+                }
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
@@ -51,14 +56,16 @@ namespace sp::vulkan::renderer {
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);
 
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, voxels.GetLayerCount());
+
                 cmd.SetImageView(0, 0, resources.GetImageView("ShadowMap.Linear"));
-                cmd.SetImageView(0, 1, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 2, resources.GetImageView("Voxels.Normals"));
 
                 cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
                 cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
+
+                cmd.SetBindlessDescriptors(3, voxels.GetCurrentVoxelDescriptorSet());
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),

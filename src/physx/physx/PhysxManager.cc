@@ -670,7 +670,11 @@ namespace sp {
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
         auto globalTransform = transform.GetGlobalTransform(lock);
-        auto scale = globalTransform.GetScale();
+        auto &scale = globalTransform.GetScale();
+        if (glm::any(glm::equal(scale, glm::vec3(0.0f)))) {
+            Warnf("Physics actor %s has zero scale: %s", ecs::ToString(lock, e), glm::to_string(scale));
+            return nullptr;
+        }
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
             GlmQuatToPxQuat(globalTransform.GetRotation()));
@@ -680,15 +684,16 @@ namespace sp {
             actor = pxPhysics->createRigidStatic(pxTransform);
         } else if (ph.type == ecs::PhysicsActorType::Dynamic || ph.type == ecs::PhysicsActorType::Kinematic) {
             actor = pxPhysics->createRigidDynamic(pxTransform);
-
-            if (ph.type == ecs::PhysicsActorType::Kinematic) {
-                actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-                actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES,
-                    true);
-            }
         }
-        Assert(actor, "Physx did not return valid PxRigidActor");
+        if (!actor) {
+            Warnf("PhysX actor creation failed for entity: %s", ecs::ToString(lock, e));
+            return nullptr;
+        }
 
+        if (ph.type == ecs::PhysicsActorType::Kinematic) {
+            actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+            actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES, true);
+        }
         actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
 
         auto userData = new ActorUserData(e, globalTransform, ph.group);

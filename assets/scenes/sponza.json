@@ -211,11 +211,11 @@
 		{
 			"transform": {
 				"parent": "voxel_center",
-				"translate": [-6.4, -6.4, -13.7],
-				"scale": 0.1
+				"translate": [-6.1, -6.4, -13.7],
+				"scale": 0.2
 			},
 			"voxel_area": {
-				"extents": [128, 140, 280]
+				"extents": [64, 64, 144]
 			}
 		},
 		{

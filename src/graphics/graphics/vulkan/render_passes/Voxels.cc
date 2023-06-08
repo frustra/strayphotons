@@ -17,17 +17,16 @@
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
-    static CVar<bool> CVarEnableVoxels2("r.EnableVoxels2", true, "Enable world voxelization for lighting");
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
-        "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
+        "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace)");
     static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
-    static CVar<uint32_t> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
+    static CVar<uint32_t> CVarVoxelDebugLayer("r.VoxelDebugLayer", 0, "The voxel mipmap to sample in the debug view");
     static CVar<size_t> CVarVoxelLayers("r.VoxelLayers", 3, "The number of voxel mipmap layers");
     static CVar<int> CVarVoxelClear("r.VoxelClear",
-        15,
+        3,
         "Change the voxel grid clearing operation used between frames "
-        "(bitfield: 1=radiance, 2=counters, 4=normals, 8=mipmap)");
+        "(bitfield: 1=counters, 2=mipmap)");
     static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.1f, "Light attenuation for voxel bounces");
     static CVar<float> CVarLightLowPass("r.LightLowPass",
         0.95,
@@ -123,7 +122,9 @@ namespace sp::vulkan::renderer {
         ZoneScoped;
         auto scope = graph.Scope("Voxels");
 
-        if (voxelGridSize == glm::ivec3(0) || !CVarEnableVoxels.Get()) {
+        voxelLayerCount = std::min(CVarVoxelLayers.Get(), VoxelLayers.size());
+
+        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels.Get()) {
             graph.AddPass("Dummy")
                 .Build([&](rg::PassBuilder &builder) {
                     ImageDesc desc;
@@ -131,68 +132,38 @@ namespace sp::vulkan::renderer {
                     desc.primaryViewType = vk::ImageViewType::e3D;
                     desc.imageType = vk::ImageType::e3D;
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
-                    builder.CreateImage("Radiance", desc, Access::TransferWrite);
-                    // desc.format = vk::Format::eR8G8B8A8Snorm;
-                    builder.CreateImage("Normals", desc, Access::TransferWrite);
+                    for (auto &layerDirs : VoxelLayers) {
+                        for (auto &layerInfo : layerDirs) {
+                            builder.CreateImage(layerInfo.name, desc, Access::TransferWrite);
+                        }
+                    }
                 })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                    auto radianceView = resources.GetImageView("Radiance");
-                    auto normalsView = resources.GetImageView("Normals");
-
+                .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                     vk::ClearColorValue clear;
                     clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
                     vk::ImageSubresourceRange range;
                     range.layerCount = 1;
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    cmd.Raw().clearColorImage(*radianceView->Image(),
-                        vk::ImageLayout::eTransferDstOptimal,
-                        clear,
-                        {range});
 
-                    cmd.Raw().clearColorImage(*normalsView->Image(),
-                        vk::ImageLayout::eTransferDstOptimal,
-                        clear,
-                        {range});
+                    for (auto &layerDirs : VoxelLayers) {
+                        for (auto &layerInfo : layerDirs) {
+                            auto layerView = resources.GetImageView(layerInfo.name);
+                            if (!layerView) continue; // If the image is never read, it may be culled entirely.
+
+                            cmd.Raw().clearColorImage(*layerView->Image(),
+                                vk::ImageLayout::eTransferDstOptimal,
+                                clear,
+                                {range});
+                        }
+                    }
+
+                    updateDescriptorSet(resources, cmd.Device());
                 });
             return;
         }
 
-        ecs::View ortho;
-        ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
-
-        auto voxelCenter = voxelToWorld;
-        voxelCenter.Translate(voxelCenter * (0.5f * glm::vec4(voxelGridSize, 0)));
-
-        std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
-        axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
-        axisTransform[1].Rotate(M_PI_2, glm::vec3(1, 0, 0));
-
-        axisTransform[0].Scale(glm::vec3(voxelGridSize.z, voxelGridSize.y, voxelGridSize.x));
-        axisTransform[1].Scale(glm::vec3(voxelGridSize.x, voxelGridSize.z, voxelGridSize.y));
-        axisTransform[2].Scale(voxelGridSize);
-
-        std::array<ecs::View, 3> orthoAxes = {ortho, ortho, ortho};
-        orthoAxes[0].extents = glm::ivec2(voxelGridSize.z, voxelGridSize.y);
-        orthoAxes[1].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.z);
-        orthoAxes[2].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.y);
-        for (size_t i = 0; i < orthoAxes.size(); i++) {
-            auto axis = axisTransform[i];
-            axis.Scale(glm::vec3(0.5, 0.5, 1));
-            axis.Translate(axis * glm::vec4(0, 0, -0.5, 0));
-            orthoAxes[i].SetInvViewMat(axis.GetMatrix());
-        }
-
-        bool clearRadiance = (CVarVoxelClear.Get() & 1) == 1;
-        bool clearCounters = (CVarVoxelClear.Get() & 2) == 2;
-        bool clearNormals = (CVarVoxelClear.Get() & 4) == 4;
-        auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
-
-        auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
-        auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
-
         fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
-        auto voxelFillIndex = std::min(CVarVoxelFillIndex.Get(), voxelLayerCount - 1);
 
         uint32 totalFragmentListSize = 0;
         {
@@ -205,22 +176,30 @@ namespace sp::vulkan::renderer {
             }
         }
 
+        bool clearCounters = (CVarVoxelClear.Get() & 1) == 1;
+        bool clearMipmap = (CVarVoxelClear.Get() & 2) == 2;
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc;
-                desc.extent = voxelGridExtents;
+                desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;
-                desc.mipLevels = voxelGridMips;
 
                 desc.format = vk::Format::eR32Uint;
                 builder.CreateImage("FillCounters", desc, clearCounters ? Access::TransferWrite : Access::None);
 
                 desc.sampler = SamplerType::TrilinearClampBorder;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
-                builder.CreateImage("Radiance", desc, clearRadiance ? Access::TransferWrite : Access::None);
-                // desc.format = vk::Format::eR8G8B8A8Snorm;
-                builder.CreateImage("Normals", desc, clearNormals ? Access::TransferWrite : Access::None);
+                for (size_t layer = 0; layer < voxelLayerCount; layer++) {
+                    for (auto &voxelLayer : VoxelLayers[layer]) {
+                        builder.CreateImage(voxelLayer.name,
+                            desc,
+                            layer == 0 && clearMipmap ? Access::TransferWrite : Access::None);
+                        builder.CreateImage(voxelLayer.preBlurName,
+                            desc,
+                            layer == 0 && clearMipmap ? Access::TransferWrite : Access::None);
+                    }
+                }
 
                 builder.CreateBuffer("FragmentListMetadata",
                     {sizeof(GPUVoxelFragmentList), MAX_VOXEL_FRAGMENT_LISTS},
@@ -232,19 +211,7 @@ namespace sp::vulkan::renderer {
                     Residency::GPU_ONLY,
                     Access::None);
             })
-            .Execute([this, clearRadiance, clearCounters, clearNormals](rg::Resources &resources, CommandContext &cmd) {
-                if (clearRadiance) {
-                    auto radianceView = resources.GetImageView("Radiance");
-                    vk::ClearColorValue clear;
-                    vk::ImageSubresourceRange range;
-                    range.layerCount = 1;
-                    range.levelCount = 1;
-                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    cmd.Raw().clearColorImage(*radianceView->Image(),
-                        vk::ImageLayout::eTransferDstOptimal,
-                        clear,
-                        {range});
-                }
+            .Execute([this, clearCounters, clearMipmap](rg::Resources &resources, CommandContext &cmd) {
                 if (clearCounters) {
                     auto counterView = resources.GetImageView("FillCounters");
                     vk::ClearColorValue clear;
@@ -257,17 +224,26 @@ namespace sp::vulkan::renderer {
                         clear,
                         {range});
                 }
-                if (clearNormals) {
-                    auto normalsView = resources.GetImageView("Normals");
+                if (clearMipmap) {
                     vk::ClearColorValue clear;
                     vk::ImageSubresourceRange range;
                     range.layerCount = 1;
                     range.levelCount = 1;
                     range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    cmd.Raw().clearColorImage(*normalsView->Image(),
-                        vk::ImageLayout::eTransferDstOptimal,
-                        clear,
-                        {range});
+
+                    for (auto &voxelLayer : VoxelLayers[0]) {
+                        auto layerView = resources.GetImageView(voxelLayer.name);
+                        cmd.Raw().clearColorImage(*layerView->Image(),
+                            vk::ImageLayout::eTransferDstOptimal,
+                            clear,
+                            {range});
+
+                        auto layerView2 = resources.GetImageView(voxelLayer.preBlurName);
+                        cmd.Raw().clearColorImage(*layerView2->Image(),
+                            vk::ImageLayout::eTransferDstOptimal,
+                            clear,
+                            {range});
+                    }
                 }
 
                 auto listBuffer = resources.GetBuffer("FragmentListMetadata");
@@ -294,13 +270,42 @@ namespace sp::vulkan::renderer {
                         sizeof(uint32_t) * 2,
                         1);
                 }
+
+                updateDescriptorSet(resources, cmd.Device());
             });
+
+        ecs::View ortho;
+        ortho.visibilityMask = ecs::VisibilityMask::LightingVoxel;
+
+        auto voxelCenter = voxelToWorld;
+        voxelCenter.Translate(voxelCenter * (0.5f * glm::vec4(voxelGridSize, 0)));
+
+        std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
+        axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
+        axisTransform[1].Rotate(M_PI_2, glm::vec3(1, 0, 0));
+
+        axisTransform[0].Scale(glm::vec3(voxelGridSize.z, voxelGridSize.y, voxelGridSize.x));
+        axisTransform[1].Scale(glm::vec3(voxelGridSize.x, voxelGridSize.z, voxelGridSize.y));
+        axisTransform[2].Scale(voxelGridSize);
+
+        std::array<ecs::View, 3> orthoAxes = {ortho, ortho, ortho};
+        orthoAxes[0].extents = glm::ivec2(voxelGridSize.z, voxelGridSize.y);
+        orthoAxes[1].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.z);
+        orthoAxes[2].extents = glm::ivec2(voxelGridSize.x, voxelGridSize.y);
+        for (size_t i = 0; i < orthoAxes.size(); i++) {
+            auto axis = axisTransform[i];
+            axis.Scale(glm::vec3(0.5, 0.5, 1));
+            axis.Translate(axis * glm::vec4(0, 0, -0.5, 0));
+            orthoAxes[i].SetInvViewMat(axis.GetMatrix());
+        }
+
+        auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
+
+        auto voxelFillIndex = std::min(CVarVoxelFillIndex.Get(), voxelLayerCount - 1);
 
         graph.AddPass("Fill")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Write("FillCounters", Access::FragmentShaderWrite);
-                builder.Write("Radiance", Access::FragmentShaderWrite);
-                builder.Write("Normals", Access::FragmentShaderWrite);
 
                 builder.ReadPreviousFrame("VoxelState", Access::AnyShaderReadUniform);
                 for (auto &voxelLayer : VoxelLayers[voxelFillIndex]) {
@@ -358,8 +363,6 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
                 cmd.SetImageView(0, 3, resources.GetImageView("ShadowMap.Linear"));
                 cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
-                cmd.SetImageView(0, 5, resources.GetImageMipView("Radiance", 0));
-                cmd.SetImageView(0, 6, resources.GetImageMipView("Normals", 0));
                 cmd.SetStorageBuffer(0, 7, resources.GetBuffer("FragmentListMetadata"));
                 cmd.SetStorageBuffer(0, 8, resources.GetBuffer("FragmentLists"));
 
@@ -374,7 +377,7 @@ namespace sp::vulkan::renderer {
                     if (lastVoxelLayerID != InvalidResource) {
                         cmd.SetImageView(0, 10 + voxelLayer.dirIndex, resources.GetImageView(lastVoxelLayerID));
                     } else {
-                        cmd.SetImageView(0, 10 + voxelLayer.dirIndex, resources.GetImageView("Radiance"));
+                        cmd.SetImageView(0, 10 + voxelLayer.dirIndex, scene.textures.GetSinglePixel(glm::vec4(0)));
                     }
                 }
 
@@ -389,68 +392,6 @@ namespace sp::vulkan::renderer {
                 cmd.EndRenderPass();
             });
 
-        for (uint32_t i = 1; i < fragmentListCount; i++) {
-            graph.AddPass("Merge")
-                .Build([&](rg::PassBuilder &builder) {
-                    builder.Write("Radiance", Access::ComputeShaderWrite);
-                    builder.Write("Normals", Access::ComputeShaderWrite);
-
-                    builder.Read("FragmentListMetadata", Access::IndirectBuffer);
-                    builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);
-                    builder.Read("FragmentLists", Access::ComputeShaderReadStorage);
-                })
-                .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.SetComputeShader("voxel_merge.comp");
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
-
-                    cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
-                    cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
-
-                    auto metadata = resources.GetBuffer("FragmentListMetadata");
-                    cmd.SetStorageBuffer(0,
-                        2,
-                        metadata,
-                        i * sizeof(GPUVoxelFragmentList),
-                        sizeof(GPUVoxelFragmentList));
-
-                    cmd.SetStorageBuffer(0,
-                        3,
-                        resources.GetBuffer("FragmentLists"),
-                        fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
-                        fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
-
-                    cmd.DispatchIndirect(metadata,
-                        i * sizeof(GPUVoxelFragmentList) + offsetof(GPUVoxelFragmentList, cmd));
-                });
-        }
-
-        for (uint32_t i = 1; i < voxelGridMips; i++) {
-            graph.AddPass("Mipmap")
-                .Build([&](rg::PassBuilder &builder) {
-                    builder.Read("Radiance", Access::ComputeShaderSampleImage);
-                    builder.Write("Radiance", Access::ComputeShaderWrite);
-                    builder.Read("Normals", Access::ComputeShaderSampleImage);
-                    builder.Write("Normals", Access::ComputeShaderWrite);
-                })
-                .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.SetComputeShader("voxel_mipmap.comp");
-
-                    cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", i - 1));
-                    cmd.SetSampler(0, 0, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
-                    cmd.SetImageView(0, 1, resources.GetImageMipView("Radiance", i));
-
-                    cmd.SetImageView(0, 2, resources.GetImageMipView("Normals", i - 1));
-                    cmd.SetSampler(0, 2, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
-                    cmd.SetImageView(0, 3, resources.GetImageMipView("Normals", i));
-
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
-
-                    auto divisor = 8 << i;
-                    auto dispatchCount = (voxelGridSize + divisor - 1) / divisor;
-                    cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
-                });
-        }
-
         AddBufferReadback(graph, "FragmentListMetadata", 0, {}, [listCount = fragmentListCount](BufferPtr buffer) {
             auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
             for (uint32 i = 0; i < listCount; i++) {
@@ -461,105 +402,6 @@ namespace sp::vulkan::renderer {
                     map[i].capacity);
             }
         });
-    }
-
-    void Voxels::AddVoxelizationInit(RenderGraph &graph, const Lighting &lighting) {
-        ZoneScoped;
-        auto scope = graph.Scope("Voxels2");
-
-        voxelLayerCount = std::min(CVarVoxelLayers.Get(), VoxelLayers.size());
-        bool clearMipmap = (CVarVoxelClear.Get() & 8) == 8;
-
-        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels2.Get()) {
-            graph.AddPass("Dummy")
-                .Build([&](rg::PassBuilder &builder) {
-                    ImageDesc desc;
-                    desc.extent = vk::Extent3D(1, 1, 1);
-                    desc.primaryViewType = vk::ImageViewType::e3D;
-                    desc.imageType = vk::ImageType::e3D;
-                    desc.format = vk::Format::eR16G16B16A16Sfloat;
-                    for (auto &layerDirs : VoxelLayers) {
-                        for (auto &layerInfo : layerDirs) {
-                            builder.CreateImage(layerInfo.name, desc, Access::TransferWrite);
-                        }
-                    }
-                })
-                .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                    vk::ClearColorValue clear;
-                    clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-                    vk::ImageSubresourceRange range;
-                    range.layerCount = 1;
-                    range.levelCount = 1;
-                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
-
-                    for (auto &layerDirs : VoxelLayers) {
-                        for (auto &layerInfo : layerDirs) {
-                            auto layerView = resources.GetImageView(layerInfo.name);
-                            if (!layerView) continue; // If the image is never read, it may be culled entirely.
-
-                            cmd.Raw().clearColorImage(*layerView->Image(),
-                                vk::ImageLayout::eTransferDstOptimal,
-                                clear,
-                                {range});
-                        }
-                    }
-
-                    updateDescriptorSet(resources, cmd.Device());
-                });
-            return;
-        }
-
-        graph.AddPass("Init")
-            .Build([&](rg::PassBuilder &builder) {
-                ImageDesc desc;
-                desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
-                desc.primaryViewType = vk::ImageViewType::e3D;
-                desc.imageType = vk::ImageType::e3D;
-                desc.sampler = SamplerType::TrilinearClampBorder;
-                desc.format = vk::Format::eR16G16B16A16Sfloat;
-                for (size_t layer = 0; layer < voxelLayerCount; layer++) {
-                    for (auto &voxelLayer : VoxelLayers[layer]) {
-                        builder.CreateImage(voxelLayer.name,
-                            desc,
-                            layer == 0 && clearMipmap ? Access::TransferWrite : Access::None);
-                        builder.CreateImage(voxelLayer.preBlurName,
-                            desc,
-                            layer == 0 && clearMipmap ? Access::TransferWrite : Access::None);
-                    }
-                }
-            })
-            .Execute([this, clearMipmap](rg::Resources &resources, CommandContext &cmd) {
-                if (clearMipmap) {
-                    vk::ClearColorValue clear;
-                    vk::ImageSubresourceRange range;
-                    range.layerCount = 1;
-                    range.levelCount = 1;
-                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
-
-                    for (auto &voxelLayer : VoxelLayers[0]) {
-                        auto layerView = resources.GetImageView(voxelLayer.name);
-                        cmd.Raw().clearColorImage(*layerView->Image(),
-                            vk::ImageLayout::eTransferDstOptimal,
-                            clear,
-                            {range});
-
-                        auto layerView2 = resources.GetImageView(voxelLayer.preBlurName);
-                        cmd.Raw().clearColorImage(*layerView2->Image(),
-                            vk::ImageLayout::eTransferDstOptimal,
-                            clear,
-                            {range});
-                    }
-                }
-
-                updateDescriptorSet(resources, cmd.Device());
-            });
-    }
-
-    void Voxels::AddVoxelization2(RenderGraph &graph, const Lighting &lighting) {
-        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels2.Get()) return;
-
-        ZoneScoped;
-        auto scope = graph.Scope("Voxels2");
 
         struct GPULayerData {
             glm::vec3 direction;
@@ -574,9 +416,9 @@ namespace sp::vulkan::renderer {
 
                     builder.ReadUniform("VoxelState");
 
-                    builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
-                    builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
-                    builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                    builder.Read("FragmentListMetadata", Access::IndirectBuffer);
+                    builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);
+                    builder.Read("FragmentLists", Access::ComputeShaderReadStorage);
                 })
 
                 .Execute([this, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
@@ -592,12 +434,12 @@ namespace sp::vulkan::renderer {
 
                     cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
 
-                    auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                    auto metadata = resources.GetBuffer("FragmentListMetadata");
                     cmd.SetStorageBuffer(0, 3, metadata, 0, sizeof(GPUVoxelFragmentList));
 
                     cmd.SetStorageBuffer(0,
                         4,
-                        resources.GetBuffer("Voxels.FragmentLists"),
+                        resources.GetBuffer("FragmentLists"),
                         fragmentListSizes[0].offset * sizeof(GPUVoxelFragment),
                         fragmentListSizes[0].capacity * sizeof(GPUVoxelFragment));
 
@@ -612,9 +454,9 @@ namespace sp::vulkan::renderer {
 
                         builder.ReadUniform("VoxelState");
 
-                        builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
-                        builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
-                        builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                        builder.Read("FragmentListMetadata", Access::IndirectBuffer);
+                        builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);
+                        builder.Read("FragmentLists", Access::ComputeShaderReadStorage);
                     })
                     .Execute([this, i, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
                         cmd.SetComputeShader("voxel_merge_layer.comp");
@@ -630,7 +472,7 @@ namespace sp::vulkan::renderer {
 
                         cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
 
-                        auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                        auto metadata = resources.GetBuffer("FragmentListMetadata");
                         cmd.SetStorageBuffer(0,
                             3,
                             metadata,
@@ -639,7 +481,7 @@ namespace sp::vulkan::renderer {
 
                         cmd.SetStorageBuffer(0,
                             4,
-                            resources.GetBuffer("Voxels.FragmentLists"),
+                            resources.GetBuffer("FragmentLists"),
                             fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                             fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
@@ -734,19 +576,19 @@ namespace sp::vulkan::renderer {
 
     void Voxels::AddDebugPass(RenderGraph &graph) {
         if (CVarVoxelDebug.Get() <= 0 || voxelGridSize == glm::ivec3(0)) return;
-        auto debugMipLayer = std::min(CVarVoxelDebugMip.Get(), voxelLayerCount - 1);
+        auto debugMipLayer = std::min(CVarVoxelDebugLayer.Get(), voxelLayerCount - 1);
 
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Read("Voxels.FillCounters", Access::FragmentShaderReadStorage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("VoxelState");
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
 
-                for (auto &voxelLayer : VoxelLayers[debugMipLayer]) {
-                    builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                for (size_t layer = 0; layer < voxelLayerCount; layer++) {
+                    for (auto &voxelLayer : Voxels::VoxelLayers[layer]) {
+                        builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                    }
                 }
 
                 builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
@@ -755,7 +597,7 @@ namespace sp::vulkan::renderer {
                 builder.OutputColorAttachment(0, "VoxelDebug", desc, {LoadOp::DontCare, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
-            .Execute([debugMipLayer](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, debugMipLayer](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "voxel_debug.frag");
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);
@@ -768,18 +610,13 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
                 cmd.SetImageView(0, 3, resources.GetImageView(resources.LastOutputID()));
                 cmd.SetImageView(0, 4, resources.GetImageView("Voxels.FillCounters"));
-                cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
 
-                for (auto &voxelLayer : VoxelLayers[debugMipLayer]) {
-                    auto layerView = resources.GetImageView(voxelLayer.fullName);
-                    Assertf(layerView, "Layer view missing: %s", voxelLayer.fullName);
-                    cmd.SetImageView(1, voxelLayer.dirIndex, layerView);
-                }
+                cmd.SetBindlessDescriptors(1, GetCurrentVoxelDescriptorSet());
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 2, debugMipLayer);
+                cmd.SetShaderConstant(ShaderStage::Fragment, 2, voxelLayerCount);
+                cmd.SetShaderConstant(ShaderStage::Fragment, 3, debugMipLayer);
 
                 cmd.Draw(3);
             });

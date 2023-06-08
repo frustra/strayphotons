@@ -24,8 +24,6 @@ layout(binding = 1) uniform sampler2DArray gBuffer1;
 layout(binding = 2) uniform sampler2DArray gBuffer2;
 layout(binding = 3) uniform sampler2DArray gBufferDepth;
 layout(binding = 4) uniform sampler2D shadowMap;
-layout(binding = 5) uniform sampler3D voxelRadiance;
-layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[];
 layout(set = 2, binding = 0) uniform sampler3D voxelLayersIn[];
@@ -48,48 +46,6 @@ layout(location = 0) out vec4 outFragColor;
 
 #include "../lib/shading.glsl"
 #include "../lib/voxel_trace_shared.glsl"
-
-vec4 ConeTraceGrid2(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord) {
-    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(rayPos, 1.0)).xyz;
-    vec3 voxelDir = normalize(mat3(voxelInfo.worldToVoxel) * rayDir);
-
-    // int axisIndex = DominantAxis(voxelDir);
-    // if (axisIndex < 0) {
-    //     axisIndex = -axisIndex + 2;
-    // } else {
-    //     axisIndex -= 1;
-    // }
-
-    float dist = InterleavedGradientNoise(fragCoord);
-    vec4 result = vec4(0);
-
-    // TODO: Fix this constant
-    for (int i = 0; i < 200; i++) {
-        float size = max(1.0, ratio * dist);
-        vec3 position = voxelPos + voxelDir * dist;
-        position += surfaceNormal * 1.4;
-
-        uint layerLevel = clamp(uint(size - 1), 0, VOXEL_LAYERS - 1);
-        // TODO: layers > 0 start to blur extremely quickly. An intermediate layer is needed for specular to look good.
-
-        vec4 value = vec4(0);
-        for (int axis = 0; axis < 3; axis++) {
-            float cosWeight = dot(AxisDirections[axis], voxelDir);
-            float axisSign = sign(cosWeight);
-            int axisIndex = axis + 3 * (1 - int(step(0, axisSign)));
-            // vec4 sampleValue = texelFetch(voxelLayersIn[layerLevel * 6 + axisIndex], ivec3(position), 0);
-            vec4 sampleValue = texture(voxelLayersIn[layerLevel * 6 + axisIndex], position / voxelInfo.gridSize);
-            value += sampleValue * abs(cosWeight);
-        }
-
-        result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
-
-        if (result.a > 0.999) break;
-        dist += size;
-    }
-
-    return result;
-}
 
 void main() {
     ViewState view = views[gl_ViewID_OVR];
@@ -128,7 +84,7 @@ void main() {
         vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
         if (any(greaterThan(directSpecularColor, vec3(0.0))) && roughness < 1.0) {
             float specularConeRatio = roughness * 0.8;
-            vec4 sampleColor = ConeTraceGrid2(specularConeRatio,
+            vec4 sampleColor = ConeTraceGrid(specularConeRatio,
                 worldPosition,
                 rayReflectDir,
                 flatWorldNormal,

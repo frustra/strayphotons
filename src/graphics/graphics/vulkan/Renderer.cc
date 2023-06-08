@@ -52,8 +52,8 @@ namespace sp::vulkan {
     static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
 
     Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels), transparency(scene),
-          guiRenderer(new GuiRenderer(device)) {
+        : device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
+          transparency(scene, voxels), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -142,9 +142,7 @@ namespace sp::vulkan {
         AddWorldGuis(lock);
         AddMenuGui(lock);
         lighting.AddGelTextures(graph);
-        voxels.AddVoxelizationInit(graph, lighting);
         voxels.AddVoxelization(graph, lighting);
-        voxels.AddVoxelization2(graph, lighting);
         renderer::AddLightSensors(graph, scene, lock);
 
 #ifdef SP_XR_SUPPORT

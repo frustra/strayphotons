@@ -15,13 +15,16 @@ namespace ecs {
 }
 
 namespace sp::vulkan::renderer {
+    class Voxels;
+
     class Transparency {
     public:
-        Transparency(GPUScene &scene) : scene(scene) {}
+        Transparency(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {}
 
         void AddPass(RenderGraph &graph, const ecs::View &view);
 
     private:
         GPUScene &scene;
+        Voxels &voxels;
     };
 } // namespace sp::vulkan::renderer

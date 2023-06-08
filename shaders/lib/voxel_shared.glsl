@@ -21,15 +21,6 @@ struct VoxelFragment {
 
 const uint MipmapWorkGroupSize = 256;
 
-const uint[13] MaxFragListMask = uint[](8191, 4095, 2047, 1023, 511, 255, 127, 63, 31, 15, 7, 3, 1);
-const uint[13] FragListWidthBits = uint[](13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
-
-const mat4[3] AxisSwapForward = mat4[](mat4(mat3(0, 0, 1, 0, 1, 0, -1, 0, 0)),
-    mat4(mat3(1, 0, 0, 0, 0, 1, 0, -1, 0)),
-    mat4(mat3(1.0)));
-
-const mat3[3] AxisSwapReverse = mat3[](mat3(0, 0, -1, 0, 1, 0, 1, 0, 0), mat3(1, 0, 0, 0, 0, -1, 0, 1, 0), mat3(1.0));
-
 const uint[6] OppositeAxis = uint[](3, 4, 5, 0, 1, 2);
 const uint[6] TangentAxisA = uint[](1, 0, 0, 4, 3, 3);
 const uint[6] TangentAxisB = uint[](2, 2, 1, 5, 5, 4);
@@ -39,6 +30,13 @@ const vec3[6] AxisDirections = vec3[](vec3(1, 0, 0),
     vec3(-1, 0, 0),
     vec3(0, -1, 0),
     vec3(0, 0, -1));
+
+int GetAxisIndex(vec3 axis) {
+    vec3 signAxis = sign(axis);
+    float indexPositive = dot(vec3(0, 1, 2), max(signAxis, 0));
+    float indexNegative = dot(vec3(3, 4, 5), abs(min(signAxis, 0)));
+    return int(indexPositive + indexNegative);
+}
 
 int DominantAxis(vec3 normal) {
     vec3 absNormal = abs(normal);

@@ -27,8 +27,6 @@ namespace sp::vulkan::renderer {
         void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock);
 
         void AddVoxelization(RenderGraph &graph, const Lighting &lighting);
-        void AddVoxelizationInit(RenderGraph &graph, const Lighting &lighting);
-        void AddVoxelization2(RenderGraph &graph, const Lighting &lighting);
         void AddDebugPass(RenderGraph &graph);
 
         vk::DescriptorSet GetCurrentVoxelDescriptorSet() const;
@@ -72,7 +70,7 @@ namespace sp::vulkan::renderer {
                     std::string name = "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir);
                     layers[i][dir] = VoxelLayerInfo{
                         name,
-                        "Voxels2." + name,
+                        "Voxels." + name,
                         name + "_PreBlur",
                         i,
                         dir,
