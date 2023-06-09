@@ -20,7 +20,7 @@ target_precompile_headers(docs_generator REUSE_FROM ${PROJECT_CORE_LIB})
 
 target_include_directories(docs_generator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(DOCS_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/docs")
+set(DOCS_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/docs/generated")
 add_custom_target(component_docs ALL)
 
 function(generate_docs_pages)
