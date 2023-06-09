@@ -24,7 +24,7 @@
 #include <stdexcept>
 
 namespace sp {
-    GlfwInputHandler::GlfwInputHandler(ecs::EventQueue &windowEventQueue, GLFWwindow &glfwWindow)
+    GlfwInputHandler::GlfwInputHandler(LockFreeEventQueue<ecs::Event> &windowEventQueue, GLFWwindow &glfwWindow)
         : outputEventQueue(windowEventQueue), window(&glfwWindow) {
         glfwSetWindowUserPointer(window, this);
 
@@ -87,9 +87,9 @@ namespace sp {
         auto keyboard = ctx->keyboardEntity.GetLive();
         std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
         if (action == GLFW_PRESS) {
-            ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_KEYBOARD_KEY_DOWN, keyboard, keyName});
+            ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_KEYBOARD_KEY_DOWN, keyboard, keyName});
         } else if (action == GLFW_RELEASE) {
-            ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_KEYBOARD_KEY_UP, keyboard, keyName});
+            ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_KEYBOARD_KEY_UP, keyboard, keyName});
         }
     }
 
@@ -100,7 +100,7 @@ namespace sp {
 
         auto keyboard = ctx->keyboardEntity.GetLive();
         // TODO: Handle unicode somehow?
-        ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch});
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch});
     }
 
     void GlfwInputHandler::MouseMoveCallback(GLFWwindow *window, double xPos, double yPos) {
@@ -109,7 +109,7 @@ namespace sp {
         Assert(ctx, "MouseMoveCallback occured without valid context");
 
         auto mouse = ctx->mouseEntity.GetLive();
-        ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, glm::vec2(xPos, yPos)});
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, glm::vec2(xPos, yPos)});
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
@@ -119,11 +119,11 @@ namespace sp {
 
         auto mouse = ctx->mouseEntity.GetLive();
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
-            ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_LEFT_CLICK, mouse, action == GLFW_PRESS});
+            ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_LEFT_CLICK, mouse, action == GLFW_PRESS});
         } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-            ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_MIDDLE_CLICK, mouse, action == GLFW_PRESS});
+            ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MIDDLE_CLICK, mouse, action == GLFW_PRESS});
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-            ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_RIGHT_CLICK, mouse, action == GLFW_PRESS});
+            ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_RIGHT_CLICK, mouse, action == GLFW_PRESS});
         }
     }
 
@@ -133,6 +133,6 @@ namespace sp {
         Assert(ctx, "MouseScrollCallback occured without valid context");
 
         auto mouse = ctx->mouseEntity.GetLive();
-        ctx->outputEventQueue.Add(ecs::Event{INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset)});
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset)});
     }
 } // namespace sp

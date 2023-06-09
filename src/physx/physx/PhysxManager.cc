@@ -37,7 +37,7 @@ namespace sp {
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
     CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
-    PhysxManager::PhysxManager(ecs::EventQueue &windowInputQueue, bool stepMode)
+    PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode)
         : RegisteredThread("PhysX", 120.0, true), windowInputQueue(windowInputQueue), scenes(GetSceneManager()),
           characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
           animationSystem(*this), workQueue("PhysXHullLoading") {
