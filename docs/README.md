@@ -2,9 +2,11 @@ Welcome to the Stray Photons documentation!
 
 ## Guides
 
-- [Installation and Setup Guide](https://github.com/frustra/strayphotons/wiki/Installation-and-Setup-Guide)
-- [Loading Scenes and Navigating the World](https://github.com/frustra/strayphotons/wiki/Loading-Scenes-and-Navigating-the-World)
-- [Building a Basic Scene](https://github.com/frustra/strayphotons/wiki/Building-a-Basic-Scene)
+- [Installation and Setup Guide](#/guides/Installation_and_Setup.md)
+- [Loading Scenes and Navigating the World](#/guides/Loading_Scenes.md)
+- [Building a Basic Scene](#/guides/Building_a_Basic_Scene.md)
 
-## Component Documentation
-- [Component Overview](https://github.com/frustra/strayphotons/wiki/Component-Overview)
+## Component Definitions
+- [General Components](#/generated/General_Components.md)
+- [Physics Components](#/generated/Physics_Components.md)
+- [Rendering Components](#/generated/Rendering_Components.md)
