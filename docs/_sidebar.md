@@ -1,3 +1,5 @@
+- [Home](/)
+
 - Guides
 
   - [Installation and Setup Guide](guides/Installation_and_Setup.md)
