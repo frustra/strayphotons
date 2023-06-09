@@ -19,7 +19,7 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 
 - **Robust Force-limited Physics System** - Based on Nvidia's PhysX, Stray Photons physics system includes custom fine-tuned constraints and controllers for handling VR hand input. Forces are accurately limited to prevent moving objects that are too heavy, or the player clipping out of bounds. Full-hand physics interaction is supported for precise player input.
 
-    <video src="https://assets.strayphotons.net/demos/2022-05-02_23-23-21-cut(1).mp4" alt="Accurate full-hand physics simulation" height="340" controls loop />
+    <img src="https://assets.strayphotons.net/demos/hand_physics.gif" alt="Accurate full-hand physics simulation" height="340" />
 
 - **Light Reflections and Transparency** - The engine's lighting includes a custom recursive shadow system that allows direct lights to both bounce off mirrors, or be tinted by glass filters. Objects in a light's path can be moved in real-time by the player, allowing light-based puzzles to be created.
 
@@ -37,7 +37,7 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 
 - **Powerful Signal Expression System** - Without the need for writing any code at all, complex game logic can be represented using just signals and events sent between entities. A set of built-in scripts can be combined to control almost any engine component.
 
-    <video src="https://assets.strayphotons.net/demos/STRAY_PHOTONS_141_FPS_2023-05-03_16-37-22.mp4" alt="Game of Life built using Signal Expressions" height="340" controls loop />
+    <img src="https://assets.strayphotons.net/demos/game_of_life.gif" alt="Game of Life built using Signal Expressions" height="340" />
 
 - **CI Testing Environment and Dev-Friendly Build Tools** - Stray Photon's development tools are made to keep iteration fast and easy. The engine's modularity allows for fast incremental builds, and flexible configurations for CI testing. Most aspects of the engine are tested, including automatic screenshot diffing of scripted scenarios. These test scripts allow the engine to be run in a deterministic "lockstep" mode for tracking down even single-frame issues.
 
