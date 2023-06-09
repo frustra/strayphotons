@@ -29,14 +29,12 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 
         vec4 value = vec4(0);
         for (int axis = 0; axis < 3; axis++) {
-            float axisSign = sign(dot(AxisDirections[axis], voxelDir));
+            float cosWeight = dot(AxisDirections[axis], voxelDir);
+            float axisSign = sign(cosWeight);
             int axisIndex = axis + 3 * (1 - int(step(0, axisSign)));
-            // vec4 sampleValue = texelFetch(voxelLayersIn[layerLevel * 6 + axisIndex], ivec3(position), 0);
             vec4 sampleValue = texture(voxelLayersIn[layerLevel * 6 + axisIndex], position / voxelInfo.gridSize);
             sampleValue.a /= max(1, sampleValue.a);
-            value += sampleValue;
-            // value.rgb += sampleValue.rgb * ((sampleValue.a + 0.000001) / (value.a + 0.000001));
-            // value = sampleValue * max(0, dot(AxisDirections[axisIndex], voxelDir));
+            value += sampleValue * smoothstep(0, 0.4, abs(cosWeight));
         }
         value.rgb /= max(1, value.a);
 
