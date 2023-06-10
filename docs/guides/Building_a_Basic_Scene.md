@@ -227,4 +227,4 @@ Entities can be attached in a couple ways:
 
    Note how the `hello_world:interactive-box` entity can be picked up via the red cube, but not the blue cube, since they are different physics actors.
 
-**See [Component Overview](https://github.com/frustra/strayphotons/wiki/Component-Overview) for more info on component definitions.**
+**See [Component Definitions](../generated/General_Components.md) for more information on component fields.**

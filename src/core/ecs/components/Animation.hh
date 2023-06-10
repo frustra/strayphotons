@@ -26,7 +26,10 @@ namespace ecs {
         {(uint32_t)InterpolationMode::Linear, "Move entities at a constant speed between states."},
         {(uint32_t)InterpolationMode::Cubic, "Move entities according to a customizable Cubic Hermite spline curve."},
     };
-    static const StructMetadata MetadataInterpolationMode(typeid(InterpolationMode), "InterpolationMode", "", &DocsEnumInterpolationMode);
+    static const StructMetadata MetadataInterpolationMode(typeid(InterpolationMode),
+        "InterpolationMode",
+        "",
+        &DocsEnumInterpolationMode);
 
     static const char *DocsDescriptionAnimation = R"(
 Animations control the position of an entity by moving it between a set of animation states. Animation updates happen in the physics thread before each simulation step.

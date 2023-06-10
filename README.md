@@ -1,4 +1,4 @@
-# ![Stray Photons](https://assets.strayphotons.net/logos/sp-laser-black.svg) [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg?branch=master)](https://buildkite.com/frustra/strayphotons)
+# ![Stray Photons](https://assets.strayphotons.net/logos/sp-laser-black.svg) [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg?branch=master)](https://buildkite.com/frustra/strayphotons) [![Discord Link](https://dcbadge.vercel.app/api/server/djzfKZwvt4)](https://discord.gg/djzfKZwvt4)
 
 Stray Photons is a high performance game engine with a focus on immersive VR experiences. Featuring full-hand physics interaction, seamless asynchronous scene Loading, fully interactive global illumination lighting, powerful game logic and scripting capabilities, and much more.
 
