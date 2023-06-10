@@ -1,9 +1,12 @@
+
+<div class="component_definition">
+
 ## `renderable` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **model** | string | "" | Name of the GLTF model to display. Models are loaded from the `assets/models/` folder. |
 | **mesh_index** | size_t | 0 | The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab. |
-| **visibility** | enum flags `VisibilityMask` | "DirectCamera\|DirectEye\|LightingShadow\|LightingVoxel" | Visibility mask for different render passes. |
+| **visibility** | enum flags [VisibilityMask](#VisibilityMask-type) | "DirectCamera\|DirectEye\|LightingShadow\|LightingVoxel" | Visibility mask for different render passes. |
 | **emissive** | float | 0 | Emissive multiplier to turn this model into a light source |
 | **color_override** | vec4 (red, green, blue, alpha) | [-1, -1, -1, -1] | Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used. |
 | **metallic_roughness_override** | vec2 | [-1, -1] | Override the mesh's metallic and roughness material properties. Values are in the range 0.0 to 1.0. -1 means the original material is used. |
@@ -16,6 +19,8 @@ It is usually preferred to load the model using the `gltf` prefab script to auto
 
 See the definition here: https://github.com/frustra/strayphotons/blob/master/src/scripts/prefabs/GltfPrefab.cc
 
+
+<div class="type_definition">
 
 ### `VisibilityMask` Type
 This is a flags enum type. Multiple flags can be combined using the '|' character (e.g. `"One|Two"` with no whitespace).
@@ -30,12 +35,20 @@ Note: Enum string names are case-sensitive.
 | "Optics" |
 | "OutlineSelection" |
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `gui` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **window_name** | string | "" | No description |
-| **target** | enum `GuiTarget` | "World" | No description |
+| **target** | enum [GuiTarget](#GuiTarget-type) | "World" | No description |
+
+<div class="type_definition">
 
 ### `GuiTarget` Type
 Note: Enum string names are case-sensitive.
@@ -45,6 +58,12 @@ Note: Enum string names are case-sensitive.
 | "World" |
 | "Debug" |
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `laser_line` Component
 | Field Name | Type | Default Value | Description |
@@ -55,6 +74,10 @@ Note: Enum string names are case-sensitive.
 | **relative** | bool | true | No description |
 | **radius** | float | 0.003 | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `light_sensor` Component
 | Field Name | Type | Default Value | Description |
@@ -63,6 +86,10 @@ Note: Enum string names are case-sensitive.
 | **direction** | vec3 | [0, 0, -1] | No description |
 | **color_value** | vec3 | [0, 0, 0] | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `light` Component
 | Field Name | Type | Default Value | Description |
@@ -76,6 +103,10 @@ Note: Enum string names are case-sensitive.
 | **shadow_map_size** | uint32 | 9 | All shadow maps are square powers of 2 in resolution. Each light's shadow map resolution is defined as `2^shadow_map_size`. For example, a map size of 10 would result in a 1024x1024 shadow map resolution. |
 | **shadow_map_clip** | vec2 | [0.1, 256] | The near and far clipping plane distances for this light. For example, with a clip value of `[1, 10]`, light won't start hitting objects until the near plane, 1 meter from the light. The light will then cast shadows for the next 9 meters until the far plane, 10 meters from the light. |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `optic` Component
 | Field Name | Type | Default Value | Description |
@@ -84,6 +115,10 @@ Note: Enum string names are case-sensitive.
 | **reflect_tint** | vec3 (red, green, blue) | [1, 1, 1] | No description |
 | **single_direction** | bool | false | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `screen` Component
 | Field Name | Type | Default Value | Description |
@@ -91,6 +126,10 @@ Note: Enum string names are case-sensitive.
 | **target** | string | "" | No description |
 | **luminance** | vec3 | [1, 1, 1] | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `view` Component
 | Field Name | Type | Default Value | Description |
@@ -99,20 +138,30 @@ Note: Enum string names are case-sensitive.
 | **extents** | ivec2 | [0, 0] | No description |
 | **fov** | float (degrees) | 0 | No description |
 | **clip** | vec2 | [0.1, 256] | No description |
-| **visibility_mask** | enum flags `VisibilityMask` | "" | No description |
+| **visibility_mask** | enum flags [VisibilityMask](#VisibilityMask-type) | "" | No description |
 
 **See Also:**
-`VisibilityMask`
+[VisibilityMask](#VisibilityMask-type)
 
+</div>
+
+
+<div class="component_definition">
 
 ## `voxel_area` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **extents** | ivec3 | [128, 128, 128] | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `xr_view` Component
-The `xr_view` component has type: enum `XrEye`
+The `xr_view` component has type: enum [XrEye](#XrEye-type)
+
+<div class="type_definition">
 
 ### `XrEye` Type
 Note: Enum string names are case-sensitive.
@@ -121,4 +170,7 @@ Note: Enum string names are case-sensitive.
 | "Left" |
 | "Right" |
 
+</div>
+
+</div>
 

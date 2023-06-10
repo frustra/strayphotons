@@ -69,17 +69,17 @@ private:
             return "optional&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
         } else if constexpr (std::is_enum<T>()) {
             static const auto enumName = magic_enum::enum_type_name<T>();
-            references.emplace(enumName, typeid(T));
+            auto &typeName = references.emplace(enumName, typeid(T)).first->first;
 
             if constexpr (is_flags_enum<T>()) {
-                return "enum flags `" + std::string(enumName) + "`";
+                return "enum flags [" + typeName + "](#" + typeName + "-type)";
             } else {
-                return "enum `" + std::string(enumName) + "`";
+                return "enum [" + typeName + "](#" + typeName + "-type)";
             }
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
             references.emplace(metadata.name, metadata.type);
-            return "`"s + metadata.name + "`";
+            return "["s + metadata.name + "](#"s + metadata.name + "-type)";
         }
     }
 

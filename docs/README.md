@@ -1,5 +1,3 @@
-![Stray Photons](https://assets.strayphotons.net/logos/sp-laser-black.svg)
-
 Welcome to the Stray Photons documentation!
 
 ## Guides <!-- {docsify-ignore} -->
