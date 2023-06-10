@@ -244,12 +244,10 @@ The `audio` component has type: vector&lt;[Sound](#Sound-type)&gt;
 <div class="type_definition">
 
 ### `SoundType` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Object" |
-| "Stereo" |
-| "Ambisonic" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Object**" - No description
+- "**Stereo**" - No description
+- "**Ambisonic**" - No description
 
 </div>
 

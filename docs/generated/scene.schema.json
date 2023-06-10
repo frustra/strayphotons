@@ -119,6 +119,14 @@
 			"description": "An event destintation is an entity name + event queue name, in the format: \"scene:entity/event/queue\"",
 			"type": "string"
 		},
+		"InterpolationMode": {
+			"enum": [
+				"Step",
+				"Linear",
+				"Cubic"
+			],
+			"type": "string"
+		},
 		"PhysicsJoint": {
 			"properties": {
 				"limit": {
@@ -326,14 +334,9 @@
 								"type": "number"
 							},
 							"interpolation": {
+								"$ref": "#/definitions/InterpolationMode",
 								"default": "Linear",
-								"description": "No description",
-								"enum": [
-									"Step",
-									"Linear",
-									"Cubic"
-								],
-								"type": "string"
+								"description": "No description"
 							},
 							"states": {
 								"anyOf": [

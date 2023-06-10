@@ -57,30 +57,26 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
 <div class="type_definition">
 
 ### `PhysicsActorType` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Static" |
-| "Dynamic" |
-| "Kinematic" |
-| "SubActor" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Static**" - No description
+- "**Dynamic**" - No description
+- "**Kinematic**" - No description
+- "**SubActor**" - No description
 
 </div>
 
 <div class="type_definition">
 
 ### `PhysicsGroup` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "NoClip" |
-| "World" |
-| "Interactive" |
-| "HeldObject" |
-| "Player" |
-| "PlayerLeftHand" |
-| "PlayerRightHand" |
-| "UserInterface" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**NoClip**" - No description
+- "**World**" - No description
+- "**Interactive**" - No description
+- "**HeldObject**" - No description
+- "**Player**" - No description
+- "**PlayerLeftHand**" - No description
+- "**PlayerRightHand**" - No description
+- "**UserInterface**" - No description
 
 </div>
 
@@ -148,17 +144,15 @@ The `physics_joints` component has type: vector&lt;[PhysicsJoint](#PhysicsJoint-
 <div class="type_definition">
 
 ### `PhysicsJointType` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Fixed" |
-| "Distance" |
-| "Spherical" |
-| "Hinge" |
-| "Slider" |
-| "Force" |
-| "NoClip" |
-| "TemporaryNoClip" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Fixed**" - No description
+- "**Distance**" - No description
+- "**Spherical**" - No description
+- "**Hinge**" - No description
+- "**Slider**" - No description
+- "**Force**" - No description
+- "**NoClip**" - No description
+- "**TemporaryNoClip**" - No description
 
 </div>
 
@@ -236,12 +230,10 @@ When moving from state `2.0` to state `0.0`, the animation will follow the path 
 <div class="type_definition">
 
 ### `InterpolationMode` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Step" |
-| "Linear" |
-| "Cubic" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Step**" - Teleport entities from state to state.
+- "**Linear**" - Move entities at a constant speed between states.
+- "**Cubic**" - Move entities according to a customizable Cubic Hermite spline curve.
 
 </div>
 
@@ -292,11 +284,9 @@ The `trigger_area` component has type: enum [TriggerShape](#TriggerShape-type)
 <div class="type_definition">
 
 ### `TriggerShape` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Box" |
-| "Sphere" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Box**" - No description
+- "**Sphere**" - No description
 
 </div>
 
@@ -311,12 +301,10 @@ The `trigger_group` component has type: enum [TriggerGroup](#TriggerGroup-type)
 <div class="type_definition">
 
 ### `TriggerGroup` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Player" |
-| "Object" |
-| "Magnetic" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Player**" - No description
+- "**Object**" - No description
+- "**Magnetic**" - No description
 
 </div>
 

@@ -119,9 +119,16 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
                     isEnumFlags = true;
                 }
 
-                static const auto names = magic_enum::enum_names<T>();
-                for (auto &enumName : names) {
-                    refDocs.fields.emplace_back(DocField{std::string(enumName), "", "", typeid(T), {}});
+                static const auto entries = magic_enum::enum_entries<T>();
+                for (auto &[enumValue, enumName] : entries) {
+                    const char *description = "No description";
+                    if (metadata && metadata->enumMap) {
+                        auto it = metadata->enumMap->find((uint32_t)enumValue);
+                        if (it != metadata->enumMap->end()) {
+                            description = it->second.c_str();
+                        }
+                    }
+                    refDocs.fields.emplace_back(DocField{std::string(enumName), "", description, typeid(T), {}});
                 }
             } else {
                 static const T defaultComp = {};
@@ -140,15 +147,15 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
         file << std::endl << "<div class=\"type_definition\">" << std::endl << std::endl;
         file << "### `" << refName << "` Type" << std::endl;
         if (isEnumFlags) {
-            file << "This is a flags enum type. Multiple flags can be combined using the '|' character "
-                 << "(e.g. `\"One|Two\"` with no whitespace)." << std::endl;
+            file << "This is an **enum flags** type. Multiple flags can be combined using the `|` "
+                    "character (e.g. `\"One|Two\"` with no whitespace). Flag names are case-sensitive.  ";
+            file << std::endl << "Enum flag names:" << std::endl;
+        } else if (isEnum) {
+            file << "This is an **enum** type, and can be one of the following case-sensitive values:" << std::endl;
         }
         if (isEnum) {
-            file << "Note: Enum string names are case-sensitive." << std::endl;
-            file << "| Enum Value |" << std::endl;
-            file << "|------------|" << std::endl;
             for (auto &field : refDocs.fields) {
-                file << "| \"" << field.name << "\" |" << std::endl;
+                file << "- \"**" << field.name << "**\" - " << field.description << "" << std::endl;
             }
         } else if (!refDocs.fields.empty()) {
             file << "| Field Name | Type | Default Value | Description |" << std::endl;

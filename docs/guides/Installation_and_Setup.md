@@ -121,7 +121,7 @@ For both executables, the startup order is as follows:
 
 A number of pre-defined launch configurations are available through the provided VSCode debugger launch.json.
 
-See [Loading Scenes and Navigating the World](https://github.com/frustra/strayphotons/wiki/Loading-Scenes-and-Navigating-the-World) for more info on engine usage.
+See [Loading Scenes](./Loading_Scenes.md) for more info on engine usage.
 
 ## Default Input Bindings
 

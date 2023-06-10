@@ -23,17 +23,15 @@ See the definition here: https://github.com/frustra/strayphotons/blob/master/src
 <div class="type_definition">
 
 ### `VisibilityMask` Type
-This is a flags enum type. Multiple flags can be combined using the '|' character (e.g. `"One|Two"` with no whitespace).
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "DirectCamera" |
-| "DirectEye" |
-| "Transparent" |
-| "LightingShadow" |
-| "LightingVoxel" |
-| "Optics" |
-| "OutlineSelection" |
+This is an **enum flags** type. Multiple flags can be combined using the `|` character (e.g. `"One|Two"` with no whitespace). Flag names are case-sensitive.  
+Enum flag names:
+- "**DirectCamera**" - No description
+- "**DirectEye**" - No description
+- "**Transparent**" - No description
+- "**LightingShadow**" - No description
+- "**LightingVoxel**" - No description
+- "**Optics**" - No description
+- "**OutlineSelection**" - No description
 
 </div>
 
@@ -51,12 +49,10 @@ Note: Enum string names are case-sensitive.
 <div class="type_definition">
 
 ### `GuiTarget` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "None" |
-| "World" |
-| "Debug" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**None**" - No description
+- "**World**" - No description
+- "**Debug**" - No description
 
 </div>
 
@@ -164,11 +160,9 @@ The `xr_view` component has type: enum [XrEye](#XrEye-type)
 <div class="type_definition">
 
 ### `XrEye` Type
-Note: Enum string names are case-sensitive.
-| Enum Value |
-|------------|
-| "Left" |
-| "Right" |
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Left**" - No description
+- "**Right**" - No description
 
 </div>
 
