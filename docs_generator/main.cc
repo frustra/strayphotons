@@ -137,7 +137,8 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
             return;
         }
 
-        file << std::endl << "### `" << refName << "` Type" << std::endl;
+        file << std::endl << "<div class=\"type_definition\">" << std::endl << std::endl;
+        file << "### `" << refName << "` Type" << std::endl;
         if (isEnumFlags) {
             file << "This is a flags enum type. Multiple flags can be combined using the '|' character "
                  << "(e.g. `\"One|Two\"` with no whitespace)." << std::endl;
@@ -163,6 +164,8 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
             file << metadata->description << std::endl;
         }
 
+        file << std::endl << "</div>" << std::endl;
+
         for (auto &[subRefName, subRefType] : refDocs.references) {
             if (!savedDocs.count(subRefName)) {
                 saveReferencedType(subRefName, subRefType);
@@ -173,16 +176,18 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
     };
 
     if (!commonTypes.empty()) {
+        file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
         file << "## Common Types" << std::endl;
         for (auto &type : commonTypes) {
             auto *metadata = ecs::StructMetadata::Get(type);
             Assertf(metadata, "Type has no metadata: %s", type.name());
             saveReferencedType(metadata->name, metadata->type);
         }
-        file << std::endl << std::endl;
+        file << std::endl << "</div>" << std::endl << std::endl;
     }
 
     for (auto &name : compList) {
+        file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
         file << "## `" << name << "` Component" << std::endl;
 
         auto &comp = *ecs::LookupComponent(name);
@@ -232,12 +237,12 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
             if (!seeAlso.empty()) {
                 file << std::endl << "**See Also:**" << std::endl;
                 for (auto &refName : seeAlso) {
-                    file << "`" << refName << "`" << std::endl;
+                    file << "[" << refName << "](#" << refName << "-type)" << std::endl;
                 }
             }
         }
 
-        file << std::endl << std::endl;
+        file << std::endl << "</div>" << std::endl << std::endl;
     }
 }
 

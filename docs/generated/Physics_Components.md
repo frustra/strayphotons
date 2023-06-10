@@ -1,4 +1,9 @@
+
+<div class="component_definition">
+
 ## Common Types
+
+<div class="type_definition">
 
 ### `EntityRef` Type
 
@@ -17,6 +22,10 @@ If just a relative name is provided, the reference will be expanded based on the
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
 
+</div>
+
+<div class="type_definition">
+
 ### `Transform` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -24,20 +33,28 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
 | **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `physics` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **shapes** | vector&lt;`PhysicsShape`&gt; | [] | A list of individual shapes and models that combine to form the actor's overall collision shape. |
-| **group** | enum `PhysicsGroup` | "World" | The collision group that this actor belongs to. |
-| **type** | enum `PhysicsActorType` | "Dynamic" | "Dynamic" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. "Static" objects are meant to be immovable and will not push objects if moved. The "SubActor" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor. |
-| **parent_actor** | `EntityRef` | "" | Only used for "SubActor" type. If empty, the parent actor is determined by the `transform` parent. |
+| **shapes** | vector&lt;[PhysicsShape](#PhysicsShape-type)&gt; | [] | A list of individual shapes and models that combine to form the actor's overall collision shape. |
+| **group** | enum [PhysicsGroup](#PhysicsGroup-type) | "World" | The collision group that this actor belongs to. |
+| **type** | enum [PhysicsActorType](#PhysicsActorType-type) | "Dynamic" | "Dynamic" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. "Static" objects are meant to be immovable and will not push objects if moved. The "SubActor" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor. |
+| **parent_actor** | [EntityRef](#EntityRef-type) | "" | Only used for "SubActor" type. If empty, the parent actor is determined by the `transform` parent. |
 | **mass** | float | 0 | The weight of the physics actor in Kilograms (kg). Overrides **density** field. Only used for "Dynamic" objects. |
 | **density** | float | 1000 | The density of the physics actor in Kilograms per Cubic Meter (kg/m^3). This value is ignored if **mass** != 0. Only used for "Dynamic" objects. |
 | **angular_damping** | float | 0.05 | Resistance to changes in rotational velocity. Affects how quickly the entity will stop spinning. (>= 0.0) |
 | **linear_damping** | float | 0 | Resistance to changes in linear velocity. Affects how quickly the entity will stop moving. (>= 0.0) |
 | **contact_report_force** | float | -1 | The minimum collision force required to trigger a contact event. Force-based contact events are enabled if this value is >= 0.0 |
 | **constant_force** | vec3 | [0, 0, 0] | A vector defining a constant force (in Newtons, N) that should be applied to the actor. The force vector is applied relative to the actor at its center of mass. |
+
+<div class="type_definition">
 
 ### `PhysicsActorType` Type
 Note: Enum string names are case-sensitive.
@@ -47,6 +64,10 @@ Note: Enum string names are case-sensitive.
 | "Dynamic" |
 | "Kinematic" |
 | "SubActor" |
+
+</div>
+
+<div class="type_definition">
 
 ### `PhysicsGroup` Type
 Note: Enum string names are case-sensitive.
@@ -61,10 +82,14 @@ Note: Enum string names are case-sensitive.
 | "PlayerRightHand" |
 | "UserInterface" |
 
+</div>
+
+<div class="type_definition">
+
 ### `PhysicsShape` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **transform** | `Transform` | {} | No description |
+| **transform** | [Transform](#Transform-type) | {} | No description |
 | **static_friction** | float | 0.6 | This material's coefficient of static friction (>= 0.0) |
 | **dynamic_friction** | float | 0.5 | This material's coefficient of dynamic friction (>= 0.0) |
 | **restitution** | float | 0 | This material's coefficient of restitution (0.0 no bounce - 1.0 more bounce) |
@@ -93,22 +118,34 @@ For example, the `duck.physics.json` physics definition defines `"duck.cooked"`,
 which decomposes the duck model into multiple convex hulls to more accurately represent its non-convex shape.
 
 
-**See Also:**
-`EntityRef`
-`Transform`
+</div>
 
+**See Also:**
+[EntityRef](#EntityRef-type)
+[Transform](#Transform-type)
+
+</div>
+
+
+<div class="component_definition">
 
 ## `physics_joints` Component
-The `physics_joints` component has type: vector&lt;`PhysicsJoint`&gt;
+The `physics_joints` component has type: vector&lt;[PhysicsJoint](#PhysicsJoint-type)&gt;
+
+<div class="type_definition">
 
 ### `PhysicsJoint` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **target** | `EntityRef` | "" | No description |
-| **type** | enum `PhysicsJointType` | "Fixed" | No description |
+| **target** | [EntityRef](#EntityRef-type) | "" | No description |
+| **type** | enum [PhysicsJointType](#PhysicsJointType-type) | "Fixed" | No description |
 | **limit** | vec2 | [0, 0] | No description |
-| **local_offset** | `Transform` | {} | No description |
-| **remote_offset** | `Transform` | {} | No description |
+| **local_offset** | [Transform](#Transform-type) | {} | No description |
+| **remote_offset** | [Transform](#Transform-type) | {} | No description |
+
+</div>
+
+<div class="type_definition">
 
 ### `PhysicsJointType` Type
 Note: Enum string names are case-sensitive.
@@ -123,20 +160,30 @@ Note: Enum string names are case-sensitive.
 | "NoClip" |
 | "TemporaryNoClip" |
 
-**See Also:**
-`EntityRef`
-`Transform`
+</div>
 
+**See Also:**
+[EntityRef](#EntityRef-type)
+[Transform](#Transform-type)
+
+</div>
+
+
+<div class="component_definition">
 
 ## `physics_query` Component
 The `physics_query` component has no public fields
 
+</div>
+
+
+<div class="component_definition">
 
 ## `animation` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **states** | vector&lt;`AnimationState`&gt; | [] | No description |
-| **interpolation** | enum `InterpolationMode` | "Linear" | No description |
+| **states** | vector&lt;[AnimationState](#AnimationState-type)&gt; | [] | No description |
+| **interpolation** | enum [InterpolationMode](#InterpolationMode-type) | "Linear" | No description |
 | **cubic_tension** | float | 0.5 | No description |
 
 Animations control the position of an entity by moving it between a set of animation states. Animation updates happen in the physics thread before each simulation step.
@@ -149,6 +196,8 @@ Animations read and write two signal values:
 
 The animation is running any time these values are different, and paused when they are equal.
 
+
+<div class="type_definition">
 
 ### `AnimationState` Type
 | Field Name | Type | Default Value | Description |
@@ -182,6 +231,10 @@ An example of a 3-state linear animation might look like this:
 When moving from state `2.0` to state `0.0`, the animation will follow the path through state `1.0`, rather than moving directly to the target position. The `animation_state` signal can however be manually controlled to teleport the animation to a specific state.
 
 
+</div>
+
+<div class="type_definition">
+
 ### `InterpolationMode` Type
 Note: Enum string names are case-sensitive.
 | Enum Value |
@@ -190,15 +243,25 @@ Note: Enum string names are case-sensitive.
 | "Linear" |
 | "Cubic" |
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `character_controller` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **head** | `EntityRef` | "" | No description |
+| **head** | [EntityRef](#EntityRef-type) | "" | No description |
 
 **See Also:**
-`EntityRef`
+[EntityRef](#EntityRef-type)
 
+</div>
+
+
+<div class="component_definition">
 
 ## `laser_emitter` Component
 | Field Name | Type | Default Value | Description |
@@ -208,15 +271,25 @@ Note: Enum string names are case-sensitive.
 | **on** | bool | true | No description |
 | **start_distance** | float | 0 | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `laser_sensor` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **threshold** | vec3 | [0.5, 0.5, 0.5] | No description |
 
+</div>
+
+
+<div class="component_definition">
 
 ## `trigger_area` Component
-The `trigger_area` component has type: enum `TriggerShape`
+The `trigger_area` component has type: enum [TriggerShape](#TriggerShape-type)
+
+<div class="type_definition">
 
 ### `TriggerShape` Type
 Note: Enum string names are case-sensitive.
@@ -225,9 +298,17 @@ Note: Enum string names are case-sensitive.
 | "Box" |
 | "Sphere" |
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `trigger_group` Component
-The `trigger_group` component has type: enum `TriggerGroup`
+The `trigger_group` component has type: enum [TriggerGroup](#TriggerGroup-type)
+
+<div class="type_definition">
 
 ### `TriggerGroup` Type
 Note: Enum string names are case-sensitive.
@@ -237,15 +318,22 @@ Note: Enum string names are case-sensitive.
 | "Object" |
 | "Magnetic" |
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `scene_properties` Component
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **root_transform** | `Transform` | {} | No description |
-| **gravity_transform** | `Transform` | {} | No description |
+| **root_transform** | [Transform](#Transform-type) | {} | No description |
+| **gravity_transform** | [Transform](#Transform-type) | {} | No description |
 | **gravity** | vec3 | [0, -9.81, 0] | No description |
 
 **See Also:**
-`Transform`
+[Transform](#Transform-type)
 
+</div>
 

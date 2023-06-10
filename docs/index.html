@@ -5,20 +5,64 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta charset="UTF-8" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/docsify@4/themes/vue.css"
-    />
+    <!-- Theme: Simple -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
+    <link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
+    <link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+    <style>
+      :root {
+        --sidebar-width: 23em;
+        --content-max-width: 90em;
+        --mono-hue: 186;
+        --theme-hue: 20;
+        --theme-saturation: 100%;
+        --theme-lightness: 60%;
+      }
+      .sidebar > h1 img {
+        filter: drop-shadow(0 0 1px #ffe9c4) drop-shadow(0 0 5px #d4fbff8b) drop-shadow(0 0 10px #000);
+      }
+      .component_definition {
+        background-color: #00000012;
+        border-left-width: 4px;
+        border-left-style: solid;
+        border-color: #32abb877;
+        padding: 30px;
+        margin: 5px -30px;
+      }
+      .component_definition:nth-child(even) {
+        border-color: #d4fbff77;
+      }
+      .type_definition {
+        background-color: #00000012;
+        border-left-width: 4px;
+        border-left-style: solid;
+        border-color: #ffe9c4;
+        padding: 20px;
+        margin: 5px -10px;
+      }
+      .type_definition:nth-child(even) {
+        border-color: #c4a776;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
     <script>
       window.$docsify = {
-        basePath: "https://raw.githubusercontent.com/frustra/strayphotons/master/docs/",
+        name: "Stray Photons",
+        logo: "https://assets.strayphotons.net/logos/sp-laser-black.svg",
+        repo: "https://github.com/frustra/strayphotons",
+        // basePath: "https://raw.githubusercontent.com/frustra/strayphotons/master/docs/",
         loadSidebar: true,
-        subMaxLevel: 2
+        subMaxLevel: 2,
+        'flexible-alerts': {
+          style: 'flat'
+        }
       };
     </script>
     <script src="docsify.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+    <script src="https://unpkg.com/docsify-plugin-flexible-alerts"></script>
   </body>
 </html>

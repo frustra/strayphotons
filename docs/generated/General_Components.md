@@ -1,4 +1,9 @@
+
+<div class="component_definition">
+
 ## Common Types
+
+<div class="type_definition">
 
 ### `EntityRef` Type
 
@@ -16,6 +21,10 @@ If just a relative name is provided, the reference will be expanded based on the
 
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
+
+</div>
+
+<div class="type_definition">
 
 ### `SignalExpression` Type
 
@@ -39,6 +48,12 @@ Vector fields such as position or color can be accessed as `pos.x` or `color.r`.
 Note: Only number-compatble fields can be referenced. All evaluation is done using double floating point numbers.
 
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `name` Component
 
@@ -60,6 +75,10 @@ Relative names specified in a template take the form:
 The special `"scoperoot"` alias can also be used inside a template to reference the parent entity.
 
 
+</div>
+
+
+<div class="component_definition">
 
 ## `transform` Component
 | Field Name | Type | Default Value | Description |
@@ -67,7 +86,7 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
 | **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
 | **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
-| **parent** | `EntityRef` | "" | Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root. |
+| **parent** | [EntityRef](#EntityRef-type) | "" | Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root. |
 
 Multiple entities with transforms can be linked together to create a tree of entities that all move together (i.e. a transform tree).
 
@@ -79,8 +98,12 @@ behavior is undefined if the combinations introduce skew. (The scale should be a
 
 
 **See Also:**
-`EntityRef`
+[EntityRef](#EntityRef-type)
 
+</div>
+
+
+<div class="component_definition">
 
 ## `transform_snapshot` Component
 | Field Name | Type | Default Value | Description |
@@ -100,41 +123,71 @@ while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
 
 
+</div>
+
+
+<div class="component_definition">
 
 ## `event_bindings` Component
-The `event_bindings` component has type: map&lt;string, vector&lt;`EventBinding`&gt;&gt;
+The `event_bindings` component has type: map&lt;string, vector&lt;[EventBinding](#EventBinding-type)&gt;&gt;
+
+<div class="type_definition">
 
 ### `EventBinding` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **outputs** | vector&lt;`EventDest`&gt; | [] | No description |
-| **filter** | optional&lt;`SignalExpression`&gt; | null | No description |
-| **modify** | vector&lt;`SignalExpression`&gt; | [] | No description |
-| **set_value** | optional&lt;`EventData`&gt; | null | No description |
+| **outputs** | vector&lt;[EventDest](#EventDest-type)&gt; | [] | No description |
+| **filter** | optional&lt;[SignalExpression](#SignalExpression-type)&gt; | null | No description |
+| **modify** | vector&lt;[SignalExpression](#SignalExpression-type)&gt; | [] | No description |
+| **set_value** | optional&lt;[EventData](#EventData-type)&gt; | null | No description |
+
+</div>
+
+<div class="type_definition">
 
 ### `EventData` Type
 Stores a variety of possible data types for sending in events (JSON supported values are: bool, double, vec2, vec3, vec4, and string).
 
+</div>
+
+<div class="type_definition">
+
 ### `EventDest` Type
 An event destination in the form of a string: "target_entity/event/input"
 
-**See Also:**
-`SignalExpression`
+</div>
 
+**See Also:**
+[SignalExpression](#SignalExpression-type)
+
+</div>
+
+
+<div class="component_definition">
 
 ## `event_input` Component
 The `event_input` component has no public fields
 
+</div>
+
+
+<div class="component_definition">
 
 ## `scene_connection` Component
-The `scene_connection` component has type: map&lt;string, vector&lt;`SignalExpression`&gt;&gt;
+The `scene_connection` component has type: map&lt;string, vector&lt;[SignalExpression](#SignalExpression-type)&gt;&gt;
 
 **See Also:**
-`SignalExpression`
+[SignalExpression](#SignalExpression-type)
 
+</div>
+
+
+<div class="component_definition">
 
 ## `script` Component
-The `script` component has type: vector&lt;`ScriptInstance`&gt;
+The `script` component has type: vector&lt;[ScriptInstance](#ScriptInstance-type)&gt;
+
+<div class="type_definition">
 
 ### `ScriptInstance` Type
 
@@ -146,29 +199,49 @@ Scripts can have 2 types:
             Some OnTick scripts may also define event filters to only run when events are received.
 
 
+</div>
+
+</div>
+
+
+<div class="component_definition">
 
 ## `signal_bindings` Component
-The `signal_bindings` component has type: map&lt;string, `SignalExpression`&gt;
+The `signal_bindings` component has type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
 
 **See Also:**
-`SignalExpression`
+[SignalExpression](#SignalExpression-type)
 
+</div>
+
+
+<div class="component_definition">
 
 ## `signal_output` Component
 The `signal_output` component has type: map&lt;string, double&gt;
 
+</div>
+
+
+<div class="component_definition">
 
 ## `audio` Component
-The `audio` component has type: vector&lt;`Sound`&gt;
+The `audio` component has type: vector&lt;[Sound](#Sound-type)&gt;
+
+<div class="type_definition">
 
 ### `Sound` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **type** | enum `SoundType` | "Object" | No description |
+| **type** | enum [SoundType](#SoundType-type) | "Object" | No description |
 | **file** | string | "" | No description |
 | **loop** | bool | false | No description |
 | **play_on_load** | bool | false | No description |
 | **volume** | float | 1 | No description |
+
+</div>
+
+<div class="type_definition">
 
 ### `SoundType` Type
 Note: Enum string names are case-sensitive.
@@ -178,4 +251,7 @@ Note: Enum string names are case-sensitive.
 | "Stereo" |
 | "Ambisonic" |
 
+</div>
+
+</div>
 
