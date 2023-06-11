@@ -1,4 +1,4 @@
-# ![Stray Photons](https://assets.strayphotons.net/logos/sp-laser-black.svg) [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg?branch=master)](https://buildkite.com/frustra/strayphotons)
+# ![Stray Photons](https://github.com/frustra/strayphotons/assets/1594638/ca74fc9a-55fd-4fe8-980b-ca6575d81160) <br> [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg?branch=master)](https://buildkite.com/frustra/strayphotons)
 
 > **This project is under active full-time development!**  
 > For development updates, discussion, and support, join the [Discord Server](https://discord.gg/djzfKZwvt4)!
