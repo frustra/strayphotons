@@ -76,7 +76,7 @@ namespace sp {
                 Primitive(const tinygltf::Model &model, const tinygltf::Primitive &primitive);
 
                 DrawMode drawMode;
-                Accessor<uint32_t, uint16_t> indexBuffer;
+                Accessor<uint32_t, uint16_t, uint8_t> indexBuffer;
                 int materialIndex;
                 Accessor<glm::vec3> positionBuffer;
                 Accessor<glm::vec3> normalBuffer;

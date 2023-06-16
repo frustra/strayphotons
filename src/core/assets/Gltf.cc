@@ -10,6 +10,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
+#include "assets/JsonHelpers.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 
@@ -39,7 +40,8 @@ namespace sp {
                 drawMode = DrawMode::Triangles;
             }
 
-            indexBuffer = Accessor<uint32_t, uint16_t>(model, primitive.indices);
+            indexBuffer = Accessor<uint32_t, uint16_t, uint8_t>(model, primitive.indices);
+            Assertf(indexBuffer, "Unsupported GLTF index buffer accessor: %d", primitive.indices);
             materialIndex = primitive.material;
             auto it = primitive.attributes.find("POSITION");
             if (it != primitive.attributes.end()) positionBuffer = Accessor<glm::vec3>(model, it->second);
@@ -83,10 +85,14 @@ namespace sp {
 
         Node::Node(const tinygltf::Model &model, const tinygltf::Node &node, std::optional<size_t> treeRoot)
             : name(node.name), treeRoot(treeRoot) {
-            if (node.matrix.size() >= 12) {
+            if (node.matrix.size() == 12) {
                 std::vector<float> matData(node.matrix.begin(), node.matrix.end());
-                transform = glm::mat4(glm::transpose(*reinterpret_cast<const glm::mat3x4 *>(matData.data())));
+                transform = glm::mat4(*reinterpret_cast<const glm::mat3x4 *>(matData.data()));
+            } else if (node.matrix.size() == 16) {
+                std::vector<float> matData(node.matrix.begin(), node.matrix.end());
+                transform = *reinterpret_cast<const glm::mat4 *>(matData.data());
             } else {
+                Assertf(node.matrix.empty(), "Unsupported GLTF node matrix size: %u", node.matrix.size());
                 if (node.translation.size() == 3) {
                     transform.SetPosition(glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
                 }
