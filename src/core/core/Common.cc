@@ -143,6 +143,22 @@ namespace sp {
             return out;
         }
 
+        string to_lower_copy(const string_view &str) {
+            string out(str);
+            std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
+                return std::tolower(ch);
+            });
+            return out;
+        }
+
+        string to_upper_copy(const string_view &str) {
+            string out(str);
+            std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
+                return std::toupper(ch);
+            });
+            return out;
+        }
+
         bool iequals(const string &str1, const string &str2) {
             return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
                 return std::tolower(a) == std::tolower(b);
