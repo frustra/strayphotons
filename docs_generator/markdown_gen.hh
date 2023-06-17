@@ -145,13 +145,12 @@ struct MarkdownContext {
         size_t escapeCount = std::count(input.begin(), input.end(), '|');
         if (escapeCount == 0) return input;
         std::string result;
-        result.reserve(input.length() + escapeCount * ("&#124;"s.length() - 1));
+        result.reserve(input.length() + escapeCount);
         for (auto &ch : input) {
             if (ch == '|') {
-                result += "&#124;";
-            } else {
-                result += ch;
+                result += '\\';
             }
+            result += ch;
         }
         return result;
     }
