@@ -4,6 +4,7 @@
 /assets/audio
 /assets/models/**/*.glb
 /assets/models/**/*.gltf
+/assets/models/**/*.bin
 /assets/logos
 /assets/textures
 /assets/gltf-process

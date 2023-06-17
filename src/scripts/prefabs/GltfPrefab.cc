@@ -19,6 +19,7 @@ namespace ecs {
         PhysicsGroup physicsGroup = PhysicsGroup::World;
         bool render = true;
         std::optional<ecs::PhysicsActorType> physicsType;
+        bool interactive = false;
 
         void Prefab(const ScriptState &state,
             const std::shared_ptr<sp::Scene> &scene,
@@ -95,6 +96,15 @@ namespace ecs {
                     if (physicsType) {
                         PhysicsShape::ConvexMesh mesh(modelName, *node.meshIndex);
                         newEntity.Set<Physics>(lock, mesh, physicsGroup, *physicsType);
+
+                        if (interactive) {
+                            newEntity.Set<PhysicsJoints>(lock);
+                            newEntity.Set<PhysicsQuery>(lock);
+                            newEntity.Set<EventInput>(lock);
+                            auto &scripts = newEntity.Set<Scripts>(lock);
+                            scripts.AddOnTick(prefixName, "interactive_object");
+                            GetScriptManager().RegisterEvents(lock, newEntity);
+                        }
                     }
                 }
 
@@ -112,6 +122,7 @@ namespace ecs {
         StructField::New("skip_nodes", &GltfPrefab::skipNames),
         StructField::New("physics_group", &GltfPrefab::physicsGroup),
         StructField::New("render", &GltfPrefab::render),
-        StructField::New("physics", &GltfPrefab::physicsType));
+        StructField::New("physics", &GltfPrefab::physicsType),
+        StructField::New("interactive", &GltfPrefab::interactive));
     PrefabScript<GltfPrefab> gltfPrefab("gltf", MetadataGltfPrefab);
 } // namespace ecs

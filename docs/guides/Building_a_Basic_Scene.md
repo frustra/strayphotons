@@ -1,6 +1,8 @@
+# Building a Basic Scene <!-- {docsify-ignore} -->
+
 In this guide, we will build a `hello_world` scene that can be loaded, containing a room with some interactive physics objects.
 
-### Creating a New Scene
+## Creating a New Scene
 
 Start by creating a new empty scene file:
 `assets/scenes/hello_world.json`
@@ -89,7 +91,7 @@ The player should spawn on a platform and be able to walk around on it.
 
 ![hello_world](https://github.com/frustra/strayphotons/assets/1594638/0b2137d3-68b3-4775-a331-5488bf95f84c)
 
-### Adding Interactive Objects
+## Adding Interactive Objects
 
 Now for a slightly more complex example, let's add a cardboard box that can be picked up by the player:
 ```json
@@ -119,7 +121,7 @@ Now for a slightly more complex example, let's add a cardboard box that can be p
 
 The default type for the `physics` component is "Dynamic", which means it will be affected by gravity and can be pushed around.
 The weight of physics objects can be defined in 2 ways: `density`, or `mass`. The default `density` is 1000 kg/m^3, which is the density of water.
-This is much too heavy for our cardboard box, and won't allow the player to lift it, so instead we can set the `mass` explicitly to 1 kg.
+This is much too heavy for our cardboard box, and won't allow the player to lift it, so instead we set the `mass` explicitly to 1 kg.
 
 The cardboard box makes use of the `interactive_object` script, that receives and handles grab events from the player.
 The `physics_joints`, `physics_query`, and `event_input` components are all required by the `interactive_object` script.
@@ -128,7 +130,7 @@ When the object receives a `/interact/grab` event, a physics joint is created be
 
 ![hello_world2](https://github.com/frustra/strayphotons/assets/1594638/0aed357e-dec9-4f8c-92f3-0ee92ab39a58)
 
-### Attaching Entities Together
+## Attaching Entities Together
 
 Entities can be attached in a couple ways:
 
@@ -184,7 +186,7 @@ Entities can be attached in a couple ways:
            "color_override": [0, 0, 1, 1]
        },
        "physics": {,
-           "type": "Dynamic"
+           "type": "Dynamic",
            "shapes": {
                "model": "box"
            }
