@@ -74,9 +74,7 @@ Models are loaded from the `assets/models/` folder. `.glb` and `.gltf` are suppo
 and models can be loaded from either `assets/models/<model_name>.gltf` or `assets/models/<model_name>/model_name.gltf`.
 
 Note for GLTF models with multiple meshes:  
-It is usually preferred to load the model using the `gltf` prefab script to automatically generate the correct transform tree and entity structure.
-
-See the definition here: https://github.com/frustra/strayphotons/blob/master/src/scripts/prefabs/GltfPrefab.cc
+It is usually preferred to load the model using the [gltf Prefab Script](Prefab_Scripts.md#gltf-prefab) to automatically generate the correct transform tree and entity structure.
 )",
         StructField::New("model",
             "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",

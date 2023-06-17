@@ -148,9 +148,10 @@ struct MarkdownContext {
         result.reserve(input.length() + escapeCount * ("&#124;"s.length() - 1));
         for (auto &ch : input) {
             if (ch == '|') {
-                result += "&#124;"s;
+                result += "&#124;";
+            } else {
+                result += ch;
             }
-            result += ch;
         }
         return result;
     }
@@ -295,7 +296,7 @@ struct MarkdownContext {
             }
 
             file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
-            file << "## `" << *name << "` " << magic_enum::enum_name(pageType) << std::endl;
+            file << "## `" << *name << "` " << magic_enum::enum_name(pageType) << std::endl << std::endl;
 
             if (docs.fields.empty()) {
                 if (!metadata->description.empty()) {
@@ -307,18 +308,17 @@ struct MarkdownContext {
                          << " has no configurable parameters" << std::endl;
                 }
             } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
-                if (pageType == PageType::Component) {
-                    file << "The `" << *name << "` component has type: " << docs.fields.front().typeString << std::endl;
-                }
                 if (!metadata->description.empty()) {
                     file << metadata->description << std::endl;
                 }
-                if (pageType != PageType::Component) {
+                if (pageType == PageType::Component) {
+                    file << "The `" << *name << "` component has type: " << docs.fields.front().typeString << std::endl;
+                } else {
                     file << "The `" << *name << "` " << sp::to_lower_copy(magic_enum::enum_name(pageType))
                          << " has parameter type: " << docs.fields.front().typeString << std::endl;
                 }
             } else {
-                if (pageType != PageType::Component && !metadata->description.empty()) {
+                if (!metadata->description.empty()) {
                     file << metadata->description << std::endl << std::endl;
                 }
 
@@ -329,10 +329,6 @@ struct MarkdownContext {
                     file << "| **" << field.name << "** | " << field.typeString << " | "
                          << EscapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
                          << std::endl;
-                }
-
-                if (pageType == PageType::Component && !metadata->description.empty()) {
-                    file << metadata->description << std::endl;
                 }
             }
 

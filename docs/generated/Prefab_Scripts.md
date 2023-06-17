@@ -2,6 +2,7 @@
 <div class="component_definition">
 
 ## `gltf` Prefab
+
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **model** | string | "" | No description |
@@ -28,15 +29,18 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="type_definition">
 
 ### `PhysicsGroup` Type
+
+An actor's physics group determines both what it will collide with in the physics simulation, and which physics queries it is visible to.
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**NoClip**" - No description
-- "**World**" - No description
-- "**Interactive**" - No description
-- "**HeldObject**" - No description
-- "**Player**" - No description
-- "**PlayerLeftHand**" - No description
-- "**PlayerRightHand**" - No description
-- "**UserInterface**" - No description
+- "**NoClip**" - Actors in this collision group will not collide with anything.
+- "**World**" - This is the default collision group. All actors in this group will collide with eachother.
+- "**Interactive**" - This group behaves like `World` but allows behavior to be customized for movable objects.
+- "**HeldObject**" - Held objects do not collide with the player, but will collide with other held objects and the rest of the world.
+- "**Player**" - This group is for the player's body, which collides with the world, but not other objects in any of the player groups.
+- "**PlayerLeftHand**" - The player's left hand collides with the right hand, but not itself or the player's body.
+- "**PlayerRightHand**" - The player's right hand collides with the left hand, but not itself or the player's body.
+- "**UserInterface**" - This collision group is for popup UI elements that will only collide with the player's hands.
 
 </div>
 
@@ -46,6 +50,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `life_cell` Prefab
+
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **board_size** | uvec2 | [32, 32] | No description |
@@ -56,6 +61,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `template` Prefab
+
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **source** | string | "" | No description |
@@ -66,6 +72,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `tile` Prefab
+
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **count** | ivec2 | [1, 1] | No description |
@@ -81,6 +88,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `wall` Prefab
+
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **y_offset** | float | 0 | No description |

@@ -54,6 +54,7 @@ Note: Only number-compatble fields can be referenced. All evaluation is done usi
 <div class="component_definition">
 
 ## `name` Component
+
 This component is required on all entities to allow for name-based references.
 If no name is provided upon entity creation, an auto-generated name will be filled in.
 
@@ -77,19 +78,21 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
 <div class="component_definition">
 
 ## `transform` Component
+
+Transforms are performed in the following order:  
+`scale -> rotate -> translate ( -> parent transform)`
+
+Multiple entities with transforms can be linked together to create a tree of entities that all move together (i.e. a transform tree).
+
+Note: When combining multiple transformations together with scaling factors,
+behavior is undefined if the combinations introduce skew. (The scale should be axis-aligned to the model)
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
 | **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
 | **parent** | [EntityRef](#EntityRef-type) | "" | Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root. |
-Multiple entities with transforms can be linked together to create a tree of entities that all move together (i.e. a transform tree).
-
-Transforms are combined in the following way:  
-`scale -> rotate -> translate ( -> parent transform)`
-
-Note: When combining multiple transformations together with scaling factors,
-behavior is undefined if the combinations introduce skew. (The scale should be axis-aligned to the model)
 
 **See Also:**
 [EntityRef](#EntityRef-type)
@@ -100,11 +103,7 @@ behavior is undefined if the combinations introduce skew. (The scale should be a
 <div class="component_definition">
 
 ## `transform_snapshot` Component
-| Field Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
-| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
-| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
+
 Transform snapshots should not be set directly.
 They are automatically generated for all entities with a `transform` component, and updated by the physics system.
 
@@ -115,12 +114,19 @@ Transform snapshots are used by the render thread for drawing entities in a phys
 while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
 
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
+| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
+| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
+
 </div>
 
 
 <div class="component_definition">
 
 ## `event_bindings` Component
+
 The `event_bindings` component has type: map&lt;string, vector&lt;[EventBinding](#EventBinding-type)&gt;&gt;
 
 <div class="type_definition">
@@ -160,6 +166,7 @@ An event destination in the form of a string: "target_entity/event/input"
 <div class="component_definition">
 
 ## `event_input` Component
+
 The `event_input` component has no public fields
 
 </div>
@@ -168,6 +175,7 @@ The `event_input` component has no public fields
 <div class="component_definition">
 
 ## `scene_connection` Component
+
 The `scene_connection` component has type: map&lt;string, vector&lt;[SignalExpression](#SignalExpression-type)&gt;&gt;
 
 **See Also:**
@@ -179,6 +187,7 @@ The `scene_connection` component has type: map&lt;string, vector&lt;[SignalExpre
 <div class="component_definition">
 
 ## `script` Component
+
 The `script` component has type: vector&lt;[ScriptInstance](#ScriptInstance-type)&gt;
 
 <div class="type_definition">
@@ -200,6 +209,7 @@ Scripts can have 2 types:
 <div class="component_definition">
 
 ## `signal_bindings` Component
+
 The `signal_bindings` component has type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
 
 **See Also:**
@@ -211,6 +221,7 @@ The `signal_bindings` component has type: map&lt;string, [SignalExpression](#Sig
 <div class="component_definition">
 
 ## `signal_output` Component
+
 The `signal_output` component has type: map&lt;string, double&gt;
 
 </div>
@@ -219,6 +230,7 @@ The `signal_output` component has type: map&lt;string, double&gt;
 <div class="component_definition">
 
 ## `audio` Component
+
 The `audio` component has type: vector&lt;[Sound](#Sound-type)&gt;
 
 <div class="type_definition">

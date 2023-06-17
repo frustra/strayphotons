@@ -136,6 +136,19 @@
 			],
 			"type": "string"
 		},
+		"PhysicsGroup": {
+			"enum": [
+				"NoClip",
+				"World",
+				"Interactive",
+				"HeldObject",
+				"Player",
+				"PlayerLeftHand",
+				"PlayerRightHand",
+				"UserInterface"
+			],
+			"type": "string"
+		},
 		"PhysicsJoint": {
 			"properties": {
 				"limit": {
@@ -223,7 +236,7 @@
 								"scale": [1, 1, 1],
 								"translate": [0, 0, 0]
 							},
-							"description": "No description"
+							"description": "The position and orientation of the shape relative to the actor's origin (the entity transform position)"
 						}
 					},
 					"type": "object"
@@ -664,19 +677,9 @@
 								"type": "number"
 							},
 							"group": {
+								"$ref": "#/definitions/PhysicsGroup",
 								"default": "World",
-								"description": "The collision group that this actor belongs to.",
-								"enum": [
-									"NoClip",
-									"World",
-									"Interactive",
-									"HeldObject",
-									"Player",
-									"PlayerLeftHand",
-									"PlayerRightHand",
-									"UserInterface"
-								],
-								"type": "string"
+								"description": "The collision group that this actor belongs to."
 							},
 							"linear_damping": {
 								"default": 0,
