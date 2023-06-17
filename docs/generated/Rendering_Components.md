@@ -2,6 +2,13 @@
 <div class="component_definition">
 
 ## `renderable` Component
+
+Models are loaded from the `assets/models/` folder. `.glb` and `.gltf` are supported,
+and models can be loaded from either `assets/models/<model_name>.gltf` or `assets/models/<model_name>/model_name.gltf`.
+
+Note for GLTF models with multiple meshes:  
+It is usually preferred to load the model using the [gltf Prefab Script](Prefab_Scripts.md#gltf-prefab) to automatically generate the correct transform tree and entity structure.
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **model** | string | "" | Name of the GLTF model to display. Models are loaded from the `assets/models/` folder. |
@@ -10,15 +17,6 @@
 | **emissive** | float | 0 | Emissive multiplier to turn this model into a light source |
 | **color_override** | vec4 (red, green, blue, alpha) | [-1, -1, -1, -1] | Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used. |
 | **metallic_roughness_override** | vec2 | [-1, -1] | Override the mesh's metallic and roughness material properties. Values are in the range 0.0 to 1.0. -1 means the original material is used. |
-
-Models are loaded from the `assets/models/` folder. `.glb` and `.gltf` are supported,
-and models can be loaded from either `assets/models/<model_name>.gltf` or `assets/models/<model_name>/model_name.gltf`.
-
-Note for GLTF models with multiple meshes:  
-It is usually preferred to load the model using the `gltf` prefab script to automatically generate the correct transform tree and entity structure.
-
-See the definition here: https://github.com/frustra/strayphotons/blob/master/src/scripts/prefabs/GltfPrefab.cc
-
 
 <div class="type_definition">
 
@@ -41,6 +39,7 @@ Enum flag names:
 <div class="component_definition">
 
 ## `gui` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **window_name** | string | "" | No description |
@@ -62,6 +61,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `laser_line` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **intensity** | float | 1 | No description |
@@ -76,6 +76,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `light_sensor` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **position** | vec3 | [0, 0, 0] | No description |
@@ -88,6 +89,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `light` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **intensity** | float | 0 | The brightness of the light measured in candela (lumens per solid angle). This value is ignored if **illuminance** != 0. |
@@ -105,6 +107,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `optic` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **pass_tint** | vec3 (red, green, blue) | [0, 0, 0] | No description |
@@ -117,6 +120,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `screen` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **target** | string | "" | No description |
@@ -128,6 +132,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `view` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **offset** | ivec2 | [0, 0] | No description |
@@ -145,6 +150,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `voxel_area` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **extents** | ivec3 | [128, 128, 128] | No description |
@@ -155,6 +161,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `xr_view` Component
+
 The `xr_view` component has type: enum [XrEye](#XrEye-type)
 
 <div class="type_definition">

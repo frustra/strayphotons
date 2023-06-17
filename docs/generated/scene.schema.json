@@ -127,6 +127,28 @@
 			],
 			"type": "string"
 		},
+		"PhysicsActorType": {
+			"enum": [
+				"Static",
+				"Dynamic",
+				"Kinematic",
+				"SubActor"
+			],
+			"type": "string"
+		},
+		"PhysicsGroup": {
+			"enum": [
+				"NoClip",
+				"World",
+				"Interactive",
+				"HeldObject",
+				"Player",
+				"PlayerLeftHand",
+				"PlayerRightHand",
+				"UserInterface"
+			],
+			"type": "string"
+		},
 		"PhysicsJoint": {
 			"properties": {
 				"limit": {
@@ -214,7 +236,7 @@
 								"scale": [1, 1, 1],
 								"translate": [0, 0, 0]
 							},
-							"description": "No description"
+							"description": "The position and orientation of the shape relative to the actor's origin (the entity transform position)"
 						}
 					},
 					"type": "object"
@@ -655,19 +677,9 @@
 								"type": "number"
 							},
 							"group": {
+								"$ref": "#/definitions/PhysicsGroup",
 								"default": "World",
-								"description": "The collision group that this actor belongs to.",
-								"enum": [
-									"NoClip",
-									"World",
-									"Interactive",
-									"HeldObject",
-									"Player",
-									"PlayerLeftHand",
-									"PlayerRightHand",
-									"UserInterface"
-								],
-								"type": "string"
+								"description": "The collision group that this actor belongs to."
 							},
 							"linear_damping": {
 								"default": 0,
@@ -700,15 +712,9 @@
 								"description": "A list of individual shapes and models that combine to form the actor's overall collision shape."
 							},
 							"type": {
+								"$ref": "#/definitions/PhysicsActorType",
 								"default": "Dynamic",
-								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor.",
-								"enum": [
-									"Static",
-									"Dynamic",
-									"Kinematic",
-									"SubActor"
-								],
-								"type": "string"
+								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor."
 							}
 						},
 						"type": "object"

@@ -52,11 +52,15 @@
         name: "Stray Photons",
         logo: "https://assets.strayphotons.net/logos/sp-laser-black.svg",
         repo: "https://github.com/frustra/strayphotons",
+        relativePath: true,
         loadSidebar: true,
         subMaxLevel: 2,
         search: {
           maxAge: 86400000,
           depth: 6
+        },
+        alias: {
+          '/.*/_sidebar.md': '/_sidebar.md'
         }
       };
     </script>

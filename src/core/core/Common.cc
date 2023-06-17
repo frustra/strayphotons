@@ -143,6 +143,22 @@ namespace sp {
             return out;
         }
 
+        string to_lower_copy(const string_view &str) {
+            string out(str);
+            std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
+                return std::tolower(ch);
+            });
+            return out;
+        }
+
+        string to_upper_copy(const string_view &str) {
+            string out(str);
+            std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
+                return std::toupper(ch);
+            });
+            return out;
+        }
+
         bool iequals(const string &str1, const string &str2) {
             return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
                 return std::tolower(a) == std::tolower(b);
@@ -166,6 +182,24 @@ namespace sp {
                 return !std::isspace(ch);
             }).base();
             str.erase(right, str.end());
+        }
+
+        string_view trim(const string_view &str) {
+            return trim_right(trim_left(str));
+        }
+
+        string_view trim_left(const string_view &str) {
+            auto left = std::find_if(str.begin(), str.end(), [](char ch) {
+                return !std::isspace(ch);
+            });
+            return str.substr(left - str.begin());
+        }
+
+        string_view trim_right(const string_view &str) {
+            auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
+                return !std::isspace(ch);
+            }).base();
+            return str.substr(0, right - str.begin());
         }
     } // namespace boost_replacements
 } // namespace sp

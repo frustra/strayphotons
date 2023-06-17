@@ -243,10 +243,15 @@ namespace sp {
         string to_upper(string &str);
         string to_lower_copy(const string &str);
         string to_upper_copy(const string &str);
+        string to_lower_copy(const string_view &str);
+        string to_upper_copy(const string_view &str);
         bool iequals(const string &str1, const string &str2);
         void trim(string &str);
         void trim_left(string &str);
         void trim_right(string &str);
+        string_view trim(const string_view &str);
+        string_view trim_left(const string_view &str);
+        string_view trim_right(const string_view &str);
     } // namespace boost_replacements
     using namespace boost_replacements;
 

@@ -21,7 +21,6 @@ If just a relative name is provided, the reference will be expanded based on the
 
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
-
 </div>
 
 <div class="type_definition">
@@ -41,6 +40,7 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
 <div class="component_definition">
 
 ## `physics` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **shapes** | vector&lt;[PhysicsShape](#PhysicsShape-type)&gt; | [] | A list of individual shapes and models that combine to form the actor's overall collision shape. |
@@ -57,26 +57,32 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
 <div class="type_definition">
 
 ### `PhysicsActorType` Type
+
+A physics actor's type determines how it behaves in the world. The type should match the intended usage of an object. Dynamic actor's positions are taken over by the physics system, but scripts may still control these actors with physics joints or force-based constraints.
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**Static**" - No description
-- "**Dynamic**" - No description
-- "**Kinematic**" - No description
-- "**SubActor**" - No description
+- "**Static**" - The physics actor will not move. Used for walls, floors, and other static objects.
+- "**Dynamic**" - The physics actor has a mass and is affected by gravity.
+- "**Kinematic**" - The physics actor has infinite mass and is controlled by script or animation.
+- "**SubActor**" - The shapes defined on this virtual physics actor are added to the parent physics actor instead.
 
 </div>
 
 <div class="type_definition">
 
 ### `PhysicsGroup` Type
+
+An actor's physics group determines both what it will collide with in the physics simulation, and which physics queries it is visible to.
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**NoClip**" - No description
-- "**World**" - No description
-- "**Interactive**" - No description
-- "**HeldObject**" - No description
-- "**Player**" - No description
-- "**PlayerLeftHand**" - No description
-- "**PlayerRightHand**" - No description
-- "**UserInterface**" - No description
+- "**NoClip**" - Actors in this collision group will not collide with anything.
+- "**World**" - This is the default collision group. All actors in this group will collide with eachother.
+- "**Interactive**" - This group behaves like `World` but allows behavior to be customized for movable objects.
+- "**HeldObject**" - Held objects do not collide with the player, but will collide with other held objects and the rest of the world.
+- "**Player**" - This group is for the player's body, which collides with the world, but not other objects in any of the player groups.
+- "**PlayerLeftHand**" - The player's left hand collides with the right hand, but not itself or the player's body.
+- "**PlayerRightHand**" - The player's right hand collides with the left hand, but not itself or the player's body.
+- "**UserInterface**" - This collision group is for popup UI elements that will only collide with the player's hands.
 
 </div>
 
@@ -85,13 +91,14 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 ### `PhysicsShape` Type
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **transform** | [Transform](#Transform-type) | {} | No description |
+| **transform** | [Transform](#Transform-type) | {} | The position and orientation of the shape relative to the actor's origin (the entity transform position) |
 | **static_friction** | float | 0.6 | This material's coefficient of static friction (>= 0.0) |
 | **dynamic_friction** | float | 0.5 | This material's coefficient of dynamic friction (>= 0.0) |
 | **restitution** | float | 0 | This material's coefficient of restitution (0.0 no bounce - 1.0 more bounce) |
 
 Most physics shapes correlate with the underlying [PhysX Geometry Shapes](https://gameworksdocs.nvidia.com/PhysX/4.1/documentation/physxguide/Manual/Geometry.html).
 The diagrams provided in the PhysX docs may be helpful in visualizing collisions.
+Additionally an in-engine debug overlay can be turned on by entering `x.DebugColliders 1` in the consle.
 
 A shape type is defined by setting one of the following additional fields:
 | Shape Field | Type    | Default Value   | Description |
@@ -113,7 +120,6 @@ If a `model_name.physics.json` file is provided alongside the GLTF, then custom 
 For example, the `duck.physics.json` physics definition defines `"duck.cooked"`,
 which decomposes the duck model into multiple convex hulls to more accurately represent its non-convex shape.
 
-
 </div>
 
 **See Also:**
@@ -126,6 +132,7 @@ which decomposes the duck model into multiple convex hulls to more accurately re
 <div class="component_definition">
 
 ## `physics_joints` Component
+
 The `physics_joints` component has type: vector&lt;[PhysicsJoint](#PhysicsJoint-type)&gt;
 
 <div class="type_definition">
@@ -166,6 +173,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `physics_query` Component
+
 The `physics_query` component has no public fields
 
 </div>
@@ -174,11 +182,6 @@ The `physics_query` component has no public fields
 <div class="component_definition">
 
 ## `animation` Component
-| Field Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **states** | vector&lt;[AnimationState](#AnimationState-type)&gt; | [] | No description |
-| **interpolation** | enum [InterpolationMode](#InterpolationMode-type) | "Linear" | No description |
-| **cubic_tension** | float | 0.5 | No description |
 
 Animations control the position of an entity by moving it between a set of animation states. Animation updates happen in the physics thread before each simulation step.
 When an animation state is defined, the `transform` position is ignored except for the transform parent, using the pose from the animation.
@@ -190,6 +193,11 @@ Animations read and write two signal values:
 
 The animation is running any time these values are different, and paused when they are equal.
 
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **states** | vector&lt;[AnimationState](#AnimationState-type)&gt; | [] | No description |
+| **interpolation** | enum [InterpolationMode](#InterpolationMode-type) | "Linear" | No description |
+| **cubic_tension** | float | 0.5 | No description |
 
 <div class="type_definition">
 
@@ -224,7 +232,6 @@ An example of a 3-state linear animation might look like this:
 
 When moving from state `2.0` to state `0.0`, the animation will follow the path through state `1.0`, rather than moving directly to the target position. The `animation_state` signal can however be manually controlled to teleport the animation to a specific state.
 
-
 </div>
 
 <div class="type_definition">
@@ -243,6 +250,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `character_controller` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **head** | [EntityRef](#EntityRef-type) | "" | No description |
@@ -256,6 +264,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `laser_emitter` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **intensity** | float | 1 | No description |
@@ -269,6 +278,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `laser_sensor` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **threshold** | vec3 | [0.5, 0.5, 0.5] | No description |
@@ -279,6 +289,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `trigger_area` Component
+
 The `trigger_area` component has type: enum [TriggerShape](#TriggerShape-type)
 
 <div class="type_definition">
@@ -296,6 +307,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `trigger_group` Component
+
 The `trigger_group` component has type: enum [TriggerGroup](#TriggerGroup-type)
 
 <div class="type_definition">
@@ -314,6 +326,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `scene_properties` Component
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **root_transform** | [Transform](#Transform-type) | {} | No description |

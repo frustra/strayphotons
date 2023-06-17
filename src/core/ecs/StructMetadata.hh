@@ -64,7 +64,7 @@ namespace ecs {
             std::type_index type,
             size_t offset,
             FieldAction actions)
-            : name(name), desc(desc), type(type), offset(offset), actions(actions) {}
+            : name(name), desc(sp::trim(desc)), type(type), offset(offset), actions(actions) {}
 
         template<typename T, typename F>
         static size_t OffsetOf(const F T::*M) {
@@ -180,7 +180,7 @@ namespace ecs {
 
         template<typename... Fields>
         StructMetadata(const std::type_index &idx, const char *name, const char *desc, Fields &&...fields)
-            : type(idx), name(name), description(desc) {
+            : type(idx), name(name), description(sp::trim(desc)) {
             (
                 [&] {
                     using FieldT = std::decay_t<Fields>;
