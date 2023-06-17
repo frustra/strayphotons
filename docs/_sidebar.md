@@ -9,3 +9,8 @@
   - [General Components](generated/General_Components.md)
   - [Physics Components](generated/Physics_Components.md)
   - [Rendering Components](generated/Rendering_Components.md)
+
+- Script Definitions
+
+  - [Prefab Scripts](generated/Prefab_Scripts.md)
+  - [Runtime Scripts](generated/Runtime_Scripts.md)

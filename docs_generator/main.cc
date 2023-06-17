@@ -12,13 +12,14 @@
 
 #include <array>
 #include <cxxopts.hpp>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
-using CompList = const std::vector<std::string>;
-using CommonTypes = const std::vector<std::type_index>;
+using CompList = std::vector<std::string>;
+using CommonTypes = std::vector<std::type_index>;
 
-static CompList generalComponents = {
+static const CompList generalComponents = {
     "name",
     "transform",
     "transform_snapshot",
@@ -30,12 +31,12 @@ static CompList generalComponents = {
     "signal_output",
     "audio",
 };
-static CommonTypes generalCommonTypes = {
+static const CommonTypes generalCommonTypes = {
     typeid(ecs::EntityRef),
     typeid(ecs::SignalExpression),
 };
 
-static CompList renderingComponents = {
+static const CompList renderingComponents = {
     "renderable",
     "gui",
     "laser_line",
@@ -47,9 +48,9 @@ static CompList renderingComponents = {
     "voxel_area",
     "xr_view",
 };
-static CommonTypes renderingCommonTypes = {};
+static const CommonTypes renderingCommonTypes = {};
 
-static CompList physicsComponents = {
+static const CompList physicsComponents = {
     "physics",
     "physics_joints",
     "physics_query",
@@ -61,23 +62,9 @@ static CompList physicsComponents = {
     "trigger_group",
     "scene_properties",
 };
-static CommonTypes physicsCommonTypes = {
+static const CommonTypes physicsCommonTypes = {
     typeid(ecs::EntityRef),
     typeid(ecs::Transform),
-};
-
-static const std::map<std::string, CompList *> docGroups = {
-    {"general", &generalComponents},
-    {"rendering", &renderingComponents},
-    {"physics", &physicsComponents},
-    {"other", nullptr},
-    {"schema", nullptr},
-};
-
-static const std::map<std::string, CommonTypes *> docGroupCommonTypes = {
-    {"general", &generalCommonTypes},
-    {"rendering", &renderingCommonTypes},
-    {"physics", &physicsCommonTypes},
 };
 
 inline std::string escapeMarkdownString(const std::string &input) {
@@ -94,9 +81,18 @@ inline std::string escapeMarkdownString(const std::string &input) {
     return result;
 }
 
-void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &commonTypes) {
+bool saveMarkdownComponentPage(const std::filesystem::path &outputPath,
+    const CompList &compList,
+    const CommonTypes *commonTypes = nullptr,
+    CompList *otherList = nullptr) {
     std::set<std::string> savedDocs;
     std::set<std::string> seeAlso;
+
+    std::ofstream file(outputPath);
+    if (!file) {
+        Errorf("Failed to open output file: '%s'", outputPath.string());
+        return false;
+    }
 
     std::function<void(const std::string &, const std::type_index &)> saveReferencedType;
     saveReferencedType = [&](const std::string &refName, const std::type_index &refType) {
@@ -182,10 +178,10 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
         }
     };
 
-    if (!commonTypes.empty()) {
+    if (commonTypes && !commonTypes->empty()) {
         file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
         file << "## Common Types" << std::endl;
-        for (auto &type : commonTypes) {
+        for (auto &type : *commonTypes) {
             auto *metadata = ecs::StructMetadata::Get(type);
             Assertf(metadata, "Type has no metadata: %s", type.name());
             saveReferencedType(metadata->name, metadata->type);
@@ -196,6 +192,8 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
     for (auto &name : compList) {
         file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
         file << "## `" << name << "` Component" << std::endl;
+
+        if (otherList) sp::erase(*otherList, name);
 
         auto &comp = *ecs::LookupComponent(name);
 
@@ -251,6 +249,65 @@ void saveMarkdownPage(std::ofstream &file, CompList &compList, CommonTypes &comm
 
         file << std::endl << "</div>" << std::endl << std::endl;
     }
+
+    return true;
+}
+
+bool saveMarkdownScriptPage(const std::filesystem::path &outputPath,
+    const std::string &type,
+    const std::map<std::string, ecs::ScriptDefinition> &scriptDefinitions) {
+    std::ofstream file(outputPath);
+    if (!file) {
+        Errorf("Failed to open output file: '%s'", outputPath.string());
+        return false;
+    }
+
+    for (auto &[name, def] : scriptDefinitions) {
+        if (!def.context) continue;
+
+        file << std::endl << "<div class=\"script_definition\">" << std::endl << std::endl;
+        file << "## `" << name << "` " << type << std::endl;
+
+        auto &metadata = def.context->metadata;
+        const void *defaultScript = def.context->GetDefault();
+
+        DocsStruct docs;
+        for (auto &field : metadata.fields) {
+            docs.AddField(field, field.Access(defaultScript));
+        }
+
+        if (docs.fields.empty()) {
+            if (!metadata.description.empty()) {
+                file << metadata.description << std::endl;
+            } else {
+                file << "The `" << name << "` " << sp::to_lower_copy(type) << " has no configurable parameters"
+                     << std::endl;
+            }
+        } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
+            if (!metadata.description.empty()) {
+                file << metadata.description << std::endl << std::endl;
+            }
+
+            file << "The `" << name << "` " << sp::to_lower_copy(type)
+                 << " has parameter type: " << docs.fields.front().typeString << std::endl;
+        } else {
+            if (!metadata.description.empty()) {
+                file << metadata.description << std::endl << std::endl;
+            }
+
+            file << "| Parameter Name | Type | Default Value | Description |" << std::endl;
+            file << "|----------------|------|---------------|-------------|" << std::endl;
+            for (auto &field : docs.fields) {
+                file << "| **" << field.name << "** | " << field.typeString << " | "
+                     << escapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
+                     << std::endl;
+            }
+        }
+
+        file << std::endl << "</div>" << std::endl;
+    }
+
+    return true;
 }
 
 template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
@@ -274,9 +331,15 @@ void ForEachComponentType(Func &&callback) {
     forEachComponentType((ecs::ECS *)nullptr, std::forward<Func>(callback));
 }
 
-void saveJsonSchema(std::ofstream &file) {
+bool saveJsonSchema(const std::filesystem::path &outputPath) {
     SchemaContext ctx;
     picojson::object entityProperties;
+
+    std::ofstream file(outputPath);
+    if (!file) {
+        Errorf("Failed to open output file: '%s'", outputPath.string());
+        return false;
+    }
 
     auto &nameComp = ecs::LookupComponent<ecs::Name>();
     sp::json::SaveSchema<ecs::Name>(entityProperties[nameComp.name]);
@@ -311,70 +374,68 @@ void saveJsonSchema(std::ofstream &file) {
 
     root["properties"] = picojson::value(properties);
     file << picojson::value(root).serialize(true);
+
+    return true;
 }
 
 int main(int argc, char **argv) {
     cxxopts::Options options("docs_generator", "");
-    options.positional_help("<doc-group> <output_path>");
-    options.add_options()("doc-group", "", cxxopts::value<std::string>());
-    options.add_options()("output-path", "", cxxopts::value<std::string>());
-    options.parse_positional({"doc-group", "output-path"});
+    options.positional_help("<output_dir>");
+    options.add_options()("output-dir", "", cxxopts::value<std::string>());
+    options.parse_positional({"output-dir"});
 
     auto optionsResult = options.parse(argc, argv);
 
-    if (!optionsResult.count("doc-group") || !optionsResult.count("output-path")) {
+    if (!optionsResult.count("output-dir")) {
         std::cout << options.help() << std::endl;
         return 1;
     }
 
     sp::logging::SetLogLevel(sp::logging::Level::Log);
 
-    std::string docGroup = optionsResult["doc-group"].as<std::string>();
-    std::string outputPath = optionsResult["output-path"].as<std::string>();
-
-    if (!docGroups.count(docGroup)) {
-        std::cout << "Unknown documentation group: " << docGroup << std::endl;
-        std::cout << "Options are:";
-        for (auto &group : docGroups) {
-            std::cout << " " << group.first;
-        }
-        std::cout << std::endl;
+    std::filesystem::path outputDir = optionsResult["output-dir"].as<std::string>();
+    if (!std::filesystem::exists(outputDir)) {
+        std::filesystem::create_directories(outputDir);
+    }
+    if (!std::filesystem::is_directory(outputDir)) {
+        Errorf("Output path must be a directory: %s", outputDir.string());
         return 1;
     }
 
-    std::ofstream file(outputPath);
-    if (!file) {
-        Errorf("Failed to open output file: '%s'", outputPath);
+    std::vector<std::string> otherGroup;
+    auto &nameComp = ecs::LookupComponent<ecs::Name>();
+    otherGroup.emplace_back(nameComp.name);
+    ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
+        otherGroup.emplace_back(name);
+    });
+
+    if (!saveMarkdownComponentPage(outputDir / "General_Components.md",
+            generalComponents,
+            &generalCommonTypes,
+            &otherGroup)) {
+        return 1;
+    }
+    if (!saveMarkdownComponentPage(outputDir / "Rendering_Components.md",
+            renderingComponents,
+            &renderingCommonTypes,
+            &otherGroup)) {
+        return 1;
+    }
+    if (!saveMarkdownComponentPage(outputDir / "Physics_Components.md",
+            physicsComponents,
+            &physicsCommonTypes,
+            &otherGroup)) {
+        return 1;
+    }
+    if (!saveMarkdownComponentPage(outputDir / "Other_Components.md", otherGroup)) return 1;
+
+    if (!saveMarkdownScriptPage(outputDir / "Prefab_Scripts.md", "Prefab", ecs::GetScriptDefinitions().prefabs)) {
+        return 1;
+    }
+    if (!saveMarkdownScriptPage(outputDir / "Runtime_Scripts.md", "Script", ecs::GetScriptDefinitions().scripts)) {
         return 1;
     }
 
-    if (docGroup == "schema") {
-        saveJsonSchema(file);
-    } else {
-        std::vector<std::string> otherGroup;
-        auto &groupFilterPtr = docGroups.at(docGroup);
-        auto &groupFilter = groupFilterPtr ? *groupFilterPtr : otherGroup;
-
-        if (groupFilterPtr == nullptr) {
-            // Special case for the "other" group which documents all unlisted components.
-            std::vector<std::string> allListedComponents;
-            for (auto &[_, group] : docGroups) {
-                if (group) {
-                    allListedComponents.insert(allListedComponents.end(), group->begin(), group->end());
-                }
-            }
-
-            auto &nameComp = ecs::LookupComponent<ecs::Name>();
-            if (!sp::contains(allListedComponents, nameComp.name)) otherGroup.emplace_back(nameComp.name);
-            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
-                if (!sp::contains(allListedComponents, name)) otherGroup.emplace_back(name);
-            });
-        }
-
-        CommonTypes emptyCommonTypes;
-        auto &groupCommonTypes = docGroupCommonTypes.count(docGroup) ? *docGroupCommonTypes.at(docGroup)
-                                                                     : emptyCommonTypes;
-        saveMarkdownPage(file, groupFilter, groupCommonTypes);
-    }
+    if (!saveJsonSchema(outputDir / "scene.schema.json")) return 1;
     return 0;
 }
