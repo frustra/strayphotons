@@ -202,29 +202,34 @@ struct MarkdownContext {
 
         file << std::endl << "<div class=\"type_definition\">" << std::endl << std::endl;
         file << "### `" << refName << "` Type" << std::endl;
-        if (isEnumFlags) {
-            file << "This is an **enum flags** type. Multiple flags can be combined using the `|` "
-                    "character (e.g. `\"One|Two\"` with no whitespace). Flag names are case-sensitive.  ";
-            file << std::endl << "Enum flag names:" << std::endl;
-        } else if (isEnum) {
-            file << "This is an **enum** type, and can be one of the following case-sensitive values:" << std::endl;
-        }
         if (isEnum) {
+            if (metadata && !metadata->description.empty()) {
+                file << std::endl << metadata->description << std::endl << std::endl;
+            }
+            if (isEnumFlags) {
+                file << "This is an **enum flags** type. Multiple flags can be combined using the `|` "
+                        "character (e.g. `\"One|Two\"` with no whitespace). Flag names are case-sensitive.  ";
+                file << std::endl << "Enum flag names:" << std::endl;
+            } else {
+                file << "This is an **enum** type, and can be one of the following case-sensitive values:" << std::endl;
+            }
             for (auto &field : refDocs.fields) {
                 file << "- \"**" << field.name << "**\" - " << field.description << "" << std::endl;
             }
-        } else if (!refDocs.fields.empty()) {
-            file << "| Field Name | Type | Default Value | Description |" << std::endl;
-            file << "|------------|------|---------------|-------------|" << std::endl;
-            for (auto &field : refDocs.fields) {
-                file << "| **" << field.name << "** | " << field.typeString << " | "
-                     << EscapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
-                     << std::endl;
+        } else {
+            if (!refDocs.fields.empty()) {
+                file << "| Field Name | Type | Default Value | Description |" << std::endl;
+                file << "|------------|------|---------------|-------------|" << std::endl;
+                for (auto &field : refDocs.fields) {
+                    file << "| **" << field.name << "** | " << field.typeString << " | "
+                         << EscapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
+                         << std::endl;
+                }
             }
-        }
 
-        if (metadata && !metadata->description.empty()) {
-            file << metadata->description << std::endl;
+            if (metadata && !metadata->description.empty()) {
+                file << std::endl << metadata->description << std::endl;
+            }
         }
 
         file << std::endl << "</div>" << std::endl;

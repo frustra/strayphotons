@@ -21,7 +21,6 @@ If just a relative name is provided, the reference will be expanded based on the
 
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
-
 </div>
 
 <div class="type_definition">
@@ -47,7 +46,6 @@ Vector fields such as position or color can be accessed as `pos.x` or `color.r`.
 
 Note: Only number-compatble fields can be referenced. All evaluation is done using double floating point numbers.
 
-
 </div>
 
 </div>
@@ -56,7 +54,6 @@ Note: Only number-compatble fields can be referenced. All evaluation is done usi
 <div class="component_definition">
 
 ## `name` Component
-
 This component is required on all entities to allow for name-based references.
 If no name is provided upon entity creation, an auto-generated name will be filled in.
 
@@ -74,7 +71,6 @@ Relative names specified in a template take the form:
 
 The special `"scoperoot"` alias can also be used inside a template to reference the parent entity.
 
-
 </div>
 
 
@@ -87,7 +83,6 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
 | **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
 | **parent** | [EntityRef](#EntityRef-type) | "" | Specifies a parent entity that this transform is relative to. If empty, the transform is relative to the scene root. |
-
 Multiple entities with transforms can be linked together to create a tree of entities that all move together (i.e. a transform tree).
 
 Transforms are combined in the following way:  
@@ -95,7 +90,6 @@ Transforms are combined in the following way:
 
 Note: When combining multiple transformations together with scaling factors,
 behavior is undefined if the combinations introduce skew. (The scale should be axis-aligned to the model)
-
 
 **See Also:**
 [EntityRef](#EntityRef-type)
@@ -111,7 +105,6 @@ behavior is undefined if the combinations introduce skew. (The scale should be a
 | **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
 | **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
-
 Transform snapshots should not be set directly.
 They are automatically generated for all entities with a `transform` component, and updated by the physics system.
 
@@ -121,7 +114,6 @@ This represents and an entity's absolute position, orientation, and scale in the
 Transform snapshots are used by the render thread for drawing entities in a physics-synchronized state,
 while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
-
 
 </div>
 
@@ -146,6 +138,7 @@ The `event_bindings` component has type: map&lt;string, vector&lt;[EventBinding]
 <div class="type_definition">
 
 ### `EventData` Type
+
 Stores a variety of possible data types for sending in events (JSON supported values are: bool, double, vec2, vec3, vec4, and string).
 
 </div>
@@ -153,6 +146,7 @@ Stores a variety of possible data types for sending in events (JSON supported va
 <div class="type_definition">
 
 ### `EventDest` Type
+
 An event destination in the form of a string: "target_entity/event/input"
 
 </div>
@@ -197,7 +191,6 @@ Scripts can have 2 types:
 - "onTick": OnTick scripts will run during in the GameLogic thread during it's frame.
             OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.
             Some OnTick scripts may also define event filters to only run when events are received.
-
 
 </div>
 

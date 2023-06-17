@@ -175,6 +175,21 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         Kinematic,
         SubActor,
     };
+    static const StructMetadata::EnumDescriptions DocsEnumPhysicsActorType = {
+        {(uint32_t)PhysicsActorType::Static,
+            "The physics actor will not move. Used for walls, floors, and other static objects."},
+        {(uint32_t)PhysicsActorType::Dynamic, "The physics actor has a mass and is affected by gravity."},
+        {(uint32_t)PhysicsActorType::Kinematic,
+            "The physics actor has infinite mass and is controlled by script or animation."},
+        {(uint32_t)PhysicsActorType::SubActor,
+            "The shapes defined on this virtual physics actor are added to the parent physics actor instead."},
+    };
+    static const StructMetadata MetadataPhysicsActorType(typeid(PhysicsActorType),
+        "PhysicsActorType",
+        "A physics actor's type determines how it behaves in the world. The type should match the intended usage of an "
+        "object. Dynamic actor's positions are taken over by the physics system, but scripts may still control these "
+        "actors with physics joints or force-based constraints.",
+        &DocsEnumPhysicsActorType);
 
     struct Physics {
         Physics() {}

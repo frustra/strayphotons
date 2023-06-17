@@ -14,11 +14,14 @@
 <div class="type_definition">
 
 ### `PhysicsActorType` Type
+
+A physics actor's type determines how it behaves in the world. The type should match the intended usage of an object. Dynamic actor's positions are taken over by the physics system, but scripts may still control these actors with physics joints or force-based constraints.
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**Static**" - No description
-- "**Dynamic**" - No description
-- "**Kinematic**" - No description
-- "**SubActor**" - No description
+- "**Static**" - The physics actor will not move. Used for walls, floors, and other static objects.
+- "**Dynamic**" - The physics actor has a mass and is affected by gravity.
+- "**Kinematic**" - The physics actor has infinite mass and is controlled by script or animation.
+- "**SubActor**" - The shapes defined on this virtual physics actor are added to the parent physics actor instead.
 
 </div>
 

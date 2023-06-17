@@ -21,7 +21,6 @@ If just a relative name is provided, the reference will be expanded based on the
 
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
-
 </div>
 
 <div class="type_definition">
@@ -46,7 +45,6 @@ For example: `light#renderable.emissive` will return the `emissive` value from t
 Vector fields such as position or color can be accessed as `pos.x` or `color.r`.
 
 Note: Only number-compatble fields can be referenced. All evaluation is done using double floating point numbers.
-
 
 </div>
 

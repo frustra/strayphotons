@@ -183,5 +183,23 @@ namespace sp {
             }).base();
             str.erase(right, str.end());
         }
+
+        string_view trim(const string_view &str) {
+            return trim_right(trim_left(str));
+        }
+
+        string_view trim_left(const string_view &str) {
+            auto left = std::find_if(str.begin(), str.end(), [](char ch) {
+                return !std::isspace(ch);
+            });
+            return str.substr(left - str.begin());
+        }
+
+        string_view trim_right(const string_view &str) {
+            auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
+                return !std::isspace(ch);
+            }).base();
+            return str.substr(0, right - str.begin());
+        }
     } // namespace boost_replacements
 } // namespace sp

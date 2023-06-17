@@ -127,6 +127,15 @@
 			],
 			"type": "string"
 		},
+		"PhysicsActorType": {
+			"enum": [
+				"Static",
+				"Dynamic",
+				"Kinematic",
+				"SubActor"
+			],
+			"type": "string"
+		},
 		"PhysicsJoint": {
 			"properties": {
 				"limit": {
@@ -700,15 +709,9 @@
 								"description": "A list of individual shapes and models that combine to form the actor's overall collision shape."
 							},
 							"type": {
+								"$ref": "#/definitions/PhysicsActorType",
 								"default": "Dynamic",
-								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor.",
-								"enum": [
-									"Static",
-									"Dynamic",
-									"Kinematic",
-									"SubActor"
-								],
-								"type": "string"
+								"description": "\"Dynamic\" objects are affected by gravity, while Kinematic objects have an infinite mass and are only movable by game logic. \"Static\" objects are meant to be immovable and will not push objects if moved. The \"SubActor\" type adds this entity's shapes to the **parent_actor** entity instead of creating a new physics actor."
 							}
 						},
 						"type": "object"

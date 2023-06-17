@@ -249,6 +249,9 @@ namespace sp {
         void trim(string &str);
         void trim_left(string &str);
         void trim_right(string &str);
+        string_view trim(const string_view &str);
+        string_view trim_left(const string_view &str);
+        string_view trim_right(const string_view &str);
     } // namespace boost_replacements
     using namespace boost_replacements;
 

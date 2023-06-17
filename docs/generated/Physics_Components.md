@@ -21,7 +21,6 @@ If just a relative name is provided, the reference will be expanded based on the
 
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
-
 </div>
 
 <div class="type_definition">
@@ -57,11 +56,14 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
 <div class="type_definition">
 
 ### `PhysicsActorType` Type
+
+A physics actor's type determines how it behaves in the world. The type should match the intended usage of an object. Dynamic actor's positions are taken over by the physics system, but scripts may still control these actors with physics joints or force-based constraints.
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**Static**" - No description
-- "**Dynamic**" - No description
-- "**Kinematic**" - No description
-- "**SubActor**" - No description
+- "**Static**" - The physics actor will not move. Used for walls, floors, and other static objects.
+- "**Dynamic**" - The physics actor has a mass and is affected by gravity.
+- "**Kinematic**" - The physics actor has infinite mass and is controlled by script or animation.
+- "**SubActor**" - The shapes defined on this virtual physics actor are added to the parent physics actor instead.
 
 </div>
 
@@ -112,7 +114,6 @@ If only a model name is specified, `convex0` will be used by default.
 If a `model_name.physics.json` file is provided alongside the GLTF, then custom physics meshes can be generated and configured.
 For example, the `duck.physics.json` physics definition defines `"duck.cooked"`,
 which decomposes the duck model into multiple convex hulls to more accurately represent its non-convex shape.
-
 
 </div>
 
@@ -179,7 +180,6 @@ The `physics_query` component has no public fields
 | **states** | vector&lt;[AnimationState](#AnimationState-type)&gt; | [] | No description |
 | **interpolation** | enum [InterpolationMode](#InterpolationMode-type) | "Linear" | No description |
 | **cubic_tension** | float | 0.5 | No description |
-
 Animations control the position of an entity by moving it between a set of animation states. Animation updates happen in the physics thread before each simulation step.
 When an animation state is defined, the `transform` position is ignored except for the transform parent, using the pose from the animation.
 
@@ -189,7 +189,6 @@ Animations read and write two signal values:
 2. **animation_target** - The target state index. The entity will always animate towards this state.
 
 The animation is running any time these values are different, and paused when they are equal.
-
 
 <div class="type_definition">
 
@@ -223,7 +222,6 @@ An example of a 3-state linear animation might look like this:
 ```
 
 When moving from state `2.0` to state `0.0`, the animation will follow the path through state `1.0`, rather than moving directly to the target position. The `animation_state` signal can however be manually controlled to teleport the animation to a specific state.
-
 
 </div>
 

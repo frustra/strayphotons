@@ -10,7 +10,6 @@
 | **emissive** | float | 0 | Emissive multiplier to turn this model into a light source |
 | **color_override** | vec4 (red, green, blue, alpha) | [-1, -1, -1, -1] | Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used. |
 | **metallic_roughness_override** | vec2 | [-1, -1] | Override the mesh's metallic and roughness material properties. Values are in the range 0.0 to 1.0. -1 means the original material is used. |
-
 Models are loaded from the `assets/models/` folder. `.glb` and `.gltf` are supported,
 and models can be loaded from either `assets/models/<model_name>.gltf` or `assets/models/<model_name>/model_name.gltf`.
 
@@ -18,7 +17,6 @@ Note for GLTF models with multiple meshes:
 It is usually preferred to load the model using the `gltf` prefab script to automatically generate the correct transform tree and entity structure.
 
 See the definition here: https://github.com/frustra/strayphotons/blob/master/src/scripts/prefabs/GltfPrefab.cc
-
 
 <div class="type_definition">
 
