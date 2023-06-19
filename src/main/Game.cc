@@ -90,7 +90,7 @@ namespace sp {
         GetConsoleManager().StartInputLoop();
 
 #if RUST_CXX
-        sp::rust::print_hello();
+        sp::rs::print_hello();
 #endif
 
         if (options.count("command")) {

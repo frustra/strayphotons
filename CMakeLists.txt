@@ -179,10 +179,6 @@ if(SP_BUILD_RUST)
     add_subdirectory(rust)
     add_subdirectory(wasm)
 
-    target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
-        RUST_CXX
-    )
-
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
         sp-rust
     )

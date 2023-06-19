@@ -1,0 +1,10 @@
+{
+    "entities": [
+        {
+            "name": "wasm_test",
+            "script": {
+                "onTick": "script.wasm"
+            }
+        }
+    ]
+}

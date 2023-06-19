@@ -39,7 +39,14 @@ namespace ecs {
                 auto &node = *model->nodes[nodeId];
 
                 if (node.name.empty()) return "gltf" + std::to_string(nodeId);
-                return node.name;
+                std::string nodeName = node.name;
+                std::transform(nodeName.begin(), nodeName.end(), nodeName.begin(), [](unsigned char c) {
+                    return sp::contains(",():/# "s, c) ? '_' : c;
+                });
+                if (sp::starts_with(nodeName, "-")) {
+                    nodeName.front() = '_';
+                }
+                return nodeName;
             };
 
             robin_hood::unordered_set<size_t> jointNodes;
@@ -103,7 +110,6 @@ namespace ecs {
                             newEntity.Set<EventInput>(lock);
                             auto &scripts = newEntity.Set<Scripts>(lock);
                             scripts.AddOnTick(prefixName, "interactive_object");
-                            GetScriptManager().RegisterEvents(lock, newEntity);
                         }
                     }
                 }

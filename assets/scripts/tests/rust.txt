@@ -1,1 +1,2 @@
-# Exit immediately after startup.
+loadscene rust
+steplogic

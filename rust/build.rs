@@ -10,7 +10,10 @@ use std::io::prelude::*;
 
 fn main() {
     let mut build = cxx_build::bridge("src/lib.rs");  // returns a cc::Build
+    build.warnings_into_errors(true);
     build.flag_if_supported("-std=c++17");
+    build.flag_if_supported("/std:c++17");
+    build.define("RUST_CXX", "1");
 
     let mut includes_file = File::open("../build/rust/rust_includes.list").expect("Failed to open file: rust_includes.list");
     let mut include_list = String::new();

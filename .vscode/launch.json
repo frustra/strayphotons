@@ -130,7 +130,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test.exe",
-            "args": ["--with-validation-layers", "tests/scene-overrides.txt"],
+            "args": ["--with-validation-layers", "--headless", "tests/rust.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
