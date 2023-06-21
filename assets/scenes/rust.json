@@ -3,7 +3,7 @@
         {
             "name": "wasm_test",
             "script": {
-                "onTick": "script.wasm"
+                "onTick": "test.wasm"
             }
         }
     ]

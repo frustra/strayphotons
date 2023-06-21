@@ -5,26 +5,50 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#[derive(Debug)]
+use std::path::Path;
+
+use wasmer_vm::WasmContext;
+
 pub struct Context {
-    data: String,
+    name: String,
+    wasm: Option<WasmContext>,
 }
  
 fn new_wasm_context(name: &str) -> Box<Context> {
     println!("Rust callback! name={}", name);
-    return Box::new(Context { data: name.to_string() });
+    let result = wasmer_vm::new_instance(&Path::new("scripts/").join(name));
+    if result.is_err() {
+        println!("new_instance() failed! {}", result.err().unwrap());
+        return Box::new(Context {
+            name: name.to_string(),
+            wasm: None,
+        });
+    } else {
+        return Box::new(Context {
+            name: name.to_string(),
+            wasm: result.ok(),
+        });
+    }
 }
  
-fn wasm_run_on_tick(context: Box<Context>) {
-    println!("Rust onTick callback! context.data={}", context.data);
+fn wasm_run_on_tick(mut context: Box<Context>, ent: u64) {
+    println!("Rust onTick callback! context.name={}", context.name);
+    if context.wasm.is_some() {
+        let result = wasmer_vm::call_on_tick(context.wasm.as_mut().unwrap(), ent);
+        if result.is_err() {
+            println!("call_on_tick() failed! {}", result.err().unwrap());
+        }
+    } else {
+        println!("wasm_run_on_tick() null instance! {}", context.name);
+    }
 }
  
 fn wasm_run_on_physics_update(context: Box<Context>) {
-    println!("Rust onPhysicsUpdate callback! context.data={}", context.data);
+    println!("Rust onPhysicsUpdate callback! context.name={} instance: {}", context.name, context.wasm.map_or("invalid", |_| "valid"));
 }
  
 fn wasm_run_prefab(context: Box<Context>) {
-    println!("Rust prefab callback! context.data={}", context.data);
+    println!("Rust prefab callback! context.name={} instance: {}", context.name, context.wasm.map_or("invalid", |_| "valid"));
 }
 
 #[cxx::bridge(namespace = "sp::rs")]
@@ -34,7 +58,7 @@ mod ffi_rust {
 
         type Context;
         fn new_wasm_context(name: &str) -> Box<Context>;
-        fn wasm_run_on_tick(context: Box<Context>);
+        fn wasm_run_on_tick(mut context: Box<Context>, ent: u64);
         fn wasm_run_on_physics_update(context: Box<Context>);
         fn wasm_run_prefab(context: Box<Context>);
     }

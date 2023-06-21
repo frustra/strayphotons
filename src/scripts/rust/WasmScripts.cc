@@ -34,8 +34,8 @@ namespace sp::rs {
             auto ctx = new_wasm_context(state.definition.name);
             ptr = &state.userData.emplace<Context *>(ctx.into_raw());
         }
-
-        wasm_run_on_tick(rust::Box<Context>::from_raw(*ptr));
+        uint64_t value = (uint64_t)ent.index << (sizeof(TECS_ENTITY_GENERATION_TYPE) * 8) | ent.generation;
+        wasm_run_on_tick(rust::Box<Context>::from_raw(*ptr), value);
         // ptr->OnPhysicsUpdate(state, lock, ent, interval);
     }
 
