@@ -32,7 +32,7 @@ fn new_wasm_context(name: &str) -> Box<Context> {
 }
  
 fn wasm_run_on_tick(mut context: Box<Context>, ent: u64) {
-    println!("Rust onTick callback! context.name={}", context.name);
+    println!("Rust onTick callback! context.name={} entity={}", context.name, ent);
     if context.wasm.is_some() {
         let result = wasmer_vm::call_on_tick(context.wasm.as_mut().unwrap(), ent);
         if result.is_err() {
@@ -77,10 +77,10 @@ mod wasmer_vm;
 fn print_hello() {
     println!("hello world!");
 
-    let result = wasmer_vm::run_wasm();
-    if result.is_err() {
-        println!("run_wasm() failed! {}", result.err().unwrap());
-    }
+    // let result = wasmer_vm::run_wasm();
+    // if result.is_err() {
+    //     println!("run_wasm() failed! {}", result.err().unwrap());
+    // }
     
     // Loop over *.wasm files
     for entry in std::fs::read_dir("scripts/").unwrap() {

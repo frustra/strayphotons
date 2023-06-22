@@ -7,6 +7,7 @@
 
 #include <ecs.h>
 #include <ecs/components/Transform.h>
+#include <string>
 
 // If this changes, make sure it is the same in C++ and Rust
 static_assert(sizeof(ecs::Transform) == 60, "Wrong Transform size");

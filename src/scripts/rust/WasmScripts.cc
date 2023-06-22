@@ -35,6 +35,7 @@ namespace sp::rs {
             ptr = &state.userData.emplace<Context *>(ctx.into_raw());
         }
         uint64_t value = (uint64_t)ent.index << (sizeof(TECS_ENTITY_GENERATION_TYPE) * 8) | ent.generation;
+        Logf("Calling rust WASM with entity: %llu = %s", value, std::to_string(ent));
         wasm_run_on_tick(rust::Box<Context>::from_raw(*ptr), value);
         // ptr->OnPhysicsUpdate(state, lock, ent, interval);
     }

@@ -9,7 +9,8 @@ opt-level = 2
 
 [dependencies]
 cxx = "1.0"
-wasmer = "3.3"
+wasmer = "4.0.0-beta.3"
+wasmer-wasix = "0.8.0"
 anyhow = "1.0"
 static_assertions = "1.1"
 

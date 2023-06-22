@@ -19,10 +19,12 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
     file(GLOB SCRIPT_INPUT src/${SCRIPT_NAME}.*)
     set(SCRIPT_OUTPUT ${PROJECT_OUTPUT_DIR}/scripts/${SCRIPT_NAME}.wasm)
     add_custom_command(
-        COMMAND ${CLANG_BIN} --target=wasm32
+        COMMAND ${CLANG_BIN} --target=wasm32-wasi
             -O3
             -flto
-            -nostdlib
+            # -nostdlib
+            -nostartfiles
+            --sysroot="C:\\Users\\xthexder\\dev\\wasi-sysroot"
             -DSP_WASM_BUILD=1
             -I${CMAKE_CURRENT_SOURCE_DIR}/inc
             -I${PROJECT_SOURCE_DIR}/src/core

@@ -55,9 +55,13 @@ target_link_libraries(sp-rust PRIVATE
 
 if(WIN32)
     target_link_libraries(sp-rust PRIVATE
-        ws2_32
-        userenv
         bcrypt
+        crypt32
+        Ncrypt
+        ntdll
+        secur32
+        userenv
+        ws2_32
     )
 elseif(UNIX)
     target_link_libraries(sp-rust PRIVATE
