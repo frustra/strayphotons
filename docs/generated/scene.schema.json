@@ -76,7 +76,7 @@
 										}
 									],
 									"default": [],
-									"description": "No description"
+									"description": "One or more event queue targets to send events to. If only a single output is needed, it can be specified directly as: `\"outputs\": \"target_entity/target/event/queue\"`"
 								}
 							},
 							"type": "object"
@@ -90,7 +90,7 @@
 				"filter": {
 					"$ref": "#/definitions/SignalExpression",
 					"default": null,
-					"description": "No description"
+					"description": "If a `filter` expression is specified, only events for which the filter evaluates to true (>= 0.5) are forwarded to the output. Event data can be accessed in the filter expression via the `event` keyword (e.g. `event.y > 2`)"
 				},
 				"modify": {
 					"anyOf": [
@@ -105,11 +105,11 @@
 						}
 					],
 					"default": [],
-					"description": "No description"
+					"description": "One or more `modify` expressions can be specified to manipulate the contents of events as they flow through an binding. 1 expression is evaluated per 'element' of the input event type (i.e. 3 exprs for vec3, 1 expr for bool, etc...). Input event data is provided via the `event` expression keyword, and the result of each expression is then converted back to the original event type before being used as the new event data.  As an example, the following `modify` expression will scale an input vec3 event by 2 on all axes: `[\"event.x * 2\", \"event.y * 2\", \"event.z * 2\"]`."
 				},
 				"set_value": {
 					"default": null,
-					"description": "No description"
+					"description": "If `set_value` is specified, the event's data and type will be changed to the provided value. `set_value` occurs before the `modify` expression is evaluated."
 				}
 			},
 			"type": "object"

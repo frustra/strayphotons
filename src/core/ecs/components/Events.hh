@@ -56,7 +56,7 @@ namespace ecs {
 
     static StructMetadata MetadataEventDest(typeid(EventDest),
         "EventDest",
-        "An event destination in the form of a string: \"target_entity/event/input\"");
+        "An event destination in the form of a string: `\"target_entity/event/input\"`");
     template<>
     bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src);
     template<>
@@ -84,9 +84,24 @@ namespace ecs {
     static StructMetadata MetadataEventBindingActions(typeid(EventBindingActions),
         "EventBindingActions",
         "",
-        StructField::New("filter", &EventBindingActions::filterExpr),
-        StructField::New("modify", &EventBindingActions::modifyExprs),
-        StructField::New("set_value", &EventBindingActions::setValue));
+        StructField::New("filter",
+            "If a `filter` expression is specified, only events for which the filter evaluates to true (>= 0.5) are "
+            "forwarded to the output. Event data can be accessed in the filter expression via the `event` keyword "
+            "(e.g. `event.y > 2`)",
+            &EventBindingActions::filterExpr),
+        StructField::New("set_value",
+            "If `set_value` is specified, the event's data and type will be changed to the provided value. "
+            "`set_value` occurs before the `modify` expression is evaluated.",
+            &EventBindingActions::setValue),
+        StructField::New("modify",
+            "One or more `modify` expressions can be specified to manipulate the contents of events as they flow "
+            "through an binding. 1 expression is evaluated per 'element' of the input event type (i.e. 3 exprs for "
+            "vec3, 1 expr for bool, etc...). Input event data is provided via the `event` expression keyword, and the "
+            "result of each expression is then converted back to the original event type before being used as the "
+            "new event data.  "
+            "As an example, the following `modify` expression will scale an input vec3 event by 2 on all axes: "
+            "`[\"event.x * 2\", \"event.y * 2\", \"event.z * 2\"]`.",
+            &EventBindingActions::modifyExprs));
 
     struct EventBinding {
         std::vector<EventDest> outputs;
@@ -99,7 +114,11 @@ namespace ecs {
     static StructMetadata MetadataEventBinding(typeid(EventBinding),
         "EventBinding",
         "",
-        StructField::New("outputs", &EventBinding::outputs),
+        StructField::New("outputs",
+            "One or more event queue targets to send events to. "
+            "If only a single output is needed, it can be specified directly as: "
+            "`\"outputs\": \"target_entity/target/event/queue\"`",
+            &EventBinding::outputs),
         StructField::New(&EventBinding::actions));
     template<>
     bool StructMetadata::Load<EventBinding>(EventBinding &dst, const picojson::value &src);
@@ -134,7 +153,48 @@ namespace ecs {
 
     static StructMetadata MetadataEventBindings(typeid(EventBindings),
         "event_bindings",
-        "",
+        R"(
+Event bindings (along with signal bindings) are the main way entites communicate with eachother. 
+When an event is generated at an entity, it will first be delivered to any local event queues in the 
+[`event_input` Component](#event_input-component). Then it will be forwarded through any matching 
+event bindings to be delivered to other entities.
+
+In their most basic form, event bindings will simply forward events to a new target:
+```json
+"event_bindings": {
+    "/button1/action/press": "player:player/action/jump",
+    "/trigger/object/enter": ["scene:object1/notify/react", "scene:object2/notify/react"]
+}
+```
+For the above bindings, when the input event `/button1/action/press` is generated at the local entity, 
+it will be forwarded to the `player:player` entity as the `/action/jump` event with the same event data. 
+Similarly, the `/trigger/object/enter` will be forwarded to both the `scene:object1` and `scene:object2` 
+entities as the `/notify/react` event, again with the original event data intact.
+
+> [!NOTE]
+> Events are forwarded recursively until a maximum binding depth is reached.  
+> Bindings should not contain loops or deep binding trees, otherwise events will be dropped.
+
+More advanced event bindings can also filter and modify event data as is passes through them. 
+For example, the following binding is evaluated for each `/keyboard/key/v` input event:
+```json
+"event_bindings": {
+    "/keyboard/key/v": {
+        "outputs": "console:input/action/run_command",
+        "filter": "is_focused(Game) && event",
+        "set_value": "togglesignal player:player/move_noclip"
+    }
+}
+```
+Key input events from the `input:keyboard` entity have a bool data type, and are generated for both the key down 
+and key up events (signified by a **true** and **false** value respectively).
+
+The above binding specifies a filter expression that will only forward events while the `Game` focus layer is active,
+and will only forward key down events (true data values).
+
+The event data is then replaced with the string `"togglesignal player:player/move_noclip"`, and forwarded to the `console:input` entity
+as the `/action/run_command` event. Upon receiving this event, the `console:input` entity will execute the provided string in the console.
+)",
         StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave));
     static Component<EventBindings> ComponentEventBindings(MetadataEventBindings);
     template<>

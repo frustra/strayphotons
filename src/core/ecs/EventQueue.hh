@@ -37,7 +37,7 @@ namespace ecs {
     static StructMetadata MetadataEventData(typeid(EventData),
         "EventData",
         "Stores a variety of possible data types for sending in events "
-        "(JSON supported values are: bool, double, vec2, vec3, vec4, and string).");
+        "(JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).");
     template<>
     bool StructMetadata::Load<EventData>(EventData &dst, const picojson::value &src);
     template<>

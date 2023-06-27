@@ -299,7 +299,7 @@ struct MarkdownContext {
 
             if (docs.fields.empty()) {
                 if (!metadata->description.empty()) {
-                    file << metadata->description << std::endl;
+                    file << metadata->description << std::endl << std::endl;
                 } else if (pageType == PageType::Component) {
                     file << "The `" << *name << "` component has no public fields" << std::endl;
                 } else {
@@ -308,7 +308,7 @@ struct MarkdownContext {
                 }
             } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
                 if (!metadata->description.empty()) {
-                    file << metadata->description << std::endl;
+                    file << metadata->description << std::endl << std::endl;
                 }
                 if (pageType == PageType::Component) {
                     file << "The `" << *name << "` component has type: " << docs.fields.front().typeString << std::endl;

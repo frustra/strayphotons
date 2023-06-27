@@ -34,7 +34,7 @@ namespace sp {
 
         static const size_t SPINLOCK_RETRY_YIELD = 10;
 
-        std::atomic_uint32_t lockState = 0;
-        std::atomic_bool exclusiveWaiting = 0;
+        std::atomic_uint32_t lockState;
+        std::atomic_bool exclusiveWaiting;
     };
 } // namespace sp
