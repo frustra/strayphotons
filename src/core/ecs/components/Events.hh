@@ -44,7 +44,13 @@ namespace ecs {
         robin_hood::unordered_map<std::string, std::vector<EventQueueRef>> events;
     };
 
-    static StructMetadata MetadataEventInput(typeid(EventInput), "event_input", "");
+    static StructMetadata MetadataEventInput(typeid(EventInput), "event_input", R"(
+For an entity to receive events (not just forward them), it must have an `event_input` component.  
+This component stores a list of event queues that have been registered to receive events on a per-entity basis.
+
+No configuration is stored for the `event_input` component. Scripts and other systems programmatically register 
+their own event queues as needed.
+)");
     static Component<EventInput> ComponentEventInput(MetadataEventInput);
 
     struct EventDest {
