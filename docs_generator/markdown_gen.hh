@@ -155,7 +155,7 @@ struct MarkdownContext {
         return result;
     }
 
-    void SaveReferencedType(const std::string &refName, const std::type_index &refType) {
+    void SaveReferencedType(std::ostream &out, const std::string &refName, const std::type_index &refType) {
         if (savedDocs.count(refName)) {
             seeAlso.emplace(refName);
             return;
@@ -200,43 +200,43 @@ struct MarkdownContext {
             return;
         }
 
-        file << std::endl << "<div class=\"type_definition\">" << std::endl << std::endl;
-        file << "### `" << refName << "` Type" << std::endl;
+        out << std::endl << "<div class=\"type_definition\">" << std::endl << std::endl;
+        out << "### `" << refName << "` Type" << std::endl;
         if (isEnum) {
             if (metadata && !metadata->description.empty()) {
-                file << std::endl << metadata->description << std::endl << std::endl;
+                out << std::endl << metadata->description << std::endl << std::endl;
             }
             if (isEnumFlags) {
-                file << "This is an **enum flags** type. Multiple flags can be combined using the `|` "
-                        "character (e.g. `\"One|Two\"` with no whitespace). Flag names are case-sensitive.  ";
-                file << std::endl << "Enum flag names:" << std::endl;
+                out << "This is an **enum flags** type. Multiple flags can be combined using the `|` "
+                       "character (e.g. `\"One|Two\"` with no whitespace). Flag names are case-sensitive.  ";
+                out << std::endl << "Enum flag names:" << std::endl;
             } else {
-                file << "This is an **enum** type, and can be one of the following case-sensitive values:" << std::endl;
+                out << "This is an **enum** type, and can be one of the following case-sensitive values:" << std::endl;
             }
             for (auto &field : refDocs.fields) {
-                file << "- \"**" << field.name << "**\" - " << field.description << "" << std::endl;
+                out << "- \"**" << field.name << "**\" - " << field.description << "" << std::endl;
             }
         } else {
             if (!refDocs.fields.empty()) {
-                file << "| Field Name | Type | Default Value | Description |" << std::endl;
-                file << "|------------|------|---------------|-------------|" << std::endl;
+                out << "| Field Name | Type | Default Value | Description |" << std::endl;
+                out << "|------------|------|---------------|-------------|" << std::endl;
                 for (auto &field : refDocs.fields) {
-                    file << "| **" << field.name << "** | " << field.typeString << " | "
-                         << EscapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
-                         << std::endl;
+                    out << "| **" << field.name << "** | " << field.typeString << " | "
+                        << EscapeMarkdownString(field.defaultValue.serialize()) << " | " << field.description << " |"
+                        << std::endl;
                 }
             }
 
             if (metadata && !metadata->description.empty()) {
-                file << std::endl << metadata->description << std::endl;
+                out << std::endl << metadata->description << std::endl;
             }
         }
 
-        file << std::endl << "</div>" << std::endl;
+        out << std::endl << "</div>" << std::endl;
 
         for (auto &[subRefName, subRefType] : refDocs.references) {
             if (!savedDocs.count(subRefName)) {
-                SaveReferencedType(subRefName, subRefType);
+                SaveReferencedType(out, subRefName, subRefType);
             } else {
                 seeAlso.emplace(subRefName);
             }
@@ -245,15 +245,13 @@ struct MarkdownContext {
 
     template<typename ListType>
     void SavePage(const ListType &list, const CommonTypes *commonTypes = nullptr, CompList *otherList = nullptr) {
+        std::stringstream commonTypesSS;
         if (commonTypes && !commonTypes->empty()) {
-            file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
-            file << "## Common Types" << std::endl;
             for (auto &type : *commonTypes) {
                 auto *metadata = ecs::StructMetadata::Get(type);
                 Assertf(metadata, "Type has no metadata: %s", type.name());
-                SaveReferencedType(metadata->name, metadata->type);
+                SaveReferencedType(commonTypesSS, metadata->name, metadata->type);
             }
-            file << std::endl << "</div>" << std::endl << std::endl;
         }
 
         for (auto &entry : list) {
@@ -335,7 +333,7 @@ struct MarkdownContext {
                 seeAlso.clear();
 
                 for (auto &[refName, refType] : docs.references) {
-                    SaveReferencedType(refName, refType);
+                    SaveReferencedType(file, refName, refType);
                 }
 
                 if (!seeAlso.empty()) {
@@ -346,6 +344,14 @@ struct MarkdownContext {
                 }
             }
 
+            file << std::endl << "</div>" << std::endl << std::endl;
+        }
+
+        auto commonTypesStr = commonTypesSS.str();
+        if (!commonTypesStr.empty()) {
+            file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
+            file << "## Additional Types" << std::endl;
+            file << commonTypesStr;
             file << std::endl << "</div>" << std::endl << std::endl;
         }
     }
