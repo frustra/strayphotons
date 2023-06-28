@@ -248,6 +248,12 @@ their own event queues as needed.
 
 ## `scene_connection` Component
 
+The scene connection component has 2 functions:
+- Scenes can be requested to load asyncronously by providing one or more signal expression conditions.  
+  Scenes will stay loaded as long as at least one of the listed expressions evaluates to **true** (>= 0.5).
+- If the scene connection entity also has a [`transform` Component](#transform-component), any scene being loaded
+  with a matching `scene_connection` entity will have all its entities moved so that the connection points align.
+
 The `scene_connection` component has type: map&lt;string, vector&lt;[SignalExpression](#SignalExpression-type)&gt;&gt;
 
 **See Also:**
@@ -266,12 +272,29 @@ The `script` component has type: vector&lt;[ScriptInstance](#ScriptInstance-type
 
 ### `ScriptInstance` Type
 
-Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.
+Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.  
 Scripts can have 2 types: 
 - "prefab": Prefab scripts such as "template" will run during scene load.
-- "onTick": OnTick scripts will run during in the GameLogic thread during it's frame.
-            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.
-            Some OnTick scripts may also define event filters to only run when events are received.
+- "onTick": OnTick scripts (or Runtime scripts) will run during in GameLogic thread during its frame.  
+            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.  
+            Some OnTick scripts may also internally define event filters to only run when events are received.
+
+Script instances are defined using the following fields:
+| Instance Field | Type    | Description |
+|----------------|---------|-------------|
+| **prefab**     | string  | The name of a [Prefab Script](Prefab_Scripts.md) |
+| **onTick**     | string  | The name of a [Runtime Script](Runtime_Scripts.md) |
+| **parameters** | *any*   | A set of parameters to be given to the script. See individiaul script documentation for info. |
+
+Here is an example of an instance definition for a "spotlight" [`template` Prefab](Prefab_Scripts.md#template-prefab):
+```json
+{
+    "prefab": "template",
+    "parameters": {
+        "source": "spotlight"
+    }
+}
+```
 
 </div>
 
