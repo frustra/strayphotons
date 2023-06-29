@@ -160,10 +160,10 @@ their own event queues as needed.
     static StructMetadata MetadataEventBindings(typeid(EventBindings),
         "event_bindings",
         R"(
-Event bindings (along with signal bindings) are the main way entites communicate with eachother. 
-When an event is generated at an entity, it will first be delivered to any local event queues in the 
-[`event_input` Component](#event_input-component). Then it will be forwarded through any matching 
-event bindings to be delivered to other entities.
+Event bindings, along with [`signal_bindings`](#signal_bindings-component), are the main ways entites 
+communicate with eachother. When an event is generated at an entity, it will first be delivered to 
+any local event queues in the [`event_input` Component](#event_input-component). 
+Then it will be forwarded through any matching event bindings to be delivered to other entities.
 
 In their most basic form, event bindings will simply forward events to a new target:
 ```json
@@ -177,7 +177,7 @@ it will be forwarded to the `player:player` entity as the `/action/jump` event w
 Similarly, the `/trigger/object/enter` will be forwarded to both the `scene:object1` and `scene:object2` 
 entities as the `/notify/react` event, again with the original event data intact.
 
-> [!NOTE]
+> [!WARNING]
 > Events are forwarded recursively until a maximum binding depth is reached.  
 > Bindings should not contain loops or deep binding trees, otherwise events will be dropped.
 

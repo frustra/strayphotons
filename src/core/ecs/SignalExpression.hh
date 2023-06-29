@@ -41,9 +41,11 @@ Signal expressions support the following operations and functions:
   - `a - b`: Subtraction
   - `a * b`: Multiplication
   - `a / b`: Division (Divide by zero returns 0.0)
+  - `-a`: Sign Inverse
 - **Boolean operators**: (Inputs are true if >= 0.5, output is `0.0` or `1.0`)
   - `a && b`: Logical AND
   - `a || b`: Logical OR
+  - `!a`: Logical NOT
 - **Comparison operators**: (Output is `0.0` or `1.0`)
   - `a > b`: Greater Than
   - `a >= b`: Greater Than or Equal
@@ -65,8 +67,6 @@ Signal expressions support the following operations and functions:
     For example: `light#renderable.emissive` will return the `emissive` value from the `light` entity's `renderable` component.  
     Vector fields such as position or color can be accessed as `pos.x` or `color.r`.  
     **Note**: Only number-convertible fields can be referenced. Not all components are accessible from within the physics thread.
-
-
 )";
 
     static const size_t MAX_SIGNAL_EXPRESSION_NODES = 256;

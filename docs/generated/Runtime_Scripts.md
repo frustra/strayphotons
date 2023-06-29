@@ -601,9 +601,11 @@ Signal expressions support the following operations and functions:
   - `a - b`: Subtraction
   - `a * b`: Multiplication
   - `a / b`: Division (Divide by zero returns 0.0)
+  - `-a`: Sign Inverse
 - **Boolean operators**: (Inputs are true if >= 0.5, output is `0.0` or `1.0`)
   - `a && b`: Logical AND
   - `a || b`: Logical OR
+  - `!a`: Logical NOT
 - **Comparison operators**: (Output is `0.0` or `1.0`)
   - `a > b`: Greater Than
   - `a >= b`: Greater Than or Equal

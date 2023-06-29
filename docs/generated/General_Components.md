@@ -76,10 +76,10 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
 
 ## `event_bindings` Component
 
-Event bindings (along with signal bindings) are the main way entites communicate with eachother. 
-When an event is generated at an entity, it will first be delivered to any local event queues in the 
-[`event_input` Component](#event_input-component). Then it will be forwarded through any matching 
-event bindings to be delivered to other entities.
+Event bindings, along with [`signal_bindings`](#signal_bindings-component), are the main ways entites 
+communicate with eachother. When an event is generated at an entity, it will first be delivered to 
+any local event queues in the [`event_input` Component](#event_input-component). 
+Then it will be forwarded through any matching event bindings to be delivered to other entities.
 
 In their most basic form, event bindings will simply forward events to a new target:
 ```json
@@ -93,7 +93,7 @@ it will be forwarded to the `player:player` entity as the `/action/jump` event w
 Similarly, the `/trigger/object/enter` will be forwarded to both the `scene:object1` and `scene:object2` 
 entities as the `/notify/react` event, again with the original event data intact.
 
-> [!NOTE]
+> [!WARNING]
 > Events are forwarded recursively until a maximum binding depth is reached.  
 > Bindings should not contain loops or deep binding trees, otherwise events will be dropped.
 
@@ -228,6 +228,48 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
 
 ## `signal_bindings` Component
 
+A signal binding is a read-only signal who's value is determined by a [SignalExpression](#signalexpression-type). 
+Signal bindings can be referenced the same as signals from the [`signal_output` component](#signal_output-component).
+
+Signal bindings are used to forward state between entities, as well as make calculations about the state of the world.  
+Each signal represents a continuous value over time. When read, a binding will have its expression evaluated atomically 
+such that data is synchronized between signals and between entities.
+
+A simple signal binding to alias some values from another entity might look like this:
+```json
+"signal_bindings": {
+    "move_forward": "input:keyboard/key_w",
+    "move_back": "input:keyboard/key_s"
+    "move_left": "input:keyboard/key_a",
+    "move_right": "input:keyboard/key_d",
+}
+```
+This will map the *WASD* keys to movement signals on the local entity, decoupling the input source from the game logic.  
+You can see more examples of this being used in 
+[Stray Photon's Input Bindings](https://github.com/frustra/strayphotons/blob/master/assets/default_input_bindings.json).
+
+> [!WARNING]
+> Signal bindings may reference other signal bindings, which will be evaluated recursively up until a maximum depth.  
+> Signal expressions should not contain self-referential loops or deep reference trees to avoid unexpected `0.0` evaluations.
+
+> [!NOTE]
+> Referencing a missing entity or missing signal will result in a value of `0.0`.  
+> If a signal is defined in both the [`signal_output` component](#signal_output-component) and `signal_bindings` component 
+> of the same entity, the `signal_output` will take priority and override the binding.
+
+A more complex set of bindings could be added making use of the [SignalExpression](#signalexpression-type) syntax to 
+calculate an X/Y movement, and combine it with a joystick input:
+```json
+"signal_bindings": {
+    "move_x": "player/move_right - player/move_left + vr:controller_right/actions_main_in_movement.x",
+    "move_y": "player/move_forward - player/move_back + vr:controller_right/actions_main_in_movement.y"
+}
+```
+Depending on the source of the signals, functions like `min(1, x)` and `max(-1, x)` could be added to clamp movement speed.  
+Extra multipliers could also be added to adjust joystick senstiivity, movement speed, or flip axes.
+
+For binding state associated with a time, [`event_bindings`](#event_bindings-component) are used instead of signals.
+
 The `signal_bindings` component has type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
 
 **See Also:**
@@ -239,6 +281,25 @@ The `signal_bindings` component has type: map&lt;string, [SignalExpression](#Sig
 <div class="component_definition">
 
 ## `signal_output` Component
+
+The `signal_output` component stores a list of mutable signal values by name.  
+These values are stored as 64-bit double floating-point numbers that exist continuously over time, 
+and can be sampled by any [SignalExpression](#signalexpression-type).  
+Signal outputs can be written to by scripts and have their value changed in response to events in the world at runtime.
+
+> [!NOTE]
+> If a signal is defined in both the `signal_output` component and [`signal_bindings`](#signal_bindings-component) 
+> of the same entity, the `signal_output` will take priority and override the binding.
+
+Signal output components can have their initial values defined like this:
+```json
+"signal_output": {
+    "value1": 10.0,
+    "value2": 42.0,
+    "other": 0.0
+}
+```
+In the above case, setting the "other" output signal to `0.0` will override any `signal_bindings` named "other".
 
 The `signal_output` component has type: map&lt;string, double&gt;
 
@@ -324,9 +385,11 @@ Signal expressions support the following operations and functions:
   - `a - b`: Subtraction
   - `a * b`: Multiplication
   - `a / b`: Division (Divide by zero returns 0.0)
+  - `-a`: Sign Inverse
 - **Boolean operators**: (Inputs are true if >= 0.5, output is `0.0` or `1.0`)
   - `a && b`: Logical AND
   - `a || b`: Logical OR
+  - `!a`: Logical NOT
 - **Comparison operators**: (Output is `0.0` or `1.0`)
   - `a > b`: Greater Than
   - `a >= b`: Greater Than or Equal
