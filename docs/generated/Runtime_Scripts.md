@@ -1,58 +1,6 @@
 
 <div class="component_definition">
 
-## Common Types
-
-<div class="type_definition">
-
-### `EntityRef` Type
-
-An `EntityRef` is a stable reference to an entity via a string name. 
-
-Referenced entities do not need to exist at the point an `EntityRef` is defined.
-The reference will be automatically tracked and updated once the referenced entity is created.
-
-Reference names are defined the same as the `name` component:  
-`"<scene_name>:<entity_name>"`
-
-References can also be defined relative to their entity scope, the same as a `name` component.
-If just a relative name is provided, the reference will be expanded based on the scope root:  
-`"<scene_name>:<root_name>.<relative_name>"`
-
-The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
-
-</div>
-
-<div class="type_definition">
-
-### `SignalExpression` Type
-
-Signal expressions allow math and logic to be performed including almost any entity component property.
-Expressions are defined as strings and automatically parsed and compiled for fast game logic evaluation.
-
-A basic signal expression might look like this:  
-`"(entity_name/signal_value + 1) > 10"`
-
-The above will evaluate to `1` if the condition is true, or `0` if the condition is false.
-
-Most "error" cases will evaulate to 0, such as an empty expression, missing referenced signals or entities, or division by 0.
-
-Fields can be accessed on components using the following syntax:  
-`"<entity_name>#<component_name>.<field_name>"`
-
-For example: `light#renderable.emissive` will return the `emissive` value from the `light` entity's `renderable` component.
-
-Vector fields such as position or color can be accessed as `pos.x` or `color.r`.
-
-Note: Only number-compatble fields can be referenced. All evaluation is done using double floating point numbers.
-
-</div>
-
-</div>
-
-
-<div class="component_definition">
-
 ## `camera_view` Script
 
 The `camera_view` script has no configurable parameters
@@ -602,6 +550,85 @@ The `sun` script has no configurable parameters
 
 **See Also:**
 [EntityRef](#EntityRef-type)
+
+</div>
+
+
+<div class="component_definition">
+
+## Additional Types
+
+<div class="type_definition">
+
+### `EntityRef` Type
+
+An `EntityRef` is a stable reference to an entity via a string name. 
+
+Referenced entities do not need to exist at the point an `EntityRef` is defined.
+The reference will be automatically tracked and updated once the referenced entity is created.
+
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
+
+References can also be defined relative to their entity scope, the same as a `name` component.
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
+
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
+
+</div>
+
+<div class="type_definition">
+
+### `SignalExpression` Type
+
+Signal expressions allow math and logic to be performed using input from almost any entity property.  
+Expressions are defined as strings and automatically parsed and compiled for fast game logic evaluation.
+
+A basic signal expression might look like this:  
+`"(entity/input_value + 1) > 10"`
+
+The above will evaluate to `1.0` if the `input_value` signal on `entity` is greater than 9, or `0.0` otherwise.
+
+> [!NOTE]
+> All expressions are evaluated using double (64-bit) floating point numbers.  
+> Whitespace is required before operators and function names.
+
+Signal expressions support the following operations and functions:
+
+- **Arithmetic operators**:
+  - `a + b`: Addition
+  - `a - b`: Subtraction
+  - `a * b`: Multiplication
+  - `a / b`: Division (Divide by zero returns 0.0)
+  - `-a`: Sign Inverse
+- **Boolean operators**: (Inputs are true if >= 0.5, output is `0.0` or `1.0`)
+  - `a && b`: Logical AND
+  - `a || b`: Logical OR
+  - `!a`: Logical NOT
+- **Comparison operators**: (Output is `0.0` or `1.0`)
+  - `a > b`: Greater Than
+  - `a >= b`: Greater Than or Equal
+  - `a < b`: Less Than
+  - `a <= b`: Less Than or Equal
+  - `a == b`: Equal
+  - `a != b`: Not Equal
+- **Math functions**:
+  - `sin(x)`, `cos(x)`, `tan(x)` (Input in radians)
+  - `floor(x)`, `ceil(x)`, `abs(x)`
+  - `min(a, b)`, `max(a, b)`
+- **Focus functions**: (Possible focus layers: `Game`, `Menu`, `Overlay`)
+  - `is_focused(FocusLayer)`: Returns `1.0` if the layer is active, else `0.0`.
+  - `if_focused(FocusLayer, x)`: Returns `x` if the layer is active, else `0.0`.
+- **Entity signal access**:
+  - `<entity_name>/<signal_name>`: Read a signal on a specific entity. If the signal or entity is missing, returns `0.0`.
+- **Component field access**:  
+  - `"<entity_name>#<component_name>.<field_name>"`: Read a component value on a specific entity.  
+    For example: `light#renderable.emissive` will return the `emissive` value from the `light` entity's `renderable` component.  
+    Vector fields such as position or color can be accessed as `pos.x` or `color.r`.  
+    **Note**: Only number-convertible fields can be referenced. Not all components are accessible from within the physics thread.
+
+</div>
 
 </div>
 

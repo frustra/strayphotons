@@ -1,44 +1,6 @@
 
 <div class="component_definition">
 
-## Common Types
-
-<div class="type_definition">
-
-### `EntityRef` Type
-
-An `EntityRef` is a stable reference to an entity via a string name. 
-
-Referenced entities do not need to exist at the point an `EntityRef` is defined.
-The reference will be automatically tracked and updated once the referenced entity is created.
-
-Reference names are defined the same as the `name` component:  
-`"<scene_name>:<entity_name>"`
-
-References can also be defined relative to their entity scope, the same as a `name` component.
-If just a relative name is provided, the reference will be expanded based on the scope root:  
-`"<scene_name>:<root_name>.<relative_name>"`
-
-The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
-
-</div>
-
-<div class="type_definition">
-
-### `Transform` Type
-| Field Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
-| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
-| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
-
-</div>
-
-</div>
-
-
-<div class="component_definition">
-
 ## `physics` Component
 
 | Field Name | Type | Default Value | Description |
@@ -335,6 +297,44 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 **See Also:**
 [Transform](#Transform-type)
+
+</div>
+
+
+<div class="component_definition">
+
+## Additional Types
+
+<div class="type_definition">
+
+### `EntityRef` Type
+
+An `EntityRef` is a stable reference to an entity via a string name. 
+
+Referenced entities do not need to exist at the point an `EntityRef` is defined.
+The reference will be automatically tracked and updated once the referenced entity is created.
+
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
+
+References can also be defined relative to their entity scope, the same as a `name` component.
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
+
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
+
+</div>
+
+<div class="type_definition">
+
+### `Transform` Type
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
+| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
+| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
+
+</div>
 
 </div>
 

@@ -20,15 +20,6 @@
 #include <vector>
 
 namespace ecs {
-    static const char *DocsDescriptionScriptInstance = R"(
-Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.
-Scripts can have 2 types: 
-- "prefab": Prefab scripts such as "template" will run during scene load.
-- "onTick": OnTick scripts will run during in the GameLogic thread during it's frame.
-            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.
-            Some OnTick scripts may also define event filters to only run when events are received.
-)";
-
     class ScriptInstance {
     public:
         ScriptInstance() {}
@@ -67,7 +58,31 @@ Scripts can have 2 types:
     };
     static StructMetadata MetadataScriptInstance(typeid(ScriptInstance),
         "ScriptInstance",
-        DocsDescriptionScriptInstance);
+        R"(
+Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.  
+Scripts can have 2 types: 
+- "prefab": Prefab scripts such as "template" will run during scene load.
+- "onTick": OnTick scripts (or Runtime scripts) will run during in GameLogic thread during its frame.  
+            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.  
+            Some OnTick scripts may also internally define event filters to only run when events are received.
+
+Script instances are defined using the following fields:
+| Instance Field | Type    | Description |
+|----------------|---------|-------------|
+| **prefab**     | string  | The name of a [Prefab Script](Prefab_Scripts.md) |
+| **onTick**     | string  | The name of a [Runtime Script](Runtime_Scripts.md) |
+| **parameters** | *any*   | A set of parameters to be given to the script. See individiaul script documentation for info. |
+
+Here is an example of an instance definition for a "spotlight" [`template` Prefab](Prefab_Scripts.md#template-prefab):
+```json
+{
+    "prefab": "template",
+    "parameters": {
+        "source": "spotlight"
+    }
+}
+```
+)");
     template<>
     bool StructMetadata::Load<ScriptInstance>(ScriptInstance &dst, const picojson::value &src);
     template<>

@@ -218,6 +218,7 @@ namespace ecs {
                 }
             } else if (token == "is_focused" || token == "sin" || token == "cos" || token == "tan" ||
                        token == "floor" || token == "ceil" || token == "abs") {
+                // Parse as 1 argument function
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),
@@ -319,6 +320,7 @@ namespace ecs {
 
                 nodeStrings.emplace_back(std::string(token) + "( " + nodeStrings[inputIndex] + " )");
             } else if (token == "if_focused" || token == "min" || token == "max") {
+                // Parse as 2 argument function
                 if (index >= 0) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
                         std::string(token),

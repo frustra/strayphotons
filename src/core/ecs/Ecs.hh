@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "assets/Async.hh"
 #include "core/DispatchQueue.hh"
 #include "core/Tracing.hh"
 
