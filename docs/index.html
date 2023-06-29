@@ -52,17 +52,22 @@
         name: "Stray Photons",
         logo: "https://assets.strayphotons.net/logos/sp-laser-black.svg",
         repo: "https://github.com/frustra/strayphotons",
+        basePath: "https://raw.githubusercontent.com/frustra/strayphotons/master/docs/",
         relativePath: true,
         loadSidebar: true,
+        auto2top: true,
         subMaxLevel: 2,
         search: {
-          maxAge: 86400000,
+          maxAge: 2592000,
           depth: 6
         },
         alias: {
           '/.*/_sidebar.md': '/_sidebar.md'
         }
       };
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.$docsify.basePath = "";
+      }
     </script>
     <script src="docsify.js"></script>
     <script src="search.js"></script>
