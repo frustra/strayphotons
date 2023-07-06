@@ -305,7 +305,7 @@ struct MarkdownContext {
                          << " has no configurable parameters" << std::endl;
                 }
             } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
-                if (!metadata->description.empty()) {
+                if (!metadata->description.empty() && metadata->type != docs.fields.front().type) {
                     file << metadata->description << std::endl << std::endl;
                 }
                 if (pageType == PageType::Component) {

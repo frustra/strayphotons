@@ -288,28 +288,59 @@
 		"Transform": {
 			"properties": {
 				"rotate": {
-					"default": [0, 0, 0, 1],
-					"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized.",
-					"maxItems": 4,
-					"minItems": 4,
-					"prefixItems": [
+					"anyOf": [
 						{
-							"description": "An angle in degrees",
-							"exclusiveMaximum": 360,
-							"exclusiveMinimum": -360,
-							"type": "number"
+							"description": "A rotation around an axis, represented by the vector [angle_degrees, axis_x, axis_y, axis_z]. The axis does not to be normalized. As an example `[90, 1, 0, -1]` will rotate +90 degrees around an axis halfway between the +X and -Z directions. This is equivelent to `[-90, -1, 0, 1]`.",
+							"maxItems": 4,
+							"minItems": 4,
+							"prefixItems": [
+								{
+									"description": "An angle in degrees",
+									"exclusiveMaximum": 360,
+									"exclusiveMinimum": -360,
+									"type": "number"
+								},
+								{
+									"type": "number"
+								},
+								{
+									"type": "number"
+								},
+								{
+									"type": "number"
+								}
+							],
+							"type": "array"
 						},
 						{
-							"type": "number"
-						},
-						{
-							"type": "number"
-						},
-						{
-							"type": "number"
+							"items": {
+								"description": "A rotation around an axis, represented by the vector [angle_degrees, axis_x, axis_y, axis_z]. The axis does not to be normalized. As an example `[90, 1, 0, -1]` will rotate +90 degrees around an axis halfway between the +X and -Z directions. This is equivelent to `[-90, -1, 0, 1]`.",
+								"maxItems": 4,
+								"minItems": 4,
+								"prefixItems": [
+									{
+										"description": "An angle in degrees",
+										"exclusiveMaximum": 360,
+										"exclusiveMinimum": -360,
+										"type": "number"
+									},
+									{
+										"type": "number"
+									},
+									{
+										"type": "number"
+									},
+									{
+										"type": "number"
+									}
+								],
+								"type": "array"
+							},
+							"type": "array"
 						}
 					],
-					"type": "array"
+					"default": [0, 0, 0, 1],
+					"description": "Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized."
 				},
 				"scale": {
 					"anyOf": [
@@ -342,6 +373,13 @@
 				}
 			},
 			"type": "object"
+		},
+		"TriggerShape": {
+			"enum": [
+				"Box",
+				"Sphere"
+			],
+			"type": "string"
 		}
 	},
 	"properties": {
@@ -505,7 +543,7 @@
 						"properties": {
 							"threshold": {
 								"default": [0.5, 0.5, 0.5],
-								"description": "No description",
+								"description": "The `value` signal is set to **true** when all input RGB values are above their corresponding threshold. This is equivelent to the signal expression: `light_value_r >= threshold.x && light_value_g >= threshold.y && light_value_b >= threshold.z`",
 								"items": {
 									"type": "number"
 								},
@@ -896,11 +934,7 @@
 						"$ref": "#/definitions/Transform"
 					},
 					"trigger_area": {
-						"enum": [
-							"Box",
-							"Sphere"
-						],
-						"type": "string"
+						"$ref": "#/definitions/TriggerShape"
 					},
 					"trigger_group": {
 						"enum": [

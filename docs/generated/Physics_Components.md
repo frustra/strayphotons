@@ -241,9 +241,24 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 ## `laser_sensor` Component
 
+A laser sensor turns this entity's [`physics`](#physics-component) shapes into a receiver for laser signals.  
+Each physics frame [`laser_emitter`](#laser_emitter-component) entities will have their paths updated, 
+and any `laser_sensor` entities hit by lasers will output 3 color signals and a `value` signal based on the sensor's threshold.
+
+The following signals are written to this entity's [`signal_output` Component](General_Components.md#signal_output-component):
+```json
+// Total incoming laser light by color:
+light_value_r
+light_value_g
+light_value_b
+
+// Threshold value outputs 0.0 or 1.0:
+value
+```
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **threshold** | vec3 | [0.5, 0.5, 0.5] | No description |
+| **threshold** | vec3 | [0.5, 0.5, 0.5] | The `value` signal is set to **true** when all input RGB values are above their corresponding threshold. This is equivelent to the signal expression: `light_value_r >= threshold.x && light_value_g >= threshold.y && light_value_b >= threshold.z` |
 
 </div>
 
@@ -252,14 +267,43 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 ## `trigger_area` Component
 
+When any entity with a [`trigger_group` Component](#trigger_group-component) enters or exits this area, 
+an event will be generated based on the specific group.  
+A count signal is also updated for each group type if this entity also has a [`signal_output` Component](General_Components.md#signal_output-component).
+
+The generated events are in the following form:
+```
+/trigger/<trigger_group>/enter
+/trigger/<trigger_group>/leave
+
+Example:
+/trigger/player/enter
+/trigger/player/leave
+```
+
+Similarly, the signals will be set in the [`signal_output` Component](General_Components.md#signal_output-component) like this:
+```
+trigger_<trigger_group>_count
+
+Example:
+trigger_player_count
+```
+
+> [!NOTE] Both generated events and signals are case-sensitive (all lowercase).
+
 The `trigger_area` component has type: enum [TriggerShape](#TriggerShape-type)
 
 <div class="type_definition">
 
 ### `TriggerShape` Type
+
+A [`trigger_area`](#trigger_area-component)'s active area is defined by its `TriggerShape`, which is scaled and positioned based on the entity's [`transform` Component](General_Components.md#transform-component)
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**Box**" - No description
-- "**Sphere**" - No description
+- "**Box**" - A 1x1x1 meter cube (vertices at -0.5 and 0.5) centered around the entity's origin.  
+Can be visualized by adding a `box` renderable to the same entity, or using the `laser_cube` template.
+- "**Sphere**" - A 1.0 meter diameter sphere (0.5m radius) centered around the entity's origin.  
+Can be visualized by adding a `sphere` renderable to the same entity.
 
 </div>
 
@@ -275,10 +319,13 @@ The `trigger_group` component has type: enum [TriggerGroup](#TriggerGroup-type)
 <div class="type_definition">
 
 ### `TriggerGroup` Type
+
+An entity's `trigger_group` determines which signals and events are generated when it enters the [`trigger_area`](#trigger_area-component) of another entity (or itself if the entity is also a `trigger_area`).
+
 This is an **enum** type, and can be one of the following case-sensitive values:
-- "**Player**" - No description
-- "**Object**" - No description
-- "**Magnetic**" - No description
+- "**Player**" - A group for player entities.
+- "**Object**" - A group for generic movable object entities.
+- "**Magnetic**" - A group for magnetic entities.
 
 </div>
 

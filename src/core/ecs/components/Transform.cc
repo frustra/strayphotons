@@ -113,6 +113,16 @@ namespace ecs {
     void StructMetadata::DefineSchema<Transform>(picojson::value &dst, sp::json::SchemaTypeReferences *references) {
         auto &typeSchema = dst.get<picojson::object>();
         auto &properties = typeSchema["properties"].get<picojson::object>();
+
+        auto &rotateValue = properties["rotate"];
+        auto &rotateSchema = rotateValue.get<picojson::object>();
+        auto defaultValue = rotateSchema["default"];
+        auto description = rotateSchema["description"];
+        rotateSchema.clear();
+        sp::json::SaveSchema<std::vector<glm::quat>>(rotateValue);
+        rotateSchema["default"] = defaultValue;
+        rotateSchema["description"] = description;
+
         auto &scaleSchema = properties["scale"].get<picojson::object>();
         scaleSchema.erase("type");
         scaleSchema.erase("items");
