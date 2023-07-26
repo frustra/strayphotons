@@ -13,6 +13,7 @@
 #include "core/Common.hh"
 #include "core/DispatchQueue.hh"
 #include "core/EntityMap.hh"
+#include "core/LockFreeEventQueue.hh"
 #include "core/Logging.hh"
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
@@ -106,7 +107,7 @@ namespace sp {
 
     class PhysxManager : public RegisteredThread {
     public:
-        PhysxManager(ecs::EventQueue &windowInputQueue, bool stepMode);
+        PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode);
         virtual ~PhysxManager() override;
 
     private:
@@ -141,7 +142,7 @@ namespace sp {
         std::atomic_bool exiting = false;
         std::vector<uint8_t> scratchBlock;
 
-        ecs::EventQueue &windowInputQueue;
+        LockFreeEventQueue<ecs::Event> &windowInputQueue;
 
         SceneManager &scenes;
         CFuncCollection funcs;

@@ -11,6 +11,7 @@
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "core/Defer.hh"
+#include "core/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
@@ -71,7 +72,7 @@ namespace sp {
         std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
         GraphicsManager graphics;
 
-        ecs::EventQueue windowEventQueue;
+        LockFreeEventQueue<ecs::Event> windowEventQueue;
 
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
