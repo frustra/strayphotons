@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <future>
+#include <lib.rs.h>
 #include <robin_hood.h>
 #include <variant>
 
@@ -201,9 +202,9 @@ namespace sp::vulkan {
             return queueFamilyIndex[QueueType(type)];
         }
 
-        GLFWwindow *GetWindow() {
+        /*GLFWwindow *GetWindow() {
             return window;
-        }
+        }*/
 
         void *Win32WindowHandle() override;
 
@@ -242,7 +243,7 @@ namespace sp::vulkan {
         void SetTitle(std::string title) override;
 
     private:
-        void CreateSwapchain();
+        void CreateSwapchain(vk::PhysicalDevice physicalDevice);
         void CreateTestPipeline();
         void RecreateSwapchain();
 
@@ -259,7 +260,6 @@ namespace sp::vulkan {
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
-
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         unique_ptr<PerfTimer> perfTimer;
 
@@ -368,7 +368,6 @@ namespace sp::vulkan {
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;
-        GLFWwindow *window = nullptr;
 
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 

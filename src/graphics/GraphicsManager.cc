@@ -71,8 +71,8 @@ namespace sp {
         auto vkContext = new vulkan::DeviceContext(enableValidationLayers, enableSwapchain);
         context.reset(vkContext);
 
-        GLFWwindow *window = vkContext->GetWindow();
-        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
+            // GLFWwindow *window = vkContext->GetWindow();
+            // if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
     #endif
 
         if (game->options.count("size")) {

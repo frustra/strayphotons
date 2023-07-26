@@ -73,7 +73,7 @@ namespace sp {
     #endif
 
     #ifdef SP_INPUT_SUPPORT_GLFW
-        unique_ptr<GlfwInputHandler> glfwInputHandler;
+        unique_ptr<GlfwInputHandler> windowInputHandler;
     #endif
     };
 } // namespace sp
