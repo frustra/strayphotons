@@ -53,7 +53,7 @@ namespace FocusLockTests {
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, keyboard, ecs::Event{TEST_EVENT_KEY, keyboard, 42});
-            AssertEqual(sentCount, 1, "Expected to successfully queue 1 event");
+            AssertEqual(sentCount, 1u, "Expected to successfully queue 1 event");
 
             double val = ecs::SignalRef(player, TEST_SIGNAL_ACTION).GetSignal(lock);
             AssertEqual(val, 42.0, "Expected signal to match button source");
@@ -91,7 +91,7 @@ namespace FocusLockTests {
             auto lock = ecs::StartTransaction<ecs::SendEventsLock, ecs::ReadSignalsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, keyboard, ecs::Event{TEST_EVENT_KEY, keyboard, 42});
-            AssertEqual(sentCount, 0, "Expected to not to queue any events");
+            AssertEqual(sentCount, 0u, "Expected to not to queue any events");
 
             ecs::Event event;
             AssertTrue(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected second event");

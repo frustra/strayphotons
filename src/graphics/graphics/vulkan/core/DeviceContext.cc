@@ -27,11 +27,14 @@
 #include <string>
 
 #define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+// #include <GLFW/glfw3.h>
 #ifdef _WIN32
     #define GLFW_EXPOSE_NATIVE_WIN32
-    #include <glfw/glfw3native.h>
+//    #include <glfw/glfw3native.h>
 #endif
+
+// RUST
+#include <lib.rs.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -69,9 +72,9 @@ namespace sp::vulkan {
         return VK_FALSE;
     }
 
-    static void glfwErrorCallback(int error, const char *message) {
+    /*static void glfwErrorCallback(int error, const char *message) {
         Errorf("GLFW returned %d: %s", error, message);
-    }
+    }*/
 
     void DeviceContext::DeleteAllocator(VmaAllocator alloc) {
         if (alloc) vmaDestroyAllocator(alloc);
@@ -81,21 +84,21 @@ namespace sp::vulkan {
         : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
           frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
-        glfwSetErrorCallback(glfwErrorCallback);
+        // glfwSetErrorCallback(glfwErrorCallback);
 
-        if (!glfwInit()) {
+        /*if (!glfwInit()) {
             throw "glfw failed";
-        }
+        }*/
 
-        Assert(glfwVulkanSupported(), "Vulkan not supported");
+        // Assert(glfwVulkanSupported(), "Vulkan not supported");
 
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+        // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        // glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
         // Disable OpenGL context creation
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         std::vector<const char *> extensions, layers;
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
@@ -116,24 +119,19 @@ namespace sp::vulkan {
             extensions.push_back(name.data());
         }
 
-        uint32_t requiredExtensionCount = 0;
+        /*uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
             extensions.emplace_back(requiredExtensions[i]);
         }
+        extensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        extensions.emplace_back("VK_KHR_wayland_surface"); // FIXME: Platform specific.
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);*/
 
         if (enableValidationLayers) {
             Logf("Running with Vulkan validation layer");
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
-        }
-
-        if (enableSwapchain) {
-            // Create window and surface
-            auto initialSize = CVarWindowSize.Get();
-            window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
-            Assert(window, "glfw window creation failed");
         }
 
         vk::ApplicationInfo applicationInfo("Stray Photons",
@@ -163,20 +161,28 @@ namespace sp::vulkan {
         debugInfo.pUserData = this;
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
 
-        instance = vk::createInstanceUnique(createInfo);
+        static auto rsContext = sp::rs::create_context();
+
+        // instance = vk::createInstanceUnique(createInfo);
+        instance = vk::UniqueInstance((VkInstance)sp::rs::get_instance_handle(*rsContext));
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
         debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo);
 
-        if (enableSwapchain) {
-            vk::SurfaceKHR glfwSurface;
-            auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
-            AssertVKSuccess(result, "creating window surface");
+        // if (enableSwapchain) {
+        //   Create window and surface
+        // auto initialSize = CVarWindowSize.Get();
+        Logf("Hello, CPP!");
+        uint64_t rawHandle = sp::rs::get_surface_handle(*rsContext);
+        VkSurfaceKHR surfaceHandle = (VkSurfaceKHR)rawHandle;
+        // Assert(surface, "window creation failed");
 
-            vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
-            surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
-        }
+        vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
+        surface = vk::UniqueSurfaceKHR(std::move(surfaceHandle), deleter);
+        //}
 
-        auto physicalDevices = instance->enumeratePhysicalDevices();
+        vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(
+            std::move((VkPhysicalDevice)sp::rs::get_physical_device_handle(*rsContext)));
+        /*auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
@@ -185,7 +191,7 @@ namespace sp::vulkan {
             // auto features = device.getFeatures();
             Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
             physicalDevice = physicalDevices.front();
-        }
+        }*/
         Assert(physicalDevice, "No suitable graphics device found!");
 
         std::array<uint32, QUEUE_TYPES_COUNT> queueIndex;
@@ -504,7 +510,7 @@ namespace sp::vulkan {
 
         perfTimer.reset(new PerfTimer(*this));
 
-        int modeCount;
+        /*int modeCount;
         const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
         if (modes && modeCount > 0) {
             monitorModes.resize(modeCount);
@@ -516,29 +522,31 @@ namespace sp::vulkan {
             });
         } else {
             Warnf("Failed to read Glfw monitor modes");
-        }
+        }*/
 
-        if (enableSwapchain) CreateSwapchain();
+        if (enableSwapchain) CreateSwapchain(physicalDevice);
+
+        sp::rs::run_event_loop(*rsContext);
     }
 
     DeviceContext::~DeviceContext() {
         if (device) {
             device->waitIdle();
         }
-        if (window) {
+        /*if (window) {
             glfwDestroyWindow(window);
-        }
+        }*/
 
 #ifdef TRACY_ENABLE_GRAPHICS
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
 #endif
 
-        glfwTerminate();
+        // glfwTerminate();
     }
 
     // Releases old swapchain after creating a new one
-    void DeviceContext::CreateSwapchain() {
+    void DeviceContext::CreateSwapchain(vk::PhysicalDevice physicalDevice) {
         ZoneScoped;
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
 
@@ -605,21 +613,22 @@ namespace sp::vulkan {
     void DeviceContext::RecreateSwapchain() {
         ZoneScoped;
         device->waitIdle();
-        CreateSwapchain();
+        CreateSwapchain(physicalDevice);
     }
 
     void DeviceContext::SetTitle(string title) {
         Assert(std::this_thread::get_id() == mainThread, "DeviceContext::SetTitle must be called from main thread");
-        if (window) glfwSetWindowTitle(window, title.c_str());
+        // if (window) glfwSetWindowTitle(window, title.c_str());
     }
 
     bool DeviceContext::ShouldClose() {
-        return window && !!glfwWindowShouldClose(window);
+        // return window && !!glfwWindowShouldClose(window);
+        return false;
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
         Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
-        if (window) {
+        /*if (window) {
             bool fullscreen = CVarWindowFullscreen.Get();
             if (glfwFullscreen != fullscreen) {
                 if (fullscreen) {
@@ -663,9 +672,9 @@ namespace sp::vulkan {
             if (fbExtents.x > 0 && fbExtents.y > 0) {
                 view.extents = fbExtents;
             }
-        } else {
-            view.extents = CVarWindowSize.Get();
-        }
+        } else {*/
+        view.extents = CVarWindowSize.Get();
+        //}
         view.fov = glm::radians(CVarFieldOfView.Get());
         view.UpdateProjectionMatrix();
     }
@@ -673,7 +682,7 @@ namespace sp::vulkan {
     void DeviceContext::UpdateInputModeFromFocus() {
         Assert(std::this_thread::get_id() == mainThread, "UpdateInputModeFromFocus must be called from main thread");
         ZoneScoped;
-        if (!window) return;
+        /*if (!window) return;
 
         auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
         if (lock.Has<ecs::FocusLock>()) {
@@ -683,7 +692,7 @@ namespace sp::vulkan {
             } else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
-        }
+        }*/
     }
 
     void DeviceContext::BeginFrame() {
@@ -800,7 +809,7 @@ namespace sp::vulkan {
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
-        double frameEnd = glfwGetTime();
+        double frameEnd = (double)chrono_clock::now().time_since_epoch().count() / 1e9; // FIXME: GetTime function
         fpsTimer += frameEnd - lastFrameEnd;
         frameCounterThisSecond++;
 

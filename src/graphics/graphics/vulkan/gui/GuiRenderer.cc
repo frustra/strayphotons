@@ -17,7 +17,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
-#include <GLFW/glfw3.h>
+// #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <imgui/imgui.h>
 
@@ -76,7 +76,7 @@ namespace sp::vulkan {
     }
 
     void GuiRenderer::Tick() {
-        double currTime = glfwGetTime();
+        double currTime = (double)chrono_clock::now().time_since_epoch().count() / 1e9;
         deltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
         lastTime = currTime;
     }

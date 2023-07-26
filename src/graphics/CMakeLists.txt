@@ -15,9 +15,9 @@ add_library(${PROJECT_GRAPHICS_VULKAN_XR_LIB} STATIC)
 target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
-    "$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>"
-)
+#target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
+#    "$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>"
+#)
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
@@ -34,12 +34,12 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
-    glfw-egl # Prevents X11 context creation
+#    glfw-egl # Prevents X11 context creation
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_XR_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     ${PROJECT_XR_CORE_LIB}
-    glfw
+#    glfw
 )
 
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
