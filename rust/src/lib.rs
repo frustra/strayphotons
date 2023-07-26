@@ -22,10 +22,7 @@ use vulkano::{
 use vulkano::{Handle, VulkanObject};
 use vulkano_win::VkSurfaceBuild;
 use winit::dpi::LogicalSize;
-use winit::{
-    event_loop::EventLoop,
-    window::{Fullscreen, WindowBuilder},
-};
+use winit::{event_loop::EventLoop, window::WindowBuilder};
 
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
@@ -100,14 +97,8 @@ fn create_context(x: i32, y: i32) -> Box<MyContext> {
     let library: Arc<VulkanLibrary> = VulkanLibrary::new().expect("no local Vulkan library/DLL");
     let mut required_extensions: vulkano::instance::InstanceExtensions =
         vulkano_win::required_extensions(&library);
-    /*
-    extensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
-        extensions.emplace_back("VK_KHR_wayland_surface"); // FIXME: Platform specific.
-        extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    */
+
     required_extensions.khr_surface = true;
-    required_extensions.khr_wayland_surface = true;
     required_extensions.khr_get_physical_device_properties2 = true;
     required_extensions.ext_debug_utils = true;
 
@@ -121,12 +112,12 @@ fn create_context(x: i32, y: i32) -> Box<MyContext> {
     )
     .expect("failed to create instance");
 
-    let event_loop = EventLoop::new(); // ignore this for now
-    let monitor = event_loop
+    let event_loop = EventLoop::new();
+    /*let monitor = event_loop
         .available_monitors()
         .next()
         .expect("no monitor found!");
-    let fullscreen = Some(Fullscreen::Borderless(Some(monitor.clone())));
+    let fullscreen = Some(Fullscreen::Borderless(Some(monitor.clone())));*/
     let surface = WindowBuilder::new()
         .with_title("STRAY PHOTONS")
         .with_inner_size(LogicalSize {
@@ -152,7 +143,7 @@ fn create_context(x: i32, y: i32) -> Box<MyContext> {
                 queue_family_index,
                 ..Default::default()
             }],
-            enabled_extensions: device_extensions, // new
+            enabled_extensions: device_extensions,
             ..Default::default()
         },
     )
