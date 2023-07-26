@@ -161,7 +161,7 @@ namespace sp::vulkan {
         debugInfo.pUserData = this;
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
 
-        static auto rsContext = sp::rs::create_context();
+        static auto rsContext = sp::rs::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y);
 
         // instance = vk::createInstanceUnique(createInfo);
         instance = vk::UniqueInstance((VkInstance)sp::rs::get_instance_handle(*rsContext));
@@ -177,12 +177,12 @@ namespace sp::vulkan {
         // Assert(surface, "window creation failed");
 
         vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
-        surface = vk::UniqueSurfaceKHR(std::move(surfaceHandle), deleter);
+        surface = vk::UniqueSurfaceKHR(surfaceHandle, deleter);
         //}
 
-        vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(
-            std::move((VkPhysicalDevice)sp::rs::get_physical_device_handle(*rsContext)));
-        /*auto physicalDevices = instance->enumeratePhysicalDevices();
+        /*vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(
+            (VkPhysicalDevice)sp::rs::get_physical_device_handle(*rsContext));*/
+        auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
@@ -191,7 +191,7 @@ namespace sp::vulkan {
             // auto features = device.getFeatures();
             Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
             physicalDevice = physicalDevices.front();
-        }*/
+        }
         Assert(physicalDevice, "No suitable graphics device found!");
 
         std::array<uint32, QUEUE_TYPES_COUNT> queueIndex;
@@ -526,7 +526,7 @@ namespace sp::vulkan {
 
         if (enableSwapchain) CreateSwapchain(physicalDevice);
 
-        sp::rs::run_event_loop(*rsContext);
+        // sp::rs::run_event_loop(*rsContext);
     }
 
     DeviceContext::~DeviceContext() {
@@ -582,7 +582,8 @@ namespace sp::vulkan {
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
-        swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
+        swapchainInfo.imageExtent.setWidth(CVarWindowSize.Get().x); // surfaceCapabilities.currentExtent;
+        swapchainInfo.imageExtent.setHeight(CVarWindowSize.Get().y);
         swapchainInfo.imageArrayLayers = 1;
         // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
         swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;

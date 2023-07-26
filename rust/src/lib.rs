@@ -21,6 +21,7 @@ use vulkano::{
 };
 use vulkano::{Handle, VulkanObject};
 use vulkano_win::VkSurfaceBuild;
+use winit::dpi::LogicalSize;
 use winit::{
     event_loop::EventLoop,
     window::{Fullscreen, WindowBuilder},
@@ -43,7 +44,7 @@ pub struct MyContext {
 mod ffi_rust {
     extern "Rust" {
         type MyContext;
-        fn create_context() -> Box<MyContext>;
+        fn create_context(x: i32, y: i32) -> Box<MyContext>;
         fn get_surface_handle(context: &MyContext) -> u64;
         fn get_physical_device_handle(context: &MyContext) -> u64;
         fn get_instance_handle(context: &MyContext) -> u64;
@@ -95,7 +96,7 @@ pub fn select_physical_device(
 unsafe impl Send for MyContext {}
 unsafe impl Sync for MyContext {}
 
-fn create_context() -> Box<MyContext> {
+fn create_context(x: i32, y: i32) -> Box<MyContext> {
     let library: Arc<VulkanLibrary> = VulkanLibrary::new().expect("no local Vulkan library/DLL");
     let mut required_extensions: vulkano::instance::InstanceExtensions =
         vulkano_win::required_extensions(&library);
@@ -128,7 +129,11 @@ fn create_context() -> Box<MyContext> {
     let fullscreen = Some(Fullscreen::Borderless(Some(monitor.clone())));
     let surface = WindowBuilder::new()
         .with_title("STRAY PHOTONS")
-        .with_fullscreen(fullscreen)
+        .with_inner_size(LogicalSize {
+            width: x,
+            height: y,
+        })
+        //.with_fullscreen(fullscreen)
         .build_vk_surface(&event_loop, instance.clone())
         .unwrap();
 

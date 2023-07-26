@@ -9,6 +9,10 @@
 		"twxs.cmake",
 		"slevesque.shader",
 		"cesium.gltf-vscode",
+		// Rust extensions
+		"rust-lang.rust-analyzer",
+		"jedeop.crates-completer",
+		"tamasfe.even-better-toml",
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": [
