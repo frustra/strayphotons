@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include "core/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
-#include "ecs/EventQueue.hh"
 
 #include <glm/glm.hpp>
 
@@ -18,7 +18,7 @@ struct GLFWwindow;
 namespace sp {
     class GlfwInputHandler {
     public:
-        GlfwInputHandler(ecs::EventQueue &windowEventQueue, GLFWwindow &window);
+        GlfwInputHandler(LockFreeEventQueue<ecs::Event> &windowEventQueue, GLFWwindow &window);
         ~GlfwInputHandler();
 
         void Frame();
@@ -32,7 +32,7 @@ namespace sp {
         static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
     private:
-        ecs::EventQueue &outputEventQueue;
+        LockFreeEventQueue<ecs::Event> &outputEventQueue;
         GLFWwindow *window = nullptr;
 
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");

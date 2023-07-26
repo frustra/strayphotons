@@ -31,6 +31,15 @@ namespace sp {
             return false;
         }
 
+        template<typename Fn>
+        void PollEvents(Fn &&eventCallback) {
+            std::lock_guard lock(eventMutex);
+            for (auto &event : eventBuffer) {
+                eventCallback(event);
+            }
+            eventBuffer.clear();
+        }
+
         void PushEvent(Event &&event) {
             std::lock_guard lock(eventMutex);
             eventBuffer.emplace_back(std::move(event));
