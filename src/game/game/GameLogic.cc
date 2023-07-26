@@ -8,13 +8,14 @@
 #include "GameLogic.hh"
 
 #include "console/Console.hh"
+#include "core/LockFreeEventQueue.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "input/BindingNames.hh"
 
 namespace sp {
-    GameLogic::GameLogic(ecs::EventQueue &windowInputQueue, bool stepMode)
+    GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode)
         : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue), stepMode(stepMode) {
         if (stepMode) {
             funcs.Register<unsigned int>("steplogic",
@@ -30,7 +31,7 @@ namespace sp {
     }
 
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
-        ecs::EventQueue &inputQueue) {
+        LockFreeEventQueue<ecs::Event> &inputQueue) {
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         static const ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
 
@@ -39,8 +40,7 @@ namespace sp {
         auto keyboard = keyboardEntity.Get(lock);
         auto mouse = mouseEntity.Get(lock);
 
-        ecs::Event event;
-        while (inputQueue.Poll(event, lock.GetTransactionId())) {
+        inputQueue.PollEvents([&](const ecs::Event &event) {
             if (event.source == keyboard) {
                 ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
             } else if (event.source == mouse) {
@@ -94,7 +94,7 @@ namespace sp {
                     signalRef.ClearValue(lock);
                 }
             }
-        }
+        });
     }
 
     void GameLogic::Frame() {

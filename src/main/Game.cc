@@ -45,7 +45,7 @@ namespace sp {
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this, startupScript != nullptr), windowEventQueue(ecs::EventQueue::MAX_QUEUE_SIZE),
+          graphics(this, startupScript != nullptr),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(windowEventQueue, startupScript != nullptr),
