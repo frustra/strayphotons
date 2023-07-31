@@ -1,27 +1,13 @@
 [package]
 name = "sp-sys"
 version = "0.1.0"
-authors = ["xthexder"]
-edition = "2018"
+authors = ["xthexder", "nauscar"]
+edition = "2021"
+license-file = "../../LICENSE-MPL-2.0"
 
 [features]
-default = ["api", "gfx", "wasm"]
-api = []
-gfx = ["dep:vulkano", "dep:vulkano-win", "dep:winit"]
-wasm = ["dep:wasmer"]
-
-[dependencies]
-cxx = "1.0"
-anyhow = "1.0"
-static_assertions = "1.1"
-once_cell = "*"
-vulkano = { version = "0.33", optional = true }
-vulkano-win = { version = "0.33", optional = true }
-winit = { version = "0.28", optional = true }
-wasmer = { version = "2.1", optional = true }
+default = []
+debug = []
 
 [build-dependencies]
-cxx-build = "1.0"
-
-[lib]
-crate-type = ["staticlib"]
+cmake = "0.1"

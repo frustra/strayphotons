@@ -29,10 +29,7 @@
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
-
-#if RUST_CXX
-    #include <lib.rs.h>
-#endif
+#include <wasm.rs.h>
 
 namespace sp {
     std::atomic_int gameExitCode;
@@ -89,9 +86,7 @@ namespace sp {
 
         GetConsoleManager().StartInputLoop();
 
-#if RUST_CXX
-        sp::rs::print_hello();
-#endif
+        sp::wasm::print_hello();
 
         if (options.count("command")) {
             for (auto &cmdline : options["command"].as<vector<string>>()) {

@@ -82,7 +82,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
-    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fgnuc-version=5")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Wformat-security -Wno-deprecated-volatile -stdlib=libc++") #-Werror -fgnuc-version=5
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
@@ -176,19 +176,15 @@ endif()
 
 if(SP_BUILD_RUST)
     message(STATUS "Building with Rust")
-    add_subdirectory(rust/sp-sys)
+    add_subdirectory(rust/sp-rs)
     add_subdirectory(wasm)
 
-    target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
-        RUST_CXX
-    )
-
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        sp-sys
+        sp-rs
     )
     
     if(ipo_supported)
-        set_target_properties(sp-sys PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+        set_target_properties(sp-rs PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
 

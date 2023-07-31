@@ -19,7 +19,7 @@
 
 #include <atomic>
 #include <future>
-#include <lib.rs.h>
+#include <gfx.rs.h>
 #include <robin_hood.h>
 #include <variant>
 

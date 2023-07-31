@@ -6,10 +6,27 @@
  */
 
 use static_assertions::assert_eq_size;
+use std::error::Error;
 use std::mem::MaybeUninit;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use wasmer::{imports, Extern, Function, Instance, Module, NativeFunc, Store, WasmPtr, WasmerEnv};
+
+#[cxx::bridge(namespace = "sp::wasm")]
+mod ctx {
+    extern "Rust" {
+        fn print_hello();
+    }
+}
+
+fn print_hello() {
+    println!("hello world!");
+
+    let result = run_wasm();
+    if result.is_err() {
+        println!("run_wasm() failed! {}", result.err().unwrap());
+    }
+}
 
 #[repr(C, packed(4))]
 #[derive(Copy, Clone)]
@@ -96,7 +113,7 @@ wasm_to_c_helper!(Transform, transform_from_pos(pos: GlmVec3));
 wasm_to_c_helper!(GlmVec3, transform_get_position(t: Transform));
 wasm_to_c_helper!(Transform, transform_set_position(pos: GlmVec3));
 
-pub fn run_wasm() -> anyhow::Result<()> {
+pub fn run_wasm() -> Result<(), Box<dyn Error>> {
     let store = Store::default();
     let module = Module::from_file(&store, Path::new("scripts/script.wasm"))?;
     println!("Loaded wasm module");
