@@ -172,8 +172,8 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         auto frameEnd = chrono_clock::now();
         while (!gameExitTriggered.test()) {
-            static const char *frameName = "WindowInput";
-            FrameMarkStart(frameName);
+            // static const char *frameName = "WindowInput";
+            // FrameMarkStart(frameName);
             if (startupScript) {
                 while (graphicsStepCount < graphicsMaxStepCount) {
                     graphics.InputFrame();
@@ -200,7 +200,7 @@ namespace sp {
             }
 
             std::this_thread::sleep_until(frameEnd);
-            FrameMarkEnd(frameName);
+            // FrameMarkEnd(frameName);
         }
         graphics.StopThread();
 #else

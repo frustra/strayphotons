@@ -18,4 +18,5 @@
 /strayphotons
 /strayphotons.zip
 /shaders/**/*.spv
-/rust/target
+/target
+Cargo.lock

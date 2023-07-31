@@ -176,7 +176,7 @@ endif()
 
 if(SP_BUILD_RUST)
     message(STATUS "Building with Rust")
-    add_subdirectory(rust)
+    add_subdirectory(rust/sp-sys)
     add_subdirectory(wasm)
 
     target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
@@ -184,11 +184,11 @@ if(SP_BUILD_RUST)
     )
 
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        sp-rust
+        sp-sys
     )
     
     if(ipo_supported)
-        set_target_properties(sp-rust PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+        set_target_properties(sp-sys PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
 
