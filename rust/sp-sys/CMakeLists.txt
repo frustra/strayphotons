@@ -14,19 +14,19 @@ else ()
 endif ()
 
 if(WIN32)
-    set(CXXBRIDGE_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/sp_rust.lib")
+    set(CXXBRIDGE_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/sp_sys.lib")
 else()
-    set(CXXBRIDGE_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libsp_rust.a")
+    set(CXXBRIDGE_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libsp_sys.a")
 endif()
 
 # Add rust source files here, and in build.rs
 set(RUST_SOURCE_FILES
     src/lib.rs
-    src/wasmer_vm.rs
+    src/wasm.rs
 )
 
-set(CXXBRIDGE_CC "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rust/src/lib.rs.cc")
-file(GENERATE OUTPUT rust_includes.list CONTENT "$<TARGET_PROPERTY:sp-rust,INCLUDE_DIRECTORIES>")
+set(CXXBRIDGE_CC "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-sys/src/lib.rs.cc")
+file(GENERATE OUTPUT rust_includes.list CONTENT "$<TARGET_PROPERTY:sp-sys,INCLUDE_DIRECTORIES>")
 add_custom_command(COMMENT "Run cxxbridge codegen"
     OUTPUT ${CXXBRIDGE_LIB} ${CXXBRIDGE_CC}
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml ${CMAKE_CURRENT_BINARY_DIR}/rust_includes.list
@@ -34,28 +34,33 @@ add_custom_command(COMMENT "Run cxxbridge codegen"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_library(sp-rust STATIC ${CXXBRIDGE_CC})
+add_library(sp-sys STATIC ${CXXBRIDGE_CC})
 
-target_include_directories(sp-rust
+target_include_directories(sp-sys
     PUBLIC
-        ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rust/src
+        ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-sys/src
+)
+
+target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} 
+    PUBLIC
+        ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-sys/src
 )
 
 # Adding dependencies here will automatically setup include directories for Rust
-target_link_libraries(sp-rust PRIVATE
+target_link_libraries(sp-sys PRIVATE
     ${CXXBRIDGE_LIB}
     ${PROJECT_CORE_LIB}
     Tecs
 )
 
 if(WIN32)
-    target_link_libraries(sp-rust PRIVATE
+    target_link_libraries(sp-sys PRIVATE
         ws2_32
         userenv
         bcrypt
     )
 elseif(UNIX)
-    target_link_libraries(sp-rust PRIVATE
+    target_link_libraries(sp-sys PRIVATE
         pthread
         dl
     )

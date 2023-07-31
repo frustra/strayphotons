@@ -50,12 +50,12 @@ mod ffi_rust {
     }
 }
 
-mod wasmer_vm;
+mod wasm;
 
 fn print_hello() {
     println!("hello world!");
 
-    let result = wasmer_vm::run_wasm();
+    let result = wasm::run_wasm();
     if result.is_err() {
         println!("run_wasm() failed! {}", result.err().unwrap());
     }
