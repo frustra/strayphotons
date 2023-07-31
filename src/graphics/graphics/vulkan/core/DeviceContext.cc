@@ -33,8 +33,7 @@
 //    #include <glfw/glfw3native.h>
 #endif
 
-// RUST
-#include <lib.rs.h>
+#include <gfx.rs.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -161,10 +160,10 @@ namespace sp::vulkan {
         debugInfo.pUserData = this;
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
 
-        static auto rsContext = sp::rs::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y);
+        static auto rsContext = sp::gfx::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y);
 
         // instance = vk::createInstanceUnique(createInfo);
-        instance = vk::UniqueInstance((VkInstance)sp::rs::get_instance_handle(*rsContext));
+        instance = vk::UniqueInstance((VkInstance)sp::gfx::get_instance_handle(*rsContext));
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
         debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo);
 
@@ -172,7 +171,7 @@ namespace sp::vulkan {
         //   Create window and surface
         // auto initialSize = CVarWindowSize.Get();
         Logf("Hello, CPP!");
-        uint64_t rawHandle = sp::rs::get_surface_handle(*rsContext);
+        uint64_t rawHandle = sp::gfx::get_surface_handle(*rsContext);
         VkSurfaceKHR surfaceHandle = (VkSurfaceKHR)rawHandle;
         // Assert(surface, "window creation failed");
 
@@ -181,7 +180,7 @@ namespace sp::vulkan {
         //}
 
         /*vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(
-            (VkPhysicalDevice)sp::rs::get_physical_device_handle(*rsContext));*/
+            (VkPhysicalDevice)sp::gfx::get_physical_device_handle(*rsContext));*/
         auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
@@ -526,7 +525,7 @@ namespace sp::vulkan {
 
         if (enableSwapchain) CreateSwapchain(physicalDevice);
 
-        // sp::rs::run_event_loop(*rsContext);
+        // sp::gfx::run_event_loop(*rsContext);
     }
 
     DeviceContext::~DeviceContext() {

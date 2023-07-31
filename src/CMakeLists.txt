@@ -29,18 +29,24 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
+add_library(sp STATIC)
+
+target_link_libraries(sp
+    ${PROJECT_GAME_LIB}
+    #${PROJECT_INPUT_LIB}
+    ${PROJECT_PHYSICS_PHYSX_LIB}
+    ${PROJECT_SCRIPTS_LIB}
+)
+
 # Vulkan desktop build
 add_module_configuration(
     NAME sp-vk
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
-        ${PROJECT_GAME_LIB}
+        sp
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
-        #${PROJECT_INPUT_LIB}
-        ${PROJECT_PHYSICS_PHYSX_LIB}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         ${PROJECT_XR_OPENVR_LIB}
-        ${PROJECT_SCRIPTS_LIB}
 )
 
 # Headless executable used for CI testing purposes
@@ -56,7 +62,7 @@ add_module_configuration(
 
 add_subdirectory(core)
 
-target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(sp REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
 
 

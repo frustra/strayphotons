@@ -1,32 +1,38 @@
-/*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
- *
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
- * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
+use cmake::Config;
+use std::env;
+use std::error::Error;
+use std::path::PathBuf;
 
-use std::fs::File;
-use std::io::prelude::*;
-
-fn main() {
-    let mut build = cxx_build::bridge("src/lib.rs"); // returns a cc::Build
-    build.flag_if_supported("-std=c++20");
-
-    let mut includes_file = File::open("../../build/rust/sp-sys/rust_includes.list")
-        .expect("Failed to open file: rust_includes.list");
-    let mut include_list = String::new();
-    includes_file
-        .read_to_string(&mut include_list)
-        .expect("Failed to read file: rust_includes.list");
-
-    for path in include_list.split(";") {
-        if !path.is_empty() {
-            build.include(path);
-        }
+#[cfg(feature = "debug")]
+macro_rules! debug {
+    ($($tokens: tt)*) => {
+        println!("cargo:warning={}", format!($($tokens)*))
     }
-    build.compile("sp-sys");
+}
 
-    // Add source files here and in CMakeLists.txt
-    println!("cargo:rerun-if-changed=src/lib.rs");
-    println!("cargo:rerun-if-changed=src/wasm.rs");
+fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
+    let mut p = p.into_os_string();
+    p.push(s);
+    p.into()
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let current_dir = env::current_dir()?;
+    let build_dir = append_to_path(current_dir, "/../../build");
+    let sp = Config::new("../../")
+        .out_dir(build_dir)
+        .define("CMAKE_C_COMPILER", "clang")
+        .define("CMAKE_CXX_COMPILER", "clang++")
+        .define("NO_CXX", "1")
+        .generator("Ninja")
+        .static_crt(true)
+        .uses_cxx11()
+        .always_configure(false)
+        .build_target("sp")
+        .build();
+
+    println!("cargo:rustc-link-search=native={}/src", sp.display());
+    println!("cargo:rustc-link-lib=static=sp");
+
+    Ok(())
 }
