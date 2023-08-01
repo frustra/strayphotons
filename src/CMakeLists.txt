@@ -31,7 +31,7 @@ include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 add_library(sp STATIC)
 
-target_link_libraries(sp
+target_link_libraries(sp PUBLIC
     ${PROJECT_GAME_LIB}
     #${PROJECT_INPUT_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
@@ -47,6 +47,7 @@ add_module_configuration(
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         ${PROJECT_XR_OPENVR_LIB}
+        ${PROJECT_SCRIPTS_LIB}
 )
 
 # Headless executable used for CI testing purposes
