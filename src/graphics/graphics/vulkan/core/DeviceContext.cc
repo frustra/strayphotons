@@ -1625,10 +1625,10 @@ namespace sp::vulkan {
 #endif
 
     void *DeviceContext::Win32WindowHandle() {
-#ifdef _WIN32
-        return window ? glfwGetWin32Window(window) : nullptr;
-#else
+// #ifdef _WIN32
+//         return window ? glfwGetWin32Window(window) : nullptr;
+// #else
         return nullptr;
-#endif
+// #endif
     }
 } // namespace sp::vulkan

@@ -64,6 +64,9 @@ if(WIN32)
         ws2_32
         userenv
         bcrypt
+        ntdll
+        Dwmapi
+        UxTheme
     )
 elseif(UNIX)
     target_link_libraries(sp-rs PRIVATE
