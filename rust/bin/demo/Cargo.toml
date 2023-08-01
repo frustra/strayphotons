@@ -1,0 +1,25 @@
+[package]
+name = "demo"
+version = "0.1.0"
+authors = ["Kevin Nause <kevin@nause.engineering>"]
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[[bin]]
+name = "demo-desktop"
+path = "gen/bin/desktop.rs"
+
+[dependencies]
+mobile-entry-point = "0.1.0"
+winit = "0.28"
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { version = "0.4", features = ["game-activity"] }
+android_logger = "0.13"
+log = "0.4.11"
+ndk-glue = "0.7"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+simple_logger = "4.2"
