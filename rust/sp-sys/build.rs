@@ -21,8 +21,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let build_dir = append_to_path(current_dir, "/../../build");
     let sp = Config::new("../../")
         .out_dir(build_dir)
-        .define("CMAKE_C_COMPILER", "clang")
-        .define("CMAKE_CXX_COMPILER", "clang++")
         .define("NO_CXX", "1")
         .generator("Ninja")
         .static_crt(true)
