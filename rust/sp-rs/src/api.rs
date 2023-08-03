@@ -1,7 +1,7 @@
 #[cxx::bridge(namespace = "sp::api")]
 mod ctx {
     unsafe extern "C++" {
-        include!("sp-rs/include/api.hh");
+        include!("api.hh");
 
         type Api;
 
