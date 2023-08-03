@@ -18,18 +18,23 @@ fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let current_dir = env::current_dir()?;
-    let build_dir = append_to_path(current_dir, "/../../build");
-    let sp = Config::new("../../")
+    let build_dir = append_to_path(current_dir, "/../../");
+    let mut sp = Config::new("../../");
+
+    //#[cfg(target_os = "android")] // FIXME: check env::var("TARGET")
+    sp.define("ANDROID_NDK", env::var("NDK_HOME")?);
+    sp.define("CMAKE_ANDROID_API", "24"); // min api version for ndk vulkan support
+
+    let sp = sp
         .out_dir(build_dir)
-        .define("NO_CXX", "1")
         .generator("Ninja")
         .static_crt(true)
         .uses_cxx11()
-        .always_configure(false)
+        .always_configure(true)
         .build_target("sp")
         .build();
 
-    println!("cargo:rustc-link-search=native={}/src", sp.display());
+    println!("cargo:rustc-link-search=native={}/build/src", sp.display());
     println!("cargo:rustc-link-lib=static=sp");
 
     Ok(())
