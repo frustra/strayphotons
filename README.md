@@ -14,9 +14,9 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 
 - **High Performance Core Engine** - Stray Photons is built on top of [Tecs](https://github.com/xthexder/Tecs), a transactional Entity Component System designed for multi-threaded applications. The core engine is designed to maximize framerate stability for VR, and take advantage of increasing core counts in modern processors.
 
-- **VR-focused Design** - The engine's features are all designed with VR as the main focus. Interactions are all done through physics actors in the world such as the player's hands. Stray Photon's rendering has been designed around VR's high framerates and resolution requirements.
+- **VR-focused Design** - The engine's features are all designed with VR as the main focus. Interactions are all done through physics actors in the world such as the player's hands. Stray Photon's rendering has been designed around VR's high frame rates and resolution requirements.
 
-- **Voxel-Based GI Lighting** - Stray Photons supports fully interactive Global Illumination (GI) without the requirement of raytracing hardware. This voxel-based approach to GI lighting partially decouples the lighting calculation from the rendering resolution, allowing for interactive bounce lighting, even in VR.
+- **Voxel-Based GI Lighting** - Stray Photons supports fully interactive Global Illumination (GI) without the requirement of ray tracing hardware. This voxel-based approach to GI lighting partially decouples the lighting calculation from the rendering resolution, allowing for interactive bounce lighting, even in VR.
 
     <img src="https://assets.strayphotons.net/demos/glowing_duck.png" alt="Glowing Duck Lighting" width="400" />
 
@@ -32,7 +32,7 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 
     <img src="https://assets.strayphotons.net/demos/d_flip_flop.png" alt="Laser-Based D-flip-flop" width="400" />
 
-- **Simple JSON-baased Scene Format** - Scenes in Stray Photons are defined using a human-readable (and writable) JSON format. A scene defines a list of entity definitions, including support for templates and other scriptable prefabs such as tiling or wall generation.
+- **Simple JSON-based Scene Format** - Scenes in Stray Photons are defined using a human-readable (and writable) JSON format. A scene defines a list of entity definitions, including support for templates and other scriptable prefabs such as tiling or wall generation.
 
     <img src="https://assets.strayphotons.net/demos/json_schema_completion.png" alt="JSON Schema Auto-completion" width="400" />
 
