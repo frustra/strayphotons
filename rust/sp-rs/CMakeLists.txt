@@ -21,7 +21,7 @@ endif()
 
 # Add rust source files here, and in build.rs
 set(RUST_SOURCE_FILES
-    #src/api.rs
+    src/api.rs
     src/gfx.rs
     src/lib.rs
     src/wasm.rs
@@ -30,14 +30,14 @@ set(RUST_SOURCE_FILES
 set(CXXBRIDGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs/src")
 file(GENERATE OUTPUT rust_includes.list CONTENT "$<TARGET_PROPERTY:sp-rs,INCLUDE_DIRECTORIES>")
 add_custom_command(COMMENT "Run cxxbridge codegen"
-    OUTPUT ${CXXBRIDGE_LIB} "${CXXBRIDGE_DIR}/gfx.rs.cc" "${CXXBRIDGE_DIR}/wasm.rs.cc" # "${CXXBRIDGE_DIR}/api.rs.cc"
+    OUTPUT ${CXXBRIDGE_LIB} "${CXXBRIDGE_DIR}/api.rs.cc" "${CXXBRIDGE_DIR}/gfx.rs.cc" "${CXXBRIDGE_DIR}/wasm.rs.cc"
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml ${CMAKE_CURRENT_BINARY_DIR}/rust_includes.list
     COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/ ${CARGO_CMD}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_library(sp-rs STATIC 
-    #"${CXXBRIDGE_DIR}/api.rs.cc"
+    "${CXXBRIDGE_DIR}/api.rs.cc"
     "${CXXBRIDGE_DIR}/gfx.rs.cc"
     "${CXXBRIDGE_DIR}/wasm.rs.cc"
 )

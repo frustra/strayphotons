@@ -6,7 +6,7 @@ edition = "2021"
 license-file = "../../LICENSE-MPL-2.0"
 
 [features]
-default = ["gfx", "wasm"]
+default = ["api", "gfx", "wasm"]
 api = []
 gfx = ["dep:vulkano", "dep:vulkano-win", "dep:winit"]
 wasm = ["dep:wasmer", "dep:static_assertions"]

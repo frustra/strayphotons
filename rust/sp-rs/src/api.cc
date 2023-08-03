@@ -1,4 +1,4 @@
-#include "sp-rs/include/api.hh"
+#include "sp-rs/src/api.hh"
 
 #include "sp-rs/src/api.rs.h"
 
