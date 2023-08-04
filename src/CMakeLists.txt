@@ -29,13 +29,23 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
-add_library(sp STATIC)
+add_library(sp STATIC
+    main/Game.cc
+    graphics/GraphicsManager.cc
+)
+
+target_include_directories(sp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 target_link_libraries(sp PUBLIC
+    sp-rs
     ${PROJECT_GAME_LIB}
     #${PROJECT_INPUT_LIB}
+    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}
+    cxxopts
 )
 
 # Vulkan desktop build
@@ -43,10 +53,12 @@ add_module_configuration(
     NAME sp-vk
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
-        sp
+        ${PROJECT_GAME_LIB}
+        #${PROJECT_INPUT_LIB}
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
-        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         ${PROJECT_XR_OPENVR_LIB}
+        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+        ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_SCRIPTS_LIB}
 )
 

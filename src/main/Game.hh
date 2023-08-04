@@ -68,11 +68,11 @@ namespace sp {
         } shutdownManagers;
 
     public:
+        LockFreeEventQueue<ecs::Event> windowEventQueue;
+
 #ifdef SP_GRAPHICS_SUPPORT
         std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
         GraphicsManager graphics;
-
-        LockFreeEventQueue<ecs::Event> windowEventQueue;
 
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
