@@ -7,13 +7,13 @@
 
 #include "Game.hh"
 
+#include "assets/AssetManager.hh"
 #include "assets/ConsoleScript.hh"
 #include "console/Console.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "core/Tracing.hh"
-#include "core/assets/AssetManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
