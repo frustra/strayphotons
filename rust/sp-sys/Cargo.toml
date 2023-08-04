@@ -10,4 +10,5 @@ default = []
 debug = []
 
 [build-dependencies]
+bindgen = "0.66"
 cmake = "0.1"

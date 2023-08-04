@@ -1,5 +1,6 @@
 use mobile_entry_point::mobile_entry_point;
 use std::error::Error;
+use sp_sys::StrayPhotons;
 
 #[cfg(target_os = "android")]
 fn init_logging() -> Result<(), Box<dyn Error>> {
@@ -21,9 +22,9 @@ fn init_logging() -> Result<(), Box<dyn Error>> {
 fn start() -> Result<(), Box<dyn Error>> {
     init_logging()?;
 
-    // TODO: Call sp.Start
-    // API for setting event_loop (closure to be invoked by c++)
-    // API for setting scripts/assets
+    let sp = StrayPhotons::new();
+    unsafe { sp.start()?; }
+    // TODO: API for setting scripts/assets
 
     Ok(())
 }
