@@ -26,6 +26,8 @@
     #include "audio/AudioManager.hh"
 #endif
 
+#include "strayphotons.h"
+
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -204,5 +206,35 @@ namespace sp {
         }
 #endif
         return gameExitCode;
+    }
+
+    struct CGameContext {
+        cxxopts::ParseResult optionsResult;
+        Game game;
+
+        CGameContext(cxxopts::Options options, int argc, char **argv)
+            : optionsResult(options.parse(argc, argv)), game(optionsResult) {}
+    };
+
+    StrayPhotons game_init(int argc, char **argv) {
+        cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
+        CGameContext *instance = new CGameContext(options, argc, argv);
+
+        static_assert(sizeof(uintptr_t) <= sizeof(StrayPhotons), "Pointer size larger than handle");
+        return static_cast<StrayPhotons>(reinterpret_cast<uintptr_t>(instance));
+    }
+
+    int game_start(StrayPhotons ctx) {
+        CGameContext *instance = reinterpret_cast<CGameContext *>(static_cast<uintptr_t>(ctx));
+        Assertf(instance != nullptr, "sp::game_destroy called with null instance");
+
+        return instance->game.Start();
+    }
+
+    void game_destroy(StrayPhotons ctx) {
+        CGameContext *instance = reinterpret_cast<CGameContext *>(static_cast<uintptr_t>(ctx));
+        Assertf(instance != nullptr, "sp::game_destroy called with null instance");
+
+        delete instance;
     }
 } // namespace sp
