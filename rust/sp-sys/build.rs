@@ -1,3 +1,4 @@
+use bindgen::builder;
 use cmake::Config;
 use std::env;
 use std::error::Error;
@@ -17,6 +18,10 @@ fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let bindings = builder().header("../../src/main/strayphotons.h")
+        .generate()?;
+    bindings.write_to_file("src/game.rs")?;
+
     let current_dir = env::current_dir()?;
     let build_dir = append_to_path(current_dir, "/../../");
     let mut sp = Config::new("../../");
