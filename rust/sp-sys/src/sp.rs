@@ -3,8 +3,6 @@ use crate::error::StrayPhotonsError;
 
 use std::error::Error;
 use std::ptr;
-use std::ffi::CStr;
-use std::ffi::CString;
 
 #[derive(Default)]
 pub struct StrayPhotons (u64);
