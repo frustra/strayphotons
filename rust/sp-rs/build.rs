@@ -11,9 +11,9 @@ use std::fs::File;
 use std::io::prelude::*;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let current = env::current_dir()?;
+    /*let current = env::current_dir()?;
     let out = current.join("../../build/rust/sp-rs/cargo/cxxbridge/sp-rs/src/api.hh");
-    File::create(out)?.write_all(include_bytes!("src/api.hh"))?;
+    File::create(out)?.write_all(include_bytes!("include/api.hh"))?;*/
 
     let mut bridges = vec![];
     #[cfg(feature = "api")]

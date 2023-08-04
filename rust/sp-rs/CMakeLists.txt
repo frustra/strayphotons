@@ -45,11 +45,13 @@ add_library(sp-rs STATIC
 target_include_directories(sp-rs
     PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs/src
+        ${CMAKE_SOURCE_DIR}/rust
 )
 
 target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} 
     PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs/src
+        ${CMAKE_SOURCE_DIR}/rust
 )
 
 # Adding dependencies here will automatically setup include directories for Rust
