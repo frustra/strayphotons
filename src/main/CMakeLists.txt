@@ -9,3 +9,7 @@ add_module_sources(
     Game.cc
     Main.cc
 )
+
+add_executable(sp-link-test link_test.c)
+
+target_link_libraries(sp-link-test PRIVATE sp)

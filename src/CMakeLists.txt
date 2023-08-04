@@ -34,19 +34,26 @@ add_library(sp STATIC
     graphics/GraphicsManager.cc
 )
 
-target_include_directories(sp PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(sp
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/main
 )
 
-target_link_libraries(sp PUBLIC
+target_link_libraries(sp PRIVATE
     sp-rs
     ${PROJECT_GAME_LIB}
     #${PROJECT_INPUT_LIB}
-    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+    ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}
     cxxopts
 )
+
+if(WIN32)
+    target_link_libraries(sp INTERFACE winmm)
+endif()
 
 # Vulkan desktop build
 add_module_configuration(
@@ -75,7 +82,7 @@ add_module_configuration(
 
 add_subdirectory(core)
 
-target_precompile_headers(sp REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
 
 
