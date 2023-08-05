@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
 
 #include <memory>
 #include <string_view>

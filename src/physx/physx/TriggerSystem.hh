@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/components/Events.hh"
 
 namespace sp {
     class PhysxManager;

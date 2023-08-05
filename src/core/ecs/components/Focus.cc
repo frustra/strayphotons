@@ -9,6 +9,7 @@
 
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <picojson/picojson.h>
 

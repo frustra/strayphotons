@@ -19,10 +19,10 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     StructMetadata.cc
 )
 
-target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
-    Ecs.hh
-    EcsImpl.hh
-    EntityRef.hh
-)
+#target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
+#    Ecs.hh
+#    EcsImpl.hh
+#    EntityRef.hh
+#)
 
 add_subdirectory(components)

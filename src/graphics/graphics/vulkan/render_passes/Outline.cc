@@ -8,6 +8,7 @@
 #include "Outline.hh"
 
 #include "Readback.hh"
+#include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 
 namespace sp::vulkan::renderer {

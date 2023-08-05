@@ -16,6 +16,7 @@
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <algorithm>
 #include <glm/gtx/vector_angle.hpp>

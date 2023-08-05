@@ -11,6 +11,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
 

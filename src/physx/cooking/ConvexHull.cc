@@ -14,6 +14,7 @@
 #include "assets/PhysicsInfo.hh"
 #include "core/Hashing.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cstdlib>

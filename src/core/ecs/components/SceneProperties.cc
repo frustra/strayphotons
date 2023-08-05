@@ -8,6 +8,7 @@
 #include "SceneProperties.hh"
 
 #include "assets/JsonHelpers.hh"
+#include "ecs/EcsImpl.hh"
 #include "ecs/components/SceneInfo.hh"
 
 namespace ecs {

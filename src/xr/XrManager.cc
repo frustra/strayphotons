@@ -11,6 +11,7 @@
 
     #include "core/Logging.hh"
     #include "core/Tracing.hh"
+    #include "ecs/EcsImpl.hh"
     #include "main/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR

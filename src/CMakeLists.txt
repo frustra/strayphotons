@@ -29,7 +29,7 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
-add_library(sp STATIC
+add_library(sp SHARED
     main/Game.cc
     graphics/GraphicsManager.cc
 )
@@ -82,8 +82,8 @@ add_module_configuration(
 
 add_subdirectory(core)
 
-target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
+#target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
+#target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
 
 
 if(WIN32)

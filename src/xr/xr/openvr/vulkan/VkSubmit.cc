@@ -7,6 +7,7 @@
 
 #if defined(SP_XR_SUPPORT_OPENVR) && defined(SP_GRAPHICS_SUPPORT_VK)
 
+    #include "ecs/EcsImpl.hh"
     #include "graphics/core/Texture.hh"
     #include "graphics/vulkan/core/DeviceContext.hh"
     #include "xr/openvr/OpenVrSystem.hh"

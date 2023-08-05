@@ -1,11 +1,10 @@
-use crate::game::{game_init, game_start, game_destroy};
 use crate::error::StrayPhotonsError;
+use crate::game::{game_destroy, game_init, game_start};
 
 use std::error::Error;
-use std::ptr;
 
 #[derive(Default)]
-pub struct StrayPhotons (u64);
+pub struct StrayPhotons(u64);
 
 impl StrayPhotons {
     pub fn new() -> Self {
@@ -13,7 +12,9 @@ impl StrayPhotons {
     }
 
     pub unsafe fn start(mut self) -> Result<(), Box<dyn Error>> {
-        self.0 = game_init(0, ptr::null::<i8>() as *mut *mut i8);
+        let mut input = ["sp"];
+
+        self.0 = game_init(1, input.as_mut_ptr() as *mut *mut i8);
         let status = game_start(self.0);
         match status {
             0 => Ok(()),
@@ -24,6 +25,8 @@ impl StrayPhotons {
 
 impl Drop for StrayPhotons {
     fn drop(&mut self) {
-        unsafe { game_destroy(self.0); }
+        unsafe {
+            game_destroy(self.0);
+        }
     }
 }
