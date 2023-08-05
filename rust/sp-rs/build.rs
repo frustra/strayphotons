@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(feature = "api")]
     build.file("src/api.cc");
 
-    build.flag_if_supported("-std=c++20");
+    build.flag_if_supported("-std=c++20").static_crt(true);
 
     let mut includes_file = File::open("../../build/rust/sp-rs/rust_includes.list")
         .expect("Failed to open file: rust_includes.list");
