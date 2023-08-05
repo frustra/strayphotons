@@ -5,11 +5,36 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "lldb",
+            "request": "launch",
+            "name": "StrayPhotons Cargo (lldb)",
+            "cargo": {
+                "args": [
+                    "build",
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "StrayPhotons Cargo (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/demo-desktop.exe",
+            "preLaunchTask": "rust: cargo build",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal"
+        },
+        {
             "name": "StrayPhotons (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
-            "args": ["--with-validation-layers"],
+            "args": [
+                "--with-validation-layers"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -23,7 +48,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
-            "args": ["--with-validation-layers"],
+            "args": [
+                "--with-validation-layers"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -42,7 +69,10 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
-            "args": ["--with-validation-layers", "--no-vr"],
+            "args": [
+                "--with-validation-layers",
+                "--no-vr"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -56,7 +86,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
-            "args": ["--with-validation-layers", "--no-vr"],
+            "args": [
+                "--with-validation-layers",
+                "--no-vr"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -89,7 +122,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
-            "args": [""],
+            "args": [
+                ""
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -108,7 +143,9 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/docs_generator.exe",
-            "args": ["."],
+            "args": [
+                "."
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/docs/generated/",
             "environment": [],
@@ -119,7 +156,9 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/scene_formatter.exe",
-            "args": ["blackhole1"],
+            "args": [
+                "blackhole1"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -130,7 +169,10 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test.exe",
-            "args": ["--with-validation-layers", "tests/scene-overrides.txt"],
+            "args": [
+                "--with-validation-layers",
+                "tests/scene-overrides.txt"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -141,7 +183,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test",
-            "args": ["--with-validation-layers", "tests/scene-overrides.txt"],
+            "args": [
+                "--with-validation-layers",
+                "tests/scene-overrides.txt"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
