@@ -13,6 +13,7 @@ set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interfa
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
 set(PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display")
+set(PROJECT_GRAPHICS_VULKAN_DESKTOP_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-desktop CACHE INTERNAL "Library for Vulkan-based rendering flatview to a display")
 set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE INTERNAL "Library for Vulkan-based rendering through an XR display")
 
 #set(PROJECT_INPUT_LIB ${PROJECT_BASE_NAME}-input-winit CACHE INTERNAL "Library implementing user input support using winit")
@@ -48,7 +49,7 @@ target_link_libraries(sp PRIVATE
     sp-rs
     ${PROJECT_GAME_LIB}
     #${PROJECT_INPUT_LIB}
-    ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
+    ${PROJECT_GRAPHICS_VULKAN_DESKTOP_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}
     cxxopts
