@@ -29,6 +29,9 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
+# TODO: Only export specific symbols:
+# https://gernotklingler.com/blog/creating-using-shared-libraries-different-compilers-different-operating-systems/
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(sp SHARED
     main/Game.cc
     graphics/GraphicsManager.cc
@@ -52,7 +55,7 @@ target_link_libraries(sp PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(sp INTERFACE winmm)
+    target_link_libraries(sp PUBLIC winmm)
 endif()
 
 # Vulkan desktop build
