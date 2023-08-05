@@ -97,7 +97,7 @@ namespace sp {
         }
 
 #ifdef SP_GRAPHICS_SUPPORT
-        if (!options["headless"].count()) {
+        if (!options.count("headless")) {
             graphics.Init();
 
             debugGui = std::make_unique<DebugGuiManager>();
@@ -108,12 +108,12 @@ namespace sp {
 #endif
 
 #ifdef SP_XR_SUPPORT
-        if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+        if (options.count("no-vr") == 0) xr.LoadXrSystem();
 #endif
 
         auto &scenes = GetSceneManager();
 #ifdef SP_GRAPHICS_SUPPORT
-        if (options["headless"].count()) {
+        if (options.count("headless")) {
 #endif
             scenes.DisableGraphicsPreload();
 #ifdef SP_GRAPHICS_SUPPORT
@@ -228,7 +228,11 @@ namespace sp {
         CGameContext *instance = reinterpret_cast<CGameContext *>(static_cast<uintptr_t>(ctx));
         Assertf(instance != nullptr, "sp::game_destroy called with null instance");
 
-        return instance->game.Start();
+        try {
+            return instance->game.Start();
+        } catch (const std::exception &e) {
+            Abortf("Error invoking game.Start(): %s", e.what());
+        }
     }
 
     void game_destroy(StrayPhotons ctx) {
