@@ -18,7 +18,8 @@ fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let bindings = builder().header("../../src/main/strayphotons.h")
+    let bindings = builder()
+        .header("../../src/main/strayphotons.h")
         .generate()?;
     bindings.write_to_file("src/game.rs")?;
 
@@ -33,14 +34,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     let sp = sp
         .out_dir(build_dir)
         .generator("Ninja")
+        .pic(true)
         .static_crt(true)
         .uses_cxx11()
-        .always_configure(true)
+        .always_configure(false)
         .build_target("sp")
         .build();
 
     println!("cargo:rustc-link-search=native={}/build/src", sp.display());
-    println!("cargo:rustc-link-lib=static=sp");
+    println!("cargo:rustc-link-lib=sp");
 
     Ok(())
 }

@@ -8,6 +8,7 @@
 #include "ForceConstraint.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 #include "physx/PhysxUtils.hh"
 
 namespace sp {

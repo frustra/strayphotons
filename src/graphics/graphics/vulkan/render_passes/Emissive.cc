@@ -7,6 +7,7 @@
 
 #include "Emissive.hh"
 
+#include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Gui.hh"
 #include "ecs/components/LaserLine.hh"

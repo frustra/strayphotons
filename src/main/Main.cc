@@ -12,6 +12,9 @@
 #include <iostream>
 using namespace std;
 
+#include "ecs/EcsImpl.hh"
+//
+
 #include "Game.hh"
 #include "core/Logging.hh"
 

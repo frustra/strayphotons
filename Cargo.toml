@@ -1,6 +1,7 @@
 [workspace]
 members = ["rust/sp-sys", "rust/bin/demo"]
 exclude = ["rust/sp-rs"]
+resolver = "2"
 
 [profile.dev]
 codegen-units = 256 # Better optimizations

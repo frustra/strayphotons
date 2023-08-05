@@ -7,6 +7,7 @@
 
 #include "SceneConnection.hh"
 
+#include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 
 #include <algorithm>

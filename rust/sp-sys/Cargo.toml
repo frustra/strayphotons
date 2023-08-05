@@ -1,5 +1,6 @@
 [package]
 name = "sp-sys"
+links = "sp"
 version = "0.1.0"
 authors = ["xthexder", "nauscar"]
 edition = "2021"
@@ -9,6 +10,12 @@ license-file = "../../LICENSE-MPL-2.0"
 default = []
 debug = []
 
+[dependencies]
+libc = "*"
+
 [build-dependencies]
 bindgen = "0.66"
 cmake = "0.1"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]

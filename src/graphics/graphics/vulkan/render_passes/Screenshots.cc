@@ -8,6 +8,7 @@
 #include "Screenshots.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

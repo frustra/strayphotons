@@ -13,6 +13,7 @@
 #include "assets/JsonHelpers.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <filesystem>
 #include <fstream>
