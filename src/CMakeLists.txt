@@ -13,10 +13,12 @@ set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interfa
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
 set(PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display")
-set(PROJECT_GRAPHICS_VULKAN_DESKTOP_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-desktop CACHE INTERNAL "Library for Vulkan-based rendering flatview to a display")
+set(PROJECT_GRAPHICS_VULKAN_GLFW_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw CACHE INTERNAL "Library for Vulkan-based rendering to a display via GLFW")
+set(PROJECT_GRAPHICS_VULKAN_WINIT_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-winit CACHE INTERNAL "Library for Vulkan-based rendering to a display via Winit")
 set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE INTERNAL "Library for Vulkan-based rendering through an XR display")
 
-#set(PROJECT_INPUT_LIB ${PROJECT_BASE_NAME}-input-winit CACHE INTERNAL "Library implementing user input support using winit")
+set(PROJECT_INPUT_GLFW_LIB ${PROJECT_BASE_NAME}-input-glfw CACHE INTERNAL "Library implementing user input support using GLFW")
+set(PROJECT_INPUT_WINIT_LIB ${PROJECT_BASE_NAME}-input-winit CACHE INTERNAL "Library implementing user input support using Winit")
 
 set(PROJECT_PHYSICS_PHYSX_LIB ${PROJECT_BASE_NAME}-physics-physx CACHE INTERNAL "Library implementing physics using PhysX")
 set(PROJECT_PHYSICS_COOKING_LIB ${PROJECT_BASE_NAME}-physics-cooking CACHE INTERNAL "Library implementing convex hull generation")
@@ -48,8 +50,8 @@ target_include_directories(sp
 target_link_libraries(sp PRIVATE
     sp-rs
     ${PROJECT_GAME_LIB}
-    #${PROJECT_INPUT_LIB}
-    ${PROJECT_GRAPHICS_VULKAN_DESKTOP_LIB}
+    ${PROJECT_INPUT_WINIT_LIB}
+    ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}
     cxxopts
@@ -65,7 +67,8 @@ add_module_configuration(
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
         ${PROJECT_GAME_LIB}
-        #${PROJECT_INPUT_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         ${PROJECT_XR_OPENVR_LIB}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
@@ -79,7 +82,7 @@ add_module_configuration(
     LINK_LIBRARIES
         ${PROJECT_GAME_TEST_LIB}
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
-        #${PROJECT_INPUT_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_SCRIPTS_LIB}
 )
@@ -96,7 +99,7 @@ endif()
 
 add_subdirectory(game)
 add_subdirectory(graphics)
-#add_subdirectory(input)
+add_subdirectory(input)
 add_subdirectory(main)
 add_subdirectory(physx)
 add_subdirectory(xr)

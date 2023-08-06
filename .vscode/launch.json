@@ -20,12 +20,11 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/demo-desktop.exe",
-            "preLaunchTask": "rust: cargo build",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/bin/",
             "environment": [],
-            "console": "externalTerminal"
+            "console": "integratedTerminal"
         },
         {
             "name": "StrayPhotons (vsdbg)",

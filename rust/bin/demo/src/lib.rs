@@ -34,13 +34,13 @@ fn start() -> Result<(), Box<dyn Error>> {
     }
     // TODO: API for setting scripts/assets
 
-    loop {}
     Ok(())
 }
 
 #[mobile_entry_point]
 fn main() {
     match start() {
-        Ok(_) | Err(_) => todo!(),
+        Ok(_) => {},
+        Err(_) => todo!(),
     }
 }

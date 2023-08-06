@@ -16,11 +16,12 @@ use vulkano::{Handle, VulkanObject};
 use vulkano_win::VkSurfaceBuild;
 use winit::dpi::LogicalSize;
 use winit::{event_loop::EventLoop, window::WindowBuilder};
+use winit::platform::run_return::EventLoopExtRunReturn;
 
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 
-pub struct MyContext {
+pub struct WinitContext {
     pub library: Arc<VulkanLibrary>,
     pub instance: Arc<Instance>,
     pub surface: Arc<Surface>,
@@ -33,12 +34,12 @@ pub struct MyContext {
 #[cxx::bridge(namespace = "sp::gfx")]
 mod ctx {
     extern "Rust" {
-        type MyContext;
-        fn create_context(x: i32, y: i32) -> Box<MyContext>;
-        fn get_surface_handle(context: &MyContext) -> u64;
-        fn get_physical_device_handle(context: &MyContext) -> u64;
-        fn get_instance_handle(context: &MyContext) -> u64;
-        fn run_event_loop(context: &mut MyContext);
+        type WinitContext;
+        fn create_context(x: i32, y: i32) -> Box<WinitContext>;
+        fn get_surface_handle(context: &WinitContext) -> u64;
+        fn get_physical_device_handle(context: &WinitContext) -> u64;
+        fn get_instance_handle(context: &WinitContext) -> u64;
+        fn run_event_loop(context: &mut WinitContext);
     }
 }
 
@@ -71,10 +72,10 @@ pub fn select_physical_device(
         .expect("no device available")
 }
 
-unsafe impl Send for MyContext {}
-unsafe impl Sync for MyContext {}
+unsafe impl Send for WinitContext {}
+unsafe impl Sync for WinitContext {}
 
-fn create_context(x: i32, y: i32) -> Box<MyContext> {
+fn create_context(x: i32, y: i32) -> Box<WinitContext> {
     let library: Arc<VulkanLibrary> = VulkanLibrary::new().expect("no local Vulkan library/DLL");
     let mut required_extensions: vulkano::instance::InstanceExtensions =
         vulkano_win::required_extensions(&library);
@@ -133,7 +134,7 @@ fn create_context(x: i32, y: i32) -> Box<MyContext> {
     let queue = queues.next().unwrap();
 
     println!("Hello, Rust!");
-    Box::new(MyContext {
+    Box::new(WinitContext {
         library: library.to_owned(),
         instance: instance.to_owned(),
         surface: surface.to_owned(),
@@ -144,29 +145,31 @@ fn create_context(x: i32, y: i32) -> Box<MyContext> {
     })
 }
 
-fn get_surface_handle(context: &MyContext) -> u64 {
+fn get_surface_handle(context: &WinitContext) -> u64 {
     println!("Library API version: {}", context.library.api_version());
     println!("Instance API version: {}", context.instance.api_version());
     context.surface.handle().as_raw()
 }
 
-fn get_physical_device_handle(context: &MyContext) -> u64 {
+fn get_physical_device_handle(context: &WinitContext) -> u64 {
     context.device.physical_device().handle().as_raw()
 }
 
-fn get_instance_handle(context: &MyContext) -> u64 {
+fn get_instance_handle(context: &WinitContext) -> u64 {
     context.instance.handle().as_raw()
 }
 
-fn run_event_loop(context: &mut MyContext) {
-    let event_loop = std::mem::take(&mut context.event_loop);
-    event_loop.run(move |event, _, control_flow| match event {
+fn run_event_loop(context: &mut WinitContext) {
+    // let event_loop = std::mem::take(&mut context.event_loop);
+    context.event_loop.run_return(|event, _, control_flow| match event {
         Event::WindowEvent {
             event: WindowEvent::CloseRequested,
             ..
         } => {
             *control_flow = ControlFlow::Exit;
-        }
-        _ => (),
+        },
+        _ => {
+            *control_flow = ControlFlow::Exit;
+        },
     });
 }
