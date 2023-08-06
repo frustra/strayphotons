@@ -26,14 +26,17 @@
 #include <optional>
 #include <string>
 
-#define GLFW_INCLUDE_VULKAN
-// #include <GLFW/glfw3.h>
-#ifdef _WIN32
-    #define GLFW_EXPOSE_NATIVE_WIN32
-//    #include <glfw/glfw3native.h>
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+    #define GLFW_INCLUDE_VULKAN
+    #include <GLFW/glfw3.h>
+    #ifdef _WIN32
+        #define GLFW_EXPOSE_NATIVE_WIN32
+        #include <glfw/glfw3native.h>
+    #endif
 #endif
-
-#include <gfx.rs.h>
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+    #include <gfx.rs.h>
+#endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -71,9 +74,11 @@ namespace sp::vulkan {
         return VK_FALSE;
     }
 
-    /*static void glfwErrorCallback(int error, const char *message) {
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+    static void glfwErrorCallback(int error, const char *message) {
         Errorf("GLFW returned %d: %s", error, message);
-    }*/
+    }
+#endif
 
     void DeviceContext::DeleteAllocator(VmaAllocator alloc) {
         if (alloc) vmaDestroyAllocator(alloc);
@@ -83,21 +88,22 @@ namespace sp::vulkan {
         : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
           frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
-        // glfwSetErrorCallback(glfwErrorCallback);
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        glfwSetErrorCallback(glfwErrorCallback);
 
-        /*if (!glfwInit()) {
-            throw "glfw failed";
-        }*/
-
-        // Assert(glfwVulkanSupported(), "Vulkan not supported");
+        if (!glfwInit()) Abort("glfwInit() failed");
+        Assert(glfwVulkanSupported(), "Vulkan not supported");
+#endif
 
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-        // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        // glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
         // Disable OpenGL context creation
-        // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
 
         std::vector<const char *> extensions, layers;
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
@@ -118,20 +124,29 @@ namespace sp::vulkan {
             extensions.push_back(name.data());
         }
 
-        /*uint32_t requiredExtensionCount = 0;
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
             extensions.emplace_back(requiredExtensions[i]);
         }
-        extensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
-        extensions.emplace_back("VK_KHR_wayland_surface"); // FIXME: Platform specific.
+#endif
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);*/
+        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         if (enableValidationLayers) {
             Logf("Running with Vulkan validation layer");
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
+
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (enableSwapchain) {
+            // Create window and surface
+            auto initialSize = CVarWindowSize.Get();
+            window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+            Assert(window, "glfw window creation failed");
+        }
+#endif
 
         vk::ApplicationInfo applicationInfo("Stray Photons",
             VK_MAKE_VERSION(1, 0, 0),
@@ -160,27 +175,34 @@ namespace sp::vulkan {
         debugInfo.pUserData = this;
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
 
-        static auto rsContext = sp::gfx::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y);
-
-        // instance = vk::createInstanceUnique(createInfo);
-        instance = vk::UniqueInstance((VkInstance)sp::gfx::get_instance_handle(*rsContext));
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        winitContext = sp::gfx::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y).into_raw();
+        instance = vk::UniqueInstance((VkInstance)sp::gfx::get_instance_handle(*winitContext));
+#else
+        instance = vk::createInstanceUnique(createInfo);
+#endif
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
         debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo);
 
-        // if (enableSwapchain) {
-        //   Create window and surface
-        // auto initialSize = CVarWindowSize.Get();
-        Logf("Hello, CPP!");
-        uint64_t rawHandle = sp::gfx::get_surface_handle(*rsContext);
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (enableSwapchain) {
+            vk::SurfaceKHR glfwSurface;
+            auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
+            AssertVKSuccess(result, "creating window surface");
+
+            vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
+            surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
+        }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        uint64_t rawHandle = sp::gfx::get_surface_handle(*winitContext);
         VkSurfaceKHR surfaceHandle = (VkSurfaceKHR)rawHandle;
-        // Assert(surface, "window creation failed");
+        Assert(surfaceHandle, "winit window creation failed");
 
         vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
         surface = vk::UniqueSurfaceKHR(surfaceHandle, deleter);
-        //}
+#endif
 
-        /*vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(
-            (VkPhysicalDevice)sp::gfx::get_physical_device_handle(*rsContext));*/
         auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
@@ -509,7 +531,8 @@ namespace sp::vulkan {
 
         perfTimer.reset(new PerfTimer(*this));
 
-        /*int modeCount;
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        int modeCount;
         const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
         if (modes && modeCount > 0) {
             monitorModes.resize(modeCount);
@@ -521,31 +544,34 @@ namespace sp::vulkan {
             });
         } else {
             Warnf("Failed to read Glfw monitor modes");
-        }*/
+        }
+#endif
 
-        if (enableSwapchain) CreateSwapchain(physicalDevice);
-
-        // sp::gfx::run_event_loop(*rsContext);
+        if (enableSwapchain) CreateSwapchain();
     }
 
     DeviceContext::~DeviceContext() {
         if (device) {
             device->waitIdle();
         }
-        /*if (window) {
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (window) {
             glfwDestroyWindow(window);
-        }*/
+        }
+#endif
 
 #ifdef TRACY_ENABLE_GRAPHICS
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
 #endif
 
-        // glfwTerminate();
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        glfwTerminate();
+#endif
     }
 
     // Releases old swapchain after creating a new one
-    void DeviceContext::CreateSwapchain(vk::PhysicalDevice physicalDevice) {
+    void DeviceContext::CreateSwapchain() {
         ZoneScoped;
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
 
@@ -618,22 +644,32 @@ namespace sp::vulkan {
     void DeviceContext::RecreateSwapchain() {
         ZoneScoped;
         device->waitIdle();
-        CreateSwapchain(physicalDevice);
+        CreateSwapchain();
     }
 
     void DeviceContext::SetTitle(string title) {
         Assert(std::this_thread::get_id() == mainThread, "DeviceContext::SetTitle must be called from main thread");
-        // if (window) glfwSetWindowTitle(window, title.c_str());
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (window) glfwSetWindowTitle(window, title.c_str());
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+            // TODO: sp::gfx::set_window_title();
+#endif
     }
 
     bool DeviceContext::ShouldClose() {
-        // return window && !!glfwWindowShouldClose(window);
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        return window && !!glfwWindowShouldClose(window);
+#else
+        // TODO: Check should close from winit
         return false;
+#endif
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
         Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
-        /*if (window) {
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (window) {
             bool fullscreen = CVarWindowFullscreen.Get();
             if (glfwFullscreen != fullscreen) {
                 if (fullscreen) {
@@ -677,9 +713,13 @@ namespace sp::vulkan {
             if (fbExtents.x > 0 && fbExtents.y > 0) {
                 view.extents = fbExtents;
             }
-        } else {*/
-        view.extents = CVarWindowSize.Get();
-        //}
+        }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+// TODO: Set window size and read framebuffer for winit
+#endif
+
+        if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
         view.fov = glm::radians(CVarFieldOfView.Get());
         view.UpdateProjectionMatrix();
     }
@@ -687,17 +727,22 @@ namespace sp::vulkan {
     void DeviceContext::UpdateInputModeFromFocus() {
         Assert(std::this_thread::get_id() == mainThread, "UpdateInputModeFromFocus must be called from main thread");
         ZoneScoped;
-        /*if (!window) return;
-
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
-        if (lock.Has<ecs::FocusLock>()) {
-            auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
-            if (layer == ecs::FocusLayer::Game) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            } else {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (window) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
+            if (lock.Has<ecs::FocusLock>()) {
+                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+                if (layer == ecs::FocusLayer::Game) {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                } else {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                }
             }
-        }*/
+        }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+// TODO: Show/hide cursor via winit
+#endif
     }
 
     void DeviceContext::BeginFrame() {
@@ -1625,10 +1670,15 @@ namespace sp::vulkan {
 #endif
 
     void *DeviceContext::Win32WindowHandle() {
-// #ifdef _WIN32
-//         return window ? glfwGetWin32Window(window) : nullptr;
-// #else
+#ifndef _WIN32
         return nullptr;
-// #endif
+#elif defined(SP_GRAPHICS_SUPPORT_GLFW)
+        return window ? glfwGetWin32Window(window) : nullptr;
+#elif defined(SP_GRAPHICS_SUPPORT_WINIT)
+        // TODO: read window handle from winit
+        return nullptr;
+#else
+        return nullptr;
+#endif
     }
 } // namespace sp::vulkan

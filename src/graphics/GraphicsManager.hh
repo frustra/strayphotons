@@ -22,6 +22,10 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
 
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        #include "input/winit/WinitInputHandler.hh"
+    #endif
+
     #include <glm/glm.hpp>
     #include <memory>
     #include <vector>
@@ -73,7 +77,11 @@ namespace sp {
     #endif
 
     #ifdef SP_INPUT_SUPPORT_GLFW
-        unique_ptr<GlfwInputHandler> windowInputHandler;
+        unique_ptr<GlfwInputHandler> glfwInputHandler;
+    #endif
+
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        unique_ptr<WinitInputHandler> winitInputHandler;
     #endif
     };
 } // namespace sp

@@ -19,11 +19,13 @@
 
 #include <atomic>
 #include <future>
-#include <gfx.rs.h>
 #include <robin_hood.h>
 #include <variant>
 
 struct GLFWwindow;
+namespace sp::gfx {
+    struct WinitContext;
+}
 
 namespace tracy {
     class VkCtx;
@@ -202,9 +204,13 @@ namespace sp::vulkan {
             return queueFamilyIndex[QueueType(type)];
         }
 
-        /*GLFWwindow *GetWindow() {
+        GLFWwindow *GetGlfwWindow() {
             return window;
-        }*/
+        }
+
+        gfx::WinitContext *GetWinitContext() {
+            return winitContext;
+        }
 
         void *Win32WindowHandle() override;
 
@@ -243,7 +249,7 @@ namespace sp::vulkan {
         void SetTitle(std::string title) override;
 
     private:
-        void CreateSwapchain(vk::PhysicalDevice physicalDevice);
+        void CreateSwapchain();
         void CreateTestPipeline();
         void RecreateSwapchain();
 
@@ -372,5 +378,8 @@ namespace sp::vulkan {
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         unique_ptr<CFuncCollection> funcs;
+
+        GLFWwindow *window = nullptr;
+        sp::gfx::WinitContext *winitContext = nullptr;
     };
 } // namespace sp::vulkan

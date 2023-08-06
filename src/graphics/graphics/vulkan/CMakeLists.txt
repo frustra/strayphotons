@@ -15,7 +15,11 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PRIVATE
     Renderer.cc
 )
 
-target_sources(${PROJECT_GRAPHICS_VULKAN_DESKTOP_LIB} PRIVATE
+target_sources(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PRIVATE
+    Renderer.cc
+)
+
+target_sources(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PRIVATE
     Renderer.cc
 )
 

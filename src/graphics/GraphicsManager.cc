@@ -71,8 +71,14 @@ namespace sp {
         auto vkContext = new vulkan::DeviceContext(enableValidationLayers, enableSwapchain);
         context.reset(vkContext);
 
-            // GLFWwindow *window = vkContext->GetWindow();
-            // if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
+        #if defined(SP_GRAPHICS_SUPPORT_GLFW) && defined(SP_INPUT_SUPPORT_GLFW)
+        GLFWwindow *window = vkContext->GetGlfwWindow();
+        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
+        #endif
+        #if defined(SP_GRAPHICS_SUPPORT_WINIT) && defined(SP_INPUT_SUPPORT_WINIT)
+        gfx::WinitContext *winitCtx = vkContext->GetWinitContext();
+        if (winitCtx != nullptr) winitInputHandler = make_unique<WinitInputHandler>(game->windowEventQueue, *winitCtx);
+        #endif
     #endif
 
         if (game->options.count("size")) {
@@ -125,6 +131,9 @@ namespace sp {
 
     #ifdef SP_INPUT_SUPPORT_GLFW
         if (glfwInputHandler) glfwInputHandler->Frame();
+    #endif
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        if (winitInputHandler) winitInputHandler->Frame();
     #endif
 
         if (!flatviewEntity || CVarFlatviewEntity.Changed()) {

@@ -10,6 +10,7 @@
 #include "core/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 
 #include <glm/glm.hpp>
 
@@ -22,8 +23,6 @@ namespace sp {
         ~GlfwInputHandler();
 
         void Frame();
-
-        glm::vec2 ImmediateCursor() const;
 
         static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
         static void CharInputCallback(GLFWwindow *window, unsigned int ch);

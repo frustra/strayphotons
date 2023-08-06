@@ -60,19 +60,6 @@ namespace sp {
         glfwPollEvents();
     }
 
-    glm::vec2 GlfwInputHandler::ImmediateCursor() const {
-        if (glfwGetWindowAttrib(window, GLFW_FOCUSED)) {
-            double mouseX, mouseY;
-            int fbWidth, fbHeight;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
-            glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-            glm::ivec2 windowSize = CVarWindowSize.Get();
-            return glm::vec2((float)mouseX, (float)mouseY + (float)(windowSize.y - fbHeight));
-        } else {
-            return glm::vec2(-1.0f, -1.0f);
-        }
-    }
-
     void GlfwInputHandler::KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
         ZoneScoped;
         if (key == GLFW_KEY_UNKNOWN) return;
