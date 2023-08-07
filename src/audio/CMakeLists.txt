@@ -25,6 +25,6 @@ target_compile_definitions(${PROJECT_AUDIO_LIB} PUBLIC
     SOUNDIO_STATIC_LIBRARY
 )
 
-#target_precompile_headers(${PROJECT_AUDIO_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_AUDIO_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(audio)

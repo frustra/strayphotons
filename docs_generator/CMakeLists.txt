@@ -16,7 +16,7 @@ target_link_libraries(docs_generator
     cxxopts
 )
 
-#target_precompile_headers(docs_generator REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(docs_generator REUSE_FROM ${PROJECT_CORE_LIB})
 
 target_include_directories(docs_generator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

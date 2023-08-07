@@ -38,8 +38,8 @@ target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB}
         SP_PHYSICS_SUPPORT_PHYSX
 )
 
-#target_precompile_headers(${PROJECT_PHYSICS_PHYSX_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-#target_precompile_headers(${PROJECT_PHYSICS_COOKING_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_PHYSICS_PHYSX_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_PHYSICS_COOKING_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(cooking)
 add_subdirectory(physx)

@@ -22,7 +22,7 @@ target_link_libraries(${PROJECT_GAME_TEST_LIB} INTERFACE
 
 target_compile_definitions(${PROJECT_GAME_TEST_LIB} INTERFACE SP_TEST_MODE)
 
-#target_precompile_headers(${PROJECT_GAME_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_GAME_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(console)
 add_subdirectory(editor)
