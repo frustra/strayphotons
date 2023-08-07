@@ -26,6 +26,7 @@ target_link_libraries(${PROJECT_INPUT_WINIT_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
     ${PROJECT_GAME_LIB}
     ${PROJECT_GRAPHICS_CORE_LIB}
+    sp-rs
 )
 
 target_compile_definitions(${PROJECT_INPUT_GLFW_LIB} PUBLIC

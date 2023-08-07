@@ -160,16 +160,20 @@ fn get_instance_handle(context: &WinitContext) -> u64 {
 }
 
 fn run_event_loop(context: &mut WinitContext) {
-    // let event_loop = std::mem::take(&mut context.event_loop);
     context.event_loop.run_return(|event, _, control_flow| match event {
         Event::WindowEvent {
             event: WindowEvent::CloseRequested,
             ..
         } => {
+            println!("Exit requested by Winit");
+            // TODO: Keep an exit flag that is accessible via should_close()
+            *control_flow = ControlFlow::Exit;
+        },
+        Event::MainEventsCleared => {
             *control_flow = ControlFlow::Exit;
         },
         _ => {
-            *control_flow = ControlFlow::Exit;
+            // Ignore unknown events
         },
     });
 }
