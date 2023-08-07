@@ -58,7 +58,6 @@ namespace sp {
     void WinitInputHandler::Frame() {
         ZoneScoped;
         sp::gfx::run_event_loop(context);
-        // glfwPollEvents();
     }
 
     void WinitInputHandler::KeyInputCallback(gfx::WinitContext &context, int key, int scancode, int action, int mods) {
