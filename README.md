@@ -32,7 +32,7 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 
     <img src="https://assets.strayphotons.net/demos/d_flip_flop.png" alt="Laser-Based D-flip-flop" width="400" />
 
-- **Simple JSON-baased Scene Format** - Scenes in Stray Photons are defined using a human-readable (and writable) JSON format. A scene defines a list of entity definitions, including support for templates and other scriptable prefabs such as tiling or wall generation.
+- **Simple JSON-based Scene Format** - Scenes in Stray Photons are defined using a human-readable (and writable) JSON format. A scene defines a list of entity definitions, including support for templates and other scriptable prefabs such as tiling or wall generation.
 
     <img src="https://assets.strayphotons.net/demos/json_schema_completion.png" alt="JSON Schema Auto-completion" width="400" />
 
