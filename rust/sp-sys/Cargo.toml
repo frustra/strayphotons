@@ -7,7 +7,7 @@ edition = "2021"
 license-file = "../../LICENSE-MPL-2.0"
 
 [features]
-default = []
+default = ["debug"]
 debug = []
 
 [dependencies]
@@ -16,6 +16,3 @@ libc = "*"
 [build-dependencies]
 bindgen = "0.66"
 cmake = "0.1"
-
-[lib]
-crate-type = ["cdylib", "staticlib", "rlib"]
