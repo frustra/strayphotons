@@ -191,7 +191,7 @@ namespace ecs {
                     }
                 }(),
                 ...);
-            for (int i = 0; i < this->fields.size(); i++) {
+            for (size_t i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
             }
             Register(type, this);

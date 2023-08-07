@@ -207,7 +207,7 @@ Signal expressions support the following operations and functions:
         // True if the expression is valid and can be evaluated.
         // An empty expression is valid and evaluates to 0.
         explicit operator bool() const {
-            return rootIndex >= 0 && rootIndex < nodes.size();
+            return rootIndex >= 0 && (size_t)rootIndex < nodes.size();
         }
 
         // Returns true if this expression is default constructed.

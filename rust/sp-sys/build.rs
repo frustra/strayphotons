@@ -32,17 +32,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     // sp.define("CMAKE_ANDROID_API", "24"); // min api version for ndk vulkan support
 
     let sp = sp
-        // .out_dir(build_dir)
+        //.out_dir(build_dir)
         .generator("Ninja")
         .pic(true)
         .static_crt(true)
         .uses_cxx11()
-        .always_configure(false)
+        .always_configure(true)
         .build_target("sp")
         .build();
 
-    println!("cargo:rustc-link-search=native={}/build/src", sp.display());
-    println!("cargo:rustc-link-lib=sp");
+    debug!("{}", sp.display());
+
+    println!(
+        "cargo:rustc-link-search=native={}/../../../../../bin", // FIXME
+        sp.display()
+    );
+    println!("cargo:rustc-link-lib=dylib=sp");
 
     Ok(())
 }
