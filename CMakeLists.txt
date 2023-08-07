@@ -176,13 +176,13 @@ endif()
 
 if(SP_BUILD_RUST)
     message(STATUS "Building with Rust")
-    add_subdirectory(rust/sp-rs)
+    add_subdirectory(rust)
     add_subdirectory(wasm)
 
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
         sp-rs
     )
-    
+
     if(ipo_supported)
         set_target_properties(sp-rs PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()

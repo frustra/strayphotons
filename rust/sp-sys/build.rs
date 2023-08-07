@@ -28,11 +28,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut sp = Config::new("../../");
 
     //#[cfg(target_os = "android")] // FIXME: check env::var("TARGET")
-    sp.define("ANDROID_NDK", env::var("NDK_HOME")?);
-    sp.define("CMAKE_ANDROID_API", "24"); // min api version for ndk vulkan support
+    // sp.define("ANDROID_NDK", env::var("NDK_HOME")?);
+    // sp.define("CMAKE_ANDROID_API", "24"); // min api version for ndk vulkan support
 
     let sp = sp
-        .out_dir(build_dir)
+        // .out_dir(build_dir)
         .generator("Ninja")
         .pic(true)
         .static_crt(true)

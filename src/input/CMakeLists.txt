@@ -37,7 +37,7 @@ target_compile_definitions(${PROJECT_INPUT_WINIT_LIB} PUBLIC
     SP_INPUT_SUPPORT_WINIT
 )
 
-#target_precompile_headers(${PROJECT_INPUT_GLFW_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-#target_precompile_headers(${PROJECT_INPUT_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_INPUT_GLFW_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_INPUT_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(input)
