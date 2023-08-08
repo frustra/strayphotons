@@ -26,11 +26,10 @@
     #include "audio/AudioManager.hh"
 #endif
 
-#include "strayphotons.h"
-
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
+#include <strayphotons.h>
 #include <wasm.rs.h>
 
 namespace sp {

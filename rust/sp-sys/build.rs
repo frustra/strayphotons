@@ -2,7 +2,6 @@ use bindgen::builder;
 use cmake::Config;
 use std::env;
 use std::error::Error;
-use std::path::PathBuf;
 
 #[cfg(feature = "debug")]
 macro_rules! debug {
@@ -11,20 +10,14 @@ macro_rules! debug {
     }
 }
 
-fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
-    let mut p = p.into_os_string();
-    p.push(s);
-    p.into()
-}
-
 fn main() -> Result<(), Box<dyn Error>> {
     let bindings = builder()
-        .header("../../src/main/strayphotons.h")
+        .header("../../include/strayphotons.h")
         .generate()?;
     bindings.write_to_file("src/game.rs")?;
 
     let current_dir = env::current_dir()?;
-    let build_dir = append_to_path(current_dir, "/../../");
+    let bin_dir = current_dir.join("../../bin");
     let mut sp = Config::new("../../");
 
     //#[cfg(target_os = "android")] // FIXME: check env::var("TARGET")
@@ -32,7 +25,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // sp.define("CMAKE_ANDROID_API", "24"); // min api version for ndk vulkan support
 
     let sp = sp
-        //.out_dir(build_dir)
         .generator("Ninja")
         .pic(true)
         .static_crt(true)
@@ -41,12 +33,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build_target("sp")
         .build();
 
-    debug!("{}", sp.display());
+    debug!("Rust output dir: {}", sp.display());
 
-    println!(
-        "cargo:rustc-link-search=native={}/../../../../../bin", // FIXME
-        sp.display()
-    );
+    // Calculate an absolute path with "../" relative to the output directory to make cargo happy
+    let relative_to = pathdiff::diff_paths(bin_dir.canonicalize()?, &sp).expect("path error");
+    let cargo_path = sp.join(relative_to);
+    debug!("CMake link dir: {}", cargo_path.display());
+
+    println!("cargo:rustc-link-search=native={}", cargo_path.display());
     println!("cargo:rustc-link-lib=dylib=sp");
 
     Ok(())

@@ -3,6 +3,7 @@ extern crate sp_sys;
 use mobile_entry_point::mobile_entry_point;
 use sp_sys::StrayPhotons;
 use std::error::Error;
+use std::env;
 
 #[cfg(target_os = "android")]
 fn init_logging() -> Result<(), Box<dyn Error>> {
@@ -26,6 +27,9 @@ fn start() -> Result<(), Box<dyn Error>> {
     log::warn!("start");
 
     let sp = StrayPhotons::new();
+
+    let current_dir = env::current_dir()?;
+    println!("Starting in directory: {}", current_dir.display());
 
     log::warn!("init");
 
