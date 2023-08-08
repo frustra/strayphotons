@@ -44,7 +44,7 @@ target_include_directories(sp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/main
+        ${PROJECT_ROOT_DIR}/include
 )
 
 target_link_libraries(sp PRIVATE
@@ -60,6 +60,9 @@ target_link_libraries(sp PRIVATE
 if(WIN32)
     target_link_libraries(sp PUBLIC winmm)
 endif()
+
+add_executable(sp-link-test link_test.c)
+target_link_libraries(sp-link-test PRIVATE sp)
 
 # Vulkan desktop build
 add_module_configuration(
