@@ -119,7 +119,11 @@ set(PROJECT_BASE_NAME strayphotons)
 set(PROJECT_COMMON_EXE ${PROJECT_BASE_NAME})
 add_library(${PROJECT_COMMON_EXE} INTERFACE)
 target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE cxxopts)
-target_include_directories(${PROJECT_COMMON_EXE} INTERFACE src)
+target_include_directories(${PROJECT_COMMON_EXE}
+    INTERFACE
+        include
+        src
+)
 
 if(UNIX)
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE pthread)

@@ -8,7 +8,6 @@
 #include "SceneRef.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "ecs/components/SceneProperties.hh"
 #include "game/Scene.hh"
 
 #include <memory>
