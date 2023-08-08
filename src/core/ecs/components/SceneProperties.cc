@@ -9,7 +9,6 @@
 
 #include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/components/SceneInfo.hh"
 
 namespace ecs {
     glm::vec3 stationSpinFunc(glm::vec3 position) {

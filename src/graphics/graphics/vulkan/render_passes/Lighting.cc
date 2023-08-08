@@ -7,16 +7,13 @@
 
 #include "Lighting.hh"
 
-#include "ecs/components/Light.hh"
-#include "ecs/components/OpticalElement.hh"
-#include "ecs/components/Transform.h"
+#include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
-#include "ecs/EcsImpl.hh"
 
 #include <algorithm>
 #include <glm/gtx/vector_angle.hpp>
