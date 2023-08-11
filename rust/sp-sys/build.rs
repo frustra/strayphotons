@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     bindings.write_to_file("src/game.rs")?;
 
     let current_dir = env::current_dir()?;
-    let bin_dir = current_dir.join("../../bin");
+    let bin_dir = current_dir.join("../../bin").canonicalize()?;
     let mut sp = Config::new("../../");
 
     //#[cfg(target_os = "android")] // FIXME: check env::var("TARGET")
@@ -34,13 +34,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build();
 
     debug!("Rust output dir: {}", sp.display());
+    debug!("CMake link dir: {}", bin_dir.display());
 
-    // Calculate an absolute path with "../" relative to the output directory to make cargo happy
-    let relative_to = pathdiff::diff_paths(bin_dir.canonicalize()?, &sp).expect("path error");
-    let cargo_path = sp.join(relative_to);
-    debug!("CMake link dir: {}", cargo_path.display());
-
-    println!("cargo:rustc-link-search=native={}", cargo_path.display());
+    println!("cargo:rustc-link-search=native={}/build/src", sp.display()); // Static library path
+    println!("cargo:rustc-link-search=native={}", bin_dir.display()); // Shared library path
     println!("cargo:rustc-link-lib=dylib=sp");
 
     Ok(())
