@@ -6,8 +6,7 @@
  */
 
 use std::error::Error;
-use std::fs::File;
-use std::io::prelude::*;
+use std::env;
 
 fn main() -> Result<(), Box<dyn Error>> {
     /*let current = env::current_dir()?;
@@ -29,12 +28,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     build.flag_if_supported("-std=c++20").static_crt(true);
 
-    let mut includes_file = File::open("../../build/rust/sp-rs/rust_includes.list")
-        .expect("Failed to open file: rust_includes.list");
-    let mut include_list = String::new();
-    includes_file
-        .read_to_string(&mut include_list)
-        .expect("Failed to read file: rust_includes.list");
+    let include_list = env!("RUST_INCLUDES", "$RUST_INCLUDES env variable not set");
+    println!("Rust include list: {}", include_list);
 
     for path in include_list.split(";") {
         if !path.is_empty() {
