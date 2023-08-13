@@ -67,6 +67,7 @@ namespace sp {
     Game::ShutdownManagers::~ShutdownManagers() {
         GetConsoleManager().Shutdown();
         GetSceneManager().Shutdown();
+        Assets().Shutdown();
     }
 
     int Game::Start() {
@@ -165,7 +166,12 @@ namespace sp {
         GetConsoleManager().StartThread(startupScript);
         logic.StartThread();
 
-#ifdef SP_GRAPHICS_SUPPORT
+#ifdef SP_INPUT_SUPPORT_WINIT
+        auto *inputHandler = graphics.GetWinitInputHandler();
+        Assertf(inputHandler != nullptr, "WinitInputHandler is null");
+        inputHandler->StartEventLoop();
+        graphics.StopThread();
+#elif defined(SP_GRAPHICS_SUPPORT)
         auto frameEnd = chrono_clock::now();
         while (!gameExitTriggered.test()) {
             // static const char *frameName = "WindowInput";

@@ -124,6 +124,7 @@ namespace sp {
             QueuedAction(SceneAction action, VoidCallback voidCallback) : action(action), voidCallback(voidCallback) {}
         };
 
+        std::atomic_bool shutdown;
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;
         std::shared_ptr<Scene> preloadScene;

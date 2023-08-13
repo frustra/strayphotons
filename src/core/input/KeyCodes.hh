@@ -134,6 +134,23 @@ namespace sp {
         KEY_CONTEXT_MENU = 348,
     };
 
+    enum InputAction : int {
+        RELEASE = 0,
+        PRESS = 1,
+        REPEAT = 2,
+    };
+
+    enum MouseButton : int {
+        BUTTON_LEFT = 0,
+        BUTTON_RIGHT = 1,
+        BUTTON_MIDDLE = 2,
+        BUTTON_4 = 3,
+        BUTTON_5 = 4,
+        BUTTON_6 = 5,
+        BUTTON_7 = 6,
+        BUTTON_8 = 7,
+    };
+
     static const robin_hood::unordered_flat_map<KeyCode, std::string> KeycodeNameLookup = {
         {KEY_SPACE, "space"},
         {KEY_APOSTROPHE, "apostrophe"},

@@ -34,11 +34,11 @@ namespace sp {
         External,
     };
 
-    class AssetManager : public RegisteredThread {
-        LogOnExit logOnExit = "Assets shut down ======================================================";
-
+    class AssetManager final : public RegisteredThread {
     public:
         AssetManager();
+        ~AssetManager();
+        void Shutdown();
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
@@ -59,6 +59,7 @@ namespace sp {
         std::string FindGltfByName(const std::string &name);
         std::string FindPhysicsByName(const std::string &name);
 
+        std::atomic_bool shutdown;
         DispatchQueue workQueue;
 
         std::mutex assetMutex;

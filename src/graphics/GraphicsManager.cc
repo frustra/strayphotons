@@ -76,8 +76,10 @@ namespace sp {
         if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
         #endif
         #if defined(SP_GRAPHICS_SUPPORT_WINIT) && defined(SP_INPUT_SUPPORT_WINIT)
-        gfx::WinitContext *winitCtx = vkContext->GetWinitContext();
-        if (winitCtx != nullptr) winitInputHandler = make_unique<WinitInputHandler>(game->windowEventQueue, *winitCtx);
+        winit::WinitContext *winitCtx = vkContext->GetWinitContext();
+        if (winitCtx != nullptr) {
+            winitInputHandler = make_unique<WinitInputHandler>(*this, game->windowEventQueue, *winitCtx);
+        }
         #endif
     #endif
 
@@ -131,9 +133,6 @@ namespace sp {
 
     #ifdef SP_INPUT_SUPPORT_GLFW
         if (glfwInputHandler) glfwInputHandler->Frame();
-    #endif
-    #ifdef SP_INPUT_SUPPORT_WINIT
-        if (winitInputHandler) winitInputHandler->Frame();
     #endif
 
         if (!flatviewEntity || CVarFlatviewEntity.Changed()) {

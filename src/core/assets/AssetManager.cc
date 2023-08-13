@@ -58,6 +58,18 @@ namespace sp {
         StartThread();
     }
 
+    AssetManager::~AssetManager() {
+        Shutdown();
+    }
+
+    void AssetManager::Shutdown() {
+        bool alreadyShutdown = shutdown.exchange(true);
+        if (alreadyShutdown) return;
+        StopThread(true);
+
+        LogOnExit logOnExit = "Assets shut down ======================================================";
+    }
+
     void AssetManager::Frame() {
         loadedGltfs.Tick(this->interval);
         for (auto &assets : loadedAssets) {

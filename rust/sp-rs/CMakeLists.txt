@@ -14,14 +14,14 @@ endif()
 # Add rust source files here, and in build.rs
 set(RUST_SOURCE_FILES
     src/api.rs
-    src/gfx.rs
     src/lib.rs
     src/wasm.rs
+    src/winit.rs
 )
 
 set(CXXBRIDGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs/src")
 add_custom_command(COMMENT "Run cxxbridge codegen"
-    OUTPUT ${CXXBRIDGE_LIB} "${CXXBRIDGE_DIR}/api.rs.cc" "${CXXBRIDGE_DIR}/gfx.rs.cc" "${CXXBRIDGE_DIR}/wasm.rs.cc"
+    OUTPUT ${CXXBRIDGE_LIB} "${CXXBRIDGE_DIR}/api.rs.cc" "${CXXBRIDGE_DIR}/wasm.rs.cc" "${CXXBRIDGE_DIR}/winit.rs.cc"
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml
     COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/ RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs,INCLUDE_DIRECTORIES>" ${CARGO_CMD}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29,8 +29,8 @@ add_custom_command(COMMENT "Run cxxbridge codegen"
 
 add_library(sp-rs STATIC
     "${CXXBRIDGE_DIR}/api.rs.cc"
-    "${CXXBRIDGE_DIR}/gfx.rs.cc"
     "${CXXBRIDGE_DIR}/wasm.rs.cc"
+    "${CXXBRIDGE_DIR}/winit.rs.cc"
 )
 
 target_include_directories(sp-rs
@@ -49,6 +49,7 @@ target_include_directories(${PROJECT_GRAPHICS_CORE_LIB}
 target_link_libraries(sp-rs PRIVATE
     ${CXXBRIDGE_LIB}
     ${PROJECT_CORE_LIB}
+    ${PROJECT_INPUT_WINIT_LIB}
     Tecs
 )
 

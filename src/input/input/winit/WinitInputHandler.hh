@@ -12,31 +12,40 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 
+#include <cstdint>
 #include <glm/glm.hpp>
 
 namespace sp {
-    namespace gfx {
+    enum KeyCode : int;
+    enum InputAction : int;
+    enum MouseButton : int;
+
+    namespace winit {
         struct WinitContext;
-    }
+    } // namespace winit
+
+    class GraphicsManager;
 
     class WinitInputHandler {
     public:
-        WinitInputHandler(LockFreeEventQueue<ecs::Event> &windowEventQueue, gfx::WinitContext &context);
-        ~WinitInputHandler();
+        WinitInputHandler(GraphicsManager &manager,
+            LockFreeEventQueue<ecs::Event> &windowEventQueue,
+            winit::WinitContext &context);
 
-        void Frame();
+        void StartEventLoop();
 
-        static void KeyInputCallback(gfx::WinitContext &context, int key, int scancode, int action, int mods);
-        static void CharInputCallback(gfx::WinitContext &context, unsigned int ch);
-        static void MouseMoveCallback(gfx::WinitContext &context, double xPos, double yPos);
-        static void MouseButtonCallback(gfx::WinitContext &context, int button, int actions, int mods);
-        static void MouseScrollCallback(gfx::WinitContext &context, double xOffset, double yOffset);
-
-    private:
+        GraphicsManager &manager;
         LockFreeEventQueue<ecs::Event> &outputEventQueue;
-        gfx::WinitContext &context;
+        winit::WinitContext &context;
 
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
     };
+
+    bool InputFrameCallback(WinitInputHandler *ctx);
+    void KeyInputCallback(WinitInputHandler *ctx, KeyCode key, int scancode, InputAction action);
+    void CharInputCallback(WinitInputHandler *ctx, unsigned int ch);
+    void MouseMoveCallback(WinitInputHandler *ctx, double xPos, double yPos);
+    void MouseButtonCallback(WinitInputHandler *ctx, MouseButton button, InputAction actions);
+    void MouseScrollCallback(WinitInputHandler *ctx, double xOffset, double yOffset);
 } // namespace sp

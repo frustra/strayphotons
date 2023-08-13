@@ -15,6 +15,7 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 
+#include <map>
 #include <robin_hood.h>
 #include <set>
 #include <string_view>

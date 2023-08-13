@@ -6,17 +6,16 @@ edition = "2021"
 license-file = "../../LICENSE-MPL-2.0"
 
 [features]
-default = ["api", "gfx", "wasm"]
+default = ["api", "wasm", "winit"]
 api = []
-gfx = ["dep:vulkano", "dep:vulkano-win", "dep:winit"]
 wasm = ["dep:wasmer", "dep:static_assertions"]
+winit = ["dep:vulkano", "dep:winit"]
 
 [dependencies]
 cxx = "1.0"
 static_assertions = { version = "1.1", optional = true }
-vulkano = { version = "0.33", optional = true }
-vulkano-win = { version = "0.33", optional = true }
-winit = { version = "0.28", optional = true }
+vulkano = { git = "https://github.com/xthexder/vulkano.git", optional = true }
+winit = { git = "https://github.com/rust-windowing/winit.git", optional = true }
 wasmer = { version = "2.1", optional = true }
 
 [build-dependencies]
@@ -24,3 +23,6 @@ cxx-build = "1.0"
 
 [lib]
 crate-type = ["staticlib"]
+
+[patch.crates-io]
+winit = { git = "https://github.com/rust-windowing/winit.git" }
