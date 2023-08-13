@@ -1,18 +1,24 @@
-use std::sync::Arc;
-use std::time::{Instant, Duration};
 use std::ops::Add;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 use vulkano::{
-    instance::{Instance, InstanceCreateInfo},
+    instance::{
+        debug::{
+            DebugUtilsMessageSeverity, DebugUtilsMessageType, DebugUtilsMessengerCallback,
+            DebugUtilsMessengerCreateInfo,
+        },
+        Instance, InstanceCreateInfo,
+    },
     swapchain::Surface,
     VulkanLibrary,
 };
 use vulkano::{Handle, VulkanObject};
 use ::winit::dpi::LogicalSize;
-use ::winit::{event_loop::EventLoop, window::WindowBuilder};
+use ::winit::event::{ElementState, Event, MouseScrollDelta, WindowEvent};
+use ::winit::keyboard::KeyCode;
 use ::winit::platform::scancode::KeyCodeExtScancode;
 use ::winit::window::Window;
-use ::winit::event::{Event, WindowEvent, ElementState, MouseScrollDelta};
-use ::winit::keyboard::KeyCode;
+use ::winit::{event_loop::EventLoop, window::WindowBuilder};
 
 pub struct WinitContext {
     pub library: Arc<VulkanLibrary>,
@@ -178,10 +184,19 @@ mod winit {
         type WinitInputHandler;
 
         unsafe fn InputFrameCallback(ctx: *mut WinitInputHandler) -> bool;
-        unsafe fn KeyInputCallback(ctx: *mut WinitInputHandler, key: KeyCode, scancode: i32, action: InputAction);
+        unsafe fn KeyInputCallback(
+            ctx: *mut WinitInputHandler,
+            key: KeyCode,
+            scancode: i32,
+            action: InputAction,
+        );
         unsafe fn CharInputCallback(ctx: *mut WinitInputHandler, ch: u32);
         unsafe fn MouseMoveCallback(ctx: *mut WinitInputHandler, xPos: f64, yPos: f64);
-        unsafe fn MouseButtonCallback(ctx: *mut WinitInputHandler, button: MouseButton, action: InputAction);
+        unsafe fn MouseButtonCallback(
+            ctx: *mut WinitInputHandler,
+            button: MouseButton,
+            action: InputAction,
+        );
         unsafe fn MouseScrollCallback(ctx: *mut WinitInputHandler, xOffset: f64, yOffset: f64);
     }
 
@@ -206,18 +221,63 @@ fn create_context(x: i32, y: i32) -> Box<WinitContext> {
 
     let event_loop = EventLoop::new();
     let mut required_extensions: vulkano::instance::InstanceExtensions =
-        // vulkano_win::required_extensions(&library);
         Surface::required_extensions(&event_loop);
 
     required_extensions.khr_surface = true;
     required_extensions.khr_get_physical_device_properties2 = true;
     required_extensions.ext_debug_utils = true;
 
+    // TODO: Match these settings with C++ DeviceContext.cc
+    let debug_create_info = unsafe {
+        DebugUtilsMessengerCreateInfo {
+            message_severity: DebugUtilsMessageSeverity::ERROR
+                | DebugUtilsMessageSeverity::WARNING,
+            message_type: DebugUtilsMessageType::GENERAL
+                | DebugUtilsMessageType::PERFORMANCE
+                | DebugUtilsMessageType::VALIDATION,
+            ..DebugUtilsMessengerCreateInfo::user_callback(DebugUtilsMessengerCallback::new(
+                |message_severity, message_type, callback_data| {
+                    let severity = if message_severity.intersects(DebugUtilsMessageSeverity::ERROR)
+                    {
+                        "error"
+                    } else if message_severity.intersects(DebugUtilsMessageSeverity::WARNING) {
+                        "warning"
+                    } else if message_severity.intersects(DebugUtilsMessageSeverity::INFO) {
+                        "information"
+                    } else if message_severity.intersects(DebugUtilsMessageSeverity::VERBOSE) {
+                        "verbose"
+                    } else {
+                        ""
+                    };
+
+                    let ty = if message_type.intersects(DebugUtilsMessageType::GENERAL) {
+                        "general"
+                    } else if message_type.intersects(DebugUtilsMessageType::VALIDATION) {
+                        "validation"
+                    } else if message_type.intersects(DebugUtilsMessageType::PERFORMANCE) {
+                        "performance"
+                    } else {
+                        ""
+                    };
+
+                    println!(
+                        "{} {} {}: {}",
+                        callback_data.message_id_name.unwrap_or("unknown"),
+                        ty,
+                        severity,
+                        callback_data.message
+                    );
+                },
+            ))
+        }
+    };
+
     let instance: Arc<Instance> = Instance::new(
         library.clone(),
         InstanceCreateInfo {
             enabled_extensions: required_extensions,
             enabled_layers: vec!["VK_LAYER_KHRONOS_validation".to_string()],
+            debug_utils_messengers: vec![debug_create_info],
             ..Default::default()
         },
     )
@@ -228,15 +288,17 @@ fn create_context(x: i32, y: i32) -> Box<WinitContext> {
         .next()
         .expect("no monitor found!");
     let fullscreen = Some(Fullscreen::Borderless(Some(monitor.clone())));*/
-    let window: Arc<Window> = Arc::new(WindowBuilder::new()
-        .with_title("STRAY PHOTONS")
-        .with_inner_size(LogicalSize {
-            width: x,
-            height: y,
-        })
-        //.with_fullscreen(fullscreen)
-        .build(&event_loop)
-        .expect("Failed to create window"));
+    let window: Arc<Window> = Arc::new(
+        WindowBuilder::new()
+            .with_title("STRAY PHOTONS")
+            .with_inner_size(LogicalSize {
+                width: x,
+                height: y,
+            })
+            //.with_fullscreen(fullscreen)
+            .build(&event_loop)
+            .expect("Failed to create window"),
+    );
 
     let surface = Surface::from_window(instance.clone(), window.clone()).unwrap();
     // let surface = create_surface_from_winit(window.clone(), instance.clone())
@@ -275,78 +337,96 @@ fn get_surface_handle(context: &WinitContext) -> u64 {
     if let Some(instance) = context.instance.as_ref() {
         println!("Instance API version: {}", instance.api_version());
     }
-    context.surface.as_ref().map_or(0u64, |s| s.handle().as_raw())
+    context
+        .surface
+        .as_ref()
+        .map_or(0u64, |s| s.handle().as_raw())
 }
 
 fn get_instance_handle(context: &WinitContext) -> u64 {
-    context.instance.as_ref().map_or(0u64, |s| s.handle().as_raw())
+    context
+        .instance
+        .as_ref()
+        .map_or(0u64, |s| s.handle().as_raw())
 }
 
 fn start_event_loop(context: &mut WinitContext, input_handler: *mut winit::WinitInputHandler) {
     let event_loop = context.event_loop.take().unwrap();
-    event_loop.run(|event, _, control_flow| {
-        match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => {
-                    println!("Exit requested by Winit");
-                    // TODO: Keep an exit flag that is accessible via should_close()
-                    control_flow.set_exit();
-                },
-                WindowEvent::CursorMoved { position, .. } => {
-                    unsafe { winit::MouseMoveCallback(input_handler, position.x, position.y); }
-                },
-                WindowEvent::MouseWheel {
-                    delta: MouseScrollDelta::LineDelta(dx, dy),
-                    // TODO: Support PixelDelta variant
-                    ..
-                } => {
-                    unsafe { winit::MouseScrollCallback(input_handler, dx as f64, dy as f64); }
-                },
-                WindowEvent::MouseInput { state, button, .. } => {
-                    let action: winit::InputAction = match state {
-                        ElementState::Released => winit::InputAction::RELEASE,
-                        ElementState::Pressed => winit::InputAction::PRESS,
-                    };
-                    let btn: winit::MouseButton = match button {
-                        ::winit::event::MouseButton::Left => winit::MouseButton::BUTTON_LEFT,
-                        ::winit::event::MouseButton::Right => winit::MouseButton::BUTTON_RIGHT,
-                        ::winit::event::MouseButton::Middle => winit::MouseButton::BUTTON_MIDDLE,
-                        ::winit::event::MouseButton::Other(3) => winit::MouseButton::BUTTON_4,
-                        ::winit::event::MouseButton::Other(4) => winit::MouseButton::BUTTON_5,
-                        ::winit::event::MouseButton::Other(5) => winit::MouseButton::BUTTON_6,
-                        ::winit::event::MouseButton::Other(6) => winit::MouseButton::BUTTON_7,
-                        ::winit::event::MouseButton::Other(7) => winit::MouseButton::BUTTON_8,
-                        _ => winit::MouseButton::BUTTON_LEFT,
-                    };
-                    unsafe { winit::MouseButtonCallback(input_handler, btn, action); }
-                },
-                WindowEvent::KeyboardInput { event, .. } => {
-                    let key: winit::KeyCode = into_keycode(event.physical_key);
-                    let scancode: u32 = event.physical_key.to_scancode().unwrap_or(0u32);
-                    let mut action: winit::InputAction = match event.state {
-                        ElementState::Released => winit::InputAction::RELEASE,
-                        ElementState::Pressed => winit::InputAction::PRESS,
-                    };
-                    if event.repeat && action == winit::InputAction::PRESS {
-                        action = winit::InputAction::REPEAT;
+    event_loop
+        .run(|event, _, control_flow| {
+            match event {
+                Event::WindowEvent { event, .. } => match event {
+                    WindowEvent::CloseRequested => {
+                        println!("Exit requested by Winit");
+                        // TODO: Keep an exit flag that is accessible via should_close()
+                        control_flow.set_exit();
                     }
-                    unsafe { winit::KeyInputCallback(input_handler, key, scancode as i32, action); }
-
-                    if let Some(text) = event.text {
-                        for ch in text.chars() {
-                            unsafe { winit::CharInputCallback(input_handler, ch as u32); }
+                    WindowEvent::CursorMoved { position, .. } => unsafe {
+                        winit::MouseMoveCallback(input_handler, position.x, position.y);
+                    },
+                    WindowEvent::MouseWheel {
+                        delta: MouseScrollDelta::LineDelta(dx, dy),
+                        // TODO: Support PixelDelta variant
+                        ..
+                    } => unsafe {
+                        winit::MouseScrollCallback(input_handler, dx as f64, dy as f64);
+                    },
+                    WindowEvent::MouseInput { state, button, .. } => {
+                        let action: winit::InputAction = match state {
+                            ElementState::Released => winit::InputAction::RELEASE,
+                            ElementState::Pressed => winit::InputAction::PRESS,
+                        };
+                        let btn: winit::MouseButton = match button {
+                            ::winit::event::MouseButton::Left => winit::MouseButton::BUTTON_LEFT,
+                            ::winit::event::MouseButton::Right => winit::MouseButton::BUTTON_RIGHT,
+                            ::winit::event::MouseButton::Middle => {
+                                winit::MouseButton::BUTTON_MIDDLE
+                            }
+                            ::winit::event::MouseButton::Other(3) => winit::MouseButton::BUTTON_4,
+                            ::winit::event::MouseButton::Other(4) => winit::MouseButton::BUTTON_5,
+                            ::winit::event::MouseButton::Other(5) => winit::MouseButton::BUTTON_6,
+                            ::winit::event::MouseButton::Other(6) => winit::MouseButton::BUTTON_7,
+                            ::winit::event::MouseButton::Other(7) => winit::MouseButton::BUTTON_8,
+                            _ => winit::MouseButton::BUTTON_LEFT,
+                        };
+                        unsafe {
+                            winit::MouseButtonCallback(input_handler, btn, action);
                         }
                     }
+                    WindowEvent::KeyboardInput { event, .. } => {
+                        let key: winit::KeyCode = into_keycode(event.physical_key);
+                        let scancode: u32 = event.physical_key.to_scancode().unwrap_or(0u32);
+                        let mut action: winit::InputAction = match event.state {
+                            ElementState::Released => winit::InputAction::RELEASE,
+                            ElementState::Pressed => winit::InputAction::PRESS,
+                        };
+                        if event.repeat && action == winit::InputAction::PRESS {
+                            action = winit::InputAction::REPEAT;
+                        }
+                        unsafe {
+                            winit::KeyInputCallback(input_handler, key, scancode as i32, action);
+                        }
+
+                        if let Some(text) = event.text {
+                            for ch in text.chars() {
+                                unsafe {
+                                    winit::CharInputCallback(input_handler, ch as u32);
+                                }
+                            }
+                        }
+                    }
+                    _ => (),
                 },
+                Event::AboutToWait => {
+                    unsafe {
+                        winit::InputFrameCallback(input_handler);
+                    }
+                    control_flow.set_wait_until(Instant::now().add(Duration::from_millis(5)));
+                }
                 _ => (),
-            },
-            Event::AboutToWait => {
-                unsafe { winit::InputFrameCallback(input_handler); }
-                control_flow.set_wait_until(Instant::now().add(Duration::from_millis(5)));
-            },
-            _ => (),
-        }
-    }).unwrap();
+            }
+        })
+        .unwrap();
 }
 
 fn into_keycode(winit_key: KeyCode) -> winit::KeyCode {
