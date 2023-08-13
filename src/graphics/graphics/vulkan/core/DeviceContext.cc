@@ -88,22 +88,21 @@ namespace sp::vulkan {
         : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
           frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
+
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) Abort("glfwInit() failed");
         Assert(glfwVulkanSupported(), "Vulkan not supported");
-#endif
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
         // Disable OpenGL context creation
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
+
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
         std::vector<const char *> extensions, layers;
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
@@ -123,14 +122,6 @@ namespace sp::vulkan {
             }
             extensions.push_back(name.data());
         }
-
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        uint32_t requiredExtensionCount = 0;
-        auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
-        for (uint32_t i = 0; i < requiredExtensionCount; i++) {
-            extensions.emplace_back(requiredExtensions[i]);
-        }
-#endif
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -138,28 +129,6 @@ namespace sp::vulkan {
             Logf("Running with Vulkan validation layer");
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
-
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        if (enableSwapchain) {
-            // Create window and surface
-            auto initialSize = CVarWindowSize.Get();
-            window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
-            Assert(window, "glfw window creation failed");
-        }
-#endif
-
-        vk::ApplicationInfo applicationInfo("Stray Photons",
-            VK_MAKE_VERSION(1, 0, 0),
-            "Stray Photons",
-            VK_MAKE_VERSION(1, 0, 0),
-            VULKAN_API_VERSION);
-
-        vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
-            &applicationInfo,
-            layers.size(),
-            layers.data(),
-            extensions.size(),
-            extensions.data());
 
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
@@ -173,7 +142,40 @@ namespace sp::vulkan {
 #endif
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
         debugInfo.pUserData = this;
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
+
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        uint32_t requiredExtensionCount = 0;
+        auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
+        for (uint32_t i = 0; i < requiredExtensionCount; i++) {
+            extensions.emplace_back(requiredExtensions[i]);
+        }
+
+        if (enableSwapchain) {
+            // Create window and surface
+            auto initialSize = CVarWindowSize.Get();
+            window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+            Assert(window, "glfw window creation failed");
+        }
+
+        vk::ApplicationInfo applicationInfo("Stray Photons",
+            VK_MAKE_VERSION(1, 0, 0),
+            "Stray Photons",
+            VK_MAKE_VERSION(1, 0, 0),
+            VULKAN_API_VERSION);
+
+        vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
+            &applicationInfo,
+            layers.size(),
+            layers.data(),
+            extensions.size(),
+            extensions.data(),
+            (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
+
+        instance = vk::createInstance(createInfo);
+        instanceDestroy.SetFunc([this] {
+            if (instance) instance.destroy();
+        });
+#endif
 
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
@@ -187,12 +189,8 @@ namespace sp::vulkan {
             Logf("Destroying rust instance");
             sp::winit::destroy_instance(*winitContext);
         });
-#else
-        instance = vk::createInstance(createInfo);
-        instanceDestroy.SetFunc([this] {
-            if (instance) instance.destroy();
-        });
 #endif
+
         VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
         debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
