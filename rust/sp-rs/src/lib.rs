@@ -10,8 +10,8 @@ mod api;
 #[cfg(feature = "api")]
 pub use api::*;
 
-#[cfg(feature = "gfx")]
-mod gfx;
-
 #[cfg(feature = "wasm")]
 mod wasm;
+
+#[cfg(feature = "winit")]
+mod winit;

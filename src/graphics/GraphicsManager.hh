@@ -59,6 +59,12 @@ namespace sp {
 
         GraphicsContext *GetContext();
 
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        WinitInputHandler *GetWinitInputHandler() {
+            return winitInputHandler.get();
+        }
+    #endif
+
     private:
         bool ThreadInit() override;
         void PreFrame() override;

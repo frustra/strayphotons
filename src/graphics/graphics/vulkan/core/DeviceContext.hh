@@ -8,6 +8,7 @@
 #pragma once
 
 #include "assets/Async.hh"
+#include "core/Defer.hh"
 #include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -23,7 +24,7 @@
 #include <variant>
 
 struct GLFWwindow;
-namespace sp::gfx {
+namespace sp::winit {
     struct WinitContext;
 }
 
@@ -68,7 +69,7 @@ namespace sp::vulkan {
         }
 
         vk::Instance &Instance() {
-            return *instance;
+            return instance;
         }
 
         vk::Queue &GetQueue(CommandContextType type) {
@@ -208,8 +209,8 @@ namespace sp::vulkan {
             return window;
         }
 
-        gfx::WinitContext *GetWinitContext() {
-            return winitContext;
+        winit::WinitContext *GetWinitContext() {
+            return winitContext.get();
         }
 
         void *Win32WindowHandle() override;
@@ -257,11 +258,15 @@ namespace sp::vulkan {
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
+        std::shared_ptr<sp::winit::WinitContext> winitContext;
+
         std::thread::id mainThread;
         std::thread::id renderThread;
-        vk::UniqueInstance instance;
+        vk::Instance instance;
+        DeferredFunc instanceDestroy;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
-        vk::UniqueSurfaceKHR surface;
+        vk::SurfaceKHR surface;
+        DeferredFunc surfaceDestroy;
         vk::PhysicalDevice physicalDevice;
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
@@ -377,9 +382,8 @@ namespace sp::vulkan {
 
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
-        unique_ptr<CFuncCollection> funcs;
+        std::unique_ptr<CFuncCollection> funcs;
 
         GLFWwindow *window = nullptr;
-        sp::gfx::WinitContext *winitContext = nullptr;
     };
 } // namespace sp::vulkan

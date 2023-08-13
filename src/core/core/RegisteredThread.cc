@@ -47,6 +47,7 @@ namespace sp {
                 if (current == ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Stopped)) {
                     Errorf("RegisteredThread %s state already Stopped", threadName);
                 }
+                Tracef("Thread stopping: %s", threadName);
                 state.notify_all();
             });
 

@@ -35,7 +35,7 @@
     #endif
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-    #include <gfx.rs.h>
+    #include <winit.rs.h>
 #endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -176,34 +176,49 @@ namespace sp::vulkan {
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
 
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-        winitContext = sp::gfx::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y).into_raw();
-        instance = vk::UniqueInstance((VkInstance)sp::gfx::get_instance_handle(*winitContext));
+        winitContext = std::shared_ptr<sp::winit::WinitContext>(
+            sp::winit::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y).into_raw(),
+            [](auto *ptr) {
+                (void)rust::cxxbridge1::Box<sp::winit::WinitContext>::from_raw(ptr);
+            });
+        instance = (VkInstance)sp::winit::get_instance_handle(*winitContext);
+        Assert(instance, "winit instance creation failed");
+        instanceDestroy.SetFunc([this] {
+            Logf("Destroying rust instance");
+            sp::winit::destroy_instance(*winitContext);
+        });
 #else
-        instance = vk::createInstanceUnique(createInfo);
+        instance = vk::createInstance(createInfo);
+        instanceDestroy.SetFunc([this] {
+            if (instance) instance.destroy();
+        });
 #endif
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
-        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+        debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (enableSwapchain) {
-            vk::SurfaceKHR glfwSurface;
-            auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
+            auto result = glfwCreateWindowSurface(instance, window, nullptr, (VkSurfaceKHR *)&surface);
             AssertVKSuccess(result, "creating window surface");
-
-            vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
-            surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
+            Assert(surface, "gkfw window surface creation failed");
+            surfaceDestroy.SetFunc([this] {
+                if (surface) {
+                    instance.destroySurfaceKHR(surface);
+                    surface = nullptr;
+                }
+            });
         }
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-        uint64_t rawHandle = sp::gfx::get_surface_handle(*winitContext);
-        VkSurfaceKHR surfaceHandle = (VkSurfaceKHR)rawHandle;
-        Assert(surfaceHandle, "winit window creation failed");
-
-        vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
-        surface = vk::UniqueSurfaceKHR(surfaceHandle, deleter);
+        surface = (VkSurfaceKHR)sp::winit::get_surface_handle(*winitContext);
+        Assert(surface, "winit window creation failed");
+        surfaceDestroy.SetFunc([this] {
+            Logf("Destroying rust surface");
+            sp::winit::destroy_surface(*winitContext);
+        });
 #endif
 
-        auto physicalDevices = instance->enumeratePhysicalDevices();
+        auto physicalDevices = instance.enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
@@ -229,7 +244,7 @@ namespace sp::vulkan {
                 auto &props = queueFamilies[i];
                 if (!(props.queueFlags & require)) continue;
                 if (props.queueFlags & deny) continue;
-                if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, *surface)) continue;
+                if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, surface)) continue;
                 if (queuesUsedCount[i] >= props.queueCount) continue;
 
                 queueFamilyIndex[queueType] = i;
@@ -439,7 +454,7 @@ namespace sp::vulkan {
         allocatorInfo.vulkanApiVersion = VULKAN_API_VERSION;
         allocatorInfo.physicalDevice = physicalDevice;
         allocatorInfo.device = *device;
-        allocatorInfo.instance = *instance;
+        allocatorInfo.instance = instance;
         allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
         allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
         allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
@@ -559,6 +574,10 @@ namespace sp::vulkan {
             glfwDestroyWindow(window);
         }
 #endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        swapchain.reset();
+        sp::winit::destroy_window(*winitContext);
+#endif
 
 #ifdef TRACY_ENABLE_GRAPHICS
         for (auto ctx : tracing.tracyContexts)
@@ -573,14 +592,14 @@ namespace sp::vulkan {
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
         ZoneScoped;
-        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
 
         if (surfaceCapabilities.currentExtent.width == 0 || surfaceCapabilities.currentExtent.height == 0) {
             return;
         }
 
-        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-        auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
+        auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
 
         vk::PresentModeKHR presentMode = vk::PresentModeKHR::eImmediate;
         for (auto &mode : presentModes) {
@@ -602,7 +621,7 @@ namespace sp::vulkan {
         Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
 
         vk::SwapchainCreateInfoKHR swapchainInfo;
-        swapchainInfo.surface = *surface;
+        swapchainInfo.surface = surface;
         swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -652,8 +671,8 @@ namespace sp::vulkan {
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) glfwSetWindowTitle(window, title.c_str());
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-            // TODO: sp::gfx::set_window_title();
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+            // TODO: sp::winit::set_window_title();
 #endif
     }
 

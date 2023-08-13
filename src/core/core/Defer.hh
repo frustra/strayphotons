@@ -7,13 +7,29 @@
 
 #pragma once
 
+#include <functional>
+
 namespace sp {
     template<typename Fn>
     struct Defer {
         Defer(Fn &&fn) : fn(std::move(fn)) {}
+        Defer(const Defer &other) = delete;
         ~Defer() {
             fn();
         }
         Fn fn;
+    };
+
+    struct DeferredFunc {
+        DeferredFunc() {}
+        DeferredFunc(std::function<void()> &&fn) : fn(std::move(fn)) {}
+        DeferredFunc(const DeferredFunc &other) = delete;
+        void SetFunc(std::function<void()> &&func) {
+            fn = std::move(func);
+        }
+        ~DeferredFunc() {
+            fn();
+        }
+        std::function<void()> fn;
     };
 } // namespace sp

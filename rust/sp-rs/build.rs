@@ -16,8 +16,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut bridges = vec![];
     #[cfg(feature = "api")]
     bridges.push("src/api.rs");
-    #[cfg(feature = "gfx")]
-    bridges.push("src/gfx.rs");
+    #[cfg(feature = "winit")]
+    bridges.push("src/winit.rs");
     #[cfg(feature = "wasm")]
     bridges.push("src/wasm.rs");
 
@@ -26,7 +26,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(feature = "api")]
     build.file("src/api.cc");
 
-    build.flag_if_supported("-std=c++20").static_crt(true);
+    build.flag_if_supported("-std=c++20")
+        .flag_if_supported("/std:c++20")
+        .flag_if_supported("/EHsc")
+        .static_crt(true);
 
     let include_list = env!("RUST_INCLUDES", "$RUST_INCLUDES env variable not set");
     println!("Rust include list: {}", include_list);
@@ -39,11 +42,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     build.compile("sp-rs");
 
     // Add source files here and in CMakeLists.txt
-    println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/api.cc");
     println!("cargo:rerun-if-changed=src/api.hh");
-    println!("cargo:rerun-if-changed=src/gfx.rs");
+    println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");
+    println!("cargo:rerun-if-changed=src/winit.rs");
     Ok(())
 }
