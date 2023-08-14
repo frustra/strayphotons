@@ -13,7 +13,7 @@ use vulkano::{
     VulkanLibrary,
 };
 use vulkano::{Handle, VulkanObject};
-use ::winit::dpi::LogicalSize;
+use ::winit::dpi::PhysicalSize;
 use ::winit::event::{ElementState, Event, MouseScrollDelta, WindowEvent};
 use ::winit::keyboard::KeyCode;
 use ::winit::platform::scancode::KeyCodeExtScancode;
@@ -175,6 +175,14 @@ mod winit {
         BUTTON_8 = 7,
     }
 
+    #[derive(Debug, Clone, Copy)]
+    pub struct MonitorMode {
+        width: u32,
+        height: u32,
+        bit_depth: u16,
+        refresh_rate_millihertz: u32,
+    }
+
     unsafe extern "C++" {
         include!("input/KeyCodes.hh");
         include!("sp-rs/include/winit.hh");
@@ -203,12 +211,13 @@ mod winit {
     #[namespace = "sp::winit"]
     extern "Rust" {
         type WinitContext;
-        fn create_context(x: i32, y: i32) -> Box<WinitContext>;
+        fn create_context(width: i32, height: i32) -> Box<WinitContext>;
         fn destroy_window(context: &mut WinitContext);
         fn destroy_surface(context: &mut WinitContext);
         fn destroy_instance(context: &mut WinitContext);
         fn get_surface_handle(context: &WinitContext) -> u64;
         fn get_instance_handle(context: &WinitContext) -> u64;
+        fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode>;
         unsafe fn start_event_loop(context: &mut WinitContext, ctx: *mut WinitInputHandler);
     }
 }
@@ -216,10 +225,10 @@ mod winit {
 unsafe impl Send for WinitContext {}
 unsafe impl Sync for WinitContext {}
 
-fn create_context(x: i32, y: i32) -> Box<WinitContext> {
+fn create_context(width: i32, height: i32) -> Box<WinitContext> {
     let library: Arc<VulkanLibrary> = VulkanLibrary::new().expect("no local Vulkan library/DLL");
 
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let mut required_extensions: vulkano::instance::InstanceExtensions =
         Surface::required_extensions(&event_loop);
 
@@ -283,26 +292,19 @@ fn create_context(x: i32, y: i32) -> Box<WinitContext> {
     )
     .expect("failed to create instance");
 
-    /*let monitor = event_loop
-        .available_monitors()
-        .next()
-        .expect("no monitor found!");
-    let fullscreen = Some(Fullscreen::Borderless(Some(monitor.clone())));*/
     let window: Arc<Window> = Arc::new(
         WindowBuilder::new()
             .with_title("STRAY PHOTONS")
-            .with_inner_size(LogicalSize {
-                width: x,
-                height: y,
+            .with_resizable(false)
+            .with_inner_size(PhysicalSize {
+                width,
+                height,
             })
-            //.with_fullscreen(fullscreen)
             .build(&event_loop)
             .expect("Failed to create window"),
     );
 
     let surface = Surface::from_window(instance.clone(), window.clone()).unwrap();
-    // let surface = create_surface_from_winit(window.clone(), instance.clone())
-    //     .unwrap();
 
     // window.set_cursor_grab(CursorGrabMode::Locked)
     //         .or_else(|_e| window.set_cursor_grab(CursorGrabMode::Confined))
@@ -348,6 +350,26 @@ fn get_instance_handle(context: &WinitContext) -> u64 {
         .instance
         .as_ref()
         .map_or(0u64, |s| s.handle().as_raw())
+}
+
+fn get_monitor_modes(context: &WinitContext) -> Vec<winit::MonitorMode> {
+    if let Some(window) = context.window.as_ref() {
+        if let Some(monitor) = window.current_monitor().as_ref() {
+            monitor.video_modes().map(|mode| {
+                let size = mode.size();
+                winit::MonitorMode {
+                    width: size.width,
+                    height: size.height,
+                    bit_depth: mode.bit_depth(),
+                    refresh_rate_millihertz: mode.refresh_rate_millihertz(),
+                }
+            }).collect()
+        } else {
+            vec![]
+        }
+    } else {
+        vec![]
+    }
 }
 
 fn start_event_loop(context: &mut WinitContext, input_handler: *mut winit::WinitInputHandler) {
