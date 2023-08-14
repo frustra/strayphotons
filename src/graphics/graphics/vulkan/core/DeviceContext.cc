@@ -96,7 +96,6 @@ namespace sp::vulkan {
         Assert(glfwVulkanSupported(), "Vulkan not supported");
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
         // Disable OpenGL context creation
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -143,6 +142,7 @@ namespace sp::vulkan {
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
         debugInfo.pUserData = this;
 
+        auto initialSize = CVarWindowSize.Get();
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
@@ -152,7 +152,6 @@ namespace sp::vulkan {
 
         if (enableSwapchain) {
             // Create window and surface
-            auto initialSize = CVarWindowSize.Get();
             window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
             Assert(window, "glfw window creation failed");
         }
@@ -179,7 +178,7 @@ namespace sp::vulkan {
 
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
-            sp::winit::create_context(CVarWindowSize.Get().x, CVarWindowSize.Get().y).into_raw(),
+            sp::winit::create_context(initialSize.x, initialSize.y).into_raw(),
             [](auto *ptr) {
                 (void)rust::cxxbridge1::Box<sp::winit::WinitContext>::from_raw(ptr);
             });
@@ -552,13 +551,21 @@ namespace sp::vulkan {
             for (int i = 0; i < modeCount; i++) {
                 monitorModes[i] = {modes[i].width, modes[i].height};
             }
-            std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-                return a.x > b.x || (a.x == b.x && a.y > b.y);
-            });
         } else {
             Warnf("Failed to read Glfw monitor modes");
         }
 #endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        auto modes = sp::winit::get_monitor_modes(*winitContext);
+        monitorModes.reserve(modes.size());
+        for (auto &mode : modes) {
+            monitorModes.emplace_back(mode.width, mode.height);
+        }
+#endif
+        std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
+            return a.x > b.x || (a.x == b.x && a.y > b.y);
+        });
+        monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
 
         if (enableSwapchain) CreateSwapchain();
     }
