@@ -38,8 +38,8 @@ namespace sp {
             });
     }
 
-    void WinitInputHandler::StartEventLoop() {
-        start_event_loop(context, this);
+    void WinitInputHandler::StartEventLoop(uint32_t maxInputRate) {
+        start_event_loop(context, this, maxInputRate);
     }
 
     bool InputFrameCallback(WinitInputHandler *ctx) {
@@ -74,9 +74,17 @@ namespace sp {
         ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_KEYBOARD_CHARACTERS, keyboard, (char)ch});
     }
 
-    void MouseMoveCallback(WinitInputHandler *ctx, double xPos, double yPos) {
+    void MouseMoveCallback(WinitInputHandler *ctx, double dx, double dy) {
         ZoneScoped;
         Assert(ctx, "MouseMoveCallback occured without valid context");
+
+        auto mouse = ctx->mouseEntity.GetLive();
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, glm::vec2(dx, dy)});
+    }
+
+    void MousePositionCallback(WinitInputHandler *ctx, double xPos, double yPos) {
+        ZoneScoped;
+        Assert(ctx, "MousePositionCallback occured without valid context");
 
         auto mouse = ctx->mouseEntity.GetLive();
         ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, glm::vec2(xPos, yPos)});

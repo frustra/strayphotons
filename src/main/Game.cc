@@ -28,25 +28,26 @@
 
 #include <atomic>
 #include <cxxopts.hpp>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <strayphotons.h>
 #include <wasm.rs.h>
 
 namespace sp {
-    std::atomic_int gameExitCode;
-    std::atomic_flag gameExitTriggered;
+    std::atomic_int GameExitCode;
+    std::atomic_flag GameExitTriggered;
 
     CFunc<int> cfExit("exit", "Quits the game", [](int arg) {
         Tracef("Exit triggered via console command");
-        gameExitCode = arg;
-        gameExitTriggered.test_and_set();
-        gameExitTriggered.notify_all();
+        GameExitCode = arg;
+        GameExitTriggered.test_and_set();
+        GameExitTriggered.notify_all();
     });
 
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this, startupScript != nullptr),
+          graphics(*this, startupScript != nullptr),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(windowEventQueue, startupScript != nullptr),
@@ -169,13 +170,13 @@ namespace sp {
 #ifdef SP_INPUT_SUPPORT_WINIT
         auto *inputHandler = graphics.GetWinitInputHandler();
         Assertf(inputHandler != nullptr, "WinitInputHandler is null");
-        inputHandler->StartEventLoop();
+        inputHandler->StartEventLoop((uint32_t)MaxInputPollRate);
         graphics.StopThread();
 #elif defined(SP_GRAPHICS_SUPPORT)
         auto frameEnd = chrono_clock::now();
-        while (!gameExitTriggered.test()) {
-            // static const char *frameName = "WindowInput";
-            // FrameMarkStart(frameName);
+        while (!GameExitTriggered.test()) {
+            static const char *frameName = "WindowInput";
+            FrameMarkStart(frameName);
             if (startupScript) {
                 while (graphicsStepCount < graphicsMaxStepCount) {
                     graphics.InputFrame();
@@ -202,7 +203,7 @@ namespace sp {
             }
 
             std::this_thread::sleep_until(frameEnd);
-            // FrameMarkEnd(frameName);
+            FrameMarkEnd(frameName);
         }
         graphics.StopThread();
 #else
@@ -210,27 +211,102 @@ namespace sp {
             exitTriggered.wait(false);
         }
 #endif
-        return gameExitCode;
+        return GameExitCode;
     }
 
     struct CGameContext {
         cxxopts::ParseResult optionsResult;
         Game game;
 
-        CGameContext(cxxopts::Options options, int argc, char **argv)
-            : optionsResult(options.parse(argc, argv)), game(optionsResult) {}
+#ifdef _WIN32
+        std::shared_ptr<unsigned int> winSchedulerHandle;
+#endif
+
+        CGameContext(cxxopts::ParseResult &&optionsResult, sp::ConsoleScript *startupScript = nullptr)
+            : optionsResult(std::move(optionsResult)), game(this->optionsResult, startupScript),
+              winSchedulerHandle(SetWindowsSchedulerFix()) {}
     };
 
     StrayPhotons game_init(int argc, char **argv) {
-        cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
-        CGameContext *instance = new CGameContext(options, argc, argv);
+        using cxxopts::value;
 
-        static_assert(sizeof(uintptr_t) <= sizeof(StrayPhotons), "Pointer size larger than handle");
-        return static_cast<StrayPhotons>(reinterpret_cast<uintptr_t>(instance));
+#ifdef CATCH_GLOBAL_EXCEPTIONS
+        try
+#endif
+        {
+#ifdef SP_TEST_MODE
+            cxxopts::Options options("sp-test", "Stray Photons Game Engine Test Environment\n");
+            options.positional_help("<script-file>");
+#else
+            cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
+#endif
+
+            // clang-format off
+            options.add_options()
+                ("h,help", "Display help")
+#ifdef SP_TEST_MODE
+                ("script-file", "", value<string>())
+#else
+                ("m,map", "Initial scene to load", value<string>())
+#endif
+                ("size", "Initial window size", value<string>())
+#ifdef SP_XR_SUPPORT
+                ("no-vr", "Disable automatic XR/VR system loading")
+#endif
+#ifdef SP_GRAPHICS_SUPPORT
+                ("headless", "Disable window creation and graphics initialization")
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_VK
+                ("with-validation-layers", "Enable Vulkan validation layers")
+#endif
+                ("c,command", "Run a console command on init", value<vector<string>>());
+            // clang-format on
+
+#ifdef SP_TEST_MODE
+            options.parse_positional({"script-file"});
+#endif
+
+            auto optionsResult = options.parse(argc, argv);
+
+            if (optionsResult.count("help")) {
+                std::cout << options.help() << std::endl;
+                return nullptr;
+            }
+
+            Logf("Starting in directory: %s", std::filesystem::current_path().string());
+
+#ifdef SP_TEST_MODE
+            if (!optionsResult.count("script-file")) {
+                Errorf("Script file required argument.");
+                return nullptr;
+            } else {
+                string scriptPath = optionsResult["script-file"].as<string>();
+
+                Logf("Loading test script: %s", scriptPath);
+                auto asset = sp::Assets().Load("scripts/" + scriptPath)->Get();
+                if (!asset) {
+                    Errorf("Test script not found: %s", scriptPath);
+                    return nullptr;
+                }
+
+                sp::ConsoleScript script(scriptPath, asset);
+                return new CGameContext(std::move(optionsResult), &script);
+            }
+#else
+            return new CGameContext(std::move(optionsResult));
+#endif
+        }
+#ifdef CATCH_GLOBAL_EXCEPTIONS
+        catch (const char *err) {
+            Errorf("terminating with exception: %s", err);
+        } catch (const std::exception &ex) {
+            Errorf("terminating with exception: %s", ex.what());
+        }
+#endif
+        return nullptr;
     }
 
-    int game_start(StrayPhotons ctx) {
-        CGameContext *instance = reinterpret_cast<CGameContext *>(static_cast<uintptr_t>(ctx));
+    int game_start(StrayPhotons instance) {
         Assertf(instance != nullptr, "sp::game_destroy called with null instance");
 
         try {
@@ -240,10 +316,22 @@ namespace sp {
         }
     }
 
-    void game_destroy(StrayPhotons ctx) {
-        CGameContext *instance = reinterpret_cast<CGameContext *>(static_cast<uintptr_t>(ctx));
+    void game_destroy(StrayPhotons instance) {
         Assertf(instance != nullptr, "sp::game_destroy called with null instance");
 
         delete instance;
     }
 } // namespace sp
+
+#ifdef _WIN32
+    #include <windows.h>
+
+std::shared_ptr<unsigned int> SetWindowsSchedulerFix() {
+    // Increase thread scheduler resolution from default of 15ms
+    timeBeginPeriod(1);
+    return std::shared_ptr<UINT>(new UINT(1), [](UINT *period) {
+        timeEndPeriod(*period);
+        delete period;
+    });
+}
+#endif

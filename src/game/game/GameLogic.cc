@@ -35,8 +35,6 @@ namespace sp {
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         static const ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
 
-        static glm::vec2 prevMousePos = {};
-
         auto keyboard = keyboardEntity.Get(lock);
         auto mouse = mouseEntity.Get(lock);
 
@@ -63,11 +61,6 @@ namespace sp {
                 signalRef.ClearValue(lock);
             } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
                 auto &mousePos = std::get<glm::vec2>(event.data);
-                ecs::EventBindings::SendEvent(lock,
-                    mouseEntity,
-                    ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - prevMousePos});
-                prevMousePos = mousePos;
-
                 ecs::SignalRef refX(mouse, INPUT_SIGNAL_MOUSE_CURSOR_X);
                 ecs::SignalRef refY(mouse, INPUT_SIGNAL_MOUSE_CURSOR_Y);
                 refX.SetValue(lock, mousePos.x);

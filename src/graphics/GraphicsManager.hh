@@ -48,7 +48,7 @@ namespace sp {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:
-        GraphicsManager(Game *game, bool stepMode);
+        GraphicsManager(Game &game, bool stepMode);
         ~GraphicsManager();
 
         void Init();
@@ -71,7 +71,7 @@ namespace sp {
         void PostFrame() override;
         void Frame() override;
 
-        Game *game;
+        Game &game;
         bool stepMode;
         unique_ptr<GraphicsContext> context;
         ecs::EntityRef flatviewEntity;

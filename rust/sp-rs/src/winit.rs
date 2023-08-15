@@ -1,6 +1,7 @@
 use std::ops::Add;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use cxx::CxxString;
 use vulkano::{
     instance::{
         debug::{
@@ -14,10 +15,10 @@ use vulkano::{
 };
 use vulkano::{Handle, VulkanObject};
 use ::winit::dpi::PhysicalSize;
-use ::winit::event::{ElementState, Event, MouseScrollDelta, WindowEvent};
+use ::winit::event::{ElementState, Event, MouseScrollDelta, WindowEvent, DeviceEvent};
 use ::winit::keyboard::KeyCode;
 use ::winit::platform::scancode::KeyCodeExtScancode;
-use ::winit::window::Window;
+use ::winit::window::{Window, CursorGrabMode};
 use ::winit::{event_loop::EventLoop, window::WindowBuilder};
 
 pub struct WinitContext {
@@ -176,6 +177,12 @@ mod winit {
     }
 
     #[derive(Debug, Clone, Copy)]
+    pub enum InputMode {
+        CursorDisabled,
+        CursorNormal,
+    }
+
+    #[derive(Debug, Clone, Copy)]
     pub struct MonitorMode {
         width: u32,
         height: u32,
@@ -199,7 +206,8 @@ mod winit {
             action: InputAction,
         );
         unsafe fn CharInputCallback(ctx: *mut WinitInputHandler, ch: u32);
-        unsafe fn MouseMoveCallback(ctx: *mut WinitInputHandler, xPos: f64, yPos: f64);
+        unsafe fn MouseMoveCallback(ctx: *mut WinitInputHandler, dx: f64, dy: f64);
+        unsafe fn MousePositionCallback(ctx: *mut WinitInputHandler, xPos: f64, yPos: f64);
         unsafe fn MouseButtonCallback(
             ctx: *mut WinitInputHandler,
             button: MouseButton,
@@ -218,7 +226,9 @@ mod winit {
         fn get_surface_handle(context: &WinitContext) -> u64;
         fn get_instance_handle(context: &WinitContext) -> u64;
         fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode>;
-        unsafe fn start_event_loop(context: &mut WinitContext, ctx: *mut WinitInputHandler);
+        fn set_window_title(context: &WinitContext, title: &CxxString);
+        fn set_input_mode(context: &WinitContext, mode: InputMode);
+        unsafe fn start_event_loop(context: &mut WinitContext, ctx: *mut WinitInputHandler, max_input_rate: u32);
     }
 }
 
@@ -306,11 +316,6 @@ fn create_context(width: i32, height: i32) -> Box<WinitContext> {
 
     let surface = Surface::from_window(instance.clone(), window.clone()).unwrap();
 
-    // window.set_cursor_grab(CursorGrabMode::Locked)
-    //         .or_else(|_e| window.set_cursor_grab(CursorGrabMode::Confined))
-    //         .unwrap();
-    // window.set_cursor_visible(false);
-
     println!("Hello, Rust!");
     Box::new(WinitContext {
         library: library.to_owned(),
@@ -322,7 +327,6 @@ fn create_context(width: i32, height: i32) -> Box<WinitContext> {
 }
 
 fn destroy_window(context: &mut WinitContext) {
-    println!("Destroying winit window");
     context.window.take().unwrap();
 }
 
@@ -372,19 +376,49 @@ fn get_monitor_modes(context: &WinitContext) -> Vec<winit::MonitorMode> {
     }
 }
 
-fn start_event_loop(context: &mut WinitContext, input_handler: *mut winit::WinitInputHandler) {
+fn set_window_title(context: &WinitContext, title: &CxxString) {
+    if let Some(window) = context.window.as_ref() {
+        window.set_title(title.to_str().unwrap_or("error"));
+    }
+}
+
+fn set_input_mode(context: &WinitContext, mode: winit::InputMode) {
+    if let Some(window) = context.window.as_ref() {
+        match mode {
+            winit::InputMode::CursorDisabled => {
+                window.set_cursor_grab(CursorGrabMode::Locked)
+                      .or_else(|_e| window.set_cursor_grab(CursorGrabMode::Confined))
+                      .unwrap();
+                window.set_cursor_visible(false);
+            },
+            winit::InputMode::CursorNormal => {
+                window.set_cursor_grab(CursorGrabMode::None).unwrap();
+                window.set_cursor_visible(true);
+            },
+            _ => (),
+        }
+    }
+}
+
+fn start_event_loop(context: &mut WinitContext, input_handler: *mut winit::WinitInputHandler, max_input_rate: u32) {
     let event_loop = context.event_loop.take().unwrap();
     event_loop
         .run(|event, _, control_flow| {
             match event {
+                Event::DeviceEvent { event, .. } => match event {
+                    // TODO: Map unique device_ids to different events/signals
+                    DeviceEvent::MouseMotion { delta } => unsafe {
+                        winit::MouseMoveCallback(input_handler, delta.0, delta.1);
+                    },
+                    _ => (),
+                },
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::CloseRequested => {
                         println!("Exit requested by Winit");
-                        // TODO: Keep an exit flag that is accessible via should_close()
                         control_flow.set_exit();
                     }
                     WindowEvent::CursorMoved { position, .. } => unsafe {
-                        winit::MouseMoveCallback(input_handler, position.x, position.y);
+                        winit::MousePositionCallback(input_handler, position.x, position.y);
                     },
                     WindowEvent::MouseWheel {
                         delta: MouseScrollDelta::LineDelta(dx, dy),
@@ -436,14 +470,21 @@ fn start_event_loop(context: &mut WinitContext, input_handler: *mut winit::Winit
                                 }
                             }
                         }
-                    }
+                    },
                     _ => (),
                 },
                 Event::AboutToWait => {
+                    let should_close: bool;
                     unsafe {
-                        winit::InputFrameCallback(input_handler);
+                        should_close = !winit::InputFrameCallback(input_handler);
                     }
-                    control_flow.set_wait_until(Instant::now().add(Duration::from_millis(5)));
+                    if should_close {
+                        control_flow.set_exit();
+                    } else if max_input_rate > 0 {
+                        control_flow.set_wait_until(Instant::now().add(Duration::from_secs(1) / max_input_rate));
+                    } else {
+                        control_flow.set_wait();
+                    }
                 }
                 _ => (),
             }

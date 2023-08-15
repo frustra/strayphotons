@@ -5,12 +5,12 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CARGO_CMD cargo build --verbose)
     set(CARGO_TARGET_DIR "debug")
-else ()
+else()
     set(CARGO_CMD cargo build --release --verbose)
     set(CARGO_TARGET_DIR "release")
-endif ()
+endif()
 
 add_subdirectory(sp-rs)

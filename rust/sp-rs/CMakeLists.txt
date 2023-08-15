@@ -19,18 +19,29 @@ set(RUST_SOURCE_FILES
     src/winit.rs
 )
 
-set(CXXBRIDGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs/src")
+set(CXXBRIDGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge")
+set(CXXBRIDGE_SP_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs/src")
 add_custom_command(COMMENT "Run cxxbridge codegen"
-    OUTPUT ${CXXBRIDGE_LIB} "${CXXBRIDGE_DIR}/api.rs.cc" "${CXXBRIDGE_DIR}/wasm.rs.cc" "${CXXBRIDGE_DIR}/winit.rs.cc"
+    OUTPUT
+        ${CXXBRIDGE_LIB}
+        "${CXXBRIDGE_SP_DIR}/api.rs.cc"
+        "${CXXBRIDGE_SP_DIR}/api.rs.h"
+        "${CXXBRIDGE_SP_DIR}/wasm.rs.cc"
+        "${CXXBRIDGE_SP_DIR}/wasm.rs.h"
+        "${CXXBRIDGE_SP_DIR}/winit.rs.cc"
+        "${CXXBRIDGE_SP_DIR}/winit.rs.h"
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml
-    COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/ RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs,INCLUDE_DIRECTORIES>" ${CARGO_CMD}
+    COMMAND ${CMAKE_COMMAND} -E env
+        CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/
+        RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs,INCLUDE_DIRECTORIES>"
+        ${CARGO_CMD}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_library(sp-rs STATIC
-    "${CXXBRIDGE_DIR}/api.rs.cc"
-    "${CXXBRIDGE_DIR}/wasm.rs.cc"
-    "${CXXBRIDGE_DIR}/winit.rs.cc"
+    "${CXXBRIDGE_SP_DIR}/api.rs.cc"
+    "${CXXBRIDGE_SP_DIR}/wasm.rs.cc"
+    "${CXXBRIDGE_SP_DIR}/winit.rs.cc"
 )
 
 target_include_directories(sp-rs

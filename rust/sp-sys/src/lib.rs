@@ -1,4 +1,3 @@
-mod error;
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 #[allow(non_camel_case_types)]
@@ -17,7 +16,7 @@ mod tests {
     fn test_sp() -> Result<(), Box<dyn Error>> {
         let sp = StrayPhotons::new();
         unsafe {
-            sp.start()?;
+            sp.start();
         }
         Ok(())
     }
