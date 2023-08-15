@@ -1707,8 +1707,7 @@ namespace sp::vulkan {
 #elif defined(SP_GRAPHICS_SUPPORT_GLFW)
         return window ? glfwGetWin32Window(window) : nullptr;
 #elif defined(SP_GRAPHICS_SUPPORT_WINIT)
-        // TODO: read window handle from winit
-        return nullptr;
+        return winitContext ? (void *)sp::winit::get_win32_window_handle(*winitContext) : nullptr;
 #else
         return nullptr;
 #endif
