@@ -225,7 +225,13 @@ namespace sp {
 
         CGameContext(cxxopts::ParseResult &&optionsResult, std::shared_ptr<sp::ConsoleScript> &&startupScript = nullptr)
             : optionsResult(std::move(optionsResult)), startupScript(startupScript),
-              game(this->optionsResult, startupScript.get()), winSchedulerHandle(SetWindowsSchedulerFix()) {}
+              game(this->optionsResult, startupScript.get())
+#ifdef _WIN32
+              ,
+              winSchedulerHandle(SetWindowsSchedulerFix())
+#endif
+        {
+        }
     };
 
     StrayPhotons game_init(int argc, char **argv) {
@@ -334,5 +340,5 @@ std::shared_ptr<unsigned int> SetWindowsSchedulerFix() {
         timeEndPeriod(*period);
         delete period;
     });
-}
 #endif
+}
