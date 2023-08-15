@@ -28,7 +28,7 @@ namespace sp {
             fn = std::move(func);
         }
         ~DeferredFunc() {
-            fn();
+            if (fn) fn();
         }
         std::function<void()> fn;
     };
