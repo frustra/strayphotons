@@ -29,14 +29,14 @@ fn start() -> Result<(), Box<dyn Error>> {
     let sp = StrayPhotons::new();
 
     let current_dir = env::current_dir()?;
-    println!("Starting in directory: {}", current_dir.display());
+    log::info!("Rust working directory: {}", current_dir.display());
 
     log::warn!("init");
 
-    unsafe {
-        sp.start()?;
-    }
     // TODO: API for setting scripts/assets
+    unsafe {
+        sp.start();
+    }
 
     Ok(())
 }
@@ -45,6 +45,8 @@ fn start() -> Result<(), Box<dyn Error>> {
 fn main() {
     match start() {
         Ok(_) => {},
-        Err(_) => todo!(),
+        Err(err) => {
+            eprintln!("Error: {}", err);
+        },
     }
 }

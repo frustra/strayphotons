@@ -11,10 +11,14 @@
 
 #ifdef __cplusplus
 namespace sp {
-    extern "C" {
-#endif
+    struct CGameContext;
 
-    typedef uint64_t StrayPhotons;
+    extern "C" {
+    typedef CGameContext *StrayPhotons;
+    static_assert(sizeof(uintptr_t) <= sizeof(uint64_t), "Pointer size larger than handle");
+#else
+typedef uint64_t StrayPhotons;
+#endif
 
     StrayPhotons game_init(int argc, char **argv);
     int game_start(StrayPhotons ctx);

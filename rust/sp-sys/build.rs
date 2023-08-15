@@ -36,6 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     debug!("Rust output dir: {}", sp.display());
     debug!("CMake link dir: {}", bin_dir.display());
 
+    println!("cargo:rerun-if-changed=../../include/strayphotons.h");
     println!("cargo:rustc-link-search=native={}/build/src", sp.display()); // Static library path
     println!("cargo:rustc-link-search=native={}", bin_dir.display()); // Shared library path
     println!("cargo:rustc-link-lib=dylib=sp");

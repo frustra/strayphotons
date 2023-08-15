@@ -185,7 +185,7 @@ namespace sp::vulkan {
         instance = (VkInstance)sp::winit::get_instance_handle(*winitContext);
         Assert(instance, "winit instance creation failed");
         instanceDestroy.SetFunc([this] {
-            Logf("Destroying rust instance");
+            Tracef("Destroying rust instance");
             sp::winit::destroy_instance(*winitContext);
         });
 #endif
@@ -210,7 +210,7 @@ namespace sp::vulkan {
         surface = (VkSurfaceKHR)sp::winit::get_surface_handle(*winitContext);
         Assert(surface, "winit window creation failed");
         surfaceDestroy.SetFunc([this] {
-            Logf("Destroying rust surface");
+            Tracef("Destroying rust surface");
             sp::winit::destroy_surface(*winitContext);
         });
 #endif
@@ -571,9 +571,8 @@ namespace sp::vulkan {
     }
 
     DeviceContext::~DeviceContext() {
-        if (device) {
-            device->waitIdle();
-        }
+        if (device) device->waitIdle();
+        Tracef("Destroying DeviceContext");
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) {
             glfwDestroyWindow(window);
@@ -677,7 +676,7 @@ namespace sp::vulkan {
         if (window) glfwSetWindowTitle(window, title.c_str());
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-            // TODO: sp::winit::set_window_title();
+        if (winitContext) sp::winit::set_window_title(*winitContext, title);
 #endif
     }
 
@@ -685,7 +684,6 @@ namespace sp::vulkan {
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         return window && !!glfwWindowShouldClose(window);
 #else
-        // TODO: Check should close from winit
         return false;
 #endif
     }
@@ -765,7 +763,17 @@ namespace sp::vulkan {
         }
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-// TODO: Show/hide cursor via winit
+        if (winitContext) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
+            if (lock.Has<ecs::FocusLock>()) {
+                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+                if (layer == ecs::FocusLayer::Game) {
+                    sp::winit::set_input_mode(*winitContext, sp::InputMode::CursorDisabled);
+                } else {
+                    sp::winit::set_input_mode(*winitContext, sp::InputMode::CursorNormal);
+                }
+            }
+        }
 #endif
     }
 

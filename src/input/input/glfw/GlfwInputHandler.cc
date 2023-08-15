@@ -95,8 +95,11 @@ namespace sp {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx, "MouseMoveCallback occured without valid context");
 
+        glm::vec2 mousePos(xPos, yPos);
         auto mouse = ctx->mouseEntity.GetLive();
-        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, glm::vec2(xPos, yPos)});
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, mousePos});
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
+        ctx->prevMousePos = mousePos;
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {

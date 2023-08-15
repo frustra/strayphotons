@@ -46,7 +46,7 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game *game, bool stepMode)
+    GraphicsManager::GraphicsManager(Game &game, bool stepMode)
         : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game), stepMode(stepMode) {}
 
     GraphicsManager::~GraphicsManager() {
@@ -61,7 +61,7 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_VK
         Logf("Graphics starting up (Vulkan)");
 
-        bool enableValidationLayers = game->options.count("with-validation-layers") > 0;
+        bool enableValidationLayers = game.options.count("with-validation-layers") > 0;
 
         #ifdef SP_GRAPHICS_SUPPORT_HEADLESS
         bool enableSwapchain = false;
@@ -73,18 +73,18 @@ namespace sp {
 
         #if defined(SP_GRAPHICS_SUPPORT_GLFW) && defined(SP_INPUT_SUPPORT_GLFW)
         GLFWwindow *window = vkContext->GetGlfwWindow();
-        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game->windowEventQueue, *window);
+        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(game.windowEventQueue, *window);
         #endif
         #if defined(SP_GRAPHICS_SUPPORT_WINIT) && defined(SP_INPUT_SUPPORT_WINIT)
         winit::WinitContext *winitCtx = vkContext->GetWinitContext();
         if (winitCtx != nullptr) {
-            winitInputHandler = make_unique<WinitInputHandler>(*this, game->windowEventQueue, *winitCtx);
+            winitInputHandler = make_unique<WinitInputHandler>(*this, game.windowEventQueue, *winitCtx);
         }
         #endif
     #endif
 
-        if (game->options.count("size")) {
-            std::istringstream ss(game->options["size"].as<string>());
+        if (game.options.count("size")) {
+            std::istringstream ss(game.options["size"].as<string>());
             glm::ivec2 size;
             ss >> size.x >> size.y;
 
@@ -103,7 +103,7 @@ namespace sp {
     }
 
     bool GraphicsManager::HasActiveContext() {
-        return context && !context->ShouldClose();
+        return context && !context->ShouldClose() && !GameExitTriggered.test();
     }
 
     bool GraphicsManager::ThreadInit() {
@@ -115,11 +115,11 @@ namespace sp {
         auto *vkContext = dynamic_cast<vulkan::DeviceContext *>(context.get());
         Assert(vkContext, "Invalid vulkan context on init");
 
-        game->debugGui->Attach(make_shared<vulkan::ProfilerGui>(*vkContext->GetPerfTimer()));
+        game.debugGui->Attach(make_shared<vulkan::ProfilerGui>(*vkContext->GetPerfTimer()));
 
         renderer = make_unique<vulkan::Renderer>(*vkContext);
-        renderer->SetDebugGui(game->debugGui.get());
-        renderer->SetMenuGui(game->menuGui.get());
+        renderer->SetDebugGui(game.debugGui.get());
+        renderer->SetMenuGui(game.menuGui.get());
     #endif
 
         return true;
@@ -159,8 +159,8 @@ namespace sp {
     void GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return;
-        if (game->debugGui) game->debugGui->BeforeFrame();
-        if (game->menuGui) game->menuGui->BeforeFrame();
+        if (game.debugGui) game.debugGui->BeforeFrame();
+        if (game.menuGui) game.menuGui->BeforeFrame();
 
         context->BeginFrame();
     }
@@ -170,7 +170,7 @@ namespace sp {
         if (!HasActiveContext()) return;
 
     #ifdef SP_XR_SUPPORT
-        auto xrSystem = game->xr.GetXrSystem();
+        auto xrSystem = game.xr.GetXrSystem();
         if (xrSystem) xrSystem->WaitFrame();
     #endif
 

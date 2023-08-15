@@ -32,8 +32,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .static_crt(true);
 
     let include_list = env!("RUST_INCLUDES", "$RUST_INCLUDES env variable not set");
-    println!("Rust include list: {}", include_list);
-
     for path in include_list.split(";") {
         if !path.is_empty() {
             build.include(path);
@@ -41,9 +39,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     build.compile("sp-rs");
 
+    let current_dir = env::current_dir()?;
+    println!("cargo:warning=Building from directory: {}", current_dir.display());
+
     // Add source files here and in CMakeLists.txt
     println!("cargo:rerun-if-changed=src/api.cc");
-    println!("cargo:rerun-if-changed=src/api.hh");
+    println!("cargo:rerun-if-changed=include/api.hh");
+    println!("cargo:rerun-if-changed=include/winit.hh");
     println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");
