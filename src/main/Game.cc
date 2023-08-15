@@ -340,5 +340,5 @@ std::shared_ptr<unsigned int> SetWindowsSchedulerFix() {
         timeEndPeriod(*period);
         delete period;
     });
-#endif
 }
+#endif

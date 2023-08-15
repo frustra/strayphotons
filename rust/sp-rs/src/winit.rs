@@ -20,6 +20,8 @@ use ::winit::keyboard::KeyCode;
 use ::winit::platform::scancode::KeyCodeExtScancode;
 use ::winit::window::{Window, CursorGrabMode};
 use ::winit::{event_loop::EventLoop, window::WindowBuilder};
+use ::winit::window::raw_window_handle::HasRawWindowHandle;
+use raw_window_handle::RawWindowHandle;
 
 pub struct WinitContext {
     pub library: Arc<VulkanLibrary>,
@@ -225,6 +227,7 @@ mod winit {
         fn destroy_instance(context: &mut WinitContext);
         fn get_surface_handle(context: &WinitContext) -> u64;
         fn get_instance_handle(context: &WinitContext) -> u64;
+        fn get_win32_window_handle(context: &WinitContext) -> u64;
         fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode>;
         fn set_window_title(context: &WinitContext, title: &CxxString);
         fn set_input_mode(context: &WinitContext, mode: InputMode);
@@ -354,6 +357,23 @@ fn get_instance_handle(context: &WinitContext) -> u64 {
         .instance
         .as_ref()
         .map_or(0u64, |s| s.handle().as_raw())
+}
+
+#[cfg(target_os = "windows")]
+fn get_win32_window_handle(context: &WinitContext) -> u64 {
+    if let Some(window) = context.window.as_ref() {
+        match window.raw_window_handle() {
+            RawWindowHandle::Win32(handle) => handle.hwnd as u64,
+            _ => 0u64,
+        }
+    } else {
+        0u64
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn get_win32_window_handle(context: &WinitContext) -> u64 {
+    0u64
 }
 
 fn get_monitor_modes(context: &WinitContext) -> Vec<winit::MonitorMode> {
