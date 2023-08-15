@@ -216,15 +216,16 @@ namespace sp {
 
     struct CGameContext {
         cxxopts::ParseResult optionsResult;
+        std::shared_ptr<sp::ConsoleScript> startupScript;
         Game game;
 
 #ifdef _WIN32
         std::shared_ptr<unsigned int> winSchedulerHandle;
 #endif
 
-        CGameContext(cxxopts::ParseResult &&optionsResult, sp::ConsoleScript *startupScript = nullptr)
-            : optionsResult(std::move(optionsResult)), game(this->optionsResult, startupScript),
-              winSchedulerHandle(SetWindowsSchedulerFix()) {}
+        CGameContext(cxxopts::ParseResult &&optionsResult, std::shared_ptr<sp::ConsoleScript> &&startupScript = nullptr)
+            : optionsResult(std::move(optionsResult)), startupScript(startupScript),
+              game(this->optionsResult, startupScript.get()), winSchedulerHandle(SetWindowsSchedulerFix()) {}
     };
 
     StrayPhotons game_init(int argc, char **argv) {
@@ -289,8 +290,8 @@ namespace sp {
                     return nullptr;
                 }
 
-                sp::ConsoleScript script(scriptPath, asset);
-                return new CGameContext(std::move(optionsResult), &script);
+                return new CGameContext(std::move(optionsResult),
+                    std::make_shared<sp::ConsoleScript>(scriptPath, asset));
             }
 #else
             return new CGameContext(std::move(optionsResult));
