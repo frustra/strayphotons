@@ -14,22 +14,15 @@ use vulkano::{
     VulkanLibrary,
 };
 use vulkano::{Handle, VulkanObject};
-use ::winit::dpi::PhysicalSize;
+use ::winit::dpi::{PhysicalSize, PhysicalPosition};
 use ::winit::event::{ElementState, Event, MouseScrollDelta, WindowEvent, DeviceEvent};
 use ::winit::keyboard::KeyCode;
 use ::winit::platform::scancode::KeyCodeExtScancode;
-use ::winit::window::{Window, CursorGrabMode};
+use ::winit::window::{Window, Fullscreen, CursorGrabMode};
+use ::winit::monitor::{MonitorHandle, VideoMode};
 use ::winit::{event_loop::EventLoop, window::WindowBuilder};
 use ::winit::window::raw_window_handle::HasRawWindowHandle;
 use raw_window_handle::RawWindowHandle;
-
-pub struct WinitContext {
-    pub library: Arc<VulkanLibrary>,
-    pub instance: Option<Arc<Instance>>,
-    pub window: Option<Arc<Window>>,
-    pub surface: Option<Arc<Surface>>,
-    pub event_loop: Option<EventLoop<()>>,
-}
 
 #[cxx::bridge(namespace = "sp")]
 mod winit {
@@ -221,18 +214,41 @@ mod winit {
     #[namespace = "sp::winit"]
     extern "Rust" {
         type WinitContext;
+        type MonitorContext;
         fn create_context(width: i32, height: i32) -> Box<WinitContext>;
         fn destroy_window(context: &mut WinitContext);
         fn destroy_surface(context: &mut WinitContext);
         fn destroy_instance(context: &mut WinitContext);
+
         fn get_surface_handle(context: &WinitContext) -> u64;
         fn get_instance_handle(context: &WinitContext) -> u64;
         fn get_win32_window_handle(context: &WinitContext) -> u64;
+
         fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode>;
+        fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext>;
+        unsafe fn get_monitor_resolution(monitor: &MonitorContext, width_out: *mut u32, height_out: *mut u32);
+        unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *mut i32);
+        unsafe fn get_window_inner_size(context: &WinitContext, width_out: *mut u32, height_out: *mut u32);
+
         fn set_window_title(context: &WinitContext, title: &CxxString);
+        unsafe fn set_window_mode(context: &WinitContext, monitor: *const MonitorContext, pos_x: i32, pos_y: i32, width: u32, height: u32);
+        fn set_window_inner_size(context: &WinitContext, width: u32, height: u32);
         fn set_input_mode(context: &WinitContext, mode: InputMode);
+
         unsafe fn start_event_loop(context: &mut WinitContext, ctx: *mut WinitInputHandler, max_input_rate: u32);
     }
+}
+
+pub struct WinitContext {
+    pub library: Arc<VulkanLibrary>,
+    pub instance: Option<Arc<Instance>>,
+    pub window: Option<Arc<Window>>,
+    pub surface: Option<Arc<Surface>>,
+    pub event_loop: Option<EventLoop<()>>,
+}
+
+pub struct MonitorContext {
+    pub handle: Option<MonitorHandle>,
 }
 
 unsafe impl Send for WinitContext {}
@@ -396,9 +412,77 @@ fn get_monitor_modes(context: &WinitContext) -> Vec<winit::MonitorMode> {
     }
 }
 
+fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext> {
+    let mut handle: Option<MonitorHandle> = None;
+    if let Some(window) = context.window.as_ref() {
+        handle = window.current_monitor().or(window.primary_monitor()).or(window.available_monitors().nth(0));
+    }
+    return Box::new(MonitorContext{ handle });
+}
+
+unsafe fn get_monitor_resolution(monitor: &MonitorContext, width_out: *mut u32, height_out: *mut u32) {
+    let window_size = monitor.handle.as_ref().map(|h| h.size()).unwrap_or(PhysicalSize::new(0, 0));
+    *width_out = window_size.width;
+    *height_out = window_size.height;
+}
+
+unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *mut i32) {
+    if let Some(window) = context.window.as_ref() {
+        let window_pos = window.outer_position().unwrap_or(PhysicalPosition::new(i32::MIN, i32::MIN));
+        *x_out = window_pos.x;
+        *y_out = window_pos.y;
+    } else {
+        *x_out = i32::MIN;
+        *y_out = i32::MIN;
+    }
+}
+
+unsafe fn get_window_inner_size(context: &WinitContext, width_out: *mut u32, height_out: *mut u32) {
+    if let Some(window) = context.window.as_ref() {
+        let window_size = window.inner_size();
+        *width_out = window_size.width;
+        *height_out = window_size.height;
+    } else {
+        *width_out = 0;
+        *height_out = 0;
+    }
+}
+
 fn set_window_title(context: &WinitContext, title: &CxxString) {
     if let Some(window) = context.window.as_ref() {
         window.set_title(title.to_str().unwrap_or("error"));
+    }
+}
+
+unsafe fn set_window_mode(context: &WinitContext, monitor: *const MonitorContext, pos_x: i32, pos_y: i32, width: u32, height: u32) {
+    if let Some(window) = context.window.as_ref() {
+        if let Some(monitor) = monitor.as_ref() {
+            // Fullscreen mode
+            if let Some(handle) = monitor.handle.as_ref() {
+                let mut modes: Vec<VideoMode> = handle.video_modes().filter(|mode| {
+                    let size = mode.size();
+                    return size.width == width && size.height == height;
+                }).collect();
+                modes.sort_by(|a, b| {
+                    (a.bit_depth(), -(a.refresh_rate_millihertz() as i64))
+                    .cmp(&(b.bit_depth(), -(b.refresh_rate_millihertz() as i64)))
+                });
+                if let Some(mode) = modes.first() {
+                    window.set_fullscreen(Some(Fullscreen::Exclusive(mode.clone())));
+                }
+            }
+        } else {
+            // Window mode
+            window.set_fullscreen(None);
+            window.set_outer_position(PhysicalPosition::new(pos_x, pos_y));
+            let _ = window.request_inner_size(PhysicalSize::new(width, height));
+        }
+    }
+}
+
+fn set_window_inner_size(context: &WinitContext, width: u32, height: u32) {
+    if let Some(window) = context.window.as_ref() {
+        let _ = window.request_inner_size(PhysicalSize::new(width, height));
     }
 }
 
