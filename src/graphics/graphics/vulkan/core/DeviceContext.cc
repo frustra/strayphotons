@@ -693,20 +693,20 @@ namespace sp::vulkan {
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) {
             bool fullscreen = CVarWindowFullscreen.Get();
-            if (glfwFullscreen != fullscreen) {
+            if (systemFullscreen != fullscreen) {
                 if (fullscreen) {
                     glfwGetWindowPos(window, &storedWindowRect.x, &storedWindowRect.y);
-                    storedWindowRect.z = glfwWindowSize.x;
-                    storedWindowRect.w = glfwWindowSize.y;
+                    storedWindowRect.z = systemWindowSize.x;
+                    storedWindowRect.w = systemWindowSize.y;
 
                     auto *monitor = glfwGetPrimaryMonitor();
                     if (monitor) {
                         auto *mode = glfwGetVideoMode(monitor);
-                        glfwWindowSize = {mode->width, mode->height};
+                        systemWindowSize = {mode->width, mode->height};
                     }
-                    glfwSetWindowMonitor(window, monitor, 0, 0, glfwWindowSize.x, glfwWindowSize.y, 60);
+                    glfwSetWindowMonitor(window, monitor, 0, 0, systemWindowSize.x, systemWindowSize.y, 60);
                 } else {
-                    glfwWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                    systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
                     glfwSetWindowMonitor(window,
                         nullptr,
                         storedWindowRect.x,
@@ -715,19 +715,19 @@ namespace sp::vulkan {
                         storedWindowRect.w,
                         0);
                 }
-                CVarWindowSize.Set(glfwWindowSize);
-                glfwFullscreen = fullscreen;
+                CVarWindowSize.Set(systemWindowSize);
+                systemFullscreen = fullscreen;
             }
 
             glm::ivec2 windowSize = CVarWindowSize.Get();
-            if (glfwWindowSize != windowSize) {
+            if (systemWindowSize != windowSize) {
                 if (CVarWindowFullscreen.Get()) {
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
                 } else {
                     glfwSetWindowSize(window, windowSize.x, windowSize.y);
                 }
 
-                glfwWindowSize = windowSize;
+                systemWindowSize = windowSize;
             }
 
             glm::ivec2 fbExtents;
@@ -738,7 +738,55 @@ namespace sp::vulkan {
         }
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-// TODO: Set window size and read framebuffer for winit
+        if (winitContext) {
+            bool fullscreen = CVarWindowFullscreen.Get();
+            if (systemFullscreen != fullscreen) {
+                if (fullscreen) {
+                    sp::winit::get_window_position(*winitContext, &storedWindowRect.x, &storedWindowRect.y);
+                    storedWindowRect.z = systemWindowSize.x;
+                    storedWindowRect.w = systemWindowSize.y;
+
+                    auto monitor = sp::winit::get_active_monitor(*winitContext);
+                    glm::uvec2 readWindowSize;
+                    sp::winit::get_monitor_resolution(*monitor, &readWindowSize.x, &readWindowSize.y);
+                    if (readWindowSize != glm::uvec2(0)) systemWindowSize = readWindowSize;
+                    sp::winit::set_window_mode(*winitContext,
+                        &*monitor,
+                        0,
+                        0,
+                        (uint32_t)systemWindowSize.x,
+                        (uint32_t)systemWindowSize.y);
+                } else {
+                    systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                    sp::winit::set_window_mode(*winitContext,
+                        0,
+                        storedWindowRect.x,
+                        storedWindowRect.y,
+                        (uint32_t)storedWindowRect.z,
+                        (uint32_t)storedWindowRect.w);
+                }
+                CVarWindowSize.Set(systemWindowSize);
+                systemFullscreen = fullscreen;
+            }
+
+            glm::ivec2 windowSize = CVarWindowSize.Get();
+            if (systemWindowSize != windowSize) {
+                if (CVarWindowFullscreen.Get()) {
+                    auto monitor = sp::winit::get_active_monitor(*winitContext);
+                    sp::winit::set_window_mode(*winitContext, &*monitor, 0, 0, windowSize.x, windowSize.y);
+                } else {
+                    sp::winit::set_window_inner_size(*winitContext, windowSize.x, windowSize.y);
+                }
+
+                systemWindowSize = windowSize;
+            }
+
+            glm::uvec2 fbExtents;
+            sp::winit::get_window_inner_size(*winitContext, &fbExtents.x, &fbExtents.y);
+            if (fbExtents.x > 0 && fbExtents.y > 0) {
+                view.extents = fbExtents;
+            }
+        }
 #endif
 
         if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
