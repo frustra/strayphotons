@@ -29,12 +29,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         .pic(true)
         .static_crt(true)
         .uses_cxx11()
-        .always_configure(true)
+        .always_configure(false)
         .build_target("sp")
         .build();
 
-    debug!("Rust output dir: {}", sp.display());
-    debug!("CMake link dir: {}", bin_dir.display());
+    #[cfg(feature = "debug")]
+    {
+        debug!("Rust output dir: {}", sp.display());
+        debug!("CMake link dir: {}", bin_dir.display());
+    }
 
     println!("cargo:rerun-if-changed=../../include/strayphotons.h");
     println!("cargo:rustc-link-search=native={}/build/src", sp.display()); // Static library path

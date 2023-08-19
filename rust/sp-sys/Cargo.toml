@@ -7,7 +7,7 @@ edition = "2021"
 license-file = "../../LICENSE-MPL-2.0"
 
 [features]
-default = ["debug"]
+default = []
 debug = []
 
 [dependencies]

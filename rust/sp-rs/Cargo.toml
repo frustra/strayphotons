@@ -6,10 +6,10 @@ edition = "2021"
 license-file = "../../LICENSE-MPL-2.0"
 
 [features]
-default = ["api", "wasm", "winit"]
+default = ["api", "wasm", "window"]
 api = []
 wasm = ["dep:wasmer", "dep:static_assertions"]
-winit = ["dep:vulkano", "dep:winit"]
+window = ["dep:vulkano", "dep:winit"]
 
 [dependencies]
 cxx = "1.0"

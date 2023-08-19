@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <stdexcept>
-#include <winit.rs.h>
+#include <window.rs.h>
 
 namespace sp {
     WinitInputHandler::WinitInputHandler(GraphicsManager &manager,
