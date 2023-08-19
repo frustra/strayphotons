@@ -5,8 +5,8 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use std::error::Error;
 use std::env;
+use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     /*let current = env::current_dir()?;
@@ -16,8 +16,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut bridges = vec![];
     #[cfg(feature = "api")]
     bridges.push("src/api.rs");
-    #[cfg(feature = "winit")]
-    bridges.push("src/winit.rs");
+    #[cfg(feature = "window")]
+    bridges.push("src/window.rs");
     #[cfg(feature = "wasm")]
     bridges.push("src/wasm.rs");
 
@@ -26,7 +26,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(feature = "api")]
     build.file("src/api.cc");
 
-    build.flag_if_supported("-std=c++20")
+    build
+        .flag_if_supported("-std=c++20")
         .flag_if_supported("/std:c++20")
         .flag_if_supported("/EHsc")
         .static_crt(true);
@@ -40,7 +41,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     build.compile("sp-rs");
 
     let current_dir = env::current_dir()?;
-    println!("cargo:warning=Building from directory: {}", current_dir.display());
+    println!(
+        "cargo:warning=Building from directory: {}",
+        current_dir.display()
+    );
 
     // Add source files here and in CMakeLists.txt
     println!("cargo:rerun-if-changed=src/api.cc");
@@ -49,6 +53,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");
-    println!("cargo:rerun-if-changed=src/winit.rs");
+    println!("cargo:rerun-if-changed=src/window.rs");
     Ok(())
 }

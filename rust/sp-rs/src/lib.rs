@@ -13,5 +13,5 @@ pub use api::*;
 #[cfg(feature = "wasm")]
 mod wasm;
 
-#[cfg(feature = "winit")]
-mod winit;
+#[cfg(feature = "window")]
+mod window;

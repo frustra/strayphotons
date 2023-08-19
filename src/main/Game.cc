@@ -176,6 +176,7 @@ namespace sp {
         auto frameEnd = chrono_clock::now();
         while (!GameExitTriggered.test()) {
             static const char *frameName = "WindowInput";
+            (void)frameName;
             FrameMarkStart(frameName);
             if (startupScript) {
                 while (graphicsStepCount < graphicsMaxStepCount) {

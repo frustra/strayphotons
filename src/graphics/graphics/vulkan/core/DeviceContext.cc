@@ -35,7 +35,7 @@
     #endif
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
-    #include <winit.rs.h>
+    #include <window.rs.h>
 #endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
