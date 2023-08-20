@@ -16,10 +16,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut bridges = vec![];
     #[cfg(feature = "api")]
     bridges.push("src/api.rs");
-    #[cfg(feature = "window")]
-    bridges.push("src/window.rs");
     #[cfg(feature = "wasm")]
     bridges.push("src/wasm.rs");
+    #[cfg(feature = "window")]
+    bridges.push("src/window.rs");
 
     let mut build = cxx_build::bridges(bridges); // returns a cc::Build
 
@@ -40,16 +40,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     build.compile("sp-rs");
 
-    let current_dir = env::current_dir()?;
-    println!(
-        "cargo:warning=Building from directory: {}",
-        current_dir.display()
-    );
+    let build_dir = env!("CARGO_TARGET_DIR", "$CARGO_TARGET_DIR env variable not set");
+    println!("cargo:warning=Building in directory: {}", build_dir);
 
     // Add source files here and in CMakeLists.txt
     println!("cargo:rerun-if-changed=src/api.cc");
     println!("cargo:rerun-if-changed=include/api.hh");
-    println!("cargo:rerun-if-changed=include/winit.hh");
     println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");

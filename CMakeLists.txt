@@ -184,11 +184,11 @@ if(SP_BUILD_RUST)
     add_subdirectory(wasm)
 
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        sp-rs
+        sp-rs-wasm
     )
 
     if(ipo_supported)
-        set_target_properties(sp-rs PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+        set_target_properties(sp-rs-wasm PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
 

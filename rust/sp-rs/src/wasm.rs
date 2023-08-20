@@ -19,7 +19,7 @@ mod ctx {
     }
 }
 
-fn print_hello() {
+pub fn print_hello() {
     println!("hello world!");
 
     let result = run_wasm();
