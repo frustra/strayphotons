@@ -7,10 +7,10 @@
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CARGO_CMD cargo build --verbose)
-    set(CARGO_TARGET_DIR "debug")
+    set(CARGO_BUILD_TYPE "debug")
 else()
     set(CARGO_CMD cargo build --release --verbose)
-    set(CARGO_TARGET_DIR "release")
+    set(CARGO_BUILD_TYPE "release")
 endif()
 
 add_subdirectory(sp-rs)
