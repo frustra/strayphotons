@@ -17,9 +17,6 @@ add_library(${PROJECT_GRAPHICS_VULKAN_XR_LIB} STATIC)
 target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-#target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
-#    "$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>"
-#)
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
@@ -31,7 +28,9 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     PUBLIC
         ${PROJECT_GRAPHICS_CORE_LIB}
         Vulkan::Vulkan
+        VulkanMemoryAllocator
     PRIVATE
+        SPIRV-Reflect
         fpng
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC
@@ -44,7 +43,8 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PUBLIC
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
-    sp-rs
+    ${PROJECT_INPUT_WINIT_LIB}
+    sp-rs-window
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_XR_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}

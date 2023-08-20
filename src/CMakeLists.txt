@@ -48,7 +48,7 @@ target_include_directories(sp
 )
 
 target_link_libraries(sp PRIVATE
-    sp-rs
+    sp-rs-window
     ${PROJECT_GAME_LIB}
     ${PROJECT_INPUT_WINIT_LIB}
     ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
