@@ -57,11 +57,20 @@ add_custom_command(COMMENT "Run window cxxbridge codegen"
         ${CARGO_CMD} --no-default-features --features "sp-rs/api,sp-rs/wasm,sp-rs/window"
 )
 
-add_custom_target(sp-rs-wasm-build DEPENDS "${CXXBRIDGE_WASM_DIR}/${RUST_OUTPUT_LIB}")
+add_custom_target(sp-rs-wasm-build DEPENDS
+    "${CXXBRIDGE_WASM_DIR}/${RUST_OUTPUT_LIB}"
+    "${CXXBRIDGE_WASM_SP_DIR}/api.rs.h"
+    "${CXXBRIDGE_WASM_SP_DIR}/wasm.rs.h"
+)
 add_library(sp-rs-wasm INTERFACE)
 add_dependencies(sp-rs-wasm sp-rs-wasm-build)
 
-add_custom_target(sp-rs-window-build DEPENDS "${CXXBRIDGE_WINDOW_DIR}/${RUST_OUTPUT_LIB}")
+add_custom_target(sp-rs-window-build DEPENDS
+    "${CXXBRIDGE_WINDOW_DIR}/${RUST_OUTPUT_LIB}"
+    "${CXXBRIDGE_WINDOW_SP_DIR}/api.rs.h"
+    "${CXXBRIDGE_WINDOW_SP_DIR}/wasm.rs.h"
+    "${CXXBRIDGE_WINDOW_SP_DIR}/window.rs.h"
+)
 add_library(sp-rs-window INTERFACE)
 add_dependencies(sp-rs-window sp-rs-window-build)
 
