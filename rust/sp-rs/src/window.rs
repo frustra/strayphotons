@@ -431,6 +431,7 @@ fn get_instance_handle(context: &WinitContext) -> u64 {
 
 #[cfg(target_os = "windows")]
 fn get_win32_window_handle(_context: &WinitContext) -> u64 {
+    use raw_window_handle::HasRawWindowHandle;
     use raw_window_handle::RawWindowHandle;
     if let Some(window) = _context.window.as_ref() {
         match window.raw_window_handle() {
