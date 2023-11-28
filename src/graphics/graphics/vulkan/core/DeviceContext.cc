@@ -124,11 +124,6 @@ namespace sp::vulkan {
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-        if (enableValidationLayers) {
-            Logf("Running with Vulkan validation layer");
-            layers.emplace_back("VK_LAYER_KHRONOS_validation");
-        }
-
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
@@ -149,6 +144,11 @@ namespace sp::vulkan {
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
             extensions.emplace_back(requiredExtensions[i]);
+        }
+
+        if (enableValidationLayers) {
+            Logf("Running with Vulkan validation layer");
+            layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
 
         if (enableSwapchain) {
@@ -179,7 +179,7 @@ namespace sp::vulkan {
 
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
-            sp::winit::create_context(initialSize.x, initialSize.y).into_raw(),
+            sp::winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw(),
             [](auto *ptr) {
                 (void)rust::cxxbridge1::Box<sp::winit::WinitContext>::from_raw(ptr);
             });

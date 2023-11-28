@@ -1,3 +1,10 @@
+/*
+ * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 use cxx::CxxString;
 use std::sync::Arc;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
@@ -216,7 +223,7 @@ mod ctx {
     extern "Rust" {
         type WinitContext;
         type MonitorContext;
-        fn create_context(width: i32, height: i32) -> Box<WinitContext>;
+        fn create_context(width: i32, height: i32, enable_validation: bool) -> Box<WinitContext>;
         fn create_view(context: &mut WinitContext);
         fn destroy_window(context: &mut WinitContext);
         fn destroy_surface(context: &mut WinitContext);
@@ -302,7 +309,7 @@ fn create_view(context: &mut WinitContext) {
     context.surface = Some(surface.to_owned());
 }
 
-fn create_context(width: i32, height: i32) -> Box<WinitContext> {
+fn create_context(width: i32, height: i32, enable_validation: bool) -> Box<WinitContext> {
     let library: Arc<VulkanLibrary> = VulkanLibrary::new().expect("no local Vulkan library/DLL");
 
     #[cfg(not(target_os = "android"))]
@@ -323,6 +330,12 @@ fn create_context(width: i32, height: i32) -> Box<WinitContext> {
     required_extensions.khr_surface = true;
     required_extensions.khr_get_physical_device_properties2 = true;
     required_extensions.ext_debug_utils = true;
+
+    let mut enabled_layers = Vec::<String>::new();
+    if enable_validation {
+        println!("Running with Vulkan validation layer");
+        enabled_layers.push("VK_LAYER_KHRONOS_validation".to_string());
+    }
 
     // TODO: Match these settings with C++ DeviceContext.cc
     let debug_create_info = unsafe {
@@ -372,7 +385,7 @@ fn create_context(width: i32, height: i32) -> Box<WinitContext> {
         library.clone(),
         InstanceCreateInfo {
             enabled_extensions: required_extensions,
-            enabled_layers: vec!["VK_LAYER_KHRONOS_validation".to_string()], // README: https://developer.android.com/ndk/guides/graphics/validation-layer
+            enabled_layers: enabled_layers,
             debug_utils_messengers: vec![debug_create_info],
             ..Default::default()
         },

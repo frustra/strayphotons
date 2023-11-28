@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "StrayPhotons (vsdbg)",
+            "name": "StrayPhotons GLFW (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
@@ -19,7 +19,7 @@
             }
         },
         {
-            "name": "StrayPhotons (gdb)",
+            "name": "StrayPhotons GLFW (gdb)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
@@ -38,7 +38,7 @@
             ]
         },
         {
-            "name": "StrayPhotons No VR (vsdbg)",
+            "name": "StrayPhotons GLFW No VR (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
@@ -52,7 +52,7 @@
             }
         },
         {
-            "name": "StrayPhotons No VR (gdb)",
+            "name": "StrayPhotons GLFW No VR (gdb)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
@@ -71,11 +71,11 @@
             ]
         },
         {
-            "name": "StrayPhotons No Validation (vsdbg)",
+            "name": "StrayPhotons Winit No VR (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-vk.exe",
-            "args": [],
+            "program": "${workspaceFolder}/bin/sp-winit.exe",
+            "args": ["--with-validation-layers", "--no-vr"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -85,11 +85,11 @@
             }
         },
         {
-            "name": "StrayPhotons No Validation (gdb)",
+            "name": "StrayPhotons Winit No VR (gdb)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-vk",
-            "args": [],
+            "program": "${workspaceFolder}/bin/sp-winit",
+            "args": ["--with-validation-layers", "--no-vr"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
