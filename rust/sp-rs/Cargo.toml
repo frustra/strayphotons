@@ -14,8 +14,8 @@ window = ["dep:vulkano", "dep:winit"]
 [dependencies]
 cxx = "1.0"
 static_assertions = { version = "1.1", optional = true }
-vulkano = { git = "https://github.com/xthexder/vulkano.git", optional = true }
-winit = { git = "https://github.com/rust-windowing/winit.git", optional = true }
+vulkano = { version = "0.34", optional = true }
+winit = { version = "0.29", optional = true, features = ["rwh_05"]}
 wasmer = { version = "2.1", optional = true }
 raw-window-handle = "0.5"
 
@@ -24,6 +24,3 @@ cxx-build = "1.0"
 
 [lib]
 crate-type = ["staticlib"]
-
-[patch.crates-io]
-winit = { git = "https://github.com/rust-windowing/winit.git" }
