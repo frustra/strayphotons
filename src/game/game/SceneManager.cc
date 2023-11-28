@@ -86,6 +86,9 @@ namespace sp {
     }
 
     void SceneManager::Shutdown() {
+        bool alreadyShutdown = shutdown.exchange(true);
+        if (alreadyShutdown) return;
+
         {
             // Make sure we don't deadlock on shutdown due to waiting on a preload.
             std::lock_guard lock(preloadMutex);

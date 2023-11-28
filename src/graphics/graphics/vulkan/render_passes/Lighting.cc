@@ -7,9 +7,7 @@
 
 #include "Lighting.hh"
 
-#include "ecs/components/Light.hh"
-#include "ecs/components/OpticalElement.hh"
-#include "ecs/components/Transform.h"
+#include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
@@ -217,8 +215,12 @@ namespace sp::vulkan::renderer {
             data.gelId = 0;
             if (!light.gelName.empty()) {
                 // project 4 corners of optic into gel texture uv space
-                static const auto opticCornerOffsets = std::array<glm::vec2, 4>(
-                    {{-0.5, -0.5}, {-0.5, 0.5}, {0.5, 0.5}, {0.5, -0.5}});
+                static const std::array<glm::vec2, 4> opticCornerOffsets = {
+                    glm::vec2(-0.5, -0.5),
+                    glm::vec2(-0.5, 0.5),
+                    glm::vec2(0.5, 0.5),
+                    glm::vec2(0.5, -0.5),
+                };
 
                 auto &parentLight = gpuData.lights[vLight.parentIndex.value()];
 

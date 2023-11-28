@@ -5,11 +5,28 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use wasmer::{Store, Module, Instance, Function, Extern, WasmPtr, NativeFunc, WasmerEnv, imports};
+use static_assertions::assert_eq_size;
+use std::error::Error;
+use std::mem::MaybeUninit;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::mem::MaybeUninit;
-use static_assertions::assert_eq_size;
+use wasmer::{imports, Extern, Function, Instance, Module, NativeFunc, Store, WasmPtr, WasmerEnv};
+
+#[cxx::bridge(namespace = "sp::wasm")]
+mod ctx {
+    extern "Rust" {
+        fn print_hello();
+    }
+}
+
+pub fn print_hello() {
+    println!("hello world!");
+
+    let result = run_wasm();
+    if result.is_err() {
+        println!("run_wasm() failed! {}", result.err().unwrap());
+    }
+}
 
 #[repr(C, packed(4))]
 #[derive(Copy, Clone)]
@@ -61,7 +78,7 @@ macro_rules! wasm_to_c_helper {
 
         mod $func_name {
             use wasmer::WasmPtr;
-            use crate::wasmer_vm::*;
+            use crate::wasm::*;
 
             #[allow(unused)]
             pub fn call(env: &Env, out: WasmPtr<$return_type> $(, $arg: WasmPtr<$arg_type>)*) {
@@ -73,7 +90,7 @@ macro_rules! wasm_to_c_helper {
                 $(
                     let $arg = $arg.deref(memory).unwrap();
                 )*
-            
+
                 unsafe {
                     #[allow(deprecated)]
                     $func_name(return_value.get_mut() $(, $arg.get_mut())*);
@@ -96,13 +113,13 @@ wasm_to_c_helper!(Transform, transform_from_pos(pos: GlmVec3));
 wasm_to_c_helper!(GlmVec3, transform_get_position(t: Transform));
 wasm_to_c_helper!(Transform, transform_set_position(pos: GlmVec3));
 
-pub fn run_wasm() -> anyhow::Result<()> {
+pub fn run_wasm() -> Result<(), Box<dyn Error>> {
     let store = Store::default();
     let module = Module::from_file(&store, Path::new("scripts/script.wasm"))?;
     println!("Loaded wasm module");
-    
+
     let instance_arc = Arc::new(Mutex::new(None::<Instance>));
-    let import_object = imports!{
+    let import_object = imports! {
         "env" => {
             "print_transform" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, print_transform),
             "transform_identity" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_identity::call),
@@ -118,22 +135,29 @@ pub fn run_wasm() -> anyhow::Result<()> {
         match ext {
             Extern::Function(func) => {
                 println!("Function: {}: {:?}", name, func);
-            },
+            }
             Extern::Global(global) => {
                 println!("Global: {}: {:?}", name, global);
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
 
-    let mut a = Transform{
-        offset: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]},
-        scale: GlmVec3{data: [0f32; 3]},
+    let mut a = Transform {
+        offset: GlmMat4x3 {
+            data: [GlmVec3 { data: [0f32; 3] }; 4],
+        },
+        scale: GlmVec3 { data: [0f32; 3] },
     };
     let mut b = a.clone();
     unsafe {
         transform_identity(&mut a);
-        transform_from_pos(&mut b, &GlmVec3{data: [1.0, 2.0, 3.0]});
+        transform_from_pos(
+            &mut b,
+            &GlmVec3 {
+                data: [1.0, 2.0, 3.0],
+            },
+        );
         let mut pos_a = MaybeUninit::<GlmVec3>::uninit();
         let mut pos_b = MaybeUninit::<GlmVec3>::uninit();
         transform_get_position(pos_a.as_mut_ptr(), &a);
@@ -141,8 +165,9 @@ pub fn run_wasm() -> anyhow::Result<()> {
         println!("A: {:?}, B: {:?}", pos_a.assume_init(), pos_b.assume_init());
     }
 
-    let add: NativeFunc<(WasmPtr<Transform>, WasmPtr<Transform>, WasmPtr<Transform>)> = instance.exports.get_native_function("add")?;
-    
+    let add: NativeFunc<(WasmPtr<Transform>, WasmPtr<Transform>, WasmPtr<Transform>)> =
+        instance.exports.get_native_function("add")?;
+
     {
         let mut instance_lock = instance_arc.lock().unwrap();
         instance_lock.replace(instance);
@@ -154,7 +179,7 @@ pub fn run_wasm() -> anyhow::Result<()> {
         let instance_lock = instance_arc.lock().unwrap();
         let instance = instance_lock.as_ref().unwrap();
         let memory = instance.exports.get_memory("memory").unwrap();
-        
+
         memory_offset = memory.grow(1)?.bytes().0 as u32;
         unsafe {
             let host_memory = memory.data_ptr().offset(memory_offset as isize);
@@ -167,13 +192,19 @@ pub fn run_wasm() -> anyhow::Result<()> {
     add.call(
         WasmPtr::new(memory_offset + 2 * memory_stride),
         WasmPtr::new(memory_offset),
-        WasmPtr::new(memory_offset + memory_stride))?;
+        WasmPtr::new(memory_offset + memory_stride),
+    )?;
     {
         let instance_lock = instance_arc.lock().unwrap();
         let instance = instance_lock.as_ref().unwrap();
         let memory = instance.exports.get_memory("memory").unwrap();
-        
-        println!("Result: {:?}", WasmPtr::<Transform>::new(memory_offset + 2 * memory_stride).deref(memory).unwrap());
+
+        println!(
+            "Result: {:?}",
+            WasmPtr::<Transform>::new(memory_offset + 2 * memory_stride)
+                .deref(memory)
+                .unwrap()
+        );
     }
     Ok(())
 }

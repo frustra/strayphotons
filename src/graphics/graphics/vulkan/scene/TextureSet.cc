@@ -9,6 +9,7 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
+#include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {

@@ -10,6 +10,7 @@
 #include "core/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 
 #include <glm/glm.hpp>
 
@@ -23,8 +24,6 @@ namespace sp {
 
         void Frame();
 
-        glm::vec2 ImmediateCursor() const;
-
         static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
         static void CharInputCallback(GLFWwindow *window, unsigned int ch);
         static void MouseMoveCallback(GLFWwindow *window, double xPos, double yPos);
@@ -35,6 +34,7 @@ namespace sp {
         LockFreeEventQueue<ecs::Event> &outputEventQueue;
         GLFWwindow *window = nullptr;
 
+        glm::vec2 prevMousePos = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
     };

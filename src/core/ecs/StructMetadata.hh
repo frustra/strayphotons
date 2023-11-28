@@ -15,6 +15,7 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 
+#include <map>
 #include <robin_hood.h>
 #include <set>
 #include <string_view>
@@ -191,7 +192,7 @@ namespace ecs {
                     }
                 }(),
                 ...);
-            for (int i = 0; i < this->fields.size(); i++) {
+            for (size_t i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
             }
             Register(type, this);

@@ -924,7 +924,7 @@ namespace ecs {
     double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         // ZoneScoped;
         // ZoneStr(expr);
-        if (rootIndex < 0 || rootIndex >= nodes.size()) return 0.0;
+        if (rootIndex < 0 || (size_t)rootIndex >= nodes.size()) return 0.0;
         Storage cache;
         auto &rootNode = nodes[rootIndex];
         Context ctx(lock, *this, cache, 0.0);
@@ -934,7 +934,7 @@ namespace ecs {
     double SignalExpression::EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
         // ZoneScoped;
         // ZoneStr(expr);
-        if (rootIndex < 0 || rootIndex >= nodes.size()) return 0.0;
+        if (rootIndex < 0 || (size_t)rootIndex >= nodes.size()) return 0.0;
         Storage cache;
         auto &rootNode = nodes[rootIndex];
         Context ctx(lock, *this, cache, input);

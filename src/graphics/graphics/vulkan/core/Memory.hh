@@ -13,6 +13,8 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
+#include <thread>
+
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable : 4127 4189 4324)

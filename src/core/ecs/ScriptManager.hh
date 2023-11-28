@@ -12,6 +12,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/SignalRef.hh"
+#include "ecs/components/Events.hh"
 
 #include <any>
 #include <deque>

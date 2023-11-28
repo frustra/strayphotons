@@ -26,11 +26,16 @@
 #include <optional>
 #include <string>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#ifdef _WIN32
-    #define GLFW_EXPOSE_NATIVE_WIN32
-    #include <glfw/glfw3native.h>
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+    #define GLFW_INCLUDE_VULKAN
+    #include <GLFW/glfw3.h>
+    #ifdef _WIN32
+        #define GLFW_EXPOSE_NATIVE_WIN32
+        #include <glfw/glfw3native.h>
+    #endif
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+    #include <window.rs.h>
 #endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -69,9 +74,11 @@ namespace sp::vulkan {
         return VK_FALSE;
     }
 
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
     static void glfwErrorCallback(int error, const char *message) {
         Errorf("GLFW returned %d: %s", error, message);
     }
+#endif
 
     void DeviceContext::DeleteAllocator(VmaAllocator alloc) {
         if (alloc) vmaDestroyAllocator(alloc);
@@ -81,21 +88,20 @@ namespace sp::vulkan {
         : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
           frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
+
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         glfwSetErrorCallback(glfwErrorCallback);
 
-        if (!glfwInit()) {
-            throw "glfw failed";
-        }
-
+        if (!glfwInit()) Abort("glfwInit() failed");
         Assert(glfwVulkanSupported(), "Vulkan not supported");
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
         // Disable OpenGL context creation
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
+
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
         std::vector<const char *> extensions, layers;
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
@@ -115,14 +121,30 @@ namespace sp::vulkan {
             }
             extensions.push_back(name.data());
         }
+        extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
+        vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
+        debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+
+        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
+                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+#ifdef SP_DEBUG
+        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+#endif
+        debugInfo.pfnUserCallback = &VulkanDebugCallback;
+        debugInfo.pUserData = this;
+
+        auto initialSize = CVarWindowSize.Get();
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        // TODO: Match these extensions with Rust window.rs
         uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
             extensions.emplace_back(requiredExtensions[i]);
         }
-        extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         if (enableValidationLayers) {
             Logf("Running with Vulkan validation layer");
@@ -131,7 +153,6 @@ namespace sp::vulkan {
 
         if (enableSwapchain) {
             // Create window and surface
-            auto initialSize = CVarWindowSize.Get();
             window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
             Assert(window, "glfw window creation failed");
         }
@@ -147,36 +168,55 @@ namespace sp::vulkan {
             layers.size(),
             layers.data(),
             extensions.size(),
-            extensions.data());
+            extensions.data(),
+            (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
 
-        vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-        debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-
-        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-#ifdef SP_DEBUG
-        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+        instance = vk::createInstance(createInfo);
+        instanceDestroy.SetFunc([this] {
+            if (instance) instance.destroy();
+        });
 #endif
-        debugInfo.pfnUserCallback = &VulkanDebugCallback;
-        debugInfo.pUserData = this;
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
 
-        instance = vk::createInstanceUnique(createInfo);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
-        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo);
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        winitContext = std::shared_ptr<sp::winit::WinitContext>(
+            sp::winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw(),
+            [](auto *ptr) {
+                (void)rust::cxxbridge1::Box<sp::winit::WinitContext>::from_raw(ptr);
+            });
+        instance = (VkInstance)sp::winit::get_instance_handle(*winitContext);
+        Assert(instance, "winit instance creation failed");
+        instanceDestroy.SetFunc([this] {
+            Tracef("Destroying rust instance");
+            sp::winit::destroy_instance(*winitContext);
+        });
+#endif
 
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+        debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
+
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (enableSwapchain) {
-            vk::SurfaceKHR glfwSurface;
-            auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
+            auto result = glfwCreateWindowSurface(instance, window, nullptr, (VkSurfaceKHR *)&surface);
             AssertVKSuccess(result, "creating window surface");
-
-            vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
-            surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
+            Assert(surface, "gkfw window surface creation failed");
+            surfaceDestroy.SetFunc([this] {
+                if (surface) {
+                    instance.destroySurfaceKHR(surface);
+                    surface = nullptr;
+                }
+            });
         }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        surface = (VkSurfaceKHR)sp::winit::get_surface_handle(*winitContext);
+        Assert(surface, "winit window creation failed");
+        surfaceDestroy.SetFunc([this] {
+            Tracef("Destroying rust surface");
+            sp::winit::destroy_surface(*winitContext);
+        });
+#endif
 
-        auto physicalDevices = instance->enumeratePhysicalDevices();
+        auto physicalDevices = instance.enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
@@ -202,7 +242,7 @@ namespace sp::vulkan {
                 auto &props = queueFamilies[i];
                 if (!(props.queueFlags & require)) continue;
                 if (props.queueFlags & deny) continue;
-                if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, *surface)) continue;
+                if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, surface)) continue;
                 if (queuesUsedCount[i] >= props.queueCount) continue;
 
                 queueFamilyIndex[queueType] = i;
@@ -412,7 +452,7 @@ namespace sp::vulkan {
         allocatorInfo.vulkanApiVersion = VULKAN_API_VERSION;
         allocatorInfo.physicalDevice = physicalDevice;
         allocatorInfo.device = *device;
-        allocatorInfo.instance = *instance;
+        allocatorInfo.instance = instance;
         allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
         allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
         allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
@@ -504,6 +544,7 @@ namespace sp::vulkan {
 
         perfTimer.reset(new PerfTimer(*this));
 
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         int modeCount;
         const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
         if (modes && modeCount > 0) {
@@ -511,43 +552,59 @@ namespace sp::vulkan {
             for (int i = 0; i < modeCount; i++) {
                 monitorModes[i] = {modes[i].width, modes[i].height};
             }
-            std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-                return a.x > b.x || (a.x == b.x && a.y > b.y);
-            });
         } else {
             Warnf("Failed to read Glfw monitor modes");
         }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        auto modes = sp::winit::get_monitor_modes(*winitContext);
+        monitorModes.reserve(modes.size());
+        for (auto &mode : modes) {
+            monitorModes.emplace_back(mode.width, mode.height);
+        }
+#endif
+        std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
+            return a.x > b.x || (a.x == b.x && a.y > b.y);
+        });
+        monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
 
         if (enableSwapchain) CreateSwapchain();
     }
 
     DeviceContext::~DeviceContext() {
-        if (device) {
-            device->waitIdle();
-        }
+        if (device) device->waitIdle();
+        Tracef("Destroying DeviceContext");
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) {
             glfwDestroyWindow(window);
         }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        swapchain.reset();
+        sp::winit::destroy_window(*winitContext);
+#endif
 
 #ifdef TRACY_ENABLE_GRAPHICS
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
 #endif
 
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         glfwTerminate();
+#endif
     }
 
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
         ZoneScoped;
-        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
 
         if (surfaceCapabilities.currentExtent.width == 0 || surfaceCapabilities.currentExtent.height == 0) {
             return;
         }
 
-        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-        auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
+        auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
 
         vk::PresentModeKHR presentMode = vk::PresentModeKHR::eImmediate;
         for (auto &mode : presentModes) {
@@ -569,12 +626,18 @@ namespace sp::vulkan {
         Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
 
         vk::SwapchainCreateInfoKHR swapchainInfo;
-        swapchainInfo.surface = *surface;
+        swapchainInfo.surface = surface;
         swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
-        swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
+        if (surfaceCapabilities.currentExtent.width > surfaceCapabilities.maxImageExtent.width ||
+            surfaceCapabilities.currentExtent.height > surfaceCapabilities.maxImageExtent.height) {
+            swapchainInfo.imageExtent.setHeight(CVarWindowSize.Get().y);
+            swapchainInfo.imageExtent.setWidth(CVarWindowSize.Get().x);
+        } else {
+            swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
+        }
         swapchainInfo.imageArrayLayers = 1;
         // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
         swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
@@ -610,31 +673,41 @@ namespace sp::vulkan {
 
     void DeviceContext::SetTitle(string title) {
         Assert(std::this_thread::get_id() == mainThread, "DeviceContext::SetTitle must be called from main thread");
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) glfwSetWindowTitle(window, title.c_str());
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        if (winitContext) sp::winit::set_window_title(*winitContext, title);
+#endif
     }
 
     bool DeviceContext::ShouldClose() {
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         return window && !!glfwWindowShouldClose(window);
+#else
+        return false;
+#endif
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
         Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) {
             bool fullscreen = CVarWindowFullscreen.Get();
-            if (glfwFullscreen != fullscreen) {
+            if (systemFullscreen != fullscreen) {
                 if (fullscreen) {
                     glfwGetWindowPos(window, &storedWindowRect.x, &storedWindowRect.y);
-                    storedWindowRect.z = glfwWindowSize.x;
-                    storedWindowRect.w = glfwWindowSize.y;
+                    storedWindowRect.z = systemWindowSize.x;
+                    storedWindowRect.w = systemWindowSize.y;
 
                     auto *monitor = glfwGetPrimaryMonitor();
                     if (monitor) {
                         auto *mode = glfwGetVideoMode(monitor);
-                        glfwWindowSize = {mode->width, mode->height};
+                        systemWindowSize = {mode->width, mode->height};
                     }
-                    glfwSetWindowMonitor(window, monitor, 0, 0, glfwWindowSize.x, glfwWindowSize.y, 60);
+                    glfwSetWindowMonitor(window, monitor, 0, 0, systemWindowSize.x, systemWindowSize.y, 60);
                 } else {
-                    glfwWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                    systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
                     glfwSetWindowMonitor(window,
                         nullptr,
                         storedWindowRect.x,
@@ -643,19 +716,19 @@ namespace sp::vulkan {
                         storedWindowRect.w,
                         0);
                 }
-                CVarWindowSize.Set(glfwWindowSize);
-                glfwFullscreen = fullscreen;
+                CVarWindowSize.Set(systemWindowSize);
+                systemFullscreen = fullscreen;
             }
 
             glm::ivec2 windowSize = CVarWindowSize.Get();
-            if (glfwWindowSize != windowSize) {
+            if (systemWindowSize != windowSize) {
                 if (CVarWindowFullscreen.Get()) {
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
                 } else {
                     glfwSetWindowSize(window, windowSize.x, windowSize.y);
                 }
 
-                glfwWindowSize = windowSize;
+                systemWindowSize = windowSize;
             }
 
             glm::ivec2 fbExtents;
@@ -663,9 +736,61 @@ namespace sp::vulkan {
             if (fbExtents.x > 0 && fbExtents.y > 0) {
                 view.extents = fbExtents;
             }
-        } else {
-            view.extents = CVarWindowSize.Get();
         }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        if (winitContext) {
+            bool fullscreen = CVarWindowFullscreen.Get();
+            if (systemFullscreen != fullscreen) {
+                if (fullscreen) {
+                    sp::winit::get_window_position(*winitContext, &storedWindowRect.x, &storedWindowRect.y);
+                    storedWindowRect.z = systemWindowSize.x;
+                    storedWindowRect.w = systemWindowSize.y;
+
+                    auto monitor = sp::winit::get_active_monitor(*winitContext);
+                    glm::uvec2 readWindowSize;
+                    sp::winit::get_monitor_resolution(*monitor, &readWindowSize.x, &readWindowSize.y);
+                    if (readWindowSize != glm::uvec2(0)) systemWindowSize = readWindowSize;
+                    sp::winit::set_window_mode(*winitContext,
+                        &*monitor,
+                        0,
+                        0,
+                        (uint32_t)systemWindowSize.x,
+                        (uint32_t)systemWindowSize.y);
+                } else {
+                    systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                    sp::winit::set_window_mode(*winitContext,
+                        0,
+                        storedWindowRect.x,
+                        storedWindowRect.y,
+                        (uint32_t)storedWindowRect.z,
+                        (uint32_t)storedWindowRect.w);
+                }
+                CVarWindowSize.Set(systemWindowSize);
+                systemFullscreen = fullscreen;
+            }
+
+            glm::ivec2 windowSize = CVarWindowSize.Get();
+            if (systemWindowSize != windowSize) {
+                if (CVarWindowFullscreen.Get()) {
+                    auto monitor = sp::winit::get_active_monitor(*winitContext);
+                    sp::winit::set_window_mode(*winitContext, &*monitor, 0, 0, windowSize.x, windowSize.y);
+                } else {
+                    sp::winit::set_window_inner_size(*winitContext, windowSize.x, windowSize.y);
+                }
+
+                systemWindowSize = windowSize;
+            }
+
+            glm::uvec2 fbExtents;
+            sp::winit::get_window_inner_size(*winitContext, &fbExtents.x, &fbExtents.y);
+            if (fbExtents.x > 0 && fbExtents.y > 0) {
+                view.extents = fbExtents;
+            }
+        }
+#endif
+
+        if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
         view.fov = glm::radians(CVarFieldOfView.Get());
         view.UpdateProjectionMatrix();
     }
@@ -673,17 +798,32 @@ namespace sp::vulkan {
     void DeviceContext::UpdateInputModeFromFocus() {
         Assert(std::this_thread::get_id() == mainThread, "UpdateInputModeFromFocus must be called from main thread");
         ZoneScoped;
-        if (!window) return;
-
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
-        if (lock.Has<ecs::FocusLock>()) {
-            auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
-            if (layer == ecs::FocusLayer::Game) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            } else {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        if (window) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
+            if (lock.Has<ecs::FocusLock>()) {
+                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+                if (layer == ecs::FocusLayer::Game) {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                } else {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                }
             }
         }
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_WINIT
+        if (winitContext) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
+            if (lock.Has<ecs::FocusLock>()) {
+                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+                if (layer == ecs::FocusLayer::Game) {
+                    sp::winit::set_input_mode(*winitContext, sp::InputMode::CursorDisabled);
+                } else {
+                    sp::winit::set_input_mode(*winitContext, sp::InputMode::CursorNormal);
+                }
+            }
+        }
+#endif
     }
 
     void DeviceContext::BeginFrame() {
@@ -800,7 +940,7 @@ namespace sp::vulkan {
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
-        double frameEnd = glfwGetTime();
+        double frameEnd = (double)chrono_clock::now().time_since_epoch().count() / 1e9;
         fpsTimer += frameEnd - lastFrameEnd;
         frameCounterThisSecond++;
 
@@ -1611,8 +1751,12 @@ namespace sp::vulkan {
 #endif
 
     void *DeviceContext::Win32WindowHandle() {
-#ifdef _WIN32
+#ifndef _WIN32
+        return nullptr;
+#elif defined(SP_GRAPHICS_SUPPORT_GLFW)
         return window ? glfwGetWin32Window(window) : nullptr;
+#elif defined(SP_GRAPHICS_SUPPORT_WINIT)
+        return winitContext ? (void *)sp::winit::get_win32_window_handle(*winitContext) : nullptr;
 #else
         return nullptr;
 #endif

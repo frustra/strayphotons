@@ -7,6 +7,7 @@
 
 #include "Transparency.hh"
 
+#include "ecs/EcsImpl.hh"
 #include "ecs/components/View.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

@@ -7,13 +7,13 @@
 
 #include "Game.hh"
 
+#include "assets/AssetManager.hh"
 #include "assets/ConsoleScript.hh"
 #include "console/Console.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "core/Tracing.hh"
-#include "core/assets/AssetManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
@@ -28,27 +28,26 @@
 
 #include <atomic>
 #include <cxxopts.hpp>
+#include <filesystem>
 #include <glm/glm.hpp>
-
-#if RUST_CXX
-    #include <lib.rs.h>
-#endif
+#include <strayphotons.h>
+#include <wasm.rs.h>
 
 namespace sp {
-    std::atomic_int gameExitCode;
-    std::atomic_flag gameExitTriggered;
+    std::atomic_int GameExitCode;
+    std::atomic_flag GameExitTriggered;
 
     CFunc<int> cfExit("exit", "Quits the game", [](int arg) {
         Tracef("Exit triggered via console command");
-        gameExitCode = arg;
-        gameExitTriggered.test_and_set();
-        gameExitTriggered.notify_all();
+        GameExitCode = arg;
+        GameExitTriggered.test_and_set();
+        GameExitTriggered.notify_all();
     });
 
     Game::Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this, startupScript != nullptr),
+          graphics(*this, startupScript != nullptr),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
           physics(windowEventQueue, startupScript != nullptr),
@@ -69,6 +68,7 @@ namespace sp {
     Game::ShutdownManagers::~ShutdownManagers() {
         GetConsoleManager().Shutdown();
         GetSceneManager().Shutdown();
+        Assets().Shutdown();
     }
 
     int Game::Start() {
@@ -89,9 +89,7 @@ namespace sp {
 
         GetConsoleManager().StartInputLoop();
 
-#if RUST_CXX
-        sp::rust::print_hello();
-#endif
+        sp::wasm::print_hello();
 
         if (options.count("command")) {
             for (auto &cmdline : options["command"].as<vector<string>>()) {
@@ -100,7 +98,7 @@ namespace sp {
         }
 
 #ifdef SP_GRAPHICS_SUPPORT
-        if (!options["headless"].count()) {
+        if (!options.count("headless")) {
             graphics.Init();
 
             debugGui = std::make_unique<DebugGuiManager>();
@@ -111,12 +109,12 @@ namespace sp {
 #endif
 
 #ifdef SP_XR_SUPPORT
-        if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+        if (options.count("no-vr") == 0) xr.LoadXrSystem();
 #endif
 
         auto &scenes = GetSceneManager();
 #ifdef SP_GRAPHICS_SUPPORT
-        if (options["headless"].count()) {
+        if (options.count("headless")) {
 #endif
             scenes.DisableGraphicsPreload();
 #ifdef SP_GRAPHICS_SUPPORT
@@ -169,10 +167,16 @@ namespace sp {
         GetConsoleManager().StartThread(startupScript);
         logic.StartThread();
 
-#ifdef SP_GRAPHICS_SUPPORT
+#ifdef SP_INPUT_SUPPORT_WINIT
+        auto *inputHandler = graphics.GetWinitInputHandler();
+        Assertf(inputHandler != nullptr, "WinitInputHandler is null");
+        inputHandler->StartEventLoop((uint32_t)MaxInputPollRate);
+        graphics.StopThread();
+#elif defined(SP_GRAPHICS_SUPPORT)
         auto frameEnd = chrono_clock::now();
-        while (!gameExitTriggered.test()) {
+        while (!GameExitTriggered.test()) {
             static const char *frameName = "WindowInput";
+            (void)frameName;
             FrameMarkStart(frameName);
             if (startupScript) {
                 while (graphicsStepCount < graphicsMaxStepCount) {
@@ -208,6 +212,133 @@ namespace sp {
             exitTriggered.wait(false);
         }
 #endif
-        return gameExitCode;
+        return GameExitCode;
+    }
+
+    struct CGameContext {
+        cxxopts::ParseResult optionsResult;
+        std::shared_ptr<sp::ConsoleScript> startupScript;
+        Game game;
+
+#ifdef _WIN32
+        std::shared_ptr<unsigned int> winSchedulerHandle;
+#endif
+
+        CGameContext(cxxopts::ParseResult &&optionsResult, std::shared_ptr<sp::ConsoleScript> &&startupScript = nullptr)
+            : optionsResult(std::move(optionsResult)), startupScript(startupScript),
+              game(this->optionsResult, startupScript.get())
+#ifdef _WIN32
+              ,
+              winSchedulerHandle(SetWindowsSchedulerFix())
+#endif
+        {
+        }
+    };
+
+    StrayPhotons game_init(int argc, char **argv) {
+        using cxxopts::value;
+
+#ifdef CATCH_GLOBAL_EXCEPTIONS
+        try
+#endif
+        {
+#ifdef SP_TEST_MODE
+            cxxopts::Options options("sp-test", "Stray Photons Game Engine Test Environment\n");
+            options.positional_help("<script-file>");
+#else
+            cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
+#endif
+            options.allow_unrecognised_options();
+
+            // clang-format off
+            options.add_options()
+                ("h,help", "Display help")
+#ifdef SP_TEST_MODE
+                ("script-file", "", value<string>())
+#else
+                ("m,map", "Initial scene to load", value<string>())
+#endif
+                ("size", "Initial window size", value<string>())
+#ifdef SP_XR_SUPPORT
+                ("no-vr", "Disable automatic XR/VR system loading")
+#endif
+#ifdef SP_GRAPHICS_SUPPORT
+                ("headless", "Disable window creation and graphics initialization")
+                ("with-validation-layers", "Enable Vulkan validation layers")
+#endif
+                ("c,command", "Run a console command on init", value<vector<string>>());
+            // clang-format on
+
+#ifdef SP_TEST_MODE
+            options.parse_positional({"script-file"});
+#endif
+
+            auto optionsResult = options.parse(argc, argv);
+
+            if (optionsResult.count("help")) {
+                std::cout << options.help() << std::endl;
+                return nullptr;
+            }
+
+            Logf("Starting in directory: %s", std::filesystem::current_path().string());
+
+#ifdef SP_TEST_MODE
+            if (!optionsResult.count("script-file")) {
+                Errorf("Script file required argument.");
+                return nullptr;
+            } else {
+                string scriptPath = optionsResult["script-file"].as<string>();
+
+                Logf("Loading test script: %s", scriptPath);
+                auto asset = sp::Assets().Load("scripts/" + scriptPath)->Get();
+                if (!asset) {
+                    Errorf("Test script not found: %s", scriptPath);
+                    return nullptr;
+                }
+
+                return new CGameContext(std::move(optionsResult),
+                    std::make_shared<sp::ConsoleScript>(scriptPath, asset));
+            }
+#else
+            return new CGameContext(std::move(optionsResult));
+#endif
+        }
+#ifdef CATCH_GLOBAL_EXCEPTIONS
+        catch (const char *err) {
+            Errorf("terminating with exception: %s", err);
+        } catch (const std::exception &ex) {
+            Errorf("terminating with exception: %s", ex.what());
+        }
+#endif
+        return nullptr;
+    }
+
+    int game_start(StrayPhotons instance) {
+        Assertf(instance != nullptr, "sp::game_destroy called with null instance");
+
+        try {
+            return instance->game.Start();
+        } catch (const std::exception &e) {
+            Abortf("Error invoking game.Start(): %s", e.what());
+        }
+    }
+
+    void game_destroy(StrayPhotons instance) {
+        Assertf(instance != nullptr, "sp::game_destroy called with null instance");
+
+        delete instance;
     }
 } // namespace sp
+
+#ifdef _WIN32
+    #include <windows.h>
+
+std::shared_ptr<unsigned int> SetWindowsSchedulerFix() {
+    // Increase thread scheduler resolution from default of 15ms
+    timeBeginPeriod(1);
+    return std::shared_ptr<UINT>(new UINT(1), [](UINT *period) {
+        timeEndPeriod(*period);
+        delete period;
+    });
+}
+#endif

@@ -36,7 +36,7 @@ if(WIN32)
         NOMINMAX
         _USE_MATH_DEFINES
     )
-    
+
     # fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     target_compile_options(${PROJECT_CORE_LIB} PUBLIC /bigobj)
 else()

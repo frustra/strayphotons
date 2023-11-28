@@ -12,6 +12,7 @@
 #include "assets/PhysicsInfo.hh"
 #include "cooking/ConvexHull.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cxxopts.hpp>

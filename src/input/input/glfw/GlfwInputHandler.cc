@@ -60,19 +60,6 @@ namespace sp {
         glfwPollEvents();
     }
 
-    glm::vec2 GlfwInputHandler::ImmediateCursor() const {
-        if (glfwGetWindowAttrib(window, GLFW_FOCUSED)) {
-            double mouseX, mouseY;
-            int fbWidth, fbHeight;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
-            glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-            glm::ivec2 windowSize = CVarWindowSize.Get();
-            return glm::vec2((float)mouseX, (float)mouseY + (float)(windowSize.y - fbHeight));
-        } else {
-            return glm::vec2(-1.0f, -1.0f);
-        }
-    }
-
     void GlfwInputHandler::KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
         ZoneScoped;
         if (key == GLFW_KEY_UNKNOWN) return;
@@ -108,8 +95,13 @@ namespace sp {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx, "MouseMoveCallback occured without valid context");
 
+        glm::vec2 mousePos(xPos, yPos);
         auto mouse = ctx->mouseEntity.GetLive();
-        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, glm::vec2(xPos, yPos)});
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, mousePos});
+
+        // TODO: Fix mouse leaving window not resetting prevMousePos
+        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
+        ctx->prevMousePos = mousePos;
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {

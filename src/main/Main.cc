@@ -14,6 +14,7 @@ using namespace std;
 
 #include "Game.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #ifdef SP_TEST_MODE
     #include "assets/AssetManager.hh"
@@ -25,14 +26,15 @@ using namespace std;
 #include <cxxopts.hpp>
 #include <filesystem>
 #include <memory>
+#include <strayphotons.h>
 
 using cxxopts::value;
 
 namespace sp {
     void handleSignals(int signal) {
         if (signal == SIGINT) {
-            gameExitTriggered.test_and_set();
-            gameExitTriggered.notify_all();
+            GameExitTriggered.test_and_set();
+            GameExitTriggered.notify_all();
         }
     }
 } // namespace sp
@@ -48,46 +50,8 @@ namespace sp {
 int main(int argc, char **argv)
 // #endif
 {
-#ifdef SP_TEST_MODE
-    cxxopts::Options options("sp-test", "Stray Photons Game Engine Test Environment\n");
-    options.positional_help("<script-file>");
-#else
-    cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
-#endif
-
-    // clang-format off
-    options.add_options()
-        ("h,help", "Display help")
-#ifdef SP_TEST_MODE
-        ("script-file", "", value<string>())
-#else
-        ("m,map", "Initial scene to load", value<string>())
-#endif
-        ("size", "Initial window size", value<string>())
-#ifdef SP_XR_SUPPORT
-        ("no-vr", "Disable automatic XR/VR system loading")
-#endif
-#ifdef SP_GRAPHICS_SUPPORT
-        ("headless", "Disable window creation and graphics initialization")
-#endif
-#ifdef SP_GRAPHICS_SUPPORT_VK
-        ("with-validation-layers", "Enable Vulkan validation layers")
-#endif
-        ("c,command", "Run a console command on init", value<vector<string>>());
-    // clang-format on
-
-#ifdef SP_TEST_MODE
-    options.parse_positional({"script-file"});
-#endif
 
 #ifdef _WIN32
-    // Increase thread scheduler resolution from default of 15ms
-    timeBeginPeriod(1);
-    std::shared_ptr<UINT> timePeriodReset(new UINT(1), [](UINT *period) {
-        timeEndPeriod(*period);
-        delete period;
-    });
-
     signal(SIGINT, sp::handleSignals);
 #else
     struct sigaction act;
@@ -97,50 +61,10 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-#ifdef CATCH_GLOBAL_EXCEPTIONS
-    try
-#endif
-    {
-        auto optionsResult = options.parse(ARGC_NAME, ARGV_NAME);
+    std::shared_ptr<std::remove_pointer_t<sp::StrayPhotons>> instance(sp::game_init(ARGC_NAME, ARGV_NAME),
+        [](sp::StrayPhotons ctx) {
+            sp::game_destroy(ctx);
+        });
 
-        if (optionsResult.count("help")) {
-            std::cout << options.help() << std::endl;
-            return 0;
-        }
-
-#ifdef SP_TEST_MODE
-        if (!optionsResult.count("script-file")) {
-            Logf("Script file required argument.");
-            return 0;
-        }
-#endif
-
-        Logf("Starting in directory: %s", std::filesystem::current_path().string());
-
-#ifdef SP_TEST_MODE
-        string scriptPath = optionsResult["script-file"].as<string>();
-
-        Logf("Loading test script: %s", scriptPath);
-        auto asset = sp::Assets().Load("scripts/" + scriptPath)->Get();
-        if (!asset) {
-            Errorf("Test script not found: %s", scriptPath);
-            return 0;
-        }
-
-        sp::ConsoleScript script(scriptPath, asset);
-        sp::Game game(optionsResult, &script);
-        return game.Start();
-#else
-        sp::Game game(optionsResult);
-        return game.Start();
-#endif
-    }
-#ifdef CATCH_GLOBAL_EXCEPTIONS
-    catch (const char *err) {
-        Errorf("terminating with exception: %s", err);
-    } catch (const std::exception &ex) {
-        Errorf("terminating with exception: %s", ex.what());
-    }
-#endif
-    return -1;
+    return sp::game_start(instance.get());
 }

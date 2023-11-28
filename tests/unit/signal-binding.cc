@@ -82,7 +82,7 @@ namespace SignalBindingTests {
                 AssertEqual(expr.expr, exprString, "Expected expression to be set");
             }
             std::string exprStr = "1";
-            for (int i = 0; i < ecs::MAX_SIGNAL_EXPRESSION_NODES; i++) {
+            for (size_t i = 0; i < ecs::MAX_SIGNAL_EXPRESSION_NODES; i++) {
                 exprStr += " + 1";
             }
             auto &expr = testRef.SetBinding(lock, exprStr);

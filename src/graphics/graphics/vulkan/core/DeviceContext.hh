@@ -8,6 +8,7 @@
 #pragma once
 
 #include "assets/Async.hh"
+#include "core/Defer.hh"
 #include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -23,6 +24,10 @@
 #include <variant>
 
 struct GLFWwindow;
+
+namespace sp::winit {
+    struct WinitContext;
+}
 
 namespace tracy {
     class VkCtx;
@@ -65,7 +70,7 @@ namespace sp::vulkan {
         }
 
         vk::Instance &Instance() {
-            return *instance;
+            return instance;
         }
 
         vk::Queue &GetQueue(CommandContextType type) {
@@ -201,8 +206,12 @@ namespace sp::vulkan {
             return queueFamilyIndex[QueueType(type)];
         }
 
-        GLFWwindow *GetWindow() {
+        GLFWwindow *GetGlfwWindow() {
             return window;
+        }
+
+        winit::WinitContext *GetWinitContext() {
+            return winitContext.get();
         }
 
         void *Win32WindowHandle() override;
@@ -250,16 +259,19 @@ namespace sp::vulkan {
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
+        std::shared_ptr<sp::winit::WinitContext> winitContext;
+
         std::thread::id mainThread;
         std::thread::id renderThread;
-        vk::UniqueInstance instance;
+        vk::Instance instance;
+        DeferredFunc instanceDestroy;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
-        vk::UniqueSurfaceKHR surface;
+        vk::SurfaceKHR surface;
+        DeferredFunc surfaceDestroy;
         vk::PhysicalDevice physicalDevice;
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
-
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         unique_ptr<PerfTimer> perfTimer;
 
@@ -362,16 +374,17 @@ namespace sp::vulkan {
         using SamplerKey = HashKey<VkSamplerCreateInfo>;
         robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
 
-        bool glfwFullscreen = false;
-        glm::ivec2 glfwWindowSize;
+        bool systemFullscreen = false;
+        glm::ivec2 systemWindowSize;
         glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;
-        GLFWwindow *window = nullptr;
 
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
-        unique_ptr<CFuncCollection> funcs;
+        std::unique_ptr<CFuncCollection> funcs;
+
+        GLFWwindow *window = nullptr;
     };
 } // namespace sp::vulkan

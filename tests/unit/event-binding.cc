@@ -72,11 +72,11 @@ namespace EventBindingTests {
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_BUTTON, player, 42});
-            AssertEqual(sentCount, 1, "Expected to successfully queue 1 event");
+            AssertEqual(sentCount, 1u, "Expected to successfully queue 1 event");
             sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'a'});
-            AssertEqual(sentCount, 3, "Expected to successfully queue 3 events");
+            AssertEqual(sentCount, 3u, "Expected to successfully queue 3 events");
             sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'b'});
-            AssertEqual(sentCount, 3, "Expected to successfully queue 3 events");
+            AssertEqual(sentCount, 3u, "Expected to successfully queue 3 events");
         }
         {
             Timer t("Read the test events");
@@ -150,11 +150,11 @@ namespace EventBindingTests {
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
             auto sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_BUTTON, player, 42});
-            AssertEqual(sentCount, 0, "Expected to successfully queue 0 events");
+            AssertEqual(sentCount, 0u, "Expected to successfully queue 0 events");
             sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'a'});
-            AssertEqual(sentCount, 0, "Expected to successfully queue 0 events");
+            AssertEqual(sentCount, 0u, "Expected to successfully queue 0 events");
             sentCount = ecs::EventBindings::SendEvent(lock, player, ecs::Event{TEST_SOURCE_KEY, player, 'b'});
-            AssertEqual(sentCount, 0, "Expected to successfully queue 0 events");
+            AssertEqual(sentCount, 0u, "Expected to successfully queue 0 events");
         }
     }
 

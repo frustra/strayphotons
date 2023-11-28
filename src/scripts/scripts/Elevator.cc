@@ -35,7 +35,7 @@ namespace sp::scripts {
             }
 
             float delta = transform.GetPosition().y - lastTransform.GetPosition().y;
-            bool shouldPlay = abs(delta) > 1e-8;
+            bool shouldPlay = std::abs(delta) > 1e-8;
             if (shouldPlay || frames++ > 69) {
                 if (shouldPlay != playing) {
                     if (shouldPlay) {
@@ -48,7 +48,7 @@ namespace sp::scripts {
                 lastTransform = transform;
                 frames = 0;
                 avgSpeed = 0.9 * avgSpeed + 0.1 * delta;
-                audio.sounds[0].volume = std::min(1.0f, abs(avgSpeed) / 0.5f);
+                audio.sounds[0].volume = std::min(1.0f, std::abs(avgSpeed) / 0.5f);
             }
         }
     };

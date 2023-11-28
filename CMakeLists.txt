@@ -75,14 +75,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Werror=format-security -Wno-volatile")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Werror=format-security -Wno-volatile -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
 
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
-    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fgnuc-version=5")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fgnuc-version=5 -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
@@ -119,7 +119,11 @@ set(PROJECT_BASE_NAME strayphotons)
 set(PROJECT_COMMON_EXE ${PROJECT_BASE_NAME})
 add_library(${PROJECT_COMMON_EXE} INTERFACE)
 target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE cxxopts)
-target_include_directories(${PROJECT_COMMON_EXE} INTERFACE src)
+target_include_directories(${PROJECT_COMMON_EXE}
+    INTERFACE
+        include
+        src
+)
 
 if(UNIX)
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE pthread)
@@ -179,16 +183,12 @@ if(SP_BUILD_RUST)
     add_subdirectory(rust)
     add_subdirectory(wasm)
 
-    target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
-        RUST_CXX
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
+        sp-rs-wasm
     )
 
-    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        sp-rust
-    )
-    
     if(ipo_supported)
-        set_target_properties(sp-rust PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+        set_target_properties(sp-rs-wasm PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
 

@@ -10,6 +10,7 @@
 #include "assets/JsonHelpers.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <optional>
 #include <picojson/picojson.h>

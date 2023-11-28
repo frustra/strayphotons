@@ -22,6 +22,10 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
 
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        #include "input/winit/WinitInputHandler.hh"
+    #endif
+
     #include <glm/glm.hpp>
     #include <memory>
     #include <vector>
@@ -44,7 +48,7 @@ namespace sp {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:
-        GraphicsManager(Game *game, bool stepMode);
+        GraphicsManager(Game &game, bool stepMode);
         ~GraphicsManager();
 
         void Init();
@@ -55,13 +59,19 @@ namespace sp {
 
         GraphicsContext *GetContext();
 
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        WinitInputHandler *GetWinitInputHandler() {
+            return winitInputHandler.get();
+        }
+    #endif
+
     private:
         bool ThreadInit() override;
         void PreFrame() override;
         void PostFrame() override;
         void Frame() override;
 
-        Game *game;
+        Game &game;
         bool stepMode;
         unique_ptr<GraphicsContext> context;
         ecs::EntityRef flatviewEntity;
@@ -74,6 +84,10 @@ namespace sp {
 
     #ifdef SP_INPUT_SUPPORT_GLFW
         unique_ptr<GlfwInputHandler> glfwInputHandler;
+    #endif
+
+    #ifdef SP_INPUT_SUPPORT_WINIT
+        unique_ptr<WinitInputHandler> winitInputHandler;
     #endif
     };
 } // namespace sp

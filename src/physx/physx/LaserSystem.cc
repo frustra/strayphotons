@@ -9,9 +9,7 @@
 
 #include "core/Common.hh"
 #include "core/Tracing.hh"
-#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/components/Physics.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 

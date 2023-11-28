@@ -10,13 +10,12 @@ find_package(Vulkan REQUIRED)
 add_library(${PROJECT_GRAPHICS_CORE_LIB} STATIC)
 add_library(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} STATIC)
 add_library(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} STATIC)
+add_library(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} STATIC)
+add_library(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} STATIC)
 add_library(${PROJECT_GRAPHICS_VULKAN_XR_LIB} STATIC)
 
 target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-)
-target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
-    "$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>"
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
@@ -29,17 +28,27 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     PUBLIC
         ${PROJECT_GRAPHICS_CORE_LIB}
         Vulkan::Vulkan
+        VulkanMemoryAllocator
     PRIVATE
+        SPIRV-Reflect
         fpng
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     glfw-egl # Prevents X11 context creation
 )
+target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PUBLIC
+    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+    glfw
+)
+target_link_libraries(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PUBLIC
+    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+    ${PROJECT_INPUT_WINIT_LIB}
+    sp-rs-window
+)
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_XR_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     ${PROJECT_XR_CORE_LIB}
-    glfw
 )
 
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
@@ -53,10 +62,18 @@ target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PUBLIC
 target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT_HEADLESS
 )
+target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PUBLIC
+    SP_GRAPHICS_SUPPORT_GLFW
+)
+target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PUBLIC
+    SP_GRAPHICS_SUPPORT_WINIT
+)
 
 target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_XR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(graphics)
