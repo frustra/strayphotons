@@ -98,8 +98,6 @@ namespace sp {
         glm::vec2 mousePos(xPos, yPos);
         auto mouse = ctx->mouseEntity.GetLive();
         ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, mousePos});
-
-        // TODO: Fix mouse leaving window not resetting prevMousePos
         ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
         ctx->prevMousePos = mousePos;
     }

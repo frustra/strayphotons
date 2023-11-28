@@ -62,6 +62,9 @@ if(WIN32)
     target_link_libraries(sp PUBLIC winmm)
 endif()
 
+add_executable(sp-link-test link_test.c)
+target_link_libraries(sp-link-test PRIVATE sp)
+
 # Vulkan desktop build
 add_module_configuration(
     NAME sp-vk
@@ -76,10 +79,6 @@ add_module_configuration(
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_SCRIPTS_LIB}
 )
-
-# Winit desktop build (dynamic linking)
-add_executable(sp-winit main/WinitMain.c)
-target_link_libraries(sp-winit PRIVATE sp)
 
 # Headless executable used for CI testing purposes
 add_module_configuration(
