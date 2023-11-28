@@ -1,0 +1,16 @@
+[workspace]
+members = ["rust/sp-sys", "rust/bin/demo"]
+exclude = ["rust/sp-rs"]
+resolver = "2"
+
+[profile.dev]
+codegen-units = 256 # Better optimizations
+debug = true        # Symbols don't increase size if enabled
+lto = true          # Link time optimizations
+opt-level = 2       # Optimize for speed
+
+[profile.release]
+codegen-units = 1 # Better optimizations
+debug = false     # Symbols don't increase size if enabled
+lto = true        # Link time optimizations
+opt-level = 3     # Optimize for speed

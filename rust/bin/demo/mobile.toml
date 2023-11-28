@@ -1,0 +1,5 @@
+[app]
+name = "demo"
+stylized-name = "Demo"
+domain = "strayphotons.net"
+template-pack = "winit"

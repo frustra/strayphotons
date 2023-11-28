@@ -124,6 +124,11 @@ namespace sp::vulkan {
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
+        if (enableValidationLayers) {
+            Logf("Running with Vulkan validation layer");
+            layers.emplace_back("VK_LAYER_KHRONOS_validation");
+        }
+
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
@@ -139,16 +144,10 @@ namespace sp::vulkan {
 
         auto initialSize = CVarWindowSize.Get();
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
-        // TODO: Match these extensions with Rust window.rs
         uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
             extensions.emplace_back(requiredExtensions[i]);
-        }
-
-        if (enableValidationLayers) {
-            Logf("Running with Vulkan validation layer");
-            layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
 
         if (enableSwapchain) {
@@ -179,7 +178,7 @@ namespace sp::vulkan {
 
 #ifdef SP_GRAPHICS_SUPPORT_WINIT
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
-            sp::winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw(),
+            sp::winit::create_context(initialSize.x, initialSize.y).into_raw(),
             [](auto *ptr) {
                 (void)rust::cxxbridge1::Box<sp::winit::WinitContext>::from_raw(ptr);
             });
@@ -940,7 +939,7 @@ namespace sp::vulkan {
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
-        double frameEnd = (double)chrono_clock::now().time_since_epoch().count() / 1e9;
+        double frameEnd = (double)chrono_clock::now().time_since_epoch().count() / 1e9; // FIXME: GetTime function
         fpsTimer += frameEnd - lastFrameEnd;
         frameCounterThisSecond++;
 

@@ -82,7 +82,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
-    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fgnuc-version=5 -fPIC")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fPIC") #-fgnuc-version=5
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")

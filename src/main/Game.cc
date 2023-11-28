@@ -248,7 +248,6 @@ namespace sp {
 #else
             cxxopts::Options options("sp-vk", "Stray Photons Game Engine\n");
 #endif
-            options.allow_unrecognised_options();
 
             // clang-format off
             options.add_options()
@@ -264,6 +263,8 @@ namespace sp {
 #endif
 #ifdef SP_GRAPHICS_SUPPORT
                 ("headless", "Disable window creation and graphics initialization")
+#endif
+#ifdef SP_GRAPHICS_SUPPORT_VK
                 ("with-validation-layers", "Enable Vulkan validation layers")
 #endif
                 ("c,command", "Run a console command on init", value<vector<string>>());
