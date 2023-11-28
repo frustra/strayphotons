@@ -80,6 +80,19 @@ add_module_configuration(
         ${PROJECT_SCRIPTS_LIB}
 )
 
+# Winit desktop build
+# add_module_configuration(
+#     NAME sp-winit
+#     EXPORT_COMPILE_COMMANDS
+#     LINK_LIBRARIES
+#         ${PROJECT_GAME_LIB}
+#         ${PROJECT_INPUT_WINIT_LIB}
+#         ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
+#         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+#         ${PROJECT_PHYSICS_PHYSX_LIB}
+#         ${PROJECT_SCRIPTS_LIB}
+# )
+
 # Headless executable used for CI testing purposes
 add_module_configuration(
     NAME sp-test

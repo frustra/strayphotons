@@ -144,6 +144,7 @@ namespace sp::vulkan {
 
         auto initialSize = CVarWindowSize.Get();
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
+        // TODO: Match these extensions with Rust window.rs
         uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {

@@ -317,9 +317,9 @@ fn create_context(width: i32, height: i32) -> Box<WinitContext> {
             .unwrap()
     };
 
+    // TODO: Match these extensions with C++ DeviceContext.cc
     let mut required_extensions: vulkano::instance::InstanceExtensions =
         Surface::required_extensions(&event_loop);
-
     required_extensions.khr_surface = true;
     required_extensions.khr_get_physical_device_properties2 = true;
     required_extensions.ext_debug_utils = true;

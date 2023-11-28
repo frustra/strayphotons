@@ -59,7 +59,12 @@ namespace sp {
         Assert(!context, "already have a graphics context");
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        Logf("Graphics starting up (Vulkan)");
+        #ifdef SP_GRAPHICS_SUPPORT_GLFW
+        Logf("Graphics starting up (Vulkan GLFW)");
+        #endif
+        #ifdef SP_GRAPHICS_SUPPORT_WINIT
+        Logf("Graphics starting up (Vulkan Winit)");
+        #endif
 
         bool enableValidationLayers = game.options.count("with-validation-layers") > 0;
 
