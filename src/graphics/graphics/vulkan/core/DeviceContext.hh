@@ -24,6 +24,7 @@
 #include <variant>
 
 struct GLFWwindow;
+
 namespace sp::winit {
     struct WinitContext;
 }

@@ -605,13 +605,11 @@ fn start_event_loop(
             match event {
                 #[cfg(target_os = "android")]
                 Event::Resumed => {
-                    //app.resume(event_loop); // FIXME
                     create_view(context);
                 }
                 #[cfg(target_os = "android")]
                 Event::Suspended => {
                     log::info!("Suspended, dropping render state...");
-                    //app.render_state = None; // FIXME
                 }
                 Event::DeviceEvent { event, .. } => match event {
                     // TODO: Map unique device_ids to different events/signals

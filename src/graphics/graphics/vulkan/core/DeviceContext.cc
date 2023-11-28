@@ -940,7 +940,7 @@ namespace sp::vulkan {
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
-        double frameEnd = (double)chrono_clock::now().time_since_epoch().count() / 1e9; // FIXME: GetTime function
+        double frameEnd = (double)chrono_clock::now().time_since_epoch().count() / 1e9;
         fpsTimer += frameEnd - lastFrameEnd;
         frameCounterThisSecond++;
 
