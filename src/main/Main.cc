@@ -16,11 +16,6 @@ using namespace std;
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
-#ifdef SP_TEST_MODE
-    #include "assets/AssetManager.hh"
-    #include "assets/ConsoleScript.hh"
-#endif
-
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>

@@ -37,7 +37,7 @@ namespace sp {
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
     CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
-    PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode)
+    PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
         : RegisteredThread("PhysX", 120.0, true), windowInputQueue(windowInputQueue), scenes(GetSceneManager()),
           characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
           animationSystem(*this), workQueue("PhysXHullLoading") {
@@ -70,13 +70,17 @@ namespace sp {
         scratchBlock.resize(0x1000000); // 16MiB
 
         CreatePhysxScene();
-        if (stepMode) {
-            funcs.Register<unsigned int>("stepphysics",
-                "Advance the physics simulation by N frames, default is 1",
-                [this](unsigned int arg) {
-                    this->Step(std::max(1u, arg));
-                });
-        }
+        funcs.Register<unsigned int>("stepphysics",
+            "Advance the physics simulation by N frames, default is 1",
+            [this](unsigned int arg) {
+                this->Step(std::max(1u, arg));
+            });
+        funcs.Register("pausephysics", "Pause the physics simulation (See also: resumephysics)", [this] {
+            this->Pause(true);
+        });
+        funcs.Register("resumephysics", "Pause the physics simulation (See also: pausephysics)", [this] {
+            this->Pause(false);
+        });
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "physx",
@@ -90,7 +94,6 @@ namespace sp {
             });
 
         RegisterDebugCommands();
-        StartThread(stepMode);
     }
 
     PhysxManager::~PhysxManager() {
@@ -146,6 +149,10 @@ namespace sp {
             pxFoundation->release();
             pxFoundation = nullptr;
         }
+    }
+
+    void PhysxManager::StartThread(bool startPaused) {
+        RegisteredThread::StartThread(startPaused);
     }
 
     void PhysxManager::PreFrame() {

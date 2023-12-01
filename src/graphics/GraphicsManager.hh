@@ -48,11 +48,11 @@ namespace sp {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:
-        GraphicsManager(Game &game, bool stepMode);
+        GraphicsManager(Game &game);
         ~GraphicsManager();
 
         void Init();
-        void StartThread();
+        void StartThread(bool startPaused = false);
         void StopThread();
         bool HasActiveContext();
         bool InputFrame();
@@ -68,11 +68,10 @@ namespace sp {
     private:
         bool ThreadInit() override;
         void PreFrame() override;
-        void PostFrame() override;
+        void PostFrame(bool stepMode) override;
         void Frame() override;
 
         Game &game;
-        bool stepMode;
         unique_ptr<GraphicsContext> context;
         ecs::EntityRef flatviewEntity;
 
@@ -80,6 +79,7 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
+        bool enableSwapchain = false;
     #endif
 
     #ifdef SP_INPUT_SUPPORT_GLFW

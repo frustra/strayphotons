@@ -15,19 +15,29 @@
 #include "input/BindingNames.hh"
 
 namespace sp {
-    GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode)
-        : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue), stepMode(stepMode) {
-        if (stepMode) {
-            funcs.Register<unsigned int>("steplogic",
-                "Advance the game logic by N frames, default is 1",
-                [this](unsigned int arg) {
-                    this->Step(std::max(1u, arg));
-                });
-        }
+    static CVar<bool> CVarEnableInput("w.EnableInput", true, "Enable window input events");
+
+    GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
+        : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue) {
+        funcs.Register<unsigned int>("steplogic",
+            "Advance the game logic by N frames, default is 1",
+            [this](unsigned int arg) {
+                this->Step(std::max(1u, arg));
+            });
+        funcs.Register("pauselogic", "Pause the game logic thread (See also: resumelogic)", [this] {
+            this->Pause(true);
+        });
+        funcs.Register("resumelogic", "Pause the game logic thread (See also: pauselogic)", [this] {
+            this->Pause(false);
+        });
     }
 
-    void GameLogic::StartThread() {
-        RegisteredThread::StartThread(stepMode);
+    void GameLogic::StartThread(bool startPaused) {
+        RegisteredThread::StartThread(startPaused);
+    }
+
+    void GameLogic::DisableInput(bool disable) {
+        CVarEnableInput.Set(!disable);
     }
 
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
@@ -39,6 +49,8 @@ namespace sp {
         auto mouse = mouseEntity.Get(lock);
 
         inputQueue.PollEvents([&](const ecs::Event &event) {
+            if (!CVarEnableInput.Get()) return; // Drop input event
+
             if (event.source == keyboard) {
                 ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
             } else if (event.source == mouse) {

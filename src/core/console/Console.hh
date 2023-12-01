@@ -54,7 +54,7 @@ namespace sp {
 
     public:
         ConsoleManager();
-        void StartThread(const ConsoleScript *startupScript);
+        void StartThread(const ConsoleScript *startupScript = nullptr);
         void Shutdown();
 
         void AddCVar(CVarBase *cvar);

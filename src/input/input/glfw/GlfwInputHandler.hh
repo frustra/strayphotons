@@ -29,11 +29,13 @@ namespace sp {
         static void MouseMoveCallback(GLFWwindow *window, double xPos, double yPos);
         static void MouseButtonCallback(GLFWwindow *window, int button, int actions, int mods);
         static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
+        static void MouseEnterCallback(GLFWwindow *window, int entered);
 
     private:
         LockFreeEventQueue<ecs::Event> &outputEventQueue;
         GLFWwindow *window = nullptr;
 
+        int prevMouseMode = -1;
         glm::vec2 prevMousePos = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
         ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");

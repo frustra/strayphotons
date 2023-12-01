@@ -8,7 +8,6 @@
 set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
 
 set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implementing game engine ECS systems")
-set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interface library to enable CLI test mode")
 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
@@ -85,10 +84,10 @@ target_link_libraries(sp-winit PRIVATE sp)
 add_module_configuration(
     NAME sp-test
     LINK_LIBRARIES
-        ${PROJECT_GAME_TEST_LIB}
+        ${PROJECT_GAME_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
-        ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_SCRIPTS_LIB}
 )

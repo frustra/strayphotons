@@ -32,7 +32,7 @@ namespace sp {
         if (thread.joinable()) thread.join();
     }
 
-    void RegisteredThread::StartThread(bool stepMode) {
+    void RegisteredThread::StartThread(bool startPaused) {
         ThreadState current = state;
         if (current != ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Started)) {
             Errorf("RegisteredThread %s already started: %s", threadName, current);
@@ -40,7 +40,9 @@ namespace sp {
         }
         state.notify_all();
 
-        thread = std::thread([this, stepMode] {
+        if (startPaused) this->Pause();
+
+        thread = std::thread([this] {
             tracy::SetThreadName(threadName.c_str());
             Defer exit([this] {
                 ThreadState current = state;
@@ -59,7 +61,7 @@ namespace sp {
 #endif
                 while (state == ThreadState::Started) {
                     this->PreFrame();
-                    if (stepMode) {
+                    if (this->stepMode) {
                         while (stepCount < maxStepCount) {
                             if (traceFrames) FrameMarkStart(threadName.c_str());
                             this->Frame();
@@ -67,12 +69,13 @@ namespace sp {
                             stepCount++;
                         }
                         stepCount.notify_all();
+                        this->PostFrame(true);
                     } else {
                         if (traceFrames) FrameMarkStart(threadName.c_str());
                         this->Frame();
                         if (traceFrames) FrameMarkEnd(threadName.c_str());
+                        this->PostFrame(false);
                     }
-                    this->PostFrame();
 
                     auto realFrameEnd = chrono_clock::now();
 
@@ -98,6 +101,10 @@ namespace sp {
             }
 #endif
         });
+    }
+
+    void RegisteredThread::Pause(bool pause) {
+        stepMode = pause;
     }
 
     void RegisteredThread::Step(unsigned int count) {

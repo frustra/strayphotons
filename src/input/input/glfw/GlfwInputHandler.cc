@@ -33,6 +33,7 @@ namespace sp {
         glfwSetScrollCallback(window, MouseScrollCallback);
         glfwSetMouseButtonCallback(window, MouseButtonCallback);
         glfwSetCursorPosCallback(window, MouseMoveCallback);
+        glfwSetCursorEnterCallback(window, MouseEnterCallback);
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "input",
@@ -99,9 +100,12 @@ namespace sp {
         auto mouse = ctx->mouseEntity.GetLive();
         ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_POSITION, mouse, mousePos});
 
-        // TODO: Fix mouse leaving window not resetting prevMousePos
-        ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
+        int mouseMode = glfwGetInputMode(window, GLFW_CURSOR);
+        if (!glm::any(glm::isinf(ctx->prevMousePos)) && ctx->prevMouseMode == mouseMode) {
+            ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_MOVE, mouse, mousePos - ctx->prevMousePos});
+        }
         ctx->prevMousePos = mousePos;
+        ctx->prevMouseMode = mouseMode;
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
@@ -126,5 +130,19 @@ namespace sp {
 
         auto mouse = ctx->mouseEntity.GetLive();
         ctx->outputEventQueue.PushEvent(ecs::Event{INPUT_EVENT_MOUSE_SCROLL, mouse, glm::vec2(xOffset, yOffset)});
+    }
+
+    void GlfwInputHandler::MouseEnterCallback(GLFWwindow *window, int entered) {
+        ZoneScoped;
+        auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
+        Assert(ctx, "MouseEnterCallback occured without valid context");
+
+        if (entered) {
+            glm::dvec2 dpos;
+            glfwGetCursorPos(window, &dpos.x, &dpos.y);
+            ctx->prevMousePos = dpos;
+        } else {
+            ctx->prevMousePos = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
+        }
     }
 } // namespace sp

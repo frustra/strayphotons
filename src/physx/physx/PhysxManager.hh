@@ -107,8 +107,10 @@ namespace sp {
 
     class PhysxManager : public RegisteredThread {
     public:
-        PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode);
+        PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue);
         virtual ~PhysxManager() override;
+
+        void StartThread(bool startPaused = false);
 
     private:
         void PreFrame() override;

@@ -415,6 +415,12 @@ namespace sp::json {
         if (!field.empty()) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             dst.get<picojson::object>()[field] = value;
+        } else if (value.is<picojson::object>()) {
+            if (!dst.is<picojson::object>()) {
+                dst = value;
+            } else {
+                dst.get<picojson::object>().merge(value.get<picojson::object>());
+            }
         } else {
             dst = value;
         }

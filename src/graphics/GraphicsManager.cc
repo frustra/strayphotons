@@ -34,7 +34,7 @@ namespace sp {
         "player:flatview",
         "The entity with a View component to display");
 
-    #if defined(SP_GRAPHICS_SUPPORT_HEADLESS) || defined(SP_TEST_MODE)
+    #if defined(SP_GRAPHICS_SUPPORT_HEADLESS)
     const uint32 DefaultMaxFPS = 90;
     #elif defined(SP_DEBUG)
     const uint32 DefaultMaxFPS = 144;
@@ -46,8 +46,7 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game &game, bool stepMode)
-        : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game), stepMode(stepMode) {}
+    GraphicsManager::GraphicsManager(Game &game) : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game) {}
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
@@ -99,8 +98,8 @@ namespace sp {
         }
     }
 
-    void GraphicsManager::StartThread() {
-        RegisteredThread::StartThread(stepMode);
+    void GraphicsManager::StartThread(bool startPaused) {
+        RegisteredThread::StartThread(startPaused);
     }
 
     void GraphicsManager::StopThread() {
@@ -186,11 +185,11 @@ namespace sp {
         renderer->SetXRSystem(xrSystem);
         #endif
 
-        #ifdef SP_TEST_MODE
-        renderer->RenderFrame(interval * stepCount.load());
-        #else
-        renderer->RenderFrame(chrono_clock::now() - renderStart);
-        #endif
+        if (stepMode) {
+            renderer->RenderFrame(interval * stepCount.load());
+        } else {
+            renderer->RenderFrame(chrono_clock::now() - renderStart);
+        }
 
         #ifdef SP_XR_SUPPORT
         renderer->SetXRSystem(nullptr);
@@ -198,7 +197,7 @@ namespace sp {
     #endif
     }
 
-    void GraphicsManager::PostFrame() {
+    void GraphicsManager::PostFrame(bool stepMode) {
         auto maxFPS = CVarMaxFPS.Get();
         if (maxFPS > 0) {
             interval = std::chrono::nanoseconds((int64_t)(1e9 / maxFPS));

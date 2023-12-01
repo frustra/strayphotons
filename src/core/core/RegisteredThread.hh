@@ -20,16 +20,18 @@ namespace sp {
         RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames = false);
         virtual ~RegisteredThread();
 
+        void Pause(bool pause = true);
         void Step(unsigned int count = 1);
         std::thread::id GetThreadId() const;
 
         const std::string threadName;
         chrono_clock::duration interval;
         std::atomic_uint64_t stepCount, maxStepCount;
+        std::atomic_bool stepMode;
         const bool traceFrames = false;
 
     protected:
-        void StartThread(bool stepMode = false);
+        void StartThread(bool startPaused = false);
         void StopThread(bool waitForExit = true);
 
         // Will be called once per interval except for in step mode
@@ -37,7 +39,7 @@ namespace sp {
         // Will always be called once per interval
         virtual void PreFrame(){};
         // Will always be called once per interval
-        virtual void PostFrame(){};
+        virtual void PostFrame(bool stepMode){};
 
         // Will be called once in the thread, before the first call to Frame()
         // If this returns false, the thread will be stopped

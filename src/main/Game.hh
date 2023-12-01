@@ -52,17 +52,16 @@ namespace sp {
         LogOnExit logOnExit = "Game shut down ========================================================";
 
     public:
-        Game(cxxopts::ParseResult &options, const ConsoleScript *startupScript = nullptr);
+        Game(cxxopts::ParseResult &options);
         ~Game();
 
         int Start();
 
         cxxopts::ParseResult &options;
-        const ConsoleScript *startupScript = nullptr;
-
         CFuncCollection funcs;
 
     private:
+        // Shutdown managers before CFuncs are destroyed above.
         struct ShutdownManagers {
             ~ShutdownManagers();
         } shutdownManagers;

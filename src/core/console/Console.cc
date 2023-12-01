@@ -134,7 +134,7 @@ namespace sp {
     void ConsoleManager::StartThread(const ConsoleScript *startupScript) {
         if (startupScript) {
             exitOnEmptyQueue = true;
-            for (string line : startupScript->Lines()) {
+            for (const string &line : startupScript->Lines()) {
                 scriptCommands.emplace(line);
             }
         }

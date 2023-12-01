@@ -18,10 +18,11 @@ namespace sp {
 
     class GameLogic : public RegisteredThread {
     public:
-        GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode);
+        GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue);
 
-        void StartThread();
+        void StartThread(bool startPaused = false);
 
+        static void DisableInput(bool disable = true);
         static void UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
             LockFreeEventQueue<ecs::Event> &inputQueue);
 
