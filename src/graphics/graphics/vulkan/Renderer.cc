@@ -9,6 +9,7 @@
 
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/gui/WorldGuiManager.hh"
@@ -31,6 +32,7 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
 #ifdef SP_XR_SUPPORT
+    #include "xr/XrManager.hh"
     #include "xr/XrSystem.hh"
 #endif
 
@@ -51,9 +53,9 @@ namespace sp::vulkan {
     static CVar<bool> CVarSortedDraw("r.SortedDraw", true, "Draw geometry in sorted depth-order");
     static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
 
-    Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels), transparency(scene),
-          guiRenderer(new GuiRenderer(device)) {
+    Renderer::Renderer(Game &game, DeviceContext &device)
+        : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
+          transparency(scene), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -78,6 +80,11 @@ namespace sp::vulkan {
             bool mirrorXR = CVarMirrorXR.Get(true);
             CVarWindowViewTarget.Set(mirrorXR ? CVarXRViewTarget.Get() : defaultWindowViewTarget);
         }
+
+#ifdef SP_XR_SUPPORT
+        if (game.xr) xrSystem = game.xr->GetXrSystem();
+        if (xrSystem) xrSystem->WaitFrame();
+#endif
 
         for (auto &gui : guis) {
             if (gui.contextShared) gui.contextShared->BeforeFrame();
@@ -609,7 +616,7 @@ namespace sp::vulkan {
         ZoneScoped;
         guiRenderer->Tick();
 
-        GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
+        GetSceneManager()->PreloadSceneGraphics([this](auto lock, auto scene) {
             ZoneScopedN("PreloadSceneGraphics");
             bool complete = true;
             for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Renderable>()) {

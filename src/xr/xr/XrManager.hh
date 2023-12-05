@@ -7,13 +7,11 @@
 
 #pragma once
 
-#ifdef SP_XR_SUPPORT
+#include "console/CFunc.hh"
+#include "core/LockFreeMutex.hh"
+#include "xr/XrSystem.hh"
 
-    #include "console/CFunc.hh"
-    #include "core/LockFreeMutex.hh"
-    #include "xr/XrSystem.hh"
-
-    #include <memory>
+#include <memory>
 
 namespace sp {
     class Game;
@@ -38,5 +36,3 @@ namespace sp::xr {
     };
 
 } // namespace sp::xr
-
-#endif

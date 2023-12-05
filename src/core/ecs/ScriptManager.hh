@@ -194,6 +194,6 @@ namespace ecs {
         friend struct sp::EditorContext;
     };
 
-    ScriptDefinitions &GetScriptDefinitions();
-    ScriptManager &GetScriptManager();
+    ScriptDefinitions *GetScriptDefinitions(ScriptDefinitions *override = nullptr);
+    ScriptManager *GetScriptManager(ScriptManager *override = nullptr);
 } // namespace ecs

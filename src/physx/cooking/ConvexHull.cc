@@ -225,7 +225,7 @@ namespace sp {
         auto &mesh = model->meshes[settings->hull.meshIndex];
         Assertf(mesh, "Physics mesh is undefined: %s index %u", settings->name, settings->hull.meshIndex);
 
-        auto asset = Assets().Load("cache/collision/" + settings->name)->Get();
+        auto asset = Assets()->Load("cache/collision/" + settings->name)->Get();
         if (!asset) {
             Errorf("Physics collision cache missing for hull: %s", settings->name);
             return nullptr;
@@ -331,7 +331,7 @@ namespace sp {
         }
 
         std::ofstream out;
-        if (Assets().OutputStream("cache/collision/" + settings->name, out)) {
+        if (Assets()->OutputStream("cache/collision/" + settings->name, out)) {
             hullCacheHeader header = {};
             header.modelHash = model->asset->Hash();
             HashKey<HullSettings::Fields> settingsHash = {};

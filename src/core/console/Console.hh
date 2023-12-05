@@ -96,6 +96,7 @@ namespace sp {
     private:
         void Execute(const string cmd, const string &args);
 
+        bool ThreadInit() override;
         void Frame() override;
 
         void RegisterCoreCommands();
@@ -118,9 +119,7 @@ namespace sp {
 
         std::mutex historyLock;
         vector<string> history;
-
-        friend ConsoleManager &GetConsoleManager();
     };
 
-    ConsoleManager &GetConsoleManager();
+    ConsoleManager *GetConsoleManager(ConsoleManager *override = nullptr);
 } // namespace sp

@@ -20,9 +20,22 @@ namespace ecs {
     struct View;
 }
 
+struct GLFWwindow;
+
+namespace sp::winit {
+    struct WinitContext;
+}
+
+namespace sp::vulkan {
+    class DeviceContext;
+    class PerfTimer;
+} // namespace sp::vulkan
+
 namespace sp {
     class GpuTexture;
     class Image;
+    class DebugGuiManager;
+    class MenuGuiManager;
 
     extern CVar<float> CVarFieldOfView;
     extern CVar<glm::ivec2> CVarWindowSize;
@@ -47,6 +60,12 @@ namespace sp {
             return activeView;
         }
 
+        virtual void InitRenderer() = 0;
+        virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
+
+        virtual void SetDebugGui(DebugGuiManager *debugGui) = 0;
+        virtual void SetMenuGui(MenuGuiManager *menuGui) = 0;
+
         virtual void PrepareWindowView(ecs::View &view) = 0;
         virtual void UpdateInputModeFromFocus() = 0;
 
@@ -56,6 +75,14 @@ namespace sp {
 
         virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<const Image> image, bool genMipmap = true) = 0;
 
+        virtual GLFWwindow *GetGlfwWindow() {
+            return nullptr;
+        }
+
+        virtual winit::WinitContext *GetWinitContext() {
+            return nullptr;
+        }
+
         // Returns the window HWND, if it exists. On non-Windows platforms this returns nullptr.
         virtual void *Win32WindowHandle() {
             return nullptr;
@@ -64,6 +91,7 @@ namespace sp {
         virtual uint32_t GetMeasuredFPS() const {
             return 0;
         }
+
         virtual void SetTitle(std::string title) {}
 
     protected:

@@ -145,5 +145,5 @@ namespace sp {
         friend class Scene;
     };
 
-    SceneManager &GetSceneManager();
+    SceneManager *GetSceneManager(SceneManager *override = nullptr);
 } // namespace sp

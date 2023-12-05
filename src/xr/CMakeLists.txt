@@ -34,7 +34,3 @@ target_precompile_headers(${PROJECT_XR_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 target_precompile_headers(${PROJECT_XR_OPENVR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(xr)
-
-add_module_sources(
-    XrManager.cc
-)

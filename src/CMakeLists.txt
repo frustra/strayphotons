@@ -11,13 +11,12 @@ set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implement
 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
-set(PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display")
 set(PROJECT_GRAPHICS_VULKAN_GLFW_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw CACHE INTERNAL "Library for Vulkan-based rendering to a display via GLFW")
+set(PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display via GLFW")
+set(PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw-xr CACHE INTERNAL "Library for Vulkan-based rendering through an XR display")
 set(PROJECT_GRAPHICS_VULKAN_WINIT_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-winit CACHE INTERNAL "Library for Vulkan-based rendering to a display via Winit")
-set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE INTERNAL "Library for Vulkan-based rendering through an XR display")
 
-set(PROJECT_INPUT_GLFW_LIB ${PROJECT_BASE_NAME}-input-glfw CACHE INTERNAL "Library implementing user input support using GLFW")
-set(PROJECT_INPUT_WINIT_LIB ${PROJECT_BASE_NAME}-input-winit CACHE INTERNAL "Library implementing user input support using Winit")
+set(PROJECT_MAIN_WINIT_LIB ${PROJECT_BASE_NAME}-main-winit CACHE INTERNAL "Library implementing window creation using Winit")
 
 set(PROJECT_PHYSICS_PHYSX_LIB ${PROJECT_BASE_NAME}-physics-physx CACHE INTERNAL "Library implementing physics using PhysX")
 set(PROJECT_PHYSICS_COOKING_LIB ${PROJECT_BASE_NAME}-physics-cooking CACHE INTERNAL "Library implementing convex hull generation")
@@ -31,26 +30,21 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
-# TODO: Only export specific symbols:
-# https://gernotklingler.com/blog/creating-using-shared-libraries-different-compilers-different-operating-systems/
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(sp SHARED
+    main/StrayPhotons.cc
     main/Game.cc
-    graphics/GraphicsManager.cc
 )
 
+target_compile_definitions(sp PUBLIC SP_SHARED_BUILD)
 target_include_directories(sp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     PUBLIC
         ${PROJECT_ROOT_DIR}/include
 )
-
 target_link_libraries(sp PRIVATE
-    sp-rs-window
     ${PROJECT_GAME_LIB}
-    ${PROJECT_INPUT_WINIT_LIB}
-    ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
+    ${PROJECT_GRAPHICS_CORE_LIB}
     "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
     ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}
@@ -66,30 +60,35 @@ add_module_configuration(
     NAME sp-vk
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
+        sp
         ${PROJECT_GAME_LIB}
-        ${PROJECT_INPUT_GLFW_LIB}
-        ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
-        ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB}
         ${PROJECT_XR_OPENVR_LIB}
-        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
-        ${PROJECT_PHYSICS_PHYSX_LIB}
-        ${PROJECT_SCRIPTS_LIB}
 )
 
-# Winit desktop build (dynamic linking)
-add_executable(sp-winit main/WinitMain.c)
-target_link_libraries(sp-winit PRIVATE sp)
+if(SP_BUILD_RUST)
+    # Winit desktop build (dynamic linking)
+    add_executable(sp-winit
+        main/winit/MainWinit.cc
+        game/DebugCFuncs.cc
+        xr/xr/XrManager.cc
+        xr/xr/openvr/vulkan/VkSubmit.cc
+    )
+    target_link_libraries(sp-winit PRIVATE
+        sp
+        ${PROJECT_MAIN_WINIT_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
+        ${PROJECT_XR_OPENVR_LIB}
+    )
+endif()
 
 # Headless executable used for CI testing purposes
 add_module_configuration(
     NAME sp-test
     LINK_LIBRARIES
+        sp
         ${PROJECT_GAME_LIB}
-        ${PROJECT_INPUT_GLFW_LIB}
-        ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
-        ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
-        ${PROJECT_PHYSICS_PHYSX_LIB}
-        ${PROJECT_SCRIPTS_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
 )
 
 add_subdirectory(core)
@@ -105,7 +104,6 @@ endif()
 
 add_subdirectory(game)
 add_subdirectory(graphics)
-add_subdirectory(input)
 add_subdirectory(main)
 add_subdirectory(physx)
 add_subdirectory(xr)

@@ -10,6 +10,7 @@
 #include "core/Common.hh"
 #include "core/EntityMap.hh"
 #include "core/LockFreeMutex.hh"
+#include "core/Logging.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
@@ -23,6 +24,8 @@
 
 namespace ecs {
     class EntityReferenceManager {
+        sp::LogOnExit logOnExit = "EntityReferenceManager shut down ======================================";
+
     public:
         EntityReferenceManager() {}
 

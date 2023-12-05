@@ -22,8 +22,8 @@
 
 namespace ecs {
     using EventData = std::variant<bool,
-        char,
         int,
+        unsigned int,
         float,
         double,
         glm::vec2,

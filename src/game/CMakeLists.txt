@@ -9,10 +9,14 @@ add_library(${PROJECT_GAME_LIB} STATIC)
 
 target_include_directories(${PROJECT_GAME_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_ROOT_DIR}/include
 )
 
-target_link_libraries(${PROJECT_GAME_LIB} PUBLIC
-    ${PROJECT_CORE_LIB}
+target_link_libraries(${PROJECT_GAME_LIB}
+    PUBLIC
+        ${PROJECT_CORE_LIB}
+    PRIVATE
+        cxxopts
 )
 
 target_precompile_headers(${PROJECT_GAME_LIB} REUSE_FROM ${PROJECT_CORE_LIB})

@@ -192,7 +192,7 @@ mod ctx {
 
     unsafe extern "C++" {
         include!("input/KeyCodes.hh");
-        include!("input/winit/InputCallbacks.hh");
+        include!("winit/InputCallbacks.hh");
         type KeyCode;
         type InputAction;
         type MouseButton;
@@ -266,7 +266,7 @@ mod ctx {
     }
 }
 
-use crate::window::ctx::*;
+use crate::winit::ctx::*;
 
 pub struct WinitContext {
     pub library: Arc<VulkanLibrary>,

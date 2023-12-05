@@ -35,7 +35,7 @@ namespace ecs {
             std::string source)
             : scene(scene), rootEnt(rootEnt), prefabScriptId(prefabScriptId), sourceName(source) {
             if (sourceName.empty()) return;
-            assetPtr = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true);
+            assetPtr = sp::Assets()->Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true);
         }
 
         // The provided scope is used for debug logging only, the real scope of the resulting entities
@@ -193,9 +193,9 @@ namespace ecs {
                 }
             }
 
-            auto &scriptManager = ecs::GetScriptManager();
+            auto *scriptManager = ecs::GetScriptManager();
             for (auto &e : scriptEntities) {
-                scriptManager.RunPrefabs(lock, e);
+                scriptManager->RunPrefabs(lock, e);
             }
         }
     };
@@ -219,7 +219,7 @@ namespace ecs {
             Entity rootOverride = parser.ApplyComponents(lock, scope);
             parser.AddEntities(lock, scope);
             if (rootOverride.Has<ecs::Scripts>(lock)) {
-                ecs::GetScriptManager().RunPrefabs(lock, rootOverride);
+                ecs::GetScriptManager()->RunPrefabs(lock, rootOverride);
             }
         }
     };
@@ -326,7 +326,7 @@ namespace ecs {
                         }
                     }
                     if (tileEnt.Has<ecs::Scripts>(lock)) {
-                        ecs::GetScriptManager().RunPrefabs(lock, tileEnt);
+                        ecs::GetScriptManager()->RunPrefabs(lock, tileEnt);
                     }
                 }
             }

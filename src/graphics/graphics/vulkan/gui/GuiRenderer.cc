@@ -40,7 +40,7 @@ namespace sp::vulkan {
         };
 
         for (auto &def : GetFontList()) {
-            auto asset = Assets().Load("fonts/"s + def.name)->Get();
+            auto asset = Assets()->Load("fonts/"s + def.name)->Get();
             Assertf(asset, "Failed to load gui font %s", def.name);
 
             ImFontConfig cfg;

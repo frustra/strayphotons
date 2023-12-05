@@ -16,7 +16,7 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
             "console",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
@@ -31,7 +31,7 @@ namespace sp {
                         while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {
                             auto command = std::get_if<std::string>(&event.data);
                             if (command && !command->empty()) {
-                                GetConsoleManager().QueueParseAndExecute(*command);
+                                GetConsoleManager()->QueueParseAndExecute(*command);
                             } else {
                                 Errorf("Console binding received invalid event: %s", event.toString());
                             }

@@ -53,7 +53,7 @@ namespace sp {
         "Character controller minimum gravity required to orient (m/s^2)");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
             "character",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 // Create Head entity which automatically points to the active player mode

@@ -14,19 +14,33 @@
 #include <shared_mutex>
 
 namespace ecs {
-    static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",
-        EventQueue::MAX_QUEUE_SIZE,
-        "Maximum number of event queue size for scripts");
-
-    ScriptManager &GetScriptManager() {
+    ScriptManager &MakeScriptManager() {
         static ScriptManager scriptManager;
         return scriptManager;
     }
 
-    ScriptDefinitions &GetScriptDefinitions() {
+    ScriptManager *GetScriptManager(ScriptManager *override) {
+        static ScriptManager *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        return &MakeScriptManager();
+    }
+
+    ScriptDefinitions &MakeScriptDefinitions() {
         static ScriptDefinitions scriptDefinitions;
         return scriptDefinitions;
     }
+
+    ScriptDefinitions *GetScriptDefinitions(ScriptDefinitions *override) {
+        static ScriptDefinitions *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        return &MakeScriptDefinitions();
+    }
+
+    static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",
+        EventQueue::MAX_QUEUE_SIZE,
+        "Maximum number of event queue size for scripts");
 
     void ScriptDefinitions::RegisterScript(ScriptDefinition &&definition) {
         Assertf(!scripts.contains(definition.name), "Script definition already exists: %s", definition.name);

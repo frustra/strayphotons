@@ -39,7 +39,8 @@ namespace ecs {
 
 namespace sp {
     class CFuncCollection;
-}
+    class Game;
+} // namespace sp
 
 namespace sp::vulkan {
     const uint32 MAX_FRAMES_IN_FLIGHT = 2;
@@ -50,10 +51,11 @@ namespace sp::vulkan {
     class PipelineManager;
     struct PipelineCompileInput;
     class Shader;
+    class Renderer;
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
-        DeviceContext(bool enableValidationLayers = false, bool enableSwapchain = true);
+        DeviceContext(Game &game, bool enableValidationLayers = false);
         virtual ~DeviceContext();
 
         // Access the underlying Vulkan device via the arrow operator
@@ -85,9 +87,15 @@ namespace sp::vulkan {
         void WaitIdle() override {
             device->waitIdle();
         }
-        void UpdateInputModeFromFocus() override;
+
+        void InitRenderer() override;
+        void RenderFrame(chrono_clock::duration elapsedTime) override;
+
+        void SetDebugGui(DebugGuiManager *debugGui) override;
+        void SetMenuGui(MenuGuiManager *menuGui) override;
 
         void PrepareWindowView(ecs::View &view) override;
+        void UpdateInputModeFromFocus() override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
@@ -206,11 +214,11 @@ namespace sp::vulkan {
             return queueFamilyIndex[QueueType(type)];
         }
 
-        GLFWwindow *GetGlfwWindow() {
+        GLFWwindow *GetGlfwWindow() override {
             return window;
         }
 
-        winit::WinitContext *GetWinitContext() {
+        winit::WinitContext *GetWinitContext() override {
             return winitContext.get();
         }
 
@@ -259,7 +267,10 @@ namespace sp::vulkan {
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
+        Game &game;
+
         std::shared_ptr<sp::winit::WinitContext> winitContext;
+        std::shared_ptr<vulkan::Renderer> vkRenderer;
 
         std::thread::id mainThread;
         std::thread::id renderThread;

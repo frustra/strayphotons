@@ -27,13 +27,12 @@
 
 namespace sp {
     class GuiContext;
+    class Game;
+}
 
-#ifdef SP_XR_SUPPORT
-    namespace xr {
-        class XrSystem;
-    }
-#endif
-} // namespace sp
+namespace sp::xr {
+    class XrSystem;
+}
 
 namespace sp::vulkan {
     class Mesh;
@@ -43,7 +42,7 @@ namespace sp::vulkan {
 
     class Renderer {
     public:
-        Renderer(DeviceContext &context);
+        Renderer(Game &game, DeviceContext &context);
         ~Renderer();
 
         void RenderFrame(chrono_clock::duration elapsedTime);
@@ -52,13 +51,8 @@ namespace sp::vulkan {
         void SetDebugGui(GuiContext *gui);
         void SetMenuGui(GuiContext *gui);
 
-#ifdef SP_XR_SUPPORT
-        void SetXRSystem(shared_ptr<xr::XrSystem> xr) {
-            xrSystem = xr;
-        }
-#endif
-
     private:
+        Game &game;
         DeviceContext &device;
         rg::RenderGraph graph;
 
@@ -105,11 +99,9 @@ namespace sp::vulkan {
 
         bool listImages = false;
 
-#ifdef SP_XR_SUPPORT
-        shared_ptr<xr::XrSystem> xrSystem;
+        std::shared_ptr<xr::XrSystem> xrSystem;
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
         std::array<uint32, 2> hiddenAreaTriangleCount;
-#endif
     };
 } // namespace sp::vulkan

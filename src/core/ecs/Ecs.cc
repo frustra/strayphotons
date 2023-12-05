@@ -14,26 +14,28 @@
 #include <typeindex>
 
 namespace ecs {
-    auto &ECSContext() {
-        static struct {
-            sp::LogOnExit logOnExit = "ECS shut down =========================================================";
-            ECS live;
-            ECS staging;
-            sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue");
-        } context;
+    ECSContext &MakeECSContext() {
+        static ECSContext context;
         return context;
     }
 
+    ECSContext *GetECSContext(ECSContext *override) {
+        static ECSContext *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        return &MakeECSContext();
+    }
+
     ECS &World() {
-        return ECSContext().live;
+        return GetECSContext()->live;
     }
 
     ECS &StagingWorld() {
-        return ECSContext().staging;
+        return GetECSContext()->staging;
     }
 
     sp::DispatchQueue &TransactionQueue() {
-        return ECSContext().transactionQueue;
+        return GetECSContext()->transactionQueue;
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>

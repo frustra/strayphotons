@@ -72,7 +72,7 @@ namespace sp::vulkan {
         auto it = textureCache.find(key);
         if (it != textureCache.end()) return it->second;
 
-        auto imageFut = Assets().LoadImage(name);
+        auto imageFut = Assets()->LoadImage(name);
         auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=, this](shared_ptr<sp::Image> image) {
             if (!image) {
                 Warnf("Missing asset image: %s", name);

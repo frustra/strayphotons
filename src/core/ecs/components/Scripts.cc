@@ -16,7 +16,7 @@
 namespace ecs {
     template<>
     bool StructMetadata::Load<ScriptInstance>(ScriptInstance &instance, const picojson::value &src) {
-        const auto &definitions = GetScriptDefinitions();
+        const auto *definitions = GetScriptDefinitions();
         const ScriptDefinition *definition = nullptr;
         if (!src.is<picojson::object>()) {
             Errorf("Script has invalid definition: %s", src.to_str());
@@ -27,8 +27,8 @@ namespace ecs {
             if (param.first == "onTick") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
-                    auto it = definitions.scripts.find(scriptName);
-                    if (it != definitions.scripts.end()) {
+                    auto it = definitions->scripts.find(scriptName);
+                    if (it != definitions->scripts.end()) {
                         if (definition) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
@@ -45,8 +45,8 @@ namespace ecs {
             } else if (param.first == "prefab") {
                 if (param.second.is<std::string>()) {
                     auto scriptName = param.second.get<std::string>();
-                    auto it = definitions.prefabs.find(scriptName);
-                    if (it != definitions.prefabs.end()) {
+                    auto it = definitions->prefabs.find(scriptName);
+                    if (it != definitions->prefabs.end()) {
                         if (definition) {
                             Errorf("Script has multiple definitions: %s", scriptName);
                             return false;
@@ -106,7 +106,7 @@ namespace ecs {
             }
 
             if (state.definition.context) {
-                std::lock_guard l(GetScriptManager().mutexes[state.definition.callback.index()]);
+                std::lock_guard l(GetScriptManager()->mutexes[state.definition.callback.index()]);
 
                 const void *dataPtr = state.definition.context->Access(state);
                 const void *defaultPtr = state.definition.context->GetDefault();
@@ -133,7 +133,7 @@ namespace ecs {
         if (dst.state->scope != scope) {
             auto &oldState = *dst.state;
             // Create a new script instance so references to the old scope remain valid.
-            auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
+            auto newState = GetScriptManager()->NewScriptInstance(scope, oldState.definition);
 
             if (oldState.definition.context) {
                 const void *defaultPtr = oldState.definition.context->GetDefault();

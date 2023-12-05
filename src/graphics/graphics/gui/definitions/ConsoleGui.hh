@@ -43,7 +43,7 @@ namespace sp {
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
-                for (auto &line : GetConsoleManager().Lines()) {
+                for (auto &line : GetConsoleManager()->Lines()) {
                     ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
                     ImGui::TextUnformatted(line.text.c_str());
                     ImGui::PopStyleColor();
@@ -71,9 +71,9 @@ namespace sp {
                         (void *)this)) {
                     string line(inputBuf);
                     if (!line.empty()) {
-                        auto &console = GetConsoleManager();
-                        console.AddHistory(line);
-                        console.QueueParseAndExecute(line);
+                        auto *console = GetConsoleManager();
+                        console->AddHistory(line);
+                        console->QueueParseAndExecute(line);
                         inputBuf[0] = '\0';
                         completionMode = COMPLETION_NONE;
                         completionPopupVisible = false;
@@ -104,7 +104,7 @@ namespace sp {
 
             if (completionMode == COMPLETION_INPUT && completionPending) {
                 string line(inputBuf);
-                auto result = GetConsoleManager().AllCompletions(line, requestNewCompletions);
+                auto result = GetConsoleManager()->AllCompletions(line, requestNewCompletions);
                 completionPending = result.pending;
                 completionEntries = result.values;
                 completionPopupVisible = !completionEntries.empty();
@@ -167,7 +167,7 @@ namespace sp {
                 syncInputFromCompletion = false;
             } else if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
                 if (completionMode == COMPLETION_NONE) {
-                    completionEntries = GetConsoleManager().AllHistory(128);
+                    completionEntries = GetConsoleManager()->AllHistory(128);
                     if (!completionEntries.empty()) {
                         completionMode = COMPLETION_HISTORY;
                         completionSelectedIndex = 0;

@@ -6,3 +6,7 @@
 #
 
 add_subdirectory(openvr)
+
+add_module_sources(
+    XrManager.cc
+)

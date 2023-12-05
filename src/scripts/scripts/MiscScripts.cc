@@ -98,7 +98,7 @@ namespace sp::scripts {
                 Transform transform(position);
                 transform = relativeTransform * transform;
 
-                GetSceneManager().QueueAction([ent, transform, modelName = modelName, scope = state.scope]() {
+                GetSceneManager()->QueueAction([ent, transform, modelName = modelName, scope = state.scope]() {
                     auto lock = ecs::StartTransaction<ecs::AddRemove>();
                     if (!ent.Has<ecs::SceneInfo>(lock)) return;
                     auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
@@ -109,14 +109,14 @@ namespace sp::scripts {
 
                     newEntity.Set<TransformTree>(lock, transform);
                     newEntity.Set<TransformSnapshot>(lock, transform);
-                    newEntity.Set<Renderable>(lock, modelName, sp::Assets().LoadGltf(modelName));
+                    newEntity.Set<Renderable>(lock, modelName, sp::Assets()->LoadGltf(modelName));
                     newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, ecs::PhysicsActorType::Dynamic, 1.0f);
                     newEntity.Set<PhysicsJoints>(lock);
                     newEntity.Set<PhysicsQuery>(lock);
                     newEntity.Set<EventInput>(lock);
                     auto &scripts = newEntity.Set<Scripts>(lock);
                     scripts.AddOnTick(scope, "interactive_object");
-                    GetScriptManager().RegisterEvents(lock, newEntity);
+                    GetScriptManager()->RegisterEvents(lock, newEntity);
                 });
             }
         }

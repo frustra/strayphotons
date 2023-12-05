@@ -111,9 +111,9 @@ int main(int argc, char **argv) {
         MarkdownContext(outputDir / "Other_Components.md", PageType::Component).SavePage(otherGroup);
 
         MarkdownContext(outputDir / "Prefab_Scripts.md", PageType::Prefab)
-            .SavePage(ecs::GetScriptDefinitions().prefabs, &prefabCommonTypes);
+            .SavePage(ecs::GetScriptDefinitions()->prefabs, &prefabCommonTypes);
         MarkdownContext(outputDir / "Runtime_Scripts.md", PageType::Script)
-            .SavePage(ecs::GetScriptDefinitions().scripts, &scriptsCommonTypes);
+            .SavePage(ecs::GetScriptDefinitions()->scripts, &scriptsCommonTypes);
 
         SchemaContext(outputDir / "scene.schema.json").SaveSchema();
     } catch (const std::exception &e) {

@@ -7,6 +7,7 @@
 
 #include "EntityReferenceManager.hh"
 
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalRef.hh"
 
@@ -15,8 +16,7 @@
 
 namespace ecs {
     EntityReferenceManager &GetEntityRefs() {
-        static EntityReferenceManager entityRefs;
-        return entityRefs;
+        return GetECSContext()->refManager;
     }
 
     EntityRef EntityReferenceManager::Get(const Name &name) {

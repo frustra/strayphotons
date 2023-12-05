@@ -57,7 +57,7 @@ namespace sp::scripts {
                 }
 
                 auto sharedEntity = make_shared<EntityRef>();
-                GetSceneManager().QueueAction(SceneAction::EditStagingScene,
+                GetSceneManager()->QueueAction(SceneAction::EditStagingScene,
                     scene.data->name,
                     [source = templateSource, transform, signals, baseName = sourceName.entity, sharedEntity](
                         ecs::Lock<ecs::AddRemove> lock,
@@ -84,12 +84,12 @@ namespace sp::scripts {
                         auto &scripts = newEntity.Set<Scripts>(lock);
                         auto &prefab = scripts.AddPrefab(scope, "template");
                         prefab.SetParam("source", source);
-                        ecs::GetScriptManager().RunPrefabs(lock, newEntity);
+                        ecs::GetScriptManager()->RunPrefabs(lock, newEntity);
 
                         *sharedEntity = newEntity;
                     });
-                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, scene.data->name);
-                GetSceneManager().QueueAction([ent, target = event.source, sharedEntity] {
+                GetSceneManager()->QueueAction(SceneAction::ApplyStagingScene, scene.data->name);
+                GetSceneManager()->QueueAction([ent, target = event.source, sharedEntity] {
                     auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
                     ecs::EventBindings::SendEvent(lock,
                         target,

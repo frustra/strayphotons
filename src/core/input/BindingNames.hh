@@ -13,9 +13,9 @@
 namespace sp {
     // Global Mouse + Keyboard
     static const std::string INPUT_EVENT_KEYBOARD_KEY_BASE = "/keyboard/key/"; // bool
-    static const std::string INPUT_EVENT_KEYBOARD_KEY_DOWN = "/keyboard/key_down"; // string
-    static const std::string INPUT_EVENT_KEYBOARD_KEY_UP = "/keyboard/key_up"; // string
-    static const std::string INPUT_EVENT_KEYBOARD_CHARACTERS = "/keyboard/characters"; // char
+    static const std::string INPUT_EVENT_KEYBOARD_KEY_DOWN = "/keyboard/key_down"; // KeyCode
+    static const std::string INPUT_EVENT_KEYBOARD_KEY_UP = "/keyboard/key_up"; // KeyCode
+    static const std::string INPUT_EVENT_KEYBOARD_CHARACTERS = "/keyboard/characters"; // char or string if unicode
     static const std::string INPUT_EVENT_MOUSE_LEFT_CLICK = "/mouse/left_click"; // bool
     static const std::string INPUT_EVENT_MOUSE_MIDDLE_CLICK = "/mouse/middle_click"; // bool
     static const std::string INPUT_EVENT_MOUSE_RIGHT_CLICK = "/mouse/right_click"; // bool
@@ -38,9 +38,9 @@ namespace sp {
     static const std::string INPUT_EVENT_MENU_CURSOR = "/action/menu/cursor"; // glm::vec2
     static const std::string INPUT_EVENT_MENU_PRIMARY_TRIGGER = "/action/menu/primary_trigger"; // bool
     static const std::string INPUT_EVENT_MENU_SECONDARY_TRIGGER = "/action/menu/secondary_trigger"; // bool
-    static const std::string INPUT_EVENT_MENU_TEXT_INPUT = "/action/menu/text_input"; // char
-    static const std::string INPUT_EVENT_MENU_KEY_DOWN = "/action/menu/key_down"; // string
-    static const std::string INPUT_EVENT_MENU_KEY_UP = "/action/menu/key_up"; // string
+    static const std::string INPUT_EVENT_MENU_TEXT_INPUT = "/action/menu/text_input"; // uint32
+    static const std::string INPUT_EVENT_MENU_KEY_DOWN = "/action/menu/key_down"; // KeyCode
+    static const std::string INPUT_EVENT_MENU_KEY_UP = "/action/menu/key_up"; // KeyCode
 
     // CharacterController
     static const std::string INPUT_SIGNAL_MOVE_RELATIVE_X = "move_relative.x";

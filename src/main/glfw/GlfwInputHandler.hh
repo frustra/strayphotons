@@ -9,7 +9,6 @@
 
 #include "core/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 
 #include <glm/glm.hpp>
@@ -17,27 +16,29 @@
 struct GLFWwindow;
 
 namespace sp {
+    struct CGameContext;
+
     class GlfwInputHandler {
     public:
-        GlfwInputHandler(LockFreeEventQueue<ecs::Event> &windowEventQueue, GLFWwindow &window);
+        GlfwInputHandler(CGameContext *ctx);
         ~GlfwInputHandler();
 
-        void Frame();
+        static void Frame();
 
         static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-        static void CharInputCallback(GLFWwindow *window, unsigned int ch);
+        static void CharInputCallback(GLFWwindow *window, unsigned int codepoint);
         static void MouseMoveCallback(GLFWwindow *window, double xPos, double yPos);
         static void MouseButtonCallback(GLFWwindow *window, int button, int actions, int mods);
         static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
         static void MouseEnterCallback(GLFWwindow *window, int entered);
 
     private:
+        CGameContext *ctx;
         LockFreeEventQueue<ecs::Event> &outputEventQueue;
         GLFWwindow *window = nullptr;
 
         int prevMouseMode = -1;
         glm::vec2 prevMousePos = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
-        ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
-        ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
+        ecs::Entity mouse, keyboard;
     };
 } // namespace sp

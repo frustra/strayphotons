@@ -29,14 +29,16 @@
 #include <sstream>
 
 namespace sp {
-    ConsoleManager &GetConsoleManager() {
+    ConsoleManager &MakeConsoleManager() {
         static ConsoleManager consoleManager;
-        static std::atomic_bool functionsAdded = false;
-        if (!functionsAdded.exchange(true)) {
-            consoleManager.RegisterCoreCommands();
-            consoleManager.RegisterTracyCommands();
-        }
         return consoleManager;
+    }
+
+    ConsoleManager *GetConsoleManager(ConsoleManager *override) {
+        static ConsoleManager *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        return &MakeConsoleManager();
     }
 
 #ifdef USE_LINENOISE_CLI
@@ -45,7 +47,7 @@ namespace sp {
 
     namespace logging {
         void GlobalLogOutput(Level lvl, const string &line) {
-            GetConsoleManager().AddLog(lvl, line);
+            GetConsoleManager()->AddLog(lvl, line);
         }
     } // namespace logging
 
@@ -53,11 +55,11 @@ namespace sp {
         : name(name), nameLower(to_lower_copy(name)), description(description) {}
 
     void CVarBase::Register() {
-        GetConsoleManager().AddCVar(this);
+        GetConsoleManager()->AddCVar(this);
     }
 
     void CVarBase::UnRegister() {
-        GetConsoleManager().RemoveCVar(this);
+        GetConsoleManager()->RemoveCVar(this);
     }
 
     ConsoleManager::ConsoleManager() : RegisteredThread("ConsoleManager", 60.0) {}
@@ -139,6 +141,12 @@ namespace sp {
             }
         }
         RegisteredThread::StartThread();
+    }
+
+    bool ConsoleManager::ThreadInit() {
+        RegisterCoreCommands();
+        RegisterTracyCommands();
+        return true;
     }
 
     void ConsoleManager::Frame() {
@@ -289,7 +297,7 @@ namespace sp {
 
 #ifdef USE_LINENOISE_CLI
     void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc) {
-        auto completions = GetConsoleManager().AllCompletions(string(buf), true);
+        auto completions = GetConsoleManager()->AllCompletions(string(buf), true);
         for (auto str : completions.values) {
             linenoiseAddCompletion(lc, str.c_str());
         }

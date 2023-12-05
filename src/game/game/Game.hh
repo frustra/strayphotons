@@ -16,20 +16,6 @@
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
 
-#ifdef SP_GRAPHICS_SUPPORT
-    #include "graphics/GraphicsManager.hh"
-    #include "graphics/gui/DebugGuiManager.hh"
-    #include "graphics/gui/MenuGuiManager.hh"
-#endif
-
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-    #include "physx/PhysxManager.hh"
-#endif
-
-#ifdef SP_XR_SUPPORT
-    #include "xr/XrManager.hh"
-#endif
-
 #include <chrono>
 #include <memory>
 #include <vector>
@@ -38,27 +24,33 @@ namespace cxxopts {
     class ParseResult;
 }
 
+namespace sp::xr {
+    class XrManager;
+}
+
 namespace sp {
     class ConsoleScript;
+    struct CGameContext;
 
-#ifdef SP_AUDIO_SUPPORT
+    class GraphicsManager;
+    class PhysxManager;
     class AudioManager;
-#endif
-
-    extern std::atomic_int GameExitCode;
-    extern std::atomic_flag GameExitTriggered;
 
     class Game {
         LogOnExit logOnExit = "Game shut down ========================================================";
 
     public:
-        Game(cxxopts::ParseResult &options);
+        Game(CGameContext &ctx);
         ~Game();
 
         int Start();
 
+        CGameContext &gameContext;
         cxxopts::ParseResult &options;
         CFuncCollection funcs;
+
+        std::atomic_int exitCode;
+        std::atomic_flag exitTriggered;
 
     private:
         // Shutdown managers before CFuncs are destroyed above.
@@ -67,30 +59,21 @@ namespace sp {
         } shutdownManagers;
 
     public:
-        LockFreeEventQueue<ecs::Event> windowEventQueue;
+        LockFreeEventQueue<ecs::Event> inputEventQueue;
 
-#ifdef SP_GRAPHICS_SUPPORT
         std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
-        GraphicsManager graphics;
+        std::shared_ptr<GraphicsManager> graphics;
+        void (*graphicsInitCallback)(CGameContext *) = nullptr;
+        void (*graphicsDestroyCallback)(CGameContext *) = nullptr;
 
-        std::unique_ptr<DebugGuiManager> debugGui = nullptr;
-        std::unique_ptr<MenuGuiManager> menuGui = nullptr;
-#endif
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        PhysxManager physics;
-#endif
-#ifdef SP_XR_SUPPORT
-        xr::XrManager xr;
-#endif
-#ifdef SP_AUDIO_SUPPORT
-        std::unique_ptr<AudioManager> audio;
-#endif
+        std::shared_ptr<PhysxManager> physics;
+        std::shared_ptr<xr::XrManager> xr;
+        std::shared_ptr<AudioManager> audio;
+
         ConsoleBindingManager consoleBinding;
         EditorSystem editor;
         GameLogic logic;
     };
-} // namespace sp
 
-#ifdef _WIN32
-std::shared_ptr<unsigned int> SetWindowsSchedulerFix();
-#endif
+    void RegisterDebugCFuncs();
+} // namespace sp

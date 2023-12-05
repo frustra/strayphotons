@@ -35,10 +35,9 @@ namespace sp {
     using namespace physx;
 
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
-    CVar<bool> CVarPhysxDebugJoints("x.DebugJoints", false, "Show physx joints");
 
     PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
-        : RegisteredThread("PhysX", 120.0, true), windowInputQueue(windowInputQueue), scenes(GetSceneManager()),
+        : RegisteredThread("PhysX", 120.0, true), windowInputQueue(windowInputQueue), scenes(*GetSceneManager()),
           characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
           animationSystem(*this), workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
@@ -82,7 +81,7 @@ namespace sp {
             this->Pause(false);
         });
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
             "physx",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = scene->NewSystemEntity(lock, scene, debugLineEntity.Name());
@@ -182,13 +181,10 @@ namespace sp {
 
     void PhysxManager::Frame() {
         ZoneScoped;
-        if (CVarPhysxDebugCollision.Changed() || CVarPhysxDebugJoints.Changed()) {
+        if (CVarPhysxDebugCollision.Changed()) {
             bool collision = CVarPhysxDebugCollision.Get(true);
-            bool joints = CVarPhysxDebugJoints.Get(true);
-            scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, collision || joints ? 1 : 0);
+            scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, collision ? 1 : 0);
             scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, collision);
-            scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, joints);
-            scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, joints);
         }
 
         characterControlSystem.RegisterEvents();
@@ -352,7 +348,7 @@ namespace sp {
             laserSystem.Frame(lock);
             UpdateDebugLines(lock);
 
-            ecs::GetScriptManager().RunOnPhysicsUpdate(lock, interval);
+            ecs::GetScriptManager()->RunOnPhysicsUpdate(lock, interval);
         }
 
         { // Simulate 1 physics frame (blocking)
@@ -406,6 +402,7 @@ namespace sp {
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::PlayerRightHand, false);
         PxSetGroupCollisionFlag((uint16_t)Group::NoClip, (uint16_t)Group::UserInterface, false);
 
+        // TODO: Configure PhysX with more threads in the future
         dispatcher = PxDefaultCpuDispatcherCreate(1);
         sceneDesc.cpuDispatcher = dispatcher;
 
@@ -945,7 +942,7 @@ namespace sp {
             }
             auto &segments = std::get<ecs::LaserLine::Segments>(laser.line);
             segments.clear();
-            if (CVarPhysxDebugCollision.Get() || CVarPhysxDebugJoints.Get()) {
+            if (CVarPhysxDebugCollision.Get()) {
                 auto &rb = scene->getRenderBuffer();
                 for (size_t i = 0; i < rb.getNbLines(); i++) {
                     auto &line = rb.getLines()[i];

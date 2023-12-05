@@ -5,6 +5,7 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-target_sources(${PROJECT_INPUT_WINIT_LIB} PRIVATE
-    WinitInputHandler.cc
+add_module_sources(
+    GlfwInputHandler.cc
+    MainGlfw.cc
 )

@@ -78,5 +78,5 @@ namespace sp {
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 
-    AssetManager &Assets();
+    AssetManager *Assets(AssetManager *override = nullptr);
 } // namespace sp

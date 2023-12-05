@@ -43,9 +43,16 @@ extern "C" {
 #include <stb_image_write.h>
 
 namespace sp {
-    AssetManager &Assets() {
+    AssetManager &MakeAssetsManager() {
         static AssetManager assets;
         return assets;
+    }
+
+    AssetManager *Assets(AssetManager *override) {
+        static AssetManager *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        return &MakeAssetsManager();
     }
 
     const char *ASSETS_DIR = "../assets/";

@@ -72,6 +72,10 @@ namespace ecs {
                 transform.SetPosition(translate);
             }
         }
+
+        DebugAssertf(!glm::any(glm::equal(transform.scale, glm::vec3(0))),
+            "Loaded transform with zero scale: %s",
+            glm::to_string(transform.scale));
         return true;
     }
 
@@ -142,6 +146,9 @@ namespace ecs {
 
     Transform::Transform(const glm::mat4 &matrix) : offset(matrix) {
         scale = glm::vec3(glm::length(offset[0]), glm::length(offset[1]), glm::length(offset[2]));
+        DebugAssertf(!glm::any(glm::equal(scale, glm::vec3(0))),
+            "Creating transform with zero scale: %s",
+            glm::to_string(scale));
         offset[0] = glm::normalize(offset[0]);
         offset[1] = glm::normalize(offset[1]);
         offset[2] = glm::normalize(offset[2]);
@@ -214,6 +221,9 @@ namespace ecs {
 
     void Transform::SetScale(const glm::vec3 &xyz) {
         initIfUndefined(*this);
+        DebugAssertf(!glm::any(glm::equal(xyz, glm::vec3(0))),
+            "Setting transform to zero scale: %s",
+            glm::to_string(xyz));
         scale = xyz;
     }
 

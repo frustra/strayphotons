@@ -14,11 +14,16 @@
 #include "core/InlineVector.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Game.hh"
+#include "graphics/gui/DebugGuiManager.hh"
+#include "graphics/gui/MenuGuiManager.hh"
+#include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
+#include "graphics/vulkan/gui/ProfilerGui.hh"
 
 #include <algorithm>
 #include <iostream>
@@ -34,8 +39,8 @@
         #include <glfw/glfw3native.h>
     #endif
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
-    #include <window.rs.h>
+#ifdef SP_RUST_WINIT_SUPPORT
+    #include <winit.rs.h>
 #endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -84,10 +89,17 @@ namespace sp::vulkan {
         if (alloc) vmaDestroyAllocator(alloc);
     }
 
-    DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
-        : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
+    DeviceContext::DeviceContext(Game &game, bool enableValidationLayers)
+        : game(game), mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
           frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
+
+#ifdef SP_GRAPHICS_SUPPORT_GLFW
+        Logf("Graphics starting up (Vulkan GLFW)");
+#endif
+#ifdef SP_RUST_WINIT_SUPPORT
+        Logf("Graphics starting up (Vulkan Winit)");
+#endif
 
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         glfwSetErrorCallback(glfwErrorCallback);
@@ -139,7 +151,7 @@ namespace sp::vulkan {
 
         auto initialSize = CVarWindowSize.Get();
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
-        // TODO: Match these extensions with Rust window.rs
+        // TODO: Match these extensions with Rust winit.rs
         uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
@@ -151,11 +163,11 @@ namespace sp::vulkan {
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
 
-        if (enableSwapchain) {
-            // Create window and surface
-            window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
-            Assert(window, "glfw window creation failed");
-        }
+    #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+        // Create window and surface
+        window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+        Assert(window, "glfw window creation failed");
+    #endif
 
         vk::ApplicationInfo applicationInfo("Stray Photons",
             VK_MAKE_VERSION(1, 0, 0),
@@ -177,7 +189,7 @@ namespace sp::vulkan {
         });
 #endif
 
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifdef SP_RUST_WINIT_SUPPORT
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
             sp::winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw(),
             [](auto *ptr) {
@@ -194,26 +206,26 @@ namespace sp::vulkan {
         VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
         debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        if (enableSwapchain) {
-            auto result = glfwCreateWindowSurface(instance, window, nullptr, (VkSurfaceKHR *)&surface);
-            AssertVKSuccess(result, "creating window surface");
-            Assert(surface, "gkfw window surface creation failed");
-            surfaceDestroy.SetFunc([this] {
-                if (surface) {
-                    instance.destroySurfaceKHR(surface);
-                    surface = nullptr;
-                }
-            });
-        }
-#endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+    #ifdef SP_GRAPHICS_SUPPORT_GLFW
+        auto result = glfwCreateWindowSurface(instance, window, nullptr, (VkSurfaceKHR *)&surface);
+        AssertVKSuccess(result, "creating window surface");
+        Assert(surface, "gkfw window surface creation failed");
+        surfaceDestroy.SetFunc([this] {
+            if (surface) {
+                instance.destroySurfaceKHR(surface);
+                surface = nullptr;
+            }
+        });
+    #endif
+    #ifdef SP_RUST_WINIT_SUPPORT
         surface = (VkSurfaceKHR)sp::winit::get_surface_handle(*winitContext);
         Assert(surface, "winit window creation failed");
         surfaceDestroy.SetFunc([this] {
             Tracef("Destroying rust surface");
             sp::winit::destroy_surface(*winitContext);
         });
+    #endif
 #endif
 
         auto physicalDevices = instance.enumeratePhysicalDevices();
@@ -253,12 +265,14 @@ namespace sp::vulkan {
             return false;
         };
 
-        if (!findQueue(QUEUE_TYPE_GRAPHICS,
-                vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
-                {},
-                1.0f,
-                enableSwapchain))
+#ifdef SP_GRAPHICS_SUPPORT_HEADLESS
+        // Don't require surface support when headless
+        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.f, false))
             Abort("could not find a supported graphics queue family");
+#else
+        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.f, true))
+            Abort("could not find a supported graphics queue family");
+#endif
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
             // must be only one queue that supports compute, fall back to it
@@ -301,9 +315,9 @@ namespace sp::vulkan {
             VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         };
 
-        if (enableSwapchain) {
-            enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        }
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+        enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+#endif
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -556,7 +570,7 @@ namespace sp::vulkan {
             Warnf("Failed to read Glfw monitor modes");
         }
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifdef SP_RUST_WINIT_SUPPORT
         auto modes = sp::winit::get_monitor_modes(*winitContext);
         monitorModes.reserve(modes.size());
         for (auto &mode : modes) {
@@ -568,10 +582,11 @@ namespace sp::vulkan {
         });
         monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
 
-        if (enableSwapchain) CreateSwapchain();
+        CreateSwapchain();
     }
 
     DeviceContext::~DeviceContext() {
+        if (vkRenderer) vkRenderer.reset();
         if (device) device->waitIdle();
         Tracef("Destroying DeviceContext");
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
@@ -579,7 +594,7 @@ namespace sp::vulkan {
             glfwDestroyWindow(window);
         }
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifdef SP_RUST_WINIT_SUPPORT
         swapchain.reset();
         sp::winit::destroy_window(*winitContext);
 #endif
@@ -596,6 +611,7 @@ namespace sp::vulkan {
 
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         ZoneScoped;
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
 
@@ -663,6 +679,7 @@ namespace sp::vulkan {
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
+#endif
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -676,7 +693,7 @@ namespace sp::vulkan {
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) glfwSetWindowTitle(window, title.c_str());
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifdef SP_RUST_WINIT_SUPPORT
         if (winitContext) sp::winit::set_window_title(*winitContext, title);
 #endif
     }
@@ -687,6 +704,24 @@ namespace sp::vulkan {
 #else
         return false;
 #endif
+    }
+
+    void DeviceContext::InitRenderer() {
+        vkRenderer = make_shared<vulkan::Renderer>(game, *this);
+    }
+
+    void DeviceContext::RenderFrame(chrono_clock::duration elapsedTime) {
+        if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
+    }
+
+    void DeviceContext::SetDebugGui(DebugGuiManager *debugGui) {
+        debugGui->Attach(make_shared<vulkan::ProfilerGui>(GetPerfTimer()));
+
+        if (vkRenderer) vkRenderer->SetDebugGui(debugGui);
+    }
+
+    void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {
+        if (vkRenderer) vkRenderer->SetMenuGui(menuGui);
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
@@ -738,7 +773,7 @@ namespace sp::vulkan {
             }
         }
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifdef SP_RUST_WINIT_SUPPORT
         if (winitContext) {
             bool fullscreen = CVarWindowFullscreen.Get();
             if (systemFullscreen != fullscreen) {
@@ -811,7 +846,7 @@ namespace sp::vulkan {
             }
         }
 #endif
-#ifdef SP_GRAPHICS_SUPPORT_WINIT
+#ifdef SP_RUST_WINIT_SUPPORT
         if (winitContext) {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
             if (lock.Has<ecs::FocusLock>()) {
@@ -908,6 +943,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SwapBuffers() {
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         ZoneScoped;
 
         vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
@@ -926,9 +962,12 @@ namespace sp::vulkan {
         } catch (const vk::OutOfDateKHRError &) {
             RecreateSwapchain();
         }
+#endif
     }
 
     void DeviceContext::EndFrame() {
+        if (vkRenderer) vkRenderer->EndFrame();
+
         allocatorQueue.Dispatch<void>([this]() {
             Thread().ReleaseAvailableResources();
         });
@@ -1633,7 +1672,7 @@ namespace sp::vulkan {
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
         ZoneScoped;
         ZoneStr(name);
-        auto asset = Assets().Load("shaders/" + name + ".spv", AssetType::Bundled, compareHash != Hash64())->Get();
+        auto asset = Assets()->Load("shaders/" + name + ".spv", AssetType::Bundled, compareHash != Hash64())->Get();
         Assertf(asset, "could not load shader: %s", name);
 
         auto newHash = Hash128To64(asset->Hash());
@@ -1755,7 +1794,7 @@ namespace sp::vulkan {
         return nullptr;
 #elif defined(SP_GRAPHICS_SUPPORT_GLFW)
         return window ? glfwGetWin32Window(window) : nullptr;
-#elif defined(SP_GRAPHICS_SUPPORT_WINIT)
+#elif defined(SP_RUST_WINIT_SUPPORT)
         return winitContext ? (void *)sp::winit::get_win32_window_handle(*winitContext) : nullptr;
 #else
         return nullptr;

@@ -14,19 +14,23 @@ fn main() -> Result<(), Box<dyn Error>> {
     bridges.push("src/api.rs");
     #[cfg(feature = "wasm")]
     bridges.push("src/wasm.rs");
-    #[cfg(feature = "window")]
-    bridges.push("src/window.rs");
+    #[cfg(feature = "winit")]
+    bridges.push("src/winit.rs");
 
     let mut build = cxx_build::bridges(bridges); // returns a cc::Build
 
     #[cfg(feature = "api")]
     build.file("src/api.cc");
 
-    build
-        .flag_if_supported("-std=c++20")
-        .flag_if_supported("/std:c++20")
+    build.cpp(true).std("c++20")
         .flag_if_supported("/EHsc")
         .static_crt(true);
+
+    let build_type = env!("CMAKE_BUILD_TYPE", "$CMAKE_BUILD_TYPE env variable not set");
+    if build_type == "Debug" {
+        println!("cargo:warning=Building in debug mode");
+        build.debug(true);
+    }
 
     let include_list = env!("RUST_INCLUDES", "$RUST_INCLUDES env variable not set");
     for path in include_list.split(";") {
@@ -45,6 +49,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");
-    println!("cargo:rerun-if-changed=src/window.rs");
+    println!("cargo:rerun-if-changed=src/winit.rs");
     Ok(())
 }

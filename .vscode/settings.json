@@ -31,5 +31,6 @@
             "fileMatch": ["assets/scenes/**/*.json"],
             "url": "./docs/generated/scene.schema.json"
         }
-    ]
+    ],
+    "cmake.configureOnOpen": false
 }

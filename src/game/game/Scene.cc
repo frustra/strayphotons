@@ -290,7 +290,7 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        ecs::GetScriptManager().RegisterEvents(live);
+        ecs::GetScriptManager()->RegisterEvents(live);
         {
             ZoneScopedN("TransformSnapshot");
             for (auto &e : live.EntitiesWith<ecs::TransformTree>()) {

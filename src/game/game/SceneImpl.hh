@@ -90,7 +90,7 @@ namespace sp::scene {
                             // Create a new script instance for each staging definition
                             for (auto &script : scripts.scripts) {
                                 if (!script.state) continue;
-                                script.state = GetScriptManager().NewScriptInstance(*script.state);
+                                script.state = GetScriptManager()->NewScriptInstance(*script.state);
                             }
 
                             LookupComponent<Scripts>().ApplyComponent(component.value(), scripts, false);

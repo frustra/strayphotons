@@ -5,5 +5,6 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-add_subdirectory(glfw)
-add_subdirectory(winit)
+target_sources(${PROJECT_MAIN_WINIT_LIB} PRIVATE
+    WinitInputHandler.cc
+)

@@ -38,7 +38,7 @@ namespace sp {
             ToggleTray();
         });
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
             "editor",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
@@ -140,9 +140,9 @@ namespace sp {
         }
 
         if (trayOpen) {
-            GetSceneManager().QueueAction(SceneAction::RemoveScene, "tray");
+            GetSceneManager()->QueueAction(SceneAction::RemoveScene, "tray");
         } else {
-            GetSceneManager().QueueAction(SceneAction::AddScene, "tray");
+            GetSceneManager()->QueueAction(SceneAction::AddScene, "tray");
         }
     }
 } // namespace sp

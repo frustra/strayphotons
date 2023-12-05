@@ -13,10 +13,9 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "input/BindingNames.hh"
+#include "input/KeyCodes.hh"
 
 namespace sp {
-    static CVar<bool> CVarEnableInput("w.EnableInput", true, "Enable window input events");
-
     GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
         : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue) {
         funcs.Register<unsigned int>("steplogic",
@@ -36,10 +35,6 @@ namespace sp {
         RegisteredThread::StartThread(startPaused);
     }
 
-    void GameLogic::DisableInput(bool disable) {
-        CVarEnableInput.Set(!disable);
-    }
-
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
         LockFreeEventQueue<ecs::Event> &inputQueue) {
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
@@ -49,8 +44,6 @@ namespace sp {
         auto mouse = mouseEntity.Get(lock);
 
         inputQueue.PollEvents([&](const ecs::Event &event) {
-            if (!CVarEnableInput.Get()) return; // Drop input event
-
             if (event.source == keyboard) {
                 ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
             } else if (event.source == mouse) {
@@ -58,19 +51,25 @@ namespace sp {
             }
 
             if (event.name == INPUT_EVENT_KEYBOARD_KEY_DOWN) {
-                auto &keyName = std::get<std::string>(event.data);
-                std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, true});
+                auto &keyCode = (KeyCode &)std::get<int>(event.data);
+                auto keyName = KeycodeNameLookup.find(keyCode);
+                if (keyName != KeycodeNameLookup.end()) {
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName->second;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, true});
 
-                ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
-                signalRef.SetValue(lock, 1.0);
+                    ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+                    signalRef.SetValue(lock, 1.0);
+                }
             } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
-                auto &keyName = std::get<std::string>(event.data);
-                std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
+                auto &keyCode = (KeyCode &)std::get<int>(event.data);
+                auto keyName = KeycodeNameLookup.find(keyCode);
+                if (keyName != KeycodeNameLookup.end()) {
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName->second;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
 
-                ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
-                signalRef.ClearValue(lock);
+                    ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+                    signalRef.ClearValue(lock);
+                }
             } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
                 auto &mousePos = std::get<glm::vec2>(event.data);
                 ecs::SignalRef refX(mouse, INPUT_SIGNAL_MOUSE_CURSOR_X);
@@ -107,7 +106,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::WriteAll>();
             UpdateInputEvents(lock, windowInputQueue);
-            ecs::GetScriptManager().RunOnTick(lock, interval);
+            ecs::GetScriptManager()->RunOnTick(lock, interval);
         }
     }
 } // namespace sp

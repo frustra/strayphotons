@@ -12,9 +12,10 @@
     #include "core/Logging.hh"
     #include "core/Tracing.hh"
     #include "ecs/EcsImpl.hh"
-    #include "main/Game.hh"
+    #include "game/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR
+        #include "graphics/GraphicsManager.hh"
         #include "xr/openvr/OpenVrSystem.hh"
     #endif
 
@@ -36,7 +37,7 @@ namespace sp::xr {
         }
 
     #ifdef SP_XR_SUPPORT_OPENVR
-        xrSystem = std::make_shared<OpenVrSystem>(game->graphics.GetContext());
+        xrSystem = std::make_shared<OpenVrSystem>(game->graphics->context.get());
     #else
         Abort("No XR system defined");
     #endif

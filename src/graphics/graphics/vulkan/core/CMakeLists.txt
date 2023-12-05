@@ -19,11 +19,15 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     VkCommon.cc
 )
 
-target_sources(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PRIVATE
+target_sources(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PRIVATE
     DeviceContext.cc
 )
 
-target_sources(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PRIVATE
+target_sources(${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB} PRIVATE
+    DeviceContext.cc
+)
+
+target_sources(${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB} PRIVATE
     DeviceContext.cc
 )
 

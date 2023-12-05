@@ -25,7 +25,7 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            auto asyncGltf = sp::Assets().LoadGltf(modelName);
+            auto asyncGltf = sp::Assets()->LoadGltf(modelName);
             auto model = asyncGltf->Get();
             if (!model) {
                 Errorf("Gltf model not found: %s", modelName);
@@ -103,7 +103,7 @@ namespace ecs {
                             newEntity.Set<EventInput>(lock);
                             auto &scripts = newEntity.Set<Scripts>(lock);
                             scripts.AddOnTick(prefixName, "interactive_object");
-                            GetScriptManager().RegisterEvents(lock, newEntity);
+                            GetScriptManager()->RegisterEvents(lock, newEntity);
                         }
                     }
                 }

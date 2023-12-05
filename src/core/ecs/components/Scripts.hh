@@ -25,7 +25,7 @@ namespace ecs {
         ScriptInstance() {}
         ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
-            : ScriptInstance(GetScriptManager().NewScriptInstance(scope, definition)) {}
+            : ScriptInstance(GetScriptManager()->NewScriptInstance(scope, definition)) {}
         ScriptInstance(const EntityScope &scope, OnTickFunc callback)
             : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
         ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
@@ -95,10 +95,10 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
 
     struct Scripts {
         ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
-            return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
+            return *(scripts.emplace_back(scope, GetScriptDefinitions()->scripts.at(scriptName)).state);
         }
         ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
-            return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
+            return *(scripts.emplace_back(scope, GetScriptDefinitions()->prefabs.at(scriptName)).state);
         }
 
         ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
@@ -164,13 +164,13 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
         }
 
         InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript({name, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
+            GetScriptDefinitions()->RegisterScript({name, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
         InternalScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
             : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
+            GetScriptDefinitions()->RegisterScript(
                 {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
         }
     };
@@ -210,7 +210,7 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
         }
 
         InternalPhysicsScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
+            GetScriptDefinitions()->RegisterScript(
                 {name, {}, false, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
         }
 
@@ -220,7 +220,7 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
             bool filterOnEvent,
             Events... events)
             : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
+            GetScriptDefinitions()->RegisterScript(
                 {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
         }
     };
@@ -252,7 +252,7 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
         }
 
         PrefabScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterPrefab({name, {}, false, this, {}, PrefabFunc(&Prefab)});
+            GetScriptDefinitions()->RegisterPrefab({name, {}, false, this, {}, PrefabFunc(&Prefab)});
         }
     };
 } // namespace ecs

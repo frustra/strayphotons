@@ -30,7 +30,7 @@
 #include <shared_mutex>
 
 namespace sp {
-    SceneManager &GetSceneManager() {
+    SceneManager &MakeSceneManager() {
         // Ensure ECS, ScriptManager, and AssetManager are constructed first so they are destructed in the right order.
         ecs::World();
         ecs::StagingWorld();
@@ -38,6 +38,13 @@ namespace sp {
         sp::Assets();
         static SceneManager sceneManager;
         return sceneManager;
+    }
+
+    SceneManager *GetSceneManager(SceneManager *override) {
+        static SceneManager *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        return &MakeSceneManager();
     }
 
     static std::atomic<std::thread::id> activeSceneManagerThread;
@@ -589,14 +596,14 @@ namespace sp {
 
                 if (sceneInfo.prefabStagingId) scene->RemovePrefabEntity(lock, e);
             }
-            auto &scriptManager = ecs::GetScriptManager();
+            auto *scriptManager = ecs::GetScriptManager();
             for (auto &e : lock.EntitiesWith<ecs::Scripts>()) {
                 if (!e.Has<ecs::Scripts, ecs::SceneInfo>(lock)) continue;
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                 if (sceneInfo.scene != scene) continue;
                 if (sceneInfo.prefabStagingId) continue;
 
-                scriptManager.RunPrefabs(lock, e);
+                scriptManager->RunPrefabs(lock, e);
             }
         }
     }
@@ -604,7 +611,7 @@ namespace sp {
     std::shared_ptr<Scene> SceneManager::LoadSceneJson(const std::string &sceneName, SceneType sceneType) {
         Logf("Loading scene: %s", sceneName);
 
-        auto asset = Assets().Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
+        auto asset = Assets()->Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
         if (!asset) {
             Errorf("Scene not found: %s", sceneName);
             return nullptr;
@@ -685,9 +692,9 @@ namespace sp {
             }
         }
 
-        auto &scriptManager = ecs::GetScriptManager();
+        auto *scriptManager = ecs::GetScriptManager();
         for (auto &e : scriptEntities) {
-            scriptManager.RunPrefabs(lock, e);
+            scriptManager->RunPrefabs(lock, e);
         }
         return scene;
     }
@@ -752,7 +759,7 @@ namespace sp {
             Logf("Saving scene %s to '%s'", scene->data->name, scenePath.string());
 
             std::ofstream out;
-            if (Assets().OutputStream(scenePath.string(), out)) {
+            if (Assets()->OutputStream(scenePath.string(), out)) {
                 auto outputJson = val.serialize(true);
                 out.write(outputJson.c_str(), outputJson.size());
                 out.close();
@@ -767,7 +774,7 @@ namespace sp {
 
         std::shared_ptr<const Asset> bindingConfig;
         if (!std::filesystem::exists(InputBindingConfigPath)) {
-            bindingConfig = Assets().Load("default_input_bindings.json", AssetType::Bundled, true)->Get();
+            bindingConfig = Assets()->Load("default_input_bindings.json", AssetType::Bundled, true)->Get();
             Assert(bindingConfig, "Default input binding config missing");
 
             // TODO: Create CFunc to save current input bindings to file
@@ -776,7 +783,7 @@ namespace sp {
             // file << bindingConfig->String();
             // file.close();
         } else {
-            bindingConfig = Assets().Load(InputBindingConfigPath, AssetType::External, true)->Get();
+            bindingConfig = Assets()->Load(InputBindingConfigPath, AssetType::External, true)->Get();
             Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
         }
 

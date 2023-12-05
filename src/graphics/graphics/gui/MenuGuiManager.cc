@@ -7,12 +7,12 @@
 
 #include "MenuGuiManager.hh"
 
-#include "GraphicsManager.hh"
 #include "assets/AssetManager.hh"
 #include "console/CVar.hh"
 #include "console/Console.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/GraphicsManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/Texture.hh"
 #include "input/BindingNames.hh"
@@ -137,7 +137,7 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        if (!logoTex) logoTex = graphics.GetContext()->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
+        if (!logoTex) logoTex = graphics.context->LoadTexture(Assets()->LoadImage("logos/sp-menu.png")->Get());
         ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
         if (selectedScreen == MenuScreen::Main) {
@@ -161,7 +161,7 @@ namespace sp {
             }
 
             if (ImGui::Button("Quit")) {
-                GetConsoleManager().QueueParseAndExecute("exit");
+                GetConsoleManager()->QueueParseAndExecute("exit");
             }
 
             ImGui::End();
@@ -178,11 +178,11 @@ namespace sp {
 
             PushFont(Font::Monospace, 32);
 
-#define LEVEL_BUTTON(name, file)                                     \
-    if (ImGui::Button(name)) {                                       \
-        CVarMenuOpen.Set(false);                                     \
-        selectedScreen = MenuScreen::Main;                           \
-        GetConsoleManager().QueueParseAndExecute("loadscene " file); \
+#define LEVEL_BUTTON(name, file)                                      \
+    if (ImGui::Button(name)) {                                        \
+        CVarMenuOpen.Set(false);                                      \
+        selectedScreen = MenuScreen::Main;                            \
+        GetConsoleManager()->QueueParseAndExecute("loadscene " file); \
     }
 
             LEVEL_BUTTON("01 - Outside", "01-outside")
@@ -230,7 +230,7 @@ namespace sp {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0);
 
             {
-                auto modes = graphics.GetContext()->MonitorModes();
+                auto modes = graphics.context->MonitorModes();
                 auto size = CVarWindowSize.Get();
                 // If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if
                 // not found.
@@ -253,7 +253,7 @@ namespace sp {
                     CVarWindowFullscreen.Set(fullscreen);
                 }
 
-                auto &mirrorXRCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
+                auto &mirrorXRCVar = GetConsoleManager()->GetCVar<bool>("r.mirrorxr");
                 bool mirrorXR = mirrorXRCVar.Get();
                 if (ImGui::Checkbox("##mirrorxrcheck", &mirrorXR)) {
                     mirrorXRCVar.Set(mirrorXR);

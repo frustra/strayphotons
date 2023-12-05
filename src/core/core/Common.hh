@@ -53,7 +53,7 @@ typedef int64_t int64;
 
 namespace sp {
     [[noreturn]] void Abort(const string &message = "");
-    void DebugBreak();
+    // void DebugBreak();
 
     uint32 CeilToPowerOfTwo(uint32 v);
     uint32 Uint32Log2(uint32 v);

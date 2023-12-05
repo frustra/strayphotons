@@ -139,6 +139,8 @@ namespace ecs {
 
     std::string ToString(Lock<Read<Name>> lock, Entity e);
 
+    struct ECSContext;
+    ECSContext *GetECSContext(ECSContext *override = nullptr);
     ECS &World();
     ECS &StagingWorld();
     sp::DispatchQueue &TransactionQueue();
