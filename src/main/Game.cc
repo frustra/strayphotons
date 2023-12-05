@@ -63,8 +63,6 @@ namespace sp {
 #endif
     }
 
-    const int64 MaxInputPollRate = 144;
-
     Game::~Game() {
         if (graphicsDestroyCallback) graphicsDestroyCallback(&gameContext);
 #ifdef SP_GRAPHICS_SUPPORT
