@@ -6,10 +6,18 @@
     #ifndef SP_EXPORT
         #ifdef sp_EXPORTS
             /* We are building this library */
-            #define SP_EXPORT __declspec(dllexport)
+            #ifdef _WIN32
+                #define SP_EXPORT __declspec(dllexport)
+            #else
+                #define SP_EXPORT __attribute__((__visibility__("default")))
+            #endif
         #else
             /* We are using this library */
-            #define SP_EXPORT __declspec(dllimport)
+            #ifdef _WIN32
+                #define SP_EXPORT __declspec(dllimport)
+            #else
+                #define SP_EXPORT
+            #endif
         #endif
     #endif
 #else
