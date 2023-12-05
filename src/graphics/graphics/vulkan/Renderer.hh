@@ -28,7 +28,7 @@
 namespace sp {
     class GuiContext;
     class Game;
-}
+} // namespace sp
 
 namespace sp::xr {
     class XrSystem;
