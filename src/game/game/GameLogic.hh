@@ -30,7 +30,6 @@ namespace sp {
 
         LockFreeEventQueue<ecs::Event> &windowInputQueue;
 
-        bool stepMode;
         CFuncCollection funcs;
     };
 
