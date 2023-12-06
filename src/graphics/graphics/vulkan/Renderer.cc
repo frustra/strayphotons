@@ -85,7 +85,12 @@ namespace sp::vulkan {
         if (game.xr) xrSystem = game.xr->GetXrSystem();
         if (xrSystem) xrSystem->WaitFrame();
 #else
-        (void)game; // Prevents unused private variable warning
+        // Prevents unused private variable warnings
+        (void)game;
+        (void)xrSystem;
+        (void)xrRenderPoses;
+        (void)hiddenAreaMesh;
+        (void)hiddenAreaTriangleCount;
 #endif
 
         for (auto &gui : guis) {
