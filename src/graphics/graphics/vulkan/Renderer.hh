@@ -99,9 +99,11 @@ namespace sp::vulkan {
 
         bool listImages = false;
 
+#ifdef SP_XR_SUPPORT
         std::shared_ptr<xr::XrSystem> xrSystem;
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
         std::array<uint32, 2> hiddenAreaTriangleCount;
+#endif
     };
 } // namespace sp::vulkan

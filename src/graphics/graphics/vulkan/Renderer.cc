@@ -84,6 +84,8 @@ namespace sp::vulkan {
 #ifdef SP_XR_SUPPORT
         if (game.xr) xrSystem = game.xr->GetXrSystem();
         if (xrSystem) xrSystem->WaitFrame();
+#else
+        (void)game; // Prevents unused private variable warning
 #endif
 
         for (auto &gui : guis) {
