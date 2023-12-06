@@ -27,7 +27,7 @@
     #include <winit.rs.h>
 
 namespace sp {
-    WinitInputHandler::WinitInputHandler(CGameContext *ctx) : ctx(ctx), outputEventQueue(ctx->game.inputEventQueue) {
+    WinitInputHandler::WinitInputHandler(CGameContext *ctx) : ctx(ctx) {
         GraphicsContext *gfxContext = ctx->game.graphics->context.get();
         if (gfxContext) context = gfxContext->GetWinitContext();
 

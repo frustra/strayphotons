@@ -34,7 +34,6 @@ namespace sp {
 
     private:
         CGameContext *ctx;
-        LockFreeEventQueue<ecs::Event> &outputEventQueue;
         GLFWwindow *window = nullptr;
 
         int prevMouseMode = -1;

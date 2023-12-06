@@ -28,7 +28,7 @@
 #include <strayphotons.h>
 
 namespace sp {
-    GlfwInputHandler::GlfwInputHandler(CGameContext *ctx) : ctx(ctx), outputEventQueue(ctx->game.inputEventQueue) {
+    GlfwInputHandler::GlfwInputHandler(CGameContext *ctx) : ctx(ctx) {
         GraphicsContext *gfxContext = ctx->game.graphics->context.get();
         if (gfxContext) window = gfxContext->GetGlfwWindow();
 

@@ -30,7 +30,6 @@ namespace sp {
         void StartEventLoop(uint32_t maxInputRate);
 
         CGameContext *ctx;
-        LockFreeEventQueue<ecs::Event> &outputEventQueue;
         winit::WinitContext *context = nullptr;
 
         ecs::Entity mouse, keyboard;
