@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 
 #include <foundation/PxQuat.h>
 #include <foundation/PxTransform.h>

@@ -8,8 +8,8 @@
 #pragma once
 
 #include "assets/JsonHelpers.hh"
-#include "core/Common.hh"
-#include "core/Defer.hh"
+#include "common/Common.hh"
+#include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
@@ -600,7 +600,7 @@ namespace sp {
                     auto comp = ecs::LookupComponent<T>();
 
                     T compareComp = {};
-                    auto existingComp = std::get<std::optional<T>>(flatParentEntity);
+                    auto &existingComp = std::get<std::shared_ptr<T>>(flatParentEntity);
                     if (existingComp) {
                         comp.ApplyComponent(compareComp, *existingComp, true);
                     }
@@ -629,7 +629,7 @@ namespace sp {
     void EditorContext::AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
         Assertf(ecs::IsLive(lock), "AddLiveSignalControls must be called with a live lock");
         if (ImGui::CollapsingHeader("Signals", ImGuiTreeNodeFlags_DefaultOpen)) {
-            std::set<ecs::SignalRef> signals = ecs::GetSignalManager().GetSignals(targetEntity);
+            std::set<ecs::SignalRef> signals = ecs::GetSignalManager()->GetSignals(targetEntity);
 
             // Make a best guess at the scope of this entity
             ecs::EntityScope scope(targetEntity.Name().scene, "");

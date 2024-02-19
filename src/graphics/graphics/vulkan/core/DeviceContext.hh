@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/Defer.hh"
-#include "core/DispatchQueue.hh"
-#include "core/Hashing.hh"
+#include "common/Async.hh"
+#include "common/Defer.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
 #include "graphics/vulkan/core/HandlePool.hh"

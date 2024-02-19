@@ -7,9 +7,9 @@
 
 #include "RegisteredThread.hh"
 
-#include "core/Common.hh"
-#include "core/Defer.hh"
-#include "core/Tracing.hh"
+#include "common/Common.hh"
+#include "common/Defer.hh"
+#include "common/Tracing.hh"
 
 #include <array>
 #include <iostream>

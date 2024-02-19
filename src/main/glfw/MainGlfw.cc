@@ -16,34 +16,32 @@ using namespace std;
 #include "console/Console.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/ScriptManager.hh"
-#include "game/CGameContext.hh"
+#include "ecs/SignalManager.hh"
+#include "game/Game.hh"
 #include "game/SceneManager.hh"
 
 #include <strayphotons.h>
 
 struct OnStart {
     OnStart() {
-        sp::GetConsoleManager(sp::game_get_console_manager());
-        ecs::GetECSContext(sp::game_get_ecs_context());
-        ecs::GetScriptManager(sp::game_get_script_manager());
-        ecs::GetScriptDefinitions(sp::game_get_script_definitons());
-        sp::Assets(sp::game_get_asset_manager());
-        sp::GetSceneManager(sp::game_get_scene_manager());
+        sp::GetConsoleManager(sp_get_console_manager());
+        ecs::GetECSContext(sp_get_ecs_context());
+        ecs::GetSignalManager(sp_get_signal_manager());
+        ecs::GetScriptManager(sp_get_script_manager());
+        ecs::GetScriptDefinitions(sp_get_script_definitons());
+        sp::Assets(sp_get_asset_manager());
+        sp::GetSceneManager(sp_get_scene_manager());
         sp::RegisterDebugCFuncs();
     }
 } onStart;
 
 #include "GlfwInputHandler.hh"
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "graphics/GraphicsManager.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
-
-#ifdef SP_GRAPHICS_SUPPORT
-    #include "graphics/GraphicsManager.hh"
-    #include "graphics/core/GraphicsContext.hh"
-#endif
+// #include "graphics/core/GraphicsContext.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
@@ -76,7 +74,7 @@ namespace sp {
         }
     }
 
-    void destroyGraphicsCallback(StrayPhotons ctx) {
+    void destroyGraphicsCallback(sp_game_t ctx) {
         if (ctx != nullptr) {
             ctx->game.xr.reset();
             if (ctx->inputHandler) {
@@ -84,7 +82,7 @@ namespace sp {
                 delete handler;
                 ctx->inputHandler = nullptr;
             }
-            ctx->game.graphics.reset();
+            ctx->game.graphics.context.reset();
         }
     }
 } // namespace sp
@@ -113,24 +111,20 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-    std::shared_ptr<std::remove_pointer_t<sp::StrayPhotons>> instance(sp::game_init(ARGC_NAME, ARGV_NAME),
-        [](sp::StrayPhotons ctx) {
-            sp::GameInstance = nullptr;
-            sp::game_destroy(ctx);
-        });
+    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t ctx) {
+        sp::GameInstance = nullptr;
+        sp_game_destroy(ctx);
+    });
 
-    sp::CGameContext *ctx = instance.get();
+    sp_game_t ctx = instance.get();
+    sp_game_set_shutdown_callback(ctx, &sp::destroyGraphicsCallback);
+
     sp::GameInstance = &ctx->game;
 
     {
         using namespace sp;
         auto &game = ctx->game;
 
-#ifdef SP_GRAPHICS_SUPPORT
-        if (!game.options.count("headless")) {
-            game.graphics = make_shared<GraphicsManager>(game.options);
-        }
-#endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         game.physics = make_shared<PhysxManager>(game.inputEventQueue);
 #endif
@@ -138,12 +132,10 @@ int main(int argc, char **argv)
         game.audio = make_shared<AudioManager>();
 #endif
 
-#ifdef SP_GRAPHICS_SUPPORT
-        if (game.graphics) game.graphics->Init();
-#endif
+        if (!game.options.count("headless")) game.graphics.Init();
 
         bool withValidationLayers = game.options.count("with-validation-layers");
-        game.graphics->context = make_shared<vulkan::DeviceContext>(game, withValidationLayers);
+        game.graphics.context = make_shared<vulkan::DeviceContext>(game, withValidationLayers);
         ctx->inputHandler = new GlfwInputHandler(ctx);
 
 #ifdef SP_XR_SUPPORT
@@ -153,21 +145,17 @@ int main(int argc, char **argv)
         }
 #endif
 
-        sp::game_set_shutdown_callback(ctx, &sp::destroyGraphicsCallback);
-
         bool scriptMode = game.options.count("run") > 0;
-#ifdef SP_GRAPHICS_SUPPORT
-        if (game.graphics) game.graphics->StartThread(scriptMode);
-#endif
+        if (game.graphics) game.graphics.StartThread(scriptMode);
 
-        int status_code = sp::game_start(ctx);
+        int status_code = sp_game_start(ctx);
         if (status_code) return status_code;
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         game.physics->StartThread(scriptMode);
 #endif
 
-        if (!game.options.count("headless")) {
+        if (game.graphics) {
             if (scriptMode) {
                 game.funcs.Register<unsigned int>("stepgraphics",
                     "Renders N frames in a row, saving any queued screenshots, default is 1",
@@ -182,7 +170,7 @@ int main(int argc, char **argv)
                                 step = game.graphicsStepCount.load();
                             }
 
-                            game.graphics->Step(1);
+                            game.graphics.Step(1);
                         }
                     });
             }
@@ -195,20 +183,20 @@ int main(int argc, char **argv)
                 if (scriptMode) {
                     while (game.graphicsStepCount < game.graphicsMaxStepCount) {
                         GlfwInputHandler::Frame();
-                        game.graphics->InputFrame();
+                        game.graphics.InputFrame();
                         game.graphicsStepCount++;
                     }
                     game.graphicsStepCount.notify_all();
                 } else {
                     GlfwInputHandler::Frame();
-                    if (!game.graphics->InputFrame()) {
+                    if (!game.graphics.InputFrame()) {
                         Tracef("Exit triggered via window manager");
                         break;
                     }
                 }
 
                 auto realFrameEnd = chrono_clock::now();
-                auto interval = game.graphics->interval;
+                auto interval = game.graphics.interval;
                 if (interval.count() == 0) {
                     interval = std::chrono::nanoseconds((int64_t)(1e9 / MaxInputPollRate));
                 }

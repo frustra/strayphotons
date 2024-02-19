@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/Common.hh"
+#include "common/Async.hh"
+#include "common/Common.hh"
 
 #include <atomic>
 #include <glm/glm.hpp>

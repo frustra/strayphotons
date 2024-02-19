@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/Hashing.hh"
-#include "core/InlineVector.hh"
+#include "common/Hashing.hh"
+#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"

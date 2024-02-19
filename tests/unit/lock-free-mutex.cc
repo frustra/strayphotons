@@ -5,7 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "core/LockFreeMutex.hh"
+#include "common/LockFreeMutex.hh"
 
 #include <mutex>
 #include <shared_mutex>

@@ -7,7 +7,7 @@
 
 #include "Scene.hh"
 
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 
 #include <memory>
 

@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/DispatchQueue.hh"
-#include "core/EnumTypes.hh"
-#include "core/PreservingMap.hh"
-#include "core/RegisteredThread.hh"
+#include "common/Async.hh"
+#include "common/DispatchQueue.hh"
+#include "common/EnumTypes.hh"
+#include "common/PreservingMap.hh"
+#include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 
 #include <atomic>
@@ -78,5 +78,6 @@ namespace sp {
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 
+    AssetManager &MakeAssetsManager();
     AssetManager *Assets(AssetManager *override = nullptr);
 } // namespace sp

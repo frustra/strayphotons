@@ -14,9 +14,17 @@
 #include <shared_mutex>
 
 namespace ecs {
-    SignalManager &GetSignalManager() {
+    SignalManager &MakeSignalManager() {
         static SignalManager signalManager;
         return signalManager;
+    }
+
+    SignalManager *GetSignalManager(SignalManager *override) {
+        static SignalManager *overrideValue = nullptr;
+        if (override) overrideValue = override;
+        if (overrideValue) return overrideValue;
+        // return &MakeSignalManager();
+        Abortf("Requested SignalManager before it was set");
     }
 
     SignalRef SignalManager::GetRef(const SignalKey &signal) {

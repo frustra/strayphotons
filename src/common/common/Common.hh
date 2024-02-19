@@ -79,6 +79,7 @@ namespace sp {
 
     class Singleton : public NonCopyable {
     public:
+        Singleton() = default;
         Singleton(Singleton &&) = delete;
         Singleton &operator=(Singleton &&) = delete;
     };

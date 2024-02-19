@@ -8,7 +8,7 @@
 #include "Animation.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <sstream>

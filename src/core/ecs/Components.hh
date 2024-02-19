@@ -126,7 +126,7 @@ namespace ecs {
             CompType comp = defaultStagingComponent;
             if (!LoadFields(comp, src)) return false;
             if (StructMetadata::Load<CompType>(comp, src)) {
-                std::get<std::optional<CompType>>(dst) = comp;
+                std::get<std::shared_ptr<CompType>>(dst) = std::make_shared<CompType>(std::move(comp));
                 return true;
             }
             return false;
@@ -164,7 +164,7 @@ namespace ecs {
             const EntityScope &scope,
             const Entity &dst,
             const FlatEntity &src) const override {
-            auto &opt = std::get<std::optional<CompType>>(src);
+            auto &opt = std::get<std::shared_ptr<CompType>>(src);
             if (opt) {
                 auto &comp = dst.Set<CompType>(lock, *opt);
                 scope::SetScope(comp, scope);
@@ -176,7 +176,7 @@ namespace ecs {
         }
 
         bool HasComponent(const FlatEntity &ent) const override {
-            return std::get<std::optional<CompType>>(ent).has_value();
+            return (bool)std::get<std::shared_ptr<CompType>>(ent);
         }
 
         const void *Access(const Lock<ReadAll> &lock, Entity ent) const override {

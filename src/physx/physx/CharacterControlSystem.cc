@@ -8,8 +8,8 @@
 #include "CharacterControlSystem.hh"
 
 #include "console/CVar.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"

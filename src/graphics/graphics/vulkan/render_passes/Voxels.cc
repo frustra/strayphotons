@@ -7,7 +7,7 @@
 
 #include "Voxels.hh"
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

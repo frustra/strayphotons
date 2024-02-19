@@ -8,9 +8,9 @@
 #ifdef SP_RUST_WINIT_SUPPORT
     #include "WinitInputHandler.hh"
 
-    #include "core/Common.hh"
-    #include "core/Logging.hh"
-    #include "core/Tracing.hh"
+    #include "common/Common.hh"
+    #include "common/Logging.hh"
+    #include "common/Tracing.hh"
     #include "ecs/EcsImpl.hh"
     #include "game/CGameContext.hh"
     #include "game/Game.hh"
@@ -31,8 +31,8 @@ namespace sp {
         GraphicsContext *gfxContext = ctx->game.graphics->context.get();
         if (gfxContext) context = gfxContext->GetWinitContext();
 
-        mouse = sp::game_new_input_device(ctx, "mouse");
-        keyboard = sp::game_new_input_device(ctx, "keyboard");
+        mouse = sp_new_input_device(ctx, "mouse");
+        keyboard = sp_new_input_device(ctx, "keyboard");
     }
 
     void WinitInputHandler::StartEventLoop(uint32_t maxInputRate) {
@@ -52,15 +52,9 @@ namespace sp {
         if (key == KeyCode::KEY_INVALID) return;
 
         if (action == InputAction::PRESS) {
-            sp::game_send_input_int(handler->ctx,
-                (uint64_t)handler->keyboard,
-                INPUT_EVENT_KEYBOARD_KEY_DOWN.c_str(),
-                key);
+            sp_send_input_int(handler->ctx, (uint64_t)handler->keyboard, INPUT_EVENT_KEYBOARD_KEY_DOWN.c_str(), key);
         } else if (action == InputAction::RELEASE) {
-            sp::game_send_input_int(handler->ctx,
-                (uint64_t)handler->keyboard,
-                INPUT_EVENT_KEYBOARD_KEY_UP.c_str(),
-                key);
+            sp_send_input_int(handler->ctx, (uint64_t)handler->keyboard, INPUT_EVENT_KEYBOARD_KEY_UP.c_str(), key);
         }
     }
 
@@ -68,7 +62,7 @@ namespace sp {
         ZoneScoped;
         Assert(handler, "CharInputCallback occured without valid context");
 
-        sp::game_send_input_uint(handler->ctx,
+        sp_send_input_uint(handler->ctx,
             (uint64_t)handler->keyboard,
             INPUT_EVENT_KEYBOARD_CHARACTERS.c_str(),
             codepoint);
@@ -78,18 +72,14 @@ namespace sp {
         ZoneScoped;
         Assert(handler, "MouseMoveCallback occured without valid context");
 
-        sp::game_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_MOVE.c_str(), dx, dy);
+        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_MOVE.c_str(), dx, dy);
     }
 
     void MousePositionCallback(WinitInputHandler *handler, double xPos, double yPos) {
         ZoneScoped;
         Assert(handler, "MousePositionCallback occured without valid context");
 
-        sp::game_send_input_vec2(handler->ctx,
-            (uint64_t)handler->mouse,
-            INPUT_EVENT_MOUSE_POSITION.c_str(),
-            xPos,
-            yPos);
+        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_POSITION.c_str(), xPos, yPos);
     }
 
     void MouseButtonCallback(WinitInputHandler *handler, MouseButton button, InputAction action) {
@@ -97,17 +87,17 @@ namespace sp {
         Assert(handler, "MouseButtonCallback occured without valid context");
 
         if (button == MouseButton::BUTTON_LEFT) {
-            sp::game_send_input_bool(handler->ctx,
+            sp_send_input_bool(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_LEFT_CLICK.c_str(),
                 action == InputAction::PRESS);
         } else if (button == MouseButton::BUTTON_MIDDLE) {
-            sp::game_send_input_bool(handler->ctx,
+            sp_send_input_bool(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_MIDDLE_CLICK.c_str(),
                 action == InputAction::PRESS);
         } else if (button == MouseButton::BUTTON_RIGHT) {
-            sp::game_send_input_bool(handler->ctx,
+            sp_send_input_bool(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_RIGHT_CLICK.c_str(),
                 action == InputAction::PRESS);
@@ -118,11 +108,7 @@ namespace sp {
         ZoneScoped;
         Assert(handler, "MouseScrollCallback occured without valid context");
 
-        sp::game_send_input_vec2(handler->ctx,
-            (uint64_t)handler->mouse,
-            INPUT_EVENT_MOUSE_SCROLL.c_str(),
-            xOffset,
-            yOffset);
+        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_SCROLL.c_str(), xOffset, yOffset);
     }
 } // namespace sp
 

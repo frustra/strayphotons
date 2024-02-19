@@ -7,11 +7,9 @@
 
 #pragma once
 
-// #include "ecs/Ecs.hh"
-// #include "ecs/components/Events.hh"
+#include "ecs/Ecs.hh"
+#include "ecs/components/Events.hh"
 #include "graphics/gui/SystemGuiManager.hh"
-
-#include <strayphotons.h>
 
 namespace sp {
     class GraphicsContext;

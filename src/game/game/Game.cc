@@ -9,11 +9,11 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/ConsoleScript.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
+#include "common/RegisteredThread.hh"
+#include "common/Tracing.hh"
 #include "console/Console.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
-#include "core/RegisteredThread.hh"
-#include "core/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
@@ -30,7 +30,8 @@
 
 namespace sp {
 
-    Game::Game(CGameContext &ctx) : gameContext(ctx), options(ctx.options), logic(inputEventQueue) {
+    Game::Game(CGameContext &ctx)
+        : gameContext(ctx), options(ctx.options), graphics(ctx.options), logic(inputEventQueue) {
         funcs.Register<int>("exit", "Quits the game", [this](int arg) {
             Tracef("Exit triggered via console command");
             this->exitCode = arg;

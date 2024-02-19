@@ -7,7 +7,7 @@
 
 #include "Renderer.hh"
 
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"

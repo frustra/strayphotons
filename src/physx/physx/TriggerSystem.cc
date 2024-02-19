@@ -8,9 +8,9 @@
 #include "TriggerSystem.hh"
 
 #include "console/Console.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <glm/gtx/norm.hpp>

@@ -8,15 +8,10 @@
 #include "GlfwInputHandler.hh"
 
 #include "GlfwKeyCodes.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/CGameContext.hh"
-#include "game/Game.hh"
-#include "game/Scene.hh"
-#include "game/SceneManager.hh"
-#include "graphics/GraphicsManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "input/BindingNames.hh"
 #include "input/KeyCodes.hh"
@@ -28,9 +23,9 @@
 #include <strayphotons.h>
 
 namespace sp {
-    GlfwInputHandler::GlfwInputHandler(CGameContext *ctx) : ctx(ctx) {
-        GraphicsContext *gfxContext = ctx->game.graphics->context.get();
-        if (gfxContext) window = gfxContext->GetGlfwWindow();
+    GlfwInputHandler::GlfwInputHandler(sp_game_t ctx) : ctx(ctx) {
+        GraphicsContext *graphicsContext = sp_game_get_graphics_context(ctx);
+        if (graphicsContext) window = graphicsContext->GetGlfwWindow();
 
         if (window) {
             glfwSetWindowUserPointer(window, this);
@@ -43,8 +38,8 @@ namespace sp {
             glfwSetCursorEnterCallback(window, MouseEnterCallback);
         }
 
-        mouse = sp::game_new_input_device(ctx, "mouse");
-        keyboard = sp::game_new_input_device(ctx, "keyboard");
+        mouse = sp_new_input_device(ctx, "mouse");
+        keyboard = sp_new_input_device(ctx, "keyboard");
     }
 
     GlfwInputHandler::~GlfwInputHandler() {
@@ -79,12 +74,12 @@ namespace sp {
         }
 
         if (action == GLFW_PRESS) {
-            sp::game_send_input_int(handler->ctx,
+            sp_send_input_int(handler->ctx,
                 (uint64_t)handler->keyboard,
                 INPUT_EVENT_KEYBOARD_KEY_DOWN.c_str(),
                 keyCode->second);
         } else if (action == GLFW_RELEASE) {
-            sp::game_send_input_int(handler->ctx,
+            sp_send_input_int(handler->ctx,
                 (uint64_t)handler->keyboard,
                 INPUT_EVENT_KEYBOARD_KEY_UP.c_str(),
                 keyCode->second);
@@ -96,7 +91,7 @@ namespace sp {
         auto handler = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(handler, "CharInputCallback occured without valid context");
 
-        sp::game_send_input_uint(handler->ctx,
+        sp_send_input_uint(handler->ctx,
             (uint64_t)handler->keyboard,
             INPUT_EVENT_KEYBOARD_CHARACTERS.c_str(),
             codepoint);
@@ -107,15 +102,11 @@ namespace sp {
         auto handler = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(handler, "MouseMoveCallback occured without valid context");
 
-        sp::game_send_input_vec2(handler->ctx,
-            (uint64_t)handler->mouse,
-            INPUT_EVENT_MOUSE_POSITION.c_str(),
-            xPos,
-            yPos);
+        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_POSITION.c_str(), xPos, yPos);
 
         int mouseMode = glfwGetInputMode(window, GLFW_CURSOR);
         if (!glm::any(glm::isinf(handler->prevMousePos)) && handler->prevMouseMode == mouseMode) {
-            sp::game_send_input_vec2(handler->ctx,
+            sp_send_input_vec2(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_MOVE.c_str(),
                 xPos - handler->prevMousePos.x,
@@ -131,17 +122,17 @@ namespace sp {
         Assert(handler, "MouseButtonCallback occured without valid context");
 
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
-            sp::game_send_input_bool(handler->ctx,
+            sp_send_input_bool(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_LEFT_CLICK.c_str(),
                 action == GLFW_PRESS);
         } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-            sp::game_send_input_bool(handler->ctx,
+            sp_send_input_bool(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_MIDDLE_CLICK.c_str(),
                 action == GLFW_PRESS);
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-            sp::game_send_input_bool(handler->ctx,
+            sp_send_input_bool(handler->ctx,
                 (uint64_t)handler->mouse,
                 INPUT_EVENT_MOUSE_RIGHT_CLICK.c_str(),
                 action == GLFW_PRESS);
@@ -153,11 +144,7 @@ namespace sp {
         auto handler = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(handler, "MouseScrollCallback occured without valid context");
 
-        sp::game_send_input_vec2(handler->ctx,
-            (uint64_t)handler->mouse,
-            INPUT_EVENT_MOUSE_SCROLL.c_str(),
-            xOffset,
-            yOffset);
+        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_SCROLL.c_str(), xOffset, yOffset);
     }
 
     void GlfwInputHandler::MouseEnterCallback(GLFWwindow *window, int entered) {

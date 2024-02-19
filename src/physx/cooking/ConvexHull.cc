@@ -12,8 +12,8 @@
 #include "assets/Gltf.hh"
 #include "assets/GltfImpl.hh"
 #include "assets/PhysicsInfo.hh"
-#include "core/Hashing.hh"
-#include "core/Logging.hh"
+#include "common/Hashing.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <PxPhysicsAPI.h>

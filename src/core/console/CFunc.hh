@@ -8,8 +8,8 @@
 #pragma once
 
 #include "console/CVar.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
 #include "ecs/EntityRef.hh"
 
 #include <functional>

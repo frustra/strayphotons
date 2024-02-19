@@ -9,10 +9,10 @@
 
 #include "console/CFunc.hh"
 #include "console/CVar.hh"
-#include "core/Common.hh"
-#include "core/LockFreeMutex.hh"
-#include "core/Logging.hh"
-#include "core/RegisteredThread.hh"
+#include "common/Common.hh"
+#include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
+#include "common/RegisteredThread.hh"
 
 #include <condition_variable>
 #include <map>

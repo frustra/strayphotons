@@ -7,7 +7,7 @@
 
 #include "RenderPass.hh"
 
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {

@@ -7,7 +7,7 @@
 
 #include "SystemGuiManager.hh"
 
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"

@@ -6,7 +6,7 @@
  */
 
 #include "console/Console.hh"
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"

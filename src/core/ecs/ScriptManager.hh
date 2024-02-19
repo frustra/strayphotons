@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/LockFreeMutex.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"

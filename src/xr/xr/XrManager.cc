@@ -9,10 +9,10 @@
 
     #include "XrManager.hh"
 
-    #include "core/Logging.hh"
-    #include "core/Tracing.hh"
+    #include "common/Logging.hh"
+    #include "common/Tracing.hh"
     #include "ecs/EcsImpl.hh"
-    #include "game/Game.hh"
+// #include "game/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR
         #include "graphics/GraphicsManager.hh"

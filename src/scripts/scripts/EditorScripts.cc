@@ -6,7 +6,7 @@
  */
 
 #include "console/CVar.hh"
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalManager.hh"
@@ -44,7 +44,7 @@ namespace sp::scripts {
                 auto &sourceName = ent.Get<Name>(lock);
                 auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
 
-                auto signals = GetSignalManager().GetSignals(ent);
+                auto signals = GetSignalManager()->GetSignals(ent);
 
                 SceneRef scene;
                 if (lock.Has<ActiveScene>()) {

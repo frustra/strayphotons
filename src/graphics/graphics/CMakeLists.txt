@@ -8,7 +8,3 @@
 add_subdirectory(core)
 add_subdirectory(gui)
 add_subdirectory(vulkan)
-
-target_sources(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
-    GraphicsManager.cc
-)

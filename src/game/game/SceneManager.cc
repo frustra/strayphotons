@@ -10,10 +10,10 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/JsonHelpers.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "console/Console.hh"
 #include "console/ConsoleBindingManager.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
@@ -44,7 +44,8 @@ namespace sp {
         static SceneManager *overrideValue = nullptr;
         if (override) overrideValue = override;
         if (overrideValue) return overrideValue;
-        return &MakeSceneManager();
+        // return &MakeSceneManager();
+        Abortf("Requested SceneManager before it was set");
     }
 
     static std::atomic<std::thread::id> activeSceneManagerThread;
@@ -466,7 +467,7 @@ namespace sp {
             scene.reset();
         });
         ecs::GetEntityRefs().Tick(this->interval);
-        ecs::GetSignalManager().Tick(this->interval);
+        ecs::GetSignalManager()->Tick(this->interval);
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditSceneCallback callback) {
@@ -651,7 +652,7 @@ namespace sp {
 
                 if (entSrc.count("name") && entSrc["name"].is<string>()) {
                     ecs::Name name(entSrc["name"].get<string>(), scope);
-                    if (name) std::get<std::optional<ecs::Name>>(entDst) = name;
+                    if (name) std::get<std::shared_ptr<ecs::Name>>(entDst) = std::make_shared<ecs::Name>(name);
                 }
 
                 for (auto &comp : entSrc) {
@@ -674,7 +675,8 @@ namespace sp {
 
         std::vector<ecs::Entity> scriptEntities;
         for (auto &flatEnt : entities) {
-            auto name = std::get<std::optional<ecs::Name>>(flatEnt).value_or(ecs::Name());
+            auto &name_ptr = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
+            auto name = name_ptr ? *name_ptr : ecs::Name();
 
             ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
             if (!entity) {
@@ -816,7 +818,7 @@ namespace sp {
 
             auto &entSrc = value.get<picojson::object>();
             auto &entDst = entities.emplace_back();
-            std::get<std::optional<ecs::Name>>(entDst) = name;
+            std::get<std::shared_ptr<ecs::Name>>(entDst) = std::make_shared<ecs::Name>(name);
 
             for (auto *comp : allowedComponents) {
                 Assertf(comp,
@@ -834,13 +836,13 @@ namespace sp {
         auto scene = Scene::New(lock, "bindings", SceneType::System, ScenePriority::Bindings, {}, bindingConfig);
 
         for (auto &flatEnt : entities) {
-            auto name = std::get<std::optional<ecs::Name>>(flatEnt).value_or(ecs::Name());
-            if (!name) continue;
+            auto &name = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
+            if (!name || !*name) continue;
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name);
             if (!entity) {
                 // Most llkely a duplicate entity definition
-                Errorf("Failed to create binding entity, ignoring: '%s'", name.String());
+                Errorf("Failed to create binding entity, ignoring: '%s'", name->String());
                 continue;
             }
 

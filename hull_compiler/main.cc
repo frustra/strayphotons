@@ -7,11 +7,11 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
+#include "common/Async.hh"
+#include "common/Logging.hh"
 #include "cooking/ConvexHull.hh"
-#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <PxPhysicsAPI.h>
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
     sp::logging::SetLogLevel(sp::logging::Level::Warn);
 
-    auto modelPtr = sp::Assets()->LoadGltf(modelName);
+    auto modelPtr = sp::Assets(&sp::MakeAssetsManager())->LoadGltf(modelName);
     auto model = modelPtr->Get();
     if (!model) {
         Errorf("hull_compiler could not load Gltf model: %s", modelName);

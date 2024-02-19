@@ -7,14 +7,15 @@
 
 #pragma once
 
+#include "common/Common.hh"
+#include "common/Defer.hh"
+#include "common/LockFreeEventQueue.hh"
 #include "console/CFunc.hh"
 #include "console/ConsoleBindingManager.hh"
-#include "core/Common.hh"
-#include "core/Defer.hh"
-#include "core/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
+#include "graphics/core/GraphicsManager.hh"
 
 #include <chrono>
 #include <memory>
@@ -60,9 +61,9 @@ namespace sp {
 
     public:
         LockFreeEventQueue<ecs::Event> inputEventQueue;
-
         std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
-        std::shared_ptr<GraphicsManager> graphics;
+        GraphicsManager graphics;
+
         void (*shutdownCallback)(CGameContext *) = nullptr;
 
         std::shared_ptr<PhysxManager> physics;

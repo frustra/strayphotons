@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "assets/Async.hh"
+#include "common/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/core/Memory.hh"

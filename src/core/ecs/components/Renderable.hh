@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/Common.hh"
-#include "core/EnumTypes.hh"
+#include "common/Async.hh"
+#include "common/Common.hh"
+#include "common/EnumTypes.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 

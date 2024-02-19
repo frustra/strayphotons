@@ -9,7 +9,7 @@
 
 #include "Common.hh"
 #include "console/CFunc.hh"
-#include "core/LockFreeMutex.hh"
+#include "common/LockFreeMutex.hh"
 
 namespace sp::vulkan::renderer {
     class Screenshots {

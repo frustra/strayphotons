@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/RegisteredThread.hh"
+#include "common/Common.hh"
+#include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 
@@ -36,6 +36,10 @@ namespace sp {
         GraphicsManager(cxxopts::ParseResult &options);
         ~GraphicsManager();
 
+        operator bool() const {
+            return initialized;
+        }
+
         void Init();
         void StartThread(bool startPaused = false);
         void StopThread();
@@ -58,5 +62,7 @@ namespace sp {
 
         std::shared_ptr<DebugGuiManager> debugGui;
         std::shared_ptr<MenuGuiManager> menuGui;
+
+        bool initialized = false;
     };
 } // namespace sp

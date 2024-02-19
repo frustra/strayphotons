@@ -8,8 +8,8 @@
 #include "GameLogic.hh"
 
 #include "console/Console.hh"
-#include "core/LockFreeEventQueue.hh"
-#include "core/Tracing.hh"
+#include "common/LockFreeEventQueue.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "input/BindingNames.hh"

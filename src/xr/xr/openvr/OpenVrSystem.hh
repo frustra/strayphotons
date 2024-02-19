@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/RegisteredThread.hh"
+#include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "xr/XrSystem.hh"

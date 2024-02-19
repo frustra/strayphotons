@@ -16,9 +16,9 @@
 #endif
 
 #include "assets/ConsoleScript.hh"
-#include "core/Logging.hh"
-#include "core/RegisteredThread.hh"
-#include "core/Tracing.hh"
+#include "common/Logging.hh"
+#include "common/RegisteredThread.hh"
+#include "common/Tracing.hh"
 
 #include <algorithm>
 #include <atomic>
@@ -39,6 +39,7 @@ namespace sp {
         if (override) overrideValue = override;
         if (overrideValue) return overrideValue;
         return &MakeConsoleManager();
+        // Abortf("Requested ConsoleManager before it was set");
     }
 
 #ifdef USE_LINENOISE_CLI

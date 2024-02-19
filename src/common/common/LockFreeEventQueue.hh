@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/InlineVector.hh"
-#include "core/LockFreeMutex.hh"
+#include "common/InlineVector.hh"
+#include "common/LockFreeMutex.hh"
 
 #include <vector>
 

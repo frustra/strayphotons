@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>

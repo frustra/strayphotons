@@ -7,9 +7,10 @@
 
 #include "Renderable.hh"
 
-#include <assets/AssetManager.hh>
-#include <core/Logging.hh>
-#include <ecs/EcsImpl.hh>
+#include "assets/AssetManager.hh"
+#include "common/Logging.hh"
+#include "ecs/EcsImpl.hh"
+
 #include <picojson/picojson.h>
 
 namespace ecs {

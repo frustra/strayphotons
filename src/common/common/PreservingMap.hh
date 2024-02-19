@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/InlineVector.hh"
-#include "core/LockFreeMutex.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/InlineVector.hh"
+#include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
 
 #include <atomic>
 #include <memory>

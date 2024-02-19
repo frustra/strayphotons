@@ -9,7 +9,7 @@
 
 #ifdef SP_RUST_WINIT_SUPPORT
     #include "InputCallbacks.hh"
-    #include "core/LockFreeEventQueue.hh"
+    #include "common/LockFreeEventQueue.hh"
     #include "ecs/Ecs.hh"
     #include "ecs/EventQueue.hh"
 

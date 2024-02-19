@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 
 #include <tracy/Tracy.hpp>
 

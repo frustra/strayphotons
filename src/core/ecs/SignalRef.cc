@@ -15,12 +15,12 @@
 namespace ecs {
     SignalRef::SignalRef(const EntityRef &ent, const std::string_view &signalName) {
         if (!ent || signalName.empty()) return;
-        ptr = GetSignalManager().GetRef(ent, signalName).ptr;
+        ptr = GetSignalManager()->GetRef(ent, signalName).ptr;
     }
 
     SignalRef::SignalRef(const std::string_view &str, const EntityScope &scope) {
         if (str.empty()) return;
-        ptr = GetSignalManager().GetRef(str, scope).ptr;
+        ptr = GetSignalManager()->GetRef(str, scope).ptr;
     }
 
     size_t &SignalRef::GetIndex(const Lock<> &lock) const {
@@ -65,7 +65,7 @@ namespace ecs {
         if (!newRef) {
             ptr = nullptr;
         } else if (newRef != ptr->signal.entity) {
-            ptr = GetSignalManager().GetRef(newRef, ptr->signal.signalName).ptr;
+            ptr = GetSignalManager()->GetRef(newRef, ptr->signal.signalName).ptr;
         }
     }
 

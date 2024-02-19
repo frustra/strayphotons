@@ -25,7 +25,7 @@ foreach(_file ${_files_to_copy})
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_file}
         DEPENDS
             ${CMAKE_CURRENT_LIST_DIR}/${_file}
-        COMMAND   
+        COMMAND
             ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/${_file} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_file}
     )
 

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/InlineVector.hh"
+#include "common/Async.hh"
+#include "common/InlineVector.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"

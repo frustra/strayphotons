@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/Common.hh"
-#include "core/Tracing.hh"
+#include "common/Async.hh"
+#include "common/Common.hh"
+#include "common/Tracing.hh"
 
 #include <condition_variable>
 #include <cstdint>

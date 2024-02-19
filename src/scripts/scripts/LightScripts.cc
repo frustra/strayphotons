@@ -6,7 +6,7 @@
  */
 
 #include "console/CVar.hh"
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 

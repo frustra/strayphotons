@@ -5,7 +5,7 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-target_sources(${PROJECT_CORE_LIB} PRIVATE
+target_sources(${PROJECT_COMMON_LIB} PRIVATE
     Common.cc
     DispatchQueue.cc
     LockFreeMutex.cc
@@ -14,11 +14,12 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
 )
 
 if(TRACY_ENABLE)
-    target_sources(${PROJECT_CORE_LIB} PRIVATE
+    target_sources(${PROJECT_COMMON_LIB} PRIVATE
         Tracing.cc
     )
 endif()
 
-# target_precompile_headers(${PROJECT_CORE_LIB} PRIVATE
+# target_precompile_headers(${PROJECT_COMMON_LIB} PRIVATE
 #    Common.hh
+#    Logging.hh
 # )

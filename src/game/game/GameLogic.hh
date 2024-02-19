@@ -8,8 +8,8 @@
 #pragma once
 
 #include "console/CFunc.hh"
-#include "core/LockFreeEventQueue.hh"
-#include "core/RegisteredThread.hh"
+#include "common/LockFreeEventQueue.hh"
+#include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Events.hh"

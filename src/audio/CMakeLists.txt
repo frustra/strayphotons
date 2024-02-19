@@ -12,8 +12,9 @@ target_include_directories(${PROJECT_AUDIO_LIB} PUBLIC
 )
 
 target_link_libraries(${PROJECT_AUDIO_LIB} PUBLIC
+    ${PROJECT_COMMON_LIB}
     ${PROJECT_CORE_LIB}
-    ${PROJECT_GAME_LIB}
+    # ${PROJECT_GAME_LIB}
     libsoundio_static
     ${LIBSOUNDIO_LIBS}
     ResonanceAudioStatic

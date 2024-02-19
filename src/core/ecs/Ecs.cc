@@ -7,8 +7,8 @@
 
 #include "Ecs.hh"
 
-#include "core/DispatchQueue.hh"
-#include "core/Logging.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <typeindex>
@@ -23,7 +23,8 @@ namespace ecs {
         static ECSContext *overrideValue = nullptr;
         if (override) overrideValue = override;
         if (overrideValue) return overrideValue;
-        return &MakeECSContext();
+        // return &MakeECSContext();
+        Abortf("Requested ECSContext before it was set");
     }
 
     ECS &World() {

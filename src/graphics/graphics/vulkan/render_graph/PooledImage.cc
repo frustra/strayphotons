@@ -7,7 +7,7 @@
 
 #include "PooledImage.hh"
 
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan::render_graph {

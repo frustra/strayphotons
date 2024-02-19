@@ -31,13 +31,12 @@ target_include_directories(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PRIVATE
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB}
-    PUBLIC
-        # ${PROJECT_CORE_LIB}
-        # ${PROJECT_GAME_LIB}
-        sp
-        ImGui
     PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         cxxopts
+        ImGui
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
@@ -46,6 +45,9 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         Vulkan::Vulkan
         VulkanMemoryAllocator
     PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         SPIRV-Reflect
         fpng
 )
@@ -54,6 +56,9 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         glfw
     PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         cxxopts
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
@@ -61,14 +66,20 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         glfw-egl # Prevents X11 context creation
     PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         cxxopts
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB}
     PUBLIC
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
-        # ${PROJECT_XR_CORE_LIB}
+        ${PROJECT_XR_CORE_LIB}
         glfw
     PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         cxxopts
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
@@ -77,6 +88,9 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
         ${PROJECT_XR_CORE_LIB}
         sp-rs-winit
     PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         cxxopts
 )
 

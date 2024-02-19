@@ -7,8 +7,8 @@
 
 #include "AnimationSystem.hh"
 
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxManager.hh"

@@ -6,8 +6,8 @@
  */
 
 #include "console/Console.hh"
-#include "core/Logging.hh"
-#include "core/RegisteredThread.hh"
+#include "common/Logging.hh"
+#include "common/RegisteredThread.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <fstream>

@@ -7,13 +7,12 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/Image.hh"
+#include "assets/Image.hh"
+#include "common/Common.hh"
 
 #include <memory>
 
 namespace sp {
-    class Image;
     class GpuTexture {
     public:
         virtual uintptr_t GetHandle() const = 0;

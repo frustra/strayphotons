@@ -8,13 +8,13 @@
 #pragma once
 
 #include "assets/Asset.hh"
-#include "assets/Async.hh"
 #include "audio/LockFreeAudioSet.hh"
-#include "core/DispatchQueue.hh"
-#include "core/EntityMap.hh"
-#include "core/LockFreeEventQueue.hh"
-#include "core/PreservingMap.hh"
-#include "core/RegisteredThread.hh"
+#include "common/Async.hh"
+#include "common/DispatchQueue.hh"
+#include "common/EntityMap.hh"
+#include "common/LockFreeEventQueue.hh"
+#include "common/PreservingMap.hh"
+#include "common/RegisteredThread.hh"
 #include "ecs/EntityRef.hh"
 
 #include <atomic>

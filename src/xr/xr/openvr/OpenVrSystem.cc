@@ -8,9 +8,9 @@
 #include "OpenVrSystem.hh"
 
 #include "assets/AssetManager.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"

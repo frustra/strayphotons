@@ -8,12 +8,12 @@
 #include "MenuGuiManager.hh"
 
 #include "assets/AssetManager.hh"
+#include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "console/Console.hh"
-#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/GraphicsManager.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
 #include "input/BindingNames.hh"
 

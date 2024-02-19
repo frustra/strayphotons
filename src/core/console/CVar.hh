@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/StreamOverloads.hh"
+#include "common/Common.hh"
+#include "common/StreamOverloads.hh"
 
 #include <atomic>
 #include <functional>

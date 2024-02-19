@@ -8,7 +8,7 @@
 #pragma once
 
 #include "console/CFunc.hh"
-#include "core/LockFreeMutex.hh"
+#include "common/LockFreeMutex.hh"
 #include "xr/XrSystem.hh"
 
 #include <memory>

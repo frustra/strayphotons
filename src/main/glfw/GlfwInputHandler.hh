@@ -7,20 +7,19 @@
 
 #pragma once
 
-#include "core/LockFreeEventQueue.hh"
+#include "common/LockFreeEventQueue.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
 
 #include <glm/glm.hpp>
+#include <strayphotons.h>
 
 struct GLFWwindow;
 
 namespace sp {
-    struct CGameContext;
-
     class GlfwInputHandler {
     public:
-        GlfwInputHandler(CGameContext *ctx);
+        GlfwInputHandler(sp_game_t ctx);
         ~GlfwInputHandler();
 
         static void Frame();
@@ -33,7 +32,7 @@ namespace sp {
         static void MouseEnterCallback(GLFWwindow *window, int entered);
 
     private:
-        CGameContext *ctx;
+        sp_game_t ctx;
         GLFWwindow *window = nullptr;
 
         int prevMouseMode = -1;

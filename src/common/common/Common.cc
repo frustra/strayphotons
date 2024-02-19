@@ -7,7 +7,7 @@
 
 #include "Common.hh"
 
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 
 #include <algorithm>
 #include <cctype>

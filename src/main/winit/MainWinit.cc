@@ -34,7 +34,7 @@ struct OnStart {
 } onStart;
 
 #include "WinitInputHandler.hh"
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "graphics/GraphicsManager.hh"
@@ -63,7 +63,7 @@ namespace sp {
         }
     }
 
-    void destroyGraphicsCallback(StrayPhotons ctx) {
+    void destroyGraphicsCallback(sp_game_t ctx) {
         if (ctx != nullptr) {
 #ifdef SP_XR_SUPPORT
             ctx->game.xr.reset();
@@ -103,11 +103,10 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-    std::shared_ptr<std::remove_pointer_t<sp::StrayPhotons>> instance(sp::game_init(ARGC_NAME, ARGV_NAME),
-        [](sp::StrayPhotons ctx) {
-            sp::GameInstance = nullptr;
-            sp::game_destroy(ctx);
-        });
+    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t ctx) {
+        sp::GameInstance = nullptr;
+        sp_game_destroy(ctx);
+    });
 
     sp::CGameContext *ctx = instance.get();
     sp::GameInstance = &ctx->game;
@@ -117,7 +116,7 @@ int main(int argc, char **argv)
         auto &game = ctx->game;
 
         bool withValidationLayers = game.options.count("with-validation-layers");
-        game.graphics->context = make_shared<vulkan::DeviceContext>(game, withValidationLayers);
+        game.graphics.context = make_shared<vulkan::DeviceContext>(game, withValidationLayers);
         ctx->inputHandler = new WinitInputHandler(ctx);
 
 #ifdef SP_XR_SUPPORT
@@ -127,9 +126,9 @@ int main(int argc, char **argv)
         }
 #endif
 
-        sp::game_set_shutdown_callback(ctx, &sp::destroyGraphicsCallback);
+        sp_game_set_shutdown_callback(ctx, &sp::destroyGraphicsCallback);
 
-        int status_code = sp::game_start(ctx);
+        int status_code = sp_game_start(ctx);
         if (status_code) return status_code;
 
         if (!game.options.count("headless")) {

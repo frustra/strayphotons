@@ -31,6 +31,7 @@ function(add_module_configuration)
 
     target_link_libraries(${ARG_NAME} PRIVATE
         ${PROJECT_COMMON_EXE}
+        ${PROJECT_COMMON_LIB}
         ${ARG_LINK_LIBRARIES}
     )
 

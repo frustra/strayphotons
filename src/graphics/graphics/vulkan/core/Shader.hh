@@ -8,8 +8,8 @@
 #pragma once
 
 #include "SPIRV-Reflect/spirv_reflect.h"
-#include "core/EnumTypes.hh"
-#include "core/Hashing.hh"
+#include "common/EnumTypes.hh"
+#include "common/Hashing.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {

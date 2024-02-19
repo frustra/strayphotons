@@ -6,9 +6,9 @@
  */
 
 #include "assets/JsonHelpers.hh"
+#include "common/Common.hh"
+#include "common/Tracing.hh"
 #include "console/Console.hh"
-#include "core/Common.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
@@ -202,7 +202,7 @@ namespace sp {
                 } else {
                     Logf("Signals containing '%s':", filterStr);
                 }
-                auto signals = ecs::GetSignalManager().GetSignals(filterStr);
+                auto signals = ecs::GetSignalManager()->GetSignals(filterStr);
                 for (auto &signal : signals) {
                     if (signal.HasValue(lock)) {
                         Logf("  %s = %.4f", signal.String(), signal.GetValue(lock));

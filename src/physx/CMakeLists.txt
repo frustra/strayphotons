@@ -16,17 +16,19 @@ target_include_directories(${PROJECT_PHYSICS_COOKING_LIB} PUBLIC
 )
 
 target_link_libraries(${PROJECT_PHYSICS_PHYSX_LIB}
+    PUBLIC
+        PhysX
     PRIVATE
+        ${PROJECT_COMMON_LIB}
         ${PROJECT_CORE_LIB}
         ${PROJECT_GAME_LIB}
         ${PROJECT_PHYSICS_COOKING_LIB}
-    PUBLIC
-        PhysX
         PhysXCharacterKinematic
         PhysXPvdSDK
 )
 target_link_libraries(${PROJECT_PHYSICS_COOKING_LIB}
-    PUBLIC
+    PRIVATE
+        ${PROJECT_COMMON_LIB}
         ${PROJECT_CORE_LIB}
         vhacd
         PhysXCooking

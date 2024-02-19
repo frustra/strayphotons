@@ -7,8 +7,8 @@
 
 #include "ScriptManager.hh"
 
+#include "common/Defer.hh"
 #include "console/CVar.hh"
-#include "core/Defer.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <shared_mutex>
@@ -23,7 +23,8 @@ namespace ecs {
         static ScriptManager *overrideValue = nullptr;
         if (override) overrideValue = override;
         if (overrideValue) return overrideValue;
-        return &MakeScriptManager();
+        // return &MakeScriptManager();
+        Abortf("Requested ScriptManager before it was set");
     }
 
     ScriptDefinitions &MakeScriptDefinitions() {
@@ -35,7 +36,8 @@ namespace ecs {
         static ScriptDefinitions *overrideValue = nullptr;
         if (override) overrideValue = override;
         if (overrideValue) return overrideValue;
-        return &MakeScriptDefinitions();
+        // return &MakeScriptDefinitions();
+        Abortf("Requested ScriptDefinitions before it was set");
     }
 
     static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",

@@ -8,9 +8,9 @@
 #pragma once
 
 #include "Ecs.hh"
-#include "core/Common.hh"
-#include "core/DispatchQueue.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Logging.hh"
 #include "ecs/EntityReferenceManager.hh"
 
 // Components

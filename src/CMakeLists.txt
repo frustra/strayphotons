@@ -5,8 +5,8 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
+set(PROJECT_COMMON_LIB ${PROJECT_BASE_NAME}-common CACHE INTERNAL "Library containing common unitility functions")
 set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
-
 set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implementing game engine ECS systems")
 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
@@ -31,7 +31,10 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 add_library(sp SHARED
-    StrayPhotons.cc
+    exports/Entity.cc
+    exports/Game.cc
+    exports/Input.cc
+    exports/Signals.cc
 )
 
 target_compile_definitions(sp PUBLIC SP_SHARED_BUILD)
@@ -42,7 +45,9 @@ target_include_directories(sp
         ${PROJECT_ROOT_DIR}/include
 )
 target_link_libraries(sp PRIVATE
+    ${PROJECT_COMMON_LIB}
     ${PROJECT_GAME_LIB}
+    ${PROJECT_GRAPHICS_CORE_LIB}
     ${PROJECT_SCRIPTS_LIB}
     cxxopts
 )
@@ -57,10 +62,11 @@ add_module_configuration(
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
         sp
-        # ${PROJECT_GAME_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB}
-        # "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
-        # ${PROJECT_PHYSICS_PHYSX_LIB}
+        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+        ${PROJECT_PHYSICS_PHYSX_LIB}
         # ${PROJECT_XR_OPENVR_LIB}
 )
 
@@ -87,11 +93,13 @@ add_module_configuration(
     NAME sp-test
     LINK_LIBRARIES
         sp
+        ${PROJECT_CORE_LIB}
         ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
+add_subdirectory(common)
 add_subdirectory(core)
 
 # target_precompile_headers(sp REUSE_FROM ${PROJECT_CORE_LIB})

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/EnumTypes.hh"
+#include "common/Common.hh"
+#include "common/EnumTypes.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"

@@ -15,7 +15,7 @@ extern "C" {
 #include "assets/Gltf.hh"
 #include "assets/Image.hh"
 #include "assets/PhysicsInfo.hh"
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
@@ -52,7 +52,8 @@ namespace sp {
         static AssetManager *overrideValue = nullptr;
         if (override) overrideValue = override;
         if (overrideValue) return overrideValue;
-        return &MakeAssetsManager();
+        // return &MakeAssetsManager();
+        Abortf("Requested AssetManager before it was set");
     }
 
     const char *ASSETS_DIR = "../assets/";

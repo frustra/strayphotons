@@ -8,7 +8,7 @@
 #include "EditorSystem.hh"
 
 #include "console/Console.hh"
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 #include "game/SceneManager.hh"

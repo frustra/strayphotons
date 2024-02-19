@@ -7,7 +7,7 @@
 
 #include "LockFreeMutex.hh"
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 
 #include <thread>
 

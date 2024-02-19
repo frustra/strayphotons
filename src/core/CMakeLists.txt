@@ -11,16 +11,18 @@ target_include_directories(${PROJECT_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
-    glm
-    magic_enum
-    microtar
-    murmurhash
-    picojson
-    robin_hood
-    Tecs
-    tinygltf
-    TracyClient
+target_link_libraries(${PROJECT_CORE_LIB}
+    PUBLIC
+        ${PROJECT_COMMON_LIB}
+        Tecs
+        glm
+        picojson
+        magic_enum
+        robin_hood
+        tinygltf
+    PRIVATE
+        microtar
+        murmurhash
 )
 
 if(WIN32)
@@ -54,6 +56,5 @@ endif()
 
 add_subdirectory(assets)
 add_subdirectory(console)
-add_subdirectory(core)
 add_subdirectory(ecs)
 add_subdirectory(game)

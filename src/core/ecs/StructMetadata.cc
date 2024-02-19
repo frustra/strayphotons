@@ -8,7 +8,7 @@
 #include "StructMetadata.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/StructFieldTypes.hh"
 
 #include <cstring>

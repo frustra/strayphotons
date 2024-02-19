@@ -7,9 +7,9 @@
 
 #include "GraphicsManager.hh"
 
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "console/CVar.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/gui/DebugGuiManager.hh"
@@ -48,7 +48,8 @@ namespace sp {
 
     void GraphicsManager::Init() {
         ZoneScoped;
-        Assert(!context, "already have a graphics context");
+        Assert(!initialized, "GraphicsManager initialized twice");
+        initialized = true;
 
         if (options.count("size")) {
             std::istringstream ss(options["size"].as<string>());

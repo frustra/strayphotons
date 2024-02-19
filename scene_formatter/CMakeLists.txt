@@ -10,6 +10,7 @@ add_executable(scene_formatter
 )
 
 target_link_libraries(scene_formatter
+    ${PROJECT_COMMON_LIB}
     ${PROJECT_CORE_LIB}
     ${PROJECT_GAME_LIB}
     ${PROJECT_SCRIPTS_LIB}

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/EnumTypes.hh"
+#include "common/EnumTypes.hh"
 #include "ecs/Components.hh"
 
 #include <glm/glm.hpp>
