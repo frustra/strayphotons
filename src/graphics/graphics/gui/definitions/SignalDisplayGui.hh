@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "ecs/EntityRef.hh"
 #include "graphics/gui/GuiContext.hh"
+
+#include <strayphotons.h>
 
 namespace sp {
     class SignalDisplayGui : public GuiWindow {

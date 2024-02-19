@@ -29,11 +29,7 @@ target_link_libraries(${PROJECT_MAIN_WINIT_LIB} PUBLIC
     cxxopts
 )
 
-target_precompile_headers(${PROJECT_MAIN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_MAIN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(glfw)
 add_subdirectory(winit)
-
-add_module_sources(
-    Game.cc
-)

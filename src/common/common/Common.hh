@@ -72,9 +72,15 @@ namespace sp {
 
     class NonCopyable {
     public:
-        NonCopyable &operator=(const NonCopyable &) = delete;
-        NonCopyable(const NonCopyable &) = delete;
         NonCopyable() = default;
+        NonCopyable(const NonCopyable &) = delete;
+        NonCopyable &operator=(const NonCopyable &) = delete;
+    };
+
+    class Singleton : public NonCopyable {
+    public:
+        Singleton(Singleton &&) = delete;
+        Singleton &operator=(Singleton &&) = delete;
     };
 
     typedef std::array<uint64, 2> Hash128;

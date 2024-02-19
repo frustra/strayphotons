@@ -63,8 +63,7 @@ namespace sp {
 
         std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
         std::shared_ptr<GraphicsManager> graphics;
-        void (*graphicsInitCallback)(CGameContext *) = nullptr;
-        void (*graphicsDestroyCallback)(CGameContext *) = nullptr;
+        void (*shutdownCallback)(CGameContext *) = nullptr;
 
         std::shared_ptr<PhysxManager> physics;
         std::shared_ptr<xr::XrManager> xr;

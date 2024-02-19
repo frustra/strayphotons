@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Ecs.hh"
+#include "core/Common.hh"
 #include "core/DispatchQueue.hh"
 #include "core/Logging.hh"
 #include "ecs/EntityReferenceManager.hh"
@@ -44,7 +45,7 @@
 #include "ecs/components/XRView.hh"
 
 namespace ecs {
-    struct ECSContext {
+    struct ECSContext : public sp::Singleton {
         sp::LogOnExit logOnExit = "ECS shut down =========================================================";
         ECS live;
         ECS staging;

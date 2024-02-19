@@ -7,6 +7,7 @@
 
 target_sources(${PROJECT_GAME_LIB} PRIVATE
     CGameContext.cc
+    Game.cc
     GameEntities.cc
     GameLogic.cc
     Scene.cc

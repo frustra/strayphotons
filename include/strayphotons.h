@@ -38,12 +38,10 @@ typedef void AssetManager;
 typedef void SceneManager;
 #endif
 
-    // The following functions are declared in main/StrayPhotons.cc
+    // The following functions are declared in StrayPhotons.cc
 
     SP_EXPORT StrayPhotons game_init(int argc, char **argv);
-    SP_EXPORT void game_set_graphics_callbacks(StrayPhotons ctx,
-        void (*init)(StrayPhotons),
-        void (*destroy)(StrayPhotons));
+    SP_EXPORT void game_set_shutdown_callback(StrayPhotons ctx, void (*callback)(StrayPhotons));
     SP_EXPORT int game_start(StrayPhotons ctx);
     SP_EXPORT void game_destroy(StrayPhotons ctx);
 

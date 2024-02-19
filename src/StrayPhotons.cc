@@ -36,13 +36,9 @@ namespace sp {
                 ("r,run", "Load commands from a file an execute them in the console", value<string>())
                 ("s,scene", "Initial scene to load", value<string>())
                 ("size", "Initial window size", value<string>())
-#ifdef SP_XR_SUPPORT
                 ("no-vr", "Disable automatic XR/VR system loading")
-#endif
-#ifdef SP_GRAPHICS_SUPPORT
                 ("headless", "Disable window creation and graphics initialization")
                 ("with-validation-layers", "Enable Vulkan validation layers")
-#endif
                 ("c,command", "Run a console command on init", value<vector<string>>());
             // clang-format on
 
@@ -67,12 +63,9 @@ namespace sp {
 #endif
     }
 
-    SP_EXPORT void game_set_graphics_callbacks(StrayPhotons ctx,
-        void (*init)(StrayPhotons),
-        void (*destroy)(StrayPhotons)) {
-        Assertf(ctx != nullptr, "sp::game_start called with null ctx");
-        ctx->game.graphicsInitCallback = init;
-        ctx->game.graphicsDestroyCallback = destroy;
+    SP_EXPORT void game_set_shutdown_callback(StrayPhotons ctx, void (*callback)(StrayPhotons)) {
+        Assertf(ctx != nullptr, "sp::game_set_shutdown_callback called with null ctx");
+        ctx->game.shutdownCallback = callback;
     }
 
     SP_EXPORT int game_start(StrayPhotons ctx) {

@@ -10,6 +10,5 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     AssetManager.cc
     ConsoleScript.cc
     Gltf.cc
-    Image.cc
     PhysicsInfo.cc
 )

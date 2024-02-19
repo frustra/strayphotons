@@ -63,21 +63,6 @@ namespace sp {
         }
     }
 
-    void initGraphicsCallback(StrayPhotons ctx) {
-        if (ctx != nullptr) {
-            bool withValidationLayers = ctx->game.options.count("with-validation-layers");
-            ctx->game.graphics->context = make_shared<vulkan::DeviceContext>(ctx->game, withValidationLayers);
-            ctx->inputHandler = new WinitInputHandler(ctx);
-
-#ifdef SP_XR_SUPPORT
-            if (!ctx->game.options.count("no-vr")) {
-                ctx->game.xr = make_shared<xr::XrManager>(&ctx->game);
-                ctx->game.xr->LoadXrSystem();
-            }
-#endif
-        }
-    }
-
     void destroyGraphicsCallback(StrayPhotons ctx) {
         if (ctx != nullptr) {
 #ifdef SP_XR_SUPPORT
@@ -127,14 +112,25 @@ int main(int argc, char **argv)
     sp::CGameContext *ctx = instance.get();
     sp::GameInstance = &ctx->game;
 
-    sp::game_set_graphics_callbacks(ctx, &sp::initGraphicsCallback, &sp::destroyGraphicsCallback);
-
-    int status_code = sp::game_start(ctx);
-    if (status_code) return status_code;
-
     {
         using namespace sp;
         auto &game = ctx->game;
+
+        bool withValidationLayers = game.options.count("with-validation-layers");
+        game.graphics->context = make_shared<vulkan::DeviceContext>(game, withValidationLayers);
+        ctx->inputHandler = new WinitInputHandler(ctx);
+
+#ifdef SP_XR_SUPPORT
+        if (!game.options.count("no-vr")) {
+            game.xr = make_shared<xr::XrManager>(&game);
+            game.xr->LoadXrSystem();
+        }
+#endif
+
+        sp::game_set_shutdown_callback(ctx, &sp::destroyGraphicsCallback);
+
+        int status_code = sp::game_start(ctx);
+        if (status_code) return status_code;
 
         if (!game.options.count("headless")) {
             Assertf(ctx->inputHandler != nullptr, "WinitInputHandler is null");

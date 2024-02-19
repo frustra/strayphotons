@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Common.hh"
+#include "common/Common.hh"
 
 namespace sp {
     template<size_t BucketCount>

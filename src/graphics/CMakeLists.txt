@@ -32,8 +32,9 @@ target_include_directories(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PRIVATE
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB}
     PUBLIC
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_GAME_LIB}
+        # ${PROJECT_CORE_LIB}
+        # ${PROJECT_GAME_LIB}
+        sp
         ImGui
     PRIVATE
         cxxopts
@@ -65,7 +66,7 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB}
     PUBLIC
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
-        ${PROJECT_XR_CORE_LIB}
+        # ${PROJECT_XR_CORE_LIB}
         glfw
     PRIVATE
         cxxopts
@@ -101,11 +102,11 @@ target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT_GLFW
 )
 
-target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(graphics)

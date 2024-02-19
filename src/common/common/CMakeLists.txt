@@ -19,6 +19,6 @@ if(TRACY_ENABLE)
     )
 endif()
 
-target_precompile_headers(${PROJECT_CORE_LIB} PRIVATE
-   Common.hh
-)
+# target_precompile_headers(${PROJECT_CORE_LIB} PRIVATE
+#    Common.hh
+# )

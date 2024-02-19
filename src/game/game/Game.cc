@@ -19,19 +19,6 @@
 #include "game/CGameContext.hh"
 #include "game/SceneManager.hh"
 
-#ifdef SP_GRAPHICS_SUPPORT
-    #include "graphics/GraphicsManager.hh"
-    #include "graphics/core/GraphicsContext.hh"
-#endif
-
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-    #include "physx/PhysxManager.hh"
-#endif
-
-#ifdef SP_AUDIO_SUPPORT
-    #include "audio/AudioManager.hh"
-#endif
-
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -50,34 +37,6 @@ namespace sp {
             this->exitTriggered.test_and_set();
             this->exitTriggered.notify_all();
         });
-#ifdef SP_GRAPHICS_SUPPORT
-        if (!options.count("headless")) {
-            graphics = make_shared<GraphicsManager>(options);
-        }
-#endif
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        physics = make_shared<PhysxManager>(inputEventQueue);
-#endif
-#ifdef SP_AUDIO_SUPPORT
-        audio = make_shared<AudioManager>();
-#endif
-    }
-
-    Game::~Game() {
-        if (graphicsDestroyCallback) graphicsDestroyCallback(&gameContext);
-#ifdef SP_GRAPHICS_SUPPORT
-        if (graphics) graphics->StopThread();
-#endif
-    }
-
-    Game::ShutdownManagers::~ShutdownManagers() {
-        GetConsoleManager()->Shutdown();
-        GetSceneManager()->Shutdown();
-        Assets()->Shutdown();
-    }
-
-    int Game::Start() {
-        tracy::SetThreadName("Main");
 
         Debugf("Bytes of memory used per entity: %u", ecs::World().GetBytesPerEntity());
 
@@ -92,28 +51,30 @@ namespace sp {
             lock.Set<ecs::Signals>();
         }
 
-        GetConsoleManager()->StartInputLoop();
-
-#ifdef SP_RUST_WASM_SUPPORT
-        sp::wasm::print_hello();
-#endif
-
         if (options.count("command")) {
             for (auto &cmdline : options["command"].as<vector<string>>()) {
                 GetConsoleManager()->ParseAndExecute(cmdline);
             }
         }
+    }
 
-        bool scriptMode = options.count("run") > 0;
+    Game::~Game() {
+        if (shutdownCallback) shutdownCallback(&gameContext);
+    }
 
-#ifdef SP_GRAPHICS_SUPPORT
-        if (graphics) graphics->Init();
-#endif
+    Game::ShutdownManagers::~ShutdownManagers() {
+        GetConsoleManager()->Shutdown();
+        GetSceneManager()->Shutdown();
+        Assets()->Shutdown();
+    }
 
-        if (graphicsInitCallback) graphicsInitCallback(&gameContext);
+    int Game::Start() {
+        tracy::SetThreadName("Main");
 
-#ifdef SP_GRAPHICS_SUPPORT
-        if (graphics) graphics->StartThread(scriptMode);
+        GetConsoleManager()->StartInputLoop();
+
+#ifdef SP_RUST_WASM_SUPPORT
+        sp::wasm::print_hello();
 #endif
 
         auto *scenes = GetSceneManager();
@@ -122,6 +83,7 @@ namespace sp {
         scenes->QueueAction(SceneAction::ReloadPlayer);
         scenes->QueueAction(SceneAction::ReloadBindings);
 
+        bool scriptMode = options.count("run") > 0;
         if (scriptMode) {
             string scriptPath = options["run"].as<string>();
 
@@ -157,9 +119,6 @@ namespace sp {
         }
 
         logic.StartThread(scriptMode);
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        physics->StartThread(scriptMode);
-#endif
 
         return exitCode;
     }

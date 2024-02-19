@@ -7,11 +7,9 @@
 
 #pragma once
 
-#include "ecs/Ecs.hh"
-#include "ecs/EntityRef.hh"
-
 #include <glm/glm.hpp>
 #include <memory>
+#include <strayphotons.h>
 #include <vector>
 
 struct ImGuiContext;

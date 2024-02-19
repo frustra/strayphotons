@@ -31,8 +31,7 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 add_library(sp SHARED
-    main/StrayPhotons.cc
-    main/Game.cc
+    StrayPhotons.cc
 )
 
 target_compile_definitions(sp PUBLIC SP_SHARED_BUILD)
@@ -44,9 +43,6 @@ target_include_directories(sp
 )
 target_link_libraries(sp PRIVATE
     ${PROJECT_GAME_LIB}
-    ${PROJECT_GRAPHICS_CORE_LIB}
-    "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
-    ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}
     cxxopts
 )
@@ -61,9 +57,11 @@ add_module_configuration(
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
         sp
-        ${PROJECT_GAME_LIB}
+        # ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB}
-        ${PROJECT_XR_OPENVR_LIB}
+        # "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+        # ${PROJECT_PHYSICS_PHYSX_LIB}
+        # ${PROJECT_XR_OPENVR_LIB}
 )
 
 if(SP_BUILD_RUST)
@@ -78,6 +76,8 @@ if(SP_BUILD_RUST)
         sp
         ${PROJECT_MAIN_WINIT_LIB}
         ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
+        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+        ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_XR_OPENVR_LIB}
     )
 endif()
@@ -89,13 +89,14 @@ add_module_configuration(
         sp
         ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
 add_subdirectory(core)
 
-target_precompile_headers(sp REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(sp REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(sp-vk REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(sp-test REUSE_FROM ${PROJECT_CORE_LIB})
 
 
 if(WIN32)

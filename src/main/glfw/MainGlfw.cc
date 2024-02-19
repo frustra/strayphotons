@@ -40,6 +40,19 @@ struct OnStart {
 #include "graphics/GraphicsManager.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#ifdef SP_GRAPHICS_SUPPORT
+    #include "graphics/GraphicsManager.hh"
+    #include "graphics/core/GraphicsContext.hh"
+#endif
+
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #include "physx/PhysxManager.hh"
+#endif
+
+#ifdef SP_AUDIO_SUPPORT
+    #include "audio/AudioManager.hh"
+#endif
+
 #ifdef SP_XR_SUPPORT
     #include "xr/XrManager.hh"
 #endif
@@ -63,27 +76,9 @@ namespace sp {
         }
     }
 
-    void initGraphicsCallback(StrayPhotons ctx) {
-        if (ctx != nullptr) {
-            bool withValidationLayers = ctx->game.options.count("with-validation-layers");
-            ctx->game.graphics->context = make_shared<vulkan::DeviceContext>(ctx->game, withValidationLayers);
-            ctx->inputHandler = new GlfwInputHandler(ctx);
-
-#ifdef SP_XR_SUPPORT
-            if (!ctx->game.options.count("no-vr")) {
-                ctx->game.xr = make_shared<xr::XrManager>(&ctx->game);
-                ctx->game.xr->LoadXrSystem();
-            }
-#endif
-        }
-    }
-
     void destroyGraphicsCallback(StrayPhotons ctx) {
         if (ctx != nullptr) {
-#ifdef SP_XR_SUPPORT
             ctx->game.xr.reset();
-#endif
-
             if (ctx->inputHandler) {
                 GlfwInputHandler *handler = (GlfwInputHandler *)ctx->inputHandler;
                 delete handler;
@@ -127,17 +122,52 @@ int main(int argc, char **argv)
     sp::CGameContext *ctx = instance.get();
     sp::GameInstance = &ctx->game;
 
-    sp::game_set_graphics_callbacks(ctx, &sp::initGraphicsCallback, &sp::destroyGraphicsCallback);
-
-    int status_code = sp::game_start(ctx);
-    if (status_code) return status_code;
-
     {
         using namespace sp;
         auto &game = ctx->game;
 
+#ifdef SP_GRAPHICS_SUPPORT
         if (!game.options.count("headless")) {
-            bool scriptMode = game.options.count("run");
+            game.graphics = make_shared<GraphicsManager>(game.options);
+        }
+#endif
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+        game.physics = make_shared<PhysxManager>(game.inputEventQueue);
+#endif
+#ifdef SP_AUDIO_SUPPORT
+        game.audio = make_shared<AudioManager>();
+#endif
+
+#ifdef SP_GRAPHICS_SUPPORT
+        if (game.graphics) game.graphics->Init();
+#endif
+
+        bool withValidationLayers = game.options.count("with-validation-layers");
+        game.graphics->context = make_shared<vulkan::DeviceContext>(game, withValidationLayers);
+        ctx->inputHandler = new GlfwInputHandler(ctx);
+
+#ifdef SP_XR_SUPPORT
+        if (!game.options.count("no-vr")) {
+            game.xr = make_shared<xr::XrManager>(&game);
+            game.xr->LoadXrSystem();
+        }
+#endif
+
+        sp::game_set_shutdown_callback(ctx, &sp::destroyGraphicsCallback);
+
+        bool scriptMode = game.options.count("run") > 0;
+#ifdef SP_GRAPHICS_SUPPORT
+        if (game.graphics) game.graphics->StartThread(scriptMode);
+#endif
+
+        int status_code = sp::game_start(ctx);
+        if (status_code) return status_code;
+
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+        game.physics->StartThread(scriptMode);
+#endif
+
+        if (!game.options.count("headless")) {
             if (scriptMode) {
                 game.funcs.Register<unsigned int>("stepgraphics",
                     "Renders N frames in a row, saving any queued screenshots, default is 1",
