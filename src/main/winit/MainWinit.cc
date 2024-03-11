@@ -12,24 +12,22 @@
 #include <iostream>
 using namespace std;
 
-#include "assets/AssetManager.hh"
-#include "console/Console.hh"
-#include "ecs/Ecs.hh"
-#include "ecs/ScriptManager.hh"
-#include "game/CGameContext.hh"
-#include "game/SceneManager.hh"
+// #include "assets/AssetManager.hh"
+// #include "console/Console.hh"
+// #include "ecs/Ecs.hh"
+// #include "ecs/ScriptManager.hh"
+// #include "game/CGameContext.hh"
+// #include "game/SceneManager.hh"
 
 #include <strayphotons.h>
 
 struct OnStart {
     OnStart() {
-        sp::GetConsoleManager(sp::game_get_console_manager());
-        ecs::GetECSContext(sp::game_get_ecs_context());
-        ecs::GetScriptManager(sp::game_get_script_manager());
-        ecs::GetScriptDefinitions(sp::game_get_script_definitons());
-        sp::Assets(sp::game_get_asset_manager());
-        sp::GetSceneManager(sp::game_get_scene_manager());
-        sp::RegisterDebugCFuncs();
+        // ecs::GetECSContext(sp::game_get_ecs_context());
+        // ecs::GetScriptManager(sp::game_get_script_manager());
+        // ecs::GetScriptDefinitions(sp::game_get_script_definitons());
+        // sp::Assets(sp::game_get_asset_manager());
+        // sp::GetSceneManager(sp::game_get_scene_manager());
     }
 } onStart;
 

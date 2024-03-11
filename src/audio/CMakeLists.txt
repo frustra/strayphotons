@@ -11,14 +11,16 @@ target_include_directories(${PROJECT_AUDIO_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_AUDIO_LIB} PUBLIC
-    ${PROJECT_COMMON_LIB}
-    ${PROJECT_CORE_LIB}
-    # ${PROJECT_GAME_LIB}
-    libsoundio_static
-    ${LIBSOUNDIO_LIBS}
-    ResonanceAudioStatic
-    libnyquist
+target_link_libraries(${PROJECT_AUDIO_LIB}
+    PRIVATE
+        sp
+        ${PROJECT_COMMON_LIB}
+        # ${PROJECT_CORE_LIB}
+        # ${PROJECT_GAME_LIB}
+        libsoundio_static
+        ${LIBSOUNDIO_LIBS}
+        ResonanceAudioStatic
+        libnyquist
 )
 
 target_compile_definitions(${PROJECT_AUDIO_LIB} PUBLIC

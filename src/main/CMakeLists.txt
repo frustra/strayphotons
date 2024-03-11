@@ -18,12 +18,11 @@ target_include_directories(${PROJECT_MAIN_WINIT_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE
-        ${PROJECT_ROOT_DIR}/include
+        ${PROJECT_ROOT_DIR}/shared/include
 )
 
 target_link_libraries(${PROJECT_MAIN_WINIT_LIB} PUBLIC
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GAME_LIB}
+    ${PROJECT_LIB_NAME}
     ${PROJECT_GRAPHICS_CORE_LIB}
     sp-rs-winit
     cxxopts

@@ -115,6 +115,9 @@ set(PROJECT_INSTALL sp)
 # Root name for all libraries that will be part of this project
 set(PROJECT_BASE_NAME strayphotons)
 
+# Output shared library name (lib<name>.so / <name>.dll)
+set(PROJECT_LIB_NAME sp)
+
 # Interface library that is applied to all module configurations
 set(PROJECT_COMMON_EXE ${PROJECT_BASE_NAME})
 add_library(${PROJECT_COMMON_EXE} INTERFACE)
@@ -152,6 +155,7 @@ endif()
 cmake_policy(SET CMP0076 NEW)
 
 add_subdirectory(shaders)
+add_subdirectory(shared)
 add_subdirectory(src)
 add_subdirectory(docs_generator)
 add_subdirectory(hull_compiler)

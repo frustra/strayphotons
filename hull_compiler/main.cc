@@ -38,14 +38,14 @@ int main(int argc, char **argv) {
 
     sp::logging::SetLogLevel(sp::logging::Level::Warn);
 
-    auto modelPtr = sp::Assets(&sp::MakeAssetsManager())->LoadGltf(modelName);
+    auto modelPtr = sp::Assets().LoadGltf(modelName);
     auto model = modelPtr->Get();
     if (!model) {
         Errorf("hull_compiler could not load Gltf model: %s", modelName);
         return 1;
     }
 
-    auto physicsInfo = sp::Assets()->LoadPhysicsInfo(modelName)->Get();
+    auto physicsInfo = sp::Assets().LoadPhysicsInfo(modelName)->Get();
 
     physx::PxDefaultErrorCallback defaultErrorCallback;
     physx::PxDefaultAllocator defaultAllocatorCallback;
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
     bool updated = false;
     if (physicsInfo) {
         for (auto &[meshName, settings] : physicsInfo->GetHulls()) {
-            auto settingsPtr = sp::Assets()->LoadHullSettings(modelName, meshName);
+            auto settingsPtr = sp::Assets().LoadHullSettings(modelName, meshName);
 
             auto set = sp::hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
             if (set) continue;
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     for (size_t i = 0; i < model->meshes.size(); i++) {
         std::string meshName("convex" + std::to_string(i));
-        auto settingsPtr = sp::Assets()->LoadHullSettings(modelName, meshName);
+        auto settingsPtr = sp::Assets().LoadHullSettings(modelName, meshName);
 
         auto set = sp::hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
         if (set) continue;

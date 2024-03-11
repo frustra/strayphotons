@@ -45,8 +45,8 @@ namespace sp::xr {
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
-        GetSceneManager()->QueueActionAndBlock(SceneAction::RemoveScene, "vr");
-        GetSceneManager()->QueueActionAndBlock(SceneAction::RemoveScene, "vr_system");
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr");
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_system");
         loaded.clear();
         vrSystem.reset();
     }
@@ -86,7 +86,7 @@ namespace sp::xr {
 
         RegisterModels();
 
-        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "vr_system",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto vrOrigin = scene->NewSystemEntity(lock, scene, vrOriginEntity.Name());
@@ -127,7 +127,7 @@ namespace sp::xr {
                 }
             });
 
-        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene, "vr");
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene, "vr");
 
         return true;
     }
@@ -239,7 +239,7 @@ namespace sp::xr {
         }
         if (missingEntities) {
             ZoneScopedN("OpenVrSystem::AddMissingEntities");
-            GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
+            GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
                 "vr_system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto *entityRef : trackedDevices) {
@@ -272,7 +272,7 @@ namespace sp::xr {
             "rendermodels/vr_glove/",
             modelPathStr.data(),
             modelPathStr.size());
-        Assets()->RegisterExternalGltf("vr_glove_left", modelPathStr.data());
+        Assets().RegisterExternalGltf("vr_glove_left", modelPathStr.data());
 
         modelPathLen = vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb",
             "rendermodels/vr_glove/",
@@ -283,6 +283,6 @@ namespace sp::xr {
             "rendermodels/vr_glove/",
             modelPathStr.data(),
             modelPathStr.size());
-        Assets()->RegisterExternalGltf("vr_glove_right", modelPathStr.data());
+        Assets().RegisterExternalGltf("vr_glove_right", modelPathStr.data());
     }
 } // namespace sp::xr

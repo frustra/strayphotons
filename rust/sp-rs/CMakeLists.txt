@@ -92,12 +92,12 @@ target_include_directories(sp-rs-winit
 # Adding dependencies here will automatically setup include directories for Rust
 target_link_libraries(sp-rs-wasm INTERFACE
     "${CXXBRIDGE_WASM_DIR}/${RUST_OUTPUT_LIB}"
-    ${PROJECT_CORE_LIB}
+    # ${PROJECT_CORE_LIB}
     Tecs
 )
 target_link_libraries(sp-rs-winit INTERFACE
     "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
-    ${PROJECT_CORE_LIB}
+    # ${PROJECT_CORE_LIB}
     ${PROJECT_MAIN_WINIT_LIB}
     Tecs
 )

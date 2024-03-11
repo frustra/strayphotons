@@ -7,10 +7,6 @@
 
 #pragma once
 
-#include "common/LockFreeEventQueue.hh"
-#include "ecs/Ecs.hh"
-#include "ecs/EventQueue.hh"
-
 #include <glm/glm.hpp>
 #include <strayphotons.h>
 
@@ -19,7 +15,7 @@ struct GLFWwindow;
 namespace sp {
     class GlfwInputHandler {
     public:
-        GlfwInputHandler(sp_game_t ctx);
+        GlfwInputHandler(sp_game_t game, GLFWwindow *window);
         ~GlfwInputHandler();
 
         static void Frame();
@@ -32,11 +28,11 @@ namespace sp {
         static void MouseEnterCallback(GLFWwindow *window, int entered);
 
     private:
-        sp_game_t ctx;
+        sp_game_t game;
         GLFWwindow *window = nullptr;
 
         int prevMouseMode = -1;
         glm::vec2 prevMousePos = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
-        ecs::Entity mouse, keyboard;
+        sp_entity_t mouse, keyboard;
     };
 } // namespace sp

@@ -34,7 +34,7 @@ namespace sp::xr {
         vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(actionManifestPath.c_str());
         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
 
-        auto actionManifest = Assets()->Load(actionManifestPath, AssetType::External, true)->Get();
+        auto actionManifest = Assets().Load(actionManifestPath, AssetType::External, true)->Get();
         Assertf(actionManifest, "Failed to load vr action manifest: %s", actionManifestPath);
 
         picojson::value root;
@@ -107,7 +107,7 @@ namespace sp::xr {
             }
         }
 
-        GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "vr_input",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 for (auto &actionSet : actionSets) {
@@ -127,7 +127,7 @@ namespace sp::xr {
     }
 
     InputBindings::~InputBindings() {
-        GetSceneManager()->QueueActionAndBlock(SceneAction::RemoveScene, "vr_input");
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_input");
     }
 
     void InputBindings::Frame() {
@@ -440,7 +440,7 @@ namespace sp::xr {
 
         if (missingEntities) {
             ZoneScopedN("InputBindings::AddMissingEntities");
-            GetSceneManager()->QueueActionAndBlock(SceneAction::ApplySystemScene,
+            GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
                 "vr_input",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto &actionSet : actionSets) {
