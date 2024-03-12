@@ -100,31 +100,16 @@ SP_EXPORT cxxopts::ParseResult *sp_game_get_options(sp_game_t game) {
     return &game->game.options;
 }
 
-SP_EXPORT void sp_game_set_graphics_manager(sp_game_t game,
-    GraphicsManager *manager,
-    void (*destroy_callback)(GraphicsManager *)) {
-    Assertf(game != nullptr, "sp_game_set_shutdown_callback called with null game");
-    if (manager) {
-        game->game.graphics = std::shared_ptr<GraphicsManager>(manager, destroy_callback);
-    } else {
-        game->game.graphics.reset();
-    }
-}
-
-SP_EXPORT GraphicsManager *sp_game_get_graphics_manager(sp_game_t game) {
-    Assertf(game != nullptr, "sp_game_get_graphics_manager called with null game");
-    return game->game.graphics.get();
-}
-
-SP_EXPORT void sp_game_set_input_handler(sp_game_t game, void *handler, void (*destroy_callback)(void *)) {
-    Assertf(game != nullptr, "sp_game_set_input_handler called with null game");
+SP_EXPORT void sp_game_set_input_handler(sp_game_t ctx, void *handler, void (*destroy_callback)(void *)) {
+    Assertf(ctx != nullptr, "sp_game_set_input_handler called with null ctx");
     if (handler) {
-        game->inputHandler = std::shared_ptr<void>(handler, destroy_callback);
+        ctx->inputHandler = std::shared_ptr<void>(handler, destroy_callback);
     } else {
-        game->inputHandler.reset();
+        ctx->inputHandler.reset();
     }
 }
-SP_EXPORT void *sp_game_get_input_handler(sp_game_t game) {
-    Assertf(game != nullptr, "sp_game_get_input_handler called with null game");
-    return game->inputHandler.get();
+
+SP_EXPORT void *sp_game_get_input_handler(sp_game_t ctx) {
+    Assertf(ctx != nullptr, "sp_game_get_input_handler called with null ctx");
+    return ctx->inputHandler.get();
 }

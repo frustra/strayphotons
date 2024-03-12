@@ -17,12 +17,20 @@
 #include <strayphotons.h>
 #include <vector>
 
+struct GLFWwindow;
+struct VkInstance_T;
+struct VkSurfaceKHR_T;
+
 namespace sp::vulkan {
     class Renderer;
 }
 
+namespace sp::winit {
+    struct WinitContext;
+}
+
 namespace sp {
-    struct CGameContext;
+    class Game;
     class GraphicsContext;
     class DebugGuiManager;
     class MenuGuiManager;
@@ -31,7 +39,7 @@ namespace sp {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:
-        GraphicsManager(CGameContext &game);
+        GraphicsManager(Game &game);
         ~GraphicsManager();
 
         operator bool() const {
@@ -44,6 +52,14 @@ namespace sp {
         bool HasActiveContext();
         bool InputFrame();
 
+        // Note: deconstruction order for the below fields is important.
+
+        std::shared_ptr<VkInstance_T> vkInstance;
+        std::shared_ptr<VkSurfaceKHR_T> vkSurface;
+
+        std::shared_ptr<GLFWwindow> glfwWindow;
+        std::shared_ptr<sp::winit::WinitContext> winitContext;
+
         std::shared_ptr<GraphicsContext> context;
 
     private:
@@ -52,8 +68,7 @@ namespace sp {
         void PostFrame(bool stepMode) override;
         void Frame() override;
 
-        CGameContext &game;
-        ecs::ECS &world;
+        Game &game;
         ecs::Name flatviewName;
 
         chrono_clock::time_point renderStart;

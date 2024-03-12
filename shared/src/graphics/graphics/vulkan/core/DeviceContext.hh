@@ -23,12 +23,6 @@
 #include <robin_hood.h>
 #include <variant>
 
-struct GLFWwindow;
-
-namespace sp::winit {
-    struct WinitContext;
-}
-
 namespace tracy {
     class VkCtx;
 }
@@ -39,7 +33,8 @@ namespace ecs {
 
 namespace sp {
     class CFuncCollection;
-    struct CGameContext;
+    class Game;
+    class GraphicsManager;
 } // namespace sp
 
 namespace sp::vulkan {
@@ -55,7 +50,7 @@ namespace sp::vulkan {
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
-        DeviceContext(bool enableValidationLayers = false);
+        DeviceContext(GraphicsManager &graphics, bool enableValidationLayers = false);
         virtual ~DeviceContext();
 
         // Access the underlying Vulkan device via the arrow operator
@@ -88,7 +83,7 @@ namespace sp::vulkan {
             device->waitIdle();
         }
 
-        void InitRenderer(CGameContext &game) override;
+        void InitRenderer(Game &game) override;
         void RenderFrame(chrono_clock::duration elapsedTime) override;
 
         void SetDebugGui(DebugGuiManager *debugGui) override;
@@ -214,22 +209,12 @@ namespace sp::vulkan {
             return queueFamilyIndex[QueueType(type)];
         }
 
-        GLFWwindow *GetGlfwWindow() override {
-            return window;
-        }
-
-        winit::WinitContext *GetWinitContext() override {
-            return winitContext.get();
-        }
-
         void *Win32WindowHandle() override;
 
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 
-        static void DeleteAllocator(VmaAllocator allocator);
-
-        void FlushMainQueue() {
-            frameEndQueue.Flush(true);
+        void FlushMainQueue(bool blockUntilReady = true) {
+            frameEndQueue.Flush(blockUntilReady);
         }
 
         template<typename CallbackFn>
@@ -267,21 +252,22 @@ namespace sp::vulkan {
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
-        std::shared_ptr<sp::winit::WinitContext> winitContext;
-        std::shared_ptr<vulkan::Renderer> vkRenderer;
+        GraphicsManager &graphics;
 
         std::thread::id mainThread;
         std::thread::id renderThread;
+
         vk::Instance instance;
         DeferredFunc instanceDestroy;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
-        vk::SurfaceKHR surface;
-        DeferredFunc surfaceDestroy;
         vk::PhysicalDevice physicalDevice;
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
+        vk::SurfaceKHR surface;
+        DeferredFunc surfaceDestroy;
+
         unique_ptr<PerfTimer> perfTimer;
 
 #ifdef TRACY_ENABLE_GRAPHICS
@@ -393,7 +379,6 @@ namespace sp::vulkan {
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         std::unique_ptr<CFuncCollection> funcs;
-
-        GLFWwindow *window = nullptr;
+        std::shared_ptr<vulkan::Renderer> vkRenderer;
     };
 } // namespace sp::vulkan

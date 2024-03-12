@@ -28,9 +28,7 @@
 
 namespace sp {
     WinitInputHandler::WinitInputHandler(CGameContext *ctx) : ctx(ctx) {
-        GraphicsContext *gfxContext = ctx->game.graphics->context.get();
-        if (gfxContext) context = gfxContext->GetWinitContext();
-
+        context = ctx->game.graphics->winitContext;
         mouse = sp_new_input_device(ctx, "mouse");
         keyboard = sp_new_input_device(ctx, "keyboard");
     }

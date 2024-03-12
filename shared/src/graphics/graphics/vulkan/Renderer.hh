@@ -27,7 +27,7 @@
 
 namespace sp {
     class GuiContext;
-    struct CGameContext;
+    class Game;
 } // namespace sp
 
 namespace sp::xr {
@@ -42,7 +42,7 @@ namespace sp::vulkan {
 
     class Renderer {
     public:
-        Renderer(CGameContext &game, DeviceContext &context);
+        Renderer(Game &game, DeviceContext &context);
         ~Renderer();
 
         void RenderFrame(chrono_clock::duration elapsedTime);
@@ -52,7 +52,7 @@ namespace sp::vulkan {
         void SetMenuGui(GuiContext *gui);
 
     private:
-        CGameContext &game;
+        Game &game;
         DeviceContext &device;
         rg::RenderGraph graph;
 
@@ -94,6 +94,7 @@ namespace sp::vulkan {
         };
         vector<RenderableGui> guis;
         GuiContext *debugGui = nullptr, *menuGui = nullptr;
+        AsyncPtr<ImageView> logoTex;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 

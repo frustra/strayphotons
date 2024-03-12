@@ -46,6 +46,7 @@ namespace sp {
             glfwSetScrollCallback(window, nullptr);
             glfwSetMouseButtonCallback(window, nullptr);
             glfwSetCursorPosCallback(window, nullptr);
+            glfwSetCursorEnterCallback(window, nullptr);
 
             glfwSetWindowUserPointer(window, nullptr);
         }

@@ -28,7 +28,6 @@ namespace sp {
     class ConsoleManager;
     class AssetManager;
     class SceneManager;
-    class GraphicsManager;
 } // namespace sp
 
 extern "C" {
@@ -41,8 +40,9 @@ static_assert(sizeof(sp_game_t) == sizeof(uint64_t), "Pointer size doesn't match
 #else
 typedef uint64_t sp_game_t;
 typedef void ParseResult;
-typedef void GraphicsManager;
 #endif
+
+struct GLFWwindow;
 
 // The following functions are declared in src/exports/Game.cc
 
@@ -56,13 +56,8 @@ SP_EXPORT void sp_game_destroy(sp_game_t game);
 
 SP_EXPORT ParseResult *sp_game_get_options(sp_game_t ctx);
 
-SP_EXPORT void sp_game_set_graphics_manager(sp_game_t game,
-    GraphicsManager *manager,
-    void (*destroy_callback)(GraphicsManager *));
-SP_EXPORT GraphicsManager *sp_game_get_graphics_manager(sp_game_t game);
-
-SP_EXPORT void sp_game_set_input_handler(sp_game_t game, void *handler, void (*destroy_callback)(void *));
-SP_EXPORT void *sp_game_get_input_handler(sp_game_t game);
+SP_EXPORT void sp_game_set_input_handler(sp_game_t ctx, void *handler, void (*destroy_callback)(void *));
+SP_EXPORT void *sp_game_get_input_handler(sp_game_t ctx);
 
 #ifdef __cplusplus
 }

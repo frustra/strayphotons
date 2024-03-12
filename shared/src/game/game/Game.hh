@@ -71,4 +71,8 @@ namespace sp {
     };
 
     void RegisterDebugCFuncs(CFuncCollection &funcs);
+    void InitGraphicsManager(Game &game);
+    void StartGraphicsThread(Game &game, bool scriptMode);
+    void InitPhysicsManager(Game &game);
+    void StartPhysicsThread(Game &game, bool scriptMode);
 } // namespace sp

@@ -9,7 +9,7 @@
 
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/CGameContext.hh"
+#include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/gui/WorldGuiManager.hh"
@@ -35,6 +35,7 @@
     #include "xr/XrManager.hh"
     #include "xr/XrSystem.hh"
 #endif
+#include <assets/AssetManager.hh>
 
 namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
@@ -53,7 +54,7 @@ namespace sp::vulkan {
     static CVar<bool> CVarSortedDraw("r.SortedDraw", true, "Draw geometry in sorted depth-order");
     static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
 
-    Renderer::Renderer(CGameContext &game, DeviceContext &device)
+    Renderer::Renderer(Game &game, DeviceContext &device)
         : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
           transparency(scene), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
@@ -176,8 +177,25 @@ namespace sp::vulkan {
             if (graph.HasResource("GBuffer0") && view) {
                 AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph);
-                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
+            } else {
+                if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
+                graph.AddPass("LogoOverlay")
+                    .Build([](rg::PassBuilder &builder) {
+                        rg::ImageDesc desc;
+                        auto windowSize = CVarWindowSize.Get();
+                        desc.extent = vk::Extent3D(windowSize.x, windowSize.y, 1);
+                        desc.format = vk::Format::eR8G8B8A8Srgb;
+                        builder.OutputColorAttachment(0, "LogoView", desc, {LoadOp::DontCare, StoreOp::Store});
+                    })
+                    .Execute([&](rg::Resources &resources, CommandContext &cmd) {
+                        cmd.DrawScreenCover(scene.textures.GetSinglePixel(glm::vec4(0, 0, 0, 1)));
+                        if (logoTex->Ready()) {
+                            cmd.SetBlending(true);
+                            cmd.DrawScreenCover(logoTex->Get());
+                        }
+                    });
             }
+            if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
         }
         screenshots.AddPass(graph);
         AddWindowOutput();
@@ -549,8 +567,9 @@ namespace sp::vulkan {
         graph.AddPass("MenuGui")
             .Build([&](rg::PassBuilder &builder) {
                 rg::ImageDesc desc;
+                auto windowSize = CVarWindowSize.Get();
+                desc.extent = vk::Extent3D(windowSize.x, windowSize.y, 1);
                 desc.format = vk::Format::eR8G8B8A8Srgb;
-                desc.extent = vk::Extent3D(1024, 1024, 1);
 
                 ecs::Entity windowEntity = device.GetActiveView();
                 if (windowEntity && windowEntity.Has<ecs::View>(lock)) {

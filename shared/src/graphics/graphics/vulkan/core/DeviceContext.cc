@@ -14,6 +14,7 @@
 #include "common/Logging.hh"
 #include "console/CFunc.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/gui/DebugGuiManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/Renderer.hh"
@@ -30,14 +31,6 @@
 #include <optional>
 #include <string>
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-    #define GLFW_INCLUDE_VULKAN
-    #include <GLFW/glfw3.h>
-    #ifdef _WIN32
-        #define GLFW_EXPOSE_NATIVE_WIN32
-        #include <glfw/glfw3native.h>
-    #endif
-#endif
 #ifdef SP_RUST_WINIT_SUPPORT
     #include <winit.rs.h>
 #endif
@@ -78,43 +71,54 @@ namespace sp::vulkan {
         return VK_FALSE;
     }
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-    static void glfwErrorCallback(int error, const char *message) {
-        Errorf("GLFW returned %d: %s", error, message);
-    }
-#endif
-
-    void DeviceContext::DeleteAllocator(VmaAllocator alloc) {
-        if (alloc) vmaDestroyAllocator(alloc);
-    }
-
-    DeviceContext::DeviceContext(bool enableValidationLayers)
-        : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
+    DeviceContext::DeviceContext(GraphicsManager &graphics, bool enableValidationLayers)
+        : graphics(graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr), threadContexts(32),
           frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        Logf("Graphics starting up (Vulkan GLFW)");
-#endif
-#ifdef SP_RUST_WINIT_SUPPORT
-        Logf("Graphics starting up (Vulkan Winit)");
-#endif
+        Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
+        Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        glfwSetErrorCallback(glfwErrorCallback);
+        bool enableSwapchain = true;
+        if (graphics.glfwWindow) {
+            Logf("Graphics starting up (Vulkan GLFW)");
+        } else if (graphics.winitContext) {
+            Logf("Graphics starting up (Vulkan Winit)");
+        } else {
+            Logf("Graphics starting up (Vulkan Headless)");
+            enableSwapchain = false;
+        }
 
-        if (!glfwInit()) Abort("glfwInit() failed");
-        Assert(glfwVulkanSupported(), "Vulkan not supported");
-
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-        // Disable OpenGL context creation
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-#endif
+        instance = graphics.vkInstance.get();
+        instanceDestroy.SetFunc([&graphics] {
+            graphics.vkInstance.reset();
+        });
+        surface = graphics.vkSurface.get();
+        surfaceDestroy.SetFunc([&graphics] {
+            graphics.vkSurface.reset();
+        });
 
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-        std::vector<const char *> extensions, layers;
+        vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
+        debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+
+        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
+                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+#ifdef SP_DEBUG
+        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+#endif
+        debugInfo.pfnUserCallback = &VulkanDebugCallback;
+        debugInfo.pUserData = this;
+
+        std::vector<const char *> layers;
+        if (enableValidationLayers) {
+            layers.emplace_back("VK_LAYER_KHRONOS_validation");
+        }
+
+        std::vector<const char *> extensions;
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
 
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
@@ -135,20 +139,6 @@ namespace sp::vulkan {
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-        vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-        debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-
-        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-#ifdef SP_DEBUG
-        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-#endif
-        debugInfo.pfnUserCallback = &VulkanDebugCallback;
-        debugInfo.pUserData = this;
-
-        auto initialSize = CVarWindowSize.Get();
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         // TODO: Match these extensions with Rust winit.rs
         uint32_t requiredExtensionCount = 0;
@@ -157,13 +147,9 @@ namespace sp::vulkan {
             extensions.emplace_back(requiredExtensions[i]);
         }
 
-        if (enableValidationLayers) {
-            Logf("Running with Vulkan validation layer");
-            layers.emplace_back("VK_LAYER_KHRONOS_validation");
-        }
-
     #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         // Create window and surface
+        auto initialSize = CVarWindowSize.Get();
         window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
         Assert(window, "glfw window creation failed");
     #endif
@@ -189,6 +175,7 @@ namespace sp::vulkan {
 #endif
 
 #ifdef SP_RUST_WINIT_SUPPORT
+        auto initialSize = CVarWindowSize.Get();
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
             sp::winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw(),
             [](auto *ptr) {
@@ -264,14 +251,12 @@ namespace sp::vulkan {
             return false;
         };
 
-#ifdef SP_GRAPHICS_SUPPORT_HEADLESS
-        // Don't require surface support when headless
-        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.f, false))
+        if (!findQueue(QUEUE_TYPE_GRAPHICS,
+                vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                {},
+                1.f,
+                enableSwapchain))
             Abort("could not find a supported graphics queue family");
-#else
-        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.f, true))
-            Abort("could not find a supported graphics queue family");
-#endif
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
             // must be only one queue that supports compute, fall back to it
@@ -314,9 +299,9 @@ namespace sp::vulkan {
             VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         };
 
-#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-        enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-#endif
+        if (enableSwapchain) {
+            enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        }
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -476,7 +461,9 @@ namespace sp::vulkan {
 
         VmaAllocator alloc;
         Assert(vmaCreateAllocator(&allocatorInfo, &alloc) == VK_SUCCESS, "allocator init failed");
-        allocator.reset(alloc);
+        allocator = unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)>(alloc, [](VmaAllocator alloc) {
+            if (alloc) vmaDestroyAllocator(alloc);
+        });
 
         semaphorePool = make_unique<HandlePool<vk::Semaphore>>(
             [&]() {
@@ -581,13 +568,17 @@ namespace sp::vulkan {
         });
         monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
 
-        CreateSwapchain();
+        if (enableSwapchain) CreateSwapchain();
     }
 
     DeviceContext::~DeviceContext() {
         if (vkRenderer) vkRenderer.reset();
         if (device) device->waitIdle();
-        Tracef("Destroying DeviceContext");
+        Debugf("Destroying DeviceContext");
+        swapchain.reset();
+        graphics.glfwWindow.reset();
+        graphics.winitContext.reset();
+
 #ifdef SP_GRAPHICS_SUPPORT_GLFW
         if (window) {
             glfwDestroyWindow(window);
@@ -610,7 +601,6 @@ namespace sp::vulkan {
 
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
-#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         ZoneScoped;
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
 
@@ -678,11 +668,11 @@ namespace sp::vulkan {
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
-#endif
     }
 
     void DeviceContext::RecreateSwapchain() {
         ZoneScoped;
+        Assertf(swapchain, "DeviceContext::RecreateSwapchain called without existing swapchain");
         device->waitIdle();
         CreateSwapchain();
     }
@@ -705,7 +695,7 @@ namespace sp::vulkan {
 #endif
     }
 
-    void DeviceContext::InitRenderer(CGameContext &game) {
+    void DeviceContext::InitRenderer(Game &game) {
         vkRenderer = make_shared<vulkan::Renderer>(game, *this);
     }
 
@@ -942,7 +932,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SwapBuffers() {
-#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+        if (!swapchain) return;
         ZoneScoped;
 
         vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
@@ -961,7 +951,6 @@ namespace sp::vulkan {
         } catch (const vk::OutOfDateKHRError &) {
             RecreateSwapchain();
         }
-#endif
     }
 
     void DeviceContext::EndFrame() {

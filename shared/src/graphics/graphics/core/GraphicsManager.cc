@@ -39,8 +39,7 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(CGameContext &game)
-        : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game), world(ecs::World()) {}
+    GraphicsManager::GraphicsManager(Game &game) : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game) {}
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
@@ -51,10 +50,6 @@ namespace sp {
         ZoneScoped;
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
-
-        // auto *optionsPtr = sp_game_get_options(game);
-        // Assertf(optionsPtr, "Game instance has no parsed options");
-        // cxxopts::ParseResult &options = *optionsPtr;
 
         if (game.options.count("size")) {
             std::istringstream ss(game.options["size"].as<string>());
@@ -106,10 +101,8 @@ namespace sp {
         context->SetTitle("STRAY PHOTONS (" + std::to_string(context->GetMeasuredFPS()) + " FPS)");
         context->UpdateInputModeFromFocus();
 
-        // This function is sometimes called from another memory space where the global ECS and EntityReferenceManager
-        // are not set. To work around this, we need to access the ECS via the reference GraphicsManager::world
         {
-            auto lock = world.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
 
             for (auto &ent : lock.EntitiesWith<ecs::View>()) {
                 if (!ent.Has<ecs::Name>(lock)) continue;

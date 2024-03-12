@@ -10,6 +10,7 @@
 #include "strayphotons/entity.h"
 #include "strayphotons/export.h"
 #include "strayphotons/game.h"
+#include "strayphotons/graphics.h"
 #include "strayphotons/input.h"
 #include "strayphotons/logging.h"
 #include "strayphotons/signals.h"

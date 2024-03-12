@@ -12,23 +12,21 @@
 #include <strayphotons.h>
 #include <strayphotons/export.h>
 
-namespace sp {
-    SP_EXPORT sp_signal_ref_t sp_get_signal_ref(sp_game_t ctx, sp_entity_ref_t entity_ref, const char *signal_name) {
-        Assertf(ctx != nullptr, "sp_get_signal_ref called with null ctx");
-        Assertf(entity_ref != nullptr, "sp_get_signal_ref called with null entity_ref");
-        return new ecs::SignalRef(*entity_ref, signal_name);
-    }
+SP_EXPORT sp_signal_ref_t sp_get_signal_ref(sp_game_t ctx, sp_entity_ref_t entity_ref, const char *signal_name) {
+    Assertf(ctx != nullptr, "sp_get_signal_ref called with null ctx");
+    Assertf(entity_ref != nullptr, "sp_get_signal_ref called with null entity_ref");
+    return new ecs::SignalRef(*entity_ref, signal_name);
+}
 
-    // SP_EXPORT float sp_get_signal(sp_game_t ctx, sp_signal_ref_t signal_ref) {
-    //     Assertf(ctx != nullptr, "sp_get_signal called with null ctx");
-    //     Assertf(signal_ref != nullptr, "sp_get_signal called with null signal_ref");
-    //     return signal_ref->GetSignal(lock);
-    // }
+// SP_EXPORT float sp_get_signal(sp_game_t ctx, sp_signal_ref_t signal_ref) {
+//     Assertf(ctx != nullptr, "sp_get_signal called with null ctx");
+//     Assertf(signal_ref != nullptr, "sp_get_signal called with null signal_ref");
+//     return signal_ref->GetSignal(lock);
+// }
 
-    // SP_EXPORT void sp_set_signal(sp_game_t ctx, sp_signal_ref_t signal_ref, float value) {
-    //     Assertf(ctx != nullptr, "sp_set_signal called with null ctx");
-    //     Assertf(signal_ref != nullptr, "sp_set_signal called with null signal_ref");
-    //     if (ctx->disableInput) return;
-    //     ctx->game.inputEventQueue.PushEvent(ecs::Event{event_name, input_device, std::string(value)});
-    // }
-} // namespace sp
+// SP_EXPORT void sp_set_signal(sp_game_t ctx, sp_signal_ref_t signal_ref, float value) {
+//     Assertf(ctx != nullptr, "sp_set_signal called with null ctx");
+//     Assertf(signal_ref != nullptr, "sp_set_signal called with null signal_ref");
+//     if (ctx->disableInput) return;
+//     ctx->game.inputEventQueue.PushEvent(ecs::Event{event_name, input_device, std::string(value)});
+// }

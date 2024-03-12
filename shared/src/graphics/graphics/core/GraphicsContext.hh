@@ -35,7 +35,7 @@ namespace sp {
     class Image;
     class DebugGuiManager;
     class MenuGuiManager;
-    struct CGameContext;
+    class Game;
 
     extern CVar<float> CVarFieldOfView;
     extern CVar<glm::ivec2> CVarWindowSize;
@@ -60,7 +60,7 @@ namespace sp {
             return activeView;
         }
 
-        virtual void InitRenderer(CGameContext &game) = 0;
+        virtual void InitRenderer(Game &game) = 0;
         virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
 
         virtual void SetDebugGui(DebugGuiManager *debugGui) = 0;
@@ -74,14 +74,6 @@ namespace sp {
         }
 
         virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<const Image> image, bool genMipmap = true) = 0;
-
-        virtual GLFWwindow *GetGlfwWindow() {
-            return nullptr;
-        }
-
-        virtual winit::WinitContext *GetWinitContext() {
-            return nullptr;
-        }
 
         // Returns the window HWND, if it exists. On non-Windows platforms this returns nullptr.
         virtual void *Win32WindowHandle() {

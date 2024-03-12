@@ -145,6 +145,8 @@ endif()
 # Build all external dependencies
 add_subdirectory(ext)
 
+find_package(Vulkan REQUIRED)
+
 if((CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR (CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
     set(ARM ON)
 else()

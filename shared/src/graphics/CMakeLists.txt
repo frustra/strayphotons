@@ -5,8 +5,6 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-find_package(Vulkan REQUIRED)
-
 add_library(${PROJECT_GRAPHICS_CORE_LIB} STATIC)
 add_library(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} STATIC)
 

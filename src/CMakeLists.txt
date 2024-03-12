@@ -19,6 +19,13 @@ set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library
 
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
+add_library(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} INTERFACE)
+target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} INTERFACE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} INTERFACE
+    glfw
+    Vulkan::Vulkan
+)
+
 # Vulkan desktop build
 add_module_configuration(
     NAME sp-vk
@@ -26,10 +33,9 @@ add_module_configuration(
     LINK_LIBRARIES
         ${PROJECT_LIB_NAME}
         ${PROJECT_COMMON_LIB}
-        # ${PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
         # "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         # ${PROJECT_XR_OPENVR_LIB}
-        glfw
 )
 
 if(SP_BUILD_RUST)

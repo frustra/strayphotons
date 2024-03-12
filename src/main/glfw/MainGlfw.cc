@@ -12,38 +12,10 @@
 #include <iostream>
 using namespace std;
 
-// #include "assets/AssetManager.hh"
-// #include "console/Console.hh"
-// #include "ecs/Ecs.hh"
-// #include "ecs/ScriptManager.hh"
-// #include "ecs/SignalManager.hh"
-// #include "game/Game.hh"
-// #include "game/SceneManager.hh"
-
-#include <strayphotons.h>
-
-struct OnStart {
-    OnStart() {
-        // ecs::GetECSContext(sp_get_ecs_context());
-        // ecs::GetSignalManager(sp_get_signal_manager());
-        // ecs::GetScriptManager(sp_get_script_manager());
-        // ecs::GetScriptDefinitions(sp_get_script_definitons());
-        // sp::Assets(sp_get_asset_manager());
-        // sp::GetSceneManager(sp_get_scene_manager());
-    }
-} onStart;
-
 #include "GlfwInputHandler.hh"
 #include "common/Common.hh"
+#include "common/Defer.hh"
 #include "common/Logging.hh"
-// #include "ecs/EcsImpl.hh"
-// #include "game/Game.hh"
-// #include "graphics/core/GraphicsManager.hh"
-// #include "graphics/vulkan/core/DeviceContext.hh"
-
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-    #include "physx/PhysxManager.hh"
-#endif
 
 #ifdef SP_AUDIO_SUPPORT
     #include "audio/AudioManager.hh"
@@ -53,19 +25,27 @@ struct OnStart {
     #include "xr/XrManager.hh"
 #endif
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#ifdef _WIN32
+    #define GLFW_EXPOSE_NATIVE_WIN32
+    #include <glfw/glfw3native.h>
+#endif
+
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
 #include <filesystem>
 #include <memory>
 #include <strayphotons.h>
+#include <vulkan/vulkan.hpp>
 
 using cxxopts::value;
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace sp {
     sp_game_t GameInstance = (sp_game_t)0;
-    std::shared_ptr<GraphicsManager> GameGraphicsManager;
-    std::shared_ptr<GlfwInputHandler> GameInputHandler;
 
     void handleSignals(int signal) {
         if (signal == SIGINT && GameInstance) {
@@ -73,16 +53,36 @@ namespace sp {
         }
     }
 
-    // void destroyGraphicsCallback(sp_game_t ctx) {
-    //     if (ctx != nullptr) {
-    //         ctx->game.xr.reset();
-    //         if (ctx->inputHandler) {
-    //             GlfwInputHandler *handler = (GlfwInputHandler *)ctx->inputHandler;
-    //             delete handler;
-    //             ctx->inputHandler = nullptr;
-    //         }
-    //     }
-    // }
+    void glfwErrorCallback(int error, const char *message) {
+        Errorf("GLFW returned %d: %s", error, message);
+    }
+
+    static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+        void *pContext) {
+        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
+        string_view message(pCallbackData->pMessage);
+
+        switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+            if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
+                             "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
+                string_view::npos)
+                break;
+            Errorf("VK %s %s", typeStr, message);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) break;
+            Warnf("VK %s %s", typeStr, message);
+            break;
+        default:
+            break;
+        }
+        Tracef("VK %s %s", typeStr, message);
+        return VK_FALSE;
+    }
 } // namespace sp
 
 using namespace sp;
@@ -117,38 +117,122 @@ int main(int argc, char **argv)
     });
 
     GameInstance = instance.get();
-    Logf("Game instance: %x", GameInstance);
-    // auto *optionsPtr = sp_game_get_options(GameInstance);
-    // Assertf(optionsPtr, "Game instance has no parsed options");
-    // cxxopts::ParseResult &options = *optionsPtr;
 
-    // if (!options.count("headless")) {
-    //     GameGraphicsManager = std::make_shared<GraphicsManager>(GameInstance);
-    //     sp_game_set_graphics_manager(GameInstance, GameGraphicsManager.get(), [](GraphicsManager *manager) {
-    //         Assertf(manager == GameGraphicsManager.get(), "GraphicsManager pointer mismatch");
-    //         GameGraphicsManager.reset();
-    //     });
-    // }
-    // sp_game_set_shutdown_callback(GameInstance, &sp::destroyGraphicsCallback);
+    cxxopts::ParseResult *options = sp_game_get_options(GameInstance);
+    GraphicsManager *graphicsManager = sp_game_get_graphics_manager(GameInstance);
 
-    // #ifdef SP_PHYSICS_SUPPORT_PHYSX
-    //     game.physics = make_shared<PhysxManager>(game.inputEventQueue);
-    // #endif
+    glfwSetErrorCallback(glfwErrorCallback);
+
+    if (!glfwInit()) Abort("glfwInit() failed");
+    Assert(glfwVulkanSupported(), "Vulkan not supported");
+
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    // Disable OpenGL context creation
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
+    vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
+    debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+
+    debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
+                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+#ifdef SP_DEBUG
+    debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+#endif
+    debugInfo.pfnUserCallback = &VulkanDebugCallback;
+
+    std::vector<const char *> layers;
+    if (options->count("with-validation-layers")) {
+        Logf("Running with Vulkan validation layer");
+        layers.emplace_back("VK_LAYER_KHRONOS_validation");
+    }
+
+    std::vector<const char *> extensions;
+    bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
+
+    auto availableExtensions = vk::enumerateInstanceExtensionProperties();
+    // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
+    for (auto &ext : availableExtensions) {
+        string_view name(ext.extensionName.data());
+        // Debugf("\t%s", name);
+
+        if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
+            hasMemoryRequirements2Ext = true;
+        } else if (name == VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) {
+            hasDedicatedAllocationExt = true;
+        } else {
+            continue;
+        }
+        extensions.push_back(name.data());
+    }
+    extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    // TODO: Match these extensions with Rust winit.rs
+    uint32_t requiredExtensionCount = 0;
+    auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
+    for (uint32_t i = 0; i < requiredExtensionCount; i++) {
+        extensions.emplace_back(requiredExtensions[i]);
+    }
+
+    // Create window and surface
+    // auto initialSize = CVarWindowSize.Get();
+    // window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1920, 1080, "STRAY PHOTONS", nullptr, nullptr);
+    Assert(window, "glfw window creation failed");
+    sp_graphics_set_glfw_window(graphicsManager, window, [](GLFWwindow *window) {
+        if (window) glfwDestroyWindow(window);
+        glfwTerminate();
+    });
+
+    vk::ApplicationInfo applicationInfo("Stray Photons",
+        VK_MAKE_VERSION(1, 0, 0),
+        "Stray Photons",
+        VK_MAKE_VERSION(1, 0, 0),
+        VK_API_VERSION_1_2);
+
+    vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
+        &applicationInfo,
+        layers.size(),
+        layers.data(),
+        extensions.size(),
+        extensions.data(),
+        (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
+
+    vk::Instance vkInstance = vk::createInstance(createInfo);
+    sp_graphics_set_vulkan_instance(graphicsManager, vkInstance, [](GraphicsManager *graphics, VkInstance instance) {
+        if (instance) ((vk::Instance)instance).destroy();
+    });
+
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkInstance);
+    // debugMessenger = vkInstance.createDebugUtilsMessengerEXTUnique(debugInfo);
+
+    vk::SurfaceKHR vkSurface;
+    VkResult result = glfwCreateWindowSurface(vkInstance, window, nullptr, (VkSurfaceKHR *)&vkSurface);
+    if (result != VK_SUCCESS) {
+        Abortf("creating window surface (%s)", vk::to_string(static_cast<vk::Result>(result)));
+    }
+    Assert(vkSurface, "gkfw window surface creation failed");
+    sp_graphics_set_vulkan_surface(graphicsManager, vkSurface, [](GraphicsManager *graphics, VkSurfaceKHR surface) {
+        if (graphics && surface) {
+            vk::Instance instance = sp_graphics_get_vulkan_instance(graphics);
+            if (instance) instance.destroySurfaceKHR(surface);
+        }
+    });
+
+    GlfwInputHandler *inputHandler = new GlfwInputHandler(GameInstance, window);
+    sp_game_set_input_handler(GameInstance, inputHandler, [](void *handler) {
+        auto *inputHandler = (GlfwInputHandler *)handler;
+        delete inputHandler;
+    });
+
     // #ifdef SP_AUDIO_SUPPORT
     //     game.audio = make_shared<AudioManager>();
     // #endif
-
-    // if (GameGraphicsManager) GameGraphicsManager->Init();
-
-    // bool withValidationLayers = options.count("with-validation-layers");
-    // auto deviceContext = std::make_shared<vulkan::DeviceContext>(withValidationLayers);
-    // GameGraphicsManager->context = deviceContext;
-
-    // GameInputHandler = std::make_shared<GlfwInputHandler>(GameInstance, deviceContext->GetGlfwWindow());
-    // sp_game_set_input_handler(GameInstance, GameInputHandler.get(), [](void *handler) {
-    //     Assertf(handler == GameInputHandler.get(), "InputHandler pointer mismatch");
-    //     GameInputHandler.reset();
-    // });
 
     // #ifdef SP_XR_SUPPORT
     //     if (!options.count("no-vr")) {
@@ -157,19 +241,13 @@ int main(int argc, char **argv)
     //     }
     // #endif
 
-    // bool scriptMode = options.count("run") > 0;
-    // if (GameGraphicsManager) GameGraphicsManager->StartThread(scriptMode);
-
     int status_code = sp_game_start(GameInstance);
     if (status_code) return status_code;
 
-    // #ifdef SP_PHYSICS_SUPPORT_PHYSX
-    //     game.physics->StartThread(scriptMode);
-    // #endif
+    if (graphicsManager) {
+        std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
 
-    if (GameGraphicsManager) {
-        // std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
-
+        bool scriptMode = options->count("run") > 0;
         // if (scriptMode) {
         //     game.funcs.Register<unsigned int>("stepgraphics",
         //         "Renders N frames in a row, saving any queued screenshots, default is 1",
@@ -184,48 +262,48 @@ int main(int argc, char **argv)
         //                     step = graphicsStepCount.load();
         //                 }
 
-        //                 GameGraphicsManager->Step(1);
+        //                 graphicsManager->Step(1);
         //             }
         //         });
         // }
 
-        // auto frameEnd = chrono_clock::now();
-        // while (!sp_game_is_exit_triggered(GameInstance)) {
-        //     static const char *frameName = "WindowInput";
-        //     (void)frameName;
-        //     FrameMarkStart(frameName);
-        //     if (scriptMode) {
-        //         while (graphicsStepCount < graphicsMaxStepCount) {
-        //             GlfwInputHandler::Frame();
-        //             GameGraphicsManager->InputFrame();
-        //             graphicsStepCount++;
-        //         }
-        //         graphicsStepCount.notify_all();
-        //     } else {
-        //         GlfwInputHandler::Frame();
-        //         if (!GameGraphicsManager->InputFrame()) {
-        //             Tracef("Exit triggered via window manager");
-        //             break;
-        //         }
-        //     }
+        auto frameEnd = chrono_clock::now();
+        while (!sp_game_is_exit_triggered(GameInstance)) {
+            static const char *frameName = "WindowInput";
+            (void)frameName;
+            FrameMarkStart(frameName);
+            if (scriptMode) {
+                while (graphicsStepCount < graphicsMaxStepCount) {
+                    GlfwInputHandler::Frame();
+                    // graphicsManager->InputFrame();
+                    graphicsStepCount++;
+                }
+                graphicsStepCount.notify_all();
+            } else {
+                GlfwInputHandler::Frame();
+                //         if (!graphicsManager->InputFrame()) {
+                //             Tracef("Exit triggered via window manager");
+                //             break;
+                //         }
+            }
 
-        //     auto realFrameEnd = chrono_clock::now();
-        //     auto interval = GameGraphicsManager->interval;
-        //     if (interval.count() == 0) {
-        //         interval = std::chrono::nanoseconds((int64_t)(1e9 / MaxInputPollRate));
-        //     }
+            auto realFrameEnd = chrono_clock::now();
+            chrono_clock::duration interval(0); //  = graphicsManager->interval;
+            if (interval.count() == 0) {
+                interval = std::chrono::nanoseconds((int64_t)(1e9 / MaxInputPollRate));
+            }
 
-        //     frameEnd += interval;
+            frameEnd += interval;
 
-        //     if (realFrameEnd >= frameEnd) {
-        //         // Falling behind, reset target frame end time.
-        //         // Add some extra time to allow other threads to start transactions.
-        //         frameEnd = realFrameEnd + std::chrono::nanoseconds(100);
-        //     }
+            if (realFrameEnd >= frameEnd) {
+                // Falling behind, reset target frame end time.
+                // Add some extra time to allow other threads to start transactions.
+                frameEnd = realFrameEnd + std::chrono::nanoseconds(100);
+            }
 
-        //     std::this_thread::sleep_until(frameEnd);
-        //     FrameMarkEnd(frameName);
-        // }
+            std::this_thread::sleep_until(frameEnd);
+            FrameMarkEnd(frameName);
+        }
         return sp_game_get_exit_code(GameInstance);
     } else {
         return sp_game_wait_for_exit_trigger(GameInstance);

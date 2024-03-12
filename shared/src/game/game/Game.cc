@@ -56,6 +56,9 @@ namespace sp {
                 GetConsoleManager().ParseAndExecute(cmdline);
             }
         }
+
+        InitGraphicsManager(*this);
+        InitPhysicsManager(*this);
     }
 
     Game::ShutdownManagers::~ShutdownManagers() {
@@ -73,13 +76,16 @@ namespace sp {
         sp::wasm::print_hello();
 #endif
 
+        bool scriptMode = options.count("run") > 0;
+        StartGraphicsThread(*this, scriptMode);
+        StartPhysicsThread(*this, scriptMode);
+
         auto &scenes = GetSceneManager();
         if (!graphics) scenes.DisableGraphicsPreload();
         if (!physics) scenes.DisablePhysicsPreload();
         scenes.QueueAction(SceneAction::ReloadPlayer);
         scenes.QueueAction(SceneAction::ReloadBindings);
 
-        bool scriptMode = options.count("run") > 0;
         if (scriptMode) {
             string scriptPath = options["run"].as<string>();
 
