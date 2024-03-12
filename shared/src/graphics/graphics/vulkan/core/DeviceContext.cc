@@ -139,41 +139,6 @@ namespace sp::vulkan {
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        // TODO: Match these extensions with Rust winit.rs
-        uint32_t requiredExtensionCount = 0;
-        auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
-        for (uint32_t i = 0; i < requiredExtensionCount; i++) {
-            extensions.emplace_back(requiredExtensions[i]);
-        }
-
-    #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-        // Create window and surface
-        auto initialSize = CVarWindowSize.Get();
-        window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
-        Assert(window, "glfw window creation failed");
-    #endif
-
-        vk::ApplicationInfo applicationInfo("Stray Photons",
-            VK_MAKE_VERSION(1, 0, 0),
-            "Stray Photons",
-            VK_MAKE_VERSION(1, 0, 0),
-            VULKAN_API_VERSION);
-
-        vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
-            &applicationInfo,
-            layers.size(),
-            layers.data(),
-            extensions.size(),
-            extensions.data(),
-            (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
-
-        instance = vk::createInstance(createInfo);
-        instanceDestroy.SetFunc([this] {
-            if (instance) instance.destroy();
-        });
-#endif
-
 #ifdef SP_RUST_WINIT_SUPPORT
         auto initialSize = CVarWindowSize.Get();
         winitContext = std::shared_ptr<sp::winit::WinitContext>(
@@ -193,17 +158,6 @@ namespace sp::vulkan {
         debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
 #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-    #ifdef SP_GRAPHICS_SUPPORT_GLFW
-        auto result = glfwCreateWindowSurface(instance, window, nullptr, (VkSurfaceKHR *)&surface);
-        AssertVKSuccess(result, "creating window surface");
-        Assert(surface, "gkfw window surface creation failed");
-        surfaceDestroy.SetFunc([this] {
-            if (surface) {
-                instance.destroySurfaceKHR(surface);
-                surface = nullptr;
-            }
-        });
-    #endif
     #ifdef SP_RUST_WINIT_SUPPORT
         surface = (VkSurfaceKHR)sp::winit::get_surface_handle(*winitContext);
         Assert(surface, "winit window creation failed");
@@ -579,11 +533,6 @@ namespace sp::vulkan {
         graphics.glfwWindow.reset();
         graphics.winitContext.reset();
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        if (window) {
-            glfwDestroyWindow(window);
-        }
-#endif
 #ifdef SP_RUST_WINIT_SUPPORT
         swapchain.reset();
         sp::winit::destroy_window(*winitContext);
@@ -592,10 +541,6 @@ namespace sp::vulkan {
 #ifdef TRACY_ENABLE_GRAPHICS
         for (auto ctx : tracing.tracyContexts)
             if (ctx) TracyVkDestroy(ctx);
-#endif
-
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        glfwTerminate();
 #endif
     }
 
