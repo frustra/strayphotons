@@ -180,9 +180,10 @@ int main(int argc, char **argv)
     }
 
     // Create window and surface
-    // auto initialSize = CVarWindowSize.Get();
-    // window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
-    GLFWwindow *window = glfwCreateWindow(1920, 1080, "STRAY PHOTONS", nullptr, nullptr);
+    glm::ivec2 initialSize;
+    sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+    sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
+    GLFWwindow *window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
     Assert(window, "glfw window creation failed");
     sp_graphics_set_glfw_window(graphicsManager, window, [](GLFWwindow *window) {
         if (window) glfwDestroyWindow(window);
@@ -209,7 +210,6 @@ int main(int argc, char **argv)
     });
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkInstance);
-    // debugMessenger = vkInstance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
     vk::SurfaceKHR vkSurface;
     VkResult result = glfwCreateWindowSurface(vkInstance, window, nullptr, (VkSurfaceKHR *)&vkSurface);
@@ -229,6 +229,83 @@ int main(int argc, char **argv)
         auto *inputHandler = (GlfwInputHandler *)handler;
         delete inputHandler;
     });
+
+    sp_window_handlers_t windowHandlers;
+    windowHandlers.set_title = [](GraphicsManager *graphics, const char *title) {
+        GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
+        if (window) glfwSetWindowTitle(window, title);
+    };
+    windowHandlers.should_close = [](GraphicsManager *graphics) {
+        GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
+        return window && !!glfwWindowShouldClose(window);
+    };
+    windowHandlers.update_window_view = [](GraphicsManager *graphics, int *width_out, int *height_out) {
+        GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
+        if (!window) return;
+
+        static bool systemFullscreen;
+        static glm::ivec2 systemWindowSize;
+        static glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
+
+        sp_cvar_t *cvarWindowFullscreen = sp_get_cvar("r.fullscreen");
+        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+        bool fullscreen = sp_cvar_get_bool(cvarWindowFullscreen);
+        if (systemFullscreen != fullscreen) {
+            if (fullscreen) {
+                glfwGetWindowPos(window, &storedWindowRect.x, &storedWindowRect.y);
+                storedWindowRect.z = systemWindowSize.x;
+                storedWindowRect.w = systemWindowSize.y;
+
+                auto *monitor = glfwGetPrimaryMonitor();
+                if (monitor) {
+                    auto *mode = glfwGetVideoMode(monitor);
+                    systemWindowSize = {mode->width, mode->height};
+                }
+                glfwSetWindowMonitor(window, monitor, 0, 0, systemWindowSize.x, systemWindowSize.y, 60);
+            } else {
+                systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
+                glfwSetWindowMonitor(window,
+                    nullptr,
+                    storedWindowRect.x,
+                    storedWindowRect.y,
+                    storedWindowRect.z,
+                    storedWindowRect.w,
+                    0);
+            }
+            sp_cvar_set_ivec2(cvarWindowSize, systemWindowSize.x, systemWindowSize.y);
+            systemFullscreen = fullscreen;
+        }
+
+        glm::ivec2 windowSize;
+        sp_cvar_get_ivec2(cvarWindowSize, &windowSize.x, &windowSize.y);
+        if (systemWindowSize != windowSize) {
+            if (sp_cvar_get_bool(cvarWindowFullscreen)) {
+                glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
+            } else {
+                glfwSetWindowSize(window, windowSize.x, windowSize.y);
+            }
+
+            systemWindowSize = windowSize;
+        }
+
+        glm::ivec2 fbExtents;
+        glfwGetFramebufferSize(window, &fbExtents.x, &fbExtents.y);
+        if (fbExtents.x > 0 && fbExtents.y > 0) {
+            *width_out = fbExtents.x;
+            *height_out = fbExtents.y;
+        }
+    };
+    windowHandlers.set_cursor_visible = [](GraphicsManager *graphics, bool visible) {
+        GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
+        if (!window) return;
+        if (visible) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+    };
+    windowHandlers.win32_handle = glfwGetWin32Window(window);
+    sp_graphics_set_window_handlers(graphicsManager, &windowHandlers);
 
     // #ifdef SP_AUDIO_SUPPORT
     //     game.audio = make_shared<AudioManager>();
@@ -267,6 +344,8 @@ int main(int argc, char **argv)
         //         });
         // }
 
+        sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
+
         auto frameEnd = chrono_clock::now();
         while (!sp_game_is_exit_triggered(GameInstance)) {
             static const char *frameName = "WindowInput";
@@ -275,21 +354,24 @@ int main(int argc, char **argv)
             if (scriptMode) {
                 while (graphicsStepCount < graphicsMaxStepCount) {
                     GlfwInputHandler::Frame();
-                    // graphicsManager->InputFrame();
+                    sp_graphics_handle_input_frame(graphicsManager);
                     graphicsStepCount++;
                 }
                 graphicsStepCount.notify_all();
             } else {
                 GlfwInputHandler::Frame();
-                //         if (!graphicsManager->InputFrame()) {
-                //             Tracef("Exit triggered via window manager");
-                //             break;
-                //         }
+                if (!sp_graphics_handle_input_frame(graphicsManager)) {
+                    Tracef("Exit triggered via window manager");
+                    break;
+                }
             }
 
             auto realFrameEnd = chrono_clock::now();
-            chrono_clock::duration interval(0); //  = graphicsManager->interval;
-            if (interval.count() == 0) {
+            chrono_clock::duration interval(0);
+            uint32_t maxFps = sp_cvar_get_uint32(cvarMaxFps);
+            if (maxFps > 0) {
+                interval = std::chrono::nanoseconds((int64_t)(1e9 / (int64_t)maxFps));
+            } else {
                 interval = std::chrono::nanoseconds((int64_t)(1e9 / MaxInputPollRate));
             }
 

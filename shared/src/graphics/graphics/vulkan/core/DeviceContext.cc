@@ -1723,14 +1723,6 @@ namespace sp::vulkan {
 #endif
 
     void *DeviceContext::Win32WindowHandle() {
-#ifndef _WIN32
-        return nullptr;
-#elif defined(SP_GRAPHICS_SUPPORT_GLFW)
-        return window ? glfwGetWin32Window(window) : nullptr;
-#elif defined(SP_RUST_WINIT_SUPPORT)
-        return winitContext ? (void *)sp::winit::get_win32_window_handle(*winitContext) : nullptr;
-#else
-        return nullptr;
-#endif
+        return graphics.windowHandlers.win32_handle;
     }
 } // namespace sp::vulkan

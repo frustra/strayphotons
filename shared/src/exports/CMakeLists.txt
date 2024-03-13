@@ -6,6 +6,7 @@
 #
 
 target_sources(${PROJECT_LIB_NAME} PRIVATE
+    Console.cc
     Entity.cc
     Game.cc
     Graphics.cc

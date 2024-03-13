@@ -52,6 +52,8 @@ namespace sp {
         bool HasActiveContext();
         bool InputFrame();
 
+        sp_window_handlers_t windowHandlers;
+
         // Note: deconstruction order for the below fields is important.
 
         std::shared_ptr<VkInstance_T> vkInstance;

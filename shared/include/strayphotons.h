@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "strayphotons/console.h"
 #include "strayphotons/entity.h"
 #include "strayphotons/export.h"
 #include "strayphotons/game.h"

@@ -77,3 +77,13 @@ SP_EXPORT sp_winit_ctx_t *sp_graphics_get_winit_context(GraphicsManager *graphic
     Assertf(graphics != nullptr, "sp_graphics_get_winit_context called with null graphics");
     return graphics->winitContext.get();
 }
+
+SP_EXPORT void sp_graphics_set_window_handlers(GraphicsManager *graphics, const sp_window_handlers_t *handlers) {
+    Assertf(graphics != nullptr, "sp_graphics_set_window_handlers called with null graphics");
+    graphics->windowHandlers = *handlers;
+}
+
+SP_EXPORT bool sp_graphics_handle_input_frame(GraphicsManager *graphics) {
+    Assertf(graphics != nullptr, "sp_graphics_handle_input_frame called with null graphics");
+    return graphics->InputFrame();
+}

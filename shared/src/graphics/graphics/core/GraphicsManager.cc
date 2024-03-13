@@ -39,7 +39,18 @@ namespace sp {
         DefaultMaxFPS,
         "wait between frames to target this framerate (0 to disable)");
 
-    GraphicsManager::GraphicsManager(Game &game) : RegisteredThread("RenderThread", DefaultMaxFPS, true), game(game) {}
+    GraphicsManager::GraphicsManager(Game &game)
+        : RegisteredThread("RenderThread", CVarMaxFPS.Get(), true), game(game) {
+        if (game.options.count("size")) {
+            std::istringstream ss(game.options["size"].as<string>());
+            glm::ivec2 size;
+            ss >> size.x >> size.y;
+
+            if (size.x > 0 && size.y > 0) {
+                CVarWindowSize.Set(size);
+            }
+        }
+    }
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
@@ -50,16 +61,6 @@ namespace sp {
         ZoneScoped;
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
-
-        if (game.options.count("size")) {
-            std::istringstream ss(game.options["size"].as<string>());
-            glm::ivec2 size;
-            ss >> size.x >> size.y;
-
-            if (size.x > 0 && size.y > 0) {
-                CVarWindowSize.Set(size);
-            }
-        }
 
         debugGui = std::make_shared<DebugGuiManager>();
         menuGui = std::make_shared<MenuGuiManager>(*this);
@@ -74,7 +75,8 @@ namespace sp {
     }
 
     bool GraphicsManager::HasActiveContext() {
-        return context && !context->ShouldClose();
+        bool shouldClose = windowHandlers.should_close && windowHandlers.should_close(this);
+        return context && !shouldClose;
     }
 
     bool GraphicsManager::ThreadInit() {
@@ -98,8 +100,22 @@ namespace sp {
             flatviewName = ecs::Name(CVarFlatviewEntity.Get(true), ecs::Name());
         }
 
-        context->SetTitle("STRAY PHOTONS (" + std::to_string(context->GetMeasuredFPS()) + " FPS)");
-        context->UpdateInputModeFromFocus();
+        if (windowHandlers.set_title) {
+            std::string newTitle = "STRAY PHOTONS (" + std::to_string(context->GetMeasuredFPS()) + " FPS)";
+            windowHandlers.set_title(this, newTitle.c_str());
+        }
+        if (windowHandlers.set_cursor_visible) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
+            if (lock.Has<ecs::FocusLock>()) {
+                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+                if (layer == ecs::FocusLayer::Game) {
+                    windowHandlers.set_cursor_visible(this, false);
+                } else {
+                    windowHandlers.set_cursor_visible(this, true);
+                }
+            }
+        }
+        // context->UpdateInputModeFromFocus();
 
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
@@ -109,7 +125,15 @@ namespace sp {
                 auto &name = ent.Get<ecs::Name>(lock);
                 if (name == flatviewName) {
                     auto &view = ent.Get<ecs::View>(lock);
-                    context->PrepareWindowView(view);
+                    if (windowHandlers.update_window_view) {
+                        windowHandlers.update_window_view(this, &view.extents.x, &view.extents.y);
+                    }
+                    // context->PrepareWindowView(view);
+
+                    if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
+                    view.fov = glm::radians(CVarFieldOfView.Get());
+                    view.UpdateProjectionMatrix();
+
                     context->AttachView(ent);
                 }
             }

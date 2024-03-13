@@ -60,9 +60,13 @@ namespace sp {
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
 
+        CVarBase *GetCVarBase(const string &name) {
+            return cvars[all_lower(name) ? name : to_lower_copy(name)];
+        }
+
         template<typename T>
         CVar<T> &GetCVar(const string &name) {
-            auto *base = cvars[all_lower(name) ? name : to_lower_copy(name)];
+            auto *base = GetCVarBase(name);
             Assertf(base, "CVar %s does not exist", name);
             auto *derived = dynamic_cast<CVar<T> *>(base);
             Assertf(derived, "CVar %s has unexpected type", name);
