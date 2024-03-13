@@ -11,8 +11,6 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "common/Tracing.hh"
-// #include "ecs/EcsImpl.hh"
-// #include "graphics/core/GraphicsContext.hh"
 #include "input/BindingNames.hh"
 #include "input/KeyCodes.hh"
 

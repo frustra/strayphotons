@@ -30,13 +30,10 @@ namespace sp {
         if (game.graphics) {
             game.graphics->Init();
 
-            auto window = game.graphics->glfwWindow;
-            if (window) {
     #ifdef SP_GRAPHICS_SUPPORT_VK
-                bool withValidationLayers = game.options.count("with-validation-layers");
-                game.graphics->context = std::make_shared<vulkan::DeviceContext>(*game.graphics, withValidationLayers);
+            bool withValidationLayers = game.options.count("with-validation-layers");
+            game.graphics->context = std::make_shared<vulkan::DeviceContext>(*game.graphics, withValidationLayers);
     #endif
-            }
 
             game.graphics->StartThread(scriptMode);
         }

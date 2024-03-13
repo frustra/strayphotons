@@ -80,10 +80,19 @@ SP_EXPORT sp_winit_ctx_t *sp_graphics_get_winit_context(GraphicsManager *graphic
 
 SP_EXPORT void sp_graphics_set_window_handlers(GraphicsManager *graphics, const sp_window_handlers_t *handlers) {
     Assertf(graphics != nullptr, "sp_graphics_set_window_handlers called with null graphics");
-    graphics->windowHandlers = *handlers;
+    if (handlers) {
+        graphics->windowHandlers = *handlers;
+    } else {
+        graphics->windowHandlers = {};
+    }
 }
 
 SP_EXPORT bool sp_graphics_handle_input_frame(GraphicsManager *graphics) {
     Assertf(graphics != nullptr, "sp_graphics_handle_input_frame called with null graphics");
     return graphics->InputFrame();
+}
+
+SP_EXPORT void sp_graphics_step_thread(GraphicsManager *graphics, unsigned int count) {
+    Assertf(graphics != nullptr, "sp_graphics_step_thread called with null graphics");
+    graphics->Step(count);
 }

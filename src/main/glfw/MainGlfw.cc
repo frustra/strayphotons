@@ -46,6 +46,8 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp {
     sp_game_t GameInstance = (sp_game_t)0;
+    GraphicsManager *GameGraphics = nullptr;
+    std::atomic_uint64_t GraphicsStepCount, GraphicsMaxStepCount;
 
     void handleSignals(int signal) {
         if (signal == SIGINT && GameInstance) {
@@ -114,12 +116,13 @@ int main(int argc, char **argv)
     std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t game) {
         GameInstance = nullptr;
         sp_game_destroy(game);
+        glfwTerminate();
     });
 
     GameInstance = instance.get();
 
     cxxopts::ParseResult *options = sp_game_get_options(GameInstance);
-    GraphicsManager *graphicsManager = sp_game_get_graphics_manager(GameInstance);
+    GameGraphics = sp_game_get_graphics_manager(GameInstance);
 
     glfwSetErrorCallback(glfwErrorCallback);
 
@@ -179,16 +182,17 @@ int main(int argc, char **argv)
         extensions.emplace_back(requiredExtensions[i]);
     }
 
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
     // Create window and surface
     glm::ivec2 initialSize;
     sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
     sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
     GLFWwindow *window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
     Assert(window, "glfw window creation failed");
-    sp_graphics_set_glfw_window(graphicsManager, window, [](GLFWwindow *window) {
+    sp_graphics_set_glfw_window(GameGraphics, window, [](GLFWwindow *window) {
         if (window) glfwDestroyWindow(window);
-        glfwTerminate();
     });
+#endif
 
     vk::ApplicationInfo applicationInfo("Stray Photons",
         VK_MAKE_VERSION(1, 0, 0),
@@ -205,19 +209,20 @@ int main(int argc, char **argv)
         (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
 
     vk::Instance vkInstance = vk::createInstance(createInfo);
-    sp_graphics_set_vulkan_instance(graphicsManager, vkInstance, [](GraphicsManager *graphics, VkInstance instance) {
+    sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](GraphicsManager *graphics, VkInstance instance) {
         if (instance) ((vk::Instance)instance).destroy();
     });
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkInstance);
 
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
     vk::SurfaceKHR vkSurface;
     VkResult result = glfwCreateWindowSurface(vkInstance, window, nullptr, (VkSurfaceKHR *)&vkSurface);
     if (result != VK_SUCCESS) {
         Abortf("creating window surface (%s)", vk::to_string(static_cast<vk::Result>(result)));
     }
     Assert(vkSurface, "gkfw window surface creation failed");
-    sp_graphics_set_vulkan_surface(graphicsManager, vkSurface, [](GraphicsManager *graphics, VkSurfaceKHR surface) {
+    sp_graphics_set_vulkan_surface(GameGraphics, vkSurface, [](GraphicsManager *graphics, VkSurfaceKHR surface) {
         if (graphics && surface) {
             vk::Instance instance = sp_graphics_get_vulkan_instance(graphics);
             if (instance) instance.destroySurfaceKHR(surface);
@@ -229,6 +234,7 @@ int main(int argc, char **argv)
         auto *inputHandler = (GlfwInputHandler *)handler;
         delete inputHandler;
     });
+#endif
 
     sp_window_handlers_t windowHandlers;
     windowHandlers.get_video_modes = [](GraphicsManager *graphics, int *mode_count_out, sp_video_mode_t *modes_out) {
@@ -247,6 +253,7 @@ int main(int argc, char **argv)
         }
         *mode_count_out = modeCount;
     };
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
     windowHandlers.set_title = [](GraphicsManager *graphics, const char *title) {
         GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
         if (window) glfwSetWindowTitle(window, title);
@@ -321,7 +328,11 @@ int main(int argc, char **argv)
         }
     };
     windowHandlers.win32_handle = glfwGetWin32Window(window);
-    sp_graphics_set_window_handlers(graphicsManager, &windowHandlers);
+#endif
+    sp_graphics_set_window_handlers(GameGraphics, &windowHandlers);
+    Defer disableHanlders([&] {
+        sp_graphics_set_window_handlers(GameGraphics, nullptr);
+    });
 
     // #ifdef SP_XR_SUPPORT
     //     if (!options.count("no-vr")) {
@@ -333,28 +344,30 @@ int main(int argc, char **argv)
     int status_code = sp_game_start(GameInstance);
     if (status_code) return status_code;
 
-    if (graphicsManager) {
-        std::atomic_uint64_t graphicsStepCount, graphicsMaxStepCount;
-
+    if (GameGraphics) {
         bool scriptMode = options->count("run") > 0;
-        // if (scriptMode) {
-        //     game.funcs.Register<unsigned int>("stepgraphics",
-        //         "Renders N frames in a row, saving any queued screenshots, default is 1",
-        //         [&game](unsigned int arg) {
-        //             auto count = std::max(1u, arg);
-        //             for (auto i = 0u; i < count; i++) {
-        //                 // Step main thread glfw input first
-        //                 graphicsMaxStepCount++;
-        //                 auto step = graphicsStepCount.load();
-        //                 while (step < graphicsMaxStepCount) {
-        //                     graphicsStepCount.wait(step);
-        //                     step = graphicsStepCount.load();
-        //                 }
+        sp_cvar_t *cfuncStepGraphics = nullptr;
+        if (scriptMode) {
+            cfuncStepGraphics = sp_register_cfunc_uint32("stepgraphics",
+                "Renders N frames in a row, saving any queued screenshots, default is 1",
+                [](unsigned int arg) {
+                    auto count = std::max(1u, arg);
+                    for (auto i = 0u; i < count; i++) {
+                        // Step main thread glfw input first
+                        GraphicsMaxStepCount++;
+                        auto step = GraphicsStepCount.load();
+                        while (step < GraphicsMaxStepCount) {
+                            GraphicsStepCount.wait(step);
+                            step = GraphicsStepCount.load();
+                        }
 
-        //                 graphicsManager->Step(1);
-        //             }
-        //         });
-        // }
+                        sp_graphics_step_thread(GameGraphics, 1);
+                    }
+                });
+        }
+        Defer unregisterStepFunc([&] {
+            if (cfuncStepGraphics) sp_unregister_cfunc(cfuncStepGraphics);
+        });
 
         sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
 
@@ -364,15 +377,15 @@ int main(int argc, char **argv)
             (void)frameName;
             FrameMarkStart(frameName);
             if (scriptMode) {
-                while (graphicsStepCount < graphicsMaxStepCount) {
+                while (GraphicsStepCount < GraphicsMaxStepCount) {
                     GlfwInputHandler::Frame();
-                    sp_graphics_handle_input_frame(graphicsManager);
-                    graphicsStepCount++;
+                    sp_graphics_handle_input_frame(GameGraphics);
+                    GraphicsStepCount++;
                 }
-                graphicsStepCount.notify_all();
+                GraphicsStepCount.notify_all();
             } else {
                 GlfwInputHandler::Frame();
-                if (!sp_graphics_handle_input_frame(graphicsManager)) {
+                if (!sp_graphics_handle_input_frame(GameGraphics)) {
                     Tracef("Exit triggered via window manager");
                     break;
                 }

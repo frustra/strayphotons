@@ -30,5 +30,4 @@ target_link_libraries(${PROJECT_MAIN_WINIT_LIB} PUBLIC
 
 # target_precompile_headers(${PROJECT_MAIN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
-add_subdirectory(glfw)
 add_subdirectory(winit)

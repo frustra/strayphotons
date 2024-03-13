@@ -24,7 +24,7 @@ target_link_libraries(${PROJECT_XR_OPENVR_LIB}
         ${PROJECT_COMMON_LIB}
         ${PROJECT_XR_CORE_LIB}
         # ${PROJECT_GAME_LIB}
-        ${PROJECT_GRAPHICS_CORE_LIB}
+        # ${PROJECT_GRAPHICS_CORE_LIB}
 )
 
 target_compile_definitions(${PROJECT_XR_CORE_LIB} INTERFACE

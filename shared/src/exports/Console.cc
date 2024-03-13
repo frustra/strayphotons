@@ -72,3 +72,13 @@ SP_EXPORT void sp_cvar_set_ivec2(sp_cvar_t *cvar, int value_x, int value_y) {
     Assertf(derived, "CVar %s has unexpected type", cvar->GetName());
     derived->Set(glm::ivec2(value_x, value_y));
 }
+
+SP_EXPORT sp_cvar_t *sp_register_cfunc_uint32(const char *name,
+    const char *description,
+    void (*cfunc_callback)(uint32_t)) {
+    return new CFunc<uint32_t>(name, description, cfunc_callback);
+}
+
+SP_EXPORT void sp_unregister_cfunc(sp_cvar_t *cfunc) {
+    if (cfunc) delete cfunc;
+}

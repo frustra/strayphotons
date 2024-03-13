@@ -5,60 +5,72 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-set(PROJECT_GRAPHICS_VULKAN_GLFW_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw CACHE INTERNAL "Library for Vulkan-based rendering to a display via GLFW")
-set(PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display via GLFW")
-set(PROJECT_GRAPHICS_VULKAN_GLFW_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-glfw-xr CACHE INTERNAL "Library for Vulkan-based rendering through an XR display")
-set(PROJECT_GRAPHICS_VULKAN_WINIT_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-winit CACHE INTERNAL "Library for Vulkan-based rendering to a display via Winit")
-
 set(PROJECT_MAIN_WINIT_LIB ${PROJECT_BASE_NAME}-main-winit CACHE INTERNAL "Library implementing window creation using Winit")
 
 set(PROJECT_XR_CORE_LIB ${PROJECT_BASE_NAME}-xr-core CACHE INTERNAL "Library containing generic XR/VR support")
 set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library implementing XR support using OpenVR")
 
-include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
-
-add_library(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} INTERFACE)
-target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} INTERFACE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
-target_link_libraries(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} INTERFACE
+# Vulkan desktop build
+# TODO: Commented until package release saves a log file
+# if(SP_PACKAGE_RELEASE AND WIN32)
+#     add_executable(sp-vk WIN32)
+# else()
+add_executable(sp-vk
+    main/glfw/MainGlfw.cc
+    main/glfw/GlfwInputHandler.cc
+    # xr/xr/XrManager.cc
+    # xr/xr/openvr/vulkan/VkSubmit.cc
+)
+# endif()
+target_link_libraries(sp-vk PRIVATE
+    ${PROJECT_COMMON_EXE}
+    ${PROJECT_LIB_NAME}
+    ${PROJECT_COMMON_LIB}
+    # ${PROJECT_XR_OPENVR_LIB}
     glfw
     Vulkan::Vulkan
 )
-
-# Vulkan desktop build
-add_module_configuration(
-    NAME sp-vk
-    EXPORT_COMPILE_COMMANDS
-    LINK_LIBRARIES
-        ${PROJECT_LIB_NAME}
-        ${PROJECT_COMMON_LIB}
-        ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
-        # ${PROJECT_XR_OPENVR_LIB}
-)
+target_compile_definitions(sp-vk PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+set_target_properties(sp-vk PROPERTIES EXPORT_COMPILE_COMMANDS 1)
 
 if(SP_BUILD_RUST)
     # Winit desktop build (dynamic linking)
     add_executable(sp-winit
         main/winit/MainWinit.cc
-        game/DebugCFuncs.cc
-        xr/xr/XrManager.cc
-        xr/xr/openvr/vulkan/VkSubmit.cc
+        # xr/xr/XrManager.cc
+        # xr/xr/openvr/vulkan/VkSubmit.cc
     )
     target_link_libraries(sp-winit PRIVATE
         ${PROJECT_LIB_NAME}
         ${PROJECT_MAIN_WINIT_LIB}
-        ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
-        ${PROJECT_XR_OPENVR_LIB}
+        # ${PROJECT_XR_OPENVR_LIB}
+        Vulkan::Vulkan
     )
+    target_compile_definitions(sp-winit PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 endif()
 
 # Headless executable used for CI testing purposes
-add_module_configuration(
-    NAME sp-test
-    LINK_LIBRARIES
-        ${PROJECT_LIB_NAME}
-        # ${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
-        glfw
+# TODO: Commented until package release saves a log file
+# if(SP_PACKAGE_RELEASE AND WIN32)
+#     add_executable(sp-test WIN32)
+# else()
+add_executable(sp-test
+    main/glfw/MainGlfw.cc
+    main/glfw/GlfwInputHandler.cc
 )
+# endif()
+target_link_libraries(sp-test PRIVATE
+    ${PROJECT_COMMON_EXE}
+    ${PROJECT_LIB_NAME}
+    ${PROJECT_COMMON_LIB}
+    glfw-egl
+    Vulkan::Vulkan
+)
+target_compile_definitions(sp-test PRIVATE
+    SP_GRAPHICS_SUPPORT_HEADLESS
+    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
+)
+set_target_properties(sp-test PROPERTIES EXPORT_COMPILE_COMMANDS 1)
 
 add_subdirectory(main)
-add_subdirectory(xr)
+# add_subdirectory(xr)

@@ -77,13 +77,14 @@ namespace sp::vulkan {
         ZoneScoped;
 
         Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
-        Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
 
         bool enableSwapchain = true;
         if (graphics.glfwWindow) {
             Logf("Graphics starting up (Vulkan GLFW)");
+            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
         } else if (graphics.winitContext) {
             Logf("Graphics starting up (Vulkan Winit)");
+            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
         } else {
             Logf("Graphics starting up (Vulkan Headless)");
             enableSwapchain = false;

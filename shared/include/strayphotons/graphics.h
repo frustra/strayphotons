@@ -75,6 +75,7 @@ typedef struct sp_window_handlers_t {
 
 SP_EXPORT void sp_graphics_set_window_handlers(GraphicsManager *graphics, const sp_window_handlers_t *handlers);
 SP_EXPORT bool sp_graphics_handle_input_frame(GraphicsManager *graphics);
+SP_EXPORT void sp_graphics_step_thread(GraphicsManager *graphics, unsigned int count = 1u);
 
 #ifdef __cplusplus
 }

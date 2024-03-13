@@ -39,5 +39,3 @@ foreach(_file ${_files_to_copy})
     add_dependencies(${PROJECT_XR_OPENVR_LIB} ${_file}-runtime-copy)
 
 endforeach()
-
-add_subdirectory(vulkan)
