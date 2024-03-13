@@ -12,8 +12,6 @@ set(PROJECT_GRAPHICS_VULKAN_WINIT_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-winit
 
 set(PROJECT_MAIN_WINIT_LIB ${PROJECT_BASE_NAME}-main-winit CACHE INTERNAL "Library implementing window creation using Winit")
 
-set(PROJECT_AUDIO_LIB ${PROJECT_BASE_NAME}-audio CACHE INTERNAL "Library implementing audio using libsoundio and Resonance Audio")
-
 set(PROJECT_XR_CORE_LIB ${PROJECT_BASE_NAME}-xr-core CACHE INTERNAL "Library containing generic XR/VR support")
 set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library implementing XR support using OpenVR")
 
@@ -34,7 +32,6 @@ add_module_configuration(
         ${PROJECT_LIB_NAME}
         ${PROJECT_COMMON_LIB}
         ${PROJECT_GRAPHICS_VULKAN_GLFW_LIB}
-        # "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         # ${PROJECT_XR_OPENVR_LIB}
 )
 
@@ -50,7 +47,6 @@ if(SP_BUILD_RUST)
         ${PROJECT_LIB_NAME}
         ${PROJECT_MAIN_WINIT_LIB}
         ${PROJECT_GRAPHICS_VULKAN_WINIT_LIB}
-        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         ${PROJECT_XR_OPENVR_LIB}
     )
 endif()
@@ -63,10 +59,6 @@ add_module_configuration(
         # ${PROJECT_GRAPHICS_VULKAN_GLFW_HEADLESS_LIB}
         glfw
 )
-
-if(WIN32)
-    add_subdirectory(audio)
-endif()
 
 add_subdirectory(main)
 add_subdirectory(xr)

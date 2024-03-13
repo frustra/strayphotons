@@ -75,4 +75,5 @@ namespace sp {
     void StartGraphicsThread(Game &game, bool scriptMode);
     void InitPhysicsManager(Game &game);
     void StartPhysicsThread(Game &game, bool scriptMode);
+    void InitAudioManager(Game &game);
 } // namespace sp

@@ -35,6 +35,7 @@ add_subdirectory(game)
 
 target_sources(${PROJECT_LIB_NAME} PRIVATE
     DebugCFuncs.cc
+    InitAudio.cc
     InitGraphics.cc
     InitPhysics.cc
 )

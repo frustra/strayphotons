@@ -323,10 +323,6 @@ int main(int argc, char **argv)
     windowHandlers.win32_handle = glfwGetWin32Window(window);
     sp_graphics_set_window_handlers(graphicsManager, &windowHandlers);
 
-    // #ifdef SP_AUDIO_SUPPORT
-    //     game.audio = make_shared<AudioManager>();
-    // #endif
-
     // #ifdef SP_XR_SUPPORT
     //     if (!options.count("no-vr")) {
     //         game.xr = make_shared<xr::XrManager>(&game);

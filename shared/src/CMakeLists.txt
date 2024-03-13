@@ -5,6 +5,10 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
+if(WIN32)
+    add_subdirectory(audio)
+endif()
+
 add_subdirectory(common)
 add_subdirectory(core)
 add_subdirectory(exports)
