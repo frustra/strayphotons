@@ -58,8 +58,14 @@ SP_EXPORT void sp_graphics_set_winit_context(GraphicsManager *graphics,
     void (*destroy_callback)(sp_winit_ctx_t *) = 0);
 SP_EXPORT sp_winit_ctx_t *sp_graphics_get_winit_context(GraphicsManager *graphics);
 
+typedef struct sp_video_mode_t {
+    int width;
+    int height;
+    // TODO: Color modes?
+} sp_video_mode_t;
+
 typedef struct sp_window_handlers_t {
-    // TODO: Get video modes
+    void (*get_video_modes)(GraphicsManager *, int *mode_count, sp_video_mode_t *modes) = 0;
     void (*set_title)(GraphicsManager *, const char *) = 0;
     bool (*should_close)(GraphicsManager *) = 0;
     void (*update_window_view)(GraphicsManager *, int *, int *) = 0;

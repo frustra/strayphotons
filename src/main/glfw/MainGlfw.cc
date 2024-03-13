@@ -231,6 +231,22 @@ int main(int argc, char **argv)
     });
 
     sp_window_handlers_t windowHandlers;
+    windowHandlers.get_video_modes = [](GraphicsManager *graphics, int *mode_count_out, sp_video_mode_t *modes_out) {
+        Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
+        int modeCount;
+        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
+        if (!modes || modeCount <= 0) {
+            Warnf("Failed to read Glfw monitor modes");
+            *mode_count_out = 0;
+            return;
+        }
+        if (modes_out && *mode_count_out >= modeCount) {
+            for (int i = 0; i < modeCount; i++) {
+                modes_out[i] = {modes[i].width, modes[i].height};
+            }
+        }
+        *mode_count_out = modeCount;
+    };
     windowHandlers.set_title = [](GraphicsManager *graphics, const char *title) {
         GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
         if (window) glfwSetWindowTitle(window, title);

@@ -498,29 +498,20 @@ namespace sp::vulkan {
 
         perfTimer.reset(new PerfTimer(*this));
 
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        int modeCount;
-        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
-        if (modes && modeCount > 0) {
+        if (graphics.windowHandlers.get_video_modes) {
+            int modeCount;
+            graphics.windowHandlers.get_video_modes(&graphics, &modeCount, nullptr);
             monitorModes.resize(modeCount);
+            std::vector<sp_video_mode_t> videoModes(modeCount);
+            graphics.windowHandlers.get_video_modes(&graphics, &modeCount, videoModes.data());
             for (int i = 0; i < modeCount; i++) {
-                monitorModes[i] = {modes[i].width, modes[i].height};
+                monitorModes[i] = {videoModes[i].width, videoModes[i].height};
             }
-        } else {
-            Warnf("Failed to read Glfw monitor modes");
+            std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
+                return a.x > b.x || (a.x == b.x && a.y > b.y);
+            });
+            monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
         }
-#endif
-#ifdef SP_RUST_WINIT_SUPPORT
-        auto modes = sp::winit::get_monitor_modes(*winitContext);
-        monitorModes.reserve(modes.size());
-        for (auto &mode : modes) {
-            monitorModes.emplace_back(mode.width, mode.height);
-        }
-#endif
-        std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-            return a.x > b.x || (a.x == b.x && a.y > b.y);
-        });
-        monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
 
         if (enableSwapchain) CreateSwapchain();
     }
@@ -622,24 +613,6 @@ namespace sp::vulkan {
         CreateSwapchain();
     }
 
-    void DeviceContext::SetTitle(string title) {
-        Assert(std::this_thread::get_id() == mainThread, "DeviceContext::SetTitle must be called from main thread");
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        if (window) glfwSetWindowTitle(window, title.c_str());
-#endif
-#ifdef SP_RUST_WINIT_SUPPORT
-        if (winitContext) sp::winit::set_window_title(*winitContext, title);
-#endif
-    }
-
-    bool DeviceContext::ShouldClose() {
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        return window && !!glfwWindowShouldClose(window);
-#else
-        return false;
-#endif
-    }
-
     void DeviceContext::InitRenderer(Game &game) {
         vkRenderer = make_shared<vulkan::Renderer>(game, *this);
     }
@@ -656,143 +629,6 @@ namespace sp::vulkan {
 
     void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {
         if (vkRenderer) vkRenderer->SetMenuGui(menuGui);
-    }
-
-    void DeviceContext::PrepareWindowView(ecs::View &view) {
-        Assert(std::this_thread::get_id() == mainThread, "PrepareWindowView must be called from main thread");
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        if (window) {
-            bool fullscreen = CVarWindowFullscreen.Get();
-            if (systemFullscreen != fullscreen) {
-                if (fullscreen) {
-                    glfwGetWindowPos(window, &storedWindowRect.x, &storedWindowRect.y);
-                    storedWindowRect.z = systemWindowSize.x;
-                    storedWindowRect.w = systemWindowSize.y;
-
-                    auto *monitor = glfwGetPrimaryMonitor();
-                    if (monitor) {
-                        auto *mode = glfwGetVideoMode(monitor);
-                        systemWindowSize = {mode->width, mode->height};
-                    }
-                    glfwSetWindowMonitor(window, monitor, 0, 0, systemWindowSize.x, systemWindowSize.y, 60);
-                } else {
-                    systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
-                    glfwSetWindowMonitor(window,
-                        nullptr,
-                        storedWindowRect.x,
-                        storedWindowRect.y,
-                        storedWindowRect.z,
-                        storedWindowRect.w,
-                        0);
-                }
-                CVarWindowSize.Set(systemWindowSize);
-                systemFullscreen = fullscreen;
-            }
-
-            glm::ivec2 windowSize = CVarWindowSize.Get();
-            if (systemWindowSize != windowSize) {
-                if (CVarWindowFullscreen.Get()) {
-                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
-                } else {
-                    glfwSetWindowSize(window, windowSize.x, windowSize.y);
-                }
-
-                systemWindowSize = windowSize;
-            }
-
-            glm::ivec2 fbExtents;
-            glfwGetFramebufferSize(window, &fbExtents.x, &fbExtents.y);
-            if (fbExtents.x > 0 && fbExtents.y > 0) {
-                view.extents = fbExtents;
-            }
-        }
-#endif
-#ifdef SP_RUST_WINIT_SUPPORT
-        if (winitContext) {
-            bool fullscreen = CVarWindowFullscreen.Get();
-            if (systemFullscreen != fullscreen) {
-                if (fullscreen) {
-                    sp::winit::get_window_position(*winitContext, &storedWindowRect.x, &storedWindowRect.y);
-                    storedWindowRect.z = systemWindowSize.x;
-                    storedWindowRect.w = systemWindowSize.y;
-
-                    auto monitor = sp::winit::get_active_monitor(*winitContext);
-                    glm::uvec2 readWindowSize;
-                    sp::winit::get_monitor_resolution(*monitor, &readWindowSize.x, &readWindowSize.y);
-                    if (readWindowSize != glm::uvec2(0)) systemWindowSize = readWindowSize;
-                    sp::winit::set_window_mode(*winitContext,
-                        &*monitor,
-                        0,
-                        0,
-                        (uint32_t)systemWindowSize.x,
-                        (uint32_t)systemWindowSize.y);
-                } else {
-                    systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
-                    sp::winit::set_window_mode(*winitContext,
-                        0,
-                        storedWindowRect.x,
-                        storedWindowRect.y,
-                        (uint32_t)storedWindowRect.z,
-                        (uint32_t)storedWindowRect.w);
-                }
-                CVarWindowSize.Set(systemWindowSize);
-                systemFullscreen = fullscreen;
-            }
-
-            glm::ivec2 windowSize = CVarWindowSize.Get();
-            if (systemWindowSize != windowSize) {
-                if (CVarWindowFullscreen.Get()) {
-                    auto monitor = sp::winit::get_active_monitor(*winitContext);
-                    sp::winit::set_window_mode(*winitContext, &*monitor, 0, 0, windowSize.x, windowSize.y);
-                } else {
-                    sp::winit::set_window_inner_size(*winitContext, windowSize.x, windowSize.y);
-                }
-
-                systemWindowSize = windowSize;
-            }
-
-            glm::uvec2 fbExtents;
-            sp::winit::get_window_inner_size(*winitContext, &fbExtents.x, &fbExtents.y);
-            if (fbExtents.x > 0 && fbExtents.y > 0) {
-                view.extents = fbExtents;
-            }
-        }
-#endif
-
-        if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
-        view.fov = glm::radians(CVarFieldOfView.Get());
-        view.UpdateProjectionMatrix();
-    }
-
-    void DeviceContext::UpdateInputModeFromFocus() {
-        Assert(std::this_thread::get_id() == mainThread, "UpdateInputModeFromFocus must be called from main thread");
-        ZoneScoped;
-#ifdef SP_GRAPHICS_SUPPORT_GLFW
-        if (window) {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
-            if (lock.Has<ecs::FocusLock>()) {
-                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
-                if (layer == ecs::FocusLayer::Game) {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                } else {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                }
-            }
-        }
-#endif
-#ifdef SP_RUST_WINIT_SUPPORT
-        if (winitContext) {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
-            if (lock.Has<ecs::FocusLock>()) {
-                auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
-                if (layer == ecs::FocusLayer::Game) {
-                    sp::winit::set_input_mode(*winitContext, sp::InputMode::CursorDisabled);
-                } else {
-                    sp::winit::set_input_mode(*winitContext, sp::InputMode::CursorNormal);
-                }
-            }
-        }
-#endif
     }
 
     void DeviceContext::BeginFrame() {

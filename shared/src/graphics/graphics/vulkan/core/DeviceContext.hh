@@ -75,7 +75,6 @@ namespace sp::vulkan {
         }
 
         // Potential GraphicsContext function implementations
-        bool ShouldClose() override;
         void BeginFrame() override;
         void SwapBuffers() override;
         void EndFrame() override;
@@ -88,9 +87,6 @@ namespace sp::vulkan {
 
         void SetDebugGui(DebugGuiManager *debugGui) override;
         void SetMenuGui(MenuGuiManager *menuGui) override;
-
-        void PrepareWindowView(ecs::View &view) override;
-        void UpdateInputModeFromFocus() override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
@@ -240,8 +236,6 @@ namespace sp::vulkan {
         uint32_t GetMeasuredFPS() const override {
             return measuredFrameRate.load();
         }
-
-        void SetTitle(std::string title) override;
 
     private:
         void CreateSwapchain();

@@ -46,7 +46,6 @@ namespace sp {
         GraphicsContext() {}
         virtual ~GraphicsContext() {}
 
-        virtual bool ShouldClose() = 0;
         virtual void BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
         virtual void EndFrame() = 0;
@@ -66,9 +65,6 @@ namespace sp {
         virtual void SetDebugGui(DebugGuiManager *debugGui) = 0;
         virtual void SetMenuGui(MenuGuiManager *menuGui) = 0;
 
-        virtual void PrepareWindowView(ecs::View &view) = 0;
-        virtual void UpdateInputModeFromFocus() = 0;
-
         virtual const std::vector<glm::ivec2> &MonitorModes() {
             return monitorModes;
         }
@@ -83,8 +79,6 @@ namespace sp {
         virtual uint32_t GetMeasuredFPS() const {
             return 0;
         }
-
-        virtual void SetTitle(std::string title) {}
 
     protected:
         ecs::Entity activeView;

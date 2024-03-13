@@ -115,7 +115,6 @@ namespace sp {
                 }
             }
         }
-        // context->UpdateInputModeFromFocus();
 
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
@@ -128,7 +127,6 @@ namespace sp {
                     if (windowHandlers.update_window_view) {
                         windowHandlers.update_window_view(this, &view.extents.x, &view.extents.y);
                     }
-                    // context->PrepareWindowView(view);
 
                     if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
                     view.fov = glm::radians(CVarFieldOfView.Get());
