@@ -157,7 +157,6 @@ endif()
 cmake_policy(SET CMP0076 NEW)
 
 add_subdirectory(shaders)
-add_subdirectory(shared)
 add_subdirectory(src)
 add_subdirectory(docs_generator)
 add_subdirectory(hull_compiler)

@@ -17,14 +17,6 @@ using namespace std;
 #include "common/Defer.hh"
 #include "common/Logging.hh"
 
-#ifdef SP_AUDIO_SUPPORT
-    #include "audio/AudioManager.hh"
-#endif
-
-#ifdef SP_XR_SUPPORT
-    #include "xr/XrManager.hh"
-#endif
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #ifdef _WIN32
@@ -230,13 +222,6 @@ int main(int argc, char **argv)
         auto *inputHandler = (GlfwInputHandler *)handler;
         delete inputHandler;
     });
-#endif
-
-#ifdef SP_XR_SUPPORT
-    if (!options.count("no-vr")) {
-        game.xr = make_shared<xr::XrManager>(&game);
-        game.xr->LoadXrSystem();
-    }
 #endif
 
     sp_window_handlers_t windowHandlers;

@@ -97,7 +97,6 @@ target_link_libraries(sp-rs-wasm INTERFACE
 target_link_libraries(sp-rs-winit INTERFACE
     "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
     ${PROJECT_COMMON_LIB}
-    ${PROJECT_MAIN_WINIT_LIB}
     Tecs
 )
 target_compile_definitions(sp-rs-wasm INTERFACE

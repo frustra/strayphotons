@@ -5,73 +5,60 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-set(PROJECT_MAIN_WINIT_LIB ${PROJECT_BASE_NAME}-main-winit CACHE INTERNAL "Library implementing window creation using Winit")
+set(PROJECT_COMMON_LIB ${PROJECT_BASE_NAME}-common CACHE INTERNAL "Library containing common unitility functions")
+set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
+set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implementing game engine ECS systems")
 
-set(PROJECT_XR_CORE_LIB ${PROJECT_BASE_NAME}-xr-core CACHE INTERNAL "Library containing generic XR/VR support")
+set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
+set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
+
 set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library implementing XR support using OpenVR")
 
-# Vulkan desktop build
-# TODO: Commented until package release saves a log file
-# if(SP_PACKAGE_RELEASE AND WIN32)
-#     add_executable(sp-vk WIN32)
-# else()
-add_executable(sp-vk
-    main/glfw/MainGlfw.cc
-    main/glfw/GlfwInputHandler.cc
-    # xr/xr/XrManager.cc
-    # xr/xr/openvr/vulkan/VkSubmit.cc
-)
-# endif()
-target_link_libraries(sp-vk PRIVATE
-    ${PROJECT_COMMON_EXE}
-    ${PROJECT_LIB_NAME}
-    ${PROJECT_COMMON_LIB}
-    # ${PROJECT_XR_OPENVR_LIB}
-    glfw
-    Vulkan::Vulkan
-)
-target_compile_definitions(sp-vk PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
-set_target_properties(sp-vk PROPERTIES EXPORT_COMPILE_COMMANDS 1)
+set(PROJECT_AUDIO_LIB ${PROJECT_BASE_NAME}-audio CACHE INTERNAL "Library implementing audio using libsoundio and Resonance Audio")
 
-if(SP_BUILD_RUST)
-    # Winit desktop build (dynamic linking)
-    add_executable(sp-winit
-        main/winit/MainWinit.cc
-        # xr/xr/XrManager.cc
-        # xr/xr/openvr/vulkan/VkSubmit.cc
-    )
-    target_link_libraries(sp-winit PRIVATE
-        ${PROJECT_COMMON_EXE}
-        ${PROJECT_LIB_NAME}
-        ${PROJECT_MAIN_WINIT_LIB}
-        # ${PROJECT_XR_OPENVR_LIB}
-        Vulkan::Vulkan
-    )
-    target_compile_definitions(sp-winit PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+set(PROJECT_PHYSICS_PHYSX_LIB ${PROJECT_BASE_NAME}-physics-physx CACHE INTERNAL "Library implementing physics using PhysX")
+set(PROJECT_PHYSICS_COOKING_LIB ${PROJECT_BASE_NAME}-physics-cooking CACHE INTERNAL "Library implementing convex hull generation")
+
+set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library containing built-in scripts")
+
+
+add_library(${PROJECT_LIB_NAME} SHARED)
+
+target_include_directories(${PROJECT_LIB_NAME} PUBLIC
+    ${PROJECT_ROOT_DIR}/include
+)
+
+target_link_libraries(${PROJECT_LIB_NAME} PRIVATE
+    ${PROJECT_COMMON_LIB}
+    ${PROJECT_CORE_LIB}
+    ${PROJECT_GAME_LIB}
+    ${PROJECT_PHYSICS_PHYSX_LIB}
+    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+    ${PROJECT_XR_OPENVR_LIB}
+    "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+    "$<IF:$<BOOL:SP_BUILD_RUST>,sp-rs-wasm,>"
+    ${PROJECT_SCRIPTS_LIB}
+)
+
+target_compile_definitions(${PROJECT_LIB_NAME}
+    PRIVATE
+        SP_SHARED_INTERNAL
+    INTERFACE
+        SP_SHARED_BUILD
+)
+
+# Shared library components
+add_subdirectory(common)
+add_subdirectory(core)
+add_subdirectory(exports)
+add_subdirectory(game)
+add_subdirectory(graphics)
+add_subdirectory(physics)
+add_subdirectory(scripts)
+add_subdirectory(xr)
+if(WIN32)
+    add_subdirectory(audio)
 endif()
 
-# Headless executable used for CI testing purposes
-# TODO: Commented until package release saves a log file
-# if(SP_PACKAGE_RELEASE AND WIN32)
-#     add_executable(sp-test WIN32)
-# else()
-add_executable(sp-test
-    main/glfw/MainGlfw.cc
-    main/glfw/GlfwInputHandler.cc
-)
-# endif()
-target_link_libraries(sp-test PRIVATE
-    ${PROJECT_COMMON_EXE}
-    ${PROJECT_LIB_NAME}
-    ${PROJECT_COMMON_LIB}
-    glfw-egl
-    Vulkan::Vulkan
-)
-target_compile_definitions(sp-test PRIVATE
-    SP_GRAPHICS_SUPPORT_HEADLESS
-    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-)
-set_target_properties(sp-test PROPERTIES EXPORT_COMPILE_COMMANDS 1)
-
+# Statically linked executables
 add_subdirectory(main)
-# add_subdirectory(xr)

@@ -16,10 +16,6 @@ using namespace std;
 #include "common/Defer.hh"
 #include "common/Logging.hh"
 
-#ifdef SP_XR_SUPPORT
-    #include "xr/XrManager.hh"
-#endif
-
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
@@ -111,13 +107,6 @@ int main(int argc, char **argv)
         auto *inputHandler = (WinitInputHandler *)handler;
         delete inputHandler;
     });
-
-#ifdef SP_XR_SUPPORT
-    if (!game.options.count("no-vr")) {
-        game.xr = make_shared<xr::XrManager>(&game);
-        game.xr->LoadXrSystem();
-    }
-#endif
 
     sp_window_handlers_t windowHandlers;
     windowHandlers.get_video_modes = [](GraphicsManager *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {

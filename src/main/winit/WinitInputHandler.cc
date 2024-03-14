@@ -8,7 +8,7 @@
 #ifdef SP_RUST_WINIT_SUPPORT
     #include "WinitInputHandler.hh"
 
-    #include "InputCallbacks.hh"
+    // #include "InputCallbacks.hh"
     #include "common/Common.hh"
     #include "common/Logging.hh"
     #include "common/Tracing.hh"

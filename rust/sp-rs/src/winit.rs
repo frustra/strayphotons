@@ -192,7 +192,7 @@ mod ctx {
 
     unsafe extern "C++" {
         include!("input/KeyCodes.hh");
-        include!("winit/InputCallbacks.hh");
+        include!("sp-rs/include/InputCallbacks.hh");
         type KeyCode;
         type InputAction;
         type MouseButton;
