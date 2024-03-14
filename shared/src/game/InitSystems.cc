@@ -8,6 +8,10 @@
 #include "common/Common.hh"
 #include "game/Game.hh"
 
+#ifdef SP_AUDIO_SUPPORT
+    #include "audio/AudioManager.hh"
+#endif
+
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/core/GraphicsManager.hh"
 #endif
@@ -16,9 +20,23 @@
     #include "graphics/vulkan/core/DeviceContext.hh"
 #endif
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #include "physx/PhysxManager.hh"
+#endif
+
+#ifdef SP_RUST_WASM_SUPPORT
+    #include <wasm.rs.h>
+#endif
+
 #include <cxxopts.hpp>
 
 namespace sp {
+    void InitAudioManager(Game &game) {
+#ifdef SP_AUDIO_SUPPORT
+        game.audio = make_shared<AudioManager>();
+#endif
+    }
+
     void InitGraphicsManager(Game &game) {
 #ifdef SP_GRAPHICS_SUPPORT
         game.graphics = make_shared<GraphicsManager>(game);
@@ -37,6 +55,26 @@ namespace sp {
 
             game.graphics->StartThread(scriptMode);
         }
+#endif
+    }
+
+    void InitPhysicsManager(Game &game) {
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+        game.physics = make_shared<PhysxManager>(game.inputEventQueue);
+#endif
+    }
+
+    void StartPhysicsThread(Game &game, bool scriptMode) {
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+        if (game.physics) {
+            game.physics->StartThread(scriptMode);
+        }
+#endif
+    }
+
+    void InitRust(Game &game) {
+#ifdef SP_RUST_WASM_SUPPORT
+        wasm::print_hello();
 #endif
     }
 } // namespace sp

@@ -8,16 +8,10 @@
 #ifdef SP_RUST_WINIT_SUPPORT
     #include "WinitInputHandler.hh"
 
+    #include "InputCallbacks.hh"
     #include "common/Common.hh"
     #include "common/Logging.hh"
     #include "common/Tracing.hh"
-    #include "ecs/EcsImpl.hh"
-    #include "game/CGameContext.hh"
-    #include "game/Game.hh"
-    #include "game/Scene.hh"
-    #include "game/SceneManager.hh"
-    #include "graphics/GraphicsManager.hh"
-    #include "graphics/core/GraphicsContext.hh"
     #include "input/BindingNames.hh"
 
     #include <algorithm>
@@ -27,21 +21,22 @@
     #include <winit.rs.h>
 
 namespace sp {
-    WinitInputHandler::WinitInputHandler(CGameContext *ctx) : ctx(ctx) {
-        context = ctx->game.graphics->winitContext;
+    WinitInputHandler::WinitInputHandler(sp_game_t ctx, winit::WinitContext *winitContext)
+        : ctx(ctx), winitContext(winitContext) {
         mouse = sp_new_input_device(ctx, "mouse");
         keyboard = sp_new_input_device(ctx, "keyboard");
     }
 
     void WinitInputHandler::StartEventLoop(uint32_t maxInputRate) {
-        start_event_loop(*context, this, maxInputRate);
+        start_event_loop(*winitContext, this, maxInputRate);
     }
 
     bool InputFrameCallback(WinitInputHandler *handler) {
         ZoneScoped;
-        Assert(handler, "KeyInputCallback occured without valid context");
-
-        return handler->ctx->game.graphics->InputFrame() && !handler->ctx->game.exitTriggered.test();
+        Assert(handler, "InputFrameCallback occured without valid context");
+        GraphicsManager *graphicsManager = sp_game_get_graphics_manager(handler->ctx);
+        Assert(graphicsManager, "InputFrameCallback occured without valid GraphicsManager");
+        return sp_graphics_handle_input_frame(graphicsManager) && !sp_game_is_exit_triggered(handler->ctx);
     }
 
     void KeyInputCallback(WinitInputHandler *handler, KeyCode key, int scancode, InputAction action) {

@@ -47,12 +47,12 @@ struct GLFWwindow;
 // The following functions are declared in src/exports/Game.cc
 
 SP_EXPORT sp_game_t sp_game_init(int argc, char **argv);
-SP_EXPORT int sp_game_start(sp_game_t game);
-SP_EXPORT void sp_game_trigger_exit(sp_game_t game);
-SP_EXPORT bool sp_game_is_exit_triggered(sp_game_t game);
-SP_EXPORT int sp_game_wait_for_exit_trigger(sp_game_t game);
-SP_EXPORT int sp_game_get_exit_code(sp_game_t game);
-SP_EXPORT void sp_game_destroy(sp_game_t game);
+SP_EXPORT int sp_game_start(sp_game_t ctx);
+SP_EXPORT void sp_game_trigger_exit(sp_game_t ctx);
+SP_EXPORT bool sp_game_is_exit_triggered(sp_game_t ctx);
+SP_EXPORT int sp_game_wait_for_exit_trigger(sp_game_t ctx);
+SP_EXPORT int sp_game_get_exit_code(sp_game_t ctx);
+SP_EXPORT void sp_game_destroy(sp_game_t ctx);
 
 SP_EXPORT ParseResult *sp_game_get_options(sp_game_t ctx);
 

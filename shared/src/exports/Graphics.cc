@@ -14,7 +14,7 @@
 using namespace sp;
 
 SP_EXPORT GraphicsManager *sp_game_get_graphics_manager(sp_game_t ctx) {
-    Assertf(ctx != nullptr, "sp_game_get_graphics_manager called with null ctx");
+    Assertf(ctx != nullptr, "sp_game_get_graphics_manager called with null game ctx");
     return ctx->game.graphics.get();
 }
 

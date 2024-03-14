@@ -36,7 +36,7 @@ struct GLFWwindow;
 
 // The following functions are declared in src/exports/Graphics.cc
 
-SP_EXPORT GraphicsManager *sp_game_get_graphics_manager(sp_game_t game);
+SP_EXPORT GraphicsManager *sp_game_get_graphics_manager(sp_game_t ctx);
 
 SP_EXPORT void sp_graphics_set_vulkan_instance(GraphicsManager *graphics,
     VkInstance instance,
@@ -59,13 +59,13 @@ SP_EXPORT void sp_graphics_set_winit_context(GraphicsManager *graphics,
 SP_EXPORT sp_winit_ctx_t *sp_graphics_get_winit_context(GraphicsManager *graphics);
 
 typedef struct sp_video_mode_t {
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
     // TODO: Color modes?
 } sp_video_mode_t;
 
 typedef struct sp_window_handlers_t {
-    void (*get_video_modes)(GraphicsManager *, int *mode_count, sp_video_mode_t *modes) = 0;
+    void (*get_video_modes)(GraphicsManager *, size_t *mode_count, sp_video_mode_t *modes) = 0;
     void (*set_title)(GraphicsManager *, const char *) = 0;
     bool (*should_close)(GraphicsManager *) = 0;
     void (*update_window_view)(GraphicsManager *, int *, int *) = 0;

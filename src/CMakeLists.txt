@@ -41,6 +41,7 @@ if(SP_BUILD_RUST)
         # xr/xr/openvr/vulkan/VkSubmit.cc
     )
     target_link_libraries(sp-winit PRIVATE
+        ${PROJECT_COMMON_EXE}
         ${PROJECT_LIB_NAME}
         ${PROJECT_MAIN_WINIT_LIB}
         # ${PROJECT_XR_OPENVR_LIB}

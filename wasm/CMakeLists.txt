@@ -25,7 +25,7 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
             -nostdlib
             -DSP_WASM_BUILD=1
             -I${CMAKE_CURRENT_SOURCE_DIR}/inc
-            -I${PROJECT_SOURCE_DIR}/src/core
+            -I${PROJECT_SOURCE_DIR}/shared/src/core
             -Wl,--allow-undefined-file=${CMAKE_CURRENT_SOURCE_DIR}/wasm.syms
             -Wl,--no-entry
             -Wl,--export-all

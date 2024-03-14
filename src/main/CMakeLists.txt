@@ -28,6 +28,10 @@ target_link_libraries(${PROJECT_MAIN_WINIT_LIB} PUBLIC
     cxxopts
 )
 
+if(WIN32)
+    target_link_libraries(${PROJECT_MAIN_WINIT_LIB} PUBLIC Imm32)
+endif()
+
 # target_precompile_headers(${PROJECT_MAIN_WINIT_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(winit)

@@ -31,10 +31,6 @@
 #include <optional>
 #include <string>
 
-#ifdef SP_RUST_WINIT_SUPPORT
-    #include <winit.rs.h>
-#endif
-
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp::vulkan {
@@ -140,34 +136,8 @@ namespace sp::vulkan {
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-#ifdef SP_RUST_WINIT_SUPPORT
-        auto initialSize = CVarWindowSize.Get();
-        winitContext = std::shared_ptr<sp::winit::WinitContext>(
-            sp::winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw(),
-            [](auto *ptr) {
-                (void)rust::cxxbridge1::Box<sp::winit::WinitContext>::from_raw(ptr);
-            });
-        instance = (VkInstance)sp::winit::get_instance_handle(*winitContext);
-        Assert(instance, "winit instance creation failed");
-        instanceDestroy.SetFunc([this] {
-            Tracef("Destroying rust instance");
-            sp::winit::destroy_instance(*winitContext);
-        });
-#endif
-
         VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
         debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
-
-#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-    #ifdef SP_RUST_WINIT_SUPPORT
-        surface = (VkSurfaceKHR)sp::winit::get_surface_handle(*winitContext);
-        Assert(surface, "winit window creation failed");
-        surfaceDestroy.SetFunc([this] {
-            Tracef("Destroying rust surface");
-            sp::winit::destroy_surface(*winitContext);
-        });
-    #endif
-#endif
 
         auto physicalDevices = instance.enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
@@ -500,12 +470,12 @@ namespace sp::vulkan {
         perfTimer.reset(new PerfTimer(*this));
 
         if (graphics.windowHandlers.get_video_modes) {
-            int modeCount;
+            size_t modeCount;
             graphics.windowHandlers.get_video_modes(&graphics, &modeCount, nullptr);
             monitorModes.resize(modeCount);
             std::vector<sp_video_mode_t> videoModes(modeCount);
             graphics.windowHandlers.get_video_modes(&graphics, &modeCount, videoModes.data());
-            for (int i = 0; i < modeCount; i++) {
+            for (size_t i = 0; i < modeCount; i++) {
                 monitorModes[i] = {videoModes[i].width, videoModes[i].height};
             }
             std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
@@ -523,12 +493,6 @@ namespace sp::vulkan {
         Debugf("Destroying DeviceContext");
         swapchain.reset();
         graphics.glfwWindow.reset();
-        graphics.winitContext.reset();
-
-#ifdef SP_RUST_WINIT_SUPPORT
-        swapchain.reset();
-        sp::winit::destroy_window(*winitContext);
-#endif
 
 #ifdef TRACY_ENABLE_GRAPHICS
         for (auto ctx : tracing.tracyContexts)

@@ -8,31 +8,25 @@
 #pragma once
 
 #ifdef SP_RUST_WINIT_SUPPORT
-    #include "InputCallbacks.hh"
-    #include "common/LockFreeEventQueue.hh"
-    #include "ecs/Ecs.hh"
-    #include "ecs/EventQueue.hh"
-
     #include <glm/glm.hpp>
+    #include <strayphotons.h>
 
 namespace sp::winit {
     struct WinitContext;
 }
 
 namespace sp {
-    struct CGameContext;
-
     class WinitInputHandler {
     public:
-        WinitInputHandler(CGameContext *ctx);
+        WinitInputHandler(sp_game_t ctx, winit::WinitContext *winitContext);
         ~WinitInputHandler() {}
 
         void StartEventLoop(uint32_t maxInputRate);
 
-        CGameContext *ctx;
-        winit::WinitContext *context = nullptr;
+        sp_game_t ctx;
+        winit::WinitContext *winitContext = nullptr;
 
-        ecs::Entity mouse, keyboard;
+        sp_entity_t mouse, keyboard;
     };
 } // namespace sp
 

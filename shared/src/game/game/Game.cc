@@ -24,10 +24,6 @@
 #include <glm/glm.hpp>
 #include <strayphotons.h>
 
-#ifdef SP_RUST_WASM_SUPPORT
-    #include <wasm.rs.h>
-#endif
-
 namespace sp {
 
     Game::Game(CGameContext &ctx) : gameContext(ctx), options(ctx.options), logic(inputEventQueue) {
@@ -73,9 +69,7 @@ namespace sp {
 
         GetConsoleManager().StartInputLoop();
 
-#ifdef SP_RUST_WASM_SUPPORT
-        sp::wasm::print_hello();
-#endif
+        InitRust(*this);
 
         bool scriptMode = options.count("run") > 0;
         StartGraphicsThread(*this, scriptMode);

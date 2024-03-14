@@ -71,9 +71,10 @@ namespace sp {
     };
 
     void RegisterDebugCFuncs(CFuncCollection &funcs);
+    void InitAudioManager(Game &game);
     void InitGraphicsManager(Game &game);
     void StartGraphicsThread(Game &game, bool scriptMode);
     void InitPhysicsManager(Game &game);
     void StartPhysicsThread(Game &game, bool scriptMode);
-    void InitAudioManager(Game &game);
+    void InitRust(Game &game);
 } // namespace sp

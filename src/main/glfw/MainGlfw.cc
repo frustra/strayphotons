@@ -113,9 +113,9 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t game) {
+    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t ctx) {
         GameInstance = nullptr;
-        sp_game_destroy(game);
+        sp_game_destroy(ctx);
         glfwTerminate();
     });
 
@@ -236,8 +236,15 @@ int main(int argc, char **argv)
     });
 #endif
 
+#ifdef SP_XR_SUPPORT
+    if (!options.count("no-vr")) {
+        game.xr = make_shared<xr::XrManager>(&game);
+        game.xr->LoadXrSystem();
+    }
+#endif
+
     sp_window_handlers_t windowHandlers;
-    windowHandlers.get_video_modes = [](GraphicsManager *graphics, int *mode_count_out, sp_video_mode_t *modes_out) {
+    windowHandlers.get_video_modes = [](GraphicsManager *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
         Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
         int modeCount;
         const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
@@ -247,8 +254,8 @@ int main(int argc, char **argv)
             return;
         }
         if (modes_out && *mode_count_out >= modeCount) {
-            for (int i = 0; i < modeCount; i++) {
-                modes_out[i] = {modes[i].width, modes[i].height};
+            for (size_t i = 0; i < modeCount; i++) {
+                modes_out[i] = {(uint32_t)modes[i].width, (uint32_t)modes[i].height};
             }
         }
         *mode_count_out = modeCount;
@@ -333,13 +340,6 @@ int main(int argc, char **argv)
     Defer disableHanlders([&] {
         sp_graphics_set_window_handlers(GameGraphics, nullptr);
     });
-
-    // #ifdef SP_XR_SUPPORT
-    //     if (!options.count("no-vr")) {
-    //         game.xr = make_shared<xr::XrManager>(&game);
-    //         game.xr->LoadXrSystem();
-    //     }
-    // #endif
 
     int status_code = sp_game_start(GameInstance);
     if (status_code) return status_code;

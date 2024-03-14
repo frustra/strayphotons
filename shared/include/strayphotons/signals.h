@@ -24,7 +24,7 @@ typedef uint64_t sp_signal_ref_t;
 
 // The following functions are declared in src/exports/Signals.cc
 
-SP_EXPORT sp_signal_ref_t sp_get_signal_ref(sp_game_t ctx, sp_signal_ref_t entity, const char *signal_name);
+// SP_EXPORT sp_signal_ref_t sp_get_signal_ref(sp_game_t ctx, sp_signal_ref_t entity, const char *signal_name);
 // SP_EXPORT float sp_get_signal(sp_game_t ctx, sp_signal_ref_t signal_ref);
 // SP_EXPORT void sp_set_signal(sp_game_t ctx, sp_signal_ref_t signal_ref, float value);
 
