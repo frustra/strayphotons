@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "console/CFunc.hh"
 #include "common/LockFreeEventQueue.hh"
 #include "common/RegisteredThread.hh"
+#include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Events.hh"

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "common/Async.hh"
 #include "assets/Gltf.hh"
+#include "common/Async.hh"
 #include "common/DispatchQueue.hh"
 #include "common/Hashing.hh"
 #include "graphics/vulkan/core/Image.hh"

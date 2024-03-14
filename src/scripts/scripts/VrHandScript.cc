@@ -7,10 +7,10 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
-#include "console/CVar.hh"
 #include "common/Common.hh"
 #include "common/EnumTypes.hh"
 #include "common/Logging.hh"
+#include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 #include "input/BindingNames.hh"
