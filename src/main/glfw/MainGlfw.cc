@@ -155,7 +155,6 @@ int main(int argc, char **argv)
     }
 
     std::vector<const char *> extensions;
-    bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
 
     auto availableExtensions = vk::enumerateInstanceExtensionProperties();
     // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
@@ -164,13 +163,10 @@ int main(int argc, char **argv)
         // Debugf("\t%s", name);
 
         if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
-            hasMemoryRequirements2Ext = true;
+            extensions.push_back(name.data());
         } else if (name == VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) {
-            hasDedicatedAllocationExt = true;
-        } else {
-            continue;
+            extensions.push_back(name.data());
         }
-        extensions.push_back(name.data());
     }
     extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -334,7 +330,9 @@ int main(int argc, char **argv)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     };
+    #ifdef _WIN32
     windowHandlers.win32_handle = glfwGetWin32Window(window);
+    #endif
 #endif
     sp_graphics_set_window_handlers(GameGraphics, &windowHandlers);
     Defer disableHanlders([&] {
