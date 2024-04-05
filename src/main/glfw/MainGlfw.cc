@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
     std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t ctx) {
         GameInstance = nullptr;
-        sp_game_destroy(ctx);
+        if (ctx) sp_game_destroy(ctx);
         glfwTerminate();
     });
 

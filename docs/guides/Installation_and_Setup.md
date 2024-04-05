@@ -89,11 +89,12 @@ Usage:
   -h, --help                    Display help
   -r, --run arg                 Load commands from a file an execute them in the console
   -s, --scene arg               Initial scene to load
-      --size arg                Initial window size
+      --size width height       Initial window size
       --no-vr                   Disable automatic XR/VR system loading
       --headless                Disable window creation and graphics initialization
       --with-validation-layers  Enable Vulkan validation layers
   -c, --command arg             Run a console command on init
+  -v, --verbose                 Enable debug logging
 ```
 
 `sp-test` is a special test environment variant of `sp-vk` that runs windowless for automated testing on a headless server.
@@ -104,13 +105,16 @@ Execution stops when the console execution queue is empty.
 Stray Photons Game Engine Test Environment
 
 Usage:
-  sp-test [OPTION...] <script-file>
+  sp-test [OPTION...] --run <script-file>
 
   -h, --help                    Display help
+  -r, --run arg                 Load commands from a file an execute them in the console
+  -s, --scene arg               Initial scene to load
       --size width height       Initial window size
       --headless                Disable window creation and graphics initialization
       --with-validation-layers  Enable Vulkan validation layers
   -c, --command arg             Run a console command on init
+  -v, --verbose                 Enable debug logging
 ```
 
 For both executables, the startup order is as follows:

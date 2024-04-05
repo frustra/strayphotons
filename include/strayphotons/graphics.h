@@ -21,8 +21,6 @@ namespace sp::winit {
 }
 
 extern "C" {
-using namespace sp;
-
 typedef sp::GraphicsManager sp_graphics_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
 #else

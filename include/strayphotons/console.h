@@ -17,9 +17,7 @@ namespace sp {
 } // namespace sp
 
 extern "C" {
-using namespace sp;
-
-typedef CVarBase sp_cvar_t;
+typedef sp::CVarBase sp_cvar_t;
 #else
     #include <stdint.h>
 

@@ -179,7 +179,7 @@ namespace sp {
         LogOnExit(const char *message) : message(message) {}
         ~LogOnExit() {
             if (logging::Level::Debug > logging::GetLogLevel()) return;
-            std::cout << std::fixed << std::setprecision(3) << logging::LogTime() << " [log] " << message << std::endl
+            std::cout << std::fixed << std::setprecision(3) << logging::LogTime() << " [debug] " << message << std::endl
                       << std::flush;
         }
     };

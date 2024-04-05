@@ -12,34 +12,15 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-namespace cxxopts {
-    class ParseResult;
-}
-
-namespace ecs {
-    struct ECSContext;
-    class SignalManager;
-    class ScriptManager;
-    struct ScriptDefinitions;
-} // namespace ecs
-
 namespace sp {
     struct CGameContext;
-    class ConsoleManager;
-    class AssetManager;
-    class SceneManager;
 } // namespace sp
 
 extern "C" {
-using namespace cxxopts;
-using namespace sp;
-using namespace ecs;
-
-typedef CGameContext *sp_game_t;
+typedef sp::CGameContext *sp_game_t;
 static_assert(sizeof(sp_game_t) == sizeof(uint64_t), "Pointer size doesn't match handle");
 #else
 typedef uint64_t sp_game_t;
-typedef void ParseResult;
 typedef unsigned int bool;
 #endif
 

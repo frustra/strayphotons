@@ -33,10 +33,17 @@ SP_EXPORT sp_game_t sp_game_init(int argc, char **argv) {
             ("no-vr", "Disable automatic XR/VR system loading")
             ("headless", "Disable window creation and graphics initialization")
             ("with-validation-layers", "Enable Vulkan validation layers")
-            ("c,command", "Run a console command on init", value<vector<string>>());
+            ("c,command", "Run a console command on init", value<vector<string>>())
+            ("v,verbose", "Enable debug logging");
         // clang-format on
 
         auto optionsResult = options.parse(argc, argv);
+
+        if (optionsResult.count("verbose")) {
+            sp::logging::SetLogLevel(sp::logging::Level::Debug);
+        } else {
+            sp::logging::SetLogLevel(sp::logging::Level::Log);
+        }
 
         if (optionsResult.count("help")) {
             std::cout << options.help() << std::endl;
@@ -45,7 +52,7 @@ SP_EXPORT sp_game_t sp_game_init(int argc, char **argv) {
 
         Logf("Starting in directory: %s", std::filesystem::current_path().string());
         // When running a script, disable input events from the window
-        return new CGameContext(std::move(optionsResult), optionsResult.count("run"));
+        return new sp::CGameContext(std::move(optionsResult), optionsResult.count("run"));
     }
 #ifdef CATCH_GLOBAL_EXCEPTIONS
     catch (const char *err) {

@@ -8,11 +8,7 @@
 #include "Logging.hh"
 
 namespace sp::logging {
-#ifdef SP_PACKAGE_RELEASE
     static Level logLevel = Level::Log;
-#else
-    static Level logLevel = Level::Debug;
-#endif
     static chrono_clock::time_point LogEpoch = chrono_clock::now();
 
     float LogTime_static() {
