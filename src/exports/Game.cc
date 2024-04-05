@@ -57,6 +57,11 @@ SP_EXPORT sp_game_t sp_game_init(int argc, char **argv) {
 #endif
 }
 
+SP_EXPORT bool sp_game_get_cli_flag(sp_game_t ctx, const char *arg_name) {
+    Assertf(ctx != nullptr, "sp_game_get_cli_flag called with null game ctx");
+    return ctx->game.options.count(arg_name) > 0;
+}
+
 SP_EXPORT int sp_game_start(sp_game_t ctx) {
     Assertf(ctx != nullptr, "sp_game_start called with null game ctx");
     try {
@@ -93,11 +98,6 @@ SP_EXPORT int sp_game_get_exit_code(sp_game_t ctx) {
 SP_EXPORT void sp_game_destroy(sp_game_t ctx) {
     Assertf(ctx != nullptr, "sp_game_destroy called with null game ctx");
     delete ctx;
-}
-
-SP_EXPORT bool sp_game_get_cli_flag(sp_game_t ctx, const char *arg_name) {
-    Assertf(ctx != nullptr, "sp_game_get_cli_flag called with null game ctx");
-    return ctx->game.options.count(arg_name) > 0;
 }
 
 SP_EXPORT void sp_game_set_input_handler(sp_game_t ctx, void *handler, void (*destroy_callback)(void *)) {

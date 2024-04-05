@@ -28,7 +28,7 @@ using cxxopts::value;
 
 namespace sp {
     sp_game_t GameInstance = (sp_game_t)0;
-    GraphicsManager *GameGraphics = nullptr;
+    sp_graphics_ctx_t *GameGraphics = nullptr;
 
     void handleSignals(int signal) {
         if (signal == SIGINT && GameInstance) {
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     GameInstance = instance.get();
     if (!GameInstance) return 1;
 
-    GameGraphics = sp_game_get_graphics_manager(GameInstance);
+    GameGraphics = sp_game_get_graphics_context(GameInstance);
 
     glm::ivec2 initialSize;
     sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 
     VkInstance vkInstance = (VkInstance)winit::get_instance_handle(*winitContext);
     Assert(vkInstance, "winit instance creation failed");
-    sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](GraphicsManager *graphics, VkInstance instance) {
+    sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {
         Tracef("Destroying rust instance");
         auto *winitContext = sp_graphics_get_winit_context(graphics);
         if (winitContext) winit::destroy_instance(*winitContext);
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)winit::get_surface_handle(*winitContext);
     Assert(vkSurface, "winit window surface creation failed");
-    sp_graphics_set_vulkan_surface(GameGraphics, vkSurface, [](GraphicsManager *graphics, VkSurfaceKHR surface) {
+    sp_graphics_set_vulkan_surface(GameGraphics, vkSurface, [](sp_graphics_ctx_t *graphics, VkSurfaceKHR surface) {
         Tracef("Destroying rust surface");
         auto *winitContext = sp_graphics_get_winit_context(graphics);
         if (winitContext) winit::destroy_surface(*winitContext);
@@ -109,31 +109,32 @@ int main(int argc, char **argv)
     });
 
     sp_window_handlers_t windowHandlers;
-    windowHandlers.get_video_modes = [](GraphicsManager *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
-        Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
-        winit::WinitContext *winitContext = sp_graphics_get_winit_context(graphics);
-        if (!winitContext) {
-            Warnf("Failed to read Winit monitor modes");
-            *mode_count_out = 0;
-            return;
-        }
-        auto modes = winit::get_monitor_modes(*winitContext);
-        if (modes_out && *mode_count_out >= modes.size()) {
-            for (size_t i = 0; i < modes.size(); i++) {
-                modes_out[i] = {modes[i].width, modes[i].height};
+    windowHandlers.get_video_modes =
+        [](sp_graphics_ctx_t *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
+            Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
+            winit::WinitContext *winitContext = sp_graphics_get_winit_context(graphics);
+            if (!winitContext) {
+                Warnf("Failed to read Winit monitor modes");
+                *mode_count_out = 0;
+                return;
             }
-        }
-        *mode_count_out = modes.size();
-    };
-    windowHandlers.set_title = [](GraphicsManager *graphics, const char *title) {
+            auto modes = winit::get_monitor_modes(*winitContext);
+            if (modes_out && *mode_count_out >= modes.size()) {
+                for (size_t i = 0; i < modes.size(); i++) {
+                    modes_out[i] = {modes[i].width, modes[i].height};
+                }
+            }
+            *mode_count_out = modes.size();
+        };
+    windowHandlers.set_title = [](sp_graphics_ctx_t *graphics, const char *title) {
         winit::WinitContext *winitContext = sp_graphics_get_winit_context(graphics);
         if (winitContext) winit::set_window_title(*winitContext, title);
     };
-    // windowHandlers.should_close = [](GraphicsManager *graphics) {
+    // windowHandlers.should_close = [](sp_graphics_ctx_t *graphics) {
     //     winit::WinitContext *winitContext = sp_graphics_get_winit_context(graphics);
     //     return window && !!glfwWindowShouldClose(window);
     // };
-    windowHandlers.update_window_view = [](GraphicsManager *graphics, int *width_out, int *height_out) {
+    windowHandlers.update_window_view = [](sp_graphics_ctx_t *graphics, int *width_out, int *height_out) {
         winit::WinitContext *winitContext = sp_graphics_get_winit_context(graphics);
         if (!winitContext) return;
 
@@ -193,7 +194,7 @@ int main(int argc, char **argv)
             *height_out = fbExtents.y;
         }
     };
-    windowHandlers.set_cursor_visible = [](GraphicsManager *graphics, bool visible) {
+    windowHandlers.set_cursor_visible = [](sp_graphics_ctx_t *graphics, bool visible) {
         winit::WinitContext *winitContext = sp_graphics_get_winit_context(graphics);
         if (!winitContext) return;
         if (visible) {

@@ -38,7 +38,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp {
     sp_game_t GameInstance = (sp_game_t)0;
-    GraphicsManager *GameGraphics = nullptr;
+    sp_graphics_ctx_t *GameGraphics = nullptr;
     std::atomic_uint64_t GraphicsStepCount, GraphicsMaxStepCount;
 
     void handleSignals(int signal) {
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     GameInstance = instance.get();
     if (!GameInstance) return 1;
 
-    GameGraphics = sp_game_get_graphics_manager(GameInstance);
+    GameGraphics = sp_game_get_graphics_context(GameInstance);
 
     glfwSetErrorCallback(glfwErrorCallback);
 
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
         (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
 
     vk::Instance vkInstance = vk::createInstance(createInfo);
-    sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](GraphicsManager *graphics, VkInstance instance) {
+    sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {
         if (instance) ((vk::Instance)instance).destroy();
     });
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
         Abortf("creating window surface (%s)", vk::to_string(static_cast<vk::Result>(result)));
     }
     Assert(vkSurface, "gkfw window surface creation failed");
-    sp_graphics_set_vulkan_surface(GameGraphics, vkSurface, [](GraphicsManager *graphics, VkSurfaceKHR surface) {
+    sp_graphics_set_vulkan_surface(GameGraphics, vkSurface, [](sp_graphics_ctx_t *graphics, VkSurfaceKHR surface) {
         if (graphics && surface) {
             vk::Instance instance = sp_graphics_get_vulkan_instance(graphics);
             if (instance) instance.destroySurfaceKHR(surface);
@@ -228,32 +228,33 @@ int main(int argc, char **argv)
 #endif
 
     sp_window_handlers_t windowHandlers;
-    windowHandlers.get_video_modes = [](GraphicsManager *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
-        Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
-        int modeCount;
-        const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
-        if (!modes || modeCount <= 0) {
-            Warnf("Failed to read Glfw monitor modes");
-            *mode_count_out = 0;
-            return;
-        }
-        if (modes_out && *mode_count_out >= modeCount) {
-            for (size_t i = 0; i < modeCount; i++) {
-                modes_out[i] = {(uint32_t)modes[i].width, (uint32_t)modes[i].height};
+    windowHandlers.get_video_modes =
+        [](sp_graphics_ctx_t *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
+            Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
+            int modeCount;
+            const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
+            if (!modes || modeCount <= 0) {
+                Warnf("Failed to read Glfw monitor modes");
+                *mode_count_out = 0;
+                return;
             }
-        }
-        *mode_count_out = modeCount;
-    };
+            if (modes_out && *mode_count_out >= modeCount) {
+                for (size_t i = 0; i < modeCount; i++) {
+                    modes_out[i] = {(uint32_t)modes[i].width, (uint32_t)modes[i].height};
+                }
+            }
+            *mode_count_out = modeCount;
+        };
 #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
-    windowHandlers.set_title = [](GraphicsManager *graphics, const char *title) {
+    windowHandlers.set_title = [](sp_graphics_ctx_t *graphics, const char *title) {
         GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
         if (window) glfwSetWindowTitle(window, title);
     };
-    windowHandlers.should_close = [](GraphicsManager *graphics) {
+    windowHandlers.should_close = [](sp_graphics_ctx_t *graphics) {
         GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
         return window && !!glfwWindowShouldClose(window);
     };
-    windowHandlers.update_window_view = [](GraphicsManager *graphics, int *width_out, int *height_out) {
+    windowHandlers.update_window_view = [](sp_graphics_ctx_t *graphics, int *width_out, int *height_out) {
         GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
         if (!window) return;
 
@@ -309,7 +310,7 @@ int main(int argc, char **argv)
             *height_out = fbExtents.y;
         }
     };
-    windowHandlers.set_cursor_visible = [](GraphicsManager *graphics, bool visible) {
+    windowHandlers.set_cursor_visible = [](sp_graphics_ctx_t *graphics, bool visible) {
         GLFWwindow *window = sp_graphics_get_glfw_window(graphics);
         if (!window) return;
         if (visible) {

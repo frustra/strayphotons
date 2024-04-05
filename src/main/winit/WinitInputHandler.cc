@@ -34,7 +34,7 @@ namespace sp {
     bool InputFrameCallback(WinitInputHandler *handler) {
         ZoneScoped;
         Assert(handler, "InputFrameCallback occured without valid context");
-        GraphicsManager *graphicsManager = sp_game_get_graphics_manager(handler->ctx);
+        sp_graphics_ctx_t *graphicsManager = sp_game_get_graphics_context(handler->ctx);
         Assert(graphicsManager, "InputFrameCallback occured without valid GraphicsManager");
         return sp_graphics_handle_input_frame(graphicsManager) && !sp_game_is_exit_triggered(handler->ctx);
     }

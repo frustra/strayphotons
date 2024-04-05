@@ -23,9 +23,10 @@ namespace sp::winit {
 extern "C" {
 using namespace sp;
 
+typedef sp::GraphicsManager sp_graphics_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
 #else
-typedef void GraphicsManager;
+typedef void sp_graphics_ctx_t;
 typedef void sp_winit_ctx_t;
 #endif
 
@@ -36,27 +37,27 @@ struct GLFWwindow;
 
 // The following functions are declared in src/exports/Graphics.cc
 
-SP_EXPORT GraphicsManager *sp_game_get_graphics_manager(sp_game_t ctx);
+SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t ctx);
 
-SP_EXPORT void sp_graphics_set_vulkan_instance(GraphicsManager *graphics,
+SP_EXPORT void sp_graphics_set_vulkan_instance(sp_graphics_ctx_t *graphics,
     VkInstance instance,
-    void (*destroy_callback)(GraphicsManager *, VkInstance) = 0);
-SP_EXPORT VkInstance sp_graphics_get_vulkan_instance(GraphicsManager *graphics);
+    void (*destroy_callback)(sp_graphics_ctx_t *, VkInstance) = 0);
+SP_EXPORT VkInstance sp_graphics_get_vulkan_instance(sp_graphics_ctx_t *graphics);
 
-SP_EXPORT void sp_graphics_set_vulkan_surface(GraphicsManager *graphics,
+SP_EXPORT void sp_graphics_set_vulkan_surface(sp_graphics_ctx_t *graphics,
     VkSurfaceKHR surface,
-    void (*destroy_callback)(GraphicsManager *, VkSurfaceKHR) = 0);
-SP_EXPORT VkSurfaceKHR sp_graphics_get_vulkan_surface(GraphicsManager *graphics);
+    void (*destroy_callback)(sp_graphics_ctx_t *, VkSurfaceKHR) = 0);
+SP_EXPORT VkSurfaceKHR sp_graphics_get_vulkan_surface(sp_graphics_ctx_t *graphics);
 
-SP_EXPORT void sp_graphics_set_glfw_window(GraphicsManager *graphics,
+SP_EXPORT void sp_graphics_set_glfw_window(sp_graphics_ctx_t *graphics,
     GLFWwindow *window,
     void (*destroy_callback)(GLFWwindow *) = 0);
-SP_EXPORT GLFWwindow *sp_graphics_get_glfw_window(GraphicsManager *graphics);
+SP_EXPORT GLFWwindow *sp_graphics_get_glfw_window(sp_graphics_ctx_t *graphics);
 
-SP_EXPORT void sp_graphics_set_winit_context(GraphicsManager *graphics,
+SP_EXPORT void sp_graphics_set_winit_context(sp_graphics_ctx_t *graphics,
     sp_winit_ctx_t *window,
     void (*destroy_callback)(sp_winit_ctx_t *) = 0);
-SP_EXPORT sp_winit_ctx_t *sp_graphics_get_winit_context(GraphicsManager *graphics);
+SP_EXPORT sp_winit_ctx_t *sp_graphics_get_winit_context(sp_graphics_ctx_t *graphics);
 
 typedef struct sp_video_mode_t {
     uint32_t width;
@@ -65,17 +66,17 @@ typedef struct sp_video_mode_t {
 } sp_video_mode_t;
 
 typedef struct sp_window_handlers_t {
-    void (*get_video_modes)(GraphicsManager *, size_t *, sp_video_mode_t *) = 0;
-    void (*set_title)(GraphicsManager *, const char *) = 0;
-    bool (*should_close)(GraphicsManager *) = 0;
-    void (*update_window_view)(GraphicsManager *, int *, int *) = 0;
-    void (*set_cursor_visible)(GraphicsManager *, bool) = 0;
+    void (*get_video_modes)(sp_graphics_ctx_t *, size_t *, sp_video_mode_t *) = 0;
+    void (*set_title)(sp_graphics_ctx_t *, const char *) = 0;
+    bool (*should_close)(sp_graphics_ctx_t *) = 0;
+    void (*update_window_view)(sp_graphics_ctx_t *, int *, int *) = 0;
+    void (*set_cursor_visible)(sp_graphics_ctx_t *, bool) = 0;
     void *win32_handle = 0;
 } sp_window_handlers_t;
 
-SP_EXPORT void sp_graphics_set_window_handlers(GraphicsManager *graphics, const sp_window_handlers_t *handlers);
-SP_EXPORT bool sp_graphics_handle_input_frame(GraphicsManager *graphics);
-SP_EXPORT void sp_graphics_step_thread(GraphicsManager *graphics, unsigned int count = 1u);
+SP_EXPORT void sp_graphics_set_window_handlers(sp_graphics_ctx_t *graphics, const sp_window_handlers_t *handlers);
+SP_EXPORT bool sp_graphics_handle_input_frame(sp_graphics_ctx_t *graphics);
+SP_EXPORT void sp_graphics_step_thread(sp_graphics_ctx_t *graphics, unsigned int count = 1u);
 
 #ifdef __cplusplus
 }

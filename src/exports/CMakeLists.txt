@@ -7,11 +7,8 @@
 
 target_sources(${PROJECT_LIB_NAME} PRIVATE
     Console.cc
-    Entity.cc
     Game.cc
     Graphics.cc
     Input.cc
     Logging.cc
-    Signals.cc
-    StrayPhotons.cc
 )
