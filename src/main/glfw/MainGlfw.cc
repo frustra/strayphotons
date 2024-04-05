@@ -112,13 +112,16 @@ int main(int argc, char **argv)
     });
 
     GameInstance = instance.get();
+    if (!GameInstance) return 1;
 
-    cxxopts::ParseResult *options = sp_game_get_options(GameInstance);
     GameGraphics = sp_game_get_graphics_manager(GameInstance);
 
     glfwSetErrorCallback(glfwErrorCallback);
 
-    if (!glfwInit()) Abort("glfwInit() failed");
+    if (!glfwInit()) {
+        Errorf("glfwInit() failed");
+        return 1;
+    }
     Assert(glfwVulkanSupported(), "Vulkan not supported");
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -141,7 +144,7 @@ int main(int argc, char **argv)
     debugInfo.pfnUserCallback = &VulkanDebugCallback;
 
     std::vector<const char *> layers;
-    if (options->count("with-validation-layers")) {
+    if (sp_game_get_cli_flag(GameInstance, "with-validation-layers")) {
         Logf("Running with Vulkan validation layer");
         layers.emplace_back("VK_LAYER_KHRONOS_validation");
     }
@@ -328,7 +331,7 @@ int main(int argc, char **argv)
     if (status_code) return status_code;
 
     if (GameGraphics) {
-        bool scriptMode = options->count("run") > 0;
+        bool scriptMode = sp_game_get_cli_flag(GameInstance, "run");
         sp_cvar_t *cfuncStepGraphics = nullptr;
         if (scriptMode) {
             cfuncStepGraphics = sp_register_cfunc_uint32("stepgraphics",

@@ -22,21 +22,4 @@ target_link_libraries(${PROJECT_COMMON_LIB} PUBLIC
     Tecs
 )
 
-if(WIN32)
-    target_compile_definitions(${PROJECT_COMMON_LIB} PUBLIC
-        _CRT_SECURE_NO_WARNINGS
-        UNICODE
-        _UNICODE
-        NOMINMAX
-        _USE_MATH_DEFINES
-    )
-endif()
-
-# _DEBUG/NDEBUG Used by PhysX, must be defined everywhere to enable precompiled headers
-if (SP_DEBUG)
-    target_compile_definitions(${PROJECT_COMMON_LIB} PUBLIC _DEBUG)
-else()
-    target_compile_definitions(${PROJECT_COMMON_LIB} PUBLIC NDEBUG)
-endif()
-
 add_subdirectory(common)

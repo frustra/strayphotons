@@ -26,6 +26,6 @@ target_compile_definitions(${PROJECT_XR_OPENVR_LIB} PUBLIC
     SP_XR_SUPPORT_OPENVR
 )
 
-# target_precompile_headers(${PROJECT_XR_OPENVR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_XR_OPENVR_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(openvr)

@@ -181,7 +181,7 @@ namespace sp::vulkan {
                 {},
                 1.f,
                 enableSwapchain))
-            Abort("could not find a supported graphics queue family");
+            Abortf("could not find a supported graphics queue family");
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
             // must be only one queue that supports compute, fall back to it
@@ -587,7 +587,8 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SetDebugGui(DebugGuiManager *debugGui) {
-        debugGui->Attach(make_shared<vulkan::ProfilerGui>(GetPerfTimer()));
+        auto *perfTimer = GetPerfTimer();
+        if (perfTimer) debugGui->Attach(make_shared<vulkan::ProfilerGui>(*perfTimer));
 
         if (vkRenderer) vkRenderer->SetDebugGui(debugGui);
     }

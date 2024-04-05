@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
 
 #include <chrono>
 #include <future>

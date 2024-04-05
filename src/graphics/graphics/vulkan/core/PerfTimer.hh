@@ -13,7 +13,6 @@
 
 #include <queue>
 #include <stack>
-#include <strayphotons.h>
 
 namespace sp::vulkan {
     class PerfTimer;

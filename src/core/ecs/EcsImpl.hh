@@ -45,7 +45,7 @@
 #include "ecs/components/XRView.hh"
 
 namespace ecs {
-    struct ECSContext : public sp::Singleton {
+    struct ECSContext : public sp::NonMoveable {
         sp::LogOnExit logOnExit = "ECS shut down =========================================================";
         ECS live;
         ECS staging;

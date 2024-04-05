@@ -9,14 +9,14 @@
 
 #include <strayphotons/entity.h>
 
-SP_EXPORT sp_entity_ref_t sp_new_entity_ref(const char *scene, const char *name) {
-    return new ecs::EntityRef(ecs::Name(scene, name));
-}
+// SP_EXPORT sp_entity_ref_t sp_new_entity_ref(const char *scene, const char *name) {
+//     return new ecs::EntityRef(ecs::Name(scene, name));
+// }
 
-SP_EXPORT sp_entity_ref_t sp_get_entity_ref(sp_entity_t entity) {
-    return new ecs::EntityRef(entity);
-}
+// SP_EXPORT sp_entity_ref_t sp_get_entity_ref(sp_entity_t entity) {
+//     return new ecs::EntityRef(entity);
+// }
 
-SP_EXPORT void sp_drop_entity_ref(sp_entity_ref_t entity_ref) {
-    if (entity_ref) delete entity_ref;
-}
+// SP_EXPORT void sp_drop_entity_ref(sp_entity_ref_t entity_ref) {
+//     if (entity_ref) delete entity_ref;
+// }

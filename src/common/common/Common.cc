@@ -22,18 +22,9 @@
 #endif
 
 namespace sp {
-    [[noreturn]] void Abort(const string &message) {
-        if (!message.empty()) {
-            std::cout << std::fixed << std::setprecision(3) << logging::LogTime()
-                      << " [abort] assertion failed: " << message << std::endl
-                      << std::flush;
-        }
+    [[noreturn]] void Abort() {
         os_break();
-        throw std::runtime_error(message);
-    }
-
-    void DebugBreak() {
-        os_break();
+        throw std::runtime_error("sp::Abort() called");
     }
 
     uint32 CeilToPowerOfTwo(uint32 v) {

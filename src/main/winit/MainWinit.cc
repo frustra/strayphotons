@@ -69,14 +69,14 @@ int main(int argc, char **argv)
     });
 
     GameInstance = instance.get();
+    if (!GameInstance) return 1;
 
-    cxxopts::ParseResult *options = sp_game_get_options(GameInstance);
     GameGraphics = sp_game_get_graphics_manager(GameInstance);
 
     glm::ivec2 initialSize;
     sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
     sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
-    bool enableValidationLayers = options->count("with-validation-layers");
+    bool enableValidationLayers = sp_game_get_cli_flag(GameInstance, "with-validation-layers");
     auto *winitContext = winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw();
     Assert(winitContext, "winit context creation failed");
     sp_graphics_set_winit_context(GameGraphics, winitContext, [](winit::WinitContext *ptr) {

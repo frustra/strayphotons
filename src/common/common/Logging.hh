@@ -18,6 +18,21 @@
 #include <tracy/Tracy.hpp>
 #include <type_traits>
 
+namespace sp::logging {
+    template<typename... T>
+    static void Trace(const char *, int, const std::string &, T...);
+    template<typename... T>
+    static void Debug(const char *, int, const std::string &, T...);
+    template<typename... T>
+    static void Log(const char *, int, const std::string &, T...);
+    template<typename... T>
+    static void Warn(const char *, int, const std::string &, T...);
+    template<typename... T>
+    static void Error(const char *, int, const std::string &, T...);
+    template<typename... T>
+    [[noreturn]] static void Abort(const char *, int, const std::string &, T...);
+} // namespace sp::logging
+
 #define Tracef(...) ::sp::logging::Trace(__FILE__, __LINE__, __VA_ARGS__)
 #define Debugf(...) ::sp::logging::Debug(__FILE__, __LINE__, __VA_ARGS__)
 #define Logf(...) ::sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
@@ -26,6 +41,16 @@
 #define Abortf(...) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
 #define Assertf(condition, ...) \
     if (!(condition)) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
+#define Assert(condition, message) \
+    if (!(condition)) Abortf("assertion failed: %s", message)
+
+#ifdef SP_DEBUG
+    #define DebugAssert(condition, message) Assert(condition, message)
+    #define DebugAssertf(condition, ...) Assertf(condition, __VA_ARGS__)
+#else
+    #define DebugAssert(condition, message)
+    #define DebugAssertf(condition, ...)
+#endif
 
 namespace sp::logging {
     enum class Level : uint8_t { Error, Warn, Log, Debug, Trace };

@@ -22,7 +22,7 @@ namespace sp::vulkan {
             GPU,
         };
 
-        ProfilerGui(PerfTimer *timer) : GuiRenderable("profiler"), timer(*timer), msWindowSize(1000) {}
+        ProfilerGui(PerfTimer &timer) : GuiRenderable("profiler"), timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
 
         static float GetHistogramValue(void *data, int index) {

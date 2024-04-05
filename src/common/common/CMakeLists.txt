@@ -18,8 +18,3 @@ if(TRACY_ENABLE)
         Tracing.cc
     )
 endif()
-
-# target_precompile_headers(${PROJECT_COMMON_LIB} PRIVATE
-#    Common.hh
-#    Logging.hh
-# )

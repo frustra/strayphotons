@@ -40,20 +40,8 @@ typedef int32_t int32;
 typedef uint64_t uint64;
 typedef int64_t int64;
 
-#define Assert(condition, message) \
-    if (!(condition)) ::sp::Abort(message);
-
-#ifdef SP_DEBUG
-    #define DebugAssert(condition, message) Assert(condition, message)
-    #define DebugAssertf(condition, ...) Assertf(condition, __VA_ARGS__)
-#else
-    #define DebugAssert(condition, message)
-    #define DebugAssertf(condition, ...)
-#endif
-
 namespace sp {
-    [[noreturn]] void Abort(const string &message = "");
-    // void DebugBreak();
+    [[noreturn]] void Abort();
 
     uint32 CeilToPowerOfTwo(uint32 v);
     uint32 Uint32Log2(uint32 v);
@@ -77,11 +65,11 @@ namespace sp {
         NonCopyable &operator=(const NonCopyable &) = delete;
     };
 
-    class Singleton : public NonCopyable {
+    class NonMoveable : public NonCopyable {
     public:
-        Singleton() = default;
-        Singleton(Singleton &&) = delete;
-        Singleton &operator=(Singleton &&) = delete;
+        NonMoveable() = default;
+        NonMoveable(NonMoveable &&) = delete;
+        NonMoveable &operator=(NonMoveable &&) = delete;
     };
 
     typedef std::array<uint64, 2> Hash128;

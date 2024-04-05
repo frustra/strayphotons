@@ -54,7 +54,7 @@ SP_EXPORT int sp_game_wait_for_exit_trigger(sp_game_t ctx);
 SP_EXPORT int sp_game_get_exit_code(sp_game_t ctx);
 SP_EXPORT void sp_game_destroy(sp_game_t ctx);
 
-SP_EXPORT ParseResult *sp_game_get_options(sp_game_t ctx);
+SP_EXPORT bool sp_game_get_cli_flag(sp_game_t ctx, const char *arg_name);
 
 SP_EXPORT void sp_game_set_input_handler(sp_game_t ctx, void *handler, void (*destroy_callback)(void *));
 SP_EXPORT void *sp_game_get_input_handler(sp_game_t ctx);

@@ -1,9 +1,13 @@
+/*
+ * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
-#ifndef SP_EXPORT_H
-#define SP_EXPORT_H
+#pragma once
 
 #ifndef SP_EXPORT
-    // #ifdef sp_EXPORTS
     #ifdef SP_SHARED_INTERNAL
         /* We are building this library */
         #ifdef _WIN32
@@ -20,5 +24,3 @@
         #endif
     #endif
 #endif
-
-#endif /* SP_EXPORT_H */

@@ -95,9 +95,9 @@ SP_EXPORT void sp_game_destroy(sp_game_t ctx) {
     delete ctx;
 }
 
-SP_EXPORT cxxopts::ParseResult *sp_game_get_options(sp_game_t ctx) {
-    Assertf(ctx != nullptr, "sp_game_get_options called with null game ctx");
-    return &ctx->game.options;
+SP_EXPORT bool sp_game_get_cli_flag(sp_game_t ctx, const char *arg_name) {
+    Assertf(ctx != nullptr, "sp_game_get_cli_flag called with null game ctx");
+    return ctx->game.options.count(arg_name) > 0;
 }
 
 SP_EXPORT void sp_game_set_input_handler(sp_game_t ctx, void *handler, void (*destroy_callback)(void *)) {
