@@ -95,7 +95,7 @@ namespace sp::vulkan {
             graphics.vkSurface.reset();
         });
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance, &vkGetInstanceProcAddr);
 
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
@@ -110,14 +110,14 @@ namespace sp::vulkan {
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
         debugInfo.pUserData = this;
 
+        debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
+
         std::vector<const char *> layers;
         if (enableValidationLayers) {
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
 
-        std::vector<const char *> extensions;
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
-
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
         // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
@@ -128,16 +128,8 @@ namespace sp::vulkan {
                 hasMemoryRequirements2Ext = true;
             } else if (name == VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) {
                 hasDedicatedAllocationExt = true;
-            } else {
-                continue;
             }
-            extensions.push_back(name.data());
         }
-        extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
-        debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
         auto physicalDevices = instance.enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders

@@ -14,6 +14,9 @@
 #include <string_view>
 
 namespace ecs {
+#ifdef __GNUC__
+    __attribute__((unused))
+#endif
     static const char *DocsDescriptionEntityRef = R"(
 An `EntityRef` is a stable reference to an entity via a string name. 
 

@@ -20,6 +20,9 @@ namespace ecs {
     struct Name;
     using EntityScope = Name;
 
+#ifdef __GNUC__
+    __attribute__((unused))
+#endif
     static const char *DocsDescriptionName = R"(
 This component is required on all entities to allow for name-based references.
 If no name is provided upon entity creation, an auto-generated name will be filled in.

@@ -238,8 +238,8 @@ int main(int argc, char **argv)
                 *mode_count_out = 0;
                 return;
             }
-            if (modes_out && *mode_count_out >= modeCount) {
-                for (size_t i = 0; i < modeCount; i++) {
+            if (modes_out && *mode_count_out >= (size_t)modeCount) {
+                for (size_t i = 0; i < (size_t)modeCount; i++) {
                     modes_out[i] = {(uint32_t)modes[i].width, (uint32_t)modes[i].height};
                 }
             }
