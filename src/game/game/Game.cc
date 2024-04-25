@@ -75,9 +75,7 @@ namespace sp {
         StartGraphicsThread(*this, scriptMode);
         StartPhysicsThread(*this, scriptMode);
 
-        if (!options.count("no-vr")) {
-            LoadXrSystem(*this);
-        }
+        if (enableXrSystem) LoadXrSystem(*this);
 
         auto &scenes = GetSceneManager();
         if (!graphics) scenes.DisableGraphicsPreload();

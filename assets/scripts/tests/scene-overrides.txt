@@ -20,6 +20,10 @@ stepgraphics 120
 screenshot load-override-first3.png
 stepgraphics
 
+removescene test1
+removescene test1-override
+stepgraphics 120
+
 loadscene test1
 addscene test1-override
 respawn

@@ -76,7 +76,7 @@ namespace sp {
 
     bool GraphicsManager::HasActiveContext() {
         bool shouldClose = windowHandlers.should_close && windowHandlers.should_close(this);
-        return context && !shouldClose;
+        return context && !shouldClose && state == ThreadState::Started;
     }
 
     bool GraphicsManager::ThreadInit() {

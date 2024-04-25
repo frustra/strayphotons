@@ -65,6 +65,7 @@ namespace sp {
         std::shared_ptr<PhysxManager> physics;
         std::shared_ptr<AudioManager> audio;
         std::shared_ptr<xr::XrSystem> xr;
+        bool enableXrSystem = false;
 
         ConsoleBindingManager consoleBinding;
         EditorSystem editor;

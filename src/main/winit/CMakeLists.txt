@@ -22,7 +22,6 @@ if(SP_BUILD_RUST)
     target_link_libraries(sp-winit PRIVATE
         ${PROJECT_COMMON_EXE}
         ${PROJECT_LIB_NAME}
-        ${PROJECT_XR_OPENVR_LIB}
         sp-rs-winit
         # cxxopts
         Vulkan::Vulkan

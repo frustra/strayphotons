@@ -14,8 +14,6 @@
 
 using namespace sp;
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-
 SP_EXPORT sp_vk_dispatch_loader_t *sp_get_vulkan_dispatch_loader() {
     return &VULKAN_HPP_DEFAULT_DISPATCHER;
 }
@@ -23,6 +21,11 @@ SP_EXPORT sp_vk_dispatch_loader_t *sp_get_vulkan_dispatch_loader() {
 SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t ctx) {
     Assertf(ctx != nullptr, "sp_game_get_graphics_context called with null game ctx");
     return ctx->game.graphics.get();
+}
+
+SP_EXPORT void sp_game_enable_xr_system(sp_game_t ctx, bool enable) {
+    Assertf(ctx != nullptr, "sp_game_enable_xr_system called with null game ctx");
+    ctx->game.enableXrSystem = enable;
 }
 
 SP_EXPORT void sp_graphics_set_vulkan_instance(sp_graphics_ctx_t *graphics,

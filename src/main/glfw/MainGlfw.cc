@@ -116,6 +116,10 @@ int main(int argc, char **argv)
 
     GameGraphics = sp_game_get_graphics_context(GameInstance);
 
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+    if (!sp_game_get_cli_flag(GameInstance, "no-vr")) sp_game_enable_xr_system(GameInstance, true);
+#endif
+
     glfwSetErrorCallback(glfwErrorCallback);
 
     if (!glfwInit()) {

@@ -73,6 +73,10 @@ int main(int argc, char **argv)
 
     GameGraphics = sp_game_get_graphics_context(GameInstance);
 
+#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+    if (!sp_game_get_cli_flag(GameInstance, "no-vr")) sp_game_enable_xr_system(GameInstance, true);
+#endif
+
     glm::ivec2 initialSize;
     sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
     sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);

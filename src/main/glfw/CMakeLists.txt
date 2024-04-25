@@ -22,7 +22,6 @@ target_link_libraries(sp-vk PRIVATE
     ${PROJECT_COMMON_EXE}
     ${PROJECT_LIB_NAME}
     ${PROJECT_COMMON_LIB}
-    ${PROJECT_XR_OPENVR_LIB}
     glfw
     Vulkan::Vulkan
 )
