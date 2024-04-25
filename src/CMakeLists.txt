@@ -43,9 +43,20 @@ target_link_libraries(${PROJECT_LIB_NAME} PRIVATE
 target_compile_definitions(${PROJECT_LIB_NAME}
     PRIVATE
         SP_SHARED_INTERNAL
+    PUBLIC
+        VULKAN_HPP_STORAGE_SHARED
+        VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     INTERFACE
         SP_SHARED_BUILD
 )
+
+# _DEBUG/NDEBUG Used by PhysX, must be defined everywhere to enable precompiled headers
+# NDEBUG Used by vulkan.hpp DispatchLoaderBase
+if (SP_DEBUG)
+    target_compile_definitions(${PROJECT_LIB_NAME} PUBLIC _DEBUG)
+else()
+    target_compile_definitions(${PROJECT_LIB_NAME} PUBLIC NDEBUG)
+endif()
 
 # Shared library components
 add_subdirectory(common)

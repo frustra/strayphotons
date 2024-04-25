@@ -51,6 +51,7 @@ else()
 endif()
 
 # _DEBUG/NDEBUG Used by PhysX, must be defined everywhere to enable precompiled headers
+# NDEBUG Used by vulkan.hpp DispatchLoaderBase
 if (SP_DEBUG)
     target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC _DEBUG)
 else()

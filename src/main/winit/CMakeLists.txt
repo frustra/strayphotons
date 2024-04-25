@@ -27,7 +27,6 @@ if(SP_BUILD_RUST)
         # cxxopts
         Vulkan::Vulkan
     )
-    target_compile_definitions(sp-winit PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 
     # target_include_directories(sp-winit
     #     PUBLIC

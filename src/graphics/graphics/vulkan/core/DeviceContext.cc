@@ -31,8 +31,6 @@
 #include <optional>
 #include <string>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-
 namespace sp::vulkan {
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;

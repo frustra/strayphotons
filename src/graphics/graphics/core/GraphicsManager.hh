@@ -53,9 +53,9 @@ namespace sp {
         bool InputFrame();
 
         sp_window_handlers_t windowHandlers;
+        sp_vk_dispatch_loader_t *vkDispatchLoader;
 
         // Note: deconstruction order for the below fields is important.
-
         std::shared_ptr<VkInstance_T> vkInstance;
         std::shared_ptr<VkSurfaceKHR_T> vkSurface;
 

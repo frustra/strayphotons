@@ -26,7 +26,6 @@ target_link_libraries(sp-vk PRIVATE
     glfw
     Vulkan::Vulkan
 )
-target_compile_definitions(sp-vk PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 set_target_properties(sp-vk PROPERTIES EXPORT_COMPILE_COMMANDS 1)
 
 # Headless executable used for CI testing purposes
@@ -49,8 +48,5 @@ target_link_libraries(sp-test PRIVATE
     glfw-egl
     Vulkan::Vulkan
 )
-target_compile_definitions(sp-test PRIVATE
-    SP_GRAPHICS_SUPPORT_HEADLESS
-    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-)
+target_compile_definitions(sp-test PRIVATE SP_GRAPHICS_SUPPORT_HEADLESS)
 set_target_properties(sp-test PROPERTIES EXPORT_COMPILE_COMMANDS 1)

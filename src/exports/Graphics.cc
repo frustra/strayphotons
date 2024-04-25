@@ -10,8 +10,15 @@
 
 #include <strayphotons.h>
 #include <strayphotons/export.h>
+#include <vulkan/vulkan.hpp>
 
 using namespace sp;
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
+SP_EXPORT sp_vk_dispatch_loader_t *sp_get_vulkan_dispatch_loader() {
+    return &VULKAN_HPP_DEFAULT_DISPATCHER;
+}
 
 SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t ctx) {
     Assertf(ctx != nullptr, "sp_game_get_graphics_context called with null game ctx");

@@ -12,6 +12,8 @@
 #include <iostream>
 using namespace std;
 
+#define VULKAN_HPP_DEFAULT_DISPATCHER (*sp_get_vulkan_dispatch_loader())
+
 #include "GlfwInputHandler.hh"
 #include "common/Common.hh"
 #include "common/Defer.hh"
@@ -33,8 +35,6 @@ using namespace std;
 #include <vulkan/vulkan.hpp>
 
 using cxxopts::value;
-
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp {
     sp_game_t GameInstance = (sp_game_t)0;
