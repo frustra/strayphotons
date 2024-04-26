@@ -86,6 +86,8 @@ namespace sp::vulkan {
             enableSwapchain = false;
         }
 
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(&vkGetInstanceProcAddr);
+
         instance = graphics.vkInstance.get();
         instanceDestroy.SetFunc([&graphics] {
             graphics.vkInstance.reset();
@@ -95,7 +97,7 @@ namespace sp::vulkan {
             graphics.vkSurface.reset();
         });
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance, &vkGetInstanceProcAddr);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
@@ -171,7 +173,7 @@ namespace sp::vulkan {
         if (!findQueue(QUEUE_TYPE_GRAPHICS,
                 vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
                 {},
-                1.f,
+                1.0f,
                 enableSwapchain))
             Abortf("could not find a supported graphics queue family");
 
