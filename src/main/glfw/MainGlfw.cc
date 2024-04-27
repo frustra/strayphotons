@@ -116,7 +116,10 @@ int main(int argc, char **argv)
 
     GameGraphics = sp_game_get_graphics_context(GameInstance);
 
-#ifndef SP_GRAPHICS_SUPPORT_HEADLESS
+#ifdef SP_GRAPHICS_SUPPORT_HEADLESS
+    sp_cvar_t *maxFpsCvar = sp_get_cvar("r.MaxFPS");
+    sp_cvar_set_uint32(maxFpsCvar, 90);
+#else
     if (!sp_game_get_cli_flag(GameInstance, "no-vr")) sp_game_enable_xr_system(GameInstance, true);
 #endif
 
