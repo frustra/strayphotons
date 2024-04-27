@@ -17,7 +17,7 @@ list(REMOVE_DUPLICATES unit_test_sources)
 add_executable(sp-unit-tests tests.cc ${unit_test_sources})
 target_compile_definitions(sp-unit-tests PRIVATE TEST_TYPE=\"unit\")
 target_link_libraries(sp-unit-tests ${PROJECT_COMMON_LIB} ${PROJECT_CORE_LIB})
-target_include_directories(sp-unit-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(sp-unit-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_ROOT_DIR}/include)
 
 # target to run the tests
 add_custom_target(

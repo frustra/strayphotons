@@ -43,10 +43,6 @@ set(CXXBRIDGE_WINIT_SP_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-winit/cxxbridge/sp
 add_custom_command(COMMENT "Run winit cxxbridge codegen"
     OUTPUT
         "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
-        "${CXXBRIDGE_WINIT_SP_DIR}/api.rs.cc"
-        "${CXXBRIDGE_WINIT_SP_DIR}/api.rs.h"
-        "${CXXBRIDGE_WINIT_SP_DIR}/wasm.rs.cc"
-        "${CXXBRIDGE_WINIT_SP_DIR}/wasm.rs.h"
         "${CXXBRIDGE_WINIT_SP_DIR}/winit.rs.cc"
         "${CXXBRIDGE_WINIT_SP_DIR}/winit.rs.h"
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml
@@ -56,7 +52,7 @@ add_custom_command(COMMENT "Run winit cxxbridge codegen"
         CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo-winit/
         CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs-winit,INTERFACE_INCLUDE_DIRECTORIES>"
-        ${CARGO_CMD} --no-default-features --features "sp-rs/api,sp-rs/wasm,sp-rs/winit"
+        ${CARGO_CMD} --no-default-features --features "sp-rs/winit"
 )
 
 add_custom_target(sp-rs-wasm-build DEPENDS
@@ -69,8 +65,6 @@ add_dependencies(sp-rs-wasm sp-rs-wasm-build)
 
 add_custom_target(sp-rs-winit-build DEPENDS
     "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
-    "${CXXBRIDGE_WINIT_SP_DIR}/api.rs.h"
-    "${CXXBRIDGE_WINIT_SP_DIR}/wasm.rs.h"
     "${CXXBRIDGE_WINIT_SP_DIR}/winit.rs.h"
 )
 add_library(sp-rs-winit INTERFACE)
@@ -92,6 +86,7 @@ target_include_directories(sp-rs-winit
 # Adding dependencies here will automatically setup include directories for Rust
 target_link_libraries(sp-rs-wasm INTERFACE
     "${CXXBRIDGE_WASM_DIR}/${RUST_OUTPUT_LIB}"
+    ${PROJECT_CORE_LIB}
     Tecs
 )
 target_link_libraries(sp-rs-winit INTERFACE
