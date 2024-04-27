@@ -1,8 +1,7 @@
 Welcome to the Stray Photons documentation!
 
 > [!NOTE]
-> **This project is under active full-time development!**  
-> For development updates, discussion, and support, join the [Discord Server](https://discord.gg/djzfKZwvt4)!
+> For development updates, discussion, and support, join the [Discord Server](https://discord.gg/djzfKZwvt4).
 > 
 > New guides and documentation are being added over time.
 

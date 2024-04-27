@@ -23,16 +23,8 @@ if(SP_BUILD_RUST)
         ${PROJECT_COMMON_EXE}
         ${PROJECT_LIB_NAME}
         sp-rs-winit
-        # cxxopts
         Vulkan::Vulkan
     )
-
-    # target_include_directories(sp-winit
-    #     PUBLIC
-    #         ${CMAKE_CURRENT_SOURCE_DIR}
-    #     PRIVATE
-    #         ${PROJECT_ROOT_DIR}/include
-    # )
 
     if(WIN32)
         target_link_libraries(sp-winit PUBLIC Imm32)

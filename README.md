@@ -1,7 +1,6 @@
 # ![Stray Photons](https://github.com/frustra/strayphotons/assets/1594638/ca74fc9a-55fd-4fe8-980b-ca6575d81160) <br> [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg?branch=master)](https://buildkite.com/frustra/strayphotons)
 
-> **This project is under active full-time development!**  
-> For development updates, discussion, and support, join the [Discord Server](https://discord.gg/djzfKZwvt4)!
+> For development updates, discussion, and support, join the [Discord Server](https://discord.gg/djzfKZwvt4).
 
 Stray Photons is a high performance game engine with a focus on immersive VR experiences. Featuring full-hand physics interaction, seamless asynchronous scene Loading, fully interactive global illumination lighting, powerful game logic and scripting capabilities, and much more.
 
