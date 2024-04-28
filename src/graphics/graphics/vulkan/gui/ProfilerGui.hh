@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Histogram.hh"
+#include "graphics/core/Histogram.hh"
 #include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 

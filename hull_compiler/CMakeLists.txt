@@ -10,8 +10,10 @@ add_executable(hull_compiler
 )
 
 target_link_libraries(hull_compiler
+    ${PROJECT_COMMON_LIB}
     ${PROJECT_CORE_LIB}
     ${PROJECT_PHYSICS_COOKING_LIB}
+    PhysX
     vhacd
     cxxopts
 )

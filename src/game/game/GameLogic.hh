@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include "common/LockFreeEventQueue.hh"
+#include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
-#include "core/LockFreeEventQueue.hh"
-#include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Events.hh"
@@ -18,9 +18,9 @@ namespace sp {
 
     class GameLogic : public RegisteredThread {
     public:
-        GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode);
+        GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue);
 
-        void StartThread();
+        void StartThread(bool startPaused = false);
 
         static void UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
             LockFreeEventQueue<ecs::Event> &inputQueue);
@@ -30,7 +30,6 @@ namespace sp {
 
         LockFreeEventQueue<ecs::Event> &windowInputQueue;
 
-        bool stepMode;
         CFuncCollection funcs;
     };
 

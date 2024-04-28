@@ -9,6 +9,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     Access.cc
     BufferPool.cc
     CommandContext.cc
+    DeviceContext.cc
     Image.cc
     Memory.cc
     PerfTimer.cc
@@ -17,16 +18,4 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     UniqueID.cc
     Util.cc
     VkCommon.cc
-)
-
-target_sources(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PRIVATE
-    DeviceContext.cc
-)
-
-target_sources(${PROJECT_GRAPHICS_VULKAN_GLFW_LIB} PRIVATE
-    DeviceContext.cc
-)
-
-target_sources(${PROJECT_GRAPHICS_VULKAN_WINIT_LIB} PRIVATE
-    DeviceContext.cc
 )

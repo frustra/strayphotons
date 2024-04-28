@@ -7,8 +7,8 @@
 
 #include "VkCommon.hh"
 
-#include "core/Common.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
 
 namespace sp::vulkan {
     void AssertVKSuccess(vk::Result result, std::string message) {

@@ -8,8 +8,8 @@
 #include "Image.hh"
 
 #include "assets/Asset.hh"
-#include "core/Common.hh"
-#include "core/Tracing.hh"
+#include "common/Common.hh"
+#include "common/Tracing.hh"
 
 #include <stb_image.h>
 

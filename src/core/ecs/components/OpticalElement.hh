@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/Components.hh"
 
 #include <glm/glm.hpp>

@@ -7,8 +7,8 @@
 
 #include "PerfTimer.hh"
 
-#include "core/Common.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 

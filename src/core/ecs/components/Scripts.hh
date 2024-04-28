@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/LockFreeMutex.hh"
-#include "core/Tracing.hh"
+#include "common/LockFreeMutex.hh"
+#include "common/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"

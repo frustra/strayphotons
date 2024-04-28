@@ -11,8 +11,8 @@
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
 #include "assets/JsonHelpers.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <filesystem>

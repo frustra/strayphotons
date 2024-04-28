@@ -98,7 +98,7 @@ namespace sp {
 
             if (!nextValidIndexes) {
                 currentFrameIndex = (int)frames.size();
-                nextValidIndexes = make_shared<IndexVector>();
+                nextValidIndexes = std::make_shared<IndexVector>();
                 frames.emplace_back(Frame{nextValidIndexes, {}});
             }
 

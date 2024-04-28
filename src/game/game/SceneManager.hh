@@ -7,13 +7,13 @@
 
 #pragma once
 
+#include "common/DispatchQueue.hh"
+#include "common/EnumTypes.hh"
+#include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
+#include "common/PreservingMap.hh"
+#include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
-#include "core/DispatchQueue.hh"
-#include "core/EnumTypes.hh"
-#include "core/LockFreeMutex.hh"
-#include "core/Logging.hh"
-#include "core/PreservingMap.hh"
-#include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "game/Scene.hh"
@@ -141,7 +141,7 @@ namespace sp {
         std::shared_ptr<Scene> playerScene, bindingsScene;
         CFuncCollection funcs;
 
-        friend class SceneInfo;
+        friend struct SceneInfo;
         friend class Scene;
     };
 

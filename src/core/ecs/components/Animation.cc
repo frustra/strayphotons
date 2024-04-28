@@ -8,7 +8,7 @@
 #include "Animation.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <sstream>
@@ -59,7 +59,7 @@ namespace ecs {
         auto &currState = animation.states[state.current];
         auto &nextState = animation.states[state.next];
 
-        glm::vec3 dPos, dScale;
+        glm::vec3 dPos, scale;
         switch (animation.interpolation) {
         case InterpolationMode::Step:
             transform.pose.SetPosition(nextState.pos);
@@ -69,8 +69,8 @@ namespace ecs {
             dPos = nextState.pos - currState.pos;
             transform.pose.SetPosition(currState.pos + state.completion * dPos);
 
-            dScale = nextState.scale - currState.scale;
-            if (isNormal(dScale)) transform.pose.SetScale(currState.scale + state.completion * dScale);
+            scale = currState.scale + state.completion * (nextState.scale - currState.scale);
+            if (isNormal(scale)) transform.pose.SetScale(scale);
             break;
         case InterpolationMode::Cubic:
             float tangentScale = state.direction * nextState.delay;
@@ -87,8 +87,8 @@ namespace ecs {
                        at2 * nextState.tangentPos;
             transform.pose.SetPosition(pos);
 
-            auto scale = av1 * currState.scale + at1 * currState.tangentScale + av2 * nextState.scale +
-                         at2 * nextState.tangentScale;
+            scale = av1 * currState.scale + at1 * currState.tangentScale + av2 * nextState.scale +
+                    at2 * nextState.tangentScale;
             if (isNormal(scale)) transform.pose.SetScale(scale);
             break;
         }

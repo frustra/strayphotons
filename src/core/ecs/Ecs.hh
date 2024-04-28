@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/DispatchQueue.hh"
-#include "core/Tracing.hh"
+#include "common/Async.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Tracing.hh"
 
 #include <Tecs.hh>
 #include <cstring>
@@ -131,13 +131,16 @@ namespace ecs {
         };
         template<typename... Tn>
         struct make_flat_components<Tecs::ECS<Tn...>> {
-            using type = std::tuple<std::optional<Tn>...>;
+            using type = std::tuple<std::shared_ptr<Tn>...>;
         };
     } // namespace detail
 
     using FlatEntity = detail::make_flat_components<ECS>::type;
 
     std::string ToString(Lock<Read<Name>> lock, Entity e);
+
+    struct ECSContext;
+    ECSContext &GetECSContext();
 
     ECS &World();
     ECS &StagingWorld();

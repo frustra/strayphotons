@@ -7,11 +7,11 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "assets/Async.hh"
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
+#include "common/Async.hh"
+#include "common/Logging.hh"
 #include "cooking/ConvexHull.hh"
-#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <PxPhysicsAPI.h>

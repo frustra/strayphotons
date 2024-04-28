@@ -9,7 +9,6 @@
 
 #include "console/CVar.hh"
 #include "ecs/Ecs.hh"
-#include "graphics/core/RenderTarget.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -20,9 +19,23 @@ namespace ecs {
     struct View;
 }
 
+struct GLFWwindow;
+
+namespace sp::winit {
+    struct WinitContext;
+}
+
+namespace sp::vulkan {
+    class DeviceContext;
+    class PerfTimer;
+} // namespace sp::vulkan
+
 namespace sp {
     class GpuTexture;
     class Image;
+    class DebugGuiManager;
+    class MenuGuiManager;
+    class Game;
 
     extern CVar<float> CVarFieldOfView;
     extern CVar<glm::ivec2> CVarWindowSize;
@@ -33,7 +46,6 @@ namespace sp {
         GraphicsContext() {}
         virtual ~GraphicsContext() {}
 
-        virtual bool ShouldClose() = 0;
         virtual void BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
         virtual void EndFrame() = 0;
@@ -47,8 +59,11 @@ namespace sp {
             return activeView;
         }
 
-        virtual void PrepareWindowView(ecs::View &view) = 0;
-        virtual void UpdateInputModeFromFocus() = 0;
+        virtual void InitRenderer(Game &game) = 0;
+        virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
+
+        virtual void SetDebugGui(DebugGuiManager *debugGui) = 0;
+        virtual void SetMenuGui(MenuGuiManager *menuGui) = 0;
 
         virtual const std::vector<glm::ivec2> &MonitorModes() {
             return monitorModes;
@@ -64,7 +79,6 @@ namespace sp {
         virtual uint32_t GetMeasuredFPS() const {
             return 0;
         }
-        virtual void SetTitle(std::string title) {}
 
     protected:
         ecs::Entity activeView;

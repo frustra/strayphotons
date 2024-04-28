@@ -13,8 +13,10 @@ target_include_directories(
         microtar/src
 )
 
-target_compile_definitions(
-    microtar
-    PUBLIC
-        _CRT_SECURE_NO_WARNINGS
-)
+if(WIN32)
+    target_compile_definitions(
+        microtar
+        PUBLIC
+            _CRT_SECURE_NO_WARNINGS
+    )
+endif()

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {

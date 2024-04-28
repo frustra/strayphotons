@@ -7,24 +7,10 @@
 
 #pragma once
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-namespace sp {
-    struct CGameContext;
-
-    extern "C" {
-    typedef CGameContext *StrayPhotons;
-    static_assert(sizeof(uintptr_t) <= sizeof(uint64_t), "Pointer size larger than handle");
-#else
-typedef uint64_t StrayPhotons;
-#endif
-
-    StrayPhotons game_init(int argc, char **argv);
-    int game_start(StrayPhotons ctx);
-    void game_destroy(StrayPhotons ctx);
-
-#ifdef __cplusplus
-    }
-}
-#endif
+#include "strayphotons/console.h"
+#include "strayphotons/entity.h"
+#include "strayphotons/export.h"
+#include "strayphotons/game.h"
+#include "strayphotons/graphics.h"
+#include "strayphotons/input.h"
+#include "strayphotons/logging.h"

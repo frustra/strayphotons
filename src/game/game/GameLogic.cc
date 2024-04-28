@@ -7,27 +7,32 @@
 
 #include "GameLogic.hh"
 
+#include "common/LockFreeEventQueue.hh"
+#include "common/Tracing.hh"
 #include "console/Console.hh"
-#include "core/LockFreeEventQueue.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "input/BindingNames.hh"
+#include "input/KeyCodes.hh"
 
 namespace sp {
-    GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue, bool stepMode)
-        : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue), stepMode(stepMode) {
-        if (stepMode) {
-            funcs.Register<unsigned int>("steplogic",
-                "Advance the game logic by N frames, default is 1",
-                [this](unsigned int arg) {
-                    this->Step(std::max(1u, arg));
-                });
-        }
+    GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
+        : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue) {
+        funcs.Register<unsigned int>("steplogic",
+            "Advance the game logic by N frames, default is 1",
+            [this](unsigned int arg) {
+                this->Step(std::max(1u, arg));
+            });
+        funcs.Register("pauselogic", "Pause the game logic thread (See also: resumelogic)", [this] {
+            this->Pause(true);
+        });
+        funcs.Register("resumelogic", "Pause the game logic thread (See also: pauselogic)", [this] {
+            this->Pause(false);
+        });
     }
 
-    void GameLogic::StartThread() {
-        RegisteredThread::StartThread(stepMode);
+    void GameLogic::StartThread(bool startPaused) {
+        RegisteredThread::StartThread(startPaused);
     }
 
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
@@ -46,19 +51,25 @@ namespace sp {
             }
 
             if (event.name == INPUT_EVENT_KEYBOARD_KEY_DOWN) {
-                auto &keyName = std::get<std::string>(event.data);
-                std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, true});
+                auto &keyCode = (KeyCode &)std::get<int>(event.data);
+                auto keyName = KeycodeNameLookup.find(keyCode);
+                if (keyName != KeycodeNameLookup.end()) {
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName->second;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, true});
 
-                ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
-                signalRef.SetValue(lock, 1.0);
+                    ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+                    signalRef.SetValue(lock, 1.0);
+                }
             } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
-                auto &keyName = std::get<std::string>(event.data);
-                std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName;
-                ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
+                auto &keyCode = (KeyCode &)std::get<int>(event.data);
+                auto keyName = KeycodeNameLookup.find(keyCode);
+                if (keyName != KeycodeNameLookup.end()) {
+                    std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName->second;
+                    ecs::EventBindings::SendEvent(lock, keyboardEntity, ecs::Event{eventName, keyboard, false});
 
-                ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName);
-                signalRef.ClearValue(lock);
+                    ecs::SignalRef signalRef(keyboard, INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+                    signalRef.ClearValue(lock);
+                }
             } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
                 auto &mousePos = std::get<glm::vec2>(event.data);
                 ecs::SignalRef refX(mouse, INPUT_SIGNAL_MOUSE_CURSOR_X);

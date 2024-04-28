@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include "common/Common.hh"
+#include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
+#include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
 #include "console/CVar.hh"
-#include "core/Common.hh"
-#include "core/LockFreeMutex.hh"
-#include "core/Logging.hh"
-#include "core/RegisteredThread.hh"
 
 #include <condition_variable>
 #include <map>
@@ -54,22 +54,26 @@ namespace sp {
 
     public:
         ConsoleManager();
-        void StartThread(const ConsoleScript *startupScript);
+        void StartThread(const ConsoleScript *startupScript = nullptr);
         void Shutdown();
 
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
 
+        CVarBase *GetCVarBase(const string &name) {
+            return cvars[all_lower(name) ? name : to_lower_copy(name)];
+        }
+
         template<typename T>
         CVar<T> &GetCVar(const string &name) {
-            auto *base = cvars[all_lower(name) ? name : to_lower_copy(name)];
+            auto *base = GetCVarBase(name);
             Assertf(base, "CVar %s does not exist", name);
             auto *derived = dynamic_cast<CVar<T> *>(base);
             Assertf(derived, "CVar %s has unexpected type", name);
             return *derived;
         }
 
-        void AddLog(logging::Level lvl, const string &line);
+        void AddLine(logging::Level lvl, const string &line);
 
         const vector<ConsoleLine> Lines() {
             std::lock_guard lock(linesLock);
@@ -96,6 +100,7 @@ namespace sp {
     private:
         void Execute(const string cmd, const string &args);
 
+        bool ThreadInit() override;
         void Frame() override;
 
         void RegisterCoreCommands();
@@ -118,8 +123,6 @@ namespace sp {
 
         std::mutex historyLock;
         vector<string> history;
-
-        friend ConsoleManager &GetConsoleManager();
     };
 
     ConsoleManager &GetConsoleManager();

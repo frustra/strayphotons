@@ -7,13 +7,13 @@
 
 #include "MenuGuiManager.hh"
 
-#include "GraphicsManager.hh"
 #include "assets/AssetManager.hh"
+#include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "console/Console.hh"
-#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
 #include "input/BindingNames.hh"
 
@@ -137,7 +137,7 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        if (!logoTex) logoTex = graphics.GetContext()->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
+        if (!logoTex) logoTex = graphics.context->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
         ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
         if (selectedScreen == MenuScreen::Main) {
@@ -230,7 +230,7 @@ namespace sp {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0);
 
             {
-                auto modes = graphics.GetContext()->MonitorModes();
+                auto modes = graphics.context->MonitorModes();
                 auto size = CVarWindowSize.Get();
                 // If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if
                 // not found.

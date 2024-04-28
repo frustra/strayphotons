@@ -8,8 +8,8 @@
 #include "AudioManager.hh"
 
 #include "assets/AssetManager.hh"
+#include "common/Tracing.hh"
 #include "console/CVar.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 

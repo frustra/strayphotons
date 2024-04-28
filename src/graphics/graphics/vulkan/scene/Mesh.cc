@@ -9,8 +9,8 @@
 
 #include "assets/Gltf.hh"
 #include "assets/GltfImpl.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

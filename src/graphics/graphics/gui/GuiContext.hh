@@ -8,10 +8,11 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <span>
+#include <string>
 #include <vector>
 
 struct ImGuiContext;
@@ -31,9 +32,9 @@ namespace sp {
 
     class GuiRenderable {
     public:
-        GuiRenderable(const string &name) : name(name) {}
+        GuiRenderable(const std::string &name) : name(name) {}
 
-        const string name;
+        const std::string name;
         virtual void DefineContents() = 0;
 
         void PushFont(Font fontType, float fontSize);
@@ -41,7 +42,7 @@ namespace sp {
 
     class GuiWindow : public GuiRenderable {
     public:
-        GuiWindow(const string &name, int flags = 0) : GuiRenderable(name), flags(flags) {}
+        GuiWindow(const std::string &name, int flags = 0) : GuiRenderable(name), flags(flags) {}
 
         virtual void PreDefine() {}
         virtual void PostDefine() {}
@@ -74,7 +75,7 @@ namespace sp {
         std::string name;
     };
 
-    shared_ptr<GuiWindow> CreateGuiWindow(const string &name, const ecs::Entity &ent);
+    std::shared_ptr<GuiWindow> CreateGuiWindow(const std::string &name, const ecs::Entity &ent);
 
     std::span<FontDef> GetFontList();
 } // namespace sp

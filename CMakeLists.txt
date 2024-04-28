@@ -75,6 +75,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
+    set(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Werror=format-security -Wno-volatile -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
@@ -82,6 +83,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
+    set(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fgnuc-version=5 -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
@@ -115,6 +117,9 @@ set(PROJECT_INSTALL sp)
 # Root name for all libraries that will be part of this project
 set(PROJECT_BASE_NAME strayphotons)
 
+# Output shared library name (lib<name>.so / <name>.dll)
+set(PROJECT_LIB_NAME sp)
+
 # Interface library that is applied to all module configurations
 set(PROJECT_COMMON_EXE ${PROJECT_BASE_NAME})
 add_library(${PROJECT_COMMON_EXE} INTERFACE)
@@ -141,6 +146,8 @@ endif()
 
 # Build all external dependencies
 add_subdirectory(ext)
+
+find_package(Vulkan REQUIRED)
 
 if((CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR (CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
     set(ARM ON)
@@ -182,10 +189,6 @@ if(SP_BUILD_RUST)
     message(STATUS "Building with Rust")
     add_subdirectory(rust)
     add_subdirectory(wasm)
-
-    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        sp-rs-wasm
-    )
 
     if(ipo_supported)
         set_target_properties(sp-rs-wasm PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)

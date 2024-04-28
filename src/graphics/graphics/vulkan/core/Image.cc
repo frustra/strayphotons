@@ -8,7 +8,7 @@
 #include "Image.hh"
 
 #include "assets/GltfImpl.hh"
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <robin_hood.h>

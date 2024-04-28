@@ -25,8 +25,6 @@ file(GLOB_RECURSE SHADERS
 
 file(GLOB_RECURSE SHADERS_LIB ${SHADER_DIR}/*.glsl)
 
-find_package(Vulkan REQUIRED)
-
 foreach(SHADER IN LISTS SHADERS)
     string(REPLACE ${SHADER_DIR} "" SHADER_FILE ${SHADER})
     string(REPLACE "vulkan/" "" OUTPUT_NAME ${SHADER_FILE})

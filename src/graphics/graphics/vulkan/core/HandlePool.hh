@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/LockFreeMutex.hh"
+#include "common/LockFreeMutex.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 #ifdef SP_DEBUG

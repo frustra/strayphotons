@@ -71,6 +71,20 @@
             ]
         },
         {
+            "name": "StrayPhotons Winit (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-winit.exe",
+            "args": ["--with-validation-layers"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "sourceFileMap": {
+                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
+            }
+        },
+        {
             "name": "StrayPhotons Winit No VR (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
@@ -104,6 +118,20 @@
             ]
         },
         {
+            "name": "StrayPhotons Hull Compiler (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/hull_compiler.exe",
+            "args": ["box"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "sourceFileMap": {
+                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
+            }
+        },
+        {
             "name": "StrayPhotons Docs Generator (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
@@ -130,7 +158,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test.exe",
-            "args": ["--with-validation-layers", "tests/scene-overrides.txt"],
+            "args": ["--with-validation-layers", "-v", "--run", "tests/scene-overrides.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -141,7 +169,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test",
-            "args": ["--with-validation-layers", "tests/scene-overrides.txt"],
+            "args": ["--with-validation-layers", "-v", "--run", "tests/scene-overrides.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

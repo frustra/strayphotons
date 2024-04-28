@@ -15,7 +15,7 @@ extern "C" {
 #include "assets/Gltf.hh"
 #include "assets/Image.hh"
 #include "assets/PhysicsInfo.hh"
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"

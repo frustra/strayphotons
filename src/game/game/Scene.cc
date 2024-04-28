@@ -7,8 +7,8 @@
 
 #include "game/Scene.hh"
 
-#include "core/Common.hh"
-#include "core/Tracing.hh"
+#include "common/Common.hh"
+#include "common/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/SceneImpl.hh"

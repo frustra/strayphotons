@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
 
@@ -28,8 +28,8 @@ namespace sp::scene {
         if (!e.Has<SceneInfo>(staging)) return flatEntity;
 
         if (e.Has<Name>(staging)) {
-            auto &name = std::get<std::optional<Name>>(flatEntity);
-            name = e.Get<Name>(staging);
+            auto &name = std::get<std::shared_ptr<Name>>(flatEntity);
+            name = std::make_shared<Name>(e.Get<Name>(staging));
         }
 
         auto stagingId = e;
@@ -49,24 +49,25 @@ namespace sp::scene {
                     } else if constexpr (std::is_same_v<T, Animation>) {
                         // Ignore, this is handled bellow and depends on the final TransformTree
                     } else if constexpr (std::is_same_v<T, SceneProperties>) {
-                        auto &component = std::get<std::optional<SceneProperties>>(flatEntity);
+                        auto &component = std::get<std::shared_ptr<SceneProperties>>(flatEntity);
                         if (!component) {
-                            component = LookupComponent<SceneProperties>().StagingDefault();
+                            component = std::make_shared<SceneProperties>(
+                                LookupComponent<SceneProperties>().StagingDefault());
                         }
 
                         Assertf(stagingInfo.scene, "Staging entity %s has null scene", ToString(staging, stagingId));
                         auto properties = stagingInfo.scene.data->GetProperties(staging);
                         properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
                         properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
-                        LookupComponent<SceneProperties>().ApplyComponent(component.value(), properties, false);
+                        LookupComponent<SceneProperties>().ApplyComponent(*component, properties, false);
                     } else if constexpr (!Tecs::is_global_component<T>()) {
                         if (!stagingId.Has<T>(staging)) return;
 
-                        auto &component = std::get<std::optional<T>>(flatEntity);
+                        auto &component = std::get<std::shared_ptr<T>>(flatEntity);
                         if (!component) {
                             const ecs::ComponentBase *comp = LookupComponent(typeid(T));
                             Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
-                            component = comp->GetStagingDefault<T>();
+                            component = std::make_shared<T>(comp->GetStagingDefault<T>());
                         }
 
                         if constexpr (std::is_same_v<T, TransformTree>) {
@@ -83,7 +84,7 @@ namespace sp::scene {
                                 }
                             }
 
-                            LookupComponent<TransformTree>().ApplyComponent(component.value(), transform, false);
+                            LookupComponent<TransformTree>().ApplyComponent(*component, transform, false);
                         } else if constexpr (std::is_same_v<T, Scripts>) {
                             auto scripts = stagingId.Get<Scripts>(staging);
 
@@ -93,10 +94,10 @@ namespace sp::scene {
                                 script.state = GetScriptManager().NewScriptInstance(*script.state);
                             }
 
-                            LookupComponent<Scripts>().ApplyComponent(component.value(), scripts, false);
+                            LookupComponent<Scripts>().ApplyComponent(*component, scripts, false);
                         } else {
                             auto &srcComp = stagingId.Get<T>(staging);
-                            LookupComponent<T>().ApplyComponent(component.value(), srcComp, false);
+                            LookupComponent<T>().ApplyComponent(*component, srcComp, false);
                         }
                     }
                 }(),
@@ -105,8 +106,8 @@ namespace sp::scene {
             stagingId = stagingInfo.nextStagingId;
         }
 
-        auto &flatTransform = std::get<std::optional<TransformTree>>(flatEntity);
-        auto &flatAnimation = std::get<std::optional<Animation>>(flatEntity);
+        auto &flatTransform = std::get<std::shared_ptr<TransformTree>>(flatEntity);
+        auto &flatAnimation = std::get<std::shared_ptr<Animation>>(flatEntity);
         if (flatTransform) {
             ZoneScopedN("ApplySceneTransform");
             stagingId = e;
@@ -127,9 +128,9 @@ namespace sp::scene {
                     }
 
                     if (!flatAnimation) {
-                        flatAnimation = LookupComponent<Animation>().StagingDefault();
+                        flatAnimation = std::make_shared<Animation>(LookupComponent<Animation>().StagingDefault());
                     }
-                    LookupComponent<Animation>().ApplyComponent(flatAnimation.value(), animation, false);
+                    LookupComponent<Animation>().ApplyComponent(*flatAnimation, animation, false);
                 }
                 stagingId = stagingInfo.nextStagingId;
             }
@@ -150,7 +151,7 @@ namespace sp::scene {
             [&] {
                 using T = AllComponentTypes;
                 if constexpr (std::is_same_v<T, Name>) {
-                    auto &name = std::get<std::optional<Name>>(flatEntity);
+                    auto &name = std::get<std::shared_ptr<Name>>(flatEntity);
                     if (name) liveId.Set<Name>(live, *name);
                 } else if constexpr (std::is_same_v<T, SceneInfo>) {
                     // Ignore, this should always be set
@@ -159,7 +160,7 @@ namespace sp::scene {
                 } else if constexpr (std::is_same_v<T, SignalBindings>) {
                     // Skip, this is handled bellow
                 } else if constexpr (!Tecs::is_global_component<T>()) {
-                    auto &component = std::get<std::optional<T>>(flatEntity);
+                    auto &component = std::get<std::shared_ptr<T>>(flatEntity);
                     if (component) {
                         if (resetLive) liveId.Unset<T>(live);
 
@@ -167,7 +168,7 @@ namespace sp::scene {
                         LookupComponent<T>().ApplyComponent(dstComp, *component, true);
                     } else if (liveId.Has<T>(live)) {
                         if constexpr (std::is_same_v<T, TransformSnapshot>) {
-                            auto &transformOpt = std::get<std::optional<TransformTree>>(flatEntity);
+                            auto &transformOpt = std::get<std::shared_ptr<TransformTree>>(flatEntity);
                             if (!transformOpt) {
                                 liveId.Unset<TransformSnapshot>(live);
                             }
@@ -183,17 +184,17 @@ namespace sp::scene {
             GetSignalManager().ClearEntity(live, liveId);
         }
 
-        auto &signalOutput = std::get<std::optional<SignalOutput>>(flatEntity);
+        auto &signalOutput = std::get<std::shared_ptr<SignalOutput>>(flatEntity);
         if (signalOutput) {
-            for (auto &[signalName, value] : signalOutput.value().signals) {
+            for (auto &[signalName, value] : signalOutput->signals) {
                 if (!std::isfinite(value)) continue;
                 SignalRef ref(liveId, signalName);
                 if (!ref.HasValue(live)) ref.SetValue(live, value);
             }
         }
-        auto &signalBindings = std::get<std::optional<SignalBindings>>(flatEntity);
+        auto &signalBindings = std::get<std::shared_ptr<SignalBindings>>(flatEntity);
         if (signalBindings) {
-            for (auto &[signalName, binding] : signalBindings.value().bindings) {
+            for (auto &[signalName, binding] : signalBindings->bindings) {
                 if (!binding) continue;
                 SignalRef ref(liveId, signalName);
                 if (!ref.HasBinding(live)) ref.SetBinding(live, binding);

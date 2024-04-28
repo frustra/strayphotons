@@ -67,7 +67,7 @@ namespace sp::vulkan::renderer {
                 if (starts_with(gelName, "graph:")) {
                     gelTextureCache[gelName] = {};
                 } else if (starts_with(gelName, "asset:")) {
-                    auto handle = scene.textures.LoadAssetImage(gelName.substr(6));
+                    auto handle = scene.textures.LoadAssetImage(gelName.substr(6), true);
                     gelTextureCache[gelName] = handle;
 
                     // cull lights that don't have their gel loaded yet

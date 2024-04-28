@@ -7,33 +7,28 @@
 
 #include "Ecs.hh"
 
-#include "core/DispatchQueue.hh"
-#include "core/Logging.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <typeindex>
 
 namespace ecs {
-    auto &ECSContext() {
-        static struct {
-            sp::LogOnExit logOnExit = "ECS shut down =========================================================";
-            ECS live;
-            ECS staging;
-            sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue");
-        } context;
+    ECSContext &GetECSContext() {
+        static ECSContext context;
         return context;
     }
 
     ECS &World() {
-        return ECSContext().live;
+        return GetECSContext().live;
     }
 
     ECS &StagingWorld() {
-        return ECSContext().staging;
+        return GetECSContext().staging;
     }
 
     sp::DispatchQueue &TransactionQueue() {
-        return ECSContext().transactionQueue;
+        return GetECSContext().transactionQueue;
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>

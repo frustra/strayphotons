@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Hashing.hh"
+#include "common/Hashing.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 

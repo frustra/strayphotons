@@ -7,20 +7,25 @@
 
 add_library(${PROJECT_CORE_LIB} STATIC)
 
-target_include_directories(${PROJECT_CORE_LIB} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(${PROJECT_CORE_LIB}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE
+        ${PROJECT_ROOT_DIR}/include
 )
 
-target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
-    glm
-    magic_enum
-    microtar
-    murmurhash
-    picojson
-    robin_hood
-    Tecs
-    tinygltf
-    TracyClient
+target_link_libraries(${PROJECT_CORE_LIB}
+    PUBLIC
+        ${PROJECT_COMMON_LIB}
+        Tecs
+        glm
+        picojson
+        magic_enum
+        robin_hood
+        tinygltf
+    PRIVATE
+        microtar
+        murmurhash
 )
 
 if(WIN32)
@@ -46,6 +51,7 @@ else()
 endif()
 
 # _DEBUG/NDEBUG Used by PhysX, must be defined everywhere to enable precompiled headers
+# NDEBUG Used by vulkan.hpp DispatchLoaderBase
 if (SP_DEBUG)
     target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC _DEBUG)
 else()
@@ -54,6 +60,5 @@ endif()
 
 add_subdirectory(assets)
 add_subdirectory(console)
-add_subdirectory(core)
 add_subdirectory(ecs)
 add_subdirectory(game)

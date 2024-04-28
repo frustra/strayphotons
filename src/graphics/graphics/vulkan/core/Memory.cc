@@ -8,7 +8,7 @@
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 
 namespace sp::vulkan {
     vk::Result UniqueMemory::MapPersistent(void **data) {

@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "assets/Async.hh"
 #include "assets/Gltf.hh"
-#include "core/DispatchQueue.hh"
-#include "core/Hashing.hh"
-#include "core/PreservingMap.hh"
+#include "common/Async.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Hashing.hh"
+#include "common/PreservingMap.hh"
 #include "ecs/components/View.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"

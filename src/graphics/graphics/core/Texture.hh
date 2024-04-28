@@ -8,7 +8,7 @@
 #pragma once
 
 #include "assets/Image.hh"
-#include "core/Common.hh"
+#include "common/Common.hh"
 
 #include <memory>
 

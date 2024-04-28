@@ -8,8 +8,8 @@
 #pragma once
 
 #include "assets/JsonHelpers.hh"
-#include "core/Common.hh"
-#include "core/Defer.hh"
+#include "common/Common.hh"
+#include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
@@ -253,8 +253,8 @@ namespace sp {
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value));
         for (glm::length_t i = 0; i < angles.length(); i++) {
             if (angles[i] < 0.0f) angles[i] += 360.0f;
+            if (angles[i] >= 360.0f) angles[i] -= 360.0f;
         }
-
         if (ImGui::SliderFloat3(name.c_str(), (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
             value = glm::quat(glm::radians(angles));
             return true;
@@ -313,13 +313,9 @@ namespace sp {
         bool changed = ImGui::DragFloat3(text.c_str(), (float *)&value.offset[3], 0.01f);
 
         text = "rotation" + fieldId;
-        glm::vec3 angles = glm::degrees(glm::eulerAngles(value.GetRotation()));
-        for (glm::length_t i = 0; i < angles.length(); i++) {
-            if (angles[i] < 0.0f) angles[i] += 360.0f;
-            if (angles[i] >= 360.0f) angles[i] -= 360.0f;
-        }
-        if (ImGui::SliderFloat3(text.c_str(), (float *)&angles, 0.0f, 360.0f, "%.1f deg")) {
-            value.SetRotation(glm::quat(glm::radians(angles)));
+        glm::quat rotation = value.GetRotation();
+        if (AddImGuiElement(text, rotation)) {
+            value.SetRotation(rotation);
             changed = true;
         }
 
@@ -600,7 +596,7 @@ namespace sp {
                     auto comp = ecs::LookupComponent<T>();
 
                     T compareComp = {};
-                    auto existingComp = std::get<std::optional<T>>(flatParentEntity);
+                    auto &existingComp = std::get<std::shared_ptr<T>>(flatParentEntity);
                     if (existingComp) {
                         comp.ApplyComponent(compareComp, *existingComp, true);
                     }

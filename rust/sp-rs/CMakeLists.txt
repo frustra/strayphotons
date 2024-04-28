@@ -6,7 +6,7 @@
 #
 
 set(CXXBRIDGE_WASM_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-wasm/${CARGO_BUILD_TYPE}")
-set(CXXBRIDGE_WINDOW_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-window/${CARGO_BUILD_TYPE}")
+set(CXXBRIDGE_WINIT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-winit/${CARGO_BUILD_TYPE}")
 if(WIN32)
     set(RUST_OUTPUT_LIB "sp_rs.lib")
 else()
@@ -18,7 +18,7 @@ set(RUST_SOURCE_FILES
     src/api.rs
     src/lib.rs
     src/wasm.rs
-    src/window.rs
+    src/winit.rs
 )
 
 set(CXXBRIDGE_WASM_SP_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-wasm/cxxbridge/sp-rs/src")
@@ -34,27 +34,25 @@ add_custom_command(COMMENT "Run wasm cxxbridge codegen"
 
     COMMAND ${CMAKE_COMMAND} -E env
         CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo-wasm/
+        CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs-wasm,INTERFACE_INCLUDE_DIRECTORIES>"
         ${CARGO_CMD} --no-default-features --features "sp-rs/api,sp-rs/wasm"
 )
 
-set(CXXBRIDGE_WINDOW_SP_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-window/cxxbridge/sp-rs/src")
-add_custom_command(COMMENT "Run window cxxbridge codegen"
+set(CXXBRIDGE_WINIT_SP_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo-winit/cxxbridge/sp-rs/src")
+add_custom_command(COMMENT "Run winit cxxbridge codegen"
     OUTPUT
-        "${CXXBRIDGE_WINDOW_DIR}/${RUST_OUTPUT_LIB}"
-        "${CXXBRIDGE_WINDOW_SP_DIR}/api.rs.cc"
-        "${CXXBRIDGE_WINDOW_SP_DIR}/api.rs.h"
-        "${CXXBRIDGE_WINDOW_SP_DIR}/wasm.rs.cc"
-        "${CXXBRIDGE_WINDOW_SP_DIR}/wasm.rs.h"
-        "${CXXBRIDGE_WINDOW_SP_DIR}/window.rs.cc"
-        "${CXXBRIDGE_WINDOW_SP_DIR}/window.rs.h"
+        "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
+        "${CXXBRIDGE_WINIT_SP_DIR}/winit.rs.cc"
+        "${CXXBRIDGE_WINIT_SP_DIR}/winit.rs.h"
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 
     COMMAND ${CMAKE_COMMAND} -E env
-        CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo-window/
-        RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs-window,INTERFACE_INCLUDE_DIRECTORIES>"
-        ${CARGO_CMD} --no-default-features --features "sp-rs/api,sp-rs/wasm,sp-rs/window"
+        CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo-winit/
+        CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs-winit,INTERFACE_INCLUDE_DIRECTORIES>"
+        ${CARGO_CMD} --no-default-features --features "sp-rs/winit"
 )
 
 add_custom_target(sp-rs-wasm-build DEPENDS
@@ -65,14 +63,12 @@ add_custom_target(sp-rs-wasm-build DEPENDS
 add_library(sp-rs-wasm INTERFACE)
 add_dependencies(sp-rs-wasm sp-rs-wasm-build)
 
-add_custom_target(sp-rs-window-build DEPENDS
-    "${CXXBRIDGE_WINDOW_DIR}/${RUST_OUTPUT_LIB}"
-    "${CXXBRIDGE_WINDOW_SP_DIR}/api.rs.h"
-    "${CXXBRIDGE_WINDOW_SP_DIR}/wasm.rs.h"
-    "${CXXBRIDGE_WINDOW_SP_DIR}/window.rs.h"
+add_custom_target(sp-rs-winit-build DEPENDS
+    "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
+    "${CXXBRIDGE_WINIT_SP_DIR}/winit.rs.h"
 )
-add_library(sp-rs-window INTERFACE)
-add_dependencies(sp-rs-window sp-rs-window-build)
+add_library(sp-rs-winit INTERFACE)
+add_dependencies(sp-rs-winit sp-rs-winit-build)
 
 target_include_directories(sp-rs-wasm
     INTERFACE
@@ -80,9 +76,9 @@ target_include_directories(sp-rs-wasm
         ${PROJECT_ROOT_DIR}/rust
 )
 
-target_include_directories(sp-rs-window
+target_include_directories(sp-rs-winit
     INTERFACE
-        ${CMAKE_CURRENT_BINARY_DIR}/cargo-window/cxxbridge/sp-rs/src
+        ${CMAKE_CURRENT_BINARY_DIR}/cargo-winit/cxxbridge/sp-rs/src
         ${PROJECT_ROOT_DIR}/rust
         ${PROJECT_ROOT_DIR}/src/input
 )
@@ -93,10 +89,16 @@ target_link_libraries(sp-rs-wasm INTERFACE
     ${PROJECT_CORE_LIB}
     Tecs
 )
-target_link_libraries(sp-rs-window INTERFACE
-    "${CXXBRIDGE_WINDOW_DIR}/${RUST_OUTPUT_LIB}"
-    ${PROJECT_CORE_LIB}
+target_link_libraries(sp-rs-winit INTERFACE
+    "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
+    ${PROJECT_COMMON_LIB}
     Tecs
+)
+target_compile_definitions(sp-rs-wasm INTERFACE
+    SP_RUST_WASM_SUPPORT
+)
+target_compile_definitions(sp-rs-winit INTERFACE
+    SP_RUST_WINIT_SUPPORT
 )
 
 if(WIN32)
@@ -108,7 +110,7 @@ if(WIN32)
         Dwmapi
         UxTheme
     )
-    target_link_libraries(sp-rs-window INTERFACE
+    target_link_libraries(sp-rs-winit INTERFACE
         ws2_32
         userenv
         bcrypt
@@ -121,7 +123,7 @@ elseif(UNIX)
         pthread
         dl
     )
-    target_link_libraries(sp-rs-window INTERFACE
+    target_link_libraries(sp-rs-winit INTERFACE
         pthread
         dl
     )

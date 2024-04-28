@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "assets/Async.hh"
-#include "core/Defer.hh"
-#include "core/DispatchQueue.hh"
-#include "core/Hashing.hh"
+#include "common/Async.hh"
+#include "common/Defer.hh"
+#include "common/DispatchQueue.hh"
+#include "common/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
@@ -23,12 +23,6 @@
 #include <robin_hood.h>
 #include <variant>
 
-struct GLFWwindow;
-
-namespace sp::winit {
-    struct WinitContext;
-}
-
 namespace tracy {
     class VkCtx;
 }
@@ -39,7 +33,9 @@ namespace ecs {
 
 namespace sp {
     class CFuncCollection;
-}
+    class Game;
+    class GraphicsManager;
+} // namespace sp
 
 namespace sp::vulkan {
     const uint32 MAX_FRAMES_IN_FLIGHT = 2;
@@ -50,10 +46,11 @@ namespace sp::vulkan {
     class PipelineManager;
     struct PipelineCompileInput;
     class Shader;
+    class Renderer;
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
-        DeviceContext(bool enableValidationLayers = false, bool enableSwapchain = true);
+        DeviceContext(GraphicsManager &graphics, bool enableValidationLayers = false);
         virtual ~DeviceContext();
 
         // Access the underlying Vulkan device via the arrow operator
@@ -78,16 +75,18 @@ namespace sp::vulkan {
         }
 
         // Potential GraphicsContext function implementations
-        bool ShouldClose() override;
         void BeginFrame() override;
         void SwapBuffers() override;
         void EndFrame() override;
         void WaitIdle() override {
             device->waitIdle();
         }
-        void UpdateInputModeFromFocus() override;
 
-        void PrepareWindowView(ecs::View &view) override;
+        void InitRenderer(Game &game) override;
+        void RenderFrame(chrono_clock::duration elapsedTime) override;
+
+        void SetDebugGui(DebugGuiManager *debugGui) override;
+        void SetMenuGui(MenuGuiManager *menuGui) override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
@@ -206,22 +205,12 @@ namespace sp::vulkan {
             return queueFamilyIndex[QueueType(type)];
         }
 
-        GLFWwindow *GetGlfwWindow() {
-            return window;
-        }
-
-        winit::WinitContext *GetWinitContext() {
-            return winitContext.get();
-        }
-
         void *Win32WindowHandle() override;
 
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 
-        static void DeleteAllocator(VmaAllocator allocator);
-
-        void FlushMainQueue() {
-            frameEndQueue.Flush(true);
+        void FlushMainQueue(bool blockUntilReady = true) {
+            frameEndQueue.Flush(blockUntilReady);
         }
 
         template<typename CallbackFn>
@@ -248,8 +237,6 @@ namespace sp::vulkan {
             return measuredFrameRate.load();
         }
 
-        void SetTitle(std::string title) override;
-
     private:
         void CreateSwapchain();
         void CreateTestPipeline();
@@ -259,20 +246,22 @@ namespace sp::vulkan {
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
-        std::shared_ptr<sp::winit::WinitContext> winitContext;
+        GraphicsManager &graphics;
 
         std::thread::id mainThread;
         std::thread::id renderThread;
+
         vk::Instance instance;
         DeferredFunc instanceDestroy;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
-        vk::SurfaceKHR surface;
-        DeferredFunc surfaceDestroy;
         vk::PhysicalDevice physicalDevice;
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
+        vk::SurfaceKHR surface;
+        DeferredFunc surfaceDestroy;
+
         unique_ptr<PerfTimer> perfTimer;
 
 #ifdef TRACY_ENABLE_GRAPHICS
@@ -384,7 +373,6 @@ namespace sp::vulkan {
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         std::unique_ptr<CFuncCollection> funcs;
-
-        GLFWwindow *window = nullptr;
+        std::shared_ptr<vulkan::Renderer> vkRenderer;
     };
 } // namespace sp::vulkan

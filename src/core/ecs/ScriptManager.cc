@@ -7,17 +7,13 @@
 
 #include "ScriptManager.hh"
 
+#include "common/Defer.hh"
 #include "console/CVar.hh"
-#include "core/Defer.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <shared_mutex>
 
 namespace ecs {
-    static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",
-        EventQueue::MAX_QUEUE_SIZE,
-        "Maximum number of event queue size for scripts");
-
     ScriptManager &GetScriptManager() {
         static ScriptManager scriptManager;
         return scriptManager;
@@ -27,6 +23,10 @@ namespace ecs {
         static ScriptDefinitions scriptDefinitions;
         return scriptDefinitions;
     }
+
+    static sp::CVar<uint32_t> CVarMaxScriptQueueSize("s.MaxScriptQueueSize",
+        EventQueue::MAX_QUEUE_SIZE,
+        "Maximum number of event queue size for scripts");
 
     void ScriptDefinitions::RegisterScript(ScriptDefinition &&definition) {
         Assertf(!scripts.contains(definition.name), "Script definition already exists: %s", definition.name);

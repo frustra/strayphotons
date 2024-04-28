@@ -7,7 +7,7 @@
 
 #include "RenderGraph.hh"
 
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -187,7 +187,7 @@ namespace sp::vulkan::render_graph {
                 phase.StartTimer(*cmd);
                 pass.Execute(resources, *cmd);
             } else {
-                Abort("invalid pass");
+                Abortf("invalid render graph pass: %s", pass.name);
             }
 
             if (cmd) pendingCmds.push_back(std::move(cmd));

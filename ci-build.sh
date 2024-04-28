@@ -104,7 +104,7 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
         ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" 1>/dev/null &
 
         echo "Running test: $testscript"
-        ./sp-test "$@" "$testscript"
+        ./sp-test "$@" -v --run "$testscript"
         result=$?
         if [ $result -ne 0 ]; then
             echo -e "\n^^^ +++"

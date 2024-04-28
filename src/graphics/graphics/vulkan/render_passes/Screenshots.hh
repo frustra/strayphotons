@@ -8,8 +8,8 @@
 #pragma once
 
 #include "Common.hh"
+#include "common/LockFreeMutex.hh"
 #include "console/CFunc.hh"
-#include "core/LockFreeMutex.hh"
 
 namespace sp::vulkan::renderer {
     class Screenshots {

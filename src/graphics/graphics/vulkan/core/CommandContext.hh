@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "core/Common.hh"
-#include "core/InlineVector.hh"
+#include "common/Common.hh"
+#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 

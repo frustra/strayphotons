@@ -16,9 +16,9 @@
 #endif
 
 #include "assets/ConsoleScript.hh"
-#include "core/Logging.hh"
-#include "core/RegisteredThread.hh"
-#include "core/Tracing.hh"
+#include "common/Logging.hh"
+#include "common/RegisteredThread.hh"
+#include "common/Tracing.hh"
 
 #include <algorithm>
 #include <atomic>
@@ -31,11 +31,6 @@
 namespace sp {
     ConsoleManager &GetConsoleManager() {
         static ConsoleManager consoleManager;
-        static std::atomic_bool functionsAdded = false;
-        if (!functionsAdded.exchange(true)) {
-            consoleManager.RegisterCoreCommands();
-            consoleManager.RegisterTracyCommands();
-        }
         return consoleManager;
     }
 
@@ -44,8 +39,12 @@ namespace sp {
 #endif
 
     namespace logging {
-        void GlobalLogOutput(Level lvl, const string &line) {
-            GetConsoleManager().AddLog(lvl, line);
+        void GlobalLogOutput_static(Level level, const string &message) {
+            if (level > GetLogLevel_static()) return;
+            std::cout << message;
+            if (level < Level::Debug) {
+                GetConsoleManager().AddLine(level, message);
+            }
         }
     } // namespace logging
 
@@ -126,7 +125,7 @@ namespace sp {
         cliInputThread.detach();
     }
 
-    void ConsoleManager::AddLog(logging::Level lvl, const string &line) {
+    void ConsoleManager::AddLine(logging::Level lvl, const string &line) {
         std::lock_guard lock(linesLock);
         outputLines.push_back({lvl, line});
     }
@@ -134,11 +133,17 @@ namespace sp {
     void ConsoleManager::StartThread(const ConsoleScript *startupScript) {
         if (startupScript) {
             exitOnEmptyQueue = true;
-            for (string line : startupScript->Lines()) {
+            for (const string &line : startupScript->Lines()) {
                 scriptCommands.emplace(line);
             }
         }
         RegisteredThread::StartThread();
+    }
+
+    bool ConsoleManager::ThreadInit() {
+        RegisterCoreCommands();
+        RegisterTracyCommands();
+        return true;
     }
 
     void ConsoleManager::Frame() {

@@ -7,7 +7,7 @@
 
 #include "SceneInfo.hh"
 
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 

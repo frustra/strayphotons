@@ -7,9 +7,9 @@
 
 #include "Signals.hh"
 
-#include "core/Common.hh"
-#include "core/Hashing.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Hashing.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <optional>

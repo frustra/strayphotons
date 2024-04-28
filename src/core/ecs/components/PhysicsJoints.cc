@@ -9,7 +9,7 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/JsonHelpers.hh"
-#include "core/Common.hh"
+#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 
 namespace ecs {

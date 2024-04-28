@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Tracing.hh"
+#include "common/Tracing.hh"
 
 #include <vulkan/vulkan.hpp>
 

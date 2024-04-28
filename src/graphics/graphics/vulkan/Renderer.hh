@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "assets/Async.hh"
+#include "common/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/core/Memory.hh"
@@ -27,13 +27,12 @@
 
 namespace sp {
     class GuiContext;
-
-#ifdef SP_XR_SUPPORT
-    namespace xr {
-        class XrSystem;
-    }
-#endif
+    class Game;
 } // namespace sp
+
+namespace sp::xr {
+    class XrSystem;
+}
 
 namespace sp::vulkan {
     class Mesh;
@@ -43,7 +42,7 @@ namespace sp::vulkan {
 
     class Renderer {
     public:
-        Renderer(DeviceContext &context);
+        Renderer(Game &game, DeviceContext &context);
         ~Renderer();
 
         void RenderFrame(chrono_clock::duration elapsedTime);
@@ -52,13 +51,8 @@ namespace sp::vulkan {
         void SetDebugGui(GuiContext *gui);
         void SetMenuGui(GuiContext *gui);
 
-#ifdef SP_XR_SUPPORT
-        void SetXRSystem(shared_ptr<xr::XrSystem> xr) {
-            xrSystem = xr;
-        }
-#endif
-
     private:
+        Game &game;
         DeviceContext &device;
         rg::RenderGraph graph;
 
@@ -66,10 +60,8 @@ namespace sp::vulkan {
         ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
         void AddWindowOutput();
 
-#ifdef SP_XR_SUPPORT
         ecs::View AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock);
         void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
-#endif
 
         void AddGui(ecs::Entity ent, const ecs::Gui &gui);
         void AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock);
@@ -100,16 +92,14 @@ namespace sp::vulkan {
         };
         vector<RenderableGui> guis;
         GuiContext *debugGui = nullptr, *menuGui = nullptr;
+        AsyncPtr<ImageView> logoTex;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
         bool listImages = false;
 
-#ifdef SP_XR_SUPPORT
-        shared_ptr<xr::XrSystem> xrSystem;
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
         std::array<uint32, 2> hiddenAreaTriangleCount;
-#endif
     };
 } // namespace sp::vulkan

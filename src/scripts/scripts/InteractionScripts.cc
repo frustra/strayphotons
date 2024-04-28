@@ -5,9 +5,9 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "common/Common.hh"
+#include "common/Logging.hh"
 #include "console/CVar.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "input/BindingNames.hh"
 

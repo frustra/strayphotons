@@ -9,7 +9,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "core/Defer.hh"
+#include "common/Defer.hh"
 #include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"

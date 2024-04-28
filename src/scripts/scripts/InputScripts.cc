@@ -6,8 +6,8 @@
  */
 
 #include "assets/AssetManager.hh"
-#include "core/Common.hh"
-#include "core/Logging.hh"
+#include "common/Common.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 #include "input/BindingNames.hh"

@@ -7,8 +7,9 @@
 
 #include "Renderer.hh"
 
-#include "core/Logging.hh"
+#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/gui/WorldGuiManager.hh"
@@ -29,10 +30,9 @@
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
+#include "xr/XrSystem.hh"
 
-#ifdef SP_XR_SUPPORT
-    #include "xr/XrSystem.hh"
-#endif
+#include <assets/AssetManager.hh>
 
 namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
@@ -51,9 +51,9 @@ namespace sp::vulkan {
     static CVar<bool> CVarSortedDraw("r.SortedDraw", true, "Draw geometry in sorted depth-order");
     static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
 
-    Renderer::Renderer(DeviceContext &device)
-        : device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels), transparency(scene),
-          guiRenderer(new GuiRenderer(device)) {
+    Renderer::Renderer(Game &game, DeviceContext &device)
+        : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
+          transparency(scene), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -78,6 +78,8 @@ namespace sp::vulkan {
             bool mirrorXR = CVarMirrorXR.Get(true);
             CVarWindowViewTarget.Set(mirrorXR ? CVarXRViewTarget.Get() : defaultWindowViewTarget);
         }
+
+        if (game.xr) game.xr->WaitFrame();
 
         for (auto &gui : guis) {
             if (gui.contextShared) gui.contextShared->BeforeFrame();
@@ -147,14 +149,14 @@ namespace sp::vulkan {
         voxels.AddVoxelization2(graph, lighting);
         renderer::AddLightSensors(graph, scene, lock);
 
-#ifdef SP_XR_SUPPORT
-        {
-            auto scope = graph.Scope("XRView");
-            auto view = AddXRView(lock);
-            if (graph.HasResource("GBuffer0") && view) AddDeferredPasses(lock, view, elapsedTime);
+        if (game.xr) {
+            {
+                auto scope = graph.Scope("XRView");
+                auto view = AddXRView(lock);
+                if (graph.HasResource("GBuffer0") && view) AddDeferredPasses(lock, view, elapsedTime);
+            }
+            AddXRSubmit(lock);
         }
-        AddXRSubmit(lock);
-#endif
 
         {
             auto scope = graph.Scope("FlatView");
@@ -162,8 +164,25 @@ namespace sp::vulkan {
             if (graph.HasResource("GBuffer0") && view) {
                 AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph);
-                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
+            } else {
+                if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
+                graph.AddPass("LogoOverlay")
+                    .Build([](rg::PassBuilder &builder) {
+                        rg::ImageDesc desc;
+                        auto windowSize = CVarWindowSize.Get();
+                        desc.extent = vk::Extent3D(windowSize.x, windowSize.y, 1);
+                        desc.format = vk::Format::eR8G8B8A8Srgb;
+                        builder.OutputColorAttachment(0, "LogoView", desc, {LoadOp::DontCare, StoreOp::Store});
+                    })
+                    .Execute([&](rg::Resources &resources, CommandContext &cmd) {
+                        cmd.DrawScreenCover(scene.textures.GetSinglePixel(glm::vec4(0, 0, 0, 1)));
+                        if (logoTex->Ready()) {
+                            cmd.SetBlending(true);
+                            cmd.DrawScreenCover(logoTex->Get());
+                        }
+                    });
             }
+            if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
         }
         screenshots.AddPass(graph);
         AddWindowOutput();
@@ -278,9 +297,8 @@ namespace sp::vulkan {
         return view;
     }
 
-#ifdef SP_XR_SUPPORT
     ecs::View Renderer::AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock) {
-        if (!xrSystem) return {};
+        if (!game.xr) return {};
 
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrViews.size() == 0) return {};
@@ -304,7 +322,7 @@ namespace sp::vulkan {
 
         if (!hiddenAreaMesh[0]) {
             for (size_t i = 0; i < hiddenAreaMesh.size(); i++) {
-                auto mesh = xrSystem->GetHiddenAreaMesh(ecs::XrEye(i));
+                auto mesh = game.xr->GetHiddenAreaMesh(ecs::XrEye(i));
                 if (mesh.triangleCount == 0) {
                     static const std::array triangle = {glm::vec2(0), glm::vec2(0), glm::vec2(0)};
                     hiddenAreaMesh[i] = device.CreateBuffer(triangle.data(),
@@ -415,7 +433,7 @@ namespace sp::vulkan {
                     auto view = viewsByEye[eye];
                     auto i = (size_t)eye;
 
-                    if (this->xrSystem->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                    if (this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
                         view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
                     }
 
@@ -428,7 +446,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock) {
-        if (!xrSystem) return;
+        if (!game.xr) return;
 
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrViews.size() != 2) return;
@@ -459,11 +477,10 @@ namespace sp::vulkan {
                 auto xrImage = resources.GetImageView(sourceID);
 
                 for (size_t i = 0; i < 2; i++) {
-                    this->xrSystem->SubmitView(ecs::XrEye(i), this->xrRenderPoses[i], xrImage.get());
+                    this->game.xr->SubmitView(ecs::XrEye(i), this->xrRenderPoses[i], xrImage.get());
                 }
             });
     }
-#endif
 
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
         if (!gui.windowName.empty()) {
@@ -535,8 +552,9 @@ namespace sp::vulkan {
         graph.AddPass("MenuGui")
             .Build([&](rg::PassBuilder &builder) {
                 rg::ImageDesc desc;
+                auto windowSize = CVarWindowSize.Get();
+                desc.extent = vk::Extent3D(windowSize.x, windowSize.y, 1);
                 desc.format = vk::Format::eR8G8B8A8Srgb;
-                desc.extent = vk::Extent3D(1024, 1024, 1);
 
                 ecs::Entity windowEntity = device.GetActiveView();
                 if (windowEntity && windowEntity.Has<ecs::View>(lock)) {

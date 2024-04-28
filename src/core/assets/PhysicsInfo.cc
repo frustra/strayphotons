@@ -8,8 +8,8 @@
 #include "PhysicsInfo.hh"
 
 #include "assets/Asset.hh"
-#include "core/Logging.hh"
-#include "core/Tracing.hh"
+#include "common/Logging.hh"
+#include "common/Tracing.hh"
 
 #include <cstdlib>
 #include <iostream>

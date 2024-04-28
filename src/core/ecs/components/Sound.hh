@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "assets/Async.hh"
+#include "common/Async.hh"
 #include "ecs/Components.hh"
 #include "ecs/components/Events.hh"
 
