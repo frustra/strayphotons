@@ -11,12 +11,10 @@ if(SP_BUILD_RUST)
     # if(SP_PACKAGE_RELEASE AND WIN32)
     #     add_executable(sp-winit WIN32
     #         MainWinit.cc
-    #         WinitInputHandler.cc
     #     )
     # else()
     add_executable(sp-winit
         MainWinit.cc
-        WinitInputHandler.cc
     )
     # endif()
     target_link_libraries(sp-winit PRIVATE

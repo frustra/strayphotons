@@ -18,12 +18,12 @@ SP_EXPORT sp_vk_dispatch_loader_t *sp_get_vulkan_dispatch_loader() {
     return &VULKAN_HPP_DEFAULT_DISPATCHER;
 }
 
-SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t ctx) {
+SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t *ctx) {
     Assertf(ctx != nullptr, "sp_game_get_graphics_context called with null game ctx");
     return ctx->game.graphics.get();
 }
 
-SP_EXPORT void sp_game_enable_xr_system(sp_game_t ctx, bool enable) {
+SP_EXPORT void sp_game_enable_xr_system(sp_game_t *ctx, bool enable) {
     Assertf(ctx != nullptr, "sp_game_enable_xr_system called with null game ctx");
     ctx->game.enableXrSystem = enable;
 }
@@ -33,6 +33,7 @@ SP_EXPORT void sp_graphics_set_vulkan_instance(sp_graphics_ctx_t *graphics,
     void (*destroy_callback)(sp_graphics_ctx_t *, VkInstance)) {
     Assertf(graphics != nullptr, "sp_graphics_set_vulkan_instance called with null graphics");
     graphics->vkInstance = std::shared_ptr<VkInstance_T>(instance, [graphics, destroy_callback](VkInstance instance) {
+        Tracef("Destroying vulkan instance");
         if (destroy_callback) destroy_callback(graphics, instance);
     });
 }
@@ -47,6 +48,7 @@ SP_EXPORT void sp_graphics_set_vulkan_surface(sp_graphics_ctx_t *graphics,
     void (*destroy_callback)(sp_graphics_ctx_t *, VkSurfaceKHR)) {
     Assertf(graphics != nullptr, "sp_graphics_set_vulkan_surface called with null graphics");
     graphics->vkSurface = std::shared_ptr<VkSurfaceKHR_T>(surface, [graphics, destroy_callback](VkSurfaceKHR surface) {
+        Tracef("Destroying vulkan surface");
         if (destroy_callback) destroy_callback(graphics, surface);
     });
 }
@@ -93,7 +95,7 @@ SP_EXPORT void sp_graphics_set_window_handlers(sp_graphics_ctx_t *graphics, cons
     if (handlers) {
         graphics->windowHandlers = *handlers;
     } else {
-        graphics->windowHandlers = {};
+        graphics->windowHandlers = {0};
     }
 }
 

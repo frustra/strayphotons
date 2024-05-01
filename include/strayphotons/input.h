@@ -17,12 +17,12 @@ extern "C" {
 
 // The following functions are declared in src/exports/Input.cc
 
-SP_EXPORT sp_entity_t sp_new_input_device(sp_game_t ctx, const char *name);
-SP_EXPORT void sp_send_input_bool(sp_game_t ctx, sp_entity_t input_device, const char *event_name, int value);
-SP_EXPORT void sp_send_input_str(sp_game_t ctx, sp_entity_t input_device, const char *event_name, const char *value);
-SP_EXPORT void sp_send_input_int(sp_game_t ctx, sp_entity_t input_device, const char *event_name, int value);
-SP_EXPORT void sp_send_input_uint(sp_game_t ctx, sp_entity_t input_device, const char *event_name, unsigned int value);
-SP_EXPORT void sp_send_input_vec2(sp_game_t ctx,
+SP_EXPORT sp_entity_t sp_new_input_device(sp_game_t *ctx, const char *name);
+SP_EXPORT void sp_send_input_bool(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, int value);
+SP_EXPORT void sp_send_input_str(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, const char *value);
+SP_EXPORT void sp_send_input_int(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, int value);
+SP_EXPORT void sp_send_input_uint(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, unsigned int value);
+SP_EXPORT void sp_send_input_vec2(sp_game_t *ctx,
     sp_entity_t input_device,
     const char *event_name,
     float value_x,
