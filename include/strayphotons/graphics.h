@@ -11,6 +11,8 @@
 #include "game.h"
 
 #ifdef __cplusplus
+    #include <cstddef>
+    #include <cstdint>
 
 namespace sp {
     class GraphicsManager;
@@ -29,6 +31,9 @@ typedef sp::GraphicsManager sp_graphics_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
 typedef vk::DispatchLoaderDynamic sp_vk_dispatch_loader_t;
 #else
+    #include <stddef.h>
+    #include <stdint.h>
+
 typedef void sp_graphics_ctx_t;
 typedef void sp_winit_ctx_t;
 typedef void sp_vk_dispatch_loader_t;
