@@ -17,7 +17,6 @@ namespace sp {
         cxxopts::ParseResult options;
         Game game;
         bool disableInput;
-        std::shared_ptr<void> inputHandler;
 
 #ifdef _WIN32
         std::shared_ptr<unsigned int> winSchedulerHandle;

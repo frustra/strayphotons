@@ -21,7 +21,7 @@
 #include <strayphotons.h>
 
 namespace sp {
-    GlfwInputHandler::GlfwInputHandler(sp_game_t ctx, GLFWwindow *window) : ctx(ctx), window(window) {
+    GlfwInputHandler::GlfwInputHandler(sp_game_t *ctx, GLFWwindow *window) : ctx(ctx), window(window) {
         if (window) {
             glfwSetWindowUserPointer(window, this);
 

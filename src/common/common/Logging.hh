@@ -18,6 +18,10 @@
 #include <tracy/Tracy.hpp>
 #include <type_traits>
 
+#ifdef SP_SHARED_BUILD
+    #include <strayphotons.h>
+#endif
+
 namespace sp::logging {
     template<typename... T>
     static void Trace(const char *, int, const std::string &, T...);
@@ -56,8 +60,6 @@ namespace sp::logging {
     enum class Level : uint8_t { Error, Warn, Log, Debug, Trace };
 
 #ifdef SP_SHARED_BUILD
-    #include <strayphotons.h>
-
     // time in seconds
     inline float LogTime() {
         return sp_get_log_time();

@@ -5,6 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "StrayPhotons Cargo (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/release/sp-rs.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin/",
+            "environment": [],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "StrayPhotons GLFW (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",

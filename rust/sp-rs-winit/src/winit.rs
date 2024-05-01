@@ -5,7 +5,8 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use cxx::CxxString;
+extern crate sp_sys;
+
 use std::sync::Arc;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 use std::time::Duration;
@@ -28,6 +29,8 @@ use winit::{
     window::WindowBuilder,
     window::{CursorGrabMode, Fullscreen, Window},
 };
+use sp_sys::Game;
+use std::ffi::{CStr, c_char, c_void};
 
 #[cxx::bridge(namespace = "sp")]
 mod ctx {
@@ -192,63 +195,42 @@ mod ctx {
 
     unsafe extern "C++" {
         include!("input/KeyCodes.hh");
-        include!("sp-rs/include/InputCallbacks.hh");
+        include!("sp-rs-winit/include/InputCallbacks.hh");
         type KeyCode;
         type InputAction;
         type MouseButton;
-        type WinitInputHandler;
-
-        #[cfg(not(any(target_os = "android", target_os = "ios")))]
-        unsafe fn InputFrameCallback(ctx: *mut WinitInputHandler) -> bool;
-        #[cfg(not(any(target_os = "android", target_os = "ios")))]
-        unsafe fn KeyInputCallback(
-            ctx: *mut WinitInputHandler,
-            key: KeyCode,
-            scancode: i32,
-            action: InputAction,
-        );
-        #[cfg(not(any(target_os = "android", target_os = "ios")))]
-        unsafe fn CharInputCallback(ctx: *mut WinitInputHandler, ch: u32);
-        unsafe fn MouseMoveCallback(ctx: *mut WinitInputHandler, dx: f64, dy: f64);
-        unsafe fn MousePositionCallback(ctx: *mut WinitInputHandler, xPos: f64, yPos: f64);
-        unsafe fn MouseButtonCallback(
-            ctx: *mut WinitInputHandler,
-            button: MouseButton,
-            action: InputAction,
-        );
-        unsafe fn MouseScrollCallback(ctx: *mut WinitInputHandler, xOffset: f64, yOffset: f64);
     }
 
     #[namespace = "sp::winit"]
     extern "Rust" {
         type WinitContext;
         type MonitorContext;
-        fn create_context(width: i32, height: i32, enable_validation: bool) -> Box<WinitContext>;
-        fn create_view(context: &mut WinitContext);
-        fn destroy_window(context: &mut WinitContext);
-        fn destroy_surface(context: &mut WinitContext);
-        fn destroy_instance(context: &mut WinitContext);
+        pub unsafe fn create_context(game_handle: usize, width: i32, height: i32, enable_validation: bool);
+        pub fn create_view(context: &mut WinitContext);
+        pub fn destroy_window(context: &mut WinitContext);
+        pub fn destroy_surface(context: &mut WinitContext);
+        pub fn destroy_instance(context: &mut WinitContext);
 
-        fn get_surface_handle(context: &WinitContext) -> u64;
-        fn get_instance_handle(context: &WinitContext) -> u64;
-        fn get_win32_window_handle(_context: &WinitContext) -> u64;
+        pub fn get_surface_handle(context: &WinitContext) -> u64;
+        pub fn get_instance_handle(context: &WinitContext) -> u64;
+        pub fn get_win32_window_handle(_context: &WinitContext) -> u64;
 
-        fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode>;
-        fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext>;
-        unsafe fn get_monitor_resolution(
+        pub fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode>;
+        pub fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext>;
+        pub unsafe fn get_monitor_resolution(
             monitor: &MonitorContext,
             width_out: *mut u32,
             height_out: *mut u32,
         );
-        unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *mut i32);
-        unsafe fn get_window_inner_size(
+        pub unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *mut i32);
+        pub unsafe fn get_window_inner_size(
             context: &WinitContext,
             width_out: *mut u32,
             height_out: *mut u32,
         );
 
-        fn set_window_title(context: &WinitContext, title: &CxxString);
-        unsafe fn set_window_mode(
+        pub unsafe fn set_window_title(context: &WinitContext, title: *const c_char);
+        pub unsafe fn set_window_mode(
             context: &WinitContext,
             monitor: *const MonitorContext,
             pos_x: i32,
@@ -256,17 +238,18 @@ mod ctx {
             width: u32,
             height: u32,
         );
-        fn set_window_inner_size(context: &WinitContext, width: u32, height: u32);
-        fn set_input_mode(context: &WinitContext, mode: InputMode);
-        unsafe fn start_event_loop(
-            context: &mut WinitContext,
-            ctx: *mut WinitInputHandler,
+        pub fn set_window_inner_size(context: &WinitContext, width: u32, height: u32);
+        pub fn set_input_mode(context: &WinitContext, mode: InputMode);
+
+        pub unsafe fn start_event_loop(
+            game_handle: usize,
             _max_input_rate: u32,
         );
     }
 }
 
 use crate::winit::ctx::*;
+pub use crate::winit::ctx::InputMode;
 
 pub struct WinitContext {
     pub library: Arc<VulkanLibrary>,
@@ -280,6 +263,12 @@ pub struct WinitContext {
 
 unsafe impl Send for WinitContext {}
 unsafe impl Sync for WinitContext {}
+
+impl Drop for WinitContext {
+    fn drop(&mut self) {
+        let _ = self.window.take();
+    }
+}
 
 pub struct MonitorContext {
     pub handle: Option<MonitorHandle>,
@@ -309,7 +298,7 @@ fn create_view(context: &mut WinitContext) {
     context.surface = Some(surface.to_owned());
 }
 
-fn create_context(width: i32, height: i32, enable_validation: bool) -> Box<WinitContext> {
+pub fn create_context(game_handle: usize, width: i32, height: i32, enable_validation: bool) {
     let library: Arc<VulkanLibrary> = VulkanLibrary::new().expect("no local Vulkan library/DLL");
 
     #[cfg(not(target_os = "android"))]
@@ -406,22 +395,33 @@ fn create_context(width: i32, height: i32, enable_validation: bool) -> Box<Winit
     create_view(&mut context);
 
     println!("Hello, Rust!");
-    Box::new(context)
+
+    unsafe {
+        let mut game: Game = game_handle.into();
+        let mut graphics = game.get_graphics_context();
+        graphics.set_winit_context(Box::into_raw(Box::new(context)).cast::<c_void>(), destroy_winit_context);
+    }
 }
 
-fn destroy_window(context: &mut WinitContext) {
+unsafe extern fn destroy_winit_context(ptr: *mut c_void) {
+    let mut context = Box::from_raw(ptr.cast::<WinitContext>());
+    destroy_window(&mut *context);
+    drop(context);
+}
+
+pub fn destroy_window(context: &mut WinitContext) {
     context.window.take().unwrap();
 }
 
-fn destroy_surface(context: &mut WinitContext) {
+pub fn destroy_surface(context: &mut WinitContext) {
     context.surface.take().unwrap();
 }
 
-fn destroy_instance(context: &mut WinitContext) {
+pub fn destroy_instance(context: &mut WinitContext) {
     context.instance.take().unwrap();
 }
 
-fn get_surface_handle(context: &WinitContext) -> u64 {
+pub fn get_surface_handle(context: &WinitContext) -> u64 {
     println!("Library API version: {}", context.library.api_version());
     if let Some(instance) = context.instance.as_ref() {
         println!("Instance API version: {}", instance.api_version());
@@ -432,7 +432,7 @@ fn get_surface_handle(context: &WinitContext) -> u64 {
         .map_or(0u64, |s| s.handle().as_raw())
 }
 
-fn get_instance_handle(context: &WinitContext) -> u64 {
+pub fn get_instance_handle(context: &WinitContext) -> u64 {
     context
         .instance
         .as_ref()
@@ -440,7 +440,7 @@ fn get_instance_handle(context: &WinitContext) -> u64 {
 }
 
 #[cfg(target_os = "windows")]
-fn get_win32_window_handle(_context: &WinitContext) -> u64 {
+pub fn get_win32_window_handle(_context: &WinitContext) -> u64 {
     use raw_window_handle::HasRawWindowHandle;
     use raw_window_handle::RawWindowHandle;
     if let Some(window) = _context.window.as_ref() {
@@ -454,11 +454,11 @@ fn get_win32_window_handle(_context: &WinitContext) -> u64 {
 }
 
 #[cfg(not(target_os = "windows"))]
-fn get_win32_window_handle(_context: &WinitContext) -> u64 {
+pub fn get_win32_window_handle(_context: &WinitContext) -> u64 {
     0u64
 }
 
-fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode> {
+pub fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode> {
     if let Some(window) = context.window.as_ref() {
         if let Some(monitor) = window.current_monitor().as_ref() {
             monitor
@@ -481,7 +481,7 @@ fn get_monitor_modes(context: &WinitContext) -> Vec<MonitorMode> {
     }
 }
 
-fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext> {
+pub fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext> {
     let mut handle: Option<MonitorHandle> = None;
     if let Some(window) = context.window.as_ref() {
         handle = window
@@ -492,7 +492,7 @@ fn get_active_monitor(context: &WinitContext) -> Box<MonitorContext> {
     return Box::new(MonitorContext { handle });
 }
 
-unsafe fn get_monitor_resolution(
+pub unsafe fn get_monitor_resolution(
     monitor: &MonitorContext,
     width_out: *mut u32,
     height_out: *mut u32,
@@ -506,7 +506,7 @@ unsafe fn get_monitor_resolution(
     *height_out = window_size.height;
 }
 
-unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *mut i32) {
+pub unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *mut i32) {
     if let Some(window) = context.window.as_ref() {
         let window_pos = window
             .outer_position()
@@ -519,7 +519,7 @@ unsafe fn get_window_position(context: &WinitContext, x_out: *mut i32, y_out: *m
     }
 }
 
-unsafe fn get_window_inner_size(context: &WinitContext, width_out: *mut u32, height_out: *mut u32) {
+pub unsafe fn get_window_inner_size(context: &WinitContext, width_out: *mut u32, height_out: *mut u32) {
     if let Some(window) = context.window.as_ref() {
         let window_size = window.inner_size();
         *width_out = window_size.width;
@@ -530,13 +530,13 @@ unsafe fn get_window_inner_size(context: &WinitContext, width_out: *mut u32, hei
     }
 }
 
-fn set_window_title(context: &WinitContext, title: &CxxString) {
+pub unsafe fn set_window_title(context: &WinitContext, title: *const c_char) {
     if let Some(window) = context.window.as_ref() {
-        window.set_title(title.to_str().unwrap_or("error"));
+        window.set_title(CStr::from_ptr(title).to_str().unwrap_or("error"));
     }
 }
 
-unsafe fn set_window_mode(
+pub unsafe fn set_window_mode(
     context: &WinitContext,
     monitor: *const MonitorContext,
     pos_x: i32,
@@ -572,13 +572,13 @@ unsafe fn set_window_mode(
     }
 }
 
-fn set_window_inner_size(context: &WinitContext, width: u32, height: u32) {
+pub fn set_window_inner_size(context: &WinitContext, width: u32, height: u32) {
     if let Some(window) = context.window.as_ref() {
         let _ = window.request_inner_size(PhysicalSize::new(width, height));
     }
 }
 
-fn set_input_mode(context: &WinitContext, mode: InputMode) {
+pub fn set_input_mode(context: &WinitContext, mode: InputMode) {
     if let Some(window) = context.window.as_ref() {
         match mode {
             InputMode::CursorDisabled => {
@@ -594,11 +594,18 @@ fn set_input_mode(context: &WinitContext, mode: InputMode) {
     }
 }
 
-fn start_event_loop(
-    context: &mut WinitContext,
-    input_handler: *mut WinitInputHandler,
+pub unsafe fn start_event_loop(
+    game_handle: usize,
     _max_input_rate: u32,
 ) {
+    let mut game: Game = game_handle.into();
+    let context = game.get_graphics_context().get_winit_context().cast::<WinitContext>().as_mut().expect("Rust.get_winit_context() returned null WinitContext");
+    let mouse_device;
+    let keyboard_device;
+    unsafe {
+        mouse_device = game.new_input_device("mouse");
+        keyboard_device = game.new_input_device("keyboard");
+    }
     let event_loop = context.event_loop.take().unwrap();
     event_loop
         .run(move |event, loop_target| {
@@ -614,7 +621,8 @@ fn start_event_loop(
                 Event::DeviceEvent { event, .. } => match event {
                     // TODO: Map unique device_ids to different events/signals
                     DeviceEvent::MouseMotion { delta } => unsafe {
-                        MouseMoveCallback(input_handler, delta.0, delta.1);
+                        // MouseMoveCallback(game, delta.0, delta.1);
+                        game.send_input_vec2(mouse_device, "/mouse/move", (delta.0 as f32, delta.1 as f32));
                     },
                     _ => (),
                 },
@@ -624,14 +632,16 @@ fn start_event_loop(
                         loop_target.exit();
                     }
                     WindowEvent::CursorMoved { position, .. } => unsafe {
-                        MousePositionCallback(input_handler, position.x, position.y);
+                        // MousePositionCallback(game, position.x, position.y);
+                        game.send_input_vec2(mouse_device, "/mouse/pos", (position.x as f32, position.y as f32));
                     },
                     WindowEvent::MouseWheel {
                         delta: MouseScrollDelta::LineDelta(dx, dy),
                         // TODO: Support PixelDelta variant
                         ..
                     } => unsafe {
-                        MouseScrollCallback(input_handler, dx as f64, dy as f64);
+                        // MouseScrollCallback(game, dx as f64, dy as f64);
+                        game.send_input_vec2(mouse_device, "/mouse/scroll", (dx, dy));
                     },
                     WindowEvent::MouseInput { state, button, .. } => {
                         let action: InputAction = match state {
@@ -650,14 +660,21 @@ fn start_event_loop(
                             _ => MouseButton::BUTTON_LEFT,
                         };
                         unsafe {
-                            MouseButtonCallback(input_handler, btn, action);
+                            // MouseButtonCallback(game, btn, action);
+                            if btn == MouseButton::BUTTON_LEFT {
+                                game.send_input_bool(mouse_device, "/mouse/left_click", action == InputAction::PRESS);
+                            } else if btn == MouseButton::BUTTON_MIDDLE {
+                                game.send_input_bool(mouse_device, "/mouse/middle_click", action == InputAction::PRESS);
+                            } else if btn == MouseButton::BUTTON_RIGHT {
+                                game.send_input_bool(mouse_device, "/mouse/right_click", action == InputAction::PRESS);
+                            }
                         }
                     }
                     #[cfg(not(any(target_os = "android", target_os = "ios")))]
                     WindowEvent::KeyboardInput { event, .. } => {
-                        use winit::platform::scancode::PhysicalKeyExtScancode;
+                        // use winit::platform::scancode::PhysicalKeyExtScancode;
                         let key: KeyCode = into_keycode(event.physical_key);
-                        let scancode: u32 = event.physical_key.to_scancode().unwrap_or(0u32);
+                        // let scancode: u32 = event.physical_key.to_scancode().unwrap_or(0u32);
                         let mut action: InputAction = match event.state {
                             ElementState::Released => InputAction::RELEASE,
                             ElementState::Pressed => InputAction::PRESS,
@@ -666,13 +683,21 @@ fn start_event_loop(
                             action = InputAction::REPEAT;
                         }
                         unsafe {
-                            KeyInputCallback(input_handler, key, scancode as i32, action);
+                            // KeyInputCallback(game, key, scancode as i32, action);
+                            if key != KeyCode::KEY_INVALID {
+                                if action == InputAction::PRESS {
+                                    game.send_input_int(keyboard_device, "/keyboard/key_down", key.repr);
+                                } else if action == InputAction::RELEASE {
+                                    game.send_input_int(keyboard_device, "/keyboard/key_up", key.repr);
+                                }
+                            }
                         }
 
                         if let Some(text) = event.text {
                             for ch in text.chars() {
                                 unsafe {
-                                    CharInputCallback(input_handler, ch as u32);
+                                    // CharInputCallback(game, ch as u32);
+                                    game.send_input_uint(keyboard_device, "/keyboard/characters", ch as u32);
                                 }
                             }
                         }
@@ -683,7 +708,9 @@ fn start_event_loop(
                 Event::AboutToWait => {
                     let should_close: bool;
                     unsafe {
-                        should_close = !InputFrameCallback(input_handler);
+                        // should_close = !InputFrameCallback(game);
+                        let mut graphics = game.get_graphics_context();
+                        should_close = !graphics.handle_input_frame() || game.is_exit_triggered();
                     }
                     if should_close {
                         loop_target.exit();

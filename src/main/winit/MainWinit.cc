@@ -12,7 +12,6 @@
 #include <iostream>
 using namespace std;
 
-#include "WinitInputHandler.hh"
 #include "common/Defer.hh"
 #include "common/Logging.hh"
 
@@ -27,7 +26,7 @@ using namespace std;
 using cxxopts::value;
 
 namespace sp {
-    sp_game_t GameInstance = (sp_game_t)0;
+    sp_game_t *GameInstance = nullptr;
     sp_graphics_ctx_t *GameGraphics = nullptr;
 
     void handleSignals(int signal) {
@@ -63,7 +62,7 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t ctx) {
+    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t *ctx) {
         GameInstance = nullptr;
         if (ctx) sp_game_destroy(ctx);
     });
@@ -81,19 +80,12 @@ int main(int argc, char **argv)
     sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
     sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
     bool enableValidationLayers = sp_game_get_cli_flag(GameInstance, "with-validation-layers");
-    auto *winitContext = winit::create_context(initialSize.x, initialSize.y, enableValidationLayers).into_raw();
-    Assert(winitContext, "winit context creation failed");
-    sp_graphics_set_winit_context(GameGraphics, winitContext, [](winit::WinitContext *ptr) {
-        if (ptr) winit::destroy_window(*ptr);
-
-        // Construct rust Box<> from pointer and let its destructor run.
-        (void)rust::cxxbridge1::Box<winit::WinitContext>::from_raw(ptr);
-    });
+    winit::create_context((size_t)GameInstance, initialSize.x, initialSize.y, enableValidationLayers);
+    auto *winitContext = sp_graphics_get_winit_context(GameGraphics);
 
     VkInstance vkInstance = (VkInstance)winit::get_instance_handle(*winitContext);
     Assert(vkInstance, "winit instance creation failed");
     sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {
-        Tracef("Destroying rust instance");
         auto *winitContext = sp_graphics_get_winit_context(graphics);
         if (winitContext) winit::destroy_instance(*winitContext);
     });
@@ -101,18 +93,11 @@ int main(int argc, char **argv)
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)winit::get_surface_handle(*winitContext);
     Assert(vkSurface, "winit window surface creation failed");
     sp_graphics_set_vulkan_surface(GameGraphics, vkSurface, [](sp_graphics_ctx_t *graphics, VkSurfaceKHR surface) {
-        Tracef("Destroying rust surface");
         auto *winitContext = sp_graphics_get_winit_context(graphics);
         if (winitContext) winit::destroy_surface(*winitContext);
     });
 
-    WinitInputHandler *inputHandler = new WinitInputHandler(GameInstance, winitContext);
-    sp_game_set_input_handler(GameInstance, inputHandler, [](void *handler) {
-        auto *inputHandler = (WinitInputHandler *)handler;
-        delete inputHandler;
-    });
-
-    sp_window_handlers_t windowHandlers;
+    sp_window_handlers_t windowHandlers = {0};
     windowHandlers.get_video_modes =
         [](sp_graphics_ctx_t *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
             Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
@@ -217,7 +202,7 @@ int main(int argc, char **argv)
     if (status_code) return status_code;
 
     if (GameGraphics) {
-        inputHandler->StartEventLoop((uint32_t)MaxInputPollRate);
+        winit::start_event_loop((size_t)GameInstance, (uint32_t)MaxInputPollRate);
         return sp_game_get_exit_code(GameInstance);
     } else {
         return sp_game_wait_for_exit_trigger(GameInstance);

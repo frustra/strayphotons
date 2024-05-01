@@ -5,13 +5,10 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#[cxx::bridge(namespace = "sp::api")]
-mod ctx {
-    unsafe extern "C++" {
-        include!("sp-rs/include/api.hh");
+#[cfg(feature = "api")]
+mod api;
+#[cfg(feature = "api")]
+pub use api::*;
 
-        type Api;
-
-        fn new_api() -> UniquePtr<Api>;
-    }
-}
+#[cfg(feature = "wasm")]
+mod wasm;
