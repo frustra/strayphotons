@@ -138,18 +138,6 @@ int main(int argc, char **argv)
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-    vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-
-    debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-#ifdef SP_DEBUG
-    debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-#endif
-    debugInfo.pfnUserCallback = &VulkanDebugCallback;
-
     std::vector<const char *> layers;
     if (sp_game_get_cli_flag(GameInstance, "with-validation-layers")) {
         Logf("Running with Vulkan validation layer");
@@ -203,8 +191,21 @@ int main(int argc, char **argv)
         layers.size(),
         layers.data(),
         extensions.size(),
-        extensions.data(),
-        (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
+        extensions.data());
+
+    vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
+    debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+
+    debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
+                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+#ifdef SP_DEBUG
+    debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+#endif
+    debugInfo.pfnUserCallback = &VulkanDebugCallback;
+
+    createInfo.setPNext((VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
 
     vk::Instance vkInstance = vk::createInstance(createInfo);
     sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {

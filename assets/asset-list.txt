@@ -5,6 +5,7 @@ c8592dd4fa6a0e474199904b71db5452    https://assets.strayphotons.net/audio/door_o
 d898941580ba0847b81732689c07b44e    https://assets.strayphotons.net/audio/quack.ogg    audio/quack.ogg
 184dd045ca32e7a45f28b864e42c246f    https://assets.strayphotons.net/audio/test.ogg    audio/test.ogg
 01a601eb57e062bab742d6cfddbae9bf    https://assets.strayphotons.net/logos/sp-menu.png    logos/sp-menu.png
+eeec3326547461cfb965ed2c1d3584e5    https://assets.strayphotons.net/logos/splash.png    logos/splash.png
 2caecb81ad3c3dc7e2d8709086fe02e8    https://assets.strayphotons.net/models/01-outside/01-outside.glb    models/01-outside/01-outside.glb
 e5615c1ade6dfd811cce5c09069c0d56    https://assets.strayphotons.net/models/airlock/airlock.glb    models/airlock/airlock.glb
 cca8a80569b451dd5139fb058940e6d5    https://assets.strayphotons.net/models/articulating-arm.glb    models/articulating-arm.glb

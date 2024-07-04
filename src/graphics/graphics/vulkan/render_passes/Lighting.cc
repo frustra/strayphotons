@@ -20,6 +20,7 @@
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarBlurShadowMap("r.BlurShadowMap", false, "Blur the shadow map before sampling");
+    static CVar<int> CVarShadowMapSizeOffset("r.ShadowMapSizeOffset", -1, "Adjust shadow map sizes by 2^N");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering (0: off, 1: on, 2: shadow map blur");
     static CVar<int> CVarLightingMode("r.LightingMode",
         1,
@@ -80,7 +81,8 @@ namespace sp::vulkan::renderer {
             auto &vLight = lights.emplace_back();
             vLight.source = entity;
 
-            int extent = (int)std::pow(2, light.shadowMapSize);
+            int mapSize = std::clamp((int)light.shadowMapSize + CVarShadowMapSizeOffset.Get(), 0, 16);
+            int extent = 1 << mapSize; // 2^N map size
 
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
