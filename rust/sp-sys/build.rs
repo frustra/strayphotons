@@ -20,9 +20,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let bin_dir = current_dir.join("../../bin").canonicalize()?;
     let mut sp = Config::new("../../");
 
-    //#[cfg(target_os = "android")] // FIXME: check env::var("TARGET")
-    // sp.define("ANDROID_NDK", env::var("NDK_HOME")?);
-    // sp.define("CMAKE_ANDROID_API", "24"); // min api version for ndk vulkan support
+    #[cfg(target_os = "android")] // FIXME: check env::var("TARGET")
+    {
+        sp.define("ANDROID_NDK", env::var("NDK_HOME")?);
+        sp.define("CMAKE_ANDROID_API", "29"); // API version for Android 10.0 (Quest 1 Android version)
+
+        // Set:
+        // $env:TARGET_CXX="$env:NDK_HOME/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe"
+        // $env:TARGET_CC="$env:NDK_HOME/toolchains/llvm/prebuilt/windows-x86_64/bin/clang.exe"
+        // $env:TARGET_AR="$env:NDK_HOME/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar.exe"
+    }
 
     let sp = sp
         .generator("Ninja")
