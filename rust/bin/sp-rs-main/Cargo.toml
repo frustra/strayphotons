@@ -1,0 +1,28 @@
+[package]
+name = "sp-rs-main"
+version = "0.1.0"
+authors = ["xthexder", "nauscar"]
+edition = "2021"
+license-file = "../../LICENSE-MPL-2.0"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[[bin]]
+name = "sp-rs"
+path = "gen/bin/desktop.rs"
+
+[dependencies]
+sp-sys = { version = "*", path = "../../sp-sys" }
+sp-rs-winit = { version = "*", path = "../../sp-rs-winit" }
+mobile-entry-point = "0.1.0"
+log = "0.4"
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { version = "0.5.2", features = ["game-activity"] }
+android_logger = "0.13"
+log = "0.4.11"
+ndk-glue = "0.7"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+simple_logger = "4.2"

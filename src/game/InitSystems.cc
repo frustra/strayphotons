@@ -43,7 +43,9 @@ namespace sp {
 
     void InitGraphicsManager(Game &game) {
 #ifdef SP_GRAPHICS_SUPPORT
-        game.graphics = make_shared<GraphicsManager>(game);
+        if (!game.options.count("headless")) {
+            game.graphics = make_shared<GraphicsManager>(game);
+        }
 #endif
     }
 

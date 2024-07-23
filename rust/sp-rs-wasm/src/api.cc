@@ -5,9 +5,9 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "sp-rs/include/api.hh"
+#include "sp-rs-wasm/include/api.hh"
 
-#include "sp-rs/src/api.rs.h"
+#include "sp-rs-wasm/src/api.rs.h"
 
 namespace sp {
     namespace api {

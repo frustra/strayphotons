@@ -23,11 +23,11 @@ namespace sp {
     }
 
     CGameContext::CGameContext(cxxopts::ParseResult &&options, bool disableInput)
-        : options(std::move(options)), game(*this), disableInput(disableInput), inputHandler(nullptr),
+        : options(std::move(options)), game(*this), disableInput(disableInput),
           winSchedulerHandle(SetWindowsSchedulerFix())
 #else
     CGameContext::CGameContext(cxxopts::ParseResult &&options, bool disableInput)
-        : options(std::move(options)), game(*this), disableInput(disableInput), inputHandler(nullptr)
+        : options(std::move(options)), game(*this), disableInput(disableInput)
 #endif
     {
         RegisterDebugCFuncs(game.funcs);

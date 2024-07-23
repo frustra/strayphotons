@@ -14,8 +14,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     bridges.push("src/api.rs");
     #[cfg(feature = "wasm")]
     bridges.push("src/wasm.rs");
-    #[cfg(feature = "winit")]
-    bridges.push("src/winit.rs");
 
     let mut build = cxx_build::bridges(bridges); // returns a cc::Build
 
@@ -38,7 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             build.include(path);
         }
     }
-    build.compile("sp-rs");
+    build.compile("sp-rs-wasm");
 
     let build_dir = env!("CARGO_TARGET_DIR", "$CARGO_TARGET_DIR env variable not set");
     println!("cargo:warning=Building in directory: {}", build_dir);
@@ -49,6 +47,5 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");
-    println!("cargo:rerun-if-changed=src/winit.rs");
     Ok(())
 }

@@ -13,4 +13,5 @@ else()
     set(CARGO_BUILD_TYPE "release")
 endif()
 
-add_subdirectory(sp-rs)
+add_subdirectory(sp-rs-wasm)
+add_subdirectory(sp-rs-winit)

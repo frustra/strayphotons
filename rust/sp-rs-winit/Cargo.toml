@@ -1,0 +1,19 @@
+[package]
+name = "sp-rs-winit"
+version = "0.1.0"
+authors = ["xthexder"]
+edition = "2021"
+license-file = "../../LICENSE-MPL-2.0"
+
+[dependencies]
+sp-sys = { version = "*", path = "../sp-sys" }
+cxx = "1.0"
+vulkano = { version = "0.34" }
+winit = { version = "0.29", features = ["rwh_05"]}
+raw-window-handle = "0.5"
+
+[build-dependencies]
+cxx-build = "1.0"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
