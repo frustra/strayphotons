@@ -473,7 +473,19 @@ namespace sp::vulkan {
                 monitorModes[i] = {videoModes[i].width, videoModes[i].height};
             }
             std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-                return a.x > b.x || (a.x == b.x && a.y > b.y);
+                uint8_t ratioBitsA = 0;
+                uint8_t ratioBitsB = 0;
+                if (IsAspect(a, 16, 9)) ratioBitsA |= 1 << 2;
+                if (IsAspect(a, 16, 10)) ratioBitsA |= 1 << 1;
+                if (IsAspect(a, 4, 3)) ratioBitsA |= 1 << 0;
+                if (IsAspect(b, 16, 9)) ratioBitsB |= 1 << 2;
+                if (IsAspect(b, 16, 10)) ratioBitsB |= 1 << 1;
+                if (IsAspect(b, 4, 3)) ratioBitsB |= 1 << 0;
+                if (ratioBitsA != ratioBitsB) {
+                    return ratioBitsA > ratioBitsB;
+                } else {
+                    return a.x > b.x || (a.x == b.x && a.y > b.y);
+                }
             });
             monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
         }

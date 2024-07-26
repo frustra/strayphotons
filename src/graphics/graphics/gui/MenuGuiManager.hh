@@ -35,4 +35,8 @@ namespace sp {
 
         shared_ptr<GpuTexture> logoTex;
     };
+
+    inline bool IsAspect(glm::ivec2 size, int w, int h) {
+        return ((size.x * h) / w) == size.y;
+    }
 } // namespace sp
