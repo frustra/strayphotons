@@ -331,10 +331,11 @@ int main(int argc, char **argv)
     #endif
 #endif
         sp_graphics_set_window_handlers(GameGraphics, &windowHandlers);
-        Defer disableHanlders([&] {
-            sp_graphics_set_window_handlers(GameGraphics, nullptr);
-        });
     }
+
+    Defer disableHanlders([&] {
+        sp_graphics_set_window_handlers(GameGraphics, nullptr);
+    });
 
     int status_code = sp_game_start(GameInstance);
     if (status_code) return status_code;
