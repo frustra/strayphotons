@@ -73,67 +73,50 @@ namespace ecs {
         }
     }
 
-    std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const ScriptState &state) {
-        ZoneScoped;
+    std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const ScriptState &state, bool runInit) {
+        // ZoneScoped;
         auto *scriptListPtr = scriptLists[state.definition.callback.index()];
         Assertf(scriptListPtr, "Invalid script callback type: %s", state.definition.name);
         auto &scriptList = *scriptListPtr;
+        auto &freeScriptList = freeScriptLists[state.definition.callback.index()];
         auto &scriptMutex = mutexes[state.definition.callback.index()];
 
-        auto it = scriptList.end();
-        EventQueue *eventQueuePtr = nullptr;
-        {
-            // ZoneScopedN("InitEventQueue");
-            std::lock_guard l(mutexes[0]);
-            auto queueIt = std::find_if(eventQueues.begin(), eventQueues.end(), [](auto &arg) {
-                return arg.Capacity() == 0;
-            });
-            if (queueIt == eventQueues.end()) {
-                // ZoneScopedN("NewEventQueue");
-                eventQueuePtr = &eventQueues.emplace_back(CVarMaxScriptQueueSize.Get());
-            } else {
-                ZoneScopedN("ResizeEventQueue");
-                queueIt->Resize(CVarMaxScriptQueueSize.Get());
-                eventQueuePtr = &*queueIt;
-            }
-        }
-        auto eventQueue = std::shared_ptr<EventQueue>(eventQueuePtr, [this](EventQueue *queue) {
-            std::lock_guard l(mutexes[0]);
-            auto it = std::find_if(eventQueues.begin(), eventQueues.end(), [&queue](auto &arg) {
-                return &arg == queue;
-            });
-            Assertf(it != eventQueues.end(), "EventQueue not found for removal");
-            it->Resize(0);
-        });
+        ScriptState *scriptStatePtr = nullptr;
         {
             // ZoneScopedN("InitScriptState");
             std::lock_guard l(scriptMutex);
-            it = std::find_if(scriptList.begin(), scriptList.end(), [](auto &arg) {
-                return arg.second.index == std::numeric_limits<size_t>::max();
-            });
-            if (it == scriptList.end()) {
-                it = scriptList.insert(scriptList.end(), {Entity(), state});
+            size_t newIndex;
+            if (freeScriptList.empty()) {
+                newIndex = scriptList.size();
+                scriptList.emplace_back(Entity(), state);
             } else {
-                *it = {Entity(), state};
+                newIndex = freeScriptList.top();
+                freeScriptList.pop();
+                scriptList[newIndex] = {Entity(), state};
             }
-            auto &newState = it->second;
-            newState.index = it - scriptList.begin();
-            newState.eventQueue = eventQueue;
-            if (newState.definition.initFunc) (*newState.definition.initFunc)(newState);
-        }
+            auto &newState = scriptList[newIndex].second;
+            newState.index = newIndex;
+            if (runInit) {
+                newState.eventQueue = EventQueue::New(CVarMaxScriptQueueSize.Get());
+                if (newState.definition.initFunc) (*newState.definition.initFunc)(newState);
+            }
 
-        return std::shared_ptr<ScriptState>(&it->second, [&scriptList, &scriptMutex](ScriptState *state) {
-            std::lock_guard l(scriptMutex);
-            scriptList[state->index] = {};
-        });
+            scriptStatePtr = &newState;
+        }
+        return std::shared_ptr<ScriptState>(scriptStatePtr,
+            [&scriptList, &freeScriptList, &scriptMutex](ScriptState *state) {
+                std::lock_guard l(scriptMutex);
+                freeScriptList.push(state->index);
+                scriptList[state->index] = {};
+            });
     }
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const EntityScope &scope,
         const ScriptDefinition &definition) {
-        return NewScriptInstance(ScriptState(definition, scope));
+        return NewScriptInstance(ScriptState(definition, scope), false);
     }
 
-    void ScriptManager::internalRegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock,
+    void ScriptManager::internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
         const Entity &ent,
         const ScriptState &state) const {
         auto *scriptListPtr = scriptLists[state.definition.callback.index()];
@@ -157,7 +140,7 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock) {
+    void ScriptManager::RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock) {
         ZoneScoped;
         for (size_t i = 1; i < mutexes.size(); i++) {
             mutexes[i].lock_shared();
@@ -174,7 +157,7 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock, const Entity &ent) {
+    void ScriptManager::RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent) {
         ZoneScoped;
         if (!ent.Has<Scripts>(lock)) return;
         for (auto &instance : ent.Get<const Scripts>(lock).scripts) {

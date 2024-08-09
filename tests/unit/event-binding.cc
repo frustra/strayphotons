@@ -21,9 +21,9 @@ namespace EventBindingTests {
 
     void TrySendEvent() {
         Tecs::Entity player, hand;
-        ecs::EventQueueRef playerQueue = ecs::NewEventQueue();
-        ecs::EventQueueRef handQueue1 = ecs::NewEventQueue();
-        ecs::EventQueueRef handQueue2 = ecs::NewEventQueue();
+        ecs::EventQueueRef playerQueue = ecs::EventQueue::New();
+        ecs::EventQueueRef handQueue1 = ecs::EventQueue::New();
+        ecs::EventQueueRef handQueue2 = ecs::EventQueue::New();
         {
             Timer t("Create a basic scene with EventBindings and EventInput components");
             auto lock = ecs::StartTransaction<ecs::AddRemove>();

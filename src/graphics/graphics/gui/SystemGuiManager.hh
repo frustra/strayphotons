@@ -20,6 +20,6 @@ namespace sp {
 
     protected:
         ecs::EntityRef guiEntity;
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EventQueueRef events = ecs::EventQueue::New();
     };
 } // namespace sp

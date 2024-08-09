@@ -23,7 +23,7 @@ namespace sp {
     private:
         ecs::EntityRef guiEntity;
 
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EventQueueRef events = ecs::EventQueue::New();
 
         struct PointingState {
             ecs::Entity sourceEntity;

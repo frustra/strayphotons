@@ -171,12 +171,37 @@ namespace ecs {
         }
     }
 
-    void EventQueue::Resize(uint32_t newSize) {
-        events.resize(newSize);
-        state.store({0, 0});
-    }
+    EventQueueRef EventQueue::New(uint32_t maxQueueSize) {
+        ZoneScoped;
 
-    EventQueueRef NewEventQueue(uint32_t maxQueueSize) {
-        return make_shared<EventQueue>(maxQueueSize);
+        static std::mutex poolMutex;
+        static std::deque<EventQueue> eventQueuePool;
+        static std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeEventQueues;
+
+        Assertf(maxQueueSize <= MAX_QUEUE_SIZE, "EventQueue size %u exceeds max size %u", maxQueueSize, MAX_QUEUE_SIZE);
+
+        std::lock_guard lock(poolMutex);
+        if (freeEventQueues.empty()) {
+            size_t offset = eventQueuePool.size();
+#define QUEUE_POOL_BLOCK_SIZE 1
+            eventQueuePool.resize(offset + QUEUE_POOL_BLOCK_SIZE);
+            for (size_t i = 0; i < QUEUE_POOL_BLOCK_SIZE; i++) {
+                eventQueuePool[offset + i].poolIndex = offset + i;
+                freeEventQueues.push(offset + i);
+            }
+        }
+
+        size_t freeIndex = freeEventQueues.top();
+        freeEventQueues.pop();
+        EventQueue *newQueue = &eventQueuePool[freeIndex];
+        newQueue->events.resize(maxQueueSize);
+        return std::shared_ptr<EventQueue>(newQueue, [](EventQueue *queuePtr) {
+            if (queuePtr) {
+                queuePtr->state.store({0, 0});
+                queuePtr->events.resize(0);
+                std::lock_guard lock(poolMutex);
+                if (queuePtr->poolIndex < eventQueuePool.size()) freeEventQueues.push(queuePtr->poolIndex);
+            }
+        });
     }
 } // namespace ecs

@@ -29,7 +29,7 @@ namespace sp {
     private:
         GraphicsManager &graphics;
 
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EventQueueRef events = ecs::EventQueue::New();
 
         MenuScreen selectedScreen = MenuScreen::Main;
 
