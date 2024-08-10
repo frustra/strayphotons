@@ -167,7 +167,7 @@ namespace sp::scripts {
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
 
-            PhysicsQuery::Raycast::Result raycastResult;
+            PhysicsQuery::Raycast::Result raycastResult = {};
             if (raycastQuery) {
                 auto &result = query.Lookup(raycastQuery).result;
                 if (result) raycastResult = result.value();

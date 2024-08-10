@@ -20,7 +20,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(feature = "api")]
     build.file("src/api.cc");
 
-    build.cpp(true).std("c++20")
+    build.cpp(true)
+        .flag_if_supported("/std:c++20")
+        .flag_if_supported("-std:c++20")
         .flag_if_supported("/EHsc")
         .static_crt(true);
 

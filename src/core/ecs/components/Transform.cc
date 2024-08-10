@@ -14,6 +14,7 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
 
 namespace ecs {
@@ -171,13 +172,13 @@ namespace ecs {
 
     void Transform::Rotate(float radians, const glm::vec3 &axis) {
         initIfUndefined(*this);
-        glm::mat3 &rotation = reinterpret_cast<glm::mat3 &>(offset);
-        rotation = glm::rotate(glm::mat4(rotation), radians, axis);
+        glm::mat3 *rotation = reinterpret_cast<glm::mat3 *>(glm::value_ptr(offset));
+        *rotation = glm::rotate(glm::mat4(*rotation), radians, axis);
     }
 
     void Transform::Rotate(const glm::quat &quat) {
         initIfUndefined(*this);
-        reinterpret_cast<glm::mat3 &>(offset) *= glm::mat3_cast(quat);
+        *reinterpret_cast<glm::mat3 *>(glm::value_ptr(offset)) *= glm::mat3_cast(quat);
     }
 
     void Transform::Scale(const glm::vec3 &xyz) {
@@ -201,22 +202,22 @@ namespace ecs {
 
     void Transform::SetRotation(const glm::quat &quat) {
         initIfUndefined(*this);
-        reinterpret_cast<glm::mat3 &>(offset) = glm::mat3_cast(quat);
+        *reinterpret_cast<glm::mat3 *>(glm::value_ptr(offset)) = glm::mat3_cast(quat);
     }
 
     glm::quat Transform::GetRotation() const {
         if (std::isinf(offset[0][0])) return glm::identity<glm::quat>();
-        return glm::normalize(glm::quat_cast(reinterpret_cast<const glm::mat3 &>(offset)));
+        return glm::normalize(glm::quat_cast(*reinterpret_cast<const glm::mat3 *>(glm::value_ptr(offset))));
     }
 
     glm::vec3 Transform::GetForward() const {
         if (std::isinf(offset[0][0])) return glm::vec3(0, 0, -1);
-        return glm::normalize(reinterpret_cast<const glm::mat3 &>(offset) * glm::vec3(0, 0, -1));
+        return glm::normalize(*reinterpret_cast<const glm::mat3 *>(glm::value_ptr(offset)) * glm::vec3(0, 0, -1));
     }
 
     glm::vec3 Transform::GetUp() const {
         if (std::isinf(offset[0][0])) return glm::vec3(0, 1, 0);
-        return glm::normalize(reinterpret_cast<const glm::mat3 &>(offset) * glm::vec3(0, 1, 0));
+        return glm::normalize(*reinterpret_cast<const glm::mat3 *>(glm::value_ptr(offset)) * glm::vec3(0, 1, 0));
     }
 
     void Transform::SetScale(const glm::vec3 &xyz) {

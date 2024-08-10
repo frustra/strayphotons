@@ -10,7 +10,9 @@ use std::error::Error;
 fn main() -> Result<(), Box<dyn Error>> {
     let mut build = cxx_build::bridges(vec!["src/winit.rs"]); // returns a cc::Build
 
-    build.cpp(true).std("c++20")
+    build.cpp(true)
+        .flag_if_supported("/std:c++20")
+        .flag_if_supported("-std:c++20")
         .flag_if_supported("/EHsc")
         .static_crt(true);
 
