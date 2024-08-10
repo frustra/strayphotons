@@ -42,13 +42,20 @@ namespace ecs {
         return GetRef(SignalKey{str, scope});
     }
 
-    void SignalManager::ClearEntity(const Lock<Write<Signals>> &lock, const EntityRef &entity) {
+    void SignalManager::RemoveSignal(const Lock<Write<Signals>> &lock, const SignalRef &signal) {
         auto &signals = lock.Get<Signals>();
-        for (auto &signal : signals.signals) {
-            if (signal.ref == entity) {
-                signal = Signals::Signal();
-            }
+        size_t i;
+        if (IsLive(lock)) {
+            i = signal.ptr->liveIndex = std::numeric_limits<size_t>::max();
+        } else {
+            i = signal.ptr->stagingIndex = std::numeric_limits<size_t>::max();
         }
+        signals.FreeSignal(lock, i);
+    }
+
+    void SignalManager::ClearEntity(const Lock<Write<Signals>> &lock, Entity entity) {
+        auto &signals = lock.Get<Signals>();
+        signals.FreeEntitySignals(lock, entity);
     }
 
     std::set<SignalRef> SignalManager::GetSignals(const std::string &search) {
@@ -83,8 +90,8 @@ namespace ecs {
                 auto lock = ecs::StartStagingTransaction<Write<Signals>>();
                 auto &signals = lock.Get<Signals>();
                 for (auto &refPtr : refsToFree) {
-                    signals.FreeSignal(refPtr->stagingIndex);
                     refPtr->stagingIndex = std::numeric_limits<size_t>::max();
+                    signals.FreeSignal(lock, refPtr->stagingIndex);
                 }
             }
             {
@@ -92,8 +99,8 @@ namespace ecs {
                 auto lock = ecs::StartTransaction<Write<Signals>>();
                 auto &signals = lock.Get<Signals>();
                 for (auto &refPtr : refsToFree) {
-                    signals.FreeSignal(refPtr->liveIndex);
                     refPtr->liveIndex = std::numeric_limits<size_t>::max();
+                    signals.FreeSignal(lock, refPtr->liveIndex);
                 }
             }
         }

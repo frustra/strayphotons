@@ -230,14 +230,24 @@ namespace sp {
 
                         auto userData = (ActorUserData *)actor->userData;
                         Assert(userData, "Physics actor is missing UserData");
-                        if (ph.type == ecs::PhysicsActorType::Dynamic && transform == userData->pose) {
-                            auto pose = actor->getGlobalPose();
-                            transform.SetPosition(PxVec3ToGlmVec3(pose.p));
-                            transform.SetRotation(PxQuatToGlmQuat(pose.q));
-                            ent.Set<ecs::TransformTree>(lock, transform);
-                            userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
-                                                 (float)(1e9 / interval.count());
-                            userData->pose = transform;
+                        if (ph.type == ecs::PhysicsActorType::Dynamic) {
+                            // Only update the ECS position if nothing has moved it during the PhysX simulation
+                            if (transform == userData->pose) {
+                                auto pose = actor->getGlobalPose();
+                                transform.SetPosition(PxVec3ToGlmVec3(pose.p));
+                                transform.SetRotation(PxQuatToGlmQuat(pose.q));
+                                if (userData->pose != transform) {
+                                    // The actor moved in the simulation
+                                    ent.Set<ecs::TransformTree>(lock, transform);
+                                    userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
+                                                         (float)(1e9 / interval.count());
+                                    userData->pose = transform;
+                                    triggerSystem.UpdateEntityTriggers(lock, ent);
+                                }
+                            } else {
+                                // The actor was teleported by another system
+                                triggerSystem.UpdateEntityTriggers(lock, ent);
+                            }
                         }
                     }
                 }
@@ -302,6 +312,8 @@ namespace sp {
                             }
                         }
                     }
+
+                    triggerSystem.UpdateEntityTriggers(lock, ent);
                 }
             }
 
@@ -666,14 +678,13 @@ namespace sp {
         return shapeCount;
     }
 
-    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::Physics>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
         ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
 
-        auto &transform = e.Get<ecs::TransformTree>(lock);
-        auto globalTransform = transform.GetGlobalTransform(lock);
+        auto &globalTransform = e.Get<ecs::TransformSnapshot>(lock).globalPose;
         auto scale = globalTransform.GetScale();
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
@@ -718,23 +729,24 @@ namespace sp {
     }
 
     void PhysxManager::UpdateActor(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
+        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::TransformSnapshot, ecs::Physics, ecs::SceneProperties>>
+            lock,
         const ecs::Entity &e) {
         ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
         if (ph.type == ecs::PhysicsActorType::SubActor) {
             // ZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
-            if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+            if (!actorEnt.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
                 auto parentActor = e;
                 while (parentActor.Has<ecs::TransformTree>(lock)) {
                     auto &tree = parentActor.Get<ecs::TransformTree>(lock);
                     parentActor = tree.parent.Get(lock);
-                    if (parentActor.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                    if (parentActor.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
                         break;
                     }
                 }
-                if (parentActor.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                if (parentActor.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
                     actorEnt = parentActor;
                 } else {
                     return;
@@ -743,7 +755,7 @@ namespace sp {
         } else {
             // ZoneStr(ecs::ToString(lock, e));
         }
-        if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+        if (!actorEnt.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
             actorEnt = e;
         }
         if (actors.count(actorEnt) == 0) {
@@ -774,8 +786,8 @@ namespace sp {
             }
         }
 
-        auto actorTransform = actorEnt.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
-        auto subActorOffset = e.Get<ecs::TransformTree>(lock).GetRelativeTransform(lock, actorEnt);
+        auto &actorTransform = actorEnt.Get<ecs::TransformSnapshot>(lock).globalPose;
+        auto subActorOffset = e.Get<ecs::TransformTree>(lock).GetRelativeTransform2(lock, actorEnt);
         auto scale = actorTransform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
 

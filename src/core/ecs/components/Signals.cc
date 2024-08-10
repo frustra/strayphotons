@@ -61,7 +61,7 @@ namespace std {
 } // namespace std
 
 namespace ecs {
-    size_t Signals::NewSignal(const SignalRef &ref, double value) {
+    size_t Signals::NewSignal(const Lock<> &lock, const SignalRef &ref, double value) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
@@ -72,10 +72,11 @@ namespace ecs {
             freeIndexes.erase(it);
             signals[index] = Signal(value, ref);
         }
+        entityMapping.emplace(ref.GetEntity().Get(lock), index);
         return index;
     }
 
-    size_t Signals::NewSignal(const SignalRef &ref, const SignalExpression &expr) {
+    size_t Signals::NewSignal(const Lock<> &lock, const SignalRef &ref, const SignalExpression &expr) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
@@ -86,13 +87,31 @@ namespace ecs {
             freeIndexes.erase(it);
             signals[index] = Signal(expr, ref);
         }
+        entityMapping.emplace(ref.GetEntity().Get(lock), index);
         return index;
     }
 
-    void Signals::FreeSignal(size_t index) {
+    void Signals::FreeSignal(const Lock<> &lock, size_t index) {
         if (index >= signals.size()) return;
+        auto entity = signals[index].ref.GetEntity().Get(lock);
+        auto range = entityMapping.equal_range(entity);
+        for (auto it = range.first; it != range.second; it++) {
+            if (it->second == index) {
+                entityMapping.erase(it);
+                break;
+            }
+        }
         signals[index] = Signal();
         freeIndexes.insert(index);
+    }
+
+    void Signals::FreeEntitySignals(const Lock<> &lock, Entity entity) {
+        auto range = entityMapping.equal_range(entity);
+        for (auto it = range.first; it != range.second; it++) {
+            signals[it->second] = Signal();
+            freeIndexes.insert(it->second);
+        }
+        entityMapping.erase(entity);
     }
 
     template<>

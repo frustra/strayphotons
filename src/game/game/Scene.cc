@@ -334,7 +334,7 @@ namespace sp {
             ecs::EntityRef ref = e;
             if (!remainingId) {
                 // No more staging entities, clean up staging signals
-                ecs::GetSignalManager().ClearEntity(staging, ref);
+                ecs::GetSignalManager().ClearEntity(staging, e);
             } else if (ref.GetStaging() == e) {
                 // Update the entity ref to point to the new staging entity root.
                 ecs::GetEntityRefs().Set(ref.Name(), remainingId);

@@ -77,10 +77,9 @@ namespace ecs {
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
             signal.value = value;
-            signal.ref = *this;
             return signal.value;
         } else {
-            index = signals.NewSignal(*this, value);
+            index = signals.NewSignal(lock, *this, value);
             return signals.signals[index].value;
         }
     }
@@ -93,7 +92,7 @@ namespace ecs {
 
         auto &signal = signals[index];
         signal.value = -std::numeric_limits<double>::infinity();
-        if (signal.expr.IsNull()) signal.ref = {};
+        if (signal.expr.IsNull()) GetSignalManager().RemoveSignal(lock, signal.ref);
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
@@ -124,10 +123,9 @@ namespace ecs {
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
             signal.expr = expr;
-            signal.ref = *this;
             return signal.expr;
         } else {
-            index = signals.NewSignal(*this, expr);
+            index = signals.NewSignal(lock, *this, expr);
             return signals.signals[index].expr;
         }
     }
@@ -146,7 +144,7 @@ namespace ecs {
 
         auto &signal = signals[index];
         signal.expr = SignalExpression();
-        if (std::isinf(signal.value)) signal.ref = {};
+        if (std::isinf(signal.value)) GetSignalManager().RemoveSignal(lock, signal.ref);
     }
 
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
@@ -178,6 +176,11 @@ namespace ecs {
         auto &signal = signals[index];
         if (!std::isinf(signal.value)) return signal.value;
         return signal.expr.Evaluate(lock, depth);
+    }
+
+    bool SignalRef::operator==(const Entity &other) const {
+        if (!ptr || !other) return false;
+        return ptr->signal.entity == other;
     }
 
     bool SignalRef::operator==(const EntityRef &other) const {

@@ -293,7 +293,7 @@ namespace sp::vulkan {
         };
 
         vector<SwapchainImageContext> swapchainImageContexts;
-        uint32 swapchainImageIndex;
+        uint32 swapchainImageIndex = 0;
 
         SwapchainImageContext &SwapchainImage() {
             return swapchainImageContexts[swapchainImageIndex];

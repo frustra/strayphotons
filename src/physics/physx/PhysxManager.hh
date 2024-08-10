@@ -116,20 +116,22 @@ namespace sp {
         void PreFrame() override;
         void Frame() override;
 
-        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::Physics>> lock,
             const ecs::Entity &e);
         size_t UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics>> lock,
             const ecs::Entity &owner,
             const ecs::Entity &actorEnt,
             physx::PxRigidActor *actor,
             const ecs::Transform &offset);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
+        void UpdateActor(
+            ecs::Lock<
+                ecs::Read<ecs::Name, ecs::TransformTree, ecs::TransformSnapshot, ecs::Physics, ecs::SceneProperties>>
+                lock,
             const ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
         void SetCollisionGroup(physx::PxShape *shape, ecs::PhysicsGroup group);
 
-    private:
         void CreatePhysxScene();
         void DestroyPhysxScene();
         void UpdateDebugLines(ecs::Lock<ecs::Write<ecs::LaserLine>> lock) const;

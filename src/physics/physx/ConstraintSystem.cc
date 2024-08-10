@@ -183,34 +183,35 @@ namespace sp {
         return true;
     }
 
-    void ConstraintSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::SceneProperties>,
-            ecs::Write<ecs::PhysicsJoints>> lock) {
+    void ConstraintSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformTree,
+                                               ecs::TransformSnapshot,
+                                               ecs::CharacterController,
+                                               ecs::Physics,
+                                               ecs::SceneProperties>,
+        ecs::Write<ecs::PhysicsJoints>> lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
-            if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+            if (!entity.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
             if (manager.actors.count(entity) == 0) continue;
 
-            auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
             auto &physics = entity.Get<ecs::Physics>(lock);
             auto const &actor = manager.actors[entity];
 
-            UpdateJoints(lock, entity, actor, transform);
+            UpdateJoints(lock, entity, actor);
 
             if (physics.constantForce != glm::vec3()) {
-                auto rotation = entity.Get<ecs::TransformTree>(lock).GetGlobalRotation(lock);
+                auto rotation = entity.Get<ecs::TransformSnapshot>(lock).globalPose.GetRotation();
                 auto dynamic = actor->is<PxRigidDynamic>();
                 if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(rotation * physics.constantForce));
             }
         }
         for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
-            if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
+            if (!entity.Has<ecs::CharacterController, ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
 
-            auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
             auto &controller = entity.Get<ecs::CharacterController>(lock);
             if (!controller.pxController) continue;
 
-            UpdateJoints(lock, entity, controller.pxController->getActor(), transform);
+            UpdateJoints(lock, entity, controller.pxController->getActor());
         }
     }
 
@@ -232,15 +233,16 @@ namespace sp {
     }
 
     void ConstraintSystem::UpdateJoints(
-        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::SceneProperties>, ecs::Write<ecs::PhysicsJoints>> lock,
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::TransformSnapshot, ecs::SceneProperties>,
+            ecs::Write<ecs::PhysicsJoints>> lock,
         ecs::Entity entity,
-        physx::PxRigidActor *actor,
-        ecs::Transform transform) {
-        if (!entity.Has<ecs::PhysicsJoints>(lock)) {
+        physx::PxRigidActor *actor) {
+        if (!entity.Has<ecs::PhysicsJoints, ecs::TransformSnapshot>(lock)) {
             ReleaseJoints(entity, actor);
             return;
         }
 
+        auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
         auto &ecsJoints = entity.Get<ecs::PhysicsJoints>(lock).joints;
         if (ecsJoints.empty()) {
             ReleaseJoints(entity, actor);
@@ -302,7 +304,7 @@ namespace sp {
                 remoteTransform.q = GlmQuatToPxQuat(ecsJoint.remoteOffset.GetRotation());
 
                 if (targetEntity.Has<ecs::TransformTree>(lock)) {
-                    auto subActorTransform = targetEntity.Get<ecs::TransformTree>(lock).GetRelativeTransform(lock,
+                    auto subActorTransform = targetEntity.Get<ecs::TransformTree>(lock).GetRelativeTransform2(lock,
                         userData->entity);
                     remoteTransform.p += GlmVec3ToPxVec3(userData->scale * subActorTransform.GetPosition());
                     remoteTransform.q *= GlmQuatToPxQuat(subActorTransform.GetRotation());
@@ -313,8 +315,8 @@ namespace sp {
                 targetTransform.Translate(targetTransform * glm::vec4(ecsJoint.remoteOffset.GetPosition(), 0));
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
             } else {
-                if (targetEntity.Has<ecs::TransformTree>(lock)) {
-                    targetTransform = targetEntity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                if (targetEntity.Has<ecs::TransformSnapshot>(lock)) {
+                    targetTransform = targetEntity.Get<ecs::TransformSnapshot>(lock).globalPose;
                 } // else Target is scene root
                 targetTransform.Translate(targetTransform * glm::vec4(ecsJoint.remoteOffset.GetPosition(), 0));
                 targetTransform.Rotate(ecsJoint.remoteOffset.GetRotation());
