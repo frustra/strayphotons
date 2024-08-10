@@ -27,7 +27,6 @@ namespace ecs {
         SignalRef GetRef(const SignalKey &signal);
         SignalRef GetRef(const EntityRef &entity, const std::string_view &signalName);
         SignalRef GetRef(const std::string_view &str, const EntityScope &scope = Name());
-        void RemoveSignal(const Lock<Write<Signals>> &lock, const SignalRef &signal);
         void ClearEntity(const Lock<Write<Signals>> &lock, Entity entity);
         std::set<SignalRef> GetSignals(const std::string &search = "");
         std::set<SignalRef> GetSignals(const EntityRef &entity);

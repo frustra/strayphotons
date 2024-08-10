@@ -42,17 +42,6 @@ namespace ecs {
         return GetRef(SignalKey{str, scope});
     }
 
-    void SignalManager::RemoveSignal(const Lock<Write<Signals>> &lock, const SignalRef &signal) {
-        auto &signals = lock.Get<Signals>();
-        size_t i;
-        if (IsLive(lock)) {
-            i = signal.ptr->liveIndex = std::numeric_limits<size_t>::max();
-        } else {
-            i = signal.ptr->stagingIndex = std::numeric_limits<size_t>::max();
-        }
-        signals.FreeSignal(lock, i);
-    }
-
     void SignalManager::ClearEntity(const Lock<Write<Signals>> &lock, Entity entity) {
         auto &signals = lock.Get<Signals>();
         signals.FreeEntitySignals(lock, entity);

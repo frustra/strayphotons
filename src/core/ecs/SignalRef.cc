@@ -86,13 +86,16 @@ namespace ecs {
 
     void SignalRef::ClearValue(const Lock<Write<Signals>> &lock) const {
         Assertf(ptr, "SignalRef::ClearValue() called on null SignalRef");
-        auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
-        if (index >= signals.size()) return; // Noop
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex(lock);
+        if (index >= signals.signals.size()) return; // Noop
 
-        auto &signal = signals[index];
+        auto &signal = signals.signals[index];
         signal.value = -std::numeric_limits<double>::infinity();
-        if (signal.expr.IsNull()) GetSignalManager().RemoveSignal(lock, signal.ref);
+        if (signal.expr.IsNull()) {
+            signals.FreeSignal(lock, index);
+            index = std::numeric_limits<size_t>::max();
+        }
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
@@ -138,13 +141,16 @@ namespace ecs {
 
     void SignalRef::ClearBinding(const Lock<Write<Signals>> &lock) const {
         Assertf(ptr, "SignalRef::ClearBinding() called on null SignalRef");
-        auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
-        if (index >= signals.size()) return; // Noop
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex(lock);
+        if (index >= signals.signals.size()) return; // Noop
 
-        auto &signal = signals[index];
+        auto &signal = signals.signals[index];
         signal.expr = SignalExpression();
-        if (std::isinf(signal.value)) GetSignalManager().RemoveSignal(lock, signal.ref);
+        if (std::isinf(signal.value)) {
+            signals.FreeSignal(lock, index);
+            index = std::numeric_limits<size_t>::max();
+        }
     }
 
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
