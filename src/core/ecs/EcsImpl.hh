@@ -12,6 +12,7 @@
 #include "common/DispatchQueue.hh"
 #include "common/Logging.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/EventQueue.hh"
 
 // Components
 #include "ecs/components/ActiveScene.hh"
@@ -45,10 +46,19 @@
 #include "ecs/components/XRView.hh"
 
 namespace ecs {
+    struct EventQueuePool : public sp::NonMoveable {
+        sp::LogOnExit logOnExit = "EventQueuePool shut down ==============================================";
+        std::mutex mutex;
+        std::deque<EventQueue> pool;
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeList;
+    };
+
     struct ECSContext : public sp::NonMoveable {
+        // Order of these is important! Items are destroyed in bottom-up order.
         sp::LogOnExit logOnExit = "ECS shut down =========================================================";
-        ECS live;
+        EventQueuePool eventQueues;
         ECS staging;
+        ECS live;
         EntityReferenceManager refManager;
         sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue");
     };

@@ -234,7 +234,7 @@ int main(int argc, char **argv)
         GameInputHandler = std::make_shared<GlfwInputHandler>(GameInstance, window);
 #endif
 
-        sp_window_handlers_t windowHandlers;
+        sp_window_handlers_t windowHandlers = {0};
         windowHandlers.get_video_modes =
             [](sp_graphics_ctx_t *graphics, size_t *mode_count_out, sp_video_mode_t *modes_out) {
                 Assertf(mode_count_out != nullptr, "windowHandlers.get_video_modes called with null count pointer");
