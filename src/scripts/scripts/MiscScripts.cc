@@ -163,7 +163,7 @@ namespace sp::scripts {
             auto parent = transform.parent.Get(lock);
 
             auto targetTF = targetEnt.Get<TransformTree>(lock);
-            auto relativeTF = targetTF.GetRelativeTransform2(lock, parent);
+            auto relativeTF = targetTF.GetRelativeTransform(lock, parent);
 
             auto targetForward = relativeTF.GetPosition() - transform.pose.GetPosition();
             if (targetForward.x == 0 && targetForward.z == 0) return;
@@ -172,7 +172,7 @@ namespace sp::scripts {
             auto currentUp = glm::vec3(0, 1, 0);
             auto upEnt = upEntityRef.Get(lock);
             if (upEnt.Has<TransformTree>(lock)) {
-                currentUp = upEnt.Get<TransformTree>(lock).GetRelativeTransform2(lock, parent).GetUp();
+                currentUp = upEnt.Get<TransformTree>(lock).GetRelativeTransform(lock, parent).GetUp();
             }
 
             auto targetRight = glm::normalize(glm::cross(currentUp, targetForward));

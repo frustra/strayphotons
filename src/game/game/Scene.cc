@@ -319,7 +319,8 @@ namespace sp {
                 Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
                 if (!remainingId.Has<ecs::SceneInfo>(staging)) {
                     // No more staging entities, remove the live id.
-                    ecs::GetSignalManager().ClearEntity(live, sceneInfo.liveId);
+                    auto &signals = live.Get<ecs::Signals>();
+                    signals.FreeEntitySignals(live, sceneInfo.liveId);
                     sceneInfo.liveId.Destroy(live);
                 } else {
                     auto &remainingInfo = remainingId.Get<ecs::SceneInfo>(staging);
@@ -334,7 +335,8 @@ namespace sp {
             ecs::EntityRef ref = e;
             if (!remainingId) {
                 // No more staging entities, clean up staging signals
-                ecs::GetSignalManager().ClearEntity(staging, e);
+                auto &signals = staging.Get<ecs::Signals>();
+                signals.FreeEntitySignals(staging, e);
             } else if (ref.GetStaging() == e) {
                 // Update the entity ref to point to the new staging entity root.
                 ecs::GetEntityRefs().Set(ref.Name(), remainingId);

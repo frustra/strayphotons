@@ -158,8 +158,6 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
 
         // Returns a flatted Transform relative to the specified entity.
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
-        Transform GetRelativeTransform2(Lock<Read<TransformTree, TransformSnapshot>> lock,
-            const Entity &relative) const;
     };
 
     static StructMetadata MetadataTransformTree(typeid(TransformTree),

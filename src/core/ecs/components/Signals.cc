@@ -67,9 +67,8 @@ namespace ecs {
             index = signals.size();
             signals.emplace_back(value, ref);
         } else {
-            auto it = freeIndexes.begin();
-            index = *it;
-            freeIndexes.erase(it);
+            index = freeIndexes.top();
+            freeIndexes.pop();
             signals[index] = Signal(value, ref);
         }
         entityMapping.emplace(ref.GetEntity().Get(lock), index);
@@ -82,9 +81,8 @@ namespace ecs {
             index = signals.size();
             signals.emplace_back(expr, ref);
         } else {
-            auto it = freeIndexes.begin();
-            index = *it;
-            freeIndexes.erase(it);
+            index = freeIndexes.top();
+            freeIndexes.pop();
             signals[index] = Signal(expr, ref);
         }
         entityMapping.emplace(ref.GetEntity().Get(lock), index);
@@ -93,7 +91,8 @@ namespace ecs {
 
     void Signals::FreeSignal(const Lock<> &lock, size_t index) {
         if (index >= signals.size()) return;
-        auto entity = signals[index].ref.GetEntity().Get(lock);
+        Signal &signal = signals[index];
+        auto entity = signal.ref.GetEntity().Get(lock);
         auto range = entityMapping.equal_range(entity);
         for (auto it = range.first; it != range.second; it++) {
             if (it->second == index) {
@@ -101,15 +100,18 @@ namespace ecs {
                 break;
             }
         }
-        signals[index] = Signal();
-        freeIndexes.insert(index);
+        if (signal.ref) signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+        signal = Signal();
+        freeIndexes.push(index);
     }
 
     void Signals::FreeEntitySignals(const Lock<> &lock, Entity entity) {
         auto range = entityMapping.equal_range(entity);
         for (auto it = range.first; it != range.second; it++) {
-            signals[it->second] = Signal();
-            freeIndexes.insert(it->second);
+            Signal &signal = signals[it->second];
+            signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+            signal = Signal();
+            freeIndexes.push(it->second);
         }
         entityMapping.erase(entity);
     }

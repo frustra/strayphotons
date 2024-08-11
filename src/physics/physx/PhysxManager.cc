@@ -230,24 +230,15 @@ namespace sp {
 
                         auto userData = (ActorUserData *)actor->userData;
                         Assert(userData, "Physics actor is missing UserData");
-                        if (ph.type == ecs::PhysicsActorType::Dynamic) {
+                        if (ph.type == ecs::PhysicsActorType::Dynamic && transform == userData->pose) {
                             // Only update the ECS position if nothing has moved it during the PhysX simulation
-                            if (transform == userData->pose) {
-                                auto pose = actor->getGlobalPose();
-                                transform.SetPosition(PxVec3ToGlmVec3(pose.p));
-                                transform.SetRotation(PxQuatToGlmQuat(pose.q));
-                                if (userData->pose != transform) {
-                                    // The actor moved in the simulation
-                                    ent.Set<ecs::TransformTree>(lock, transform);
-                                    userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
-                                                         (float)(1e9 / interval.count());
-                                    userData->pose = transform;
-                                    triggerSystem.UpdateEntityTriggers(lock, ent);
-                                }
-                            } else {
-                                // The actor was teleported by another system
-                                triggerSystem.UpdateEntityTriggers(lock, ent);
-                            }
+                            auto pose = actor->getGlobalPose();
+                            transform.SetPosition(PxVec3ToGlmVec3(pose.p));
+                            transform.SetRotation(PxQuatToGlmQuat(pose.q));
+                            ent.Set<ecs::TransformTree>(lock, transform);
+                            userData->velocity = (transform.GetPosition() - userData->pose.GetPosition()) *
+                                                 (float)(1e9 / interval.count());
+                            userData->pose = transform;
                         }
                     }
                 }
@@ -286,6 +277,8 @@ namespace sp {
                     auto transform = ent.Get<const ecs::TransformTree>(lock).GetGlobalTransform(lock);
                     ent.Set<ecs::TransformSnapshot>(lock, transform);
 
+                    triggerSystem.UpdateEntityTriggers(lock, ent);
+
                     if (ent.Has<ecs::Physics>(lock)) {
                         auto &ph = ent.Get<ecs::Physics>(lock);
                         if (ph.type == ecs::PhysicsActorType::Dynamic) continue;
@@ -312,8 +305,6 @@ namespace sp {
                             }
                         }
                     }
-
-                    triggerSystem.UpdateEntityTriggers(lock, ent);
                 }
             }
 
@@ -354,7 +345,6 @@ namespace sp {
             }
 
             constraintSystem.Frame(lock);
-
             triggerSystem.Frame(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
@@ -786,8 +776,8 @@ namespace sp {
             }
         }
 
-        auto &actorTransform = actorEnt.Get<ecs::TransformSnapshot>(lock).globalPose;
-        auto subActorOffset = e.Get<ecs::TransformTree>(lock).GetRelativeTransform2(lock, actorEnt);
+        auto actorTransform = actorEnt.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+        auto subActorOffset = e.Get<ecs::TransformTree>(lock).GetRelativeTransform(lock, actorEnt);
         auto scale = actorTransform.GetScale();
         auto userData = (ActorUserData *)actor->userData;
 
@@ -839,9 +829,7 @@ namespace sp {
         }
 
         if (actor->getScene()) {
-            Assertf(actor->getGlobalPose().isValid(),
-                "Actor pose invalid: %s",
-                ecs::EntityRef(actorEnt).Name().String());
+            auto globalPose = actor->getGlobalPose();
             if (actorEnt == e && dynamic) {
                 if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
                     auto &sceneProperties = ecs::SceneProperties::Get(lock, e);

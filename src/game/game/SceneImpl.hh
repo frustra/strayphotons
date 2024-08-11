@@ -181,7 +181,8 @@ namespace sp::scene {
             ...);
 
         if (resetLive) {
-            GetSignalManager().ClearEntity(live, liveId);
+            auto &signals = live.Get<ecs::Signals>();
+            signals.FreeEntitySignals(live, liveId);
         }
 
         auto &signalOutput = std::get<std::shared_ptr<SignalOutput>>(flatEntity);

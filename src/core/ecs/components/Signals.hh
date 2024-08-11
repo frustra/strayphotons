@@ -28,8 +28,8 @@ namespace ecs {
             SignalExpression expr;
             SignalRef ref;
 
-            Signal() : value(-std::numeric_limits<double>::infinity()) {}
-            Signal(double value, const SignalRef &ref) : value(value) {
+            Signal() : value(-std::numeric_limits<double>::infinity()), expr() {}
+            Signal(double value, const SignalRef &ref) : value(value), expr() {
                 if (!std::isinf(value)) this->ref = ref;
             }
             Signal(const SignalExpression &expr, const SignalRef &ref)
@@ -40,7 +40,7 @@ namespace ecs {
 
         std::vector<Signal> signals;
         std::multimap<Entity, size_t> entityMapping;
-        std::set<size_t> freeIndexes;
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
 
         size_t NewSignal(const Lock<> &lock, const SignalRef &ref, double value);
         size_t NewSignal(const Lock<> &lock, const SignalRef &ref, const SignalExpression &expr);
