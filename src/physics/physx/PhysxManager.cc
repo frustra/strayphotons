@@ -829,7 +829,6 @@ namespace sp {
         }
 
         if (actor->getScene()) {
-            auto globalPose = actor->getGlobalPose();
             if (actorEnt == e && dynamic) {
                 if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
                     auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
