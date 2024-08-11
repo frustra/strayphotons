@@ -181,7 +181,7 @@ namespace sp::scene {
             ...);
 
         if (resetLive) {
-            auto &signals = live.Get<ecs::Signals>();
+            auto &signals = live.template Get<ecs::Signals>();
             signals.FreeEntitySignals(live, liveId);
         }
 
