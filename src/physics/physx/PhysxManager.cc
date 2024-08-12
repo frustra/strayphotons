@@ -668,13 +668,13 @@ namespace sp {
         return shapeCount;
     }
 
-    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::Physics>> lock,
+    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
         ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
 
-        auto &globalTransform = e.Get<ecs::TransformSnapshot>(lock).globalPose;
+        auto globalTransform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto scale = globalTransform.GetScale();
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
@@ -719,24 +719,23 @@ namespace sp {
     }
 
     void PhysxManager::UpdateActor(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::TransformSnapshot, ecs::Physics, ecs::SceneProperties>>
-            lock,
+        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
         if (ph.type == ecs::PhysicsActorType::SubActor) {
             // ZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
-            if (!actorEnt.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+            if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
                 auto parentActor = e;
                 while (parentActor.Has<ecs::TransformTree>(lock)) {
                     auto &tree = parentActor.Get<ecs::TransformTree>(lock);
                     parentActor = tree.parent.Get(lock);
-                    if (parentActor.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+                    if (parentActor.Has<ecs::Physics, ecs::TransformTree>(lock)) {
                         break;
                     }
                 }
-                if (parentActor.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+                if (parentActor.Has<ecs::Physics, ecs::TransformTree>(lock)) {
                     actorEnt = parentActor;
                 } else {
                     return;
@@ -745,7 +744,7 @@ namespace sp {
         } else {
             // ZoneStr(ecs::ToString(lock, e));
         }
-        if (!actorEnt.Has<ecs::Physics, ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+        if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
             actorEnt = e;
         }
         if (actors.count(actorEnt) == 0) {
@@ -829,6 +828,9 @@ namespace sp {
         }
 
         if (actor->getScene()) {
+            Assertf(actor->getGlobalPose().isValid(),
+                "Actor pose invalid: %s",
+                ecs::EntityRef(actorEnt).Name().String());
             if (actorEnt == e && dynamic) {
                 if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
                     auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
