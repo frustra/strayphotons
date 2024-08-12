@@ -25,7 +25,6 @@
 			"scene_connection": {
 				"flip-flop": "zone/trigger_player_count"
 			},
-			"trigger_area": "Box",
 			"signal_output": {}
 		},
 		{
@@ -47,7 +46,7 @@
 		{
 			"name": "table",
 			"transform": {
-				"translate": [0.45, 0, -0.15]
+				"translate": [0.45, 0, -0.025]
 			},
 			"script": {
 				"parameters": {
@@ -59,12 +58,28 @@
 		{
 			"name": "door_0",
 			"transform": {
-				"translate": [4, 0, -0.48],
-				"rotate": [180, 0, 1, 0]
+				"rotate": [180, 0, 1, 0],
+				"translate": [4, 0, -0.48]
+			},
+			"signal_bindings": {
+				"door_open": "door_0_lock/open"
 			},
 			"script": {
 				"parameters": {
-					"source": "slide_door_lock"
+					"source": "slide_door"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "door_0_lock",
+			"transform": {
+				"parent": "door_0",
+				"translate": [0.15, 0.9, -0.845]
+			},
+			"script": {
+				"parameters": {
+					"source": "gate_lock"
 				},
 				"prefab": "template"
 			}
@@ -72,12 +87,28 @@
 		{
 			"name": "door_1",
 			"transform": {
-				"rotate": [90, 0, 1, 0],
-				"translate": [1.78, 0, 2.5]
+				"translate": [4, 0, 1.85]
+			},
+			"signal_bindings": {
+				"door_open": "door_1_lock/open"
 			},
 			"script": {
 				"parameters": {
-					"source": "slide_door_lock"
+					"source": "slide_door"
+				},
+				"prefab": "template"
+			}
+		},
+		{
+			"name": "door_1_lock",
+			"transform": {
+				"parent": "door_1",
+				"rotate": [180, 0, 1, 0],
+				"translate": [-0.15, 0.9, -1.0125]
+			},
+			"script": {
+				"parameters": {
+					"source": "gate_lock"
 				},
 				"prefab": "template"
 			}
@@ -85,7 +116,7 @@
 		{
 			"name": "table2",
 			"transform": {
-				"translate": [0.5, 0, 3]
+				"translate": [4.5, 0, -1]
 			},
 			"script": {
 				"parameters": {
@@ -245,7 +276,7 @@
 			"name": "mirror_0",
 			"transform": {
 				"rotate": [135, 0, -1, 0],
-				"translate": [0.96, 0.9, 3.14]
+				"translate": [4.725, 0.9, -0.5]
 			},
 			"physics_joints": {
 				"local_offset": {

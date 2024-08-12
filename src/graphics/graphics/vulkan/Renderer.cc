@@ -433,7 +433,7 @@ namespace sp::vulkan {
                     auto view = viewsByEye[eye];
                     auto i = (size_t)eye;
 
-                    if (this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                    if (this->game.xr && this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
                         view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
                     }
 
@@ -474,6 +474,7 @@ namespace sp::vulkan {
                 builder.RequirePass();
             })
             .Execute([this, sourceID](rg::Resources &resources, DeviceContext &device) {
+                if (!this->game.xr) return;
                 auto xrImage = resources.GetImageView(sourceID);
 
                 for (size_t i = 0; i < 2; i++) {

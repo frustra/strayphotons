@@ -91,7 +91,7 @@ namespace sp::scene {
                             // Create a new script instance for each staging definition
                             for (auto &script : scripts.scripts) {
                                 if (!script.state) continue;
-                                script.state = GetScriptManager().NewScriptInstance(*script.state);
+                                script.state = GetScriptManager().NewScriptInstance(*script.state, true);
                             }
 
                             LookupComponent<Scripts>().ApplyComponent(*component, scripts, false);
@@ -181,7 +181,8 @@ namespace sp::scene {
             ...);
 
         if (resetLive) {
-            GetSignalManager().ClearEntity(live, liveId);
+            auto &signals = live.template Get<ecs::Signals>();
+            signals.FreeEntitySignals(live, liveId);
         }
 
         auto &signalOutput = std::get<std::shared_ptr<SignalOutput>>(flatEntity);

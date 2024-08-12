@@ -113,25 +113,25 @@ namespace sp {
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto maxDeltaVelocity = maxAcceleration * intervalSeconds;
             glm::vec3 accel;
-            if (deltaPos == glm::vec3(0)) {
+            auto targetDist = glm::length(deltaPos);
+            if (targetDist <= std::numeric_limits<float>::epsilon()) {
                 if (glm::length(deltaVelocity) < maxDeltaVelocity) {
                     accel = deltaVelocity * tickFrequency;
                 } else {
                     accel = glm::normalize(deltaVelocity) * maxAcceleration;
                 }
             } else {
-                auto targetDist = glm::length(deltaPos);
                 // Maximum velocity achievable over deltaPos distance (also max velocity we can decelerate from)
                 auto maxVelocity = std::sqrt(2 * maxAcceleration * targetDist);
                 if (targetDist < maxVelocity * intervalSeconds) {
                     maxVelocity = targetDist * tickFrequency;
                 }
 
-                auto deltaAccelVelocity = deltaVelocity + glm::normalize(deltaPos) * maxVelocity;
-                if (glm::length(deltaAccelVelocity) < maxDeltaVelocity) {
-                    accel = deltaAccelVelocity * tickFrequency;
+                auto deltaAccel = deltaVelocity + deltaPos * maxVelocity / targetDist;
+                if (glm::length(deltaAccel) < maxDeltaVelocity) {
+                    accel = deltaAccel * tickFrequency;
                 } else {
-                    accel = glm::normalize(deltaAccelVelocity) * maxAcceleration;
+                    accel = glm::normalize(deltaAccel) * maxAcceleration;
                 }
             }
             wakeUp |= joint->forceConstraint->setLinearAccel(accel);
@@ -191,11 +191,10 @@ namespace sp {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
             if (manager.actors.count(entity) == 0) continue;
 
-            auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
             auto &physics = entity.Get<ecs::Physics>(lock);
             auto const &actor = manager.actors[entity];
 
-            UpdateJoints(lock, entity, actor, transform);
+            UpdateJoints(lock, entity, actor);
 
             if (physics.constantForce != glm::vec3()) {
                 auto rotation = entity.Get<ecs::TransformTree>(lock).GetGlobalRotation(lock);
@@ -206,11 +205,10 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
 
-            auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
             auto &controller = entity.Get<ecs::CharacterController>(lock);
             if (!controller.pxController) continue;
 
-            UpdateJoints(lock, entity, controller.pxController->getActor(), transform);
+            UpdateJoints(lock, entity, controller.pxController->getActor());
         }
     }
 
@@ -234,13 +232,13 @@ namespace sp {
     void ConstraintSystem::UpdateJoints(
         ecs::Lock<ecs::Read<ecs::TransformTree, ecs::SceneProperties>, ecs::Write<ecs::PhysicsJoints>> lock,
         ecs::Entity entity,
-        physx::PxRigidActor *actor,
-        ecs::Transform transform) {
-        if (!entity.Has<ecs::PhysicsJoints>(lock)) {
+        physx::PxRigidActor *actor) {
+        if (!entity.Has<ecs::PhysicsJoints, ecs::TransformTree>(lock)) {
             ReleaseJoints(entity, actor);
             return;
         }
 
+        auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto &ecsJoints = entity.Get<ecs::PhysicsJoints>(lock).joints;
         if (ecsJoints.empty()) {
             ReleaseJoints(entity, actor);
@@ -353,6 +351,7 @@ namespace sp {
                 }
                 targetRoot = targetRoot.Get<ecs::TransformTree>(lock).parent.Get(lock);
             }
+            if (targetVelocity != glm::vec3(0)) wakeUp = true;
 
             if (joint == nullptr) {
                 joint = &pxJoints.emplace_back();

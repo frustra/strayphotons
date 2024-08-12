@@ -29,10 +29,14 @@ namespace sp {
     private:
         GraphicsManager &graphics;
 
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EventQueueRef events = ecs::EventQueue::New();
 
         MenuScreen selectedScreen = MenuScreen::Main;
 
         shared_ptr<GpuTexture> logoTex;
     };
+
+    inline bool IsAspect(glm::ivec2 size, int w, int h) {
+        return ((size.x * h) / w) == size.y;
+    }
 } // namespace sp

@@ -231,6 +231,7 @@ namespace sp {
                         auto userData = (ActorUserData *)actor->userData;
                         Assert(userData, "Physics actor is missing UserData");
                         if (ph.type == ecs::PhysicsActorType::Dynamic && transform == userData->pose) {
+                            // Only update the ECS position if nothing has moved it during the PhysX simulation
                             auto pose = actor->getGlobalPose();
                             transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                             transform.SetRotation(PxQuatToGlmQuat(pose.q));
@@ -275,6 +276,8 @@ namespace sp {
 
                     auto transform = ent.Get<const ecs::TransformTree>(lock).GetGlobalTransform(lock);
                     ent.Set<ecs::TransformSnapshot>(lock, transform);
+
+                    triggerSystem.UpdateEntityTriggers(lock, ent);
 
                     if (ent.Has<ecs::Physics>(lock)) {
                         auto &ph = ent.Get<ecs::Physics>(lock);
@@ -342,7 +345,6 @@ namespace sp {
             }
 
             constraintSystem.Frame(lock);
-
             triggerSystem.Frame(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
@@ -672,8 +674,7 @@ namespace sp {
         ZoneStr(ecs::ToString(lock, e));
         auto &ph = e.Get<ecs::Physics>(lock);
 
-        auto &transform = e.Get<ecs::TransformTree>(lock);
-        auto globalTransform = transform.GetGlobalTransform(lock);
+        auto globalTransform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto scale = globalTransform.GetScale();
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),

@@ -129,7 +129,6 @@ namespace sp {
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
         void SetCollisionGroup(physx::PxShape *shape, ecs::PhysicsGroup group);
 
-    private:
         void CreatePhysxScene();
         void DestroyPhysxScene();
         void UpdateDebugLines(ecs::Lock<ecs::Write<ecs::LaserLine>> lock) const;

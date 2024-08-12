@@ -90,10 +90,6 @@ namespace sp {
         return true;
     }
 
-    static bool IsAspect(glm::ivec2 size, int w, int h) {
-        return ((size.x * h) / w) == size.y;
-    }
-
     static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes) {
         vector<string> labels;
         for (size_t i = 0; i < modes.size(); i++) {
@@ -232,8 +228,7 @@ namespace sp {
             {
                 auto modes = graphics.context->MonitorModes();
                 auto size = CVarWindowSize.Get();
-                // If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if
-                // not found.
+                // If the current mode isn't in the list, add it to the bottom.
                 int resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
                 if (resIndex < 0 || resIndex >= (int)modes.size()) {
                     resIndex = modes.size();

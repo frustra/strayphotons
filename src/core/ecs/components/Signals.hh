@@ -14,6 +14,7 @@
 #include "ecs/SignalRef.hh"
 
 #include <limits>
+#include <map>
 #include <robin_hood.h>
 #include <set>
 #include <string>
@@ -27,8 +28,8 @@ namespace ecs {
             SignalExpression expr;
             SignalRef ref;
 
-            Signal() : value(-std::numeric_limits<double>::infinity()) {}
-            Signal(double value, const SignalRef &ref) : value(value) {
+            Signal() : value(-std::numeric_limits<double>::infinity()), expr() {}
+            Signal(double value, const SignalRef &ref) : value(value), expr() {
                 if (!std::isinf(value)) this->ref = ref;
             }
             Signal(const SignalExpression &expr, const SignalRef &ref)
@@ -38,11 +39,13 @@ namespace ecs {
         };
 
         std::vector<Signal> signals;
-        std::set<size_t> freeIndexes;
+        std::multimap<Entity, size_t> entityMapping;
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
 
-        size_t NewSignal(const SignalRef &ref, double value);
-        size_t NewSignal(const SignalRef &ref, const SignalExpression &expr);
-        void FreeSignal(size_t index);
+        size_t NewSignal(const Lock<> &lock, const SignalRef &ref, double value);
+        size_t NewSignal(const Lock<> &lock, const SignalRef &ref, const SignalExpression &expr);
+        void FreeSignal(const Lock<> &lock, size_t index);
+        void FreeEntitySignals(const Lock<> &lock, Entity entity);
     };
 
     struct SignalKey {

@@ -21,7 +21,7 @@ namespace FocusLockTests {
 
     void TestSendingEventsAndSignals() {
         Tecs::Entity player, keyboard, mouse;
-        ecs::EventQueueRef playerQueue = ecs::NewEventQueue();
+        ecs::EventQueueRef playerQueue = ecs::EventQueue::New();
         {
             Timer t("Set up player, keyboard, and mouse with event and signal bindings");
             auto lock = ecs::StartTransaction<ecs::AddRemove>();

@@ -158,11 +158,11 @@ namespace ecs {
         ScriptManager() {}
         ~ScriptManager();
 
-        std::shared_ptr<ScriptState> NewScriptInstance(const ScriptState &state);
+        std::shared_ptr<ScriptState> NewScriptInstance(const ScriptState &state, bool runInit);
         std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope, const ScriptDefinition &definition);
 
-        void RegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock);
-        void RegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock, const Entity &ent);
+        void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
+        void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
         void RunOnTick(const Lock<WriteAll> &Lock, const chrono_clock::duration &interval);
         void RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
 
@@ -170,7 +170,7 @@ namespace ecs {
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);
 
     private:
-        void internalRegisterEvents(const Lock<Read<Name, Scripts>, Write<EventInput>> &lock,
+        void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
             const Entity &ent,
             const ScriptState &state) const;
 
@@ -183,11 +183,16 @@ namespace ecs {
         std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> mutexes;
 
         const std::array<decltype(onTickScripts) *, std::variant_size_v<ScriptCallback>> scriptLists = {
-            nullptr,
+            nullptr, // std::monostate
             &onTickScripts,
             &onPhysicsUpdateScripts,
             &prefabScripts,
         };
+
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeEventQueues;
+        std::array<std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>>,
+            std::variant_size_v<ScriptCallback>>
+            freeScriptLists;
 
         friend class StructMetadata;
         friend class ScriptInstance;

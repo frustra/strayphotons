@@ -15,7 +15,7 @@ struct GLFWwindow;
 namespace sp {
     class GlfwInputHandler {
     public:
-        GlfwInputHandler(sp_game_t ctx, GLFWwindow *window);
+        GlfwInputHandler(sp_game_t *ctx, GLFWwindow *window);
         ~GlfwInputHandler();
 
         static void Frame();
@@ -28,7 +28,7 @@ namespace sp {
         static void MouseEnterCallback(GLFWwindow *window, int entered);
 
     private:
-        sp_game_t ctx;
+        sp_game_t *ctx;
         GLFWwindow *window = nullptr;
 
         int prevMouseMode = -1;

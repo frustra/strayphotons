@@ -40,8 +40,7 @@ namespace sp {
         void UpdateJoints(
             ecs::Lock<ecs::Read<ecs::TransformTree, ecs::SceneProperties>, ecs::Write<ecs::PhysicsJoints>> lock,
             ecs::Entity entity,
-            physx::PxRigidActor *actor,
-            ecs::Transform transform);
+            physx::PxRigidActor *actor);
 
         void ReleaseJoints(ecs::Entity entity, physx::PxRigidActor *actor);
 

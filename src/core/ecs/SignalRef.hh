@@ -63,6 +63,7 @@ namespace ecs {
             return ptr == other.ptr;
         }
 
+        bool operator==(const Entity &entity) const;
         bool operator==(const EntityRef &entity) const;
         bool operator==(const std::string &signalName) const;
         bool operator<(const SignalRef &other) const;

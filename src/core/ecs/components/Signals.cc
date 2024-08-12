@@ -61,38 +61,59 @@ namespace std {
 } // namespace std
 
 namespace ecs {
-    size_t Signals::NewSignal(const SignalRef &ref, double value) {
+    size_t Signals::NewSignal(const Lock<> &lock, const SignalRef &ref, double value) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
             signals.emplace_back(value, ref);
         } else {
-            auto it = freeIndexes.begin();
-            index = *it;
-            freeIndexes.erase(it);
+            index = freeIndexes.top();
+            freeIndexes.pop();
             signals[index] = Signal(value, ref);
         }
+        entityMapping.emplace(ref.GetEntity().Get(lock), index);
         return index;
     }
 
-    size_t Signals::NewSignal(const SignalRef &ref, const SignalExpression &expr) {
+    size_t Signals::NewSignal(const Lock<> &lock, const SignalRef &ref, const SignalExpression &expr) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
             signals.emplace_back(expr, ref);
         } else {
-            auto it = freeIndexes.begin();
-            index = *it;
-            freeIndexes.erase(it);
+            index = freeIndexes.top();
+            freeIndexes.pop();
             signals[index] = Signal(expr, ref);
         }
+        entityMapping.emplace(ref.GetEntity().Get(lock), index);
         return index;
     }
 
-    void Signals::FreeSignal(size_t index) {
+    void Signals::FreeSignal(const Lock<> &lock, size_t index) {
         if (index >= signals.size()) return;
-        signals[index] = Signal();
-        freeIndexes.insert(index);
+        Signal &signal = signals[index];
+        auto entity = signal.ref.GetEntity().Get(lock);
+        auto range = entityMapping.equal_range(entity);
+        for (auto it = range.first; it != range.second; it++) {
+            if (it->second == index) {
+                entityMapping.erase(it);
+                break;
+            }
+        }
+        if (signal.ref) signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+        signal = Signal();
+        freeIndexes.push(index);
+    }
+
+    void Signals::FreeEntitySignals(const Lock<> &lock, Entity entity) {
+        auto range = entityMapping.equal_range(entity);
+        for (auto it = range.first; it != range.second; it++) {
+            Signal &signal = signals[it->second];
+            signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+            signal = Signal();
+            freeIndexes.push(it->second);
+        }
+        entityMapping.erase(entity);
     }
 
     template<>

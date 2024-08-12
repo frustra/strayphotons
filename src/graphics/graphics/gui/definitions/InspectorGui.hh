@@ -28,7 +28,7 @@ namespace sp {
         void PostDefine() override;
 
     private:
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EventQueueRef events = ecs::EventQueue::New();
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         ecs::EntityRef targetEntity;
         std::shared_ptr<Scene> targetScene;

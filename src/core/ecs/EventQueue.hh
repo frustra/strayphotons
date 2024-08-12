@@ -84,13 +84,9 @@ namespace ecs {
     class EventQueue {
     public:
         static const size_t MAX_QUEUE_SIZE = 1000;
+        static const size_t QUEUE_POOL_BLOCK_SIZE = 1024;
 
-        EventQueue(uint32_t maxQueueSize) : events(maxQueueSize), state({0, 0}) {
-            Assertf(maxQueueSize <= MAX_QUEUE_SIZE,
-                "EventQueue size %u exceeds max size %u",
-                maxQueueSize,
-                MAX_QUEUE_SIZE);
-        }
+        using Ref = std::shared_ptr<EventQueue>;
 
         // Returns false if the queue is full
         bool Add(const AsyncEvent &event);
@@ -101,13 +97,16 @@ namespace ecs {
         bool Poll(Event &eventOut, size_t transactionId = 0);
 
         bool Empty();
+        void Clear();
         size_t Size();
 
-        // Not thread safe, drops all events in queue
-        void Resize(uint32_t newSize);
         size_t Capacity() const {
             return events.size();
         }
+
+        static Ref New(uint32_t maxQueueSize = EventQueue::MAX_QUEUE_SIZE);
+
+        EventQueue() : events(0), state({0, 0}) {}
 
     private:
         struct State {
@@ -119,9 +118,8 @@ namespace ecs {
 
         sp::InlineVector<AsyncEvent, MAX_QUEUE_SIZE> events;
         std::atomic<State> state;
+        size_t poolIndex;
     };
 
-    using EventQueueRef = std::shared_ptr<EventQueue>;
-
-    EventQueueRef NewEventQueue(uint32_t maxQueueSize = EventQueue::MAX_QUEUE_SIZE);
+    using EventQueueRef = EventQueue::Ref;
 } // namespace ecs

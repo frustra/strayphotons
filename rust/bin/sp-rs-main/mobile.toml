@@ -1,0 +1,5 @@
+[app]
+name = "sp-rs"
+stylized-name = "Stray Photons"
+domain = "strayphotons.net"
+template-pack = "winit"

@@ -28,7 +28,7 @@ namespace sp {
         bool consoleOpen = false;
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
-        ecs::EventQueueRef events = ecs::NewEventQueue();
+        ecs::EventQueueRef events = ecs::EventQueue::New();
 
         struct GuiEntityContext {
             ecs::Entity entity;

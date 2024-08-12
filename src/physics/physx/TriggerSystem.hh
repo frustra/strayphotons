@@ -22,6 +22,11 @@ namespace sp {
             ecs::Write<ecs::TriggerArea, ecs::Signals>,
             ecs::SendEventsLock> lock);
 
+        void UpdateEntityTriggers(ecs::Lock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+                                      ecs::Write<ecs::TriggerArea, ecs::Signals>,
+                                      ecs::SendEventsLock> lock,
+            ecs::Entity entity);
+
         ecs::ComponentObserver<ecs::TriggerGroup> triggerGroupObserver;
     };
 } // namespace sp

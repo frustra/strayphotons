@@ -152,7 +152,7 @@ namespace sp {
                         if (!ent.Has<ecs::EventInput, ecs::Audio>(lock)) return;
 
                         auto &audio = ent.Get<ecs::Audio>(lock);
-                        if (!audio.eventQueue) audio.eventQueue = ecs::NewEventQueue();
+                        if (!audio.eventQueue) audio.eventQueue = ecs::EventQueue::New();
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Register(lock, audio.eventQueue, "/sound/play");
                         eventInput.Register(lock, audio.eventQueue, "/sound/resume");

@@ -31,73 +31,76 @@ namespace sp {
         ecs::SendEventsLock> lock) {
         ZoneScoped;
 
-        for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
-            if (!entity.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;
-            auto &area = entity.Get<ecs::TriggerArea>(lock);
-            auto &areaTransform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
-            auto areaCenter = areaTransform.GetPosition();
-            auto boundingRadiusSquared = glm::length2(areaTransform * glm::vec4(glm::vec3(0.5f), 0.0f));
-            auto invAreaTransform = areaTransform.GetInverse();
+        ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
+        while (triggerGroupObserver.Poll(lock, triggerEvent)) {
+            if (triggerEvent.type == Tecs::EventType::REMOVED) {
+                for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
+                    auto &containedEntities = entity.Get<ecs::TriggerArea>(lock).containedEntities;
+                    containedEntities[triggerEvent.component].erase(triggerEvent.entity);
+                }
+            }
+        }
+    }
 
-            ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
-            while (triggerGroupObserver.Poll(lock, triggerEvent)) {
-                if (triggerEvent.type == Tecs::EventType::REMOVED) {
-                    for (auto &containedEntities : area.containedEntities) {
-                        containedEntities.erase(triggerEvent.entity);
-                    }
+    void TriggerSystem::UpdateEntityTriggers(ecs::Lock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+                                                 ecs::Write<ecs::TriggerArea, ecs::Signals>,
+                                                 ecs::SendEventsLock> lock,
+        ecs::Entity entity) {
+        if (!entity.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) return;
+        ZoneScoped;
+
+        auto &triggerGroup = entity.Get<ecs::TriggerGroup>(lock);
+        auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
+        auto entityPos = transform.GetPosition();
+
+        for (auto &areaEnt : lock.EntitiesWith<ecs::TriggerArea>()) {
+            if (!areaEnt.Has<ecs::TriggerArea, ecs::TransformSnapshot>(lock)) continue;
+            auto &area = areaEnt.Get<ecs::TriggerArea>(lock);
+            auto &areaTransform = areaEnt.Get<ecs::TransformSnapshot>(lock).globalPose;
+
+            auto boundingRadiusSquared = glm::length2(areaTransform * glm::vec4(glm::vec3(0.5f), 0.0f));
+            bool inArea = false;
+            if (glm::length2(entityPos - areaTransform.GetPosition()) <= boundingRadiusSquared) {
+                auto relativePos = areaTransform.GetInverse() * glm::vec4(transform.GetPosition(), 1.0);
+                switch (area.shape) {
+                case ecs::TriggerShape::Box:
+                    inArea = glm::all(glm::greaterThan(relativePos, glm::vec3(-0.5))) &&
+                             glm::all(glm::lessThan(relativePos, glm::vec3(0.5)));
+                    break;
+                case ecs::TriggerShape::Sphere:
+                    inArea = glm::length2(relativePos) < 0.25;
+                    break;
                 }
             }
 
-            for (auto &triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
-                if (!triggerEnt.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) continue;
-                auto &transform = triggerEnt.Get<ecs::TransformSnapshot>(lock).globalPose;
-                auto entityPos = transform.GetPosition();
-                bool inArea = false;
-                if (glm::length2(entityPos - areaCenter) <= boundingRadiusSquared) {
-                    auto relativePos = invAreaTransform * glm::vec4(transform.GetPosition(), 1.0);
-                    switch (area.shape) {
-                    case ecs::TriggerShape::Box:
-                        inArea = glm::all(glm::greaterThan(relativePos, glm::vec3(-0.5))) &&
-                                 glm::all(glm::lessThan(relativePos, glm::vec3(0.5)));
-                        break;
-                    case ecs::TriggerShape::Sphere:
-                        inArea = glm::length2(relativePos) < 0.25;
-                        break;
-                    }
-                }
-
-                auto &triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);
-                auto &containedEntities = area.containedEntities[triggerGroup];
-                if (containedEntities.contains(triggerEnt) == inArea) continue;
-
+            auto &containedEntities = area.containedEntities[triggerGroup];
+            if (containedEntities.contains(entity) != inArea) {
                 std::string *eventName;
 
                 if (inArea) {
                     eventName = &ecs::TriggerGroupEventNames[triggerGroup].first;
-                    containedEntities.insert(triggerEnt);
+                    containedEntities.insert(entity);
                     Tracef("%s entered TriggerArea %s at: %f %f %f",
-                        ecs::ToString(lock, triggerEnt),
                         ecs::ToString(lock, entity),
+                        ecs::ToString(lock, areaEnt),
                         entityPos.x,
                         entityPos.y,
                         entityPos.z);
                 } else {
                     eventName = &ecs::TriggerGroupEventNames[triggerGroup].second;
-                    containedEntities.erase(triggerEnt);
+                    containedEntities.erase(entity);
                     Tracef("%s leaving TriggerArea %s at: %f %f %f",
-                        ecs::ToString(lock, triggerEnt),
+                        ecs::ToString(lock, entity),
                         ecs::ToString(lock, entity),
                         entityPos.x,
                         entityPos.y,
                         entityPos.z);
                 }
 
-                ecs::EventBindings::SendEvent(lock, entity, ecs::Event{*eventName, entity, triggerEnt});
-            }
+                ecs::EventBindings::SendEvent(lock, areaEnt, ecs::Event{*eventName, areaEnt, entity});
 
-            for (auto &triggerGroup : magic_enum::enum_values<ecs::TriggerGroup>()) {
-                auto entityCount = area.containedEntities[triggerGroup].size();
-                ecs::SignalRef(entity, ecs::TriggerGroupSignalNames[triggerGroup]).SetValue(lock, (double)entityCount);
+                ecs::SignalRef(areaEnt, ecs::TriggerGroupSignalNames[triggerGroup])
+                    .SetValue(lock, (double)containedEntities.size());
             }
         }
     }

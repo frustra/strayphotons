@@ -123,7 +123,7 @@ For both executables, the startup order is as follows:
 1. If not `--no-vr`, the XR Runtime is loaded
 1. The `player` and `bindings` scenes are loaded
 1. If in test mode, commands from `script-file` are queued in the console
-1. If a `--map` is provided, that scene is loaded, else the `menu` scene is loaded.
+1. If a `--scene` is provided, that scene is loaded, else the `menu` scene is loaded.
 
 A number of pre-defined launch configurations are available through the provided VSCode debugger launch.json.
 

@@ -86,7 +86,6 @@ namespace sp::vulkan::render_graph {
 
         for (auto &pass : passes) {
             if (!pass.active) continue;
-
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
             AddPreBarriers(cmd, pass); // creates cmd if necessary

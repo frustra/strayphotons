@@ -59,6 +59,9 @@ namespace sp {
 
         void resize(size_type size) {
             Assert(size <= MaxSize, "InlineVector overflow");
+            if (size < offset) {
+                std::fill(begin() + size, end(), T{});
+            }
             offset = size;
         }
 
@@ -81,7 +84,7 @@ namespace sp {
 
         void pop_back() {
             Assert(offset > 0, "InlineVector underflow");
-            offset -= 1;
+            at(--offset) = {};
         }
 
         template<class... Args>
@@ -114,6 +117,7 @@ namespace sp {
         }
 
         void clear() {
+            fill({});
             offset = 0;
         }
 
