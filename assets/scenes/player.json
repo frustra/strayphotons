@@ -67,7 +67,7 @@
 		{
 			"name": "flashlight",
 			"transform": {
-				"parent": "head",
+				"parent": "pointer",
 				"translate": [0, -0.3, 0]
 			},
 			"light": {
@@ -85,7 +85,7 @@
 			"script": {
 				"onTick": "flashlight",
 				"parameters": {
-					"parent": "head"
+					"parent": "pointer"
 				}
 			}
 		},

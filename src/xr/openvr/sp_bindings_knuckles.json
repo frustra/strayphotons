@@ -81,24 +81,6 @@
             {
                "inputs" : {
                   "held" : {
-                     "output" : "/actions/main/in/grab"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/left/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "held" : {
-                     "output" : "/actions/main/in/grab"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/right/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "held" : {
                      "output" : "/actions/main/in/press"
                   }
                },
@@ -113,6 +95,15 @@
                },
                "mode" : "button",
                "path" : "/user/hand/right/input/a"
+            },
+            {
+               "inputs" : {
+                  "held" : {
+                     "output" : "/actions/main/in/flashlight"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/b"
             },
             {
                "inputs" : {

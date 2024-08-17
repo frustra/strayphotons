@@ -206,8 +206,6 @@ namespace sp::xr {
                                 action.name);
 
                             if (digitalActionData.bActive && digitalActionData.bChanged) {
-                                // TODO: FIX BUG
-                                // When bound to both controllers, multiple events are sent per button
                                 ecs::EventBindings::SendEvent(lock,
                                     originEntity,
                                     ecs::Event{action.name, originEntity, digitalActionData.bState});
