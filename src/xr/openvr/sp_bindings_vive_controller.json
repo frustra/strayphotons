@@ -109,7 +109,7 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/main/in/press"
+                     "output" : "/actions/main/in/flashlight"
                   }
                },
                "mode" : "button",

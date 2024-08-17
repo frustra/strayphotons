@@ -12,7 +12,7 @@
       "controller_type": "knuckles",
       "binding_url": "sp_bindings_knuckles.json"
    }
-  ], 
+  ],
   "actions": [
     {
       "name": "/actions/main/in/grab",

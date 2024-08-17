@@ -188,14 +188,17 @@
         },
         "event_bindings": {
             "/interact/grab": {
-                "outputs": "player:pointer/interact/grab",
-                "filter": "event"
+                "outputs": "player:pointer/interact/grab"
             }
         }
     },
     "vr:controller_left": {
         "event_bindings": {
             "/actions/main/in/press": "vr:left_hand_skeleton/interact/press",
+            "/actions/main/in/flashlight": {
+                "outputs": "player:flashlight/action/flashlight/toggle",
+                "filter": "event"
+            },
             "/actions/main/in/grab": "vr:left_hand/interact/grab",
             "/actions/main/in/rotate_left": {
                 "outputs": "vr:origin/action/snap_rotate",
@@ -212,6 +215,10 @@
     "vr:controller_right": {
         "event_bindings": {
             "/actions/main/in/press": "vr:right_hand_skeleton/interact/press",
+            "/actions/main/in/flashlight": {
+                "outputs": "player:flashlight/action/flashlight/toggle",
+                "filter": "event"
+            },
             "/actions/main/in/grab": "vr:right_hand/interact/grab",
             "/actions/main/in/rotate_left": {
                 "outputs": "vr:origin/action/snap_rotate",
