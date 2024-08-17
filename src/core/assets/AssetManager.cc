@@ -52,7 +52,7 @@ namespace sp {
     const std::filesystem::path DEFAULT_ASSETS_PATH = "./assets.spdata";
 
     AssetManager::AssetManager()
-        : RegisteredThread("AssetCleanup", 10.0), workQueue("AssetWorker", 4), shutdown(true) {}
+        : RegisteredThread("AssetCleanup", 10.0), shutdown(true), workQueue("AssetWorker", 4) {}
 
     AssetManager::~AssetManager() {
         Shutdown();
