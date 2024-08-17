@@ -7,16 +7,15 @@
 
 if(SP_BUILD_RUST)
     # Winit desktop build (dynamic linking)
-    # TODO: Commented until package release saves a log file
-    # if(SP_PACKAGE_RELEASE AND WIN32)
-    #     add_executable(sp-winit WIN32
-    #         MainWinit.cc
-    #     )
-    # else()
-    add_executable(sp-winit
-        MainWinit.cc
-    )
-    # endif()
+    if(SP_PACKAGE_RELEASE AND WIN32)
+        add_executable(sp-winit WIN32
+            MainWinit.cc
+        )
+    else()
+        add_executable(sp-winit
+            MainWinit.cc
+        )
+    endif()
     target_link_libraries(sp-winit PRIVATE
         ${PROJECT_COMMON_EXE}
         ${PROJECT_LIB_NAME}

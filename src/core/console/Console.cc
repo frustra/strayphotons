@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <shared_mutex>
@@ -40,6 +41,10 @@ namespace sp {
 
     namespace logging {
         void GlobalLogOutput_static(Level level, const string &message) {
+            if (level < Level::Trace) {
+                auto outputPath = GetLogOutputFile_static();
+                if (outputPath) std::ofstream(outputPath, std::ios::app) << message;
+            }
             if (level > GetLogLevel_static()) return;
             std::cout << message;
             if (level < Level::Debug) {
@@ -205,7 +210,7 @@ namespace sp {
     }
 
     void ConsoleManager::Execute(const string cmd, const string &args) {
-        Debugf("Executing console command: %s %s", cmd, args);
+        Debugf("Executing console command: %s%s%s", cmd, args.empty() ? "" : " ", args);
         std::lock_guard execLock(cvarExecLock);
         CVarBase *cvar = nullptr;
         {
