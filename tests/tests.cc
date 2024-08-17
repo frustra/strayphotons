@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 
+#include <assets/AssetManager.hh>
 #include <iostream>
 #include <vector>
 
@@ -24,6 +25,8 @@ using namespace testing;
 
 int main(int argc, char **argv) {
     std::cout << "Running " << registeredTests.size() << " " << TEST_TYPE << " tests" << std::endl;
+
+    sp::Assets().StartThread("../assets/");
     {
         auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
         auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
