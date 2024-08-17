@@ -13,12 +13,12 @@
             ],
             "/mouse/move": [
                 {
-                    "outputs": "player:flatview/script/camera_rotate",
+                    "outputs": "player:flathead/script/camera_rotate",
                     "filter": "is_focused(Game)",
                     "modify": ["event.x * 0.001", "event.y * 0.001"]
                 },
                 {
-                    "outputs": "player:flatview/interact/rotate",
+                    "outputs": "player:pointer/interact/rotate",
                     "filter": "is_focused(Game)",
                     "modify": ["event.x * 0.01", "event.y * 0.01"]
                 }
@@ -35,7 +35,7 @@
             ],
             "/mouse/left_click": [
                 {
-                    "outputs": "player:flatview/interact/press",
+                    "outputs": "player:pointer/interact/press",
                     "filter": "is_focused(Game)"
                 },
                 {
@@ -129,7 +129,7 @@
                 "filter": "is_focused(Game) && event"
             },
             "/keyboard/key/e": {
-                "outputs": "player:flatview/interact/grab",
+                "outputs": "player:pointer/interact/grab",
                 "filter": "is_focused(Game) && event"
             },
             "/keyboard/key/q": {
@@ -185,6 +185,12 @@
         "signal_bindings": {
             "move_forward": "vr:controller_right/actions_main_in_movement.y",
             "move_right": "vr:controller_right/actions_main_in_movement.x"
+        },
+        "event_bindings": {
+            "/interact/grab": {
+                "outputs": "player:pointer/interact/grab",
+                "filter": "event"
+            }
         }
     },
     "vr:controller_left": {
@@ -221,13 +227,18 @@
     },
     "player:player": {
         "signal_bindings": {
-            "move_relative.x": "player:flatview/move_relative.x + vr:left_hand/move_relative.x + vr:right_hand/move_relative.x",
-            "move_relative.y": "player:flatview/move_relative.y",
-            "move_relative.z": "player:flatview/move_relative.z + vr:left_hand/move_relative.z + vr:right_hand/move_relative.z",
+            "move_relative.x": "player:flathead/move_relative.x + vr:left_hand/move_relative.x + vr:right_hand/move_relative.x",
+            "move_relative.y": "player:flathead/move_relative.y",
+            "move_relative.z": "player:flathead/move_relative.z + vr:left_hand/move_relative.z + vr:right_hand/move_relative.z",
             "move_sprint": "input:keyboard/key_left_shift"
         }
     },
-    "player:flatview": {
+    "player:pointer": {
+        "signal_bindings": {
+            "interact_rotate": "if_focused(Game, input:keyboard/key_r)"
+        }
+    },
+    "player:flathead": {
         "signal_bindings": {
             "move_forward": "if_focused(Game, input:keyboard/key_w)",
             "move_right": "if_focused(Game, input:keyboard/key_d)",

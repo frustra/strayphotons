@@ -82,17 +82,17 @@ namespace sp {
                 Logf("Scene has no valid player snapshot");
             }
 
-            auto flatview = entities::Flatview.Get(lock);
-            if (flatview.Has<ecs::PhysicsQuery>(lock)) {
-                auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
+            auto pointer = entities::Pointer.Get(lock);
+            if (pointer.Has<ecs::PhysicsQuery>(lock)) {
+                auto &query = pointer.Get<ecs::PhysicsQuery>(lock);
                 for (auto &subQuery : query.queries) {
                     auto *raycastQuery = std::get_if<ecs::PhysicsQuery::Raycast>(&subQuery);
                     if (raycastQuery && raycastQuery->result) {
                         auto lookingAt = raycastQuery->result->target;
                         if (lookingAt) {
-                            Logf("Looking at: %s", ecs::ToString(lock, lookingAt));
+                            Logf("Pointing at: %s", ecs::ToString(lock, lookingAt));
                         } else {
-                            Logf("Looking at: nothing");
+                            Logf("Pointing at: nothing");
                         }
                     }
                 }
@@ -103,9 +103,9 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::ReadAll>();
             ecs::Entity entity;
             if (entityName.empty()) {
-                auto flatview = entities::Flatview.Get(lock);
-                if (flatview.Has<ecs::PhysicsQuery>(lock)) {
-                    auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
+                auto pointer = entities::Pointer.Get(lock);
+                if (pointer.Has<ecs::PhysicsQuery>(lock)) {
+                    auto &query = pointer.Get<ecs::PhysicsQuery>(lock);
                     for (auto &subQuery : query.queries) {
                         auto *raycastQuery = std::get_if<ecs::PhysicsQuery::Raycast>(&subQuery);
                         if (raycastQuery && raycastQuery->result) {

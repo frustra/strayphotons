@@ -32,7 +32,7 @@ stepgraphics
 
 setsignal player:flashlight/on 1
 rotate player:player -45 0 1 0
-rotate player:flatview -55 1 0 0
+rotate player:flathead -55 1 0 0
 translate player:player -0.14 6 6.1
 stepphysics
 steplogic

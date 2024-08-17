@@ -74,7 +74,7 @@ foreach(_model ${GLTF_MODELS})
 
     add_custom_command(
         COMMAND
-            hull_compiler ${_model}
+            hull_compiler --assets ../assets/ ${_model}
         WORKING_DIRECTORY
             ${PROJECT_SOURCE_DIR}/bin
         OUTPUT

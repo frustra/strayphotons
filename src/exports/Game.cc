@@ -27,6 +27,7 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
         // clang-format off
         options.add_options()
             ("h,help", "Display help")
+            ("a,assets", "Override path to assets folder", value<string>())
             ("r,run", "Load commands from a file an execute them in the console", value<string>())
             ("s,scene", "Initial scene to load", value<string>())
             ("size", "Initial window size", value<string>())

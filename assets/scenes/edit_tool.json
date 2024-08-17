@@ -22,7 +22,7 @@
         {
             "name": "edit_tool",
             "transform": {
-                "parent": "player:flatview"
+                "parent": "player:pointer"
 			},
 			"laser_line": {},
             "physics_query": {},
