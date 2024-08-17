@@ -9,6 +9,7 @@
 
 namespace sp::logging {
     static Level logLevel = Level::Log;
+    static std::string outputPath = "";
     static chrono_clock::time_point LogEpoch = chrono_clock::now();
 
     float LogTime_static() {
@@ -21,6 +22,18 @@ namespace sp::logging {
 
     void SetLogLevel_static(Level level) {
         logLevel = level;
+    }
+
+    const char *GetLogOutputFile_static() {
+        if (!outputPath.empty()) {
+            return outputPath.c_str();
+        } else {
+            return nullptr;
+        }
+    }
+
+    void SetLogOutputFile_static(const char *filePath) {
+        outputPath = filePath;
     }
 
     // GlobalLogOutput_static defined in core/console/Console.cc

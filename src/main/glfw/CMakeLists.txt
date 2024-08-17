@@ -6,18 +6,17 @@
 #
 
 # Vulkan desktop build
-# TODO: Commented until package release saves a log file
-# if(SP_PACKAGE_RELEASE AND WIN32)
-#     add_executable(sp-vk WIN32
-#         MainGlfw.cc
-#         GlfwInputHandler.cc
-#     )
-# else()
-add_executable(sp-vk
-    MainGlfw.cc
-    GlfwInputHandler.cc
-)
-# endif()
+if(SP_PACKAGE_RELEASE AND WIN32)
+    add_executable(sp-vk WIN32
+        MainGlfw.cc
+        GlfwInputHandler.cc
+    )
+else()
+    add_executable(sp-vk
+        MainGlfw.cc
+        GlfwInputHandler.cc
+    )
+endif()
 target_link_libraries(sp-vk PRIVATE
     ${PROJECT_COMMON_EXE}
     ${PROJECT_LIB_NAME}
@@ -28,18 +27,17 @@ target_link_libraries(sp-vk PRIVATE
 set_target_properties(sp-vk PROPERTIES EXPORT_COMPILE_COMMANDS 1)
 
 # Headless executable used for CI testing purposes
-# TODO: Commented until package release saves a log file
-# if(SP_PACKAGE_RELEASE AND WIN32)
-#     add_executable(sp-test WIN32
-#         MainGlfw.cc
-#         GlfwInputHandler.cc
-#     )
-# else()
-add_executable(sp-test
-    MainGlfw.cc
-    GlfwInputHandler.cc
-)
-# endif()
+if(SP_PACKAGE_RELEASE AND WIN32)
+    add_executable(sp-test WIN32
+        MainGlfw.cc
+        GlfwInputHandler.cc
+    )
+else()
+    add_executable(sp-test
+        MainGlfw.cc
+        GlfwInputHandler.cc
+    )
+endif()
 target_link_libraries(sp-test PRIVATE
     ${PROJECT_COMMON_EXE}
     ${PROJECT_LIB_NAME}

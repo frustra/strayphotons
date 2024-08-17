@@ -19,6 +19,7 @@ using namespace std;
 #include <cstdio>
 #include <cxxopts.hpp>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <strayphotons.h>
 #include <winit.rs.h>
@@ -40,17 +41,21 @@ using namespace sp;
 
 const int64_t MaxInputPollRate = 144;
 
-// TODO: Commented until package release saves a log file
-// #if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
-//     #define ARGC_NAME __argc
-//     #define ARGV_NAME __argv
-// int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
-// #else
-#define ARGC_NAME argc
-#define ARGV_NAME argv
-int main(int argc, char **argv)
-// #endif
-{
+#if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdLine, int nCmdShow) {
+    int argc = 0;
+    wchar_t **wargv = CommandLineToArgvW(pCmdLine, &argc);
+    std::vector<std::string> argStore(argc);
+    std::vector<char *> argPtrs(argc);
+    for (size_t i = 0; i < argStore.size(); i++) {
+        std::wstring tmp = wargv[i];
+        argStore[i] = std::string(tmp.begin(), tmp.end());
+        argPtrs[i] = argStore[i].data();
+    }
+    char **argv = argPtrs.data();
+#else
+int main(int argc, char **argv) {
+#endif
 
 #ifdef _WIN32
     signal(SIGINT, sp::handleSignals);
@@ -62,13 +67,20 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t *ctx) {
+    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(argc, argv), [](sp_game_t *ctx) {
         GameInstance = nullptr;
         if (ctx) sp_game_destroy(ctx);
     });
 
     GameInstance = instance.get();
     if (!GameInstance) return 1;
+
+#ifdef SP_PACKAGE_RELEASE
+    if (!sp_get_log_output_file()) {
+        std::ofstream("./strayphotons.log", std::ios::out | std::ios::trunc); // Clear log file
+        sp_set_log_output_file("./strayphotons.log");
+    }
+#endif
 
     GameGraphics = sp_game_get_graphics_context(GameInstance);
 

@@ -29,6 +29,9 @@ SP_EXPORT void sp_log_message(sp_log_level_t level, const char *message);
 SP_EXPORT void sp_set_log_level(sp_log_level_t level);
 SP_EXPORT sp_log_level_t sp_get_log_level();
 
+SP_EXPORT void sp_set_log_output_file(const char *filePath);
+SP_EXPORT const char *sp_get_log_output_file();
+
 // Returns the number of seconds since application start.
 SP_EXPORT float sp_get_log_time();
 
