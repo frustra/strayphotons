@@ -73,6 +73,9 @@ namespace sp::xr {
             vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [this](auto *ptr) {
                 Logf("Shutting down OpenVR");
                 context->WaitIdle();
+                // TODO: FIX SHUTDOWN CRASH!
+                // There is a race-condition here:
+                // - The renderer may begin a new frame before the xr system is fully destroyed
                 vr::VR_Shutdown();
             });
             loaded.test_and_set();

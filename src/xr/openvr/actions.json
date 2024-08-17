@@ -25,6 +25,11 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/main/in/flashlight",
+      "requirement": "suggested",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/main/in/teleport",
       "requirement": "mandatory",
       "type": "boolean"
@@ -84,6 +89,7 @@
 
       "/actions/main/in/grab": "Grab",
       "/actions/main/in/press": "Press",
+      "/actions/main/in/flashlight": "Toggle Flashlight",
       "/actions/main/in/teleport": "Teleport",
       "/actions/main/in/movement": "Smooth Movement",
       "/actions/main/in/rotation": "Smooth Rotation",

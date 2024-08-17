@@ -168,7 +168,7 @@ namespace sp::xr {
                         "Failed to read OpenVR action sources for: %s",
                         action.name);
 
-                    for (auto &originHandle : origins) {
+                    for (const auto &originHandle : origins) {
                         if (!originHandle) continue;
                         vr::InputOriginInfo_t originInfo;
                         error = vr::VRInput()->GetOriginTrackedDeviceInfo(originHandle,
@@ -206,6 +206,8 @@ namespace sp::xr {
                                 action.name);
 
                             if (digitalActionData.bActive && digitalActionData.bChanged) {
+                                // TODO: FIX BUG
+                                // When bound to both controllers, multiple events are sent per button
                                 ecs::EventBindings::SendEvent(lock,
                                     originEntity,
                                     ecs::Event{action.name, originEntity, digitalActionData.bState});

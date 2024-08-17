@@ -31,6 +31,13 @@
 			}
 		},
 		{
+			"name": "pointer",
+			"transform": {
+				"parent": "right_hand",
+				"translate": [0, 0, -0.05]
+			}
+		},
+		{
 			"name": "left_hand",
 			"transform": {
 				"parent": "input:vr_actions_main_in_lefthand"
