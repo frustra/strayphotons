@@ -37,9 +37,9 @@ namespace sp {
         // Will be called once per interval except for in step mode
         virtual void Frame() = 0;
         // Will always be called once per interval
-        virtual void PreFrame() {};
+        virtual void PreFrame() {}
         // Will always be called once per interval
-        virtual void PostFrame(bool stepMode) {};
+        virtual void PostFrame(bool stepMode) {}
 
         // Will be called once in the thread, before the first call to Frame()
         // If this returns false, the thread will be stopped
