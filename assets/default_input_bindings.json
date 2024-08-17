@@ -188,7 +188,8 @@
         },
         "event_bindings": {
             "/interact/grab": {
-                "outputs": "player:pointer/interact/grab"
+                "outputs": "player:pointer/interact/grab",
+                "filter": "event"
             }
         }
     },
