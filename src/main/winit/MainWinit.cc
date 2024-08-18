@@ -42,16 +42,20 @@ using namespace sp;
 const int64_t MaxInputPollRate = 144;
 
 #if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
-int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdLine, int nCmdShow) {
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
     int argc = 0;
     wchar_t **wargv = CommandLineToArgvW(pCmdLine, &argc);
-    std::vector<std::string> argStore(argc);
-    std::vector<char *> argPtrs(argc);
-    for (size_t i = 0; i < argStore.size(); i++) {
+    std::vector<std::string> argStore(argc + 1);
+    std::vector<char *> argPtrs(argc + 1);
+    for (size_t i = 0; i < argc; i++) {
         std::wstring tmp = wargv[i];
-        argStore[i] = std::string(tmp.begin(), tmp.end());
-        argPtrs[i] = argStore[i].data();
+        argStore[i + 1] = std::string(tmp.begin(), tmp.end());
+        argPtrs[i + 1] = argStore[i + 1].data();
     }
+    // Windows does not include the executable name, so we need to prepend it for cxxopts to work.
+    argStore[0] = "sp-winit";
+    argPtrs[0] = argStore[0].data();
+    argc++;
     char **argv = argPtrs.data();
 #else
 int main(int argc, char **argv) {
