@@ -108,8 +108,10 @@ namespace sp::xr {
         }
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "vr_input",
+            "vr_io",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto outputEnt = scene->NewSystemEntity(lock, scene, outputEntity.Name());
+                outputEnt.Set<ecs::EventInput>(lock);
                 for (auto &actionSet : actionSets) {
                     for (auto &action : actionSet.actions) {
                         if (action.type == Action::DataType::Pose || action.type == Action::DataType::Skeleton) {
@@ -120,14 +122,26 @@ namespace sp::xr {
                             action.poseEntity = ecs::Name("input", inputName);
                             auto ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
+                        } else if (action.type == Action::DataType::Haptic) {
+                            if (!action.eventQueue) action.eventQueue = ecs::EventQueue::New();
                         }
                     }
                 }
             });
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
+            ecs::Entity ent = outputEntity.Get(lock);
+            auto &eventInput = ent.Get<ecs::EventInput>(lock);
+
+            for (auto &actionSet : actionSets) {
+                for (auto &action : actionSet.actions) {
+                    if (action.eventQueue) eventInput.Register(lock, action.eventQueue, action.name);
+                }
+            }
+        });
     }
 
     InputBindings::~InputBindings() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_input");
+        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_io");
     }
 
     void InputBindings::Frame() {
@@ -434,6 +448,22 @@ namespace sp::xr {
                             break;
                         }
                     }
+                    if (action.type == Action::DataType::Haptic) {
+                        ecs::Event event;
+                        while (ecs::EventInput::Poll(lock, action.eventQueue, event)) {
+                            float &amplitude = std::get<float>(event.data);
+                            error = vr::VRInput()->TriggerHapticVibrationAction(action.handle,
+                                0.0f, // start delay
+                                0.1f, // duration
+                                100.0f, // frequency
+                                std::clamp(amplitude, 0.0f, 1.0f), // amplitude
+                                0);
+                            if (error != vr::EVRInputError::VRInputError_None) break;
+                        }
+                        Assertf(error == vr::EVRInputError::VRInputError_None,
+                            "Failed to send OpenVR haptic action: %s",
+                            action.name);
+                    }
                 }
             }
         }
@@ -441,7 +471,7 @@ namespace sp::xr {
         if (missingEntities) {
             ZoneScopedN("InputBindings::AddMissingEntities");
             GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-                "vr_input",
+                "vr_io",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto &actionSet : actionSets) {
                         for (auto &action : actionSet.actions) {

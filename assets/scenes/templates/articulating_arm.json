@@ -158,8 +158,9 @@
 					"translate": [0, 0.1043, 0]
 				}
 			}],
-			"signal_output": {
-				"value": 1
+			"signal_output": {},
+			"signal_bindings": {
+				"value": "(arm.Knob/interact_holds + arm.Ball_1/interact_holds) == 0"
 			},
 			"event_input": {},
 			"event_bindings": {

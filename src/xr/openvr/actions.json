@@ -73,6 +73,14 @@
       "name": "/actions/main/in/lefthand_anim",
       "type": "skeleton",
       "skeleton": "/skeleton/hand/left"
+    },
+    {
+      "name": "/actions/main/out/righthand_touch",
+      "type": "vibration"
+    },
+    {
+      "name": "/actions/main/out/lefthand_touch",
+      "type": "vibration"
     }
   ],
   "action_sets": [
@@ -98,7 +106,9 @@
       "/actions/main/in/righthand": "Right Hand",
       "/actions/main/in/lefthand": "Left Hand",
       "/actions/main/in/righthand_anim": "Right Hand Skeleton",
-      "/actions/main/in/lefthand_anim": "Left Hand Skeleton"
+      "/actions/main/in/lefthand_anim": "Left Hand Skeleton",
+      "/actions/main/out/righthand_touch": "Right Hand Touch Haptics",
+      "/actions/main/out/lefthand_touch": "Left Hand Touch Haptics"
     }
   ]
 }

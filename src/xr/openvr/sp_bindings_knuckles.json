@@ -4,6 +4,16 @@
    "app_key" : "system.generated.sp-vk.exe",
    "bindings" : {
       "/actions/main" : {
+         "haptics" : [
+            {
+               "output" : "/actions/main/out/lefthand_touch",
+               "path" : "/user/hand/left/output/haptic"
+            },
+            {
+               "output" : "/actions/main/out/righthand_touch",
+               "path" : "/user/hand/right/output/haptic"
+            }
+         ],
          "poses" : [
             {
                "output" : "/actions/main/in/righthand",

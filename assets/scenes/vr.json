@@ -103,7 +103,10 @@
 						"torque_limit": 15.0
 					}
 				}
-			]
+			],
+			"event_bindings": {
+				"/physics/collision/force_found": "output:haptics/actions/main/out/lefthand_touch"
+			}
 		},
 		{
 			"name": "right_hand_skeleton",
@@ -139,7 +142,10 @@
 						"torque_limit": 15.0
 					}
 				}
-			]
+			],
+			"event_bindings": {
+				"/physics/collision/force_found": "output:haptics/actions/main/out/righthand_touch"
+			}
 		},
 		{
 			"name": "laser_pointer",
