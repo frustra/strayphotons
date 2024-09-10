@@ -6,6 +6,7 @@
 #
 
 target_sources(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
+    EditorControls.cc
     InspectorGui.cc
     SignalDisplayGui.cc
 )

@@ -16,6 +16,11 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     SignalManager.cc
     SignalRef.cc
     SignalStructAccess.cc
+    SignalStructAccess_read.cc
+    SignalStructAccess_double.cc
+    SignalStructAccess_vec2.cc
+    SignalStructAccess_vec3.cc
+    SignalStructAccess_vec4.cc
     StructMetadata.cc
 )
 
