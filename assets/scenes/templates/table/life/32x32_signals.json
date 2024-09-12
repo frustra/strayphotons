@@ -1,0 +1,16 @@
+{
+	"components": {
+		"transform": {},
+		"script": {
+			"prefab": "tile",
+			"parameters": {
+				"surface": "table/life/life_cell3",
+				"edge": "table/life/wrap_edge",
+				"corner": "table/life/wrap_corner",
+				"axes": "xz",
+				"count": [32, 32],
+				"stride": [0.03, 0.03]
+			}
+		}
+	}
+}

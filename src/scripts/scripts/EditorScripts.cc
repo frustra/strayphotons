@@ -169,12 +169,12 @@ namespace sp::scripts {
             auto &transform = ent.Get<TransformTree>(lock);
 
             PhysicsQuery::Raycast::Result raycastResult = {};
-            if (raycastQuery) {
-                auto &result = query.Lookup(raycastQuery).result;
-                if (result) raycastResult = result.value();
-            } else {
+            if (!raycastQuery) {
                 raycastQuery = query.NewQuery(PhysicsQuery::Raycast(100.0f,
                     PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+            } else {
+                auto &result = query.Lookup(raycastQuery).result;
+                if (result) raycastResult = result.value();
             }
 
             auto globalTransform = transform.GetGlobalTransform(lock);

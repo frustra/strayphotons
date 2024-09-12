@@ -308,6 +308,39 @@ namespace sp::scripts {
     InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
         MetadataComponentFromSignal);
 
+    struct SignalFromSignal {
+        robin_hood::unordered_map<std::string, SignalExpression> mapping;
+        std::vector<std::pair<SignalRef, const SignalExpression *>> refs;
+
+        void Init(ScriptState &state) {
+            refs.reserve(mapping.size());
+            for (auto &[outputSignal, signalExpr] : mapping) {
+                refs.emplace_back(SignalRef(EntityRef(state.scope), outputSignal), &signalExpr);
+            }
+        }
+
+        template<typename LockType>
+        void updateSignalFromSignal(const LockType &lock, Entity ent) {
+            for (auto &[outputSignal, signalExpr] : refs) {
+                outputSignal.SetValue(lock, signalExpr->Evaluate(lock));
+            }
+        }
+
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+            updateSignalFromSignal(lock, ent);
+        }
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            updateSignalFromSignal(lock, ent);
+        }
+    };
+    StructMetadata MetadataSignalFromSignal(typeid(SignalFromSignal),
+        "SignalFromSignal",
+        "",
+        StructField::New(&SignalFromSignal::mapping));
+    InternalScript<SignalFromSignal> signalFromSignal("signal_from_signal", MetadataSignalFromSignal);
+    InternalPhysicsScript<SignalFromSignal> physicsSignalFromSignal("physics_signal_from_signal",
+        MetadataSignalFromSignal);
+
     struct DebounceSignal {
         size_t delayFrames = 1;
         size_t delayMs = 0;

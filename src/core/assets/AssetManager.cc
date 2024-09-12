@@ -69,8 +69,9 @@ namespace sp {
         if (assetsPath.has_filename() && std::filesystem::is_regular_file(assetsPath)) {
             // Build bundle index
             mtar_t tar;
-            if (mtar_open(&tar, assetsPath.string().c_str(), "r") != MTAR_ESUCCESS) {
-                Warnf("Failed to open asset bundle at: %s", assetsPath.c_str());
+            std::string pathStr = assetsPath.string();
+            if (mtar_open(&tar, pathStr.c_str(), "r") != MTAR_ESUCCESS) {
+                Warnf("Failed to open asset bundle at: %s", pathStr);
                 return;
             }
 

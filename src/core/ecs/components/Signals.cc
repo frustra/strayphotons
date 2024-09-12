@@ -71,7 +71,13 @@ namespace ecs {
             freeIndexes.pop();
             signals[index] = Signal(value, ref);
         }
-        entityMapping.emplace(ref.GetEntity().Get(lock), index);
+        Entity ent = ref.GetEntity().Get(lock);
+        if (!ent.Exists(lock)) {
+            Warnf("Setting signal value on missing entity");
+            entityMapping.emplace(Entity(), index);
+        } else {
+            entityMapping.emplace(ent, index);
+        }
         return index;
     }
 
@@ -85,7 +91,13 @@ namespace ecs {
             freeIndexes.pop();
             signals[index] = Signal(expr, ref);
         }
-        entityMapping.emplace(ref.GetEntity().Get(lock), index);
+        Entity ent = ref.GetEntity().Get(lock);
+        if (!ent.Exists(lock)) {
+            Warnf("Setting signal expression on missing entity");
+            entityMapping.emplace(Entity(), index);
+        } else {
+            entityMapping.emplace(ent, index);
+        }
         return index;
     }
 
@@ -114,6 +126,24 @@ namespace ecs {
             freeIndexes.push(it->second);
         }
         entityMapping.erase(entity);
+    }
+
+    void Signals::PopulateMissingEntityRefs(const Lock<> &lock, Entity entity) {
+        Assertf(entity.Exists(lock), "Signals::PopulateMissingEntityRefs called with missing entity");
+        auto range = entityMapping.equal_range(Entity());
+        sp::InlineVector<size_t, 1000> newEntityMappings;
+        for (auto it = range.first; it != range.second;) {
+            Signal &signal = signals[it->second];
+            if (signal.ref.GetEntity() == entity) {
+                newEntityMappings.emplace_back(it->second);
+                it = entityMapping.erase(it);
+            } else {
+                it++;
+            }
+        }
+        for (size_t index : newEntityMappings) {
+            entityMapping.emplace(entity, index);
+        }
     }
 
     template<>

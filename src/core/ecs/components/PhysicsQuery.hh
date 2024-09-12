@@ -23,6 +23,8 @@ namespace ecs {
             explicit operator bool() const {
                 return index != ~0u;
             }
+
+            // TODO: Automatically call RemoveQuery when Handle goes out of scope
         };
 
         struct Raycast {
@@ -147,4 +149,6 @@ namespace ecs {
     };
 
     static Component<PhysicsQuery> ComponentPhysicsQuery({typeid(PhysicsQuery), "physics_query", ""});
+    template<>
+    void Component<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget);
 } // namespace ecs
