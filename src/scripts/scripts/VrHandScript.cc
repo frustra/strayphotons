@@ -217,6 +217,7 @@ namespace sp::scripts {
                 }
 
                 if (!pointQueryHandle) {
+                    query.RemoveQuery(pointQueryHandle);
                     pointQueryHandle = query.NewQuery(
                         PhysicsQuery::Raycast(pointDistance, PhysicsGroupMask(PHYSICS_GROUP_USER_INTERFACE)));
                 }

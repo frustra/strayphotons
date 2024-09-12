@@ -183,6 +183,10 @@ namespace sp::scene {
         if (resetLive) {
             auto &signals = live.template Get<ecs::Signals>();
             signals.FreeEntitySignals(live, liveId);
+        } else {
+            auto &signals = live.template Get<ecs::Signals>();
+            // TODO: Pass in staging id and map missing refs from staging
+            signals.PopulateMissingEntityRefs(live, liveId);
         }
 
         auto &signalOutput = std::get<std::shared_ptr<SignalOutput>>(flatEntity);
