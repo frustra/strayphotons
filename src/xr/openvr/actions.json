@@ -12,7 +12,7 @@
       "controller_type": "knuckles",
       "binding_url": "sp_bindings_knuckles.json"
    }
-  ], 
+  ],
   "actions": [
     {
       "name": "/actions/main/in/grab",
@@ -22,6 +22,11 @@
     {
       "name": "/actions/main/in/press",
       "requirement": "mandatory",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/main/in/flashlight",
+      "requirement": "suggested",
       "type": "boolean"
     },
     {
@@ -68,6 +73,14 @@
       "name": "/actions/main/in/lefthand_anim",
       "type": "skeleton",
       "skeleton": "/skeleton/hand/left"
+    },
+    {
+      "name": "/actions/main/out/righthand_touch",
+      "type": "vibration"
+    },
+    {
+      "name": "/actions/main/out/lefthand_touch",
+      "type": "vibration"
     }
   ],
   "action_sets": [
@@ -84,6 +97,7 @@
 
       "/actions/main/in/grab": "Grab",
       "/actions/main/in/press": "Press",
+      "/actions/main/in/flashlight": "Toggle Flashlight",
       "/actions/main/in/teleport": "Teleport",
       "/actions/main/in/movement": "Smooth Movement",
       "/actions/main/in/rotation": "Smooth Rotation",
@@ -92,7 +106,9 @@
       "/actions/main/in/righthand": "Right Hand",
       "/actions/main/in/lefthand": "Left Hand",
       "/actions/main/in/righthand_anim": "Right Hand Skeleton",
-      "/actions/main/in/lefthand_anim": "Left Hand Skeleton"
+      "/actions/main/in/lefthand_anim": "Left Hand Skeleton",
+      "/actions/main/out/righthand_touch": "Right Hand Touch Haptics",
+      "/actions/main/out/lefthand_touch": "Left Hand Touch Haptics"
     }
   ]
 }

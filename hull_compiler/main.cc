@@ -24,7 +24,11 @@
 int main(int argc, char **argv) {
     cxxopts::Options options("hull_compiler", "");
     options.positional_help("<model_name>");
-    options.add_options()("model-name", "", cxxopts::value<std::string>());
+    // clang-format off
+    options.add_options()
+        ("assets", "Override path to assets folder", cxxopts::value<std::string>())
+        ("model-name", "", cxxopts::value<std::string>());
+    // clang-format on
     options.parse_positional({"model-name"});
 
     auto optionsResult = options.parse(argc, argv);
@@ -37,6 +41,10 @@ int main(int argc, char **argv) {
     std::string modelName = optionsResult["model-name"].as<std::string>();
 
     sp::logging::SetLogLevel(sp::logging::Level::Warn);
+
+    std::string assetsPath = "";
+    if (optionsResult.count("assets")) assetsPath = optionsResult["assets"].as<std::string>();
+    sp::Assets().StartThread(assetsPath);
 
     auto modelPtr = sp::Assets().LoadGltf(modelName);
     auto model = modelPtr->Get();

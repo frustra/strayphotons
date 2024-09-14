@@ -19,14 +19,36 @@
 		{
 			"name": "flatview",
 			"transform": {
+				"parent": "head"
+			},
+			"view": {
+				"clip": [0.05, 350],
+				"visibility_mask": "DirectCamera"
+			}
+		},
+		{
+			"name": "pointer",
+			"transform": {
+				"parent": "flathead"
+			},
+			"physics_query": {},
+			"event_input": {},
+			"signal_output": {},
+			"script": {
+				"onTick": "interact_handler",
+				"parameters": {
+					"noclip_entity": "player",
+					"grab_distance": 2
+				}
+			}
+		},
+		{
+			"name": "flathead",
+			"transform": {
 				"parent": "flatorigin",
 				"translate": [0, 1.5, 0]
 			},
 			"physics_query": {},
-			"view": {
-				"clip": [0.05, 350],
-				"visibility_mask": "DirectCamera"
-			},
 			"event_input": {},
 			"signal_output": {},
 			"script": [
@@ -39,32 +61,13 @@
 				},
 				{
 					"onTick": "physics_camera_view"
-				},
-				{
-					"onTick": "interact_handler",
-					"parameters": {
-						"noclip_entity": "player",
-						"grab_distance": 2
-					}
 				}
 			]
 		},
 		{
-			"name": "debug-spawner",
-			"event_input": {},
-			"script": {
-				"onTick": "model_spawner",
-				"parameters": {
-					"model": "cardboard-box",
-					"position": [0, 0, -2],
-					"relative_to": "flatview"
-				}
-			}
-		},
-		{
 			"name": "flashlight",
 			"transform": {
-				"parent": "flatview",
+				"parent": "pointer",
 				"translate": [0, -0.3, 0]
 			},
 			"light": {
@@ -82,7 +85,7 @@
 			"script": {
 				"onTick": "flashlight",
 				"parameters": {
-					"parent": "flatview"
+					"parent": "pointer"
 				}
 			}
 		},
