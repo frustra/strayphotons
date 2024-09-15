@@ -321,8 +321,9 @@ namespace sp::scripts {
 
         template<typename LockType>
         void updateSignalFromSignal(const LockType &lock, Entity ent) {
+            DynamicLock<ReadSignalsLock> readLock = lock.ReadOnlySubset();
             for (auto &[outputSignal, signalExpr] : refs) {
-                outputSignal.SetValue(lock, signalExpr->Evaluate(lock));
+                outputSignal.SetValue(lock, signalExpr->Evaluate(readLock));
             }
         }
 

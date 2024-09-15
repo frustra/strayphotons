@@ -289,8 +289,9 @@ namespace ecs {
                         continue;
                     }
 
-                    SignalRef(tileEnt, "tile.x").SetValue(lock, x);
-                    SignalRef(tileEnt, "tile.y").SetValue(lock, y);
+                    auto &tileSignals = tileEnt.Get<SignalOutput>(lock).signals;
+                    tileSignals.emplace("tile.x", x);
+                    tileSignals.emplace("tile.y", y);
                     surface.AddEntities(lock, tileScope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);

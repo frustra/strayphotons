@@ -141,6 +141,7 @@ namespace sp::scene {
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     void ApplyFlatEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> &live,
+        const Entity &stagingId,
         const Entity &liveId,
         const FlatEntity &flatEntity,
         bool resetLive) {
@@ -183,10 +184,6 @@ namespace sp::scene {
         if (resetLive) {
             auto &signals = live.template Get<ecs::Signals>();
             signals.FreeEntitySignals(live, liveId);
-        } else {
-            auto &signals = live.template Get<ecs::Signals>();
-            // TODO: Pass in staging id and map missing refs from staging
-            signals.PopulateMissingEntityRefs(live, liveId);
         }
 
         auto &signalOutput = std::get<std::shared_ptr<SignalOutput>>(flatEntity);

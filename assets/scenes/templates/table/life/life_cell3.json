@@ -28,7 +28,7 @@
 			{
 				"onTick": "signal_from_signal",
 				"parameters": {
-					"_alive": "scoperoot/next_alive"
+					"alive": "scoperoot/next_alive"
 				}
 			}
 		]
@@ -57,7 +57,7 @@
 		{
 			"name": "debug",
 			"transform": {
-				"aprent": "scoperoot",
+				"parent": "scoperoot",
 				"translate": [0, 0.03, 0],
 				"scale": 0.01
 			},
