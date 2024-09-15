@@ -675,6 +675,9 @@ namespace ecs {
         this->rootIndex = nodes.size();
         this->nodes.emplace_back(SignalNode{signal}, 0, 0, this->rootIndex);
         this->nodeStrings.emplace_back(expr);
+
+        nodes[rootIndex].evaluate = nodes[rootIndex].compile(*this, true);
+        Assertf(nodes[rootIndex].evaluate, "Failed to compile expression: %s", expr);
     }
 
     SignalExpression::SignalExpression(std::string_view expr, const Name &scope) : scope(scope), expr(expr) {

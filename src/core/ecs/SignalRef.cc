@@ -70,6 +70,7 @@ namespace ecs {
     }
 
     double &SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
+        Assertf(IsLive(lock), "SiganlRef::SetValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
         auto &signals = lock.Get<Signals>();
@@ -115,6 +116,7 @@ namespace ecs {
     }
 
     SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &expr) const {
+        Assertf(IsLive(lock), "SiganlRef::SetBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
         Assertf(!expr.IsNull(), "SignalRef::SetBinding() called with null SignalExpression");
         auto &signals = lock.Get<Signals>();

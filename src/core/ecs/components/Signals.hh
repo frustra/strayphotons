@@ -46,7 +46,6 @@ namespace ecs {
         size_t NewSignal(const Lock<> &lock, const SignalRef &ref, const SignalExpression &expr);
         void FreeSignal(const Lock<> &lock, size_t index);
         void FreeEntitySignals(const Lock<> &lock, Entity entity);
-        void PopulateMissingEntityRefs(const Lock<> &lock, Entity entity);
     };
 
     struct SignalKey {

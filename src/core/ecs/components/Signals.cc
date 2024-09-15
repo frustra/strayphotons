@@ -72,12 +72,8 @@ namespace ecs {
             signals[index] = Signal(value, ref);
         }
         Entity ent = ref.GetEntity().Get(lock);
-        if (!ent.Exists(lock)) {
-            Warnf("Setting signal value on missing entity");
-            entityMapping.emplace(Entity(), index);
-        } else {
-            entityMapping.emplace(ent, index);
-        }
+        Assertf(ent.Exists(lock), "Setting signal value on missing entity: %s", ref.GetEntity().Name().String());
+        entityMapping.emplace(ent, index);
         return index;
     }
 
@@ -92,12 +88,8 @@ namespace ecs {
             signals[index] = Signal(expr, ref);
         }
         Entity ent = ref.GetEntity().Get(lock);
-        if (!ent.Exists(lock)) {
-            Warnf("Setting signal expression on missing entity");
-            entityMapping.emplace(Entity(), index);
-        } else {
-            entityMapping.emplace(ent, index);
-        }
+        Assertf(ent.Exists(lock), "Setting signal expression on missing entity: %s", ref.GetEntity().Name().String());
+        entityMapping.emplace(ent, index);
         return index;
     }
 
@@ -126,24 +118,6 @@ namespace ecs {
             freeIndexes.push(it->second);
         }
         entityMapping.erase(entity);
-    }
-
-    void Signals::PopulateMissingEntityRefs(const Lock<> &lock, Entity entity) {
-        Assertf(entity.Exists(lock), "Signals::PopulateMissingEntityRefs called with missing entity");
-        auto range = entityMapping.equal_range(Entity());
-        sp::InlineVector<size_t, 1000> newEntityMappings;
-        for (auto it = range.first; it != range.second;) {
-            Signal &signal = signals[it->second];
-            if (signal.ref.GetEntity() == entity) {
-                newEntityMappings.emplace_back(it->second);
-                it = entityMapping.erase(it);
-            } else {
-                it++;
-            }
-        }
-        for (size_t index : newEntityMappings) {
-            entityMapping.emplace(entity, index);
-        }
     }
 
     template<>
