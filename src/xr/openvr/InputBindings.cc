@@ -28,14 +28,15 @@ namespace sp::xr {
         0,
         "0: none, 1: bind pose, 2: open hand, 3: fist, 4: grip limit");
 
-    InputBindings::InputBindings(OpenVrSystem &vrSystem, std::string actionManifestPath) : vrSystem(vrSystem) {
+    InputBindings::InputBindings(OpenVrSystem &vrSystem) : vrSystem(vrSystem) {
         // TODO: Create .vrmanifest file / register vr manifest with steam:
         // https://github.com/ValveSoftware/openvr/wiki/Action-manifest
-        vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(actionManifestPath.c_str());
-        Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
-
+        auto actionManifestPath = Assets().GetExternalPath("actions.json").string();
         auto actionManifest = Assets().Load(actionManifestPath, AssetType::External, true)->Get();
         Assertf(actionManifest, "Failed to load vr action manifest: %s", actionManifestPath);
+
+        vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(actionManifestPath.c_str());
+        Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
 
         picojson::value root;
         string err = picojson::parse(root, actionManifest->String());

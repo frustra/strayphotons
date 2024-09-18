@@ -87,8 +87,7 @@ namespace sp::xr {
         }
 
         // Initialize SteamVR Input subsystem
-        std::string actionManifestPath = std::filesystem::absolute("actions.json").string();
-        inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
+        inputBindings = std::make_shared<InputBindings>(*this);
 
         RegisterModels();
 

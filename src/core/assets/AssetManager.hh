@@ -39,9 +39,11 @@ namespace sp {
     public:
         AssetManager();
         ~AssetManager();
-        void Shutdown();
 
         void StartThread(std::string assetsPath = "");
+        void Shutdown();
+
+        std::filesystem::path GetExternalPath(const std::string &path) const;
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
