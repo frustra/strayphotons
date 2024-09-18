@@ -94,6 +94,16 @@ namespace sp {
         LogOnExit logOnExit = "Assets shut down ======================================================";
     }
 
+    std::filesystem::path AssetManager::GetExternalPath(const std::string &path) const {
+        if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) {
+            return OVERRIDE_ASSETS_DIR / path;
+        } else if (std::filesystem::is_regular_file(assetsPath / path)) {
+            return assetsPath / path;
+        } else {
+            return std::filesystem::absolute(path);
+        }
+    }
+
     void AssetManager::Frame() {
         loadedGltfs.Tick(this->interval);
         for (auto &assets : loadedAssets) {
@@ -105,10 +115,6 @@ namespace sp {
         switch (type) {
         case AssetType::Bundled: {
             // Allow modding the asset bundle by placing files in OVERRIDE_ASSETS_DIR
-            auto filename = OVERRIDE_ASSETS_DIR / path;
-            if (!std::filesystem::is_regular_file(filename) && bundleIndex.empty()) {
-                filename = assetsPath / path;
-            }
             if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) {
                 stream.open(OVERRIDE_ASSETS_DIR / path, std::ios::in | std::ios::binary);
 

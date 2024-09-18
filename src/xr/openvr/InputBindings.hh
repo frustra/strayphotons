@@ -18,7 +18,7 @@ namespace sp::xr {
 
     class InputBindings {
     public:
-        InputBindings(OpenVrSystem &vrSystem, std::string actionManifestPath);
+        InputBindings(OpenVrSystem &vrSystem);
         ~InputBindings();
 
         void Frame();
