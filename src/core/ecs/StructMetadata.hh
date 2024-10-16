@@ -53,19 +53,9 @@ namespace ecs {
         AutoApply = 1 << 2,
     };
 
-    struct StructField {
-        std::string name, desc;
-        std::type_index type;
-        size_t offset = 0;
-        int fieldIndex = -1;
-        FieldAction actions = ~FieldAction::None;
-
-        StructField(const std::string &name,
-            const std::string &desc,
-            std::type_index type,
-            size_t offset,
-            FieldAction actions)
-            : name(name), desc(sp::trim(desc)), type(type), offset(offset), actions(actions) {}
+    struct StructFieldDesc;
+    struct StructField : public std::shared_ptr<StructFieldDesc> {
+        StructField(std::shared_ptr<StructFieldDesc> field) : std::shared_ptr<StructFieldDesc>(field) {}
 
         template<typename T, typename F>
         static size_t OffsetOf(const F T::*M) {
@@ -85,8 +75,8 @@ namespace ecs {
          * }
          */
         template<typename T, typename F>
-        static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField(name,
+        static StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
+            return std::make_shared<StructFieldDesc>(name,
                 "No description",
                 std::type_index(typeid(std::remove_cv_t<F>)),
                 OffsetOf(M),
@@ -94,11 +84,23 @@ namespace ecs {
         }
 
         template<typename T, typename F>
-        static const StructField New(const std::string &name,
+        static StructField New(const std::string &name,
             const std::string &desc,
             const F T::*M,
             FieldAction actions = ~FieldAction::None) {
-            return StructField(name, desc, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
+            return std::make_shared<StructFieldDesc>(name,
+                desc,
+                std::type_index(typeid(std::remove_cv_t<F>)),
+                OffsetOf(M),
+                actions);
+        }
+
+        static StructField New(const std::string &name,
+            const std::string &desc,
+            std::type_index type,
+            uint32_t offset,
+            FieldAction actions = ~FieldAction::None) {
+            return std::make_shared<StructFieldDesc>(name, desc, type, offset, actions);
         }
 
         /**
@@ -130,8 +132,23 @@ namespace ecs {
          */
         template<typename T>
         static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField("", "No description", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+            return std::make_shared<StructFieldDesc>("",
+                "No description",
+                std::type_index(typeid(std::remove_cv_t<T>)),
+                0,
+                actions);
         }
+    };
+
+    struct StructFieldPtr {
+        std::type_index type;
+        uint32_t offset = 0;
+        const StructFieldDesc *desc = nullptr;
+
+        StructFieldPtr(std::type_index type, uint32_t offset, const StructFieldDesc *desc = nullptr)
+            : type(type), offset(offset), desc(desc) {}
+
+        const std::string &Name() const;
 
         void *Access(void *structPtr) const {
             return static_cast<char *>(structPtr) + offset;
@@ -159,13 +176,30 @@ namespace ecs {
             return *reinterpret_cast<const T *>(Access(structPtr));
         }
 
-        bool operator==(const StructField &) const = default;
+        bool operator==(const StructFieldPtr &) const = default;
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
         void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
         picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
         void SetScope(void *dstStruct, const EntityScope &scope) const;
         bool Compare(const void *a, const void *b) const;
+    };
+
+    struct StructFieldDesc final : public StructFieldPtr {
+        std::string name, description;
+        int fieldIndex = -1;
+        FieldAction actions = ~FieldAction::None;
+
+        StructFieldDesc(const std::string &name,
+            const std::string &description,
+            std::type_index type,
+            size_t offset,
+            FieldAction actions)
+            : StructFieldPtr(type, offset, this), name(name), description(sp::trim(description)), actions(actions) {}
+
+        StructFieldDesc(const StructFieldDesc &other) = delete;
+        StructFieldDesc(StructFieldDesc &&other) = delete;
+
         bool Load(void *dstStruct, const picojson::value &src) const;
         // If defaultStruct is nullptr, the field value is always saved
         void Save(const EntityScope &scope,
@@ -193,7 +227,7 @@ namespace ecs {
                 }(),
                 ...);
             for (size_t i = 0; i < this->fields.size(); i++) {
-                this->fields[i].fieldIndex = i;
+                this->fields[i]->fieldIndex = i;
             }
             Register(type, this);
         }
@@ -262,8 +296,8 @@ namespace ecs {
             auto *metadata = StructMetadata::Get(typeid(T));
             if (metadata) {
                 for (auto &field : metadata->fields) {
-                    if (field.name.empty() && field.type == metadata->type) continue;
-                    field.SetScope(&dst, scope);
+                    if (field->name.empty() && field->type == metadata->type) continue;
+                    field->SetScope(&dst, scope);
                 }
                 StructMetadata::SetScope(dst, scope);
             }

@@ -15,15 +15,17 @@
 #include <string_view>
 
 namespace ecs {
-    std::optional<StructField> GetStructField(std::type_index baseType,
+    std::optional<StructFieldPtr> GetStructField(std::type_index baseType,
         std::string_view fieldName,
         size_t fieldNameOffset) {
-        return ecs::GetFieldType(baseType, [&](auto *typePtr) -> std::optional<StructField> {
+        ZoneScoped;
+        ZoneStr(fieldName);
+        return ecs::GetFieldType(baseType, [&](auto *typePtr) -> std::optional<StructFieldPtr> {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             auto delimiter = fieldName.find('.', fieldNameOffset);
             if (delimiter == std::string_view::npos) {
-                return StructField(std::string(fieldName), "", baseType, 0, FieldAction::None);
+                return StructFieldPtr(baseType, 0);
             }
 
             auto subField = fieldName.substr(delimiter + 1);
@@ -40,8 +42,8 @@ namespace ecs {
                 Errorf("GetStructField invalid subfield: %s '%s'", baseType.name(), std::string(fieldName));
                 return {};
             } else if constexpr (std::is_same_v<T, EventData>) {
-                // EventData variants can't be processed without knowing the value
-                return StructField(std::string(fieldName), "", baseType, 0, FieldAction::None);
+                Errorf("GetStructField invalid subfield: EventData '%s'", std::string(fieldName));
+                return {};
             } else if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                                  std::is_same_v<T, sp::color_alpha_t>) {
                 return detail::GetVectorSubfield<T>(subField);
@@ -49,18 +51,18 @@ namespace ecs {
                 auto *metadata = StructMetadata::Get(baseType);
                 if (metadata) {
                     for (const StructField &field : metadata->fields) {
-                        if (field.name.empty()) {
-                            auto result = GetStructField(field.type, fieldName, fieldNameOffset);
+                        if (field->name.empty()) {
+                            auto result = GetStructField(field->type, fieldName, fieldNameOffset);
                             if (result) return result;
                         } else {
-                            if (!sp::starts_with(subField, field.name)) continue;
-                            if (subField.length() > field.name.length() && subField[field.name.length()] != '.') {
+                            if (!sp::starts_with(subField, field->name)) continue;
+                            if (subField.length() > field->name.length() && subField[field->name.length()] != '.') {
                                 continue;
                             }
 
-                            auto result = GetStructField(field.type, fieldName, delimiter + 1);
+                            auto result = GetStructField(field->type, fieldName, delimiter + 1);
                             if (result) {
-                                result->offset += field.offset;
+                                result->offset += field->offset;
                             }
                             return result;
                         }

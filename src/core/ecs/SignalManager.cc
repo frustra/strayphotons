@@ -14,6 +14,8 @@
 #include <shared_mutex>
 
 namespace ecs {
+    using namespace expression;
+
     SignalManager &GetSignalManager() {
         static SignalManager signalManager;
         return signalManager;
@@ -62,7 +64,23 @@ namespace ecs {
         return results;
     }
 
+    SignalNodePtr SignalManager::GetNode(const Node &node) {
+        return signalNodes.LoadOrInsert(node);
+    }
+
+    std::vector<SignalNodePtr> SignalManager::GetNodes(const std::string &search) {
+        std::vector<SignalNodePtr> results;
+        signalNodes.ForEach([&](const Node &node, SignalNodePtr ptr) {
+            if (search.empty() || node.text.find(search) != std::string::npos) {
+                results.emplace_back(ptr);
+            }
+        });
+        return results;
+    }
+
     void SignalManager::Tick(chrono_clock::duration maxTickInterval) {
+        signalNodes.Tick(maxTickInterval);
+
         std::vector<std::shared_ptr<SignalRef::Ref>> refsToFree;
         signalRefs.Tick(maxTickInterval, [&](std::shared_ptr<SignalRef::Ref> &refPtr) {
             if (!refPtr) return;
@@ -77,5 +95,13 @@ namespace ecs {
                 refPtr->index = std::numeric_limits<size_t>::max();
             }
         }
+    }
+
+    size_t SignalManager::DropAllUnusedNodes() {
+        return signalNodes.DropAll();
+    }
+
+    size_t SignalManager::GetNodeCount() {
+        return signalNodes.Size();
     }
 } // namespace ecs

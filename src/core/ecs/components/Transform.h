@@ -85,13 +85,13 @@ namespace ecs {
     static StructMetadata MetadataTransform(typeid(Transform),
         "Transform",
         "",
-        StructField("translate",
+        StructField::New("translate",
             "Specifies the entity's position in 3D space. "
             "The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
             typeid(glm::vec3),
             StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
             FieldAction::None),
-        StructField("rotate",
+        StructField::New("rotate",
             "Specifies the entity's orientation in 3D space. "
             "Multiple rotations can be combined by specifying an array of rotations: "
             "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. "

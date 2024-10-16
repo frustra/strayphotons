@@ -8,7 +8,7 @@
 #include "SignalStructAccess_common.hh"
 
 namespace ecs {
-    double ReadStructField(const void *basePtr, const StructField &field) {
+    double ReadStructField(const void *basePtr, const StructFieldPtr &field) {
         double result = 0.0;
         detail::AccessStructField<const double>(basePtr, field, [&](const double &value) {
             result = value;

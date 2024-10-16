@@ -18,7 +18,7 @@ namespace ecs::detail {
     using namespace ecs;
 
     template<typename T>
-    std::optional<StructField> GetVectorSubfield(std::string_view subField) {
+    std::optional<StructFieldPtr> GetVectorSubfield(std::string_view subField) {
         if (subField.empty()) {
             return StructField("", "", typeid(T), 0, ecs::FieldAction::None);
         }
@@ -52,7 +52,7 @@ namespace ecs::detail {
             default:
                 Abortf("GetVectorSubfield unexpected subfield size: %s '%s'", typeid(T).name(), std::string(subField));
             };
-            return StructField(std::string(subField), "", type, offset, FieldAction::None);
+            return StructFieldPtr(type, offset);
         }
         Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
         return {};
@@ -89,17 +89,18 @@ namespace ecs::detail {
     }
 
     template<typename ArgT, typename BaseType, typename Fn>
-    bool AccessStructField(BaseType *basePtr, const StructField &field, Fn &&accessor) {
-        Assertf(basePtr != nullptr, "AccessStructField was provided nullptr: %s '%s'", field.type.name(), field.name);
+    bool AccessStructField(BaseType *basePtr, const StructFieldPtr &field, Fn &&accessor) {
+        ZoneScoped;
+        Assertf(basePtr != nullptr, "AccessStructField was provided nullptr: %s '%s'", field.type.name(), field.Name());
 
         return ecs::GetFieldType(field.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                           std::is_same_v<T, sp::color_alpha_t>) {
-                std::string_view fieldName = field.name;
+                std::string_view fieldName = field.Name();
                 size_t delimiter = fieldName.find_last_of('.');
-                std::optional<StructField> subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
+                std::optional<StructFieldPtr> subField = detail::GetVectorSubfield<T>(fieldName.substr(delimiter + 1));
                 if (subField) {
                     subField->offset += field.offset;
                     if (subField->type == typeid(typename T::value_type)) {
@@ -119,7 +120,7 @@ namespace ecs::detail {
                 Errorf("AccessStructField unable to vector convert from: %s to %s '%s'",
                     field.type.name(),
                     typeid(ArgT).name(),
-                    field.name);
+                    field.Name());
                 return false;
             } else if constexpr (std::is_same_v<T, EventData>) {
                 auto &value = field.Access<EventData>(basePtr);
@@ -138,7 +139,7 @@ namespace ecs::detail {
                     Errorf("AccessStructField unable to convert from: %s to %s '%s'",
                         field.type.name(),
                         typeid(ArgT).name(),
-                        field.name);
+                        field.Name());
                 }
                 return success;
             }

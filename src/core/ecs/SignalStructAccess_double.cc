@@ -8,7 +8,7 @@
 #include "SignalStructAccess_common.hh"
 
 namespace ecs {
-    bool WriteStructField(void *basePtr, const StructField &field, std::function<void(double &)> accessor) {
+    bool WriteStructField(void *basePtr, const StructFieldPtr &field, std::function<void(double &)> accessor) {
         return detail::AccessStructField<double>(basePtr, field, accessor);
     }
 } // namespace ecs

@@ -377,7 +377,7 @@ namespace sp {
             if (ImGui::CollapsingHeader(name.c_str(), flags)) {
                 const void *component = comp.Access(lock, this->target);
                 for (auto &field : comp.metadata.fields) {
-                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
+                    ecs::GetFieldType(field->type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;
                         AddFieldControls<T>(field, comp, component);
                     });
@@ -463,10 +463,10 @@ namespace sp {
                 ecs::SceneProperties properties = this->scene.data->GetProperties(lock);
                 bool changed = false;
                 for (auto &field : metadata.fields) {
-                    fieldName = field.name;
-                    fieldId = "##scene_properties" + std::to_string(field.fieldIndex);
+                    fieldName = field->name;
+                    fieldId = "##scene_properties" + std::to_string(field->fieldIndex);
                     std::string elementName = fieldName + fieldId;
-                    ecs::GetFieldType(field.type, field.Access(&properties), [&](auto &value) {
+                    ecs::GetFieldType(field->type, field->Access(&properties), [&](auto &value) {
                         if (AddImGuiElement(elementName, value)) changed = true;
                     });
                 }
