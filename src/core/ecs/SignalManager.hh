@@ -10,14 +10,17 @@
 #include "common/Common.hh"
 #include "common/LockFreeMutex.hh"
 #include "common/PreservingMap.hh"
+#include "common/PreservingSet.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/SignalExpressionNode.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/Signals.hh"
 
 #include <limits>
 #include <memory>
+#include <vector>
 
 namespace ecs {
     class SignalManager {
@@ -30,11 +33,19 @@ namespace ecs {
         std::set<SignalRef> GetSignals(const std::string &search = "");
         std::set<SignalRef> GetSignals(const EntityRef &entity);
 
+        SignalNodePtr GetNode(const expression::Node &node);
+        std::vector<SignalNodePtr> GetNodes(const std::string &search = "");
+
         void Tick(chrono_clock::duration maxTickInterval);
+        size_t DropAllUnusedNodes();
+        size_t GetNodeCount();
 
     private:
         sp::LockFreeMutex mutex;
+        sp::PreservingSet<expression::Node, 1000> signalNodes;
         sp::PreservingMap<SignalKey, SignalRef::Ref, 1000> signalRefs;
+
+        friend class SignalExpression;
     };
 
     struct SignalRef::Ref {
