@@ -94,7 +94,7 @@ namespace ecs {
             static const CompType defaultComp = {};
             CompType comp = {};
             for (auto &field : metadata.fields) {
-                field.InitUndefined(&comp, &defaultComp);
+                field->InitUndefined(&comp, &defaultComp);
             }
             StructMetadata::InitUndefined(comp);
             return comp;
@@ -115,8 +115,8 @@ namespace ecs {
 
         bool LoadFields(CompType &dst, const picojson::value &src) const {
             for (auto &field : metadata.fields) {
-                if (!field.Load(&dst, src)) {
-                    Errorf("Component %s has invalid field: %s", name, field.name);
+                if (!field->Load(&dst, src)) {
+                    Errorf("Component %s has invalid field: %s", name, field->name);
                     return false;
                 }
             }
@@ -141,12 +141,12 @@ namespace ecs {
 
             if (IsLive(lock)) {
                 for (auto &field : metadata.fields) {
-                    field.Save(scope, dst, &comp, &defaultLiveComponent);
+                    field->Save(scope, dst, &comp, &defaultLiveComponent);
                 }
                 StructMetadata::Save<CompType>(scope, dst, comp, &defaultLiveComponent);
             } else {
                 for (auto &field : metadata.fields) {
-                    field.Save(scope, dst, &comp, &defaultStagingComponent);
+                    field->Save(scope, dst, &comp, &defaultStagingComponent);
                 }
                 StructMetadata::Save<CompType>(scope, dst, comp, &defaultStagingComponent);
             }
@@ -156,7 +156,7 @@ namespace ecs {
             const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
             // Merge existing component with a new one
             for (auto &field : metadata.fields) {
-                field.Apply(&dst, &src, &defaultComponent);
+                field->Apply(&dst, &src, &defaultComponent);
             }
             Apply(dst, src, liveTarget);
         }

@@ -59,7 +59,12 @@ namespace ecs {
         }
     }
 
-    void StructField::InitUndefined(void *dstStruct, const void *defaultStruct) const {
+    const std::string &StructFieldPtr::Name() const {
+        static const std::string blankName = "";
+        return desc ? desc->name : blankName;
+    }
+
+    void StructFieldPtr::InitUndefined(void *dstStruct, const void *defaultStruct) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
@@ -76,14 +81,14 @@ namespace ecs {
         });
     }
 
-    void StructField::DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const {
+    void StructFieldPtr::DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const {
         GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
             sp::json::SaveSchema<T>(dst, references, false);
         });
     }
 
-    picojson::value StructField::SaveDefault(const EntityScope &scope, const void *defaultStruct) const {
+    picojson::value StructFieldPtr::SaveDefault(const EntityScope &scope, const void *defaultStruct) const {
         picojson::value result;
         auto *field = static_cast<const char *>(defaultStruct) + offset;
         GetFieldType(type, field, [&](auto &value) {
@@ -94,7 +99,7 @@ namespace ecs {
         return result;
     }
 
-    void StructField::SetScope(void *dstStruct, const EntityScope &scope) const {
+    void StructFieldPtr::SetScope(void *dstStruct, const EntityScope &scope) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
 
         GetFieldType(type, field, [&](auto &dstValue) {
@@ -102,7 +107,7 @@ namespace ecs {
         });
     }
 
-    bool StructField::Compare(const void *a, const void *b) const {
+    bool StructFieldPtr::Compare(const void *a, const void *b) const {
         auto *fieldA = static_cast<const char *>(a) + offset;
         auto *fieldB = static_cast<const char *>(b) + offset;
 
@@ -118,7 +123,7 @@ namespace ecs {
         });
     }
 
-    bool StructField::Load(void *dstStruct, const picojson::value &src) const {
+    bool StructFieldDesc::Load(void *dstStruct, const picojson::value &src) const {
         if (!(actions & FieldAction::AutoLoad)) return true;
 
         auto *dstfield = static_cast<char *>(dstStruct) + offset;
@@ -147,7 +152,7 @@ namespace ecs {
         });
     }
 
-    void StructField::Save(const EntityScope &scope,
+    void StructFieldDesc::Save(const EntityScope &scope,
         picojson::value &dst,
         const void *srcStruct,
         const void *defaultStruct) const {
@@ -164,7 +169,7 @@ namespace ecs {
         });
     }
 
-    void StructField::Apply(void *dstStruct, const void *srcStruct, const void *defaultStruct) const {
+    void StructFieldDesc::Apply(void *dstStruct, const void *srcStruct, const void *defaultStruct) const {
         if (!(actions & FieldAction::AutoApply)) return;
 
         auto *dstField = static_cast<char *>(dstStruct) + offset;

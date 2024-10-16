@@ -92,7 +92,7 @@ private:
 
 public:
     void AddField(const ecs::StructField &field, const void *defaultPtr = nullptr) {
-        ecs::GetFieldType(field.type, [&](auto *typePtr) {
+        ecs::GetFieldType(field->type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             static const T defaultStruct = {};
@@ -104,21 +104,23 @@ public:
                 sp::json::Save(ecs::EntityScope(), defaultJson, defaultValue);
             }
 
-            if (field.name.empty()) {
+            if (field->name.empty()) {
                 if constexpr (std::is_enum<T>()) {
-                    fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                    fields.emplace_back(DocField{"", fieldTypeName<T>(), field->description, typeid(T), defaultJson});
                 } else {
                     auto *metadata = ecs::StructMetadata::Get(typeid(T));
                     if (metadata) {
                         for (auto &field : metadata->fields) {
-                            AddField(field, field.Access(&defaultValue));
+                            AddField(field, field->Access(&defaultValue));
                         }
                     } else {
-                        fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                        fields.emplace_back(
+                            DocField{"", fieldTypeName<T>(), field->description, typeid(T), defaultJson});
                     }
                 }
             } else {
-                fields.emplace_back(DocField{field.name, fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                fields.emplace_back(
+                    DocField{field->name, fieldTypeName<T>(), field->description, typeid(T), defaultJson});
             }
         });
     }
@@ -190,7 +192,7 @@ struct MarkdownContext {
                 static const T defaultComp = {};
                 Assertf(metadata, "Unknown StructMetadata type %s", typeid(T).name());
                 for (auto &field : metadata->fields) {
-                    refDocs.AddField(field, field.Access(&defaultComp));
+                    refDocs.AddField(field, field->Access(&defaultComp));
                 }
             }
         });
@@ -271,7 +273,7 @@ struct MarkdownContext {
                     using T = std::remove_pointer_t<decltype(typePtr)>;
                     static const T defaultComp = {};
                     for (auto &field : comp.metadata.fields) {
-                        docs.AddField(field, field.Access(&defaultComp));
+                        docs.AddField(field, field->Access(&defaultComp));
                     }
                 });
 
@@ -285,7 +287,7 @@ struct MarkdownContext {
 
                 const void *defaultScript = entry.second.context->GetDefault();
                 for (auto &field : entry.second.context->metadata.fields) {
-                    docs.AddField(field, field.Access(defaultScript));
+                    docs.AddField(field, field->Access(defaultScript));
                 }
 
                 name = &entry.first;

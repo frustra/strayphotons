@@ -95,10 +95,10 @@ namespace sp::json {
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
             for (auto &field : metadata.fields) {
-                if (!field.Load(&dst, src)) {
+                if (!field->Load(&dst, src)) {
                     Errorf("Struct metadata %s has invalid field: %s = %s",
                         typeid(T).name(),
-                        field.name,
+                        field->name,
                         src.serialize());
                     return false;
                 }
@@ -247,7 +247,7 @@ namespace sp::json {
             auto &metadata = ecs::StructMetadata::Get<T>();
             static const T defaultValue = {};
             for (auto &field : metadata.fields) {
-                field.Save(s, dst, &src, &defaultValue);
+                field->Save(s, dst, &src, &defaultValue);
             }
             ecs::StructMetadata::Save(s, dst, src, &defaultValue);
         }
@@ -372,7 +372,7 @@ namespace sp::json {
         } else {
             auto &metadata = ecs::StructMetadata::Get<T>();
             for (auto &f : metadata.fields) {
-                if (!f.Compare(&a, &b)) return false;
+                if (!f->Compare(&a, &b)) return false;
             }
             return true;
         }
@@ -398,12 +398,12 @@ namespace sp::json {
             auto *metadata = ecs::StructMetadata::Get(typeid(T));
             if (metadata) {
                 for (auto &f : metadata->fields) {
-                    Assertf(f.type != typeid(T),
+                    Assertf(f->type != typeid(T),
                         "Recursive field type found in: %s, field %s (%s)",
                         metadata->name,
-                        f.name,
-                        f.type.name());
-                    f.Save(s, value, &src, def);
+                        f->name,
+                        f->type.name());
+                    f->Save(s, value, &src, def);
                 }
                 ecs::StructMetadata::Save(s, value, src, def);
             } else {
@@ -538,19 +538,19 @@ namespace sp::json {
             picojson::object componentProperties;
             for (auto &field : metadata->fields) {
                 picojson::value fieldSchema;
-                field.DefineSchema(fieldSchema, references);
+                field->DefineSchema(fieldSchema, references);
 
-                if (field.name.empty()) {
+                if (field->name.empty()) {
                     allOfSchemas.emplace_back(std::move(fieldSchema));
                 } else {
                     Assertf(fieldSchema.is<picojson::object>(),
                         "Expected subfield schema to be object: %s",
                         fieldSchema.to_str());
                     auto &fieldObj = fieldSchema.get<picojson::object>();
-                    fieldObj["default"] = field.SaveDefault(ecs::EntityScope(), &defaultStruct);
+                    fieldObj["default"] = field->SaveDefault(ecs::EntityScope(), &defaultStruct);
 
-                    fieldObj["description"] = picojson::value(field.desc);
-                    componentProperties[field.name] = fieldSchema;
+                    fieldObj["description"] = picojson::value(field->description);
+                    componentProperties[field->name] = fieldSchema;
                 }
             }
             if (!componentProperties.empty()) {

@@ -76,8 +76,8 @@ namespace ecs {
             auto it = srcObj.find("parameters");
             if (it != srcObj.end()) {
                 for (auto &field : state.definition.context->metadata.fields) {
-                    if (!field.Load(dataPtr, it->second)) {
-                        Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
+                    if (!field->Load(dataPtr, it->second)) {
+                        Errorf("Script %s has invalid parameter: %s", state.definition.name, field->name);
                         return false;
                     }
                 }
@@ -113,14 +113,14 @@ namespace ecs {
                 Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
                 bool changed = false;
                 for (auto &field : state.definition.context->metadata.fields) {
-                    if (!field.Compare(dataPtr, defaultPtr)) {
+                    if (!field->Compare(dataPtr, defaultPtr)) {
                         changed = true;
                         break;
                     }
                 }
                 if (changed) {
                     for (auto &field : state.definition.context->metadata.fields) {
-                        field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                        field->Save(scope, obj["parameters"], dataPtr, defaultPtr);
                     }
                 }
             }
@@ -142,8 +142,8 @@ namespace ecs {
                 Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
                 Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
                 for (auto &field : oldState.definition.context->metadata.fields) {
-                    field.Apply(newPtr, oldPtr, defaultPtr);
-                    field.SetScope(newPtr, scope);
+                    field->Apply(newPtr, oldPtr, defaultPtr);
+                    field->SetScope(newPtr, scope);
                 }
             }
             dst.state = std::move(newState);
@@ -159,7 +159,7 @@ namespace ecs {
         const void *bPtr = definition.context->Access(other);
         Assertf(aPtr && bPtr, "Script definition returned null data: %s", definition.name);
         for (auto &field : definition.context->metadata.fields) {
-            if (!field.Compare(aPtr, bPtr)) return false;
+            if (!field->Compare(aPtr, bPtr)) return false;
         }
         return true;
     }

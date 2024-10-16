@@ -210,10 +210,7 @@ namespace sp {
                         }
                     } else if (signal.HasBinding(lock)) {
                         auto &binding = signal.GetBinding(lock);
-                        Logf("  %s = %.4f = %s",
-                            signal.String(),
-                            binding.Evaluate(lock),
-                            binding.nodeStrings[binding.rootIndex]);
+                        Logf("  %s = %.4f = %s", signal.String(), binding.Evaluate(lock), binding.rootNode->text);
                     } else {
                         Logf("  %s = 0.0 (unset)", signal.String());
                     }
@@ -239,12 +236,10 @@ namespace sp {
                 }
                 if (signal.HasBinding(lock)) {
                     auto &binding = signal.GetBinding(lock);
-                    if (binding.nodes.empty() || binding.rootIndex < 0) {
+                    if (!binding.rootNode) {
                         Logf("  Signal binding: nil");
                     } else {
-                        Logf("  Signal binding: %.4f = %s",
-                            binding.Evaluate(lock),
-                            binding.nodeStrings[binding.rootIndex]);
+                        Logf("  Signal binding: %.4f = %s", binding.Evaluate(lock), binding.rootNode->text);
                     }
                 }
             });

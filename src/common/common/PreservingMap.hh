@@ -54,6 +54,7 @@ namespace sp {
             std::function<void(std::shared_ptr<V> &)> destroyCallback = nullptr) {
             auto now = chrono_clock::now();
             chrono_clock::duration tickInterval = std::min(now - last_tick, maxTickInterval);
+            auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();
             last_tick = now;
 
             InlineVector<K, 100> cleanupList;
@@ -61,7 +62,6 @@ namespace sp {
                 std::shared_lock lock(mutex);
                 for (auto &[key, timed] : storage) {
                     if (timed.value.use_count() == 1) {
-                        auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();
                         if ((timed.last_use += intervalMs) > PreserveAgeMilliseconds) {
                             if (cleanupList.size() < cleanupList.capacity()) cleanupList.emplace_back(key);
                         }
