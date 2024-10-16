@@ -58,7 +58,7 @@ namespace testing {
     inline void AssertEqual(Ta a, Tb b, const std::string &message = "not equal") {
         if (!(a == b)) {
             std::stringstream ss;
-            ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
+            ss << "Assertion failed: " << message << " \"" << a << "\" != \"" << b << "\"" << std::endl;
             std::cerr << ss.str() << std::flush;
             throw std::runtime_error(message);
         }
