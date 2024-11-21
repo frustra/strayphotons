@@ -1,6 +1,6 @@
 screenshot empty-state.png
 stepgraphics
-editinworld player:flatview
+editinworld player:flathead
 screenshot editor1.png gui:editor:inspector
 stepgraphics
 # Click on "Entity View" tab and move mouse away

@@ -48,18 +48,42 @@ namespace sp {
         return assets;
     }
 
-    const char *ASSETS_DIR = "../assets/";
-    const char *ASSETS_TAR = "./assets.spdata";
+    const std::filesystem::path OVERRIDE_ASSETS_DIR = "./assets/";
+    const std::filesystem::path DEFAULT_ASSETS_PATH = "./assets.spdata";
 
-    AssetManager::AssetManager() : RegisteredThread("AssetCleanup", 10.0), workQueue("AssetWorker", 4) {
-#ifdef SP_PACKAGE_RELEASE
-        UpdateTarIndex();
-#endif
-        StartThread();
-    }
+    AssetManager::AssetManager()
+        : RegisteredThread("AssetCleanup", 10.0), shutdown(true), workQueue("AssetWorker", 4) {}
 
     AssetManager::~AssetManager() {
         Shutdown();
+    }
+
+    void AssetManager::StartThread(std::string assetsPath_) {
+        bool wasShutdown = shutdown.exchange(false);
+        if (!wasShutdown) return; // Thread already started
+        if (!assetsPath_.empty()) {
+            assetsPath = assetsPath_;
+        } else {
+            assetsPath = DEFAULT_ASSETS_PATH;
+        }
+        if (assetsPath.has_filename() && std::filesystem::is_regular_file(assetsPath)) {
+            // Build bundle index
+            mtar_t tar;
+            if (mtar_open(&tar, assetsPath.string().c_str(), "r") != MTAR_ESUCCESS) {
+                Warnf("Failed to open asset bundle at: %s", assetsPath);
+                return;
+            }
+
+            mtar_header_t h;
+            while (mtar_read_header(&tar, &h) != MTAR_ENULLRECORD) {
+                size_t offset = tar.pos + 512 * sizeof(unsigned char);
+                bundleIndex[h.name] = std::make_pair(offset, h.size);
+                mtar_next(&tar);
+            }
+
+            mtar_close(&tar);
+        }
+        RegisteredThread::StartThread();
     }
 
     void AssetManager::Shutdown() {
@@ -70,6 +94,16 @@ namespace sp {
         LogOnExit logOnExit = "Assets shut down ======================================================";
     }
 
+    std::filesystem::path AssetManager::GetExternalPath(const std::string &path) const {
+        if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) {
+            return OVERRIDE_ASSETS_DIR / path;
+        } else if (std::filesystem::is_regular_file(assetsPath / path)) {
+            return assetsPath / path;
+        } else {
+            return std::filesystem::absolute(path);
+        }
+    }
+
     void AssetManager::Frame() {
         loadedGltfs.Tick(this->interval);
         for (auto &assets : loadedAssets) {
@@ -77,29 +111,32 @@ namespace sp {
         }
     }
 
-    void AssetManager::UpdateTarIndex() {
-        mtar_t tar;
-        if (mtar_open(&tar, ASSETS_TAR, "r") != MTAR_ESUCCESS) {
-            Warnf("Failed to open asset bundle at: %s", ASSETS_TAR);
-            return;
-        }
-
-        mtar_header_t h;
-        while (mtar_read_header(&tar, &h) != MTAR_ENULLRECORD) {
-            size_t offset = tar.pos + 512 * sizeof(unsigned char);
-            tarIndex[h.name] = std::make_pair(offset, h.size);
-            mtar_next(&tar);
-        }
-
-        mtar_close(&tar);
-    }
-
     bool AssetManager::InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size) {
         switch (type) {
         case AssetType::Bundled: {
-            std::string filename = ASSETS_DIR + path;
-            if (std::filesystem::is_regular_file(filename)) {
-                stream.open(filename, std::ios::in | std::ios::binary);
+            // Allow modding the asset bundle by placing files in OVERRIDE_ASSETS_DIR
+            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) {
+                stream.open(OVERRIDE_ASSETS_DIR / path, std::ios::in | std::ios::binary);
+
+                if (stream) {
+                    if (size) {
+                        stream.seekg(0, std::ios::end);
+                        *size = stream.tellg();
+                        stream.seekg(0, std::ios::beg);
+                    }
+                    return true;
+                }
+            } else if (!bundleIndex.empty()) {
+                stream.open(assetsPath, std::ios::in | std::ios::binary);
+
+                if (stream && bundleIndex.count(path)) {
+                    auto indexData = bundleIndex[path];
+                    if (size) *size = indexData.second;
+                    stream.seekg(indexData.first, std::ios::beg);
+                    return true;
+                }
+            } else if (std::filesystem::is_regular_file(assetsPath / path)) {
+                stream.open(assetsPath / path, std::ios::in | std::ios::binary);
 
                 if (stream) {
                     if (size) {
@@ -110,17 +147,6 @@ namespace sp {
                     return true;
                 }
             }
-
-#ifdef SP_PACKAGE_RELEASE
-            stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
-
-            if (stream && tarIndex.count(path)) {
-                auto indexData = tarIndex[path];
-                if (size) *size = indexData.second;
-                stream.seekg(indexData.first, std::ios::beg);
-                return true;
-            }
-#endif
 
             return false;
         }
@@ -141,10 +167,10 @@ namespace sp {
     }
 
     bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream) {
-        std::filesystem::path p(ASSETS_DIR + path);
+        auto p = OVERRIDE_ASSETS_DIR / path;
         std::filesystem::create_directories(p.parent_path());
 
-        stream.open(ASSETS_DIR + path, std::ios::out | std::ios::binary);
+        stream.open(p, std::ios::out | std::ios::binary);
         return !!stream;
     }
 
@@ -180,32 +206,24 @@ namespace sp {
                 }
             });
             loadedAssets[type].Register(path, asset, true /* allowReplace */);
+            if (shutdown.load()) StartThread();
         }
 
         return asset;
     }
 
     std::string AssetManager::FindGltfByName(const std::string &name) {
-        std::string path;
-        std::error_code ec;
-        path = "models/" + name + "/" + name + ".glb";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-        path = "models/" + name + ".glb";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-        path = "models/" + name + "/" + name + ".gltf";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-        path = "models/" + name + ".gltf";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-#ifdef SP_PACKAGE_RELEASE
-        path = "models/" + name + "/" + name + ".glb";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + ".glb";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + "/" + name + ".gltf";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + ".gltf";
-        if (tarIndex.count(path) > 0) return path;
-#endif
+        const std::string pathOptions[] = {
+            "models/" + name + "/" + name + ".glb",
+            "models/" + name + ".glb",
+            "models/" + name + "/" + name + ".gltf",
+            "models/" + name + ".gltf",
+        };
+        for (const std::string &path : pathOptions) {
+            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) return path;
+            if (bundleIndex.count(path)) return path;
+            if (std::filesystem::is_regular_file(assetsPath / path)) return path;
+        }
         return "";
     }
 
@@ -243,6 +261,7 @@ namespace sp {
                     return std::make_shared<Gltf>(name, asset);
                 });
                 loadedGltfs.Register(name, gltf);
+                if (shutdown.load()) StartThread();
             }
         }
 
@@ -250,22 +269,16 @@ namespace sp {
     }
 
     std::string AssetManager::FindPhysicsByName(const std::string &name) {
-        std::string path;
-        std::error_code ec;
-        path = "models/" + name + "/" + name + ".physics.json";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-        path = "models/" + name + "/physics.json";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-        path = "models/" + name + ".physics.json";
-        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
-#ifdef SP_PACKAGE_RELEASE
-        path = "models/" + name + "/" + name + ".physics.json";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + "/physics.json";
-        if (tarIndex.count(path) > 0) return path;
-        path = "models/" + name + ".physics.json";
-        if (tarIndex.count(path) > 0) return path;
-#endif
+        const std::string pathOptions[] = {
+            "models/" + name + "/" + name + ".physics.json",
+            "models/" + name + "/physics.json",
+            "models/" + name + ".physics.json",
+        };
+        for (const std::string &path : pathOptions) {
+            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) return path;
+            if (bundleIndex.count(path)) return path;
+            if (std::filesystem::is_regular_file(assetsPath / path)) return path;
+        }
         return "";
     }
 

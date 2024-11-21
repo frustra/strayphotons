@@ -19,6 +19,7 @@ using namespace std;
 #include <cstdio>
 #include <cxxopts.hpp>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <strayphotons.h>
 #include <winit.rs.h>
@@ -40,17 +41,25 @@ using namespace sp;
 
 const int64_t MaxInputPollRate = 144;
 
-// TODO: Commented until package release saves a log file
-// #if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
-//     #define ARGC_NAME __argc
-//     #define ARGV_NAME __argv
-// int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
-// #else
-#define ARGC_NAME argc
-#define ARGV_NAME argv
-int main(int argc, char **argv)
-// #endif
-{
+#if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+    int argc = 0;
+    wchar_t **wargv = CommandLineToArgvW(pCmdLine, &argc);
+    std::vector<std::string> argStore(argc + 1);
+    std::vector<char *> argPtrs(argc + 1);
+    for (size_t i = 0; i < argc; i++) {
+        std::wstring tmp = wargv[i];
+        argStore[i + 1] = std::string(tmp.begin(), tmp.end());
+        argPtrs[i + 1] = argStore[i + 1].data();
+    }
+    // Windows does not include the executable name, so we need to prepend it for cxxopts to work.
+    argStore[0] = "sp-winit";
+    argPtrs[0] = argStore[0].data();
+    argc++;
+    char **argv = argPtrs.data();
+#else
+int main(int argc, char **argv) {
+#endif
 
 #ifdef _WIN32
     signal(SIGINT, sp::handleSignals);
@@ -62,13 +71,20 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &act, 0);
 #endif
 
-    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(ARGC_NAME, ARGV_NAME), [](sp_game_t *ctx) {
+    std::shared_ptr<std::remove_pointer_t<sp_game_t>> instance(sp_game_init(argc, argv), [](sp_game_t *ctx) {
         GameInstance = nullptr;
         if (ctx) sp_game_destroy(ctx);
     });
 
     GameInstance = instance.get();
     if (!GameInstance) return 1;
+
+#ifdef SP_PACKAGE_RELEASE
+    if (!sp_get_log_output_file()) {
+        std::ofstream("./strayphotons.log", std::ios::out | std::ios::trunc); // Clear log file
+        sp_set_log_output_file("./strayphotons.log");
+    }
+#endif
 
     GameGraphics = sp_game_get_graphics_context(GameInstance);
 

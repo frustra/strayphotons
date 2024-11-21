@@ -151,7 +151,7 @@ namespace sp::scripts {
                 ph.group = PhysicsGroup::HeldObject;
             }
 
-            bool newRenderOutline = !disabled && (!grabEntities.empty() || !pointEntities.empty());
+            bool newRenderOutline = enableInteraction && (!grabEntities.empty() || !pointEntities.empty());
             if (renderOutline != newRenderOutline) {
                 for (auto &e : lock.EntitiesWith<Renderable>()) {
                     if (!e.Has<TransformTree, Renderable>(lock)) continue;
@@ -172,6 +172,9 @@ namespace sp::scripts {
                 }
                 renderOutline = newRenderOutline;
             }
+
+            SignalRef(ent, "interact_holds").SetValue(lock, enableInteraction ? (double)grabEntities.size() : 0.0f);
+            SignalRef(ent, "interact_points").SetValue(lock, enableInteraction ? (double)pointEntities.size() : 0.0f);
         }
     };
     StructMetadata MetadataInteractiveObject(typeid(InteractiveObject),

@@ -18,7 +18,7 @@ namespace sp::xr {
 
     class InputBindings {
     public:
-        InputBindings(OpenVrSystem &vrSystem, std::string actionManifestPath);
+        InputBindings(OpenVrSystem &vrSystem);
         ~InputBindings();
 
         void Frame();
@@ -42,6 +42,7 @@ namespace sp::xr {
             ecs::EntityRef poseEntity;
             std::vector<ecs::EntityRef> boneEntities;
             std::vector<vr::BoneIndex_t> boneHierarchy;
+            ecs::EventQueueRef eventQueue;
             DataType type;
 
             Action() {}
@@ -59,5 +60,6 @@ namespace sp::xr {
         };
 
         std::vector<ActionSet> actionSets;
+        ecs::EntityRef outputEntity = ecs::Name("output", "haptics");
     };
 } // namespace sp::xr

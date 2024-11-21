@@ -87,6 +87,7 @@ Usage:
   strayphotons [OPTION...]
 
   -h, --help                    Display help
+  -a, --assets arg              Override path to assets folder
   -r, --run arg                 Load commands from a file an execute them in the console
   -s, --scene arg               Initial scene to load
       --size width height       Initial window size
@@ -108,6 +109,7 @@ Usage:
   sp-test [OPTION...] --run <script-file>
 
   -h, --help                    Display help
+  -a, --assets arg              Override path to assets folder
   -r, --run arg                 Load commands from a file an execute them in the console
   -s, --scene arg               Initial scene to load
       --size width height       Initial window size

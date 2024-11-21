@@ -15,6 +15,7 @@
 #include "ecs/Ecs.hh"
 
 #include <atomic>
+#include <filesystem>
 #include <future>
 #include <mutex>
 #include <robin_hood.h>
@@ -38,7 +39,11 @@ namespace sp {
     public:
         AssetManager();
         ~AssetManager();
+
+        void StartThread(std::string assetsPath = "");
         void Shutdown();
+
+        std::filesystem::path GetExternalPath(const std::string &path) const;
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);
@@ -55,9 +60,11 @@ namespace sp {
     private:
         void Frame() override;
 
-        void UpdateTarIndex();
+        void UpdateBundleIndex();
         std::string FindGltfByName(const std::string &name);
         std::string FindPhysicsByName(const std::string &name);
+
+        std::filesystem::path assetsPath;
 
         std::atomic_bool shutdown;
         DispatchQueue workQueue;
@@ -75,7 +82,7 @@ namespace sp {
         std::mutex externalGltfMutex;
         robin_hood::unordered_flat_map<std::string, std::string> externalGltfPaths;
 
-        robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
+        robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> bundleIndex;
     };
 
     AssetManager &Assets();

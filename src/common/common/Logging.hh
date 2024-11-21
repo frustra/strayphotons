@@ -70,6 +70,12 @@ namespace sp::logging {
     inline void SetLogLevel(Level level) {
         sp_set_log_level(level);
     }
+    inline const char *GetLogOutputFile() {
+        return sp_get_log_output_file();
+    }
+    inline void SetLogOutputFile(const char *filePath) {
+        sp_set_log_output_file(filePath);
+    }
     inline void GlobalLogOutput(Level level, const string &message) {
         sp_log_message(level, message.c_str());
     }
@@ -78,6 +84,8 @@ namespace sp::logging {
     float LogTime_static();
     Level GetLogLevel_static();
     void SetLogLevel_static(Level level);
+    const char *GetLogOutputFile_static();
+    void SetLogOutputFile_static(const char *filePath);
     void GlobalLogOutput_static(Level level, const string &message);
 
     // time in seconds
@@ -89,6 +97,12 @@ namespace sp::logging {
     }
     inline void SetLogLevel(Level level) {
         SetLogLevel_static(level);
+    }
+    inline const char *GetLogOutputFile() {
+        return GetLogOutputFile_static();
+    }
+    inline void SetLogOutputFile(const char *filePath) {
+        SetLogOutputFile_static(filePath);
     }
     inline void GlobalLogOutput(Level level, const string &message) {
         GlobalLogOutput_static(level, message);
@@ -126,8 +140,10 @@ namespace sp::logging {
     template<typename... T>
     inline static void writeFormatter(Level lvl, const std::string &fmt, T &&...t) {
         int size = std::snprintf(nullptr, 0, fmt.c_str(), std::forward<T>(t)...);
+        // snprintf writes N + 1 bytes with null terminator
         std::string buf(size + 1, '\0');
         std::snprintf(buf.data(), size + 1, fmt.c_str(), std::forward<T>(t)...);
+        buf.resize(size); // Remove unnecessary null terminator
 
         TracyMessage(buf.data(), size);
         GlobalLogOutput(lvl, buf);
