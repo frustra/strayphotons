@@ -125,8 +125,13 @@ void main() {
     vec3 indirectDiffuse = value.rgb;
 
     vec3 directDiffuseColor = baseColor * (1 - metalness);
-    vec3 directLight =
-        DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
+    vec3 directLight = DirectShading(worldPosition,
+        -rayDir,
+        baseColor,
+        worldNormal,
+        flatWorldNormal,
+        roughness,
+        metalness);
 
     vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
     vec3 totalLight = emissive + directLight + indirectLight;

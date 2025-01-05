@@ -153,8 +153,8 @@ namespace sp {
             });
 
         funcs.Register("printevents", "Print out the current state of event queues", []() {
-            auto lock =
-                ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventInput, ecs::EventBindings>>();
+            auto lock = ecs::StartTransaction<
+                ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventInput, ecs::EventBindings>>();
 
             for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
                 Logf("Event input %s:", ecs::ToString(lock, ent));

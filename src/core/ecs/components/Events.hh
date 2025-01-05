@@ -22,8 +22,8 @@
 namespace ecs {
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
-    using SendEventsLock =
-        Lock<Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
+    using SendEventsLock = Lock<
+        Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
 
     struct EventInput {
         EventInput() {}

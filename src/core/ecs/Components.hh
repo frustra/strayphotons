@@ -31,8 +31,8 @@ namespace ecs {
     template<typename>
     class Component;
 
-    using PhysicsWriteLock =
-        Lock<Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
+    using PhysicsWriteLock = Lock<
+        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
     class ComponentBase {
     public:
