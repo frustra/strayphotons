@@ -124,9 +124,10 @@ namespace ecs {
         }
     };
 
-    static StructMetadata MetadataTransformSnapshot(typeid(TransformSnapshot),
-        "TransformSnapshot",
-        R"(
+    static Component<TransformSnapshot> ComponentTransformSnapshot(
+        {typeid(TransformSnapshot),
+            "TransformSnapshot",
+            R"(
 Transform snapshots should not be set directly.
 They are automatically generated for all entities with a `transform` component, and updated by the physics system.
 
@@ -137,8 +138,8 @@ Transform snapshots are used by the render thread for drawing entities in a phys
 while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
 )",
-        StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave));
-    static Component<TransformSnapshot> ComponentTransformSnapshot(MetadataTransformSnapshot, "transform_snapshot");
+            StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave)},
+        "transform_snapshot");
 
     struct TransformTree {
         Transform pose;
@@ -160,9 +161,10 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
     };
 
-    static StructMetadata MetadataTransformTree(typeid(TransformTree),
-        "TransformTree",
-        R"(
+    static Component<TransformTree> ComponentTransformTree(
+        {typeid(TransformTree),
+            "TransformTree",
+            R"(
 Transforms are performed in the following order:  
 `scale -> rotate -> translate ( -> parent transform)`
 
@@ -171,13 +173,13 @@ Multiple entities with transforms can be linked together to create a tree of ent
 Note: When combining multiple transformations together with scaling factors,
 behavior is undefined if the combinations introduce skew. (The scale should be axis-aligned to the model)
 )",
-        StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
-        StructField::New("parent",
-            "Specifies a parent entity that this transform is relative to. "
-            "If empty, the transform is relative to the scene root.",
-            &TransformTree::parent,
-            ~FieldAction::AutoApply));
-    static Component<TransformTree> ComponentTransformTree(MetadataTransformTree, "transform");
+            StructField::New(&TransformTree::pose, ~FieldAction::AutoApply),
+            StructField::New("parent",
+                "Specifies a parent entity that this transform is relative to. "
+                "If empty, the transform is relative to the scene root.",
+                &TransformTree::parent,
+                ~FieldAction::AutoApply)},
+        "transform");
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);
     template<>

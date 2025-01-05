@@ -96,7 +96,7 @@ namespace ecs {
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };
 
-    static StructMetadata MetadataSignalOutput(typeid(SignalOutput),
+    static Component<SignalOutput> ComponentSignalOutput({typeid(SignalOutput),
         "signal_output",
         R"(
 The `signal_output` component stores a list of mutable signal values by name.  
@@ -118,12 +118,11 @@ Signal output components can have their initial values defined like this:
 ```
 In the above case, setting the "other" output signal to `0.0` will override any `signal_bindings` named "other".
 )",
-        StructField::New(&SignalOutput::signals, ~FieldAction::AutoApply));
-    static Component<SignalOutput> ComponentSignalOutput(MetadataSignalOutput);
+        StructField::New(&SignalOutput::signals, ~FieldAction::AutoApply)});
     template<>
     void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget);
 
-    static StructMetadata MetadataSignalBindings(typeid(SignalBindings),
+    static Component<SignalBindings> ComponentSignalBindings({typeid(SignalBindings),
         "signal_bindings",
         R"(
 A signal binding is a read-only signal who's value is determined by a [SignalExpression](#signalexpression-type). 
@@ -168,8 +167,7 @@ Extra multipliers could also be added to adjust joystick senstiivity, movement s
 
 For binding state associated with a time, [`event_bindings`](#event_bindings-component) are used instead of signals.
 )",
-        StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply));
-    static Component<SignalBindings> ComponentSignalBindings(MetadataSignalBindings);
+        StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply)});
     template<>
     void Component<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget);
 } // namespace ecs

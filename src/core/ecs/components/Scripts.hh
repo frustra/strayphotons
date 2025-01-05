@@ -116,11 +116,9 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
         std::vector<ScriptInstance> scripts;
     };
 
-    static StructMetadata MetadataScripts(typeid(Scripts),
-        "Scripts",
-        "",
-        StructField::New(&Scripts::scripts, ~FieldAction::AutoApply));
-    static Component<Scripts> ComponentScripts(MetadataScripts, "script");
+    static Component<Scripts> ComponentScripts(
+        {typeid(Scripts), "Scripts", "", StructField::New(&Scripts::scripts, ~FieldAction::AutoApply)},
+        "script");
 
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);

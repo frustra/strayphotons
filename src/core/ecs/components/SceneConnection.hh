@@ -25,7 +25,7 @@ namespace ecs {
         }
     };
 
-    static StructMetadata MetadataSceneConnection(typeid(SceneConnection),
+    static Component<SceneConnection> ComponentSceneConnection({typeid(SceneConnection),
         "scene_connection",
         R"(
 The scene connection component has 2 functions:
@@ -34,8 +34,7 @@ The scene connection component has 2 functions:
 - If the scene connection entity also has a [`transform` Component](#transform-component), any scene being loaded
   with a matching `scene_connection` entity will have all its entities moved so that the connection points align.
 )",
-        StructField::New(&SceneConnection::scenes, ~FieldAction::AutoApply));
-    static Component<SceneConnection> ComponentSceneConnection(MetadataSceneConnection);
+        StructField::New(&SceneConnection::scenes, ~FieldAction::AutoApply)});
 
     template<>
     void Component<SceneConnection>::Apply(SceneConnection &dst, const SceneConnection &src, bool liveTarget);

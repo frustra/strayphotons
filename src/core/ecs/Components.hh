@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Name.hh"
@@ -34,9 +35,9 @@ namespace ecs {
     using PhysicsWriteLock = Lock<
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
-    class ComponentBase {
+    class ComponentBase : public sp::NonMoveable {
     public:
-        ComponentBase(const char *name, const StructMetadata &metadata) : name(name), metadata(metadata) {}
+        ComponentBase(const char *name, StructMetadata &&metadata) : name(name), metadata(std::move(metadata)) {}
 
         virtual bool LoadEntity(FlatEntity &dst, const picojson::value &src) const = 0;
         virtual void SaveEntity(const Lock<ReadAll> &lock,
@@ -65,8 +66,8 @@ namespace ecs {
             return *static_cast<const T *>(dynamic_cast<const Component<T> *>(this)->GetStagingDefault());
         }
 
-        const char *name;
-        const StructMetadata &metadata;
+        std::string name;
+        StructMetadata metadata;
     };
 
     void RegisterComponent(const char *name, const std::type_index &idx, ComponentBase *comp);
@@ -100,8 +101,8 @@ namespace ecs {
         }
 
     public:
-        Component(const StructMetadata &metadata, const char *name)
-            : ComponentBase(name, metadata), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
+        Component(StructMetadata &&metadata, const char *name)
+            : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
             auto existing = dynamic_cast<const Component<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
@@ -110,7 +111,7 @@ namespace ecs {
             }
         }
 
-        Component(const StructMetadata &metadata) : Component(metadata, metadata.name.c_str()) {}
+        Component(StructMetadata &&metadata) : Component(std::move(metadata), metadata.name.c_str()) {}
 
         bool LoadFields(CompType &dst, const picojson::value &src) const {
             for (auto &field : metadata.fields) {
@@ -208,7 +209,7 @@ namespace ecs {
         }
 
         bool operator==(const Component<CompType> &other) const {
-            return strcmp(name, other.name) == 0;
+            return name == other.name && metadata == other.metadata;
         }
 
         bool operator!=(const Component<CompType> &other) const {
@@ -222,12 +223,10 @@ namespace ecs {
     };
 
     // Define these special components here to solve circular includes
-    static StructMetadata MetadataName(typeid(Name), "Name", DocsDescriptionName);
-    static Component<Name> ComponentName(MetadataName, "name");
-    static StructMetadata MetadataSceneInfo(typeid(SceneInfo),
+    static Component<Name> ComponentName({typeid(Name), "Name", DocsDescriptionName}, "name");
+    static Component<SceneInfo> ComponentSceneInfo({typeid(SceneInfo),
         "SceneInfo",
-        "This is an internal component storing each entity's source scene and other creation info.");
-    static Component<SceneInfo> ComponentSceneInfo(MetadataSceneInfo);
+        "This is an internal component storing each entity's source scene and other creation info."});
 
     static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef", DocsDescriptionEntityRef);
 }; // namespace ecs

@@ -178,9 +178,9 @@ struct MarkdownContext {
                 static const auto entries = magic_enum::enum_entries<T>();
                 for (auto &[enumValue, enumName] : entries) {
                     const char *description = "No description";
-                    if (metadata && metadata->enumMap) {
-                        auto it = metadata->enumMap->find((uint32_t)enumValue);
-                        if (it != metadata->enumMap->end()) {
+                    if (metadata) {
+                        auto it = metadata->enumMap.find((uint32_t)enumValue);
+                        if (it != metadata->enumMap.end()) {
                             description = it->second.c_str();
                         }
                     }

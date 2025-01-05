@@ -175,7 +175,7 @@ namespace ecs {
         void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
     };
 
-    class StructMetadata {
+    class StructMetadata : public sp::NonCopyable {
     public:
         using EnumDescriptions = std::map<uint32_t, std::string>;
 
@@ -185,7 +185,7 @@ namespace ecs {
             (
                 [&] {
                     using FieldT = std::decay_t<Fields>;
-                    if constexpr (std::is_same_v<FieldT, const EnumDescriptions *>) {
+                    if constexpr (std::is_same_v<FieldT, EnumDescriptions>) {
                         enumMap = fields;
                     } else {
                         this->fields.emplace_back(fields);
@@ -195,6 +195,12 @@ namespace ecs {
             for (size_t i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
             }
+            Register(type, this);
+        }
+
+        StructMetadata(const StructMetadata &&other)
+            : type(other.type), name(other.name), description(other.description), fields(other.fields),
+              enumMap(other.enumMap) {
             Register(type, this);
         }
 
@@ -211,7 +217,7 @@ namespace ecs {
         const std::string name;
         const std::string description;
         std::vector<StructField> fields;
-        const EnumDescriptions *enumMap = nullptr;
+        EnumDescriptions enumMap;
 
         // === The following functions are meant to specialized by individual structs
 
@@ -239,6 +245,11 @@ namespace ecs {
         template<typename T>
         static void Save(const EntityScope &scope, picojson::value &dst, const T &src, const T *def) {
             // Custom field serialization is always called, default to no-op.
+        }
+
+        bool operator==(const StructMetadata &other) const {
+            return type == other.type && name == other.name && description == other.description &&
+                   fields == other.fields && enumMap == other.enumMap;
         }
 
     private:

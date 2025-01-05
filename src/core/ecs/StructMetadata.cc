@@ -27,7 +27,7 @@ namespace ecs {
 
     void StructMetadata::Register(const std::type_index &idx, const StructMetadata *comp) {
         if (metadataTypeMap == nullptr) metadataTypeMap = new MetadataTypeMap();
-        metadataTypeMap->emplace(idx, comp);
+        metadataTypeMap->insert_or_assign(idx, comp);
     }
 
     template<typename, typename>

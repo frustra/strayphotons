@@ -44,14 +44,13 @@ namespace ecs {
         robin_hood::unordered_map<std::string, std::vector<EventQueueRef>> events;
     };
 
-    static StructMetadata MetadataEventInput(typeid(EventInput), "event_input", R"(
+    static Component<EventInput> ComponentEventInput({typeid(EventInput), "event_input", R"(
 For an entity to receive events (not just forward them), it must have an `event_input` component.  
 This component stores a list of event queues that have been registered to receive events on a per-entity basis.
 
 No configuration is stored for the `event_input` component. Scripts and other systems programmatically register 
 their own event queues as needed.
-)");
-    static Component<EventInput> ComponentEventInput(MetadataEventInput);
+)"});
 
     struct EventDest {
         EntityRef target;
@@ -157,7 +156,7 @@ their own event queues as needed.
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
 
-    static StructMetadata MetadataEventBindings(typeid(EventBindings),
+    static Component<EventBindings> ComponentEventBindings({typeid(EventBindings),
         "event_bindings",
         R"(
 Event bindings, along with [`signal_bindings`](#signal_bindings-component), are the main ways entites 
@@ -201,8 +200,7 @@ and will only forward key down events (true data values).
 The event data is then replaced with the string `"togglesignal player:player/move_noclip"`, and forwarded to the `console:input` entity
 as the `/action/run_command` event. Upon receiving this event, the `console:input` entity will execute the provided string in the console.
 )",
-        StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave));
-    static Component<EventBindings> ComponentEventBindings(MetadataEventBindings);
+        StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave)});
     template<>
     bool StructMetadata::Load<EventBindings>(EventBindings &dst, const picojson::value &src);
     template<>

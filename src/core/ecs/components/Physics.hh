@@ -33,30 +33,29 @@ namespace ecs {
         PlayerRightHand,
         UserInterface,
     };
-    static const StructMetadata::EnumDescriptions DocsEnumPhysicsGroup = {
-        {(uint32_t)PhysicsGroup::NoClip, "Actors in this collision group will not collide with anything."},
-        {(uint32_t)PhysicsGroup::World,
-            "This is the default collision group. All actors in this group will collide with eachother."},
-        {(uint32_t)PhysicsGroup::Interactive,
-            "This group behaves like `World` but allows behavior to be customized for movable objects."},
-        {(uint32_t)PhysicsGroup::HeldObject,
-            "Held objects do not collide with the player, "
-            "but will collide with other held objects and the rest of the world."},
-        {(uint32_t)PhysicsGroup::Player,
-            "This group is for the player's body, which collides with the world, "
-            "but not other objects in any of the player groups."},
-        {(uint32_t)PhysicsGroup::PlayerLeftHand,
-            "The player's left hand collides with the right hand, but not itself or the player's body."},
-        {(uint32_t)PhysicsGroup::PlayerRightHand,
-            "The player's right hand collides with the left hand, but not itself or the player's body."},
-        {(uint32_t)PhysicsGroup::UserInterface,
-            "This collision group is for popup UI elements that will only collide with the player's hands."},
-    };
     static const StructMetadata MetadataPhysicsGroup(typeid(PhysicsGroup),
         "PhysicsGroup",
         "An actor's physics group determines both what it will collide with in the physics simulation, "
         "and which physics queries it is visible to.",
-        &DocsEnumPhysicsGroup);
+        StructMetadata::EnumDescriptions{
+            {(uint32_t)PhysicsGroup::NoClip, "Actors in this collision group will not collide with anything."},
+            {(uint32_t)PhysicsGroup::World,
+                "This is the default collision group. All actors in this group will collide with eachother."},
+            {(uint32_t)PhysicsGroup::Interactive,
+                "This group behaves like `World` but allows behavior to be customized for movable objects."},
+            {(uint32_t)PhysicsGroup::HeldObject,
+                "Held objects do not collide with the player, "
+                "but will collide with other held objects and the rest of the world."},
+            {(uint32_t)PhysicsGroup::Player,
+                "This group is for the player's body, which collides with the world, "
+                "but not other objects in any of the player groups."},
+            {(uint32_t)PhysicsGroup::PlayerLeftHand,
+                "The player's left hand collides with the right hand, but not itself or the player's body."},
+            {(uint32_t)PhysicsGroup::PlayerRightHand,
+                "The player's right hand collides with the left hand, but not itself or the player's body."},
+            {(uint32_t)PhysicsGroup::UserInterface,
+                "This collision group is for popup UI elements that will only collide with the player's hands."},
+        });
 
     enum PhysicsGroupMask {
         PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
@@ -203,21 +202,20 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         Kinematic,
         SubActor,
     };
-    static const StructMetadata::EnumDescriptions DocsEnumPhysicsActorType = {
-        {(uint32_t)PhysicsActorType::Static,
-            "The physics actor will not move. Used for walls, floors, and other static objects."},
-        {(uint32_t)PhysicsActorType::Dynamic, "The physics actor has a mass and is affected by gravity."},
-        {(uint32_t)PhysicsActorType::Kinematic,
-            "The physics actor has infinite mass and is controlled by script or animation."},
-        {(uint32_t)PhysicsActorType::SubActor,
-            "The shapes defined on this virtual physics actor are added to the parent physics actor instead."},
-    };
     static const StructMetadata MetadataPhysicsActorType(typeid(PhysicsActorType),
         "PhysicsActorType",
         "A physics actor's type determines how it behaves in the world. The type should match the intended usage of an "
         "object. Dynamic actor's positions are taken over by the physics system, but scripts may still control these "
         "actors with physics joints or force-based constraints.",
-        &DocsEnumPhysicsActorType);
+        StructMetadata::EnumDescriptions{
+            {(uint32_t)PhysicsActorType::Static,
+                "The physics actor will not move. Used for walls, floors, and other static objects."},
+            {(uint32_t)PhysicsActorType::Dynamic, "The physics actor has a mass and is affected by gravity."},
+            {(uint32_t)PhysicsActorType::Kinematic,
+                "The physics actor has infinite mass and is controlled by script or animation."},
+            {(uint32_t)PhysicsActorType::SubActor,
+                "The shapes defined on this virtual physics actor are added to the parent physics actor instead."},
+        });
 
     struct Physics {
         Physics() {}
@@ -241,7 +239,7 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         glm::vec3 constantForce;
     };
 
-    static StructMetadata MetadataPhysics(typeid(Physics),
+    static Component<Physics> ComponentPhysics({typeid(Physics),
         "physics",
         "",
         StructField::New("shapes",
@@ -278,6 +276,5 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         StructField::New("constant_force",
             "A vector defining a constant force (in Newtons, N) that should be applied to the actor. "
             "The force vector is applied relative to the actor at its center of mass.",
-            &Physics::constantForce));
-    static Component<Physics> ComponentPhysics(MetadataPhysics);
+            &Physics::constantForce)});
 } // namespace ecs

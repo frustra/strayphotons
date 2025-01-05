@@ -143,6 +143,25 @@
             }
         },
         {
+            "name": "StrayPhotons Hull Compiler (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/hull_compiler",
+            "args": ["--assets", "../assets/", "box"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "StrayPhotons Docs Generator (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
@@ -152,6 +171,25 @@
             "cwd": "${workspaceFolder}/docs/generated/",
             "environment": [],
             "console": "integratedTerminal",
+        },
+        {
+            "name": "StrayPhotons Docs Generator (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/docs_generator",
+            "args": ["."],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/docs/generated/",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         },
         {
             "name": "StrayPhotons Scene Formatter (vsdbg)",
