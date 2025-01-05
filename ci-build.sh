@@ -147,7 +147,9 @@ fi
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Uploading package release :arrow_up:"
     mkdir -p StrayPhotons
-    mv openvr_api.dll actions.json sp.dll sp.pdb sp-vk.exe sp-vk.pdb sp-winit.exe sp-winit.pdb scripts StrayPhotons/
+    mv sp.dll sp.pdb sp-vk.exe StrayPhotons/
+    mv sp-vk.pdb sp-winit.exe sp-winit.pdb scripts StrayPhotons/
+    mv openvr_api.dll actions.json sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json StrayPhotons/
     zip -r StrayPhotons.zip StrayPhotons
     buildkite-agent artifact upload "assets.spdata"
     buildkite-agent artifact upload "StrayPhotons.zip"
