@@ -146,12 +146,13 @@ fi
 
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Uploading package release :arrow_up:"
+    mkdir -p StrayPhotons
+    mv sp.dll sp.pdb sp-vk.exe StrayPhotons/
+    mv sp-vk.pdb sp-winit.exe sp-winit.pdb scripts StrayPhotons/
+    mv openvr_api.dll actions.json sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json StrayPhotons/
+    zip -r StrayPhotons.zip StrayPhotons
     buildkite-agent artifact upload "assets.spdata"
-    buildkite-agent artifact upload "openvr_api.dll"
-    buildkite-agent artifact upload "actions.json"
-    buildkite-agent artifact upload "sp-vk.exe"
-    buildkite-agent artifact upload "sp-vk.pdb"
-    buildkite-agent artifact upload "scripts/*"
+    buildkite-agent artifact upload "StrayPhotons.zip"
 elif [ -n "$BUILDKITE_API_TOKEN" ]; then
     echo -e "--- Comparing screenshots :camera_with_flash:"
     ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
