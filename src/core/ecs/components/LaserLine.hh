@@ -34,15 +34,14 @@ namespace ecs {
         float radius = 0.003; // in world units
     };
 
-    static StructMetadata MetadataLaserLine(typeid(LaserLine),
+    static Component<LaserLine> ComponentLaserLine({typeid(LaserLine),
         "laser_line",
         "",
         StructField::New("intensity", &LaserLine::intensity),
         StructField::New("media_density", &LaserLine::mediaDensityFactor),
         StructField::New("on", &LaserLine::on),
         StructField::New("relative", &LaserLine::relative),
-        StructField::New("radius", &LaserLine::radius));
-    static Component<LaserLine> ComponentLaserLine(MetadataLaserLine);
+        StructField::New("radius", &LaserLine::radius)});
 
     template<>
     void StructMetadata::InitUndefined<LaserLine>(LaserLine &dst);

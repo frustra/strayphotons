@@ -15,10 +15,9 @@ namespace ecs {
         glm::vec3 luminanceScale = glm::vec3(1);
     };
 
-    static StructMetadata MetadataScreen(typeid(Screen),
+    static Component<Screen> ComponentScreen({typeid(Screen),
         "screen",
         "",
         StructField::New("target", &Screen::textureName),
-        StructField::New("luminance", &Screen::luminanceScale));
-    static Component<Screen> ComponentScreen(MetadataScreen);
+        StructField::New("luminance", &Screen::luminanceScale)});
 } // namespace ecs

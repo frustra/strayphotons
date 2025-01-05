@@ -22,7 +22,7 @@ foreach(asset_line ${asset_list})
         list(GET asset_split 0 asset_md5)
         list(GET asset_split 1 asset_url)
         list(GET asset_split 2 asset_path)
-        
+
         if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}")
             message(STATUS "Downloading: ${asset_path} from ${asset_url}")
         endif()
@@ -56,7 +56,7 @@ if(SP_PACKAGE_RELEASE)
     file(GLOB_RECURSE _font_assets_full "fonts/*.ttf")
     file(GLOB_RECURSE _physics_json_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}" CONFIGURE_DEPENDS "models/*physics.json")
     file(GLOB_RECURSE _physics_json_assets_full "models/*physics.json")
-    
+
     foreach(SHADER IN LISTS SHADER_FILES)
         string(REPLACE ${PROJECT_ROOT_DIR}/shaders/ "" SHADER_FILE ${SHADER})
         string(REPLACE "vulkan/" "" OUTPUT_NAME ${SHADER_FILE})

@@ -22,6 +22,6 @@ IncludeBlocks: Regroup
 BinPackArguments: false
 BinPackParameters: false
 PenaltyReturnTypeOnItsOwnLine: 1000
-PenaltyBreakAssignment: 200
+PenaltyBreakAssignment: 500
 PenaltyBreakBeforeFirstCallParameter: 0
 SpaceAfterTemplateKeyword: false

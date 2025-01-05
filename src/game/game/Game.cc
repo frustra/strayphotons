@@ -47,6 +47,10 @@ namespace sp {
             lock.Set<ecs::Signals>();
         }
 
+        std::string assetsPath = "";
+        if (options.count("assets")) assetsPath = options["assets"].as<std::string>();
+        sp::Assets().StartThread(assetsPath);
+
         if (options.count("command")) {
             for (auto &cmdline : options["command"].as<vector<string>>()) {
                 GetConsoleManager().ParseAndExecute(cmdline);

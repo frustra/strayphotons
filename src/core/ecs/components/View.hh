@@ -59,15 +59,14 @@ namespace ecs {
         glm::mat4 viewMat, invViewMat;
     };
 
-    static StructMetadata MetadataView(typeid(View),
+    static Component<View> ComponentView({typeid(View),
         "view",
         "",
         StructField::New("offset", &View::offset),
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),
         StructField::New("clip", &View::clip),
-        StructField::New("visibility_mask", &View::visibilityMask));
-    static Component<View> ComponentView(MetadataView);
+        StructField::New("visibility_mask", &View::visibilityMask)});
 
     template<>
     void Component<View>::Apply(View &dst, const View &src, bool liveTarget);

@@ -31,6 +31,13 @@
 			}
 		},
 		{
+			"name": "pointer",
+			"transform": {
+				"parent": "right_hand",
+				"translate": [0, 0, -0.05]
+			}
+		},
+		{
 			"name": "left_hand",
 			"transform": {
 				"parent": "input:vr_actions_main_in_lefthand"
@@ -96,7 +103,10 @@
 						"torque_limit": 15.0
 					}
 				}
-			]
+			],
+			"event_bindings": {
+				"/physics/collision/force_found": "output:haptics/actions/main/out/lefthand_touch"
+			}
 		},
 		{
 			"name": "right_hand_skeleton",
@@ -132,7 +142,10 @@
 						"torque_limit": 15.0
 					}
 				}
-			]
+			],
+			"event_bindings": {
+				"/physics/collision/force_found": "output:haptics/actions/main/out/righthand_touch"
+			}
 		},
 		{
 			"name": "laser_pointer",

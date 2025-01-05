@@ -138,6 +138,5 @@ namespace ecs {
         }
     };
 
-    static StructMetadata MetadataPhysicsQuery(typeid(PhysicsQuery), "physics_query", "");
-    static Component<PhysicsQuery> ComponentPhysicsQuery(MetadataPhysicsQuery);
+    static Component<PhysicsQuery> ComponentPhysicsQuery({typeid(PhysicsQuery), "physics_query", ""});
 } // namespace ecs

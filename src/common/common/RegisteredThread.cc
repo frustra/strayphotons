@@ -44,6 +44,7 @@ namespace sp {
 
         thread = std::thread([this] {
             tracy::SetThreadName(threadName.c_str());
+            Tracef("RegisteredThread Started %s", threadName);
             Defer exit([this] {
                 ThreadState current = state;
                 if (current == ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Stopped)) {

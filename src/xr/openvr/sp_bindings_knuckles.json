@@ -4,6 +4,16 @@
    "app_key" : "system.generated.sp-vk.exe",
    "bindings" : {
       "/actions/main" : {
+         "haptics" : [
+            {
+               "output" : "/actions/main/out/lefthand_touch",
+               "path" : "/user/hand/left/output/haptic"
+            },
+            {
+               "output" : "/actions/main/out/righthand_touch",
+               "path" : "/user/hand/right/output/haptic"
+            }
+         ],
          "poses" : [
             {
                "output" : "/actions/main/in/righthand",
@@ -81,24 +91,6 @@
             {
                "inputs" : {
                   "held" : {
-                     "output" : "/actions/main/in/grab"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/left/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "held" : {
-                     "output" : "/actions/main/in/grab"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/right/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "held" : {
                      "output" : "/actions/main/in/press"
                   }
                },
@@ -113,6 +105,15 @@
                },
                "mode" : "button",
                "path" : "/user/hand/right/input/a"
+            },
+            {
+               "inputs" : {
+                  "held" : {
+                     "output" : "/actions/main/in/flashlight"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/b"
             },
             {
                "inputs" : {

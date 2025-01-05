@@ -501,7 +501,7 @@ namespace sp {
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     if (!target.Has<T>(live)) return;
                     auto &liveComp = target.Get<T>(live);
-                    auto comp = ecs::LookupComponent<T>();
+                    auto &comp = ecs::LookupComponent<T>();
 
                     T compareComp = {};
                     auto &existingComp = std::get<std::shared_ptr<T>>(flatParentEntity);

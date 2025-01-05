@@ -56,10 +56,32 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "character",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                // Create Pointer entity which automatically points to the active player mode
+                auto pointerEnt = scene->NewSystemEntity(lock, scene, entities::Pointer.Name());
+                auto &pointerTree = pointerEnt.Set<ecs::TransformTree>(lock);
+                pointerTree.parent = entities::FlatHead;
+                auto &pointerScripts = pointerEnt.Set<ecs::Scripts>(lock);
+                pointerScripts.AddOnTick(ecs::Name(scene->data->name, ""),
+                    [](ecs::ScriptState &state,
+                        ecs::Lock<ecs::WriteAll> lock,
+                        ecs::Entity ent,
+                        chrono_clock::duration interval) {
+                        if (!ent.Has<ecs::TransformTree>(lock)) return;
+                        auto &tree = ent.Get<ecs::TransformTree>(lock);
+
+                        ecs::Entity vrPointer = entities::VrPointer.Get(lock);
+                        ecs::Entity flathead = entities::FlatHead.Get(lock);
+                        if (vrPointer.Has<ecs::TransformTree>(lock) && vrPointer.Get<ecs::TransformTree>(lock).parent) {
+                            tree.parent = vrPointer;
+                        } else {
+                            tree.parent = flathead;
+                        }
+                    });
+
                 // Create Head entity which automatically points to the active player mode
                 auto headEnt = scene->NewSystemEntity(lock, scene, entities::Head.Name());
                 auto &headTree = headEnt.Set<ecs::TransformTree>(lock);
-                headTree.parent = entities::Flatview;
+                headTree.parent = entities::FlatHead;
                 auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
                 headScripts.AddOnTick(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
@@ -70,11 +92,11 @@ namespace sp {
                         auto &tree = ent.Get<ecs::TransformTree>(lock);
 
                         ecs::Entity hmd = entities::VrHmd.Get(lock);
-                        ecs::Entity flatview = entities::Flatview.Get(lock);
+                        ecs::Entity flathead = entities::FlatHead.Get(lock);
                         if (hmd.Has<ecs::TransformTree>(lock) && hmd.Get<ecs::TransformTree>(lock).parent) {
                             tree.parent = hmd;
                         } else {
-                            tree.parent = flatview;
+                            tree.parent = flathead;
                         }
                     });
 

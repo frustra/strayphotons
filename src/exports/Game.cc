@@ -12,6 +12,7 @@
 
 #include <cxxopts.hpp>
 #include <filesystem>
+#include <fstream>
 #include <strayphotons.h>
 
 SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
@@ -27,6 +28,7 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
         // clang-format off
         options.add_options()
             ("h,help", "Display help")
+            ("a,assets", "Override path to assets folder", value<string>())
             ("r,run", "Load commands from a file an execute them in the console", value<string>())
             ("s,scene", "Initial scene to load", value<string>())
             ("size", "Initial window size", value<string>())
@@ -34,7 +36,8 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
             ("headless", "Disable window creation and graphics initialization")
             ("with-validation-layers", "Enable Vulkan validation layers")
             ("c,command", "Run a console command on init", value<vector<string>>())
-            ("v,verbose", "Enable debug logging");
+            ("v,verbose", "Enable debug logging")
+            ("log", "Set the path to the log output file", value<string>());
         // clang-format on
 
         auto optionsResult = options.parse(argc, argv);
@@ -43,6 +46,12 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
             sp::logging::SetLogLevel(sp::logging::Level::Debug);
         } else {
             sp::logging::SetLogLevel(sp::logging::Level::Log);
+        }
+
+        if (optionsResult.count("log")) {
+            auto outputPath = optionsResult["log"].as<string>();
+            std::ofstream(outputPath, std::ios::out | std::ios::trunc); // Clear log file
+            sp::logging::SetLogOutputFile(outputPath.c_str());
         }
 
         if (optionsResult.count("help")) {

@@ -33,9 +33,8 @@ namespace ecs {
         physx::PxCapsuleController *pxController = nullptr;
     };
 
-    static StructMetadata MetadataCharacterController(typeid(CharacterController),
+    static Component<CharacterController> ComponentCharacterController({typeid(CharacterController),
         "character_controller",
         "",
-        StructField::New("head", &CharacterController::head));
-    static Component<CharacterController> ComponenCharacterController(MetadataCharacterController);
+        StructField::New("head", &CharacterController::head)});
 } // namespace ecs

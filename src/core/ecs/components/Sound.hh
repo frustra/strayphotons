@@ -56,11 +56,8 @@ namespace ecs {
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static StructMetadata MetadataAudio(typeid(Audio),
-        "audio",
-        "",
-        StructField::New(&Audio::sounds, ~FieldAction::AutoApply));
-    static Component<Audio> ComponentAudio(MetadataAudio);
+    static Component<Audio> ComponentAudio(
+        {typeid(Audio), "audio", "", StructField::New(&Audio::sounds, ~FieldAction::AutoApply)});
 
     template<>
     void Component<Audio>::Apply(Audio &dst, const Audio &src, bool liveTarget);

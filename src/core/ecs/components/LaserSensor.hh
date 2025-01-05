@@ -20,9 +20,6 @@ namespace ecs {
         glm::vec3 illuminance;
     };
 
-    static StructMetadata MetadataLaserSensor(typeid(LaserSensor),
-        "laser_sensor",
-        "",
-        StructField::New("threshold", &LaserSensor::threshold));
-    static Component<LaserSensor> ComponentLaserSensor(MetadataLaserSensor);
+    static Component<LaserSensor> ComponentLaserSensor(
+        {typeid(LaserSensor), "laser_sensor", "", StructField::New("threshold", &LaserSensor::threshold)});
 } // namespace ecs

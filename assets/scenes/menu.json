@@ -484,6 +484,21 @@
 			}
 		},
 		{
+			"name": "mirrorcube4",
+			"transform": {
+				"parent": "table.surface",
+				"rotate": [80, 0, 1, 0],
+				"scale": 0.1,
+				"translate": [0.45, 0, 0.55]
+			},
+			"script": {
+				"parameters": {
+					"source": "mirrorcube"
+				},
+				"prefab": "template"
+			}
+		},
+		{
 			"name": "duck",
 			"transform": {
 				"parent": "table.surface",

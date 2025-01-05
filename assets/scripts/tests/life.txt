@@ -2,7 +2,7 @@ loadscene life
 setsignal player:player/move_noclip 1
 steplogic
 set_position player:player 0 0.25 -1.5
-rotate player:flatview -90 1 0 0
+rotate player:flathead -90 1 0 0
 stepphysics
 steplogic
 screenshot life0.png

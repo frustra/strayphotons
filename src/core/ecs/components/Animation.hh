@@ -21,15 +21,15 @@ namespace ecs {
               // https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
     };
 
-    static const StructMetadata::EnumDescriptions DocsEnumInterpolationMode = {
-        {(uint32_t)InterpolationMode::Step, "Teleport entities from state to state."},
-        {(uint32_t)InterpolationMode::Linear, "Move entities at a constant speed between states."},
-        {(uint32_t)InterpolationMode::Cubic, "Move entities according to a customizable Cubic Hermite spline curve."},
-    };
     static const StructMetadata MetadataInterpolationMode(typeid(InterpolationMode),
         "InterpolationMode",
         "",
-        &DocsEnumInterpolationMode);
+        StructMetadata::EnumDescriptions{
+            {(uint32_t)InterpolationMode::Step, "Teleport entities from state to state."},
+            {(uint32_t)InterpolationMode::Linear, "Move entities at a constant speed between states."},
+            {(uint32_t)InterpolationMode::Cubic,
+                "Move entities according to a customizable Cubic Hermite spline curve."},
+        });
 
     static const char *DocsDescriptionAnimation = R"(
 Animations control the position of an entity by moving it between a set of animation states. Animation updates happen in the physics thread before each simulation step.
@@ -120,13 +120,12 @@ When moving from state `2.0` to state `0.0`, the animation will follow the path 
             Entity ent);
     };
 
-    static StructMetadata MetadataAnimation(typeid(Animation),
+    static Component<Animation> ComponentAnimation({typeid(Animation),
         "animation",
         DocsDescriptionAnimation,
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
         StructField::New("interpolation", &Animation::interpolation),
-        StructField::New("cubic_tension", &Animation::tension));
-    static Component<Animation> ComponentAnimation(MetadataAnimation);
+        StructField::New("cubic_tension", &Animation::tension)});
 
     template<>
     void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget);

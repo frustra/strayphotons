@@ -63,6 +63,15 @@
             },
             {
                "inputs" : {
+                  "held" : {
+                     "output" : "/actions/main/in/flashlight"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/b"
+            },
+            {
+               "inputs" : {
                   "click" : {
                      "output" : "/actions/main/in/teleport"
                   }
