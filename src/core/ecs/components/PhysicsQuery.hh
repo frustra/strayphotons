@@ -73,7 +73,7 @@ namespace ecs {
             };
             std::optional<Result> result;
 
-            Sweep() : shape(), maxDistance(0), filterGroup((PhysicsGroupMask)0), sweepDirection(0) {}
+            Sweep() : shape(), filterGroup((PhysicsGroupMask)0), sweepDirection(0), maxDistance(0) {}
             Sweep(const PhysicsShape &shape,
                 float maxDistance,
                 PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD),
