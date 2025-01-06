@@ -122,6 +122,25 @@
 			}
 		},
 		{
+			"name": "chute_guide_bottom",
+			"transform": {
+				"parent": "chute",
+				"scale": [0.348, 0.09, 0.09],
+				"translate": [-1.536, 0.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"dynamic_friction": 0,
+					"model": "box",
+					"static_friction": 0
+				},
+				"type": "Static"
+			}
+		},
+		{
 			"name": "chute_bottom_front",
 			"transform": {
 				"parent": "chute",
@@ -195,6 +214,25 @@
 				"parent": "angle_root",
 				"scale": [2.98, 0.1, 0.3],
 				"translate": [-0.02, 0, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"dynamic_friction": 0,
+					"model": "box",
+					"static_friction": 0
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_guide_top",
+			"transform": {
+				"parent": "angle_root",
+				"scale": [2.938, 0.09, 0.09],
+				"translate": [0.04, 0.298, 0]
 			},
 			"renderable": {
 				"model": "box"
@@ -394,13 +432,17 @@
 		},
 		{
 			"name": "ball_spawner",
+			"transform": {
+				"parent": "chute",
+				"scale": 0.2,
+				"translate": [-1.8, 0.55, 0]
+			},
 			"event_input": {},
 			"script": {
 				"onTick": "model_spawner",
 				"parameters": {
-					"model": "box",
-					"position": [0, 1, 0],
-					"relative_to": "ball1"
+					"model": "sphere",
+					"relative_to": "ball_spawner"
 				}
 			}
 		},

@@ -630,6 +630,7 @@ namespace sp::vulkan {
                     UINT64_MAX,
                     *Frame().imageAvailableSemaphore,
                     nullptr);
+                AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
                 swapchainImageIndex = acquireResult.value;
                 ZoneValue(swapchainImageIndex);
             } catch (const vk::OutOfDateKHRError &) {
