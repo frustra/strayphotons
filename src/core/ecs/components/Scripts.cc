@@ -180,27 +180,15 @@ namespace ecs {
 
     template<>
     void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
-        if (liveTarget) {
-            for (auto &instance : src.scripts) {
-                if (!instance) continue;
-                auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
-                    return arg.GetInstanceId() == instance.GetInstanceId();
-                });
-                if (existing == dst.scripts.end()) {
-                    dst.scripts.emplace_back(instance);
-                }
-            }
-        } else {
-            for (auto &instance : src.scripts) {
-                if (!instance) continue;
-                auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
-                    return instance.CompareOverride(arg);
-                });
-                if (existing == dst.scripts.end()) {
-                    dst.scripts.emplace_back(instance);
-                } else if (liveTarget && existing->GetInstanceId() != instance.GetInstanceId()) {
-                    *existing = instance;
-                }
+        for (auto &instance : src.scripts) {
+            if (!instance) continue;
+            auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
+                return instance.CompareOverride(arg);
+            });
+            if (existing == dst.scripts.end()) {
+                dst.scripts.emplace_back(instance);
+            } else if (liveTarget && existing->GetInstanceId() != instance.GetInstanceId()) {
+                *existing = instance;
             }
         }
     }

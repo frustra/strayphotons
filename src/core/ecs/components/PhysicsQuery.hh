@@ -50,6 +50,7 @@ namespace ecs {
             };
             std::optional<Result> result;
 
+            Raycast() : maxDistance(0), filterGroup((PhysicsGroupMask)0) {}
             Raycast(float maxDistance, PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD))
                 : maxDistance(maxDistance), filterGroup(filterGroup) {}
         };
@@ -72,6 +73,7 @@ namespace ecs {
             };
             std::optional<Result> result;
 
+            Sweep() : shape(), filterGroup((PhysicsGroupMask)0), sweepDirection(0), maxDistance(0) {}
             Sweep(const PhysicsShape &shape,
                 float maxDistance,
                 PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD),
@@ -89,6 +91,7 @@ namespace ecs {
 
             std::optional<Entity> result;
 
+            Overlap() : shape(), filterGroup((PhysicsGroupMask)0) {}
             Overlap(const PhysicsShape &shape, PhysicsGroupMask filterGroup = PhysicsGroupMask(PHYSICS_GROUP_WORLD))
                 : shape(shape), filterGroup(filterGroup) {}
         };
@@ -106,6 +109,7 @@ namespace ecs {
             };
             std::optional<Result> result;
 
+            Mass() : targetActor() {}
             Mass(const EntityRef &targetActor) : targetActor(targetActor) {}
         };
 
@@ -127,7 +131,11 @@ namespace ecs {
         // Calling NewQuery() invalidates all references returned by Lookup()
         template<typename T>
         T &Lookup(const Handle<T> &handle) {
-            Assertf(handle.index < queries.size(), "Invalid query handle");
+            static T invalidResult = {};
+            if (handle.index >= queries.size()) {
+                Warnf("Reading invalid query handle");
+                return invalidResult;
+            }
             return std::get<T>(queries[handle.index]);
         }
 

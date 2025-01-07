@@ -115,7 +115,8 @@ namespace sp::scripts {
                     newEntity.Set<PhysicsQuery>(lock);
                     newEntity.Set<EventInput>(lock);
                     auto &scripts = newEntity.Set<Scripts>(lock);
-                    scripts.AddOnTick(scope, "interactive_object");
+                    auto &interactScript = scripts.AddOnTick(scope, "interactive_object");
+                    interactScript.eventQueue = ecs::EventQueue::New();
                     GetScriptManager().RegisterEvents(lock, newEntity);
                 });
             }

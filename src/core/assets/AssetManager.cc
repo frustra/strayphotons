@@ -70,7 +70,7 @@ namespace sp {
             // Build bundle index
             mtar_t tar;
             if (mtar_open(&tar, assetsPath.string().c_str(), "r") != MTAR_ESUCCESS) {
-                Warnf("Failed to open asset bundle at: %s", assetsPath);
+                Warnf("Failed to open asset bundle at: %s", assetsPath.c_str());
                 return;
             }
 

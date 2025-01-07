@@ -138,7 +138,7 @@ namespace sp::logging {
     }
 
     template<typename... T>
-    inline static void writeFormatter(Level lvl, const std::string &fmt, T &&...t) {
+    inline static void writeFormatter(Level lvl, std::string fmt, T &&...t) {
         int size = std::snprintf(nullptr, 0, fmt.c_str(), std::forward<T>(t)...);
         // snprintf writes N + 1 bytes with null terminator
         std::string buf(size + 1, '\0');

@@ -17,6 +17,14 @@
 			}
 		},
 		{
+			"transform": {
+				"translate": [-5, 0, -4]
+			},
+			"voxel_area": {
+				"extents": [128, 64, 128]
+			}
+		},
+		{
 			"name": "ceiling",
 			"transform": {
 				"scale": [10, 0.1, 8],
@@ -122,6 +130,25 @@
 			}
 		},
 		{
+			"name": "chute_guide_bottom",
+			"transform": {
+				"parent": "chute",
+				"scale": [0.348, 0.09, 0.09],
+				"translate": [-1.536, 0.5, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"dynamic_friction": 0,
+					"model": "box",
+					"static_friction": 0
+				},
+				"type": "Static"
+			}
+		},
+		{
 			"name": "chute_bottom_front",
 			"transform": {
 				"parent": "chute",
@@ -195,6 +222,25 @@
 				"parent": "angle_root",
 				"scale": [2.98, 0.1, 0.3],
 				"translate": [-0.02, 0, 0]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"dynamic_friction": 0,
+					"model": "box",
+					"static_friction": 0
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "chute_guide_top",
+			"transform": {
+				"parent": "angle_root",
+				"scale": [2.938, 0.09, 0.09],
+				"translate": [0.04, 0.298, 0]
 			},
 			"renderable": {
 				"model": "box"
@@ -394,15 +440,29 @@
 		},
 		{
 			"name": "ball_spawner",
+			"transform": {
+				"parent": "chute",
+				"scale": 0.2,
+				"translate": [-1.8, 0.55, 0]
+			},
 			"event_input": {},
-			"script": {
-				"onTick": "model_spawner",
-				"parameters": {
-					"model": "box",
-					"position": [0, 1, 0],
-					"relative_to": "ball1"
+			"script": [
+				{
+					"onTick": "model_spawner",
+					"parameters": {
+						"model": "sphere",
+						"relative_to": "ball_spawner"
+					}
+				},
+				{
+					"onTick": "edge_trigger",
+					"parameters": {
+						"input_expr": "sensor_spawn/value",
+						"output_event": "/script/spawn",
+						"falling_edge": false
+					}
 				}
-			}
+			]
 		},
 		{
 			"name": "ball1",
@@ -539,6 +599,33 @@
 					"onTick": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.1_4.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "sensor_spawn",
+			"transform": {
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.14, 0.9, 0.62]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.1_7.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_sensor"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.1_7.socket"
 					}
 				}
 			]
@@ -1013,6 +1100,90 @@
 						"charge_signal_r": "charge_cell_3.input-sensor.Icosphere/light_value_r",
 						"max_charge_level": 1000,
 						"output_power_r": "5"
+					}
+				}
+			]
+		},
+		{
+			"name": "splitter_2",
+			"transform": {
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.46, 0.9, 0.38]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.5_4.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/splitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.5_4.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_emitter_4",
+			"transform": {
+				"rotate": [90, 0, -1, -0],
+				"translate": [0.94, 0.9, 0.62]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, 1, 0]
+				},
+				"target": "table.surface.11_7.socket"
+			},
+			"signal_output": {
+				"laser_color_r": 5
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_emitter"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.11_7.socket"
+					}
+				}
+			]
+		},
+		{
+			"name": "laser_gate_4",
+			"transform": {
+				"rotate": [90, -0, 1, -0],
+				"translate": [0.46, 0.9, 0.62]
+			},
+			"physics_joints": {
+				"local_offset": {
+					"rotate": [90, 0, -1, 0]
+				},
+				"target": "table.surface.5_7.socket"
+			},
+			"script": [
+				{
+					"parameters": {
+						"source": "blocks/laser_gate"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "magnetic_plug",
+					"parameters": {
+						"attach": "table.surface.5_7.socket"
 					}
 				}
 			]
