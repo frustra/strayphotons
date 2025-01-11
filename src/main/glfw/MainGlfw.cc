@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         // Create window and surface
         glm::ivec2 initialSize;
-        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
         sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
         GLFWwindow *window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
         Assert(window, "glfw window creation failed");
@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
             static glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
 
             sp_cvar_t *cvarWindowFullscreen = sp_get_cvar("r.fullscreen");
-            sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+            sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
             bool fullscreen = sp_cvar_get_bool(cvarWindowFullscreen);
             if (systemFullscreen != fullscreen) {
                 if (fullscreen) {
@@ -324,6 +324,14 @@ int main(int argc, char **argv) {
                 }
 
                 systemWindowSize = windowSize;
+            }
+
+            sp_cvar_t *cvarWindowScale = sp_get_cvar("r.windowscale");
+            glm::vec2 contentScale;
+            sp_cvar_get_vec2(cvarWindowScale, &contentScale.x, &contentScale.y);
+            if (contentScale.x <= 0.0f) {
+                glfwGetWindowContentScale(window, &contentScale.x, &contentScale.y);
+                sp_cvar_set_vec2(cvarWindowScale, contentScale.x, contentScale.y);
             }
 
             glm::ivec2 fbExtents;

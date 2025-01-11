@@ -80,7 +80,7 @@ namespace sp::vulkan {
         lastTime = currTime;
     }
 
-    void GuiRenderer::Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport) {
+    void GuiRenderer::Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale) {
         if (!fontView->Ready()) return;
         ZoneScoped;
 
@@ -89,7 +89,8 @@ namespace sp::vulkan {
 
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.DisplaySize = ImVec2(viewport.extent.width, viewport.extent.height);
+        io.DisplaySize = ImVec2(viewport.extent.width / scale.x, viewport.extent.height / scale.y);
+        io.DisplayFramebufferScale = ImVec2(scale.x, scale.y);
         io.DeltaTime = deltaTime;
 
         auto lastFonts = io.Fonts;
@@ -152,7 +153,7 @@ namespace sp::vulkan {
 
         cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
-        glm::mat4 proj = MakeOrthographicProjection(viewport);
+        glm::mat4 proj = MakeOrthographicProjection(viewport, scale);
         cmd.PushConstants(proj);
 
         const vk::IndexType idxType = sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32;

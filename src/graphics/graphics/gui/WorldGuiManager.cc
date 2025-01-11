@@ -30,6 +30,7 @@ namespace sp {
 
     void WorldGuiManager::DefineWindows() {
         ZoneScoped;
+        ImGuiIO &io = ImGui::GetIO();
         for (auto &component : components) {
             auto *window = dynamic_cast<GuiWindow *>(component.get());
 
@@ -39,7 +40,7 @@ namespace sp {
                 flags |= window->flags;
             }
             ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
             ImGui::Begin(component->name.c_str(), nullptr, flags);
             component->DefineContents();
             ImGui::End();

@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 #endif
 
     glm::ivec2 initialSize;
-    sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+    sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
     sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
     bool enableValidationLayers = sp_game_get_cli_flag(GameInstance, "with-validation-layers");
     winit::create_context((size_t)GameInstance, initialSize.x, initialSize.y, enableValidationLayers);
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
         static glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
 
         sp_cvar_t *cvarWindowFullscreen = sp_get_cvar("r.fullscreen");
-        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
         bool fullscreen = sp_cvar_get_bool(cvarWindowFullscreen);
         if (systemFullscreen != fullscreen) {
             if (fullscreen) {

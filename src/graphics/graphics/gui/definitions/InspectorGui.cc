@@ -33,7 +33,8 @@ namespace sp {
 
     void InspectorGui::PreDefine() {
         auto *viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowSize(ImVec2(500, viewport->Size.y));
+        ImGuiIO &io = ImGui::GetIO();
+        ImGui::SetNextWindowSize(ImVec2(std::min(500.0f, io.DisplaySize.x), viewport->Size.y));
         ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y),
             ImGuiCond_None,
             ImVec2(1, 0));

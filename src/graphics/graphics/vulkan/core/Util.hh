@@ -17,4 +17,8 @@ namespace sp::vulkan {
         float near = 0.0f,
         float far = 1.0f);
     glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport, float near = 0.0f, float far = 1.0f);
+    glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport,
+        const glm::vec2 &scale,
+        float near = 0.0f,
+        float far = 1.0f);
 } // namespace sp::vulkan

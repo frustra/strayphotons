@@ -89,7 +89,7 @@ unsafe extern fn update_window_view(graphics: *mut sp_graphics_ctx_t, width_out:
         })).lock().unwrap();
 
         let mut cvar_window_fullscreen = Game::get_cvar("r.fullscreen");
-        let mut cvar_window_size = Game::get_cvar("r.size");
+        let mut cvar_window_size = Game::get_cvar("r.windowsize");
         let fullscreen = cvar_window_fullscreen.get_bool();
         if state_cache.system_fullscreen != fullscreen {
             if fullscreen {
@@ -164,7 +164,7 @@ fn run_until_exit() -> Result<(), Box<dyn Error>> {
         let mut game: Game = sp.game();
         let mut graphics = game.get_graphics_context();
 
-        let mut window_size_cvar = Game::get_cvar("r.size");
+        let mut window_size_cvar = Game::get_cvar("r.windowsize");
         let initial_size: (i32, i32) = window_size_cvar.get_ivec2();
         let enable_validation_layers = game.get_cli_flag("with-validation-layers");
         winit::create_context(game.into(), initial_size.0, initial_size.1, enable_validation_layers);

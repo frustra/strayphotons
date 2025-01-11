@@ -41,6 +41,9 @@ SP_EXPORT void sp_cvar_set_uint32(sp_cvar_t *cvar, uint32_t value);
 SP_EXPORT void sp_cvar_get_ivec2(sp_cvar_t *cvar, int *out_x, int *out_y);
 SP_EXPORT void sp_cvar_set_ivec2(sp_cvar_t *cvar, int value_x, int value_y);
 
+SP_EXPORT void sp_cvar_get_vec2(sp_cvar_t *cvar, float *out_x, float *out_y);
+SP_EXPORT void sp_cvar_set_vec2(sp_cvar_t *cvar, float value_x, float value_y);
+
 SP_EXPORT sp_cvar_t *sp_register_cfunc_uint32(const char *name,
     const char *description,
     void (*cfunc_callback)(uint32_t));

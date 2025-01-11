@@ -13,7 +13,16 @@
 namespace sp {
     template<typename T>
     std::istream &operator>>(std::istream &is, glm::tvec2<T, glm::highp> &v) {
-        return is >> v[0] >> v[1];
+        is >> v[0];
+        if (is.good()) {
+            is >> v[1];
+            if (is.fail()) {
+                v[1] = v[0];
+            }
+        } else if (is.eof()) {
+            v[1] = v[0];
+        }
+        return is;
     }
 
     template<typename T>
