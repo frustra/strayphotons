@@ -7,7 +7,7 @@ Script Example Definition
     struct Example {
         // Input parameters
         std::string a = "default value";
-        glm::vec3 b;
+        glm::vec3 b = glm::vec3(1, 2, 3);
         ecs::EntityRef c;
         SignalExpression expr;
 

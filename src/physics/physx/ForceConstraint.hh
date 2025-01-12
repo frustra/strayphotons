@@ -27,7 +27,7 @@ namespace sp {
             float maxTorque = 0.0f;
             glm::vec3 linearAccel = glm::vec3(0);
             glm::vec3 angularAccel = glm::vec3(0);
-            glm::vec3 gravity;
+            glm::vec3 gravity = glm::vec3(0);
         };
 
         ForceConstraint(PxPhysics &physics,

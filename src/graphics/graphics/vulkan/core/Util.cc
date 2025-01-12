@@ -9,7 +9,7 @@
 
 namespace sp::vulkan {
     glm::mat4 MakeOrthographicProjection(float left, float right, float bottom, float top, float near, float far) {
-        glm::mat4 proj;
+        glm::mat4 proj = glm::mat4(0);
         proj[0][0] = 2.0f / (right - left);
         proj[1][1] = 2.0f / (bottom - top);
         proj[2][2] = 1.0f / (near - far);

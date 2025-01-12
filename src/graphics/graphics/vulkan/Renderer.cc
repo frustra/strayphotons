@@ -312,7 +312,7 @@ namespace sp::vulkan {
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrViews.size() == 0) return {};
 
-        glm::ivec2 viewExtents;
+        glm::ivec2 viewExtents = glm::ivec2(0);
         sp::EnumArray<ecs::View, ecs::XrEye> viewsByEye;
 
         for (auto &ent : xrViews) {

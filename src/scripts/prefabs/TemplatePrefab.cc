@@ -274,7 +274,7 @@ namespace ecs {
                 for (int y = 0; y < count.y; y++) {
                     auto offset2D = (glm::vec2{float(x), float(y)} + glm::vec2(0.5)) * stride;
 
-                    glm::vec3 offset3D;
+                    glm::vec3 offset3D = glm::vec3(0);
                     offset3D[axesIndex.first] = offset2D.x;
                     offset3D[axesIndex.second] = offset2D.y;
 

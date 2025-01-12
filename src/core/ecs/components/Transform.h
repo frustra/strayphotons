@@ -25,10 +25,11 @@ namespace ecs {
 
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
-        Transform() : scale(1) {}
+        Transform() : offset(glm::identity<glm::mat4x3>()), scale(1) {}
         Transform(const glm::mat4x3 &offset, glm::vec3 scale) : offset(offset), scale(scale) {}
         Transform(const glm::mat4 &matrix);
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
+        Transform(const Transform &) = default;
 
         void Translate(const glm::vec3 &xyz);
         void Rotate(float radians, const glm::vec3 &axis);
@@ -118,6 +119,7 @@ namespace ecs {
 
         TransformSnapshot() {}
         TransformSnapshot(const Transform &pose) : globalPose(pose) {}
+        TransformSnapshot(const TransformSnapshot &) = default;
 
         operator Transform() const {
             return globalPose;

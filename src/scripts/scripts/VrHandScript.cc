@@ -35,7 +35,7 @@ namespace sp::scripts {
         std::string boneName;
         BoneGroup group;
         float radius;
-        glm::vec3 offset;
+        glm::vec3 offset = glm::vec3(0);
     };
 
     static const std::array boneDefinitions = {
@@ -198,7 +198,9 @@ namespace sp::scripts {
         };
 
         void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, const Entity &ent, bool isPointing) {
-            glm::vec3 pointOrigin, pointDir, pointPos;
+            glm::vec3 pointOrigin = glm::vec3(0);
+            glm::vec3 pointDir = glm::vec3(0);
+            glm::vec3 pointPos = glm::vec3(0);
             Entity pointTarget;
 
             auto &query = ent.Get<PhysicsQuery>(lock);

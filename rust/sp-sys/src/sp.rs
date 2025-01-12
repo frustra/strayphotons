@@ -167,7 +167,7 @@ impl CVar {
     }
 
     pub unsafe fn get_vec2(&mut self) -> (f32, f32) {
-        let mut value: (f32, f32) = (0, 0);
+        let mut value: (f32, f32) = (0.0, 0.0);
         sp_cvar_get_vec2(self.0, &mut value.0, &mut value.1);
         value
     }

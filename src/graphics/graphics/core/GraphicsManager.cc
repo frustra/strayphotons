@@ -35,7 +35,7 @@ namespace sp {
         : RegisteredThread("RenderThread", CVarMaxFPS.Get(), true), game(game) {
         if (game.options.count("window-size")) {
             std::istringstream ss(game.options["window-size"].as<string>());
-            glm::ivec2 size;
+            glm::ivec2 size = glm::ivec2(0);
             ss >> size.x >> size.y;
 
             if (size.x > 0 && size.y > 0) {
@@ -44,7 +44,7 @@ namespace sp {
         }
         if (game.options.count("window-scale")) {
             std::istringstream ss(game.options["window-scale"].as<string>());
-            glm::vec2 windowScale = {0, 0};
+            glm::vec2 windowScale = glm::vec2(0);
             ss >> windowScale;
             if (windowScale.x > 0.0f) {
                 if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;

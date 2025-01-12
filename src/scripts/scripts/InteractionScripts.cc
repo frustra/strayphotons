@@ -36,7 +36,7 @@ namespace sp::scripts {
             auto &joints = ent.Get<PhysicsJoints>(lock);
             bool enableInteraction = ph.type == PhysicsActorType::Dynamic && !disabled;
 
-            glm::vec3 centerOfMass;
+            glm::vec3 centerOfMass = glm::vec3(0);
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
                 if (massQuery) {

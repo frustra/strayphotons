@@ -107,7 +107,8 @@ namespace sp::scripts {
     struct EditTool {
         Entity selectedEntity;
         float toolDistance;
-        glm::vec3 lastToolPosition, faceNormal;
+        glm::vec3 lastToolPosition = glm::vec3(0);
+        glm::vec3 faceNormal = glm::vec3(0);
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
         bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode, bool snapToFace) {
@@ -196,6 +197,8 @@ namespace sp::scripts {
                             lastToolPosition = position + forward * toolDistance;
                             if (raycastResult.normal != glm::vec3(0)) {
                                 faceNormal = glm::normalize(raycastResult.normal);
+                            } else {
+                                faceNormal = glm::vec3(0);
                             }
                         } else if (selectedEntity) {
                             if (snapMode && raycastResult.subTarget) {

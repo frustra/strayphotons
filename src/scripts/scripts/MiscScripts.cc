@@ -81,7 +81,7 @@ namespace sp::scripts {
 
     struct ModelSpawner {
         EntityRef targetEntity;
-        glm::vec3 position;
+        glm::vec3 position = glm::vec3(0);
         std::string modelName;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -131,7 +131,7 @@ namespace sp::scripts {
     InternalScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
 
     struct Rotate {
-        glm::vec3 rotationAxis;
+        glm::vec3 rotationAxis = glm::vec3(0);
         float rotationSpeedRpm;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
@@ -212,7 +212,7 @@ namespace sp::scripts {
 
             if (chargePower <= 0.0) discharging = true;
 
-            glm::dvec3 outputColor;
+            glm::dvec3 outputColor = glm::dvec3(0.0);
             if (discharging) {
                 outputColor = {std::max(0.0, outputPowerRed.Evaluate(lock)),
                     std::max(0.0, outputPowerGreen.Evaluate(lock)),

@@ -149,7 +149,7 @@ namespace sp {
         Assert(handler, "MouseEnterCallback occured without valid context");
 
         if (entered) {
-            glm::dvec2 dpos;
+            glm::dvec2 dpos = glm::dvec2(0.0);
             glfwGetCursorPos(window, &dpos.x, &dpos.y);
             handler->prevMousePos = dpos;
         } else {
