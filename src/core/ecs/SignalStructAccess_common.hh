@@ -19,7 +19,10 @@ namespace ecs::detail {
 
     template<typename T>
     std::optional<StructField> GetVectorSubfield(std::string_view subField) {
-        if (subField.empty() || subField.size() > (size_t)T::length()) {
+        if (subField.empty()) {
+            return StructField("", "", typeid(T), 0, ecs::FieldAction::None);
+        }
+        if (subField.size() > (size_t)T::length()) {
             Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
             return {};
         }

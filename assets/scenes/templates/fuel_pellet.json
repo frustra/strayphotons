@@ -1,0 +1,17 @@
+{
+	"components": {
+		"renderable": {
+			"model": "sphere",
+			"emissive": 0.5,
+			"color_override": [0.1, 1.0, 0.2, 1]
+		},
+		"physics": {
+			"shapes": {
+				"dynamic_friction": 0.08,
+				"restitution": 0.5,
+				"sphere": 0.5,
+				"static_friction": 0.1
+			}
+		}
+	}
+}

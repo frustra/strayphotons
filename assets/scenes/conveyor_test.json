@@ -18,10 +18,11 @@
 		},
 		{
 			"transform": {
-				"translate": [-5, 0, -4]
+				"translate": [-5, 0, -4],
+				"scale": 0.1
 			},
 			"voxel_area": {
-				"extents": [128, 64, 128]
+				"extents": [100, 50, 85]
 			}
 		},
 		{
@@ -369,7 +370,40 @@
 					"model": "box",
 					"static_friction": 0
 				},
-				"type": "Kinematic"
+				"type": "Dynamic"
+			},
+			"physics_joints": [
+				{
+					"type": "NoClip",
+					"target": "chute_bottom_back"
+				},
+				{
+					"target": "chute",
+					"type": "Slider",
+					"remote_offset": {
+						"translate": [-1.71, 0.35, 0.21],
+						"rotate": [90, 0, 1, 0]
+					},
+					"local_offset": {
+						"rotate": [90, 0, 1, 0]
+					},
+					"limit": [-0.21, 0]
+				},
+				{
+					"target": "gate_target",
+					"type": "Force",
+					"limit": [
+						500,
+						0
+					]
+				}
+			]
+		},
+		{
+			"name": "gate_target",
+			"transform": {
+				"parent": "chute",
+				"translate": [-1.71, 0.35, 0.21]
 			},
 			"animation": {
 				"states": [
@@ -402,7 +436,44 @@
 				"shapes": {
 					"model": "box"
 				},
-				"type": "Kinematic"
+				"type": "Dynamic"
+			},
+			"physics_joints": [
+				{
+					"type": "NoClip",
+					"target": "chute_bottom_back"
+				},
+				{
+					"type": "NoClip",
+					"target": "chute_bottom_base"
+				},
+				{
+					"type": "NoClip",
+					"target": "chute_bottom_front"
+				},
+				{
+					"target": "chute",
+					"type": "Slider",
+					"remote_offset": {
+						"translate": [-2.1, 0.35, 0]
+					},
+					"limit": [-0.275, 0]
+				},
+				{
+					"target": "piston_target",
+					"type": "Force",
+					"limit": [
+						800,
+						0
+					]
+				}
+			]
+		},
+		{
+			"name": "piston_target",
+			"transform": {
+				"parent": "chute",
+				"translate": [-2.1, 0.35, 0]
 			},
 			"animation": {
 				"states": [
@@ -450,7 +521,7 @@
 				{
 					"onTick": "model_spawner",
 					"parameters": {
-						"model": "sphere",
+						"templates": ["interactive", "fuel_pellet"],
 						"relative_to": "ball_spawner"
 					}
 				},

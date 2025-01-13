@@ -172,7 +172,7 @@ namespace ecs {
     private:
         void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
             const Entity &ent,
-            const ScriptState &state) const;
+            ScriptState &state) const;
 
         std::deque<EventQueue> eventQueues;
         std::deque<std::pair<Entity, ScriptState>> onTickScripts;

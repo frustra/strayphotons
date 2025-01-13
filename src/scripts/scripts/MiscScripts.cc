@@ -83,8 +83,10 @@ namespace sp::scripts {
         EntityRef targetEntity;
         glm::vec3 position = glm::vec3(0);
         std::string modelName;
+        std::vector<std::string> templates = {"interactive"};
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<Name, SceneInfo>(lock)) return;
             Transform relativeTransform;
             auto target = targetEntity.Get(lock);
             if (target.Has<TransformSnapshot>(lock)) {
@@ -98,27 +100,40 @@ namespace sp::scripts {
                 Transform transform(position);
                 transform = relativeTransform * transform;
 
-                GetSceneManager().QueueAction([ent, transform, modelName = modelName, scope = state.scope]() {
-                    auto lock = ecs::StartTransaction<ecs::AddRemove>();
-                    if (!ent.Has<ecs::SceneInfo>(lock)) return;
-                    auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
-                    auto scene = sceneInfo.scene.Lock();
-                    if (!scene) return;
+                Entity stagingRootId = ent.Get<SceneInfo>(lock).rootStagingId;
 
-                    auto newEntity = scene->NewRootEntity(lock, scene);
+                GetSceneManager().QueueAction(SceneAction::ApplySystemScene,
+                    state.scope.scene,
+                    [stagingRootId,
+                        transform,
+                        modelName = modelName,
+                        templates = templates,
+                        scriptId = state.GetInstanceId(),
+                        scope = ent.Get<Name>(lock)](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                        auto newEntity = scene->NewPrefabEntity(lock, stagingRootId, scriptId, "", scope);
 
-                    newEntity.Set<TransformTree>(lock, transform);
-                    newEntity.Set<TransformSnapshot>(lock, transform);
-                    newEntity.Set<Renderable>(lock, modelName, sp::Assets().LoadGltf(modelName));
-                    newEntity.Set<Physics>(lock, modelName, PhysicsGroup::World, ecs::PhysicsActorType::Dynamic, 1.0f);
-                    newEntity.Set<PhysicsJoints>(lock);
-                    newEntity.Set<PhysicsQuery>(lock);
-                    newEntity.Set<EventInput>(lock);
-                    auto &scripts = newEntity.Set<Scripts>(lock);
-                    auto &interactScript = scripts.AddOnTick(scope, "interactive_object");
-                    interactScript.eventQueue = ecs::EventQueue::New();
-                    GetScriptManager().RegisterEvents(lock, newEntity);
-                });
+                        newEntity.Set<TransformTree>(lock, transform);
+                        newEntity.Set<TransformSnapshot>(lock, transform);
+                        if (!modelName.empty()) {
+                            Renderable newRenderable = LookupComponent<Renderable>().StagingDefault();
+                            newRenderable.modelName = modelName;
+                            newRenderable.model = sp::Assets().LoadGltf(modelName);
+                            newRenderable.meshIndex = 0;
+                            newEntity.Set<Renderable>(lock, newRenderable);
+
+                            Physics newPhysics = LookupComponent<Physics>().StagingDefault();
+                            newPhysics.shapes = {PhysicsShape::ConvexMesh(modelName)};
+                            newEntity.Set<Physics>(lock, newPhysics);
+                        }
+                        for (auto &templateName : templates) {
+                            auto &scripts = newEntity.Get<Scripts>(lock);
+                            auto &prefab = scripts.AddPrefab(scope, "template");
+                            prefab.SetParam("source", templateName);
+                        }
+                        if (!templates.empty()) {
+                            ecs::GetScriptManager().RunPrefabs(lock, newEntity);
+                        }
+                    });
             }
         }
     };
@@ -127,7 +142,8 @@ namespace sp::scripts {
         "",
         StructField::New("relative_to", &ModelSpawner::targetEntity),
         StructField::New("position", &ModelSpawner::position),
-        StructField::New("model", &ModelSpawner::modelName));
+        StructField::New("model", &ModelSpawner::modelName),
+        StructField::New("templates", &ModelSpawner::templates));
     InternalScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
 
     struct Rotate {

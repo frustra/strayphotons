@@ -26,7 +26,7 @@ namespace sp {
         return {};
     }
 
-    ecs::Name Scene::GenerateEntityName(const ecs::Name &prefix) {
+    ecs::Name Scene::GenerateEntityName(const ecs::EntityScope &prefix) {
         unnamedEntityCount++;
         if (!prefix.entity.empty()) {
             return ecs::Name(prefix.scene, prefix.entity + ".entity" + std::to_string(unnamedEntityCount));

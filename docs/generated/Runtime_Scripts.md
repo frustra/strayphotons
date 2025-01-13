@@ -239,6 +239,7 @@ The `magnetic_socket` script has no configurable parameters
 | **relative_to** | [EntityRef](#EntityRef-type) | "" | No description |
 | **position** | vec3 | [0, 0, 0] | No description |
 | **model** | string | "" | No description |
+| **templates** | vector&lt;string&gt; | "interactive" | No description |
 
 **See Also:**
 [EntityRef](#EntityRef-type)
