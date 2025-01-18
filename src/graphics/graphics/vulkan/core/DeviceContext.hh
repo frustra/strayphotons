@@ -364,8 +364,8 @@ namespace sp::vulkan {
         robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
 
         bool systemFullscreen = false;
-        glm::ivec2 systemWindowSize;
-        glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
+        glm::ivec2 systemWindowSize = glm::ivec2(0);
+        glm::ivec4 storedWindowRect = glm::ivec4(0); // Remember window position and size when returning from fullscreen
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;

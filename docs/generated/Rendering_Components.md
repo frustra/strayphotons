@@ -123,7 +123,9 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **target** | string | "" | No description |
+| **texture** | string | "" | No description |
+| **resolution** | ivec2 | [1000, 1000] | No description |
+| **scale** | vec2 | [1, 1] | No description |
 | **luminance** | vec3 | [1, 1, 1] | No description |
 
 </div>

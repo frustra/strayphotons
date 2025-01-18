@@ -39,8 +39,7 @@ namespace ecs {
 
     struct SignalRef::Ref {
         SignalKey signal;
-        size_t liveIndex = std::numeric_limits<size_t>::max();
-        size_t stagingIndex = std::numeric_limits<size_t>::max();
+        size_t index = std::numeric_limits<size_t>::max();
 
         Ref(const SignalKey &signal) : signal(signal) {}
     };

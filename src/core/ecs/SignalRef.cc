@@ -23,24 +23,9 @@ namespace ecs {
         ptr = GetSignalManager().GetRef(str, scope).ptr;
     }
 
-    size_t &SignalRef::GetIndex(const Lock<> &lock) const {
-        if (IsLive(lock)) {
-            return GetLiveIndex();
-        } else if (IsStaging(lock)) {
-            return GetStagingIndex();
-        } else {
-            Abortf("Invalid SignalRef lock: %u", lock.GetInstance().GetInstanceId());
-        }
-    }
-
-    size_t &SignalRef::GetLiveIndex() const {
-        Assert(ptr, "SignalRef::GetLiveIndex() called on null SignalRef");
-        return ptr->liveIndex;
-    }
-
-    size_t &SignalRef::GetStagingIndex() const {
-        Assert(ptr, "SignalRef::GetStagingIndex() called on null SignalRef");
-        return ptr->stagingIndex;
+    size_t &SignalRef::GetIndex() const {
+        Assert(ptr, "SignalRef::GetIndex() called on null SignalRef");
+        return ptr->index;
     }
 
     const EntityRef &SignalRef::GetEntity() const {
@@ -70,10 +55,11 @@ namespace ecs {
     }
 
     double &SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
+        Assertf(IsLive(lock), "SiganlRef::SetValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
         auto &signals = lock.Get<Signals>();
-        size_t &index = GetIndex(lock);
+        size_t &index = GetIndex();
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
             signal.value = value;
@@ -85,9 +71,10 @@ namespace ecs {
     }
 
     void SignalRef::ClearValue(const Lock<Write<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::ClearValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::ClearValue() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.signals.size()) return; // Noop
 
         auto &signal = signals.signals[index];
@@ -96,29 +83,32 @@ namespace ecs {
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::HasValue() called with staging lock. Use SignalOutput instead");
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.size()) return false;
 
         return !std::isinf(signals[index].value);
     }
 
     const double &SignalRef::GetValue(const Lock<Read<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::GetValue() called with staging lock. Use SignalOutput instead");
         static const double empty = 0.0;
         if (!ptr) return empty;
         auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.size()) return empty;
 
         return signals[index].value;
     }
 
     SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &expr) const {
+        Assertf(IsLive(lock), "SiganlRef::SetBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
         Assertf(!expr.IsNull(), "SignalRef::SetBinding() called with null SignalExpression");
         auto &signals = lock.Get<Signals>();
-        size_t &index = GetIndex(lock);
+        size_t &index = GetIndex();
 
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
@@ -137,9 +127,10 @@ namespace ecs {
     }
 
     void SignalRef::ClearBinding(const Lock<Write<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::ClearBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::ClearBinding() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.signals.size()) return; // Noop
 
         auto &signal = signals.signals[index];
@@ -148,19 +139,21 @@ namespace ecs {
     }
 
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::HasBinding() called with staging lock. Use SignalBindings instead");
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.size()) return false;
 
         return !signals[index].expr.IsNull();
     }
 
     const SignalExpression &SignalRef::GetBinding(const Lock<Read<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::GetBinding() called with staging lock. Use SignalBindings instead");
         static const SignalExpression empty = {};
         if (!ptr) return empty;
         auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.size()) return empty;
 
         return signals[index].expr;
@@ -168,9 +161,10 @@ namespace ecs {
 
     double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         ZoneScoped;
+        Assertf(IsLive(lock), "SiganlRef::GetSignal() called with staging lock. Use SignalBindings instead");
         if (!ptr) return 0.0;
         auto &signals = lock.Get<Signals>().signals;
-        const size_t &index = GetIndex(lock);
+        const size_t &index = GetIndex();
         if (index >= signals.size()) return 0.0;
 
         auto &signal = signals[index];

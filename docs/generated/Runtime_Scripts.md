@@ -239,6 +239,7 @@ The `magnetic_socket` script has no configurable parameters
 | **relative_to** | [EntityRef](#EntityRef-type) | "" | No description |
 | **position** | vec3 | [0, 0, 0] | No description |
 | **model** | string | "" | No description |
+| **templates** | vector&lt;string&gt; | "interactive" | No description |
 
 **See Also:**
 [EntityRef](#EntityRef-type)
@@ -388,6 +389,18 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
+## `physics_signal_from_signal` Script
+
+The `physics_signal_from_signal` script has parameter type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
+
+**See Also:**
+[SignalExpression](#SignalExpression-type)
+
+</div>
+
+
+<div class="component_definition">
+
 ## `physics_timer` Script
 
 | Parameter Name | Type | Default Value | Description |
@@ -473,6 +486,18 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **outputs** | vector&lt;string&gt; | [] | No description |
+
+</div>
+
+
+<div class="component_definition">
+
+## `signal_from_signal` Script
+
+The `signal_from_signal` script has parameter type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
+
+**See Also:**
+[SignalExpression](#SignalExpression-type)
 
 </div>
 

@@ -86,6 +86,7 @@ namespace sp::vulkan {
         unique_ptr<GuiRenderer> guiRenderer;
         struct RenderableGui {
             ecs::Entity entity;
+            glm::vec2 scale;
             GuiContext *context;
             shared_ptr<GuiContext> contextShared;
             rg::ResourceID renderGraphID = rg::InvalidResource;

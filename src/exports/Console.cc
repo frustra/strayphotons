@@ -73,6 +73,22 @@ SP_EXPORT void sp_cvar_set_ivec2(sp_cvar_t *cvar, int value_x, int value_y) {
     derived->Set(glm::ivec2(value_x, value_y));
 }
 
+SP_EXPORT void sp_cvar_get_vec2(sp_cvar_t *cvar, float *out_x, float *out_y) {
+    Assertf(cvar != nullptr, "sp_cvar_get_vec2 called with null cvar");
+    Assertf(out_x != nullptr && out_y != nullptr, "sp_cvar_get_vec2 called with null output ptr");
+    auto *derived = dynamic_cast<CVar<glm::vec2> *>(cvar);
+    Assertf(derived, "CVar %s has unexpected type", cvar->GetName());
+    auto value = derived->Get();
+    *out_x = value.x;
+    *out_y = value.y;
+}
+SP_EXPORT void sp_cvar_set_vec2(sp_cvar_t *cvar, float value_x, float value_y) {
+    Assertf(cvar != nullptr, "sp_cvar_set_vec2 called with null cvar");
+    auto *derived = dynamic_cast<CVar<glm::vec2> *>(cvar);
+    Assertf(derived, "CVar %s has unexpected type", cvar->GetName());
+    derived->Set(glm::vec2(value_x, value_y));
+}
+
 SP_EXPORT sp_cvar_t *sp_register_cfunc_uint32(const char *name,
     const char *description,
     void (*cfunc_callback)(uint32_t)) {

@@ -118,7 +118,7 @@ namespace ecs {
 
     void ScriptManager::internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
         const Entity &ent,
-        const ScriptState &state) const {
+        ScriptState &state) const {
         auto *scriptListPtr = scriptLists[state.definition.callback.index()];
         if (!scriptListPtr) return;
         auto &scriptList = *scriptListPtr;
@@ -129,6 +129,7 @@ namespace ecs {
             if (ent.Has<EventInput>(lock)) {
                 auto &eventInput = ent.Get<EventInput>(lock);
                 for (auto &event : state.definition.events) {
+                    if (!state.eventQueue) state.eventQueue = ecs::EventQueue::New();
                     eventInput.Register(lock, state.eventQueue, event);
                 }
             } else if (!state.definition.events.empty()) {
@@ -171,7 +172,7 @@ namespace ecs {
         ZoneScoped;
         std::shared_lock l(mutexes[ScriptCallbackIndex<OnTickFunc>()]);
         for (auto &[ent, state] : onTickScripts) {
-            if (!ent) continue;
+            if (!ent.Has<Scripts>(lock)) continue;
             auto &callback = std::get<OnTickFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             // ZoneScopedN("OnTick");
@@ -184,7 +185,7 @@ namespace ecs {
         ZoneScoped;
         std::shared_lock l(mutexes[ScriptCallbackIndex<OnPhysicsUpdateFunc>()]);
         for (auto &[ent, state] : onPhysicsUpdateScripts) {
-            if (!ent) continue;
+            if (!ent.Has<Scripts>(lock)) continue;
             auto &callback = std::get<OnPhysicsUpdateFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             // ZoneScopedN("OnPhysicsUpdate");

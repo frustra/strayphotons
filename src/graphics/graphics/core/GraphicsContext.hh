@@ -39,6 +39,7 @@ namespace sp {
 
     extern CVar<float> CVarFieldOfView;
     extern CVar<glm::ivec2> CVarWindowSize;
+    extern CVar<glm::vec2> CVarWindowScale;
     extern CVar<bool> CVarWindowFullscreen;
 
     class GraphicsContext {

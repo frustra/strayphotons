@@ -60,7 +60,7 @@ namespace sp {
                     io.AddMouseWheelEvent(scroll.x, scroll.y);
                 } else if (event.name == INPUT_EVENT_MENU_CURSOR) {
                     auto &pos = std::get<glm::vec2>(event.data);
-                    io.AddMousePosEvent(pos.x, pos.y);
+                    io.AddMousePosEvent(pos.x / io.DisplayFramebufferScale.x, pos.y / io.DisplayFramebufferScale.y);
                 } else if (event.name == INPUT_EVENT_MENU_PRIMARY_TRIGGER) {
                     auto &down = std::get<bool>(event.data);
                     io.AddMouseButtonEvent(ImGuiMouseButton_Left, down);

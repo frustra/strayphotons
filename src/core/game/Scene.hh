@@ -31,7 +31,7 @@ namespace sp {
         Scene(SceneMetadata &&metadata, std::shared_ptr<const Asset> asset = nullptr);
         friend class SceneManager;
 
-        ecs::Name GenerateEntityName(const ecs::Name &prefix);
+        ecs::Name GenerateEntityName(const ecs::EntityScope &prefix);
         bool ValidateEntityName(const ecs::Name &name) const;
 
         std::shared_ptr<const Asset> asset;

@@ -14,7 +14,7 @@ add_subdirectory(glm ${CMAKE_CURRENT_BINARY_DIR}/glm)
 target_compile_definitions(
     glm
     INTERFACE
-        GLM_FORCE_CTOR_INIT
+        # GLM_FORCE_CTOR_INIT
         GLM_FORCE_CXX2A
         GLM_FORCE_DEPTH_ZERO_TO_ONE
 )

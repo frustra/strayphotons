@@ -9,7 +9,7 @@
 
 namespace sp::vulkan {
     glm::mat4 MakeOrthographicProjection(float left, float right, float bottom, float top, float near, float far) {
-        glm::mat4 proj;
+        glm::mat4 proj = glm::mat4(0);
         proj[0][0] = 2.0f / (right - left);
         proj[1][1] = 2.0f / (bottom - top);
         proj[2][2] = 1.0f / (near - far);
@@ -26,5 +26,13 @@ namespace sp::vulkan {
         float bottom = viewport.offset.y;
         float top = bottom + viewport.extent.height;
         return MakeOrthographicProjection(left, right, bottom, top, near, far);
+    }
+    glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport, const glm::vec2 &scale, float near, float far) {
+        // Uses OpenGL style, Y up
+        float left = viewport.offset.x;
+        float right = left + viewport.extent.width;
+        float bottom = viewport.offset.y;
+        float top = bottom + viewport.extent.height;
+        return MakeOrthographicProjection(left / scale.x, right / scale.x, bottom / scale.y, top / scale.y, near, far);
     }
 } // namespace sp::vulkan

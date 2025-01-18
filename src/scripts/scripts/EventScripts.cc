@@ -243,6 +243,7 @@ namespace sp::scripts {
                     Errorf("ComponentFromEvent unknown component field: %s", fieldPath);
                     continue;
                 }
+                if (!comp->HasComponent(lock, ent)) continue;
 
                 void *compPtr = comp->Access(lock, ent);
                 if (!compPtr) {

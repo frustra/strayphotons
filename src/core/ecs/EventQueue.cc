@@ -28,21 +28,21 @@ namespace ecs {
         } else if (src.is<picojson::array>()) {
             auto &arr = src.get<picojson::array>();
             if (arr.size() == 2) {
-                glm::vec2 vec;
+                glm::vec2 vec(0);
                 if (!sp::json::Load(vec, src)) {
                     Errorf("Unsupported EventData value: %s", src.to_str());
                     return false;
                 }
                 data = vec;
             } else if (arr.size() == 3) {
-                glm::vec3 vec;
+                glm::vec3 vec(0);
                 if (!sp::json::Load(vec, src)) {
                     Errorf("Unsupported EventData value: %s", src.to_str());
                     return false;
                 }
                 data = vec;
             } else if (arr.size() == 4) {
-                glm::vec4 vec;
+                glm::vec4 vec(0);
                 if (!sp::json::Load(vec, src)) {
                     Errorf("Unsupported EventData value: %s", src.to_str());
                     return false;

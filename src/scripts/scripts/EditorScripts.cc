@@ -107,7 +107,8 @@ namespace sp::scripts {
     struct EditTool {
         Entity selectedEntity;
         float toolDistance;
-        glm::vec3 lastToolPosition, faceNormal;
+        glm::vec3 lastToolPosition = glm::vec3(0);
+        glm::vec3 faceNormal = glm::vec3(0);
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
         bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode, bool snapToFace) {
@@ -168,12 +169,12 @@ namespace sp::scripts {
             auto &transform = ent.Get<TransformTree>(lock);
 
             PhysicsQuery::Raycast::Result raycastResult = {};
-            if (raycastQuery) {
-                auto &result = query.Lookup(raycastQuery).result;
-                if (result) raycastResult = result.value();
-            } else {
+            if (!raycastQuery) {
                 raycastQuery = query.NewQuery(PhysicsQuery::Raycast(100.0f,
                     PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+            } else {
+                auto &result = query.Lookup(raycastQuery).result;
+                if (result) raycastResult = result.value();
             }
 
             auto globalTransform = transform.GetGlobalTransform(lock);
@@ -196,6 +197,8 @@ namespace sp::scripts {
                             lastToolPosition = position + forward * toolDistance;
                             if (raycastResult.normal != glm::vec3(0)) {
                                 faceNormal = glm::normalize(raycastResult.normal);
+                            } else {
+                                faceNormal = glm::vec3(0);
                             }
                         } else if (selectedEntity) {
                             if (snapMode && raycastResult.subTarget) {

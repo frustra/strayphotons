@@ -43,7 +43,8 @@ namespace sp {
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
                 inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
-                inspector.Set<ecs::Screen>(lock);
+                auto &screen = inspector.Set<ecs::Screen>(lock);
+                screen.resolution = glm::ivec2(800, 1000);
                 inspector.Set<ecs::EventInput>(lock);
                 auto &transform = inspector.Set<ecs::TransformTree>(lock);
                 transform.pose.SetScale(glm::vec3(0.8, 1, 1));

@@ -23,7 +23,7 @@ namespace sp::vulkan {
     class GuiRenderer : public NonCopyable {
     public:
         GuiRenderer(DeviceContext &device);
-        void Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport);
+        void Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale);
         void Tick();
 
     private:

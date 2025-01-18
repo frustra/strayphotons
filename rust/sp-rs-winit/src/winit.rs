@@ -228,6 +228,11 @@ mod ctx {
             width_out: *mut u32,
             height_out: *mut u32,
         );
+        pub unsafe fn get_window_content_scale(
+            context: &WinitContext,
+            x_out: *mut f32,
+            y_out: *mut f32,
+        );
 
         pub unsafe fn set_window_title(context: &WinitContext, title: *const c_char);
         pub unsafe fn set_window_mode(
@@ -527,6 +532,17 @@ pub unsafe fn get_window_inner_size(context: &WinitContext, width_out: *mut u32,
     } else {
         *width_out = 0;
         *height_out = 0;
+    }
+}
+
+pub unsafe fn get_window_content_scale(context: &WinitContext, x_out: *mut f32, y_out: *mut f32) {
+    if let Some(window) = context.window.as_ref() {
+        let content_scale = window.scale_factor() as f32;
+        *x_out = content_scale;
+        *y_out = content_scale;
+    } else {
+        *x_out = 1.0;
+        *y_out = 1.0;
     }
 }
 

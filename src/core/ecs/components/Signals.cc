@@ -71,7 +71,9 @@ namespace ecs {
             freeIndexes.pop();
             signals[index] = Signal(value, ref);
         }
-        entityMapping.emplace(ref.GetEntity().Get(lock), index);
+        Entity ent = ref.GetEntity().Get(lock);
+        Assertf(ent.Exists(lock), "Setting signal value on missing entity: %s", ref.GetEntity().Name().String());
+        entityMapping.emplace(ent, index);
         return index;
     }
 
@@ -85,7 +87,9 @@ namespace ecs {
             freeIndexes.pop();
             signals[index] = Signal(expr, ref);
         }
-        entityMapping.emplace(ref.GetEntity().Get(lock), index);
+        Entity ent = ref.GetEntity().Get(lock);
+        Assertf(ent.Exists(lock), "Setting signal expression on missing entity: %s", ref.GetEntity().Name().String());
+        entityMapping.emplace(ent, index);
         return index;
     }
 
@@ -100,7 +104,7 @@ namespace ecs {
                 break;
             }
         }
-        if (signal.ref) signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+        if (signal.ref) signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
         signal = Signal();
         freeIndexes.push(index);
     }
@@ -109,7 +113,7 @@ namespace ecs {
         auto range = entityMapping.equal_range(entity);
         for (auto it = range.first; it != range.second; it++) {
             Signal &signal = signals[it->second];
-            signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+            signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
             signal = Signal();
             freeIndexes.push(it->second);
         }

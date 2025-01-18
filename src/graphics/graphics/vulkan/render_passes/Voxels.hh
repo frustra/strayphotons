@@ -47,7 +47,7 @@ namespace sp::vulkan::renderer {
         uint32 fragmentListCount;
 
         ecs::Transform voxelToWorld;
-        glm::ivec3 voxelGridSize;
+        glm::ivec3 voxelGridSize = glm::ivec3(0);
         uint32_t voxelLayerCount;
 
         std::array<vk::DescriptorSet, 2> layerDescriptorSets;

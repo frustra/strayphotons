@@ -141,7 +141,6 @@ namespace sp {
         std::shared_ptr<Scene> playerScene, bindingsScene;
         CFuncCollection funcs;
 
-        friend struct SceneInfo;
         friend class Scene;
     };
 

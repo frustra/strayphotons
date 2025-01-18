@@ -135,14 +135,14 @@ namespace sp::json {
     }
     template<>
     inline bool Load(glm::quat &dst, const picojson::value &src) {
-        glm::vec4 r;
+        glm::vec4 r(0);
         if (!detail::LoadVec<4>(r, src)) return false;
         dst = glm::angleAxis(glm::radians(r[0]), glm::normalize(glm::vec3(r[1], r[2], r[3])));
         return true;
     }
     template<>
     inline bool Load(glm::mat3 &dst, const picojson::value &src) {
-        glm::quat q;
+        glm::quat q = glm::quat();
         if (!Load(q, src)) return false;
         dst = glm::mat3_cast(q);
         return true;

@@ -166,6 +166,15 @@ impl CVar {
         sp_cvar_set_ivec2(self.0, value.0, value.1)
     }
 
+    pub unsafe fn get_vec2(&mut self) -> (f32, f32) {
+        let mut value: (f32, f32) = (0.0, 0.0);
+        sp_cvar_get_vec2(self.0, &mut value.0, &mut value.1);
+        value
+    }
+    pub unsafe fn set_vec2(&mut self, value: (f32, f32)) {
+        sp_cvar_set_vec2(self.0, value.0, value.1)
+    }
+
     pub unsafe fn unregister_cfunc(&mut self) {
         sp_unregister_cfunc(self.0)
     }

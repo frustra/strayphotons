@@ -36,14 +36,14 @@ namespace sp::scripts {
             auto &joints = ent.Get<PhysicsJoints>(lock);
             bool enableInteraction = ph.type == PhysicsActorType::Dynamic && !disabled;
 
-            glm::vec3 centerOfMass;
+            glm::vec3 centerOfMass = glm::vec3(0);
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
-                if (massQuery) {
+                if (!massQuery) {
+                    massQuery = query.NewQuery(PhysicsQuery::Mass(ent));
+                } else {
                     auto &result = query.Lookup(massQuery).result;
                     if (result) centerOfMass = result->centerOfMass;
-                } else {
-                    massQuery = query.NewQuery(PhysicsQuery::Mass(ent));
                 }
             }
 
@@ -222,13 +222,13 @@ namespace sp::scripts {
                 auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
 
                 PhysicsQuery::Raycast::Result raycastResult = {};
-                if (raycastQuery) {
-                    auto &result = query.Lookup(raycastQuery).result;
-                    if (result) raycastResult = result.value();
-                } else {
+                if (!raycastQuery) {
                     raycastQuery = query.NewQuery(PhysicsQuery::Raycast(grabDistance,
                         PhysicsGroupMask(
                             PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+                } else {
+                    auto &result = query.Lookup(raycastQuery).result;
+                    if (result) raycastResult = result.value();
                 }
 
                 bool rotating = SignalRef(ent, "interact_rotate").GetSignal(lock) >= 0.5;

@@ -170,7 +170,10 @@ namespace sp::vulkan {
                     .Build([](rg::PassBuilder &builder) {
                         rg::ImageDesc desc;
                         auto windowSize = CVarWindowSize.Get();
-                        desc.extent = vk::Extent3D(windowSize.x, windowSize.y, 1);
+                        auto windowScale = CVarWindowScale.Get();
+                        if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                        if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+                        desc.extent = vk::Extent3D(windowSize.x / windowScale.x, windowSize.y / windowScale.y, 1);
                         desc.format = vk::Format::eR8G8B8A8Srgb;
                         builder.OutputColorAttachment(0, "LogoView", desc, {LoadOp::DontCare, StoreOp::Store});
                     })
@@ -233,7 +236,13 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(source);
                 }
 
-                if (debugGui) guiRenderer->Render(*debugGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+                if (debugGui) {
+                    auto windowScale = CVarWindowScale.Get();
+                    if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                    if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+
+                    guiRenderer->Render(*debugGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()}, windowScale);
+                }
             });
 
         graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
@@ -303,7 +312,7 @@ namespace sp::vulkan {
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrViews.size() == 0) return {};
 
-        glm::ivec2 viewExtents;
+        glm::ivec2 viewExtents = glm::ivec2(0);
         sp::EnumArray<ecs::View, ecs::XrEye> viewsByEye;
 
         for (auto &ent : xrViews) {
@@ -489,7 +498,10 @@ namespace sp::vulkan {
             auto window = CreateGuiWindow(gui.windowName, ent);
             if (window) {
                 context->Attach(window);
-                guis.emplace_back(RenderableGui{ent, context.get(), context});
+                auto windowScale = CVarWindowScale.Get();
+                if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+                guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
             }
         }
     }
@@ -516,17 +528,14 @@ namespace sp::vulkan {
             if (!gui.entity.Has<ecs::Gui, ecs::Screen, ecs::TransformSnapshot, ecs::Name>(lock)) continue;
             if (gui.entity.Get<ecs::Gui>(lock).target != ecs::GuiTarget::World) continue;
 
+            auto &screen = gui.entity.Get<ecs::Screen>(lock);
+            gui.scale = screen.scale;
+
             graph.AddPass("Gui")
                 .Build([&](rg::PassBuilder &builder) {
                     rg::ImageDesc desc;
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-
-                    // 1000 pixels per meter world-scale (~25 dpi)
-                    desc.extent = vk::Extent3D(1000, 1000, 1);
-                    auto guiScale = gui.entity.Get<ecs::TransformSnapshot>(lock).globalPose.GetScale();
-                    desc.extent.width *= guiScale.x;
-                    desc.extent.height *= guiScale.y;
-
+                    desc.extent = vk::Extent3D(std::max(1, screen.resolution.x), std::max(1, screen.resolution.y), 1);
                     desc.mipLevels = CalculateMipmapLevels(desc.extent);
                     desc.sampler = SamplerType::TrilinearClampEdge;
 
@@ -537,7 +546,7 @@ namespace sp::vulkan {
                 .Execute([this, gui](rg::Resources &resources, CommandContext &cmd) {
                     auto extent = resources.GetImageView(gui.renderGraphID)->Extent();
                     vk::Rect2D viewport = {{}, {extent.width, extent.height}};
-                    guiRenderer->Render(*gui.context, cmd, viewport);
+                    guiRenderer->Render(*gui.context, cmd, viewport, gui.scale);
                 });
 
             renderer::AddMipmap(graph, gui.renderGraphID);
@@ -571,7 +580,11 @@ namespace sp::vulkan {
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 auto extent = resources.GetImageView("menu_gui")->Extent();
                 vk::Rect2D viewport = {{}, {extent.width, extent.height}};
-                guiRenderer->Render(*menuGui, cmd, viewport);
+                auto windowScale = CVarWindowScale.Get();
+                if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+
+                guiRenderer->Render(*menuGui, cmd, viewport, windowScale);
             });
 
         if (mipmapID != rg::InvalidResource) renderer::AddMipmap(graph, mipmapID);

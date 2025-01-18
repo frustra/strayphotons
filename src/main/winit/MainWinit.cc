@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
     if (!sp_game_get_cli_flag(GameInstance, "no-vr")) sp_game_enable_xr_system(GameInstance, true);
 #endif
 
-    glm::ivec2 initialSize;
-    sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+    glm::ivec2 initialSize = glm::ivec2(0);
+    sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
     sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
     bool enableValidationLayers = sp_game_get_cli_flag(GameInstance, "with-validation-layers");
     winit::create_context((size_t)GameInstance, initialSize.x, initialSize.y, enableValidationLayers);
@@ -144,11 +144,12 @@ int main(int argc, char **argv) {
         if (!winitContext) return;
 
         static bool systemFullscreen;
-        static glm::ivec2 systemWindowSize;
-        static glm::ivec4 storedWindowRect; // Remember window position and size when returning from fullscreen
+        static glm::ivec2 systemWindowSize = glm::ivec2(0);
+        // Remember window position and size when returning from fullscreen
+        static glm::ivec4 storedWindowRect = glm::ivec4(0);
 
         sp_cvar_t *cvarWindowFullscreen = sp_get_cvar("r.fullscreen");
-        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.size");
+        sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
         bool fullscreen = sp_cvar_get_bool(cvarWindowFullscreen);
         if (systemFullscreen != fullscreen) {
             if (fullscreen) {
@@ -157,7 +158,7 @@ int main(int argc, char **argv) {
                 storedWindowRect.w = systemWindowSize.y;
 
                 auto monitor = winit::get_active_monitor(*winitContext);
-                glm::uvec2 readWindowSize;
+                glm::uvec2 readWindowSize = glm::uvec2(0);
                 winit::get_monitor_resolution(*monitor, &readWindowSize.x, &readWindowSize.y);
                 if (readWindowSize != glm::uvec2(0)) systemWindowSize = readWindowSize;
                 winit::set_window_mode(*winitContext,
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
             systemFullscreen = fullscreen;
         }
 
-        glm::ivec2 windowSize;
+        glm::ivec2 windowSize = glm::ivec2(0);
         sp_cvar_get_ivec2(cvarWindowSize, &windowSize.x, &windowSize.y);
         if (systemWindowSize != windowSize) {
             if (sp_cvar_get_bool(cvarWindowFullscreen)) {
@@ -192,7 +193,15 @@ int main(int argc, char **argv) {
             systemWindowSize = windowSize;
         }
 
-        glm::uvec2 fbExtents;
+        sp_cvar_t *cvarWindowScale = sp_get_cvar("r.windowscale");
+        glm::vec2 contentScale = glm::vec2(0);
+        sp_cvar_get_vec2(cvarWindowScale, &contentScale.x, &contentScale.y);
+        if (contentScale.x <= 0.0f) {
+            winit::get_window_content_scale(*winitContext, &contentScale.x, &contentScale.y);
+            sp_cvar_set_vec2(cvarWindowScale, contentScale.x, contentScale.y);
+        }
+
+        glm::uvec2 fbExtents = glm::uvec2(0);
         winit::get_window_inner_size(*winitContext, &fbExtents.x, &fbExtents.y);
         if (fbExtents.x > 0 && fbExtents.y > 0) {
             *width_out = fbExtents.x;

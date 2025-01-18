@@ -23,7 +23,8 @@
 		{
 			"name": "occluder",
 			"renderable": {
-				"model": "occluder"
+				"model": "occluder",
+				"visibility": "DirectCamera|DirectEye|LightingShadow"
 			},
 			"transform": {
 				"parent": "scoperoot",

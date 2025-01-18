@@ -28,7 +28,7 @@ namespace sp {
             if (completionPopupVisible) flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 
             ImGui::SetNextWindowPos(ImVec2(0, 0));
-            ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
+            ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, std::min(400.0f, io.DisplaySize.y)));
             ImVec2 popupPos;
             bool requestNewCompletions = false;
 

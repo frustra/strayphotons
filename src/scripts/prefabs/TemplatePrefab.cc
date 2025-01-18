@@ -274,7 +274,7 @@ namespace ecs {
                 for (int y = 0; y < count.y; y++) {
                     auto offset2D = (glm::vec2{float(x), float(y)} + glm::vec2(0.5)) * stride;
 
-                    glm::vec3 offset3D;
+                    glm::vec3 offset3D = glm::vec3(0);
                     offset3D[axesIndex.first] = offset2D.x;
                     offset3D[axesIndex.second] = offset2D.y;
 
@@ -289,8 +289,9 @@ namespace ecs {
                         continue;
                     }
 
-                    SignalRef(tileEnt, "tile.x").SetValue(lock, x);
-                    SignalRef(tileEnt, "tile.y").SetValue(lock, y);
+                    auto &tileSignals = tileEnt.Get<SignalOutput>(lock).signals;
+                    tileSignals.emplace("tile.x", x);
+                    tileSignals.emplace("tile.y", y);
                     surface.AddEntities(lock, tileScope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);

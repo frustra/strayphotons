@@ -19,7 +19,7 @@ namespace ecs {
         glm::vec3 direction = {0, 0, -1}; // In model space.
 
         // Updated automatically.
-        glm::vec3 illuminance;
+        glm::vec3 illuminance = glm::vec3(0);
 
         LightSensor() {}
         LightSensor(glm::vec3 p, glm::vec3 n) : position(p), direction(n) {}

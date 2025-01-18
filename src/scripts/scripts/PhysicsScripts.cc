@@ -18,7 +18,7 @@ namespace sp::scripts {
     struct VoxelController {
         float voxelScale = 0.1f;
         float voxelStride = 1.0f;
-        glm::vec3 voxelOffset;
+        glm::vec3 voxelOffset = glm::vec3(0);
         EntityRef alignmentEntity, followEntity;
         std::optional<glm::vec3> alignment;
 
@@ -32,7 +32,7 @@ namespace sp::scripts {
             glm::vec3 offset = voxelOffset * glm::vec3(voxelArea.extents) * voxelScale;
             auto alignmentTarget = alignmentEntity.Get(lock);
             if (alignmentTarget.Has<TransformSnapshot>(lock)) {
-                glm::vec3 alignmentOffset;
+                glm::vec3 alignmentOffset = glm::vec3(0);
                 auto &alignmentTargetPos = alignmentTarget.Get<TransformSnapshot>(lock).globalPose.GetPosition();
                 if (alignment) {
                     alignmentOffset = alignmentTargetPos - alignment.value();
@@ -65,7 +65,7 @@ namespace sp::scripts {
     InternalPhysicsScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
 
     struct RotatePhysics {
-        glm::vec3 rotationAxis;
+        glm::vec3 rotationAxis = glm::vec3(0);
         float rotationSpeedRpm;
 
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {

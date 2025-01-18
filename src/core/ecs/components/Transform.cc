@@ -47,7 +47,7 @@ namespace ecs {
                     // Multiple rotations were given
                     glm::quat orientation = glm::identity<glm::quat>();
                     for (auto &r : paramSecond) {
-                        glm::quat rotation;
+                        glm::quat rotation = glm::quat();
                         if (!sp::json::Load(rotation, r)) {
                             Errorf("Invalid transform rotation: %s", param.second.to_str());
                             return false;
@@ -57,7 +57,7 @@ namespace ecs {
                     transform.SetRotation(orientation);
                 } else {
                     // A single rotation was given
-                    glm::quat rotation;
+                    glm::quat rotation = glm::quat();
                     if (!sp::json::Load(rotation, param.second)) {
                         Errorf("Invalid transform rotation: %s", param.second.to_str());
                         return false;

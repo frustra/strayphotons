@@ -192,7 +192,7 @@ namespace sp {
     void Scene::ApplyScene(bool resetLive, SceneApplyCallback callback) {
         ZoneScoped;
         ZoneStr(data->name);
-        Tracef("Applying scene: %s", data->name);
+        Debugf("Applying scene: %s", data->name);
         Assertf(data->sceneEntity,
             "Scene::ApplyScene %s missing scene entity: %s",
             data->name,
@@ -205,7 +205,7 @@ namespace sp {
             data->name,
             data->sceneEntity.Name().String());
 
-        // Build a flattened list of entities to apply for the staging ECS
+        // Build a flattened list of entities to apply from the staging ECS
         std::vector<std::pair<ecs::Entity, ecs::FlatEntity>> entities;
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);

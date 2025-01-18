@@ -1,0 +1,78 @@
+{
+	"components": {
+		"transform": {},
+		"signal_output": {
+			"alive": 0
+		},
+		"signal_bindings": {
+			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
+			"next_alive": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)"
+		},
+		"event_bindings": {},
+		"physics": {
+			"shapes": {
+				"box": [0.03, 0.03, 0.03],
+				"transform": {
+					"translate": [0, 0.015, 0]
+				}
+			},
+			"type": "Static"
+		},
+		"script": [
+			{
+				"prefab": "life_cell",
+				"parameters": {
+					"board_size": [32, 32]
+				}
+			},
+			{
+				"onTick": "signal_from_signal",
+				"parameters": {
+					"alive": "scoperoot/next_alive"
+				}
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "light",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.015, 0],
+				"scale": 0.03
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "component_from_signal",
+					"parameters": {
+						"renderable.emissive": "scoperoot/alive"
+					}
+				}
+			]
+		},
+		{
+			"name": "debug",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.03, 0],
+				"scale": 0.01
+			},
+			"_renderable": {
+				"model": "box",
+				"color_override": [0, 0, 0, 1]
+			},
+			"_script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable.color_override.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
+					"renderable.color_override.g": "scoperoot/alive",
+					"renderable.color_override.b": "scoperoot/next_alive"
+				}
+			}
+		}
+	]
+}

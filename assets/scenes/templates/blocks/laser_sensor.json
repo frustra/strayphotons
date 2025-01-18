@@ -61,7 +61,8 @@
 				"window_name": "signal_display"
 			},
 			"screen": {
-				"luminance": [3, 3, 3]
+				"luminance": [3, 3, 3],
+				"resolution": [130, 50]
 			},
 			"signal_bindings": {
 				"text_color_g": "!!scoperoot/value",

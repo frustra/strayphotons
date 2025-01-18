@@ -454,11 +454,9 @@ namespace sp::vulkan::renderer {
         AddBufferReadback(graph, "FragmentListMetadata", 0, {}, [listCount = fragmentListCount](BufferPtr buffer) {
             auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
             for (uint32 i = 0; i < listCount; i++) {
-                Assertf(map[i].count <= map[i].capacity,
-                    "fragment list %d overflow, count: %u, capacity: %u",
-                    i,
-                    map[i].count,
-                    map[i].capacity);
+                if (map[i].count > map[i].capacity) {
+                    Warnf("fragment list %d overflow, count: %u, capacity: %u", i, map[i].count, map[i].capacity);
+                }
             }
         });
     }
