@@ -69,23 +69,12 @@ namespace ecs {
             refsToFree.emplace_back(refPtr);
         });
         if (!refsToFree.empty()) {
-            {
-                ZoneScopedN("FreeStagingSignals");
-                auto lock = ecs::StartStagingTransaction<Write<Signals>>();
-                auto &signals = lock.Get<Signals>();
-                for (auto &refPtr : refsToFree) {
-                    signals.FreeSignal(lock, refPtr->stagingIndex);
-                    refPtr->stagingIndex = std::numeric_limits<size_t>::max();
-                }
-            }
-            {
-                ZoneScopedN("FreeLiveSignals");
-                auto lock = ecs::StartTransaction<Write<Signals>>();
-                auto &signals = lock.Get<Signals>();
-                for (auto &refPtr : refsToFree) {
-                    signals.FreeSignal(lock, refPtr->liveIndex);
-                    refPtr->liveIndex = std::numeric_limits<size_t>::max();
-                }
+            ZoneScopedN("FreeSignals");
+            auto lock = ecs::StartTransaction<Write<Signals>>();
+            auto &signals = lock.Get<Signals>();
+            for (auto &refPtr : refsToFree) {
+                signals.FreeSignal(lock, refPtr->index);
+                refPtr->index = std::numeric_limits<size_t>::max();
             }
         }
     }

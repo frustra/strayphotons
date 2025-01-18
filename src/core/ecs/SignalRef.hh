@@ -30,9 +30,7 @@ namespace ecs {
         SignalRef(const SignalRef &ref) : ptr(ref.ptr) {}
         SignalRef(const std::shared_ptr<Ref> &ptr) : ptr(ptr) {}
 
-        size_t &GetIndex(const Lock<> &lock) const;
-        size_t &GetLiveIndex() const;
-        size_t &GetStagingIndex() const;
+        size_t &GetIndex() const;
 
         const EntityRef &GetEntity() const;
         const std::string &GetSignalName() const;

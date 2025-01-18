@@ -104,7 +104,7 @@ namespace ecs {
                 break;
             }
         }
-        if (signal.ref) signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+        if (signal.ref) signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
         signal = Signal();
         freeIndexes.push(index);
     }
@@ -113,7 +113,7 @@ namespace ecs {
         auto range = entityMapping.equal_range(entity);
         for (auto it = range.first; it != range.second; it++) {
             Signal &signal = signals[it->second];
-            signal.ref.GetIndex(lock) = std::numeric_limits<size_t>::max();
+            signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
             signal = Signal();
             freeIndexes.push(it->second);
         }
