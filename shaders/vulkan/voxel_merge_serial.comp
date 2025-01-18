@@ -34,17 +34,19 @@ layout(binding = 4, r32ui) uniform uimage3D fillCounters;
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 
 void main() {
-	for (int index = 0; index < count; index++) {
-		ivec3 position = ivec3(fragmentList[index].position);
-		vec3 overflowRadiance = vec3(fragmentList[index].radiance);
-		vec3 overflowNormal = vec3(fragmentList[index].normal);
-		vec4 existingRadiance = imageLoad(voxelRadiance, position);
-		vec4 existingNormal = imageLoad(voxelNormals, position);
+    for (int index = 0; index < count; index++) {
+        ivec3 position = ivec3(fragmentList[index].position);
+        vec3 overflowRadiance = vec3(fragmentList[index].radiance);
+        vec3 overflowNormal = vec3(fragmentList[index].normal);
+        vec4 existingRadiance = imageLoad(voxelRadiance, position);
+        vec4 existingNormal = imageLoad(voxelNormals, position);
 
-    	uint overflowCount = imageLoad(fillCounters, position).r - FRAGMENT_LIST_COUNT + 1;
-		float weight = 1.0f / (FRAGMENT_LIST_COUNT + existingRadiance.w - 1);
-		float isNotLast = 1 - step(overflowCount, existingRadiance.w - 1); // true if existingRadiance.w - 1 < overflowCount
-		imageStore(voxelRadiance, position, vec4(mix(existingRadiance.rgb, overflowRadiance, weight), isNotLast * existingRadiance.w + 1));
-		imageStore(voxelNormals, position, vec4(mix(existingNormal.rgb, overflowNormal, weight), 1));
-	}
+        uint overflowCount = imageLoad(fillCounters, position).r - FRAGMENT_LIST_COUNT + 1;
+        float weight = 1.0f / (FRAGMENT_LIST_COUNT + existingRadiance.w - 1);
+        // isNotLast = true if existingRadiance.w - 1 < overflowCount
+        float isNotLast = 1 - step(overflowCount, existingRadiance.w - 1);
+        vec3 newRadiance = mix(existingRadiance.rgb, overflowRadiance, weight);
+        imageStore(voxelRadiance, position, vec4(newRadiance, isNotLast * existingRadiance.w + 1));
+        imageStore(voxelNormals, position, vec4(mix(existingNormal.rgb, overflowNormal, weight), 1));
+    }
 }

@@ -37,18 +37,18 @@ layout(std430, binding = 4) buffer VoxelFragmentList {
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 
 void main() {
-	for (int index = 0; index < count; index++) {
-		ivec3 position = ivec3(fragmentLists[index].position);
-		vec3 overflowRadiance = vec3(fragmentLists[index].radiance);
-		vec3 overflowNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
-		float alpha = max(0, dot(overflowNormal, -layerDirection));
-		overflowRadiance *= alpha;
+    for (int index = 0; index < count; index++) {
+        ivec3 position = ivec3(fragmentLists[index].position);
+        vec3 overflowRadiance = vec3(fragmentLists[index].radiance);
+        vec3 overflowNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
+        float alpha = max(0, dot(overflowNormal, -layerDirection));
+        overflowRadiance *= alpha;
 
-		vec4 radiance = imageLoad(voxelLayer, position);
-		radiance.a += alpha;
-		if (radiance.a > 0) {
-			radiance.rgb = mix(radiance.rgb, overflowRadiance, alpha / radiance.a);
-			imageStore(voxelLayer, position, radiance);
-		}
-	}
+        vec4 radiance = imageLoad(voxelLayer, position);
+        radiance.a += alpha;
+        if (radiance.a > 0) {
+            radiance.rgb = mix(radiance.rgb, overflowRadiance, alpha / radiance.a);
+            imageStore(voxelLayer, position, radiance);
+        }
+    }
 }
