@@ -28,6 +28,8 @@ namespace sp::vulkan::renderer {
         void AddGelTextures(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
 
+        bool PreloadGelTextures(ecs::Lock<ecs::Read<ecs::Light>> lock);
+
     private:
         void AllocateShadowMap();
         GPUScene &scene;
@@ -55,7 +57,7 @@ namespace sp::vulkan::renderer {
             std::optional<uint32_t> opticIndex;
 
             std::string gelName;
-            const TextureIndex *gelTexture = nullptr;
+            std::optional<TextureIndex> gelTexture;
 
             bool operator==(const VirtualLight &) const;
         };

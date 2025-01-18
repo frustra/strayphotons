@@ -90,7 +90,7 @@ void main() {
                          smoothstep(0.0, 0.1, length(indirectDiffuse));
     }
 
-    uint bucket = min(FRAGMENT_LIST_COUNT, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
+    uint bucket = min(FRAGMENT_LIST_COUNT - 1, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
     if (index >= fragmentListMetadata[bucket].capacity) return;
     if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentListMetadata[bucket].cmd.x, 1);

@@ -8,6 +8,7 @@
 #include "Lighting.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
@@ -55,7 +56,6 @@ namespace sp::vulkan::renderer {
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         ZoneScoped;
-        gelTextureCache.clear();
         lights.clear();
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
@@ -65,15 +65,8 @@ namespace sp::vulkan::renderer {
             auto &gelName = light.gelName;
 
             if (!gelName.empty() && gelTextureCache.find(gelName) == gelTextureCache.end()) {
-                if (starts_with(gelName, "graph:")) {
-                    gelTextureCache[gelName] = {};
-                } else if (starts_with(gelName, "asset:")) {
-                    auto handle = scene.textures.LoadAssetImage(gelName.substr(6), true);
-                    gelTextureCache[gelName] = handle;
-
-                    // cull lights that don't have their gel loaded yet
-                    if (!handle.Ready()) continue;
-                }
+                // cull lights that don't have their gel loaded yet
+                continue;
             }
 
             if (!light.on) continue;
@@ -117,7 +110,7 @@ namespace sp::vulkan::renderer {
                     glm::vec2(1, 0),
                 };
                 vLight.gelName = gelName;
-                vLight.gelTexture = &gelTextureCache[gelName].index;
+                vLight.gelTexture = gelTextureCache[gelName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -240,7 +233,7 @@ namespace sp::vulkan::renderer {
                 }
 
                 vLight.gelName = light.gelName;
-                vLight.gelTexture = &gelTextureCache[light.gelName].index;
+                vLight.gelTexture = gelTextureCache[light.gelName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -617,6 +610,30 @@ namespace sp::vulkan::renderer {
 
                 cmd.Draw(3);
             });
+    }
+
+    bool Lighting::PreloadGelTextures(ecs::Lock<ecs::Read<ecs::Light>> lock) {
+        bool complete = true;
+        gelTextureCache.clear();
+        for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
+            auto &light = ent.Get<ecs::Light>(lock);
+            if (light.gelName.empty()) continue;
+            if (starts_with(light.gelName, "graph:")) {
+                gelTextureCache[light.gelName] = {};
+            } else if (starts_with(light.gelName, "asset:")) {
+                auto it = gelTextureCache.find(light.gelName);
+                if (it == gelTextureCache.end()) {
+                    auto handle = scene.textures.LoadAssetImage(light.gelName.substr(6), true);
+                    gelTextureCache[light.gelName] = handle;
+
+                    if (!handle.Ready()) complete = false;
+                } else {
+                    auto &handle = it->second;
+                    if (!handle.Ready()) complete = false;
+                }
+            }
+        }
+        return complete;
     }
 
     bool Lighting::VirtualLight::operator==(const VirtualLight &other) const {
