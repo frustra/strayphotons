@@ -141,7 +141,6 @@ namespace sp::scene {
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     void ApplyFlatEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> &live,
-        const Entity &stagingId,
         const Entity &liveId,
         const FlatEntity &flatEntity,
         bool resetLive) {

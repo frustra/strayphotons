@@ -16,9 +16,6 @@
 namespace ecs {
     template<>
     void Component<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget) {
-        // if (liveTarget && dst.queries.empty() && !src.queries.empty()) {
-        //     dst.queries = src.queries;
-        // }
-        if (dst.queries.empty()) dst.queries = src.queries;
+        if (liveTarget && dst.queries.empty()) dst.queries = src.queries;
     }
 } // namespace ecs
