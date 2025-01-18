@@ -389,7 +389,7 @@ namespace sp::vulkan::renderer {
                 cmd.EndRenderPass();
             });
 
-        for (uint32_t i = 1; i < fragmentListCount; i++) {
+        for (uint32_t i = 1; i < fragmentListCount - 1; i++) {
             graph.AddPass("Merge")
                 .Build([&](rg::PassBuilder &builder) {
                     builder.Write("Radiance", Access::ComputeShaderWrite);
@@ -423,6 +423,36 @@ namespace sp::vulkan::renderer {
                         i * sizeof(GPUVoxelFragmentList) + offsetof(GPUVoxelFragmentList, cmd));
                 });
         }
+        graph.AddPass("MergeSerial")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.Write("Radiance", Access::ComputeShaderWrite);
+                builder.Write("Normals", Access::ComputeShaderWrite);
+
+                builder.Read("FillCounters", Access::ComputeShaderReadStorage);
+                builder.Read("FragmentListMetadata", Access::IndirectBuffer);
+                builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);
+                builder.Read("FragmentLists", Access::ComputeShaderReadStorage);
+            })
+            .Execute([this, i = fragmentListCount - 1](rg::Resources &resources, CommandContext &cmd) {
+                cmd.SetComputeShader("voxel_merge_serial.comp");
+                cmd.SetShaderConstant(ShaderStage::Compute, 0, fragmentListCount);
+
+                cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
+                cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
+
+                auto metadata = resources.GetBuffer("FragmentListMetadata");
+                cmd.SetStorageBuffer(0, 2, metadata, i * sizeof(GPUVoxelFragmentList), sizeof(GPUVoxelFragmentList));
+
+                cmd.SetStorageBuffer(0,
+                    3,
+                    resources.GetBuffer("FragmentLists"),
+                    fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
+                    fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
+
+                cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
+
+                cmd.Dispatch(1, 1, 1);
+            });
 
         for (uint32_t i = 1; i < voxelGridMips; i++) {
             graph.AddPass("Mipmap")
@@ -602,7 +632,7 @@ namespace sp::vulkan::renderer {
                     cmd.DispatchIndirect(metadata, offsetof(GPUVoxelFragmentList, cmd));
                 });
 
-            for (uint32_t i = 1; i < fragmentListCount; i++) {
+            for (uint32_t i = 1; i < fragmentListCount - 1; i++) {
                 graph.AddPass("Merge")
                     .Build([&](rg::PassBuilder &builder) {
                         builder.Read(voxelLayer.name, Access::ComputeShaderReadStorage);
@@ -645,6 +675,46 @@ namespace sp::vulkan::renderer {
                             i * sizeof(GPUVoxelFragmentList) + offsetof(GPUVoxelFragmentList, cmd));
                     });
             }
+            graph.AddPass("MergeSerial")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.Read(voxelLayer.name, Access::ComputeShaderReadStorage);
+                    builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
+
+                    builder.ReadUniform("VoxelState");
+
+                    builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
+                    builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
+                    builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                })
+                .Execute([this, i = fragmentListCount - 1, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetComputeShader("voxel_merge_layer_serial.comp");
+                    cmd.SetShaderConstant(ShaderStage::Compute, 0, fragmentListCount);
+
+                    cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+
+                    GPULayerData layerData = {
+                        directions[voxelLayer.dirIndex],
+                        voxelLayer.layerIndex,
+                    };
+                    cmd.UploadUniformData(0, 1, &layerData);
+
+                    cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.name));
+
+                    auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                    cmd.SetStorageBuffer(0,
+                        3,
+                        metadata,
+                        i * sizeof(GPUVoxelFragmentList),
+                        sizeof(GPUVoxelFragmentList));
+
+                    cmd.SetStorageBuffer(0,
+                        4,
+                        resources.GetBuffer("Voxels.FragmentLists"),
+                        fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
+                        fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
+
+                    cmd.Dispatch(1, 1, 1);
+                });
         }
 
         for (size_t layer = 1; layer < voxelLayerCount; layer++) {

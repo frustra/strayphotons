@@ -31,7 +31,7 @@ layout(std430, binding = 3) buffer VoxelFragmentListMetadata {
 };
 
 layout(std430, binding = 4) buffer VoxelFragmentList {
-    VoxelFragment fragmentLists[];
+    VoxelFragment fragmentLists[]; // Already bound at +offset
 };
 
 layout(constant_id = 0) const int FRAGMENT_LIST_INDEX = 1;
