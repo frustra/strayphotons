@@ -968,6 +968,7 @@ namespace ecs {
 
     void SignalExpression::SetScope(const EntityScope &scope) {
         this->scope = scope;
+        if (!rootNode) return;
         SignalNodePtr newRoot = rootNode->setScope(scope);
         if (newRoot) {
             newRoot->compile(*this, false);

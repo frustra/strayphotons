@@ -54,6 +54,80 @@ namespace ecs {
     };
 
     struct StructFieldDesc;
+    struct StructFieldPtr {
+        std::type_index type;
+        uint32_t offset = 0;
+        const StructFieldDesc *desc = nullptr;
+
+        StructFieldPtr(std::type_index type, uint32_t offset, const StructFieldDesc *desc = nullptr)
+            : type(type), offset(offset), desc(desc) {}
+
+        const std::string &Name() const;
+
+        void *Access(void *structPtr) const {
+            return static_cast<char *>(structPtr) + offset;
+        }
+
+        const void *Access(const void *structPtr) const {
+            return static_cast<const char *>(structPtr) + offset;
+        }
+
+        template<typename T>
+        T &Access(void *structPtr) const {
+            Assertf(type == typeid(T),
+                "StructMetadata::Access called with wrong type: %s, expected %s",
+                typeid(T).name(),
+                type.name());
+            return *reinterpret_cast<T *>(Access(structPtr));
+        }
+
+        template<typename T>
+        const T &Access(const void *structPtr) const {
+            Assertf(type == typeid(T),
+                "StructMetadata::Access called with wrong type: %s, expected %s",
+                typeid(T).name(),
+                type.name());
+            return *reinterpret_cast<const T *>(Access(structPtr));
+        }
+
+        bool operator==(const StructFieldPtr &) const = default;
+
+        void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
+        picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
+        void SetScope(void *dstStruct, const EntityScope &scope) const;
+        bool Compare(const void *a, const void *b) const;
+    };
+
+    struct StructFieldDesc final : public StructFieldPtr {
+        std::string name, description;
+        int fieldIndex = -1;
+        FieldAction actions = ~FieldAction::None;
+
+        StructFieldDesc(const std::string &name,
+            const std::string &description,
+            std::type_index type,
+            size_t offset,
+            FieldAction actions)
+            : StructFieldPtr(type, offset, this), name(name), description(sp::trim(description)), actions(actions) {}
+
+        StructFieldDesc(const StructFieldDesc &other) = delete;
+        StructFieldDesc(StructFieldDesc &&other) = delete;
+
+        bool Load(void *dstStruct, const picojson::value &src) const;
+        // If defaultStruct is nullptr, the field value is always saved
+        void Save(const EntityScope &scope,
+            picojson::value &dst,
+            const void *srcStruct,
+            const void *defaultStruct) const;
+        void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
+
+        bool operator==(const StructFieldDesc &other) const {
+            return type == other.type && offset == other.offset && name == other.name &&
+                   description == other.description && fieldIndex == other.fieldIndex && actions == other.actions;
+        }
+    };
+
     struct StructField : public std::shared_ptr<StructFieldDesc> {
         StructField(std::shared_ptr<StructFieldDesc> field) : std::shared_ptr<StructFieldDesc>(field) {}
 
@@ -138,75 +212,11 @@ namespace ecs {
                 0,
                 actions);
         }
-    };
 
-    struct StructFieldPtr {
-        std::type_index type;
-        uint32_t offset = 0;
-        const StructFieldDesc *desc = nullptr;
-
-        StructFieldPtr(std::type_index type, uint32_t offset, const StructFieldDesc *desc = nullptr)
-            : type(type), offset(offset), desc(desc) {}
-
-        const std::string &Name() const;
-
-        void *Access(void *structPtr) const {
-            return static_cast<char *>(structPtr) + offset;
+        bool operator==(const StructField &other) const {
+            if (!*this || !other) return this->get() == other.get();
+            return *(this->get()) == *(other.get());
         }
-
-        const void *Access(const void *structPtr) const {
-            return static_cast<const char *>(structPtr) + offset;
-        }
-
-        template<typename T>
-        T &Access(void *structPtr) const {
-            Assertf(type == typeid(T),
-                "StructMetadata::Access called with wrong type: %s, expected %s",
-                typeid(T).name(),
-                type.name());
-            return *reinterpret_cast<T *>(Access(structPtr));
-        }
-
-        template<typename T>
-        const T &Access(const void *structPtr) const {
-            Assertf(type == typeid(T),
-                "StructMetadata::Access called with wrong type: %s, expected %s",
-                typeid(T).name(),
-                type.name());
-            return *reinterpret_cast<const T *>(Access(structPtr));
-        }
-
-        bool operator==(const StructFieldPtr &) const = default;
-
-        void InitUndefined(void *dstStruct, const void *defaultStruct) const;
-        void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
-        picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
-        void SetScope(void *dstStruct, const EntityScope &scope) const;
-        bool Compare(const void *a, const void *b) const;
-    };
-
-    struct StructFieldDesc final : public StructFieldPtr {
-        std::string name, description;
-        int fieldIndex = -1;
-        FieldAction actions = ~FieldAction::None;
-
-        StructFieldDesc(const std::string &name,
-            const std::string &description,
-            std::type_index type,
-            size_t offset,
-            FieldAction actions)
-            : StructFieldPtr(type, offset, this), name(name), description(sp::trim(description)), actions(actions) {}
-
-        StructFieldDesc(const StructFieldDesc &other) = delete;
-        StructFieldDesc(StructFieldDesc &&other) = delete;
-
-        bool Load(void *dstStruct, const picojson::value &src) const;
-        // If defaultStruct is nullptr, the field value is always saved
-        void Save(const EntityScope &scope,
-            picojson::value &dst,
-            const void *srcStruct,
-            const void *defaultStruct) const;
-        void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
     };
 
     class StructMetadata : public sp::NonCopyable {
