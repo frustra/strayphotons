@@ -111,4 +111,10 @@ namespace sp::vulkan::renderer {
                 cmd.Draw(3);
             });
     }
+
+    bool SMAA::PreloadTextures() {
+        if (!areaTexAsset) areaTexAsset = Assets().LoadImage("textures/smaa/AreaTex.tga");
+        if (!searchTexAsset) searchTexAsset = Assets().LoadImage("textures/smaa/SearchTex.tga");
+        return areaTexAsset->Ready() && searchTexAsset->Ready();
+    }
 } // namespace sp::vulkan::renderer
