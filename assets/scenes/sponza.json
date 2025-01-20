@@ -228,7 +228,7 @@
 				"shadow_map_clip": [25.5, 50]
 			},
 			"transform": {
-				"translate": [7, 35, 0],
+				"translate": [7.947, 39.203, 0],
 				"rotate": [-90, 1, 0, 0]
 			},
 			"script": {"onTick": "sun"},
