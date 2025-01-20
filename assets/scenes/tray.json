@@ -44,6 +44,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
@@ -68,6 +74,12 @@
 				"group": "UserInterface"
 			},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/laser_sensor"
@@ -94,6 +106,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
@@ -118,6 +136,12 @@
 				"group": "UserInterface"
 			},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/mirror"
@@ -144,6 +168,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/splitter"
 					},
@@ -169,6 +199,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
@@ -193,6 +229,12 @@
 				"group": "UserInterface"
 			},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/big_frame"
@@ -220,6 +262,12 @@
 			},
 			"event_input": {},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/box"

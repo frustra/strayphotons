@@ -215,7 +215,7 @@
 				"scale": 0.2
 			},
 			"voxel_area": {
-				"extents": [64, 64, 144]
+				"extents": [64, 80, 144]
 			}
 		},
 		{
@@ -225,7 +225,7 @@
 				"illuminance": 10,
 				"spot_angle": 22,
 				"shadow_map_size": 12,
-				"shadow_map_clip": [20, 50]
+				"shadow_map_clip": [25.5, 50]
 			},
 			"transform": {
 				"translate": [7, 35, 0],
@@ -235,6 +235,27 @@
 			"signal_output": {
 				"position": 0.2,
 				"fix_position": 1
+			}
+		},
+		{
+			"name": "skybox",
+			"transform": {
+				"scale": [30, 0.1, 90],
+				"translate": [0, 14.9, 0]
+			},
+			"renderable": {
+				"color_override": [0.3922, 0.7843, 1, 1],
+				"emissive": 1
+			},
+			"signal_output": {
+				"interact_holds": 0,
+				"interact_points": 50
+			},
+			"script": {
+				"parameters": {
+					"source": "blocks/box"
+				},
+				"prefab": "template"
 			}
 		}
 	]

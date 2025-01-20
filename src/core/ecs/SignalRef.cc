@@ -63,9 +63,11 @@ namespace ecs {
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
             signal.value = value;
+            signals.MarkDirty(lock, index);
             return signal.value;
         } else {
             index = signals.NewSignal(lock, *this, value);
+            signals.MarkDirty(lock, index);
             return signals.signals[index].value;
         }
     }
@@ -79,6 +81,7 @@ namespace ecs {
 
         auto &signal = signals.signals[index];
         signal.value = -std::numeric_limits<double>::infinity();
+        signals.MarkDirty(lock, index);
         if (signal.expr.IsNull()) signals.FreeSignal(lock, index);
     }
 
@@ -113,9 +116,11 @@ namespace ecs {
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
             signal.expr = expr;
+            signals.MarkDirty(lock, index);
             return signal.expr;
         } else {
             index = signals.NewSignal(lock, *this, expr);
+            signals.MarkDirty(lock, index);
             return signals.signals[index].expr;
         }
     }
@@ -135,6 +140,7 @@ namespace ecs {
 
         auto &signal = signals.signals[index];
         signal.expr = SignalExpression();
+        signals.MarkDirty(lock, index);
         if (std::isinf(signal.value)) signals.FreeSignal(lock, index);
     }
 

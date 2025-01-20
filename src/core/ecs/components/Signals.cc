@@ -71,6 +71,7 @@ namespace ecs {
             freeIndexes.pop();
             signals[index] = Signal(value, ref);
         }
+        MarkDirty(lock, index);
         Entity ent = ref.GetEntity().Get(lock);
         Assertf(ent.Exists(lock), "Setting signal value on missing entity: %s", ref.GetEntity().Name().String());
         return index;
@@ -86,6 +87,7 @@ namespace ecs {
             freeIndexes.pop();
             signals[index] = Signal(expr, ref);
         }
+        MarkDirty(lock, index);
         Entity ent = ref.GetEntity().Get(lock);
         Assertf(ent.Exists(lock), "Setting signal expression on missing entity: %s", ref.GetEntity().Name().String());
         return index;
@@ -94,6 +96,7 @@ namespace ecs {
     void Signals::FreeSignal(const Lock<Write<Signals>> &lock, size_t index) {
         if (index >= signals.size()) return;
         Signal &signal = signals[index];
+        MarkDirty(lock, index);
         if (signal.ref) signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
         signal = Signal();
         freeIndexes.push(index);
@@ -104,6 +107,7 @@ namespace ecs {
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
             if (signal.ref && signal.ref.GetEntity() == entity) {
+                MarkDirty(lock, i);
                 signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
                 signal = Signal();
                 freeIndexes.push(i);
@@ -116,11 +120,47 @@ namespace ecs {
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
             if (signal.ref && !signal.ref.GetEntity().Get(lock).Exists(lock)) {
+                MarkDirty(lock, i);
                 signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
                 signal = Signal();
                 freeIndexes.push(i);
             }
         }
+    }
+
+    void Signals::MarkDirty(const Lock<Write<Signals>> lock, size_t index) {
+        ZoneScoped;
+        auto &signals = lock.Get<Signals>();
+        auto &prevSignals = lock.GetPrevious<Signals>();
+        if (signals.changeCount == prevSignals.changeCount) {
+            signals.dirtyIndices.clear();
+            signals.changeCount++;
+        }
+        Assertf(index < signals.signals.size(), "Signals::MarkDirty index out of range");
+        signals.dirtyIndices.emplace(index);
+    }
+
+    Signals &Signals::operator=(const Signals &other) {
+        ZoneScoped;
+        if (other.changeCount == changeCount) {
+            // Noop
+            DebugAssertf(signals.size() == other.signals.size() && dirtyIndices == other.dirtyIndices,
+                "Changes are different");
+        } else {
+            Assertf(other.changeCount == changeCount + 1,
+                "Signals storage copy skipped a change: %llu -> %llu",
+                changeCount,
+                other.changeCount);
+
+            if (signals.size() != other.signals.size()) signals.resize(other.signals.size());
+            dirtyIndices = other.dirtyIndices;
+            for (size_t index : other.dirtyIndices) {
+                signals[index] = other.signals[index];
+            }
+            freeIndexes = other.freeIndexes;
+        }
+        changeCount = other.changeCount;
+        return *this;
     }
 
     template<>

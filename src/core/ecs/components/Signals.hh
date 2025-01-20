@@ -38,7 +38,9 @@ namespace ecs {
             }
         };
 
+        uint32_t changeCount = 0;
         std::vector<Signal> signals;
+        std::set<size_t> dirtyIndices;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
 
         size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value);
@@ -46,6 +48,10 @@ namespace ecs {
         void FreeSignal(const Lock<Write<Signals>> &lock, size_t index);
         void FreeEntitySignals(const Lock<Write<Signals>> &lock, Entity entity);
         void FreeMissingEntitySignals(const Lock<Write<Signals>> &lock);
+
+        void MarkDirty(const Lock<Write<Signals>> lock, size_t index);
+
+        Signals &operator=(const Signals &other);
     };
 
     struct SignalKey {

@@ -109,6 +109,29 @@
 			}
 		},
 		{
+			"name": "spawn_button",
+			"transform": {
+				"parent": "table.surface",
+				"rotate": [90, 0, 0, -1],
+				"translate": [0.06, -0.11, -0.06]
+			},
+			"event_bindings": {
+				"/button/press": [
+					"life.3_3/life/toggle_alive",
+					"life.4_4/life/toggle_alive",
+					"life.4_5/life/toggle_alive",
+					"life.3_5/life/toggle_alive",
+					"life.2_5/life/toggle_alive"
+				]
+			},
+			"script": {
+				"parameters": {
+					"source": "button"
+				},
+				"prefab": "template"
+			}
+		},
+		{
 			"name": "mirrorcube1",
 			"transform": {
 				"scale": 0.1,
