@@ -225,10 +225,10 @@
 				"illuminance": 10,
 				"spot_angle": 22,
 				"shadow_map_size": 12,
-				"shadow_map_clip": [25.5, 50]
+				"shadow_map_clip": [20, 50]
 			},
 			"transform": {
-				"translate": [7.947, 39.203, 0],
+				"translate": [7, 35, 0],
 				"rotate": [-90, 1, 0, 0]
 			},
 			"script": {"onTick": "sun"},
@@ -244,8 +244,9 @@
 				"translate": [0, 14.9, 0]
 			},
 			"renderable": {
-				"color_override": [0.3922, 0.7843, 1, 1],
-				"emissive": 1
+				"color_override": [0.529, 0.808, 0.922, 1],
+				"emissive": 1,
+				"visibility": "DirectCamera|DirectEye|LightingVoxel"
 			},
 			"signal_output": {
 				"interact_holds": 0,
