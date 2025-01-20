@@ -42,7 +42,11 @@ namespace sp {
 
         void PushEvent(Event &&event) {
             std::lock_guard lock(eventMutex);
-            eventBuffer.emplace_back(std::move(event));
+            if (eventBuffer.size() < eventBuffer.capacity()) {
+                eventBuffer.emplace_back(std::move(event));
+            } else {
+                Errorf("LockFreeEventQueue full! Dropping event %s", typeid(Event).name());
+            }
         }
 
     private:

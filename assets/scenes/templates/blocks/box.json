@@ -1,0 +1,14 @@
+{
+	"components": {
+		"transform": {},
+		"physics": {
+			"shapes": {
+				"box": [1, 1, 1]
+			},
+			"type": "Static"
+		},
+		"renderable": {
+			"model": "box"
+		}
+	}
+}

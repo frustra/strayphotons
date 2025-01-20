@@ -522,14 +522,20 @@ namespace sp {
                                     // Logf("Updating actor mesh geometry: %s index %u",
                                     //     ecs::ToString(lock, owner),
                                     //     shapeUserData->ownerShapeIndex);
+                                    auto newScale = shapeTransform.GetScale();
+                                    if (glm::all(glm::greaterThanEqual(newScale, glm::vec3(PX_MESH_SCALE_MIN)))) {
+                                        meshGeom.scale = PxMeshScale(GlmVec3ToPxVec3(newScale));
+                                        Assertf(meshGeom.isValid(), "Invalid mesh geometry: %s", mesh->meshName);
+                                        pxShape->setGeometry(meshGeom);
 
-                                    meshGeom.scale = PxMeshScale(GlmVec3ToPxVec3(shapeTransform.GetScale()));
-                                    Assertf(meshGeom.isValid(), "Invalid mesh geometry: %s", mesh->meshName);
-                                    pxShape->setGeometry(meshGeom);
-
-                                    shapeUserData->shapeCache = shape;
-                                    shapeUserData->shapeTransform.scale = shapeTransform.scale;
-                                    shapesChanged = true;
+                                        shapeUserData->shapeCache = shape;
+                                        shapeUserData->shapeTransform.scale = shapeTransform.scale;
+                                        shapesChanged = true;
+                                    } else {
+                                        Warnf("Actor mesh scale is out of range: %s %s",
+                                            mesh->meshName,
+                                            glm::to_string(newScale));
+                                    }
                                 }
                                 if (transformMoved) {
                                     // Logf("Updating actor mesh pose: %s index %u",
@@ -558,12 +564,19 @@ namespace sp {
                             //     ecs::ToString(lock, owner),
                             //     shapeUserData->ownerShapeIndex);
 
-                            auto geometry = GeometryFromShape(shape, shapeTransform.GetScale());
-                            pxShape->setGeometry(geometry.any());
+                            auto newScale = shapeTransform.GetScale();
+                            if (glm::all(glm::greaterThanEqual(newScale, glm::vec3(PX_MESH_SCALE_MIN)))) {
+                                auto geometry = GeometryFromShape(shape, newScale);
+                                pxShape->setGeometry(geometry.any());
 
-                            shapeUserData->shapeCache = shape;
-                            shapeUserData->shapeTransform.scale = shapeTransform.scale;
-                            shapesChanged = true;
+                                shapeUserData->shapeCache = shape;
+                                shapeUserData->shapeTransform.scale = shapeTransform.scale;
+                                shapesChanged = true;
+                            } else {
+                                Errorf("Actor shape scale is out of range: %s %s",
+                                    mesh->meshName,
+                                    glm::to_string(newScale));
+                            }
                         }
                         if (transformMoved) {
                             // Logf("Updating actor shape pose: %s index %u",
@@ -607,51 +620,61 @@ namespace sp {
 
                 if (shapeCache) {
                     auto shapeTransform = offset * shape.transform;
-                    for (auto &hull : shapeCache->hulls) {
-                        PxMeshScale meshScale = GlmVec3ToPxVec3(shapeTransform.GetScale());
-                        PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                            PxConvexMeshGeometry(hull.get(), meshScale),
-                            *material);
-                        Assertf(pxShape, "Failed to create physx shape");
+                    auto newScale = shapeTransform.GetScale();
+                    if (glm::all(glm::greaterThanEqual(newScale, glm::vec3(PX_MESH_SCALE_MIN)))) {
+                        for (auto &hull : shapeCache->hulls) {
+                            PxMeshScale meshScale = GlmVec3ToPxVec3(shapeTransform.GetScale());
+                            PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
+                                PxConvexMeshGeometry(hull.get(), meshScale),
+                                *material);
+                            Assertf(pxShape, "Failed to create physx shape");
 
-                        PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
-                            GlmQuatToPxQuat(shapeTransform.GetRotation()));
-                        pxShape->setLocalPose(pxTransform);
+                            PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                                GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                            pxShape->setLocalPose(pxTransform);
 
-                        SetCollisionGroup(pxShape, userData->physicsGroup);
+                            SetCollisionGroup(pxShape, userData->physicsGroup);
 
-                        auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
-                        shapeUserData->shapeCache = shape;
-                        shapeUserData->shapeTransform = shapeTransform;
-                        shapeUserData->hullCache = shapeCache;
-                        pxShape->userData = shapeUserData;
+                            auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
+                            shapeUserData->shapeCache = shape;
+                            shapeUserData->shapeTransform = shapeTransform;
+                            shapeUserData->hullCache = shapeCache;
+                            pxShape->userData = shapeUserData;
 
-                        shapeCount++;
-                        shapesChanged = true;
+                            shapeCount++;
+                            shapesChanged = true;
+                        }
+                    } else {
+                        Errorf("Actor mesh scale is out of range: %s %s", mesh->meshName, glm::to_string(newScale));
                     }
                 } else {
                     Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
                 }
             } else {
                 auto shapeTransform = offset * shape.transform;
-                PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
-                    GeometryFromShape(shape, shapeTransform.GetScale()).any(),
-                    *material);
-                Assertf(pxShape, "Failed to create physx shape");
+                auto newScale = shapeTransform.GetScale();
+                if (glm::all(glm::greaterThanEqual(newScale, glm::vec3(PX_MESH_SCALE_MIN)))) {
+                    PxShape *pxShape = PxRigidActorExt::createExclusiveShape(*actor,
+                        GeometryFromShape(shape, shapeTransform.GetScale()).any(),
+                        *material);
+                    Assertf(pxShape, "Failed to create physx shape");
 
-                PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
-                    GlmQuatToPxQuat(shapeTransform.GetRotation()));
-                pxShape->setLocalPose(pxTransform);
+                    PxTransform pxTransform(GlmVec3ToPxVec3(shapeTransform.GetPosition()),
+                        GlmQuatToPxQuat(shapeTransform.GetRotation()));
+                    pxShape->setLocalPose(pxTransform);
 
-                SetCollisionGroup(pxShape, userData->physicsGroup);
+                    SetCollisionGroup(pxShape, userData->physicsGroup);
 
-                auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
-                shapeUserData->shapeCache = shape;
-                shapeUserData->shapeTransform = shapeTransform;
-                pxShape->userData = shapeUserData;
+                    auto shapeUserData = new ShapeUserData(owner, i, actorEnt, material);
+                    shapeUserData->shapeCache = shape;
+                    shapeUserData->shapeTransform = shapeTransform;
+                    pxShape->userData = shapeUserData;
 
-                shapeCount++;
-                shapesChanged = true;
+                    shapeCount++;
+                    shapesChanged = true;
+                } else {
+                    Errorf("Actor shape scale is out of range: %s %s", mesh->meshName, glm::to_string(newScale));
+                }
             }
         }
 

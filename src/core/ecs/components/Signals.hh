@@ -39,13 +39,13 @@ namespace ecs {
         };
 
         std::vector<Signal> signals;
-        std::multimap<Entity, size_t> entityMapping;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
 
-        size_t NewSignal(const Lock<> &lock, const SignalRef &ref, double value);
-        size_t NewSignal(const Lock<> &lock, const SignalRef &ref, const SignalExpression &expr);
-        void FreeSignal(const Lock<> &lock, size_t index);
-        void FreeEntitySignals(const Lock<> &lock, Entity entity);
+        size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value);
+        size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, const SignalExpression &expr);
+        void FreeSignal(const Lock<Write<Signals>> &lock, size_t index);
+        void FreeEntitySignals(const Lock<Write<Signals>> &lock, Entity entity);
+        void FreeMissingEntitySignals(const Lock<Write<Signals>> &lock);
     };
 
     struct SignalKey {
