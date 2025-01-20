@@ -146,17 +146,16 @@ namespace ecs {
             // Noop
             DebugAssertf(signals.size() == other.signals.size() && dirtyIndices == other.dirtyIndices,
                 "Changes are different");
-        } else {
-            Assertf(other.changeCount == changeCount + 1,
-                "Signals storage copy skipped a change: %llu -> %llu",
-                changeCount,
-                other.changeCount);
-
+        } else if (other.changeCount == changeCount + 1) {
             if (signals.size() != other.signals.size()) signals.resize(other.signals.size());
             dirtyIndices = other.dirtyIndices;
             for (size_t index : other.dirtyIndices) {
                 signals[index] = other.signals[index];
             }
+            freeIndexes = other.freeIndexes;
+        } else {
+            dirtyIndices = other.dirtyIndices;
+            signals = other.signals;
             freeIndexes = other.freeIndexes;
         }
         changeCount = other.changeCount;
