@@ -16,6 +16,7 @@ stepphysics 120
 assert_position test1:animbox -1 2 -4.875
 stepphysics 120
 assert_position test1:animbox 1 5 -4.875
+assert_scale test1:door1 0.1 1 0.1
 stepgraphics 120
 screenshot load-override-first3.png
 stepgraphics
@@ -39,6 +40,7 @@ stepphysics 120
 assert_position test1:animbox -1 2 -4.875
 stepphysics 120
 assert_position test1:animbox 1 5 -4.875
+assert_scale test1:door1 0.1 1 0.1
 stepgraphics 120
 screenshot load-override-after3.png
 stepgraphics
