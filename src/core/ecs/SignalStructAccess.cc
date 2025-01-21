@@ -58,7 +58,7 @@ namespace ecs {
                                 continue;
                             }
 
-                            auto result = GetStructField(field.type, subField, delimiter + 1);
+                            auto result = GetStructField(field.type, fieldName, delimiter + 1);
                             if (result) {
                                 result->offset += field.offset;
                             }
