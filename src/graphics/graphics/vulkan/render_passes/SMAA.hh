@@ -15,6 +15,8 @@ namespace sp::vulkan::renderer {
     public:
         void AddPass(RenderGraph &graph);
 
+        bool PreloadTextures();
+
     private:
         AsyncPtr<ImageView> areaTex, searchTex;
         AsyncPtr<sp::Image> areaTexAsset, searchTexAsset;

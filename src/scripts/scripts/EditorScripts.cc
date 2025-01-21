@@ -44,7 +44,20 @@ namespace sp::scripts {
                 auto &sourceName = ent.Get<Name>(lock);
                 auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
 
+                std::optional<SignalOutput> signalOutputs;
+                std::optional<SignalBindings> signalBindings;
                 auto signals = GetSignalManager().GetSignals(ent);
+                for (auto &signal : signals) {
+                    SignalRef dstRef(ent, signal.GetSignalName());
+                    if (signal.HasValue(lock)) {
+                        if (!signalOutputs) signalOutputs = SignalOutput();
+                        signalOutputs->signals[signal.GetSignalName()] = signal.GetValue(lock);
+                    }
+                    if (signal.HasBinding(lock)) {
+                        if (!signalBindings) signalBindings = SignalBindings();
+                        signalBindings->bindings[signal.GetSignalName()] = signal.GetBinding(lock);
+                    }
+                }
 
                 SceneRef scene;
                 if (lock.Has<ActiveScene>()) {
@@ -59,9 +72,12 @@ namespace sp::scripts {
                 auto sharedEntity = make_shared<EntityRef>();
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
                     scene.data->name,
-                    [source = templateSource, transform, signals, baseName = sourceName.entity, sharedEntity](
-                        ecs::Lock<ecs::AddRemove> lock,
-                        std::shared_ptr<Scene> scene) {
+                    [source = templateSource,
+                        transform,
+                        signalOutputs,
+                        signalBindings,
+                        baseName = sourceName.entity,
+                        sharedEntity](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                         Name name(scene->data->name, "");
                         EntityScope scope = name;
                         for (size_t i = 0;; i++) {
@@ -72,14 +88,11 @@ namespace sp::scripts {
 
                         auto newEntity = scene->NewRootEntity(lock, scene, name);
                         newEntity.Set<TransformTree>(lock, transform);
-                        for (auto &signal : signals) {
-                            SignalRef dstRef(newEntity, signal.GetSignalName());
-                            if (signal.HasValue(lock)) {
-                                dstRef.SetValue(lock, signal.GetValue(lock));
-                            }
-                            if (signal.HasBinding(lock)) {
-                                dstRef.SetBinding(lock, signal.GetBinding(lock));
-                            }
+                        if (signalOutputs) {
+                            newEntity.Set<SignalOutput>(lock, *signalOutputs);
+                        }
+                        if (signalBindings) {
+                            newEntity.Set<SignalBindings>(lock, *signalBindings);
                         }
                         auto &scripts = newEntity.Set<Scripts>(lock);
                         auto &prefab = scripts.AddPrefab(scope, "template");
@@ -140,7 +153,8 @@ namespace sp::scripts {
                 // Make sure we don't invert the scale
                 if (glm::any(glm::lessThanEqual(scaleFactor, glm::vec3(0.0f)))) return false;
 
-                targetTree.pose.Scale(scaleFactor);
+                targetTree.pose.SetScale(
+                    glm::clamp(targetTree.pose.GetScale() * scaleFactor, glm::vec3(1e-4), glm::vec3(1e6)));
                 targetTree.pose.Translate(deltaVector * 0.5f);
             } else if (editMode == 2) { // Rotate mode
                 auto targetTransform = targetTree.GetGlobalTransform(lock);

@@ -675,6 +675,7 @@ namespace sp::vulkan {
                 if (!vkMesh->CheckReady()) complete = false;
             }
             if (!lighting.PreloadGelTextures(lock)) complete = false;
+            if (!smaa.PreloadTextures()) complete = false;
             return complete;
         });
 

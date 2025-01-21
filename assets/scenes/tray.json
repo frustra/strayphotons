@@ -44,6 +44,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
@@ -68,6 +74,12 @@
 				"group": "UserInterface"
 			},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/laser_sensor"
@@ -94,6 +106,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
@@ -118,6 +136,12 @@
 				"group": "UserInterface"
 			},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/mirror"
@@ -144,6 +168,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/splitter"
 					},
@@ -168,6 +198,12 @@
 				"group": "UserInterface"
 			},
 			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
 				{
 					"parameters": {
 						"source": "blocks/charge_cell"
@@ -194,6 +230,12 @@
 			},
 			"script": [
 				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
 					"parameters": {
 						"source": "blocks/big_frame"
 					},
@@ -203,6 +245,39 @@
 					"onTick": "tray_spawner",
 					"parameters": {
 						"source": "blocks/big_frame"
+					}
+				}
+			]
+		},
+		{
+			"name": "box",
+			"transform": {
+				"parent": "root",
+				"translate": [0.5, 0.05, 0.3],
+				"scale": 0.1
+			},
+			"physics": {
+				"type": "Static",
+				"group": "UserInterface"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
+					"parameters": {
+						"source": "blocks/box"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/box"
 					}
 				}
 			]

@@ -128,10 +128,16 @@
                 "outputs": "player:player/action/jump",
                 "filter": "is_focused(Game) && event"
             },
-            "/keyboard/key/e": {
-                "outputs": "player:pointer/interact/grab",
-                "filter": "is_focused(Game) && event"
-            },
+            "/keyboard/key/e": [
+                {
+                    "outputs": "player:pointer/interact/press",
+                    "filter": "is_focused(Game)"
+                },
+                {
+                    "outputs": "player:pointer/interact/grab",
+                    "filter": "is_focused(Game) && event"
+                }
+            ],
             "/keyboard/key/q": {
                 "outputs": "console:input/action/run_command",
                 "filter": "is_focused(Game) && event",

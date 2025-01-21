@@ -189,6 +189,7 @@ The `init_event` script has parameter type: vector&lt;string&gt;
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **disabled** | bool | false | No description |
+| **highlight_only** | bool | false | No description |
 
 </div>
 

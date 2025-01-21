@@ -24,17 +24,20 @@ namespace sp::scripts {
 
     struct InteractiveObject {
         bool disabled = false;
+        bool highlightOnly = false;
         std::vector<std::pair<Entity, Entity>> grabEntities;
         std::vector<Entity> pointEntities;
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<TransformSnapshot, Physics, PhysicsJoints>(lock)) return;
+            if (!ent.Has<TransformSnapshot>(lock)) return;
 
-            auto &ph = ent.Get<Physics>(lock);
-            auto &joints = ent.Get<PhysicsJoints>(lock);
-            bool enableInteraction = ph.type == PhysicsActorType::Dynamic && !disabled;
+            bool enableInteraction = !highlightOnly && !disabled;
+            if (ent.Has<Physics, PhysicsJoints>(lock)) {
+                auto &ph = ent.Get<Physics>(lock);
+                enableInteraction &= ph.type == PhysicsActorType::Dynamic;
+            }
 
             glm::vec3 centerOfMass = glm::vec3(0);
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
@@ -68,12 +71,15 @@ namespace sp::scripts {
                                 break;
                             }
                         }
-                        sp::erase_if(joints.joints, [&](auto &&joint) {
-                            return joint.target == event.source || (secondary && joint.target == secondary);
-                        });
                         sp::erase_if(grabEntities, [&](auto &arg) {
                             return arg.first == event.source;
                         });
+                        if (ent.Has<PhysicsJoints>(lock)) {
+                            auto &joints = ent.Get<PhysicsJoints>(lock);
+                            sp::erase_if(joints.joints, [&](auto &&joint) {
+                                return joint.target == event.source || (secondary && joint.target == secondary);
+                            });
+                        }
                     } else if (std::holds_alternative<Transform>(event.data)) {
                         if (!enableInteraction) continue;
 
@@ -82,48 +88,54 @@ namespace sp::scripts {
                         auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
                         Entity secondary;
-                        if (event.source.Has<PhysicsJoints>(lock)) {
-                            auto &targetJoints = event.source.Get<PhysicsJoints>(lock);
-                            for (auto &joint : targetJoints.joints) {
-                                if (joint.type != PhysicsJointType::Force) continue;
-                                auto target = joint.target.Get(lock);
-                                if (target.Has<TransformSnapshot>(lock) && !target.Has<Physics>(lock)) {
-                                    secondary = target;
+                        if (ent.Has<PhysicsJoints>(lock)) {
+                            auto &joints = ent.Get<PhysicsJoints>(lock);
+                            if (event.source.Has<PhysicsJoints>(lock)) {
+                                auto &targetJoints = event.source.Get<PhysicsJoints>(lock);
+                                for (auto &joint : targetJoints.joints) {
+                                    if (joint.type != PhysicsJointType::Force) continue;
+                                    auto target = joint.target.Get(lock);
+                                    if (target.Has<TransformSnapshot>(lock) && !target.Has<Physics>(lock)) {
+                                        secondary = target;
 
-                                    PhysicsJoint newJoint = joint;
-                                    newJoint.remoteOffset.Translate(
-                                        invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
-                                    newJoint.remoteOffset.Rotate(invParentRotate * transform.GetRotation());
-                                    // Logf("Adding secondary joint: %s / %s",
-                                    //     newJoint.type,
-                                    //     newJoint.target.Name().String());
-                                    joints.Add(newJoint);
+                                        PhysicsJoint newJoint = joint;
+                                        newJoint.remoteOffset.Translate(
+                                            invParentRotate *
+                                            (transform.GetPosition() - parentTransform.GetPosition()));
+                                        newJoint.remoteOffset.Rotate(invParentRotate * transform.GetRotation());
+                                        // Logf("Adding secondary joint: %s / %s",
+                                        //     newJoint.type,
+                                        //     newJoint.target.Name().String());
+                                        joints.Add(newJoint);
 
-                                    break;
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        grabEntities.emplace_back(event.source, secondary);
 
-                        PhysicsJoint joint;
-                        joint.target = event.source;
-                        if (secondary) {
-                            joint.type = PhysicsJointType::Fixed;
-                        } else {
-                            joint.type = PhysicsJointType::Force;
-                            // TODO: Read this property from player
-                            joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
+                            PhysicsJoint joint;
+                            joint.target = event.source;
+                            if (secondary) {
+                                joint.type = PhysicsJointType::Fixed;
+                            } else {
+                                joint.type = PhysicsJointType::Force;
+                                // TODO: Read this property from player
+                                joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
+                            }
+                            joint.remoteOffset.SetPosition(
+                                invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
+                            joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
+                            joints.Add(joint);
                         }
-                        joint.remoteOffset.SetPosition(
-                            invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
-                        joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
-                        joints.Add(joint);
+
+                        grabEntities.emplace_back(event.source, secondary);
                     } else {
                         Errorf("Unsupported grab event type: %s", event.toString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
+                    if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) continue;
+
                     if (std::holds_alternative<glm::vec2>(event.data)) {
-                        if (!enableInteraction) continue;
                         if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
                         auto &input = std::get<glm::vec2>(event.data);
@@ -133,6 +145,7 @@ namespace sp::scripts {
                         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
                                            glm::angleAxis(input.x, upAxis);
 
+                        auto &joints = ent.Get<PhysicsJoints>(lock);
                         for (auto &joint : joints.joints) {
                             if (joint.target == event.source) {
                                 // Move the objects origin so it rotates around its center of mass
@@ -145,13 +158,17 @@ namespace sp::scripts {
                 }
             }
 
-            if (grabEntities.empty() && ph.group == PhysicsGroup::HeldObject) {
-                ph.group = PhysicsGroup::World;
-            } else if (!grabEntities.empty() && ph.group == PhysicsGroup::World) {
-                ph.group = PhysicsGroup::HeldObject;
+            if (ent.Has<Physics>(lock)) {
+                auto &ph = ent.Get<Physics>(lock);
+                if (grabEntities.empty() && ph.group == PhysicsGroup::HeldObject) {
+                    ph.group = PhysicsGroup::World;
+                } else if (!grabEntities.empty() && ph.group == PhysicsGroup::World) {
+                    ph.group = PhysicsGroup::HeldObject;
+                }
             }
 
-            bool newRenderOutline = enableInteraction && (!grabEntities.empty() || !pointEntities.empty());
+            bool newRenderOutline = (enableInteraction || highlightOnly) &&
+                                    (!grabEntities.empty() || !pointEntities.empty());
             if (renderOutline != newRenderOutline) {
                 for (auto &e : lock.EntitiesWith<Renderable>()) {
                     if (!e.Has<TransformTree, Renderable>(lock)) continue;
@@ -173,14 +190,15 @@ namespace sp::scripts {
                 renderOutline = newRenderOutline;
             }
 
-            SignalRef(ent, "interact_holds").SetValue(lock, enableInteraction ? (double)grabEntities.size() : 0.0f);
-            SignalRef(ent, "interact_points").SetValue(lock, enableInteraction ? (double)pointEntities.size() : 0.0f);
+            SignalRef(ent, "interact_holds").SetValue(lock, !disabled ? (double)grabEntities.size() : 0.0f);
+            SignalRef(ent, "interact_points").SetValue(lock, !disabled ? (double)pointEntities.size() : 0.0f);
         }
     };
     StructMetadata MetadataInteractiveObject(typeid(InteractiveObject),
         "InteractiveObject",
         "",
-        StructField::New("disabled", &InteractiveObject::disabled));
+        StructField::New("disabled", &InteractiveObject::disabled),
+        StructField::New("highlight_only", &InteractiveObject::highlightOnly));
     InternalScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
         true,

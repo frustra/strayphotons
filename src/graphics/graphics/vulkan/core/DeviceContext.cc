@@ -45,7 +45,7 @@ namespace sp::vulkan {
         if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
 
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
-        string_view message(pCallbackData->pMessage);
+        string message(pCallbackData->pMessage);
 
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
