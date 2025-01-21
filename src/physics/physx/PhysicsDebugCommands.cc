@@ -74,6 +74,20 @@ void sp::PhysxManager::RegisterDebugCommands() {
             assertEqual(transform.GetPosition(), expected);
         });
 
+    funcs.Register<ecs::EntityRef, glm::vec3>("assert_scale",
+        "Asserts an entity's local scale matches a specified value (assert_scale <entity> <x> <y> <z>)",
+        [](ecs::EntityRef entityRef, glm::vec3 expected) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::TransformTree>>();
+            auto entity = entityRef.Get(lock);
+            if (!entity.Exists(lock)) {
+                Abortf("Entity does not exist: %s", entityRef.Name().String());
+            } else if (!entity.Has<ecs::TransformTree>(lock)) {
+                Abortf("Entity has no TransformTree component: %s", entityRef.Name().String());
+            }
+            auto scale = entity.Get<ecs::TransformTree>(lock).pose.GetScale();
+            assertEqual(scale, expected);
+        });
+
     funcs.Register<ecs::EntityRef, glm::vec3>("assert_velocity",
         "Asserts an entity's velocity is equal to the value in world-space (assert_velocity <entity> <dx> <dy> <dz>)",
         [this](ecs::EntityRef entityRef, glm::vec3 expected) {
