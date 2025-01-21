@@ -88,6 +88,24 @@ namespace ecs::detail {
         }
     }
 
+    template<typename ArgT, typename T, typename Fn>
+    bool ConvertAccessor(const T &value, Fn &&accessor) {
+        if constexpr (std::is_same_v<T, ArgT>) {
+            accessor((ArgT &)value);
+            return true;
+        } else if constexpr (std::is_convertible_v<T, ArgT> && std::is_convertible_v<ArgT, T>) {
+            ArgT tmp = (ArgT)value;
+            accessor(tmp);
+            return true;
+        } else if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
+                             std::is_same_v<T, sp::color_alpha_t>) {
+            if (!ConvertAccessor<ArgT, typename T::value_type>(value[0], accessor)) return false;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     template<typename ArgT, typename BaseType, typename Fn>
     bool AccessStructField(BaseType *basePtr, const StructField &field, Fn &&accessor) {
         Assertf(basePtr != nullptr, "AccessStructField was provided nullptr: %s '%s'", field.type.name(), field.name);
