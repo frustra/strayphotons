@@ -133,6 +133,7 @@
 				"states": [
 					{
 						"delay": 0.5,
+						"scale": [0.1, 0.1, 0.1],
 						"translate": [0, -1, 0]
 					},
 					{
@@ -143,7 +144,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_target": "sensor1/value"
+				"animation_target": "sensor1/value > 0.4"
 			},
 			"physics": {
 				"shapes": {
