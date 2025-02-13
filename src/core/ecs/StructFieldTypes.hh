@@ -150,10 +150,12 @@ namespace ecs {
             }
         };
 
+        // clang-format: off
         template<typename... Tn,
             template<typename...> typename Wrapper,
             typename... AllComponentTypes,
             template<typename...> typename ECSType>
+        // clang-format: on
         inline static auto CreateTypeLookup(Wrapper<Tn...> *, ECSType<AllComponentTypes...> *) {
             constexpr size_t typeCount = sizeof...(Tn) + sizeof...(AllComponentTypes);
             std::array<size_t, typeCount> typeHashes = {
