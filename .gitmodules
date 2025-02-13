@@ -67,3 +67,6 @@
 [submodule "ext/fpng"]
 	path = ext/fpng
 	url = https://github.com/richgel999/fpng.git
+[submodule "ext/compile-time-hashes"]
+	path = ext/compile-time-hashes
+	url = https://github.com/domohuhn/compile-time-hashes

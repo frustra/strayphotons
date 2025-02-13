@@ -23,6 +23,7 @@ target_link_libraries(${PROJECT_CORE_LIB}
         magic_enum
         robin_hood
         tinygltf
+        domohuhn::hashes
     PRIVATE
         microtar
         murmurhash

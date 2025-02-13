@@ -344,7 +344,7 @@ namespace sp {
                                     ImGui::TableSetColumnIndex(0);
                                     ImGui::Text("%s", field.name.c_str());
                                     ImGui::TableSetColumnIndex(1);
-                                    ecs::GetFieldType(field.type, field.Access(dataPtr), [&](auto &fieldValue) {
+                                    ecs::GetFieldType<void>(field.type, field.Access(dataPtr), [&](auto &fieldValue) {
                                         auto parentFieldName = fieldName;
                                         fieldName = "";
                                         ImGui::SetNextItemWidth(-FLT_MIN);
