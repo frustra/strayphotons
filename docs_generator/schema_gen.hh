@@ -46,7 +46,7 @@ struct SchemaContext {
     void AddDefinition(const ecs::StructMetadata &metadata) {
         if (definitions.count(metadata.name)) return;
 
-        ecs::GetFieldType<void>(metadata.type, [&](auto *typePtr) {
+        ecs::GetFieldType(metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             sp::json::SchemaTypeReferences references;

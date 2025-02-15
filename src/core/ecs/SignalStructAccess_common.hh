@@ -92,7 +92,7 @@ namespace ecs::detail {
     bool AccessStructField(BaseType *basePtr, const StructField &field, Fn &&accessor) {
         Assertf(basePtr != nullptr, "AccessStructField was provided nullptr: %s '%s'", field.type.name(), field.name);
 
-        return ecs::GetFieldType<bool>(field.type, [&](auto *typePtr) {
+        return ecs::GetFieldType(field.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||

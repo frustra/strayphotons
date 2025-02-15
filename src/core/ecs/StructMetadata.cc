@@ -63,7 +63,7 @@ namespace ecs {
         auto *field = static_cast<char *>(dstStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
-        GetFieldType<void>(type, field, [&](auto &value) {
+        GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
             auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
@@ -77,7 +77,7 @@ namespace ecs {
     }
 
     void StructField::DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const {
-        GetFieldType<void>(type, [&](auto *typePtr) {
+        GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
             sp::json::SaveSchema<T>(dst, references, false);
         });
@@ -86,7 +86,7 @@ namespace ecs {
     picojson::value StructField::SaveDefault(const EntityScope &scope, const void *defaultStruct) const {
         picojson::value result;
         auto *field = static_cast<const char *>(defaultStruct) + offset;
-        GetFieldType<void>(type, field, [&](auto &value) {
+        GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
             sp::json::SaveIfChanged<T>(scope, result, "", value, nullptr);
@@ -97,7 +97,7 @@ namespace ecs {
     void StructField::SetScope(void *dstStruct, const EntityScope &scope) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
 
-        GetFieldType<void>(type, field, [&](auto &dstValue) {
+        GetFieldType(type, field, [&](auto &dstValue) {
             scope::SetScope(dstValue, scope);
         });
     }
@@ -106,7 +106,7 @@ namespace ecs {
         auto *fieldA = static_cast<const char *>(a) + offset;
         auto *fieldB = static_cast<const char *>(b) + offset;
 
-        return GetFieldType<bool>(type, fieldA, [&](auto &valueA) -> bool {
+        return GetFieldType(type, fieldA, [&](auto &valueA) -> bool {
             using T = std::decay_t<decltype(valueA)>;
             auto &valueB = *reinterpret_cast<const T *>(fieldB);
 
@@ -138,7 +138,7 @@ namespace ecs {
             srcField = &it->second;
         }
 
-        return GetFieldType<bool>(type, dstfield, [&](auto &dstValue) {
+        return GetFieldType(type, dstfield, [&](auto &dstValue) {
             if (!sp::json::Load(dstValue, *srcField)) {
                 Errorf("Invalid %s field value: %s", type.name(), srcField->serialize());
                 return false;
@@ -156,7 +156,7 @@ namespace ecs {
         auto *field = static_cast<const char *>(srcStruct) + offset;
         auto *defaultField = defaultStruct ? static_cast<const char *>(defaultStruct) + offset : nullptr;
 
-        GetFieldType<void>(type, field, [&](auto &value) {
+        GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
             auto *defaultValue = reinterpret_cast<const T *>(defaultField);
@@ -171,7 +171,7 @@ namespace ecs {
         auto *srcField = static_cast<const char *>(srcStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
 
-        GetFieldType<void>(type, dstField, [&](auto &dstValue) {
+        GetFieldType(type, dstField, [&](auto &dstValue) {
             using T = std::decay_t<decltype(dstValue)>;
 
             auto &srcValue = *reinterpret_cast<const T *>(srcField);

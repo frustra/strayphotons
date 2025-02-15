@@ -92,7 +92,7 @@ private:
 
 public:
     void AddField(const ecs::StructField &field, const void *defaultPtr = nullptr) {
-        ecs::GetFieldType<void>(field.type, [&](auto *typePtr) {
+        ecs::GetFieldType(field.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             static const T defaultStruct = {};
@@ -166,7 +166,7 @@ struct MarkdownContext {
         DocsStruct refDocs;
         bool isEnumFlags = false;
         bool isEnum = false;
-        ecs::GetFieldType<void>(refType, [&](auto *typePtr) {
+        ecs::GetFieldType(refType, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             if constexpr (std::is_enum<T>()) {
@@ -267,7 +267,7 @@ struct MarkdownContext {
                 if (otherList) sp::erase(*otherList, entry);
 
                 auto &comp = *ecs::LookupComponent(entry);
-                ecs::GetFieldType<void>(comp.metadata.type, [&](auto *typePtr) {
+                ecs::GetComponentType(comp.metadata.type, [&](auto *typePtr) {
                     using T = std::remove_pointer_t<decltype(typePtr)>;
                     static const T defaultComp = {};
                     for (auto &field : comp.metadata.fields) {

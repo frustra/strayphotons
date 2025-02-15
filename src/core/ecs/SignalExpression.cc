@@ -817,7 +817,7 @@ namespace ecs {
         if (!componentNode.component) return 0.0;
         Entity ent = componentNode.entity.Get(ctx.lock);
         if (!ent) return 0.0;
-        return GetFieldType<double>(componentNode.component->metadata.type, [&](auto *typePtr) {
+        return GetComponentType(componentNode.component->metadata.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
             if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
                 Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
@@ -904,7 +904,7 @@ namespace ecs {
                         if (!base) return true;
                         Entity ent = node.entity.Get(lock);
                         if (!ent) return true;
-                        return GetFieldType<bool>(base->metadata.type, [&](auto *typePtr) {
+                        return GetComponentType(base->metadata.type, [&](auto *typePtr) {
                             using T = std::remove_pointer_t<decltype(typePtr)>;
                             if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
                                 return true;

@@ -21,36 +21,33 @@
 #include <type_traits>
 #include <typeindex>
 
-#ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable : 4554)
-#endif
-
-#include <hashes/fast_perfect_compressed_hash.hpp>
-
-#ifdef _MSC_VER
-    #pragma warning(pop)
-#endif
-
 namespace picojson {
     class value;
 }
 
 namespace ecs {
     using FieldTypes = std::tuple<
+        // Top types based on counts in Tracy
+        float,
+        glm::vec2,
+        glm::vec3,
+        Transform,
+        EventData,
+        std::string,
+        size_t,
+        VisibilityMask,
+        sp::color_alpha_t,
+        double,
+        glm::mat3,
+        EntityRef,
+
         // Basic types
         bool,
         int32_t,
         uint32_t,
-        size_t,
         sp::angle_t,
-        float,
-        double,
-        std::string,
 
         // Vector types
-        glm::vec2,
-        glm::vec3,
         glm::vec4,
         glm::dvec2,
         glm::dvec3,
@@ -62,14 +59,9 @@ namespace ecs {
         glm::uvec3,
         glm::uvec4,
         sp::color_t,
-        sp::color_alpha_t,
         glm::quat,
-        glm::mat3,
 
         // Structs
-        EntityRef,
-        EventData,
-        Transform,
         SignalExpression,
         EventBinding,
         EventBindingActions,
@@ -110,91 +102,74 @@ namespace ecs {
         PhysicsJointType,
         sp::ScenePriority,
         SoundType,
-        // TriggerGroup,
         TriggerShape,
-        VisibilityMask,
         XrEye>;
 
     namespace detail {
-        template<typename, size_t>
-        struct PerfectHashLookup;
+        template<typename Wrapper1, typename Wrapper2>
+        struct WrapperConcat;
 
-        template<typename... Tn, template<typename...> typename Wrapper, size_t LookupSize>
-        struct PerfectHashLookup<Wrapper<Tn...>, LookupSize> {
-            hashes::FastCompressedHash<size_t> perfectHash;
-            using SizeType = std::conditional_t<sizeof...(Tn) >= 256, uint16_t, uint8_t>;
-            std::array<SizeType, LookupSize> typeIndexes;
-
-            constexpr PerfectHashLookup(hashes::FastCompressedHash<size_t> &&perfectHash) : perfectHash(perfectHash) {
-                Assertf(perfectHash.modulo() <= LookupSize,
-                    "PerfectHashLookup overflows allocated size: %llu > %llu",
-                    perfectHash.modulo(),
-                    LookupSize);
-                typeIndexes.fill(std::numeric_limits<SizeType>::max());
-                SizeType i = 0;
-                (
-                    [&] {
-                        typeIndexes[perfectHash(typeid(Tn).hash_code())] = i++;
-                    }(),
-                    ...);
-            }
-
-            template<typename ResultT, typename Func>
-            inline ResultT GetType(std::type_index type, Func &&func) const {
-                static const std::array<ResultT (*)(Func &&), sizeof...(Tn)> callers = {[](Func &&fn) {
-                    return std::invoke(fn, (Tn *)nullptr);
-                }...};
-
-                SizeType typeIndex = typeIndexes[perfectHash(type.hash_code())];
-                return callers[typeIndex](std::forward<Func>(func));
-            }
+        template<typename... Ta,
+            template<typename...> typename Wrapper1,
+            typename... Tb,
+            template<typename...> typename Wrapper2>
+        struct WrapperConcat<Wrapper1<Ta...>, Wrapper2<Tb...>> {
+            using type = Wrapper1<Ta..., Tb...>;
         };
 
-        // clang-format: off
-        template<typename... Tn,
-            template<typename...> typename Wrapper,
-            typename... AllComponentTypes,
-            template<typename...> typename ECSType>
-        // clang-format: on
-        inline static auto CreateTypeLookup(Wrapper<Tn...> *, ECSType<AllComponentTypes...> *) {
-            constexpr size_t typeCount = sizeof...(Tn) + sizeof...(AllComponentTypes);
-            std::array<size_t, typeCount> typeHashes = {
-                typeid(Tn).hash_code()...,
-                typeid(AllComponentTypes).hash_code()...,
-            };
-            auto ph = hashes::create_fast_perfect_compressed_hash<size_t>(typeHashes.begin(), typeHashes.end());
-            return PerfectHashLookup<Wrapper<Tn..., AllComponentTypes...>, typeCount * typeCount * 2>(std::move(ph));
-        }
+        template<typename T, typename... Tn>
+        struct SelectFirstType {
+            using type = T;
+        };
 
-        template<typename Func, typename T, typename... Tn>
-        inline static auto GetComponentType(std::type_index type, Func &&func) {
-            if (type == std::type_index(typeid(T))) return std::invoke(func, (T *)nullptr);
-            if constexpr (sizeof...(Tn) > 0) {
-                return GetComponentType<Func, Tn...>(type, std::forward<Func>(func));
-            } else {
-                Abortf("Type missing from FieldTypes definition: %s", type.name());
+        template<typename Wrapper>
+        struct TypeLookup;
+
+        template<typename... Tn, template<typename...> typename Wrapper>
+        struct TypeLookup<Wrapper<Tn...>> {
+            template<typename Func>
+            static inline auto GetType(std::type_index type, Func &&func) {
+                ZoneScopedN("GetType");
+                ZoneStr(type.name());
+                using T1 = SelectFirstType<Tn...>::type;
+                using ReturnT = std::invoke_result_t<Func, T1 *>;
+                constexpr bool hasReturn = !std::is_same_v<ReturnT, void>;
+                using ResultT = std::conditional_t<hasReturn, ReturnT, bool>;
+                std::optional<ResultT> result;
+                (
+                    [&] {
+                        if (type == std::type_index(typeid(Tn))) {
+                            if constexpr (hasReturn) {
+                                result = std::invoke(func, (Tn *)nullptr);
+                            } else {
+                                std::invoke(func, (Tn *)nullptr);
+                                result = true;
+                            }
+                        }
+                    }(),
+                    ...);
+                Assertf(result.has_value(), "TypeLookup::GetType received unknown type: %s", type.name());
+                if constexpr (hasReturn) {
+                    return *result;
+                }
             }
-        }
-
-        template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
-        inline static auto GetComponentType(ECSType<AllComponentTypes...> *, std::type_index type, Func &&func) {
-            return GetComponentType<Func, AllComponentTypes...>(type, std::forward<Func>(func));
-        }
+        };
     } // namespace detail
 
-    static const auto &GetTypeLookup() {
-        static const auto TypeLookup = detail::CreateTypeLookup((FieldTypes *)nullptr, (ECS *)nullptr);
-        return TypeLookup;
+    template<typename Func>
+    inline static auto GetFieldType(std::type_index type, Func &&func) {
+        using AllTypes = detail::WrapperConcat<FieldTypes, ECS>::type;
+        return detail::TypeLookup<AllTypes>::GetType(type, std::forward<Func>(func));
     }
 
-    template<typename ResultT, typename Func>
-    inline static ResultT GetFieldType(std::type_index type, Func &&func) {
-        return GetTypeLookup().GetType<ResultT>(type, std::forward<Func>(func));
+    template<typename Func>
+    inline static auto GetComponentType(std::type_index type, Func &&func) {
+        return detail::TypeLookup<ECS>::GetType(type, std::forward<Func>(func));
     }
 
-    template<typename ResultT, typename ArgType, typename Func>
-    inline static ResultT GetFieldType(const std::type_index &type, ArgType *ptr, Func &&func) {
-        return GetFieldType<ResultT>(type, [&](auto *typePtr) {
+    template<typename ArgType, typename Func>
+    inline static auto GetFieldType(const std::type_index &type, ArgType *ptr, Func &&func) {
+        return GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
             if constexpr (std::is_const_v<ArgType>) {
                 return func(*reinterpret_cast<const T *>(ptr));
