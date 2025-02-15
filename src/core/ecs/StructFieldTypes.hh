@@ -102,69 +102,42 @@ namespace ecs {
         PhysicsJointType,
         sp::ScenePriority,
         SoundType,
+        TriggerGroup,
         TriggerShape,
         XrEye>;
 
     namespace detail {
-        template<typename Wrapper1, typename Wrapper2>
-        struct WrapperConcat;
-
-        template<typename... Ta,
-            template<typename...> typename Wrapper1,
-            typename... Tb,
-            template<typename...> typename Wrapper2>
-        struct WrapperConcat<Wrapper1<Ta...>, Wrapper2<Tb...>> {
-            using type = Wrapper1<Ta..., Tb...>;
-        };
-
-        template<typename T, typename... Tn>
-        struct SelectFirstType {
-            using type = T;
-        };
-
-        template<typename Wrapper>
-        struct TypeLookup;
-
-        template<typename... Tn, template<typename...> typename Wrapper>
-        struct TypeLookup<Wrapper<Tn...>> {
-            template<typename Func>
-            static inline auto GetType(std::type_index type, Func &&func) {
-                ZoneScopedN("GetType");
-                ZoneStr(type.name());
-                using T1 = SelectFirstType<Tn...>::type;
-                using ReturnT = std::invoke_result_t<Func, T1 *>;
-                constexpr bool hasReturn = !std::is_same_v<ReturnT, void>;
-                using ResultT = std::conditional_t<hasReturn, ReturnT, bool>;
-                std::optional<ResultT> result;
-                (
-                    [&] {
-                        if (type == std::type_index(typeid(Tn))) {
-                            if constexpr (hasReturn) {
-                                result = std::invoke(func, (Tn *)nullptr);
-                            } else {
-                                std::invoke(func, (Tn *)nullptr);
-                                result = true;
-                            }
-                        }
-                    }(),
-                    ...);
-                Assertf(result.has_value(), "TypeLookup::GetType received unknown type: %s", type.name());
-                if constexpr (hasReturn) {
-                    return *result;
-                }
+        template<typename Func, typename T, typename... Tn>
+        inline static auto GetComponentType(std::type_index type, Func &&func) {
+            if (type == std::type_index(typeid(T))) return std::invoke(func, (T *)nullptr);
+            if constexpr (sizeof...(Tn) > 0) {
+                return GetComponentType<Func, Tn...>(type, std::forward<Func>(func));
+            } else {
+                Abortf("Type missing from FieldTypes definition: %s", type.name());
             }
-        };
+        }
+
+        template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
+        inline static auto GetComponentType(ECSType<AllComponentTypes...> *, std::type_index type, Func &&func) {
+            return GetComponentType<Func, AllComponentTypes...>(type, std::forward<Func>(func));
+        }
     } // namespace detail
 
     template<typename Func>
-    inline static auto GetFieldType(std::type_index type, Func &&func) {
-        using AllTypes = detail::WrapperConcat<FieldTypes, ECS>::type;
-        return detail::TypeLookup<AllTypes>::GetType(type, std::forward<Func>(func));
+    inline static auto GetComponentType(std::type_index type, Func &&func) {
+        return detail::GetComponentType((ECS *)nullptr, type, std::forward<Func>(func));
     }
 
-    template<typename Func>
-    inline static auto GetComponentType(std::type_index type, Func &&func) {
-        return detail::TypeLookup<ECS>::GetType(type, std::forward<Func>(func));
+    template<typename Func, size_t I = 0>
+    inline static auto GetFieldType(std::type_index type, Func &&func) {
+        if (type == std::type_index(typeid(std::tuple_element_t<I, FieldTypes>))) {
+            return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
+        }
+        if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
+            return GetFieldType<Func, I + 1>(type, std::forward<Func>(func));
+        } else {
+            return detail::GetComponentType((ECS *)nullptr, type, std::forward<Func>(func));
+        }
     }
 
     template<typename ArgType, typename Func>
