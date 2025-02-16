@@ -37,9 +37,9 @@ namespace sp::vulkan {
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
-    static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+    static VkBool32 VulkanDebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
+        const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pContext) {
         auto deviceContext = static_cast<DeviceContext *>(pContext);
         if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
@@ -48,7 +48,7 @@ namespace sp::vulkan {
         string message(pCallbackData->pMessage);
 
         switch (messageSeverity) {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
             if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
@@ -56,8 +56,8 @@ namespace sp::vulkan {
                 break;
             Errorf("VK %s %s", typeStr, message);
             break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) break;
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:
+            if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance) break;
             Warnf("VK %s %s", typeStr, message);
             break;
         default:

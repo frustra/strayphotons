@@ -221,13 +221,13 @@ namespace sp::xr {
         }
 
         // Ignore OpenVR performance warning: https://github.com/ValveSoftware/openvr/issues/818
-        device->disabledDebugMessages = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        device->disabledDebugMessages = vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
 
         auto err = vr::VRCompositor()->Submit(vrEye,
             &texture,
             0,
             (vr::EVRSubmitFlags)(vr::Submit_TextureWithPose | vr::Submit_VulkanTextureWithArrayData));
-        device->disabledDebugMessages = 0;
+        device->disabledDebugMessages = {};
         Assert(err == vr::VRCompositorError_None || err == vr::VRCompositorError_DoNotHaveFocus,
             "VR compositor error: " + std::to_string(err));
     }
