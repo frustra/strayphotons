@@ -12,7 +12,14 @@
 #include <iostream>
 using namespace std;
 
-#define VULKAN_HPP_DEFAULT_DISPATCHER (*sp_get_vulkan_dispatch_loader())
+#include <vulkan/vulkan_core.h>
+
+#if VK_HEADER_VERSION >= 301
+    #define VULKAN_HPP_DEFAULT_DISPATCHER \
+        (*static_cast<vk::detail::DispatchLoaderDynamic *>(sp_get_vulkan_dispatch_loader()))
+#else
+    #define VULKAN_HPP_DEFAULT_DISPATCHER (*static_cast<vk::DispatchLoaderDynamic *>(sp_get_vulkan_dispatch_loader()))
+#endif
 
 #include "GlfwInputHandler.hh"
 #include "common/Common.hh"
