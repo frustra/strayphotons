@@ -21,6 +21,13 @@ namespace sp {
 namespace vk::detail {
     class DispatchLoaderDynamic;
 }
+namespace vk {
+    #if VK_HEADER_VERSION >= 301
+    using DispatchLoaderDynamic = vk::detail::DispatchLoaderDynamic;
+    #else
+    class DispatchLoaderDynamic;
+    #endif
+} // namespace vk
 
 namespace sp::winit {
     struct WinitContext;
@@ -29,7 +36,7 @@ namespace sp::winit {
 extern "C" {
 typedef sp::GraphicsManager sp_graphics_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
-typedef vk::detail::DispatchLoaderDynamic sp_vk_dispatch_loader_t;
+typedef vk::DispatchLoaderDynamic sp_vk_dispatch_loader_t;
 #else
     #include <stddef.h>
     #include <stdint.h>

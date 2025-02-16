@@ -53,6 +53,7 @@ namespace sp {
         Errorf("GLFW returned %d: %s", error, message);
     }
 
+#if VK_HEADER_VERSION >= 304
     static VkBool32 VulkanDebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
         const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
@@ -79,6 +80,7 @@ namespace sp {
         Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
     }
+#endif
 } // namespace sp
 
 using namespace sp;
@@ -212,6 +214,7 @@ int main(int argc, char **argv) {
             extensions.size(),
             extensions.data());
 
+#if VK_HEADER_VERSION >= 304
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
@@ -219,12 +222,13 @@ int main(int argc, char **argv) {
 
         debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-#ifdef SP_DEBUG
+    #ifdef SP_DEBUG
         debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-#endif
+    #endif
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
 
         createInfo.setPNext((VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
+#endif
 
         vk::Instance vkInstance = vk::createInstance(createInfo);
         sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {

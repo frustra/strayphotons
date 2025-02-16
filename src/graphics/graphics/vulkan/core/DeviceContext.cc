@@ -37,6 +37,7 @@ namespace sp::vulkan {
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
+#if VK_HEADER_VERSION >= 304
     static VkBool32 VulkanDebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
         const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
@@ -66,6 +67,37 @@ namespace sp::vulkan {
         Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
     }
+#else
+    static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+        void *pContext) {
+        auto deviceContext = static_cast<DeviceContext *>(pContext);
+        if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
+
+        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
+        string message(pCallbackData->pMessage);
+
+        switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+            if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
+                             "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
+                string_view::npos)
+                break;
+            Errorf("VK %s %s", typeStr, message);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) break;
+            Warnf("VK %s %s", typeStr, message);
+            break;
+        default:
+            break;
+        }
+        Tracef("VK %s %s", typeStr, message);
+        return VK_FALSE;
+    }
+#endif
 
     DeviceContext::DeviceContext(GraphicsManager &graphics, bool enableValidationLayers)
         : graphics(graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr), threadContexts(32),
