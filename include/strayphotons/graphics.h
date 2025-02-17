@@ -18,10 +18,6 @@ namespace sp {
     class GraphicsManager;
 }
 
-namespace vk {
-    class DispatchLoaderDynamic;
-}
-
 namespace sp::winit {
     struct WinitContext;
 }
@@ -29,14 +25,12 @@ namespace sp::winit {
 extern "C" {
 typedef sp::GraphicsManager sp_graphics_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
-typedef vk::DispatchLoaderDynamic sp_vk_dispatch_loader_t;
 #else
     #include <stddef.h>
     #include <stdint.h>
 
 typedef void sp_graphics_ctx_t;
 typedef void sp_winit_ctx_t;
-typedef void sp_vk_dispatch_loader_t;
 #endif
 
 typedef struct VkInstance_T *VkInstance;
@@ -46,7 +40,7 @@ typedef struct GLFWwindow GLFWwindow;
 
 // The following functions are declared in src/exports/Graphics.cc
 
-SP_EXPORT sp_vk_dispatch_loader_t *sp_get_vulkan_dispatch_loader();
+SP_EXPORT void *sp_get_vulkan_dispatch_loader();
 
 SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t *ctx);
 

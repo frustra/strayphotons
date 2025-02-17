@@ -80,6 +80,6 @@ namespace sp::vulkan {
         }
 
     protected:
-        vk::UniqueHandle<T, vk::DispatchLoaderDynamic> uniqueHandle;
+        vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> uniqueHandle;
     };
 } // namespace sp::vulkan

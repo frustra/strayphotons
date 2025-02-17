@@ -12,7 +12,14 @@
 #include <iostream>
 using namespace std;
 
-#define VULKAN_HPP_DEFAULT_DISPATCHER (*sp_get_vulkan_dispatch_loader())
+#include <vulkan/vulkan_core.h>
+
+#if VK_HEADER_VERSION >= 301
+    #define VULKAN_HPP_DEFAULT_DISPATCHER \
+        (*static_cast<vk::detail::DispatchLoaderDynamic *>(sp_get_vulkan_dispatch_loader()))
+#else
+    #define VULKAN_HPP_DEFAULT_DISPATCHER (*static_cast<vk::DispatchLoaderDynamic *>(sp_get_vulkan_dispatch_loader()))
+#endif
 
 #include "GlfwInputHandler.hh"
 #include "common/Common.hh"
@@ -53,15 +60,16 @@ namespace sp {
         Errorf("GLFW returned %d: %s", error, message);
     }
 
-    static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+#if VK_HEADER_VERSION >= 304
+    static VkBool32 VulkanDebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
+        const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pContext) {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         string_view message(pCallbackData->pMessage);
 
         switch (messageSeverity) {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
             if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
@@ -69,8 +77,8 @@ namespace sp {
                 break;
             Errorf("VK %s %s", typeStr, message);
             break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) break;
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:
+            if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance) break;
             Warnf("VK %s %s", typeStr, message);
             break;
         default:
@@ -79,6 +87,7 @@ namespace sp {
         Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
     }
+#endif
 } // namespace sp
 
 using namespace sp;
@@ -212,6 +221,7 @@ int main(int argc, char **argv) {
             extensions.size(),
             extensions.data());
 
+#if VK_HEADER_VERSION >= 304
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
@@ -219,12 +229,13 @@ int main(int argc, char **argv) {
 
         debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-#ifdef SP_DEBUG
+    #ifdef SP_DEBUG
         debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-#endif
+    #endif
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
 
         createInfo.setPNext((VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
+#endif
 
         vk::Instance vkInstance = vk::createInstance(createInfo);
         sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {

@@ -207,7 +207,11 @@ namespace sp::vulkan {
 
         void *Win32WindowHandle() override;
 
+#if VK_HEADER_VERSION >= 304
+        vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> disabledDebugMessages = {};
+#else
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
+#endif
 
         void FlushMainQueue(bool blockUntilReady = true) {
             frameEndQueue.Flush(blockUntilReady);

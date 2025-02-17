@@ -27,19 +27,27 @@ namespace picojson {
 
 namespace ecs {
     using FieldTypes = std::tuple<
+        // Top types based on counts in Tracy
+        float,
+        glm::vec2,
+        glm::vec3,
+        Transform,
+        EventData,
+        std::string,
+        size_t,
+        VisibilityMask,
+        sp::color_alpha_t,
+        double,
+        glm::mat3,
+        EntityRef,
+
         // Basic types
         bool,
         int32_t,
         uint32_t,
-        size_t,
         sp::angle_t,
-        float,
-        double,
-        std::string,
 
         // Vector types
-        glm::vec2,
-        glm::vec3,
         glm::vec4,
         glm::dvec2,
         glm::dvec3,
@@ -51,14 +59,9 @@ namespace ecs {
         glm::uvec3,
         glm::uvec4,
         sp::color_t,
-        sp::color_alpha_t,
         glm::quat,
-        glm::mat3,
 
         // Structs
-        EntityRef,
-        EventData,
-        Transform,
         SignalExpression,
         EventBinding,
         EventBindingActions,
@@ -101,7 +104,6 @@ namespace ecs {
         SoundType,
         TriggerGroup,
         TriggerShape,
-        VisibilityMask,
         XrEye>;
 
     namespace detail {
@@ -120,6 +122,11 @@ namespace ecs {
             return GetComponentType<Func, AllComponentTypes...>(type, std::forward<Func>(func));
         }
     } // namespace detail
+
+    template<typename Func>
+    inline static auto GetComponentType(std::type_index type, Func &&func) {
+        return detail::GetComponentType((ECS *)nullptr, type, std::forward<Func>(func));
+    }
 
     template<typename Func, size_t I = 0>
     inline static auto GetFieldType(std::type_index type, Func &&func) {

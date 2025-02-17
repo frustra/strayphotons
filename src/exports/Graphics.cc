@@ -14,7 +14,7 @@
 
 using namespace sp;
 
-SP_EXPORT sp_vk_dispatch_loader_t *sp_get_vulkan_dispatch_loader() {
+SP_EXPORT void *sp_get_vulkan_dispatch_loader() {
     return &VULKAN_HPP_DEFAULT_DISPATCHER;
 }
 

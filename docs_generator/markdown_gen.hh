@@ -267,7 +267,7 @@ struct MarkdownContext {
                 if (otherList) sp::erase(*otherList, entry);
 
                 auto &comp = *ecs::LookupComponent(entry);
-                ecs::GetFieldType(comp.metadata.type, [&](auto *typePtr) {
+                ecs::GetComponentType(comp.metadata.type, [&](auto *typePtr) {
                     using T = std::remove_pointer_t<decltype(typePtr)>;
                     static const T defaultComp = {};
                     for (auto &field : comp.metadata.fields) {

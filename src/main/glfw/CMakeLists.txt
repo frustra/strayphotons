@@ -46,4 +46,4 @@ target_link_libraries(sp-test PRIVATE
     Vulkan::Vulkan
 )
 target_compile_definitions(sp-test PRIVATE SP_GRAPHICS_SUPPORT_HEADLESS)
-set_target_properties(sp-test PROPERTIES EXPORT_COMPILE_COMMANDS 1)
+# set_target_properties(sp-test PROPERTIES EXPORT_COMPILE_COMMANDS 1)
