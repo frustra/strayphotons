@@ -8,7 +8,6 @@
 target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     AudioScripts.cc
     EditorScripts.cc
-    Elevator.cc
     EventScripts.cc
     InputScripts.cc
     InteractionScripts.cc

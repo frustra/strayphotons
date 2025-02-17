@@ -54,7 +54,7 @@
 		},
 		"script": [
 			{
-				"onTick": "elevator"
+				"onTick": "speed_controlled_sound"
 			},
 			{
 				"onTick": "signal_from_event",
