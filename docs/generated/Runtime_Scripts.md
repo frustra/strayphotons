@@ -109,15 +109,6 @@ The `edit_tool` script has no configurable parameters
 
 <div class="component_definition">
 
-## `elevator` Script
-
-The `elevator` script has no configurable parameters
-
-</div>
-
-
-<div class="component_definition">
-
 ## `event_from_signal` Script
 
 The `event_from_signal` script has parameter type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
@@ -508,6 +499,15 @@ The `signal_from_signal` script has parameter type: map&lt;string, [SignalExpres
 ## `sound_occlusion` Script
 
 The `sound_occlusion` script has no configurable parameters
+
+</div>
+
+
+<div class="component_definition">
+
+## `speed_controlled_sound` Script
+
+The `speed_controlled_sound` script has no configurable parameters
 
 </div>
 

@@ -199,6 +199,8 @@ namespace sp::scripts {
 
     struct ComponentFromEvent {
         std::vector<std::string> outputs;
+        robin_hood::unordered_map<std::string, std::pair<const ComponentBase *, std::optional<StructField>>>
+            componentCache;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -210,7 +212,7 @@ namespace sp::scripts {
                 auto fieldName = fieldPath.substr(delimiter + 1);
                 if (componentName.empty() || fieldName.empty()) continue;
 
-                state.definition.events.emplace_back("/set/" + componentName + "." + fieldName);
+                state.definition.events.emplace_back("/set/" + fieldPath);
             }
             state.definition.filterOnEvent = true;
         }
@@ -231,17 +233,27 @@ namespace sp::scripts {
                     continue;
                 }
                 std::string componentName(fieldPath.substr(0, delimiter));
-                auto comp = LookupComponent(componentName);
-                if (!comp) {
-                    Errorf("ComponentFromEvent unknown component: %s", componentName);
-                    continue;
-                }
-                if (!comp->HasComponent(lock, ent)) continue;
 
-                auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
-                if (!field) {
-                    Errorf("ComponentFromEvent unknown component field: %s", fieldPath);
-                    continue;
+                const ecs::ComponentBase *comp;
+                std::optional<StructField> field;
+                auto existing = componentCache.find(std::string(fieldPath));
+                if (existing != componentCache.end()) {
+                    std::tie(comp, field) = existing->second;
+                } else {
+                    comp = LookupComponent(componentName);
+                    if (!comp) {
+                        Errorf("ComponentFromEvent unknown component: %s", componentName);
+                        continue;
+                    }
+                    if (!comp->HasComponent(lock, ent)) continue;
+
+                    field = ecs::GetStructField(comp->metadata.type, fieldPath);
+                    if (!field) {
+                        Errorf("ComponentFromEvent unknown component field: %s", fieldPath);
+                        continue;
+                    }
+
+                    componentCache.emplace(fieldPath, std::pair{comp, field});
                 }
                 if (!comp->HasComponent(lock, ent)) continue;
 

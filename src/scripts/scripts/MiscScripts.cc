@@ -271,6 +271,8 @@ namespace sp::scripts {
 
     struct ComponentFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> mapping;
+        robin_hood::unordered_map<std::string, std::pair<const ComponentBase *, std::optional<StructField>>>
+            componentCache;
 
         template<typename LockType>
         void updateComponentFromSignal(const LockType &lock, Entity ent) {
@@ -281,20 +283,30 @@ namespace sp::scripts {
                     continue;
                 }
                 auto componentName = fieldPath.substr(0, delimiter);
-                auto comp = LookupComponent(componentName);
-                if (!comp) {
-                    Errorf("ComponentFromSignal unknown component: %s", componentName);
-                    continue;
+
+                const ecs::ComponentBase *comp;
+                std::optional<StructField> field;
+                auto existing = componentCache.find(fieldPath);
+                if (existing != componentCache.end()) {
+                    std::tie(comp, field) = existing->second;
+                } else {
+                    comp = LookupComponent(componentName);
+                    if (!comp) {
+                        Errorf("ComponentFromSignal unknown component: %s", componentName);
+                        continue;
+                    }
+                    if (!comp->HasComponent(lock, ent)) continue;
+
+                    field = ecs::GetStructField(comp->metadata.type, fieldPath);
+                    if (!field) {
+                        Errorf("ComponentFromSignal unknown component field: %s", fieldPath);
+                        continue;
+                    }
+
+                    componentCache.emplace(fieldPath, std::pair{comp, field});
                 }
-                if (!comp->HasComponent(lock, ent)) continue;
 
                 auto signalValue = signalExpr.Evaluate(lock);
-
-                auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
-                if (!field) {
-                    Errorf("ComponentFromSignal unknown component field: %s", fieldPath);
-                    continue;
-                }
 
                 void *compPtr = comp->Access(lock, ent);
                 if (!compPtr) {
