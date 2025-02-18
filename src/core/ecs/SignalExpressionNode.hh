@@ -34,19 +34,19 @@ namespace ecs {
         struct ConstantNode {
             double value = 0.0f;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const ConstantNode &) const = default;
         };
         struct IdentifierNode {
             StructField field;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const IdentifierNode &) const = default;
         };
         struct SignalNode {
             SignalRef signal;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const SignalNode &) const = default;
         };
         struct ComponentNode {
@@ -55,46 +55,29 @@ namespace ecs {
             StructField field;
             std::string path;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const ComponentNode &) const = default;
         };
         struct FocusCondition {
             FocusLayer ifFocused;
-            SignalNodePtr inputNode = nullptr;
-            CompiledFunc inputFunc = nullptr;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const FocusCondition &) const = default;
         };
         struct OneInputOperation {
-            SignalNodePtr inputNode = nullptr;
-            double (*evaluate)(double) = nullptr;
             std::string prefixStr, suffixStr;
-            CompiledFunc inputFunc = nullptr;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const OneInputOperation &) const = default;
         };
         struct TwoInputOperation {
-            SignalNodePtr inputNodeA = nullptr;
-            SignalNodePtr inputNodeB = nullptr;
-            double (*evaluate)(double, double) = nullptr;
             std::string prefixStr, middleStr, suffixStr;
-            CompiledFunc inputFuncA = nullptr;
-            CompiledFunc inputFuncB = nullptr;
 
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const TwoInputOperation &) const = default;
         };
         struct DeciderOperation {
-            SignalNodePtr ifNode = nullptr;
-            SignalNodePtr trueNode = nullptr;
-            SignalNodePtr falseNode = nullptr;
-            CompiledFunc ifFunc = nullptr;
-            CompiledFunc trueFunc = nullptr;
-            CompiledFunc falseFunc = nullptr;
-
-            static double Evaluate(const Context &ctx, const Node &node, size_t depth);
+            CompiledFunc Compile() const;
             bool operator==(const DeciderOperation &) const = default;
         };
 
@@ -109,28 +92,21 @@ namespace ecs {
         struct Node : public NodeVariant {
             std::string text;
             CompiledFunc evaluate = nullptr;
-            std::vector<const Node *> childNodes;
+            sp::InlineVector<SignalNodePtr, 3> childNodes;
 
             template<typename T>
-            Node(T &&arg, std::string text, std::initializer_list<const Node *> childNodes = {})
+            Node(T &&arg, std::string text, std::initializer_list<SignalNodePtr> childNodes = {})
                 : NodeVariant(arg), text(text) {
-                size_t count = 0;
-                for (auto &node : childNodes) {
-                    count += node->childNodes.size();
-                }
-                this->childNodes.reserve(count);
-                for (auto &node : childNodes) {
-                    this->childNodes.insert(this->childNodes.end(), node->childNodes.begin(), node->childNodes.end());
-                }
+                this->childNodes.insert(this->childNodes.end(), childNodes.begin(), childNodes.end());
             }
 
-            CompiledFunc compile(SignalExpression &expr, bool noCacheWrite);
+            CompiledFunc compile();
             bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
             SignalNodePtr setScope(const EntityScope &scope) const;
 
             bool operator==(const Node &other) const {
                 return (const NodeVariant &)*this == (const NodeVariant &)other && text == other.text &&
-                       evaluate == other.evaluate;
+                       evaluate == other.evaluate && childNodes == other.childNodes;
             }
         };
     } // namespace expression
