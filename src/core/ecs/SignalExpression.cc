@@ -139,9 +139,9 @@ namespace ecs {
                     return nullptr;
                 }
 
-                node = manager.GetNode(Node(DeciderOperation{ifNode, trueNode, falseNode},
+                node = manager.GetNode(Node(DeciderOperation(),
                     ifNode->text + " ? " + trueNode->text + " : " + falseNode->text,
-                    {ifNode.get(), trueNode.get(), falseNode.get()}));
+                    {ifNode, trueNode, falseNode}));
             } else if (token == "(") {
                 if (node) {
                     Errorf("Failed to parse signal expression, unexpected expression '(': %s",
@@ -162,14 +162,7 @@ namespace ecs {
                 }
 
                 tokenIndex++;
-                node = manager.GetNode(Node(OneInputOperation{inputNode,
-                                                [](double input) -> double {
-                                                    return input;
-                                                },
-                                                "( ",
-                                                " )"},
-                    "( " + inputNode->text + " )",
-                    {inputNode.get()}));
+                node = manager.GetNode(Node(OneInputOperation{"( ", " )"}, "( " + inputNode->text + " )", {inputNode}));
             } else if (!node && (token == "-" || token == "!")) {
                 tokenIndex++;
                 SignalNodePtr inputNode = parseNode(tokenIndex, '_');
@@ -185,28 +178,14 @@ namespace ecs {
                         double newVal = constantNode->value * -1;
                         node = manager.GetNode(Node(ConstantNode{newVal}, picojson::value(newVal).serialize()));
                     } else {
-                        node = manager.GetNode(Node(OneInputOperation{inputNode,
-                                                        [](double input) -> double {
-                                                            return -input;
-                                                        },
-                                                        "-",
-                                                        ""},
-                            "-" + inputNode->text,
-                            {inputNode.get()}));
+                        node = manager.GetNode(Node(OneInputOperation{"-", ""}, "-" + inputNode->text, {inputNode}));
                     }
                 } else if (token == "!") {
                     if (constantNode) {
                         double newVal = constantNode->value >= 0.5 ? 0.0 : 1.0;
                         node = manager.GetNode(Node(ConstantNode{newVal}, picojson::value(newVal).serialize()));
                     } else {
-                        node = manager.GetNode(Node(OneInputOperation{inputNode,
-                                                        [](double input) -> double {
-                                                            return input >= 0.5 ? 0.0 : 1.0;
-                                                        },
-                                                        "!",
-                                                        ""},
-                            "!" + inputNode->text,
-                            {inputNode.get()}));
+                        node = manager.GetNode(Node(OneInputOperation{"!", ""}, "!" + inputNode->text, {inputNode}));
                     }
                 }
             } else if (token == "is_focused" || token == "sin" || token == "cos" || token == "tan" ||
@@ -242,7 +221,6 @@ namespace ecs {
                 }
 
                 tokenIndex++;
-                NodeVariant tmpNode;
                 if (token == "is_focused") {
                     std::string &focusStr = inputNode->text;
                     FocusLayer focus = FocusLayer::Always;
@@ -256,55 +234,12 @@ namespace ecs {
                     } else {
                         Errorf("Blank focus layer specified for is_focused: %s", focusStr);
                     }
-                    tmpNode = FocusCondition{focus, nullptr};
-                } else if (token == "sin") {
-                    tmpNode = OneInputOperation{inputNode,
-                        [](double input) -> double {
-                            return std::sin(input);
-                        },
-                        "sin( ",
-                        " )"};
-                } else if (token == "cos") {
-                    tmpNode = OneInputOperation{inputNode,
-                        [](double input) -> double {
-                            return std::cos(input);
-                        },
-                        "cos( ",
-                        " )"};
-                } else if (token == "tan") {
-                    tmpNode = OneInputOperation{inputNode,
-                        [](double input) -> double {
-                            return std::tan(input);
-                        },
-                        "tan( ",
-                        " )"};
-                } else if (token == "floor") {
-                    tmpNode = OneInputOperation{inputNode,
-                        [](double input) -> double {
-                            return std::floor(input);
-                        },
-                        "floor( ",
-                        " )"};
-                } else if (token == "ceil") {
-                    tmpNode = OneInputOperation{inputNode,
-                        [](double input) -> double {
-                            return std::ceil(input);
-                        },
-                        "ceil( ",
-                        " )"};
-                } else if (token == "abs") {
-                    tmpNode = OneInputOperation{inputNode,
-                        [](double input) -> double {
-                            return std::abs(input);
-                        },
-                        "abs( ",
-                        " )"};
+                    node = manager.GetNode(Node(FocusCondition{focus}, "is_focused( " + inputNode->text + " )"));
                 } else {
-                    Abortf("Invalid function token: %s", std::string(token));
+                    node = manager.GetNode(Node(OneInputOperation{std::string(token) + "( ", " )"},
+                        std::string(token) + "( " + inputNode->text + " )",
+                        {inputNode}));
                 }
-
-                node = manager.GetNode(
-                    Node(tmpNode, std::string(token) + "( " + inputNode->text + " )", {inputNode.get()}));
             } else if (token == "if_focused" || token == "min" || token == "max") {
                 // Parse as 2 argument function
                 if (node) {
@@ -351,7 +286,6 @@ namespace ecs {
                 }
 
                 tokenIndex++;
-                NodeVariant tmpNode;
                 if (token == "if_focused") {
                     std::string &focusStr = aNode->text;
                     FocusLayer focus = FocusLayer::Always;
@@ -365,32 +299,14 @@ namespace ecs {
                     } else {
                         Errorf("Blank focus layer specified for if_focused: %s", std::string(focusStr));
                     }
-                    tmpNode = FocusCondition{focus, bNode};
-                } else if (token == "min") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return std::min(a, b);
-                        },
-                        "min( ",
-                        " , ",
-                        " )"};
-                } else if (token == "max") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return std::max(a, b);
-                        },
-                        "max( ",
-                        " , ",
-                        " )"};
+                    node = manager.GetNode(Node(FocusCondition{focus},
+                        "if_focused( " + aNode->text + " , " + bNode->text + " )",
+                        {bNode}));
                 } else {
-                    Abortf("Invalid function token: %s", std::string(token));
+                    node = manager.GetNode(Node(TwoInputOperation{std::string(token) + "( ", " , ", " )"},
+                        std::string(token) + "( " + aNode->text + " , " + bNode->text + " )",
+                        {aNode, bNode}));
                 }
-
-                node = manager.GetNode(Node(tmpNode,
-                    std::string(token) + "( " + aNode->text + " , " + bNode->text + " )",
-                    {aNode.get(), bNode.get()}));
             } else if (token == "+" || token == "-" || token == "*" || token == "/" || token == "&&" || token == "||" ||
                        token == ">" || token == ">=" || token == "<" || token == "<=" || token == "==" ||
                        token == "!=") {
@@ -412,142 +328,9 @@ namespace ecs {
                     return nullptr;
                 }
 
-                NodeVariant tmpNode;
-                if (token == "+") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            double result = a + b;
-                            if (!std::isfinite(result)) {
-                                Warnf("Signal expression evaluation error: %f + %f = %f", a, b, result);
-                                return 0.0;
-                            }
-                            return result;
-                        },
-                        "",
-                        " + ",
-                        ""};
-                } else if (token == "-") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            double result = a - b;
-                            if (!std::isfinite(result)) {
-                                Warnf("Signal expression evaluation error: %f - %f = %f", a, b, result);
-                                return 0.0;
-                            }
-                            return result;
-                        },
-                        "",
-                        " - ",
-                        ""};
-                } else if (token == "*") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            double result = a * b;
-                            if (!std::isfinite(result)) {
-                                Warnf("Signal expression evaluation error: %f * %f = %f", a, b, result);
-                                return 0.0;
-                            }
-                            return result;
-                        },
-                        "",
-                        " * ",
-                        ""};
-                } else if (token == "/") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            double result = a / b;
-                            if (!std::isfinite(result)) {
-                                Warnf("Signal expression evaluation error: %f / %f = %f", a, b, result);
-                                return 0.0;
-                            }
-                            return result;
-                        },
-                        "",
-                        " / ",
-                        ""};
-                } else if (token == "&&") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a >= 0.5 && b >= 0.5;
-                        },
-                        "",
-                        " && ",
-                        ""};
-                } else if (token == "||") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a >= 0.5 || b >= 0.5;
-                        },
-                        "",
-                        " || ",
-                        ""};
-                } else if (token == ">") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a > b;
-                        },
-                        "",
-                        " > ",
-                        ""};
-                } else if (token == ">=") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a >= b;
-                        },
-                        "",
-                        " >= ",
-                        ""};
-                } else if (token == "<") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a < b;
-                        },
-                        "",
-                        " < ",
-                        ""};
-                } else if (token == "<=") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a <= b;
-                        },
-                        "",
-                        " <= ",
-                        ""};
-                } else if (token == "==") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a == b;
-                        },
-                        "",
-                        " == ",
-                        ""};
-                } else if (token == "!=") {
-                    tmpNode = TwoInputOperation{aNode,
-                        bNode,
-                        [](double a, double b) -> double {
-                            return a != b;
-                        },
-                        "",
-                        " != ",
-                        ""};
-                } else {
-                    Abortf("Invalid operator token: %s", std::string(token));
-                }
-
-                node = manager.GetNode(Node(tmpNode,
+                node = manager.GetNode(Node(TwoInputOperation{"", " " + std::string(token) + " ", ""},
                     aNode->text + " " + std::string(token) + " " + bNode->text,
-                    {aNode.get(), bNode.get()}));
+                    {aNode, bNode}));
             } else if (sp::is_float(token)) {
                 if (node) {
                     Errorf("Failed to parse signal expression, unexpected constant '%s': %s",
@@ -642,7 +425,7 @@ namespace ecs {
         this->expr = signal.String();
         SignalManager &manager = GetSignalManager();
         this->rootNode = manager.GetNode(Node(SignalNode{signal}, expr));
-        rootNode->compile(*this, true);
+        rootNode->compile();
         Assertf(rootNode->evaluate, "Failed to compile expression: %s", expr);
     }
 
@@ -693,150 +476,337 @@ namespace ecs {
         Assertf(tokenIndex == ctx.tokens.size(), "Failed to parse signal expression, incomplete parse: %s", exprView);
 
         // Compile the parsed expression tree into a lambda function
-        rootNode->compile(*this, false);
+        rootNode->compile();
         Assertf(rootNode->evaluate, "Failed to compile expression: %s", expr);
         return true;
     } // namespace ecs
 
-    // double cacheLookup(const SignalExpression::Context &ctx, const Node &node, size_t depth) {
-    //     return ctx.cache[node.index];
-    // }
-
-    CompiledFunc Node::compile(SignalExpression &expr, bool noCacheWrite) {
+    CompiledFunc Node::compile() {
+        for (const auto &child : childNodes) {
+            if (child) child->compile();
+        }
+        if (evaluate) return evaluate;
         return std::visit(
             [&](auto &node) {
-                using T = std::decay_t<decltype(node)>;
-
-                // if (evaluate) {
-                //     return &cacheLookup;
-                // } else {
-                if constexpr (std::is_same_v<T, FocusCondition>) {
-                    // Force no cache writes for branching nodes
-                    node.inputFunc = node.inputNode ? node.inputNode->compile(expr, true) : nullptr;
-                } else if constexpr (std::is_same_v<T, OneInputOperation>) {
-                    node.inputFunc = node.inputNode->compile(expr, noCacheWrite);
-                } else if constexpr (std::is_same_v<T, TwoInputOperation>) {
-                    node.inputFuncA = node.inputNodeA->compile(expr, noCacheWrite);
-                    node.inputFuncB = node.inputNodeB->compile(expr, noCacheWrite);
-                } else if constexpr (std::is_same_v<T, DeciderOperation>) {
-                    node.ifFunc = node.ifNode->compile(expr, noCacheWrite);
-                    // Force no cache writes for branching nodes
-                    node.trueFunc = node.trueNode->compile(expr, true);
-                    node.falseFunc = node.falseNode->compile(expr, true);
-                }
-
-                // if (noCacheWrite) {
-                return evaluate = &T::Evaluate;
-                // } else {
-                //     evaluate = [](const Context &ctx, const Node &node, size_t depth) {
-                //         return (ctx.cache[node.index] = T::Evaluate(ctx, node, depth));
-                //     };
-                //     return evaluate;
-                // }
-                // }
+                return evaluate = node.Compile();
             },
             (NodeVariant &)*this);
     }
 
-    double ConstantNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        return std::get<ConstantNode>(node).value;
+    CompiledFunc ConstantNode::Compile() const {
+        return [](const Context &ctx, const Node &node, size_t depth) {
+            // ZoneScoped;
+            return std::get<ConstantNode>(node).value;
+        };
     }
 
-    double IdentifierNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &identNode = std::get<IdentifierNode>(node);
-        if (identNode.field.type != typeid(EventData)) {
-            Warnf("SignalExpression can't convert %s from %s to EventData", node.text, identNode.field.type.name());
-            return 0.0;
-        }
-        return ecs::ReadStructField(&ctx.input, identNode.field);
-    }
-
-    double SignalNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &signalNode = std::get<SignalNode>(node);
-        if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
-            Errorf("Max signal binding depth exceeded: %s -> %s", ctx.expr.expr, signalNode.signal.String());
-            return 0.0;
-        }
-        return signalNode.signal.GetSignal(ctx.lock, depth + 1);
-    }
-
-    double ComponentNode::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &componentNode = std::get<ComponentNode>(node);
-        if (!componentNode.component) return 0.0;
-        Entity ent = componentNode.entity.Get(ctx.lock);
-        if (!ent) return 0.0;
-        return GetComponentType(componentNode.component->metadata.type, [&](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
-            if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
-                Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
+    CompiledFunc IdentifierNode::Compile() const {
+        return [](const Context &ctx, const Node &node, size_t depth) {
+            // ZoneScoped;
+            auto &identNode = std::get<IdentifierNode>(node);
+            if (identNode.field.type != typeid(EventData)) {
+                Warnf("SignalExpression can't convert %s from %s to EventData", node.text, identNode.field.type.name());
                 return 0.0;
-            } else if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
-                auto &component = ent.Get<const T>(ctx.lock);
-                return ecs::ReadStructField(&component, componentNode.field);
-            } else {
-                auto tryLock = ctx.lock.TryLock<Read<T>>();
-                if (tryLock) {
-                    auto &component = ent.Get<const T>(*tryLock);
+            }
+            return ecs::ReadStructField(&ctx.input, identNode.field);
+        };
+    }
+
+    CompiledFunc SignalNode::Compile() const {
+        return [](const Context &ctx, const Node &node, size_t depth) {
+            // ZoneScoped;
+            auto &signalNode = std::get<SignalNode>(node);
+            if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                Errorf("Max signal binding depth exceeded: %s -> %s", ctx.expr.expr, signalNode.signal.String());
+                return 0.0;
+            }
+            return signalNode.signal.GetSignal(ctx.lock, depth + 1);
+        };
+    }
+
+    CompiledFunc ComponentNode::Compile() const {
+        return [](const Context &ctx, const Node &node, size_t depth) {
+            // ZoneScoped;
+            auto &componentNode = std::get<ComponentNode>(node);
+            if (!componentNode.component) return 0.0;
+            Entity ent = componentNode.entity.Get(ctx.lock);
+            if (!ent) return 0.0;
+            return GetComponentType(componentNode.component->metadata.type, [&](auto *typePtr) {
+                using T = std::remove_pointer_t<decltype(typePtr)>;
+                if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                    Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
+                    return 0.0;
+                } else if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
+                    auto &component = ent.Get<const T>(ctx.lock);
                     return ecs::ReadStructField(&component, componentNode.field);
                 } else {
-                    Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
-                        componentNode.field.name,
-                        typeid(T).name());
-                    return 0.0;
+                    auto tryLock = ctx.lock.TryLock<Read<T>>();
+                    if (tryLock) {
+                        auto &component = ent.Get<const T>(*tryLock);
+                        return ecs::ReadStructField(&component, componentNode.field);
+                    } else {
+                        Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
+                            componentNode.field.name,
+                            typeid(T).name());
+                        return 0.0;
+                    }
                 }
+            });
+        };
+    }
+
+    CompiledFunc FocusCondition::Compile() const {
+        return [](const Context &ctx, const Node &node, size_t depth) {
+            // ZoneScoped;
+            auto &focusNode = std::get<FocusCondition>(node);
+            if (!ctx.lock.Has<FocusLock>() || !ctx.lock.Get<FocusLock>().HasPrimaryFocus(focusNode.ifFocused)) {
+                return 0.0;
+            } else if (node.childNodes.empty()) {
+                return 1.0;
+            } else {
+                DebugAssertf(node.childNodes.size() > 0, "FocusCondition::Compile null input node: %s", node.text);
+                return node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
             }
-        });
+        };
     }
 
-    double FocusCondition::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &focusNode = std::get<FocusCondition>(node);
-        if (!ctx.lock.Has<FocusLock>() || !ctx.lock.Get<FocusLock>().HasPrimaryFocus(focusNode.ifFocused)) {
-            return 0.0;
-        } else if (!focusNode.inputNode) {
-            return 1.0;
+    CompiledFunc OneInputOperation::Compile() const {
+        if (prefixStr == "( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+            };
+        } else if (prefixStr == "-") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return -node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+            };
+        } else if (prefixStr == "!") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth) >= 0.5 ? 0.0 : 1.0;
+            };
+        } else if (prefixStr == "sin( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return std::sin(node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth));
+            };
+        } else if (prefixStr == "cos( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return std::cos(node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth));
+            };
+        } else if (prefixStr == "tan( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return std::tan(node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth));
+            };
+        } else if (prefixStr == "floor( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return std::floor(node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth));
+            };
+        } else if (prefixStr == "ceil( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return std::ceil(node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth));
+            };
+        } else if (prefixStr == "abs( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
+                return std::abs(node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth));
+            };
         } else {
-            DebugAssertf(focusNode.inputNode, "FocusCondition::Evaluate null input node: %s", node.text);
-            return focusNode.inputFunc(ctx, *focusNode.inputNode, depth);
+            Abortf("OneIpputOperation::Compile unknown operation: %s", prefixStr);
         }
     }
 
-    double OneInputOperation::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &opNode = std::get<OneInputOperation>(node);
-
-        DebugAssertf(opNode.inputNode, "OneInputOperation::Evaluate null input node: %s", node.text);
-        return opNode.evaluate(opNode.inputFunc(ctx, *opNode.inputNode, depth));
-    }
-
-    double TwoInputOperation::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &opNode = std::get<TwoInputOperation>(node);
-
-        // Argument execution order is undefined, so args must be evaluated before
-        DebugAssertf(opNode.inputNodeA, "TwoInputOperation::Evaluate null input node a: %s", node.text);
-        DebugAssertf(opNode.inputNodeB, "TwoInputOperation::Evaluate null input node b: %s", node.text);
-        double inputA = opNode.inputFuncA(ctx, *opNode.inputNodeA, depth);
-        double inputB = opNode.inputFuncB(ctx, *opNode.inputNodeB, depth);
-        return opNode.evaluate(inputA, inputB);
-    }
-
-    double DeciderOperation::Evaluate(const Context &ctx, const Node &node, size_t depth) {
-        // ZoneScoped;
-        auto &opNode = std::get<DeciderOperation>(node);
-
-        DebugAssertf(opNode.ifNode, "DeciderOperation::Evaluate null condition input node: %s", node.text);
-        if (opNode.ifFunc(ctx, *opNode.ifNode, depth) >= 0.5) {
-            DebugAssertf(opNode.trueNode, "DeciderOperation::Evaluate null true input node: %s", node.text);
-            return opNode.trueFunc(ctx, *opNode.trueNode, depth);
+    CompiledFunc TwoInputOperation::Compile() const {
+        if (prefixStr == "min( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 1, "TwoInputOperation::Compile null input node: %s", node.text);
+                double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                return std::min(inputA, inputB);
+            };
+        } else if (prefixStr == "max( ") {
+            return [](const Context &ctx, const Node &node, size_t depth) {
+                // ZoneScoped;
+                DebugAssertf(node.childNodes.size() > 1, "TwoInputOperation::Compile null input node: %s", node.text);
+                double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                return std::max(inputA, inputB);
+            };
+        } else if (prefixStr == "") {
+            if (middleStr == " + ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    double result = inputA + inputB;
+                    if (!std::isfinite(result)) {
+                        Warnf("Signal expression evaluation error: %f + %f = %f", inputA, inputB, result);
+                        return 0.0;
+                    }
+                    return result;
+                };
+            } else if (middleStr == " - ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    double result = inputA - inputB;
+                    if (!std::isfinite(result)) {
+                        Warnf("Signal expression evaluation error: %f - %f = %f", inputA, inputB, result);
+                        return 0.0;
+                    }
+                    return result;
+                };
+            } else if (middleStr == " * ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    double result = inputA * inputB;
+                    if (!std::isfinite(result)) {
+                        Warnf("Signal expression evaluation error: %f * %f = %f", inputA, inputB, result);
+                        return 0.0;
+                    }
+                    return result;
+                };
+            } else if (middleStr == " / ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    double result = inputA / inputB;
+                    if (!std::isfinite(result)) {
+                        Warnf("Signal expression evaluation error: %f / %f = %f", inputA, inputB, result);
+                        return 0.0;
+                    }
+                    return result;
+                };
+            } else if (middleStr == " && ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA >= 0.5 && inputB >= 0.5);
+                };
+            } else if (middleStr == " || ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA >= 0.5 || inputB >= 0.5);
+                };
+            } else if (middleStr == " > ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA > inputB);
+                };
+            } else if (middleStr == " >= ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA >= inputB);
+                };
+            } else if (middleStr == " < ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA < inputB);
+                };
+            } else if (middleStr == " <= ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA <= inputB);
+                };
+            } else if (middleStr == " == ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA == inputB);
+                };
+            } else if (middleStr == " != ") {
+                return [](const Context &ctx, const Node &node, size_t depth) {
+                    // ZoneScoped;
+                    DebugAssertf(node.childNodes.size() > 1,
+                        "TwoInputOperation::Compile null input node: %s",
+                        node.text);
+                    double inputA = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+                    double inputB = node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+                    return (double)(inputA != inputB);
+                };
+            } else {
+                Abortf("TwoInputOperation::Compile unknown operation: %s", middleStr);
+            }
         } else {
-            DebugAssertf(opNode.falseNode, "DeciderOperation::Evaluate null false input node: %s", node.text);
-            return opNode.falseFunc(ctx, *opNode.falseNode, depth);
+            Abortf("TwoInputOperation::Compile unknown operation: %s", prefixStr);
         }
+    }
+
+    CompiledFunc DeciderOperation::Compile() const {
+        return [](const Context &ctx, const Node &node, size_t depth) {
+            // ZoneScoped;
+            DebugAssertf(node.childNodes.size() > 2, "DeciderOperation::Compile null input node: %s", node.text);
+            double condition = node.childNodes[0]->evaluate(ctx, *node.childNodes[0], depth);
+            if (condition >= 0.5) {
+                return node.childNodes[1]->evaluate(ctx, *node.childNodes[1], depth);
+            } else {
+                return node.childNodes[2]->evaluate(ctx, *node.childNodes[2], depth);
+            }
+        };
     }
 
     bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
@@ -845,33 +815,34 @@ namespace ecs {
     }
 
     bool Node::canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        for (auto &node : childNodes) {
-            if (std::holds_alternative<SignalNode>(*node)) {
-                const SignalNode &signalNode = std::get<SignalNode>(*node);
-                if (signalNode.signal.HasValue(lock)) return true;
-                auto &binding = signalNode.signal.GetBinding(lock);
-                if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
-                    Errorf("Max signal binding depth exceeded: %s -> %s", text, binding.expr);
-                    return false;
-                }
-                return signalNode.signal.GetBinding(lock).CanEvaluate(lock, depth + 1);
-            } else if (std::holds_alternative<ComponentNode>(*node)) {
-                const ComponentNode &componentNode = std::get<ComponentNode>(*node);
-                const ComponentBase *base = componentNode.component;
-                if (!base) return true;
-                Entity ent = componentNode.entity.Get(lock);
-                if (!ent) return true;
-                return GetComponentType(base->metadata.type, [&](auto *typePtr) {
-                    using T = std::remove_pointer_t<decltype(typePtr)>;
-                    if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
-                        return true;
-                    } else {
-                        return lock.TryLock<Read<T>>().has_value();
-                    }
-                });
-            } else if (std::holds_alternative<FocusCondition>(*node)) {
-                if (!lock.template Has<FocusLock>()) return false;
+        if (std::holds_alternative<SignalNode>(*this)) {
+            const SignalNode &signalNode = std::get<SignalNode>(*this);
+            if (signalNode.signal.HasValue(lock)) return true;
+            auto &binding = signalNode.signal.GetBinding(lock);
+            if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                Errorf("Max signal binding depth exceeded: %s -> %s", text, binding.expr);
+                return false;
             }
+            return signalNode.signal.GetBinding(lock).CanEvaluate(lock, depth + 1);
+        } else if (std::holds_alternative<ComponentNode>(*this)) {
+            const ComponentNode &componentNode = std::get<ComponentNode>(*this);
+            const ComponentBase *base = componentNode.component;
+            if (!base) return true;
+            Entity ent = componentNode.entity.Get(lock);
+            if (!ent) return true;
+            return GetComponentType(base->metadata.type, [&](auto *typePtr) {
+                using T = std::remove_pointer_t<decltype(typePtr)>;
+                if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                    return true;
+                } else {
+                    return lock.TryLock<Read<T>>().has_value();
+                }
+            });
+        } else if (std::holds_alternative<FocusCondition>(*this)) {
+            if (!lock.template Has<FocusLock>()) return false;
+        }
+        for (auto &node : childNodes) {
+            if (!node->canEvaluate(lock, depth)) return false;
         }
         return true;
     }
@@ -897,52 +868,51 @@ namespace ecs {
             }
         } else if (std::holds_alternative<FocusCondition>(*this)) {
             auto &focusNode = std::get<FocusCondition>(*this);
-            if (!focusNode.inputNode) return nullptr;
-            SignalNodePtr setNode = focusNode.inputNode->setScope(scope);
+            if (childNodes.empty()) return nullptr;
+            SignalNodePtr setNode = childNodes[0]->setScope(scope);
             if (setNode) {
                 SignalManager &manager = GetSignalManager();
-                return manager.GetNode(Node(FocusCondition(focusNode.ifFocused, setNode),
+                return manager.GetNode(Node(FocusCondition(focusNode.ifFocused),
                     "if_focused( " + std::string(magic_enum::enum_name(focusNode.ifFocused)) + " , " + setNode->text +
-                        " )"));
+                        " )",
+                    {setNode}));
             }
         } else if (std::holds_alternative<OneInputOperation>(*this)) {
             auto &oneNode = std::get<OneInputOperation>(*this);
-            if (!oneNode.inputNode) return nullptr;
-            SignalNodePtr setNode = oneNode.inputNode->setScope(scope);
+            if (childNodes.empty()) return nullptr;
+            SignalNodePtr setNode = childNodes[0]->setScope(scope);
             if (setNode) {
                 SignalManager &manager = GetSignalManager();
-                return manager.GetNode(
-                    Node(OneInputOperation(setNode, oneNode.evaluate, oneNode.prefixStr, oneNode.suffixStr),
-                        oneNode.prefixStr + setNode->text + oneNode.suffixStr));
+                return manager.GetNode(Node(OneInputOperation(oneNode.prefixStr, oneNode.suffixStr),
+                    oneNode.prefixStr + setNode->text + oneNode.suffixStr,
+                    {setNode}));
             }
         } else if (std::holds_alternative<TwoInputOperation>(*this)) {
             auto &twoNode = std::get<TwoInputOperation>(*this);
-            SignalNodePtr setNodeA = twoNode.inputNodeA ? twoNode.inputNodeA->setScope(scope) : nullptr;
-            SignalNodePtr setNodeB = twoNode.inputNodeB ? twoNode.inputNodeB->setScope(scope) : nullptr;
+            if (childNodes.size() < 2) return nullptr;
+            SignalNodePtr setNodeA = childNodes[0]->setScope(scope);
+            SignalNodePtr setNodeB = childNodes[1]->setScope(scope);
             if (setNodeA || setNodeB) {
-                if (!setNodeA) setNodeA = twoNode.inputNodeA;
-                if (!setNodeB) setNodeB = twoNode.inputNodeB;
+                if (!setNodeA) setNodeA = childNodes[0];
+                if (!setNodeB) setNodeB = childNodes[1];
                 SignalManager &manager = GetSignalManager();
-                return manager.GetNode(Node(TwoInputOperation(setNodeA,
-                                                setNodeB,
-                                                twoNode.evaluate,
-                                                twoNode.prefixStr,
-                                                twoNode.middleStr,
-                                                twoNode.suffixStr),
-                    twoNode.prefixStr + setNodeA->text + twoNode.middleStr + setNodeB->text + twoNode.suffixStr));
+                return manager.GetNode(Node(TwoInputOperation(twoNode.prefixStr, twoNode.middleStr, twoNode.suffixStr),
+                    twoNode.prefixStr + setNodeA->text + twoNode.middleStr + setNodeB->text + twoNode.suffixStr,
+                    {setNodeA, setNodeB}));
             }
         } else if (std::holds_alternative<DeciderOperation>(*this)) {
-            auto &deciderNode = std::get<DeciderOperation>(*this);
-            SignalNodePtr setNodeIf = deciderNode.ifNode ? deciderNode.ifNode->setScope(scope) : nullptr;
-            SignalNodePtr setNodeTrue = deciderNode.trueNode ? deciderNode.trueNode->setScope(scope) : nullptr;
-            SignalNodePtr setNodeFalse = deciderNode.falseNode ? deciderNode.falseNode->setScope(scope) : nullptr;
+            if (childNodes.size() < 3) return nullptr;
+            SignalNodePtr setNodeIf = childNodes[0]->setScope(scope);
+            SignalNodePtr setNodeTrue = childNodes[1]->setScope(scope);
+            SignalNodePtr setNodeFalse = childNodes[2]->setScope(scope);
             if (setNodeIf || setNodeTrue || setNodeFalse) {
-                if (!setNodeIf) setNodeIf = deciderNode.ifNode;
-                if (!setNodeTrue) setNodeTrue = deciderNode.trueNode;
-                if (!setNodeFalse) setNodeFalse = deciderNode.falseNode;
+                if (!setNodeIf) setNodeIf = childNodes[0];
+                if (!setNodeTrue) setNodeTrue = childNodes[1];
+                if (!setNodeFalse) setNodeFalse = childNodes[2];
                 SignalManager &manager = GetSignalManager();
-                return manager.GetNode(Node(DeciderOperation(setNodeIf, setNodeTrue, setNodeFalse),
-                    setNodeIf->text + " ? " + setNodeTrue->text + " : " + setNodeFalse->text));
+                return manager.GetNode(Node(DeciderOperation(),
+                    setNodeIf->text + " ? " + setNodeTrue->text + " : " + setNodeFalse->text,
+                    {setNodeIf, setNodeTrue, setNodeFalse}));
             }
         }
         return nullptr;
@@ -970,7 +940,7 @@ namespace ecs {
         this->scope = scope;
         SignalNodePtr newRoot = rootNode->setScope(scope);
         if (newRoot) {
-            newRoot->compile(*this, false);
+            newRoot->compile();
             // Logf("Setting scope of expression (%s): %s -> %s", scope.String(), rootNode->text, newRoot->text);
             Assertf(newRoot->evaluate, "Failed to compile expression: %s", expr);
             this->rootNode = newRoot;
