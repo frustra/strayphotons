@@ -11,6 +11,7 @@
 #include "common/Hashing.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalManager.hh"
 
 #include <optional>
 #include <picojson/picojson.h>
@@ -138,6 +139,10 @@ namespace ecs {
         }
         Assertf(index < signals.signals.size(), "Signals::MarkDirty index out of range");
         signals.dirtyIndices.emplace(index);
+
+        auto &ref = signals.signals[index].ref;
+        SignalNodePtr node = GetSignalManager().GetNode(expression::Node{expression::SignalNode{ref}, ref.String()});
+        expression::Node::markDirty(node);
     }
 
     Signals &Signals::operator=(const Signals &other) {

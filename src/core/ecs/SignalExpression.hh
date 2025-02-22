@@ -73,19 +73,12 @@ Signal expressions support the following operations and functions:
     namespace expression {
         static const size_t MAX_SIGNAL_EXPRESSION_NODES = 256;
 
-        using Storage = std::array<double, MAX_SIGNAL_EXPRESSION_NODES>;
-
         struct Context {
             const DynamicLock<ReadSignalsLock> &lock;
             const SignalExpression &expr;
-            Storage &cache;
             const EventData &input;
 
-            Context(const DynamicLock<ReadSignalsLock> &lock,
-                const SignalExpression &expr,
-                Storage &cache,
-                const EventData &input)
-                : lock(lock), expr(expr), cache(cache), input(input) {}
+            Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input);
         };
 
         struct Node;

@@ -36,18 +36,27 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const ConstantNode &) const = default;
+            size_t hash() const {
+                return robin_hood::hash<double>()(value);
+            }
         };
         struct IdentifierNode {
             StructField field;
 
             CompiledFunc Compile() const;
             bool operator==(const IdentifierNode &) const = default;
+            size_t hash() const {
+                return robin_hood::hash<std::string>()(field.name);
+            }
         };
         struct SignalNode {
             SignalRef signal;
 
             CompiledFunc Compile() const;
-            bool operator==(const SignalNode &) const = default;
+            bool operator==(const SignalNode &other) const = default;
+            size_t hash() const {
+                return robin_hood::hash<std::string>()(signal.String());
+            }
         };
         struct ComponentNode {
             EntityRef entity;
@@ -57,28 +66,43 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const ComponentNode &) const = default;
+            size_t hash() const {
+                return robin_hood::hash<std::string>()(entity.Name().String() + field.name + path);
+            }
         };
         struct FocusCondition {
             FocusLayer ifFocused;
 
             CompiledFunc Compile() const;
             bool operator==(const FocusCondition &) const = default;
+            size_t hash() const {
+                return robin_hood::hash<std::string>()(std::string(magic_enum::enum_name(ifFocused)));
+            }
         };
         struct OneInputOperation {
             std::string prefixStr, suffixStr;
 
             CompiledFunc Compile() const;
             bool operator==(const OneInputOperation &) const = default;
+            size_t hash() const {
+                return robin_hood::hash<std::string>()(prefixStr + suffixStr);
+            }
         };
         struct TwoInputOperation {
             std::string prefixStr, middleStr, suffixStr;
 
             CompiledFunc Compile() const;
             bool operator==(const TwoInputOperation &) const = default;
+            size_t hash() const {
+                return robin_hood::hash<std::string>()(prefixStr + middleStr + suffixStr);
+            }
         };
         struct DeciderOperation {
             CompiledFunc Compile() const;
             bool operator==(const DeciderOperation &) const = default;
+            size_t hash() const {
+                return 0;
+            }
         };
 
         using NodeVariant = std::variant<ConstantNode,
@@ -93,33 +117,54 @@ namespace ecs {
             std::string text;
             CompiledFunc evaluate = nullptr;
             sp::InlineVector<SignalNodePtr, 3> childNodes;
+            std::vector<std::weak_ptr<Node>> subscribers;
+            bool uncachable = false;
+
+            mutable double lastValue = 0.0;
+            mutable bool lastValueDirty = true;
+            mutable uint32_t version = 0;
 
             template<typename T>
             Node(T &&arg, std::string text, std::initializer_list<SignalNodePtr> childNodes = {})
                 : NodeVariant(arg), text(text) {
                 this->childNodes.insert(this->childNodes.end(), childNodes.begin(), childNodes.end());
+                if constexpr (std::is_same<T, IdentifierNode>() || std::is_same<T, ComponentNode>() ||
+                              std::is_same<T, FocusCondition>()) {
+                    uncachable = true;
+                }
             }
 
+            static const SignalNodePtr &subscribeToChildren(const SignalNodePtr &node);
+            static void markDirty(const SignalNodePtr &node);
+
             CompiledFunc compile();
+            double Evaluate(const Context &ctx, size_t depth) const;
             bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
             SignalNodePtr setScope(const EntityScope &scope) const;
+            size_t hash() const;
 
             bool operator==(const Node &other) const {
-                return (const NodeVariant &)*this == (const NodeVariant &)other && text == other.text &&
-                       evaluate == other.evaluate && childNodes == other.childNodes;
+                return (const NodeVariant &)*this == (const NodeVariant &)other && childNodes == other.childNodes;
             }
         };
     } // namespace expression
 } // namespace ecs
 
+namespace std {
+    // Thread-safe equality check without weak_ptr::lock()
+    inline bool operator==(const ecs::SignalNodePtr &a, const std::weak_ptr<ecs::expression::Node> &b) {
+        return !a.owner_before(b) && !b.owner_before(b);
+    }
+} // namespace std
+
 template<>
 struct robin_hood::hash<ecs::expression::Node> {
     std::size_t operator()(const ecs::expression::Node &node) const {
-        return robin_hood::hash<std::string>()(node.text);
+        return node.hash();
     }
 
     std::size_t operator()(const std::shared_ptr<ecs::expression::Node> &node) const {
         if (!node) return robin_hood::hash<size_t>()(0);
-        return robin_hood::hash<std::string>()(node->text);
+        return node->hash();
     }
 };

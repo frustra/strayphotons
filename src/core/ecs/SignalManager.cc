@@ -65,7 +65,7 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::GetNode(const Node &node) {
-        return signalNodes.LoadOrInsert(node);
+        return expression::Node::subscribeToChildren(signalNodes.LoadOrInsert(node));
     }
 
     std::vector<SignalNodePtr> SignalManager::GetNodes(const std::string &search) {
