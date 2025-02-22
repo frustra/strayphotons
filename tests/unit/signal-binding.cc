@@ -116,12 +116,12 @@ namespace SignalBindingTests {
         {
             Timer t("Clear nodes from signal expression manager");
             size_t dropped = manager.DropAllUnusedNodes();
-            AssertEqual(dropped, 267u, "Dropped wrong number of expression nodes");
+            AssertEqual(dropped, 279u, "Dropped wrong number of expression nodes");
             dropped = manager.DropAllUnusedNodes();
             AssertEqual(dropped, 0u, "Dropped wrong number of expression nodes");
             auto nodes = manager.GetNodes();
             baseNodeCount = nodes.size();
-            AssertEqual(baseNodeCount, 85u, "Expected 87 remaining expression nodes");
+            AssertEqual(baseNodeCount, 66u, "Expected 66 remaining expression nodes");
         }
         {
             Timer t("Try looking up some bindings");
@@ -132,7 +132,7 @@ namespace SignalBindingTests {
             AssertEqual(expr1.expr, "player/device2_key", "Expected expression to be set");
             auto nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr1.rootNode, 0);
+            AssertNodeIndex(nodes, expr1.rootNode, 1);
             AssertEqual(expr1.rootNode->text, "player:player/device2_key", "Unexpected expression node");
             AssertTrue(std::holds_alternative<ecs::expression::SignalNode>(*nodes[0]),
                 "Expected expression node to be signal");
@@ -142,17 +142,17 @@ namespace SignalBindingTests {
             AssertEqual(expr2.expr, "player/device2_key + player/device1_button", "Expected expression to be set");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr2.rootNode, 3);
-            AssertEqual(nodes[0]->text, "player:player/device2_key", "Unexpected expression node");
-            AssertEqual(nodes[2]->text, "player:player/device1_button", "Unexpected expression node");
-            AssertEqual(nodes[3]->text,
+            AssertNodeIndex(nodes, expr2.rootNode, 4);
+            AssertEqual(nodes[0]->text, "player:player/device1_button", "Unexpected expression node");
+            AssertEqual(nodes[1]->text, "player:player/device2_key", "Unexpected expression node");
+            AssertEqual(nodes[4]->text,
                 "player:player/device2_key + player:player/device1_button",
                 "Unexpected expression node");
             AssertTrue(std::holds_alternative<ecs::expression::SignalNode>(*nodes[0]),
                 "Expected expression node to be signal");
-            AssertTrue(std::holds_alternative<ecs::expression::SignalNode>(*nodes[2]),
+            AssertTrue(std::holds_alternative<ecs::expression::SignalNode>(*nodes[1]),
                 "Expected expression node to be signal");
-            AssertTrue(std::holds_alternative<ecs::expression::TwoInputOperation>(*nodes[3]),
+            AssertTrue(std::holds_alternative<ecs::expression::TwoInputOperation>(*nodes[4]),
                 "Expected expression node to an add operator");
 
             auto &expr3 = ecs::SignalRef(hand, TEST_SIGNAL_ACTION3).GetBinding(lock);
@@ -160,9 +160,9 @@ namespace SignalBindingTests {
             AssertEqual(expr3.expr, "foo:unknown/device1_button", "Expected expression to be set");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr3.rootNode, 84);
-            AssertEqual(nodes[84]->text, "foo:unknown/device1_button", "Unexpected expression node");
-            AssertTrue(std::holds_alternative<ecs::expression::SignalNode>(*nodes[84]),
+            AssertNodeIndex(nodes, expr3.rootNode, 65);
+            AssertEqual(nodes[65]->text, "foo:unknown/device1_button", "Unexpected expression node");
+            AssertTrue(std::holds_alternative<ecs::expression::SignalNode>(*nodes[65]),
                 "Expected expression node to be signal");
 
             auto &expr4 = ecs::SignalRef(player, TEST_SIGNAL_ACTION4).GetBinding(lock);
@@ -170,16 +170,16 @@ namespace SignalBindingTests {
             AssertEqual(expr4.expr, "3 +4 *2 /(1 - -5)+1 /0");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr4.rootNode, 32);
-            AssertEqual(nodes[32]->text, "3 + 4 * 2 / ( 1 - -5 ) + 1 / 0", "Unexpected expression node");
+            AssertNodeIndex(nodes, expr4.rootNode, 30);
+            AssertEqual(nodes[30]->text, "3 + 4 * 2 / ( 1 - -5 ) + 1 / 0", "Unexpected expression node");
 
             auto &expr5 = ecs::SignalRef(player, TEST_SIGNAL_ACTION5).GetBinding(lock);
             Assert((bool)expr5, "Expected expression to be valid");
             AssertEqual(expr5.expr, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr5.rootNode, 45);
-            AssertEqual(nodes[45]->text,
+            AssertNodeIndex(nodes, expr5.rootNode, 38);
+            AssertEqual(nodes[38]->text,
                 "cos( max( 2 , 3 ) / 3 * 3.14159265359 ) * -1 ? 42 : 0.1",
                 "Unexpected expression node");
 
@@ -188,33 +188,33 @@ namespace SignalBindingTests {
             AssertEqual(expr6.expr, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr6.rootNode, 58);
-            AssertEqual(nodes[58]->text, "( 0.2 + 0.3 && 2 == 1 * 2 ) + 0.6 == 2 - 0.4", "Unexpected expression node");
+            AssertNodeIndex(nodes, expr6.rootNode, 50);
+            AssertEqual(nodes[50]->text, "( 0.2 + 0.3 && 2 == 1 * 2 ) + 0.6 == 2 - 0.4", "Unexpected expression node");
 
             auto &expr7 = ecs::SignalRef(player, TEST_SIGNAL_ACTION7).GetBinding(lock);
             Assert((bool)expr7, "Expected expression to be valid");
             AssertEqual(expr7.expr, "! 10 + 1 || !player/device2_key != !0");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr7.rootNode, 65);
-            AssertEqual(nodes[65]->text, "0 + 1 || !player:player/device2_key != 1", "Unexpected expression node");
+            AssertNodeIndex(nodes, expr7.rootNode, 54);
+            AssertEqual(nodes[54]->text, "0 + 1 || !player:player/device2_key != 1", "Unexpected expression node");
 
             auto &expr8 = ecs::SignalRef(player, TEST_SIGNAL_ACTION8).GetBinding(lock);
             Assert((bool)expr8, "Expected expression to be valid");
             AssertEqual(expr8.expr, "0 != 0.0 ? (1 ? 1 : (3 + 0.14)) : (3 + 0.14)");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr8.rootNode, 75);
-            AssertEqual(nodes[66]->text, "0", "Unexpected expression node");
-            AssertEqual(nodes[67]->text, "0 != 0", "Unexpected expression node");
-            AssertEqual(nodes[68]->text, "1", "Unexpected expression node");
-            AssertEqual(nodes[69]->text, "3", "Unexpected expression node");
-            AssertEqual(nodes[70]->text, "0.14", "Unexpected expression node");
-            AssertEqual(nodes[71]->text, "3 + 0.14", "Unexpected expression node");
-            AssertEqual(nodes[72]->text, "( 3 + 0.14 )", "Unexpected expression node");
-            AssertEqual(nodes[73]->text, "1 ? 1 : ( 3 + 0.14 )", "Unexpected expression node");
-            AssertEqual(nodes[74]->text, "( 1 ? 1 : ( 3 + 0.14 ) )", "Unexpected expression node");
-            AssertEqual(nodes[75]->text,
+            AssertNodeIndex(nodes, expr8.rootNode, 61);
+            AssertEqual(nodes[13]->text, "0", "Unexpected expression node");
+            AssertEqual(nodes[55]->text, "0 != 0", "Unexpected expression node");
+            AssertEqual(nodes[5]->text, "1", "Unexpected expression node");
+            AssertEqual(nodes[20]->text, "3", "Unexpected expression node");
+            AssertEqual(nodes[56]->text, "0.14", "Unexpected expression node");
+            AssertEqual(nodes[57]->text, "3 + 0.14", "Unexpected expression node");
+            AssertEqual(nodes[58]->text, "( 3 + 0.14 )", "Unexpected expression node");
+            AssertEqual(nodes[59]->text, "1 ? 1 : ( 3 + 0.14 )", "Unexpected expression node");
+            AssertEqual(nodes[60]->text, "( 1 ? 1 : ( 3 + 0.14 ) )", "Unexpected expression node");
+            AssertEqual(nodes[61]->text,
                 "0 != 0 ? ( 1 ? 1 : ( 3 + 0.14 ) ) : ( 3 + 0.14 )",
                 "Unexpected expression node");
 
@@ -223,8 +223,8 @@ namespace SignalBindingTests {
             AssertEqual(expr9.expr, "");
             nodes = manager.GetNodes();
             AssertEqual(nodes.size() - baseNodeCount, 0u, "Expected no new expression nodes");
-            AssertNodeIndex(nodes, expr9.rootNode, 76);
-            AssertEqual(nodes[76]->text, "0", "Unexpected expression node");
+            AssertNodeIndex(nodes, expr9.rootNode, 13);
+            AssertEqual(nodes[13]->text, "0", "Unexpected expression node");
 
             ecs::SignalExpression emptyExpr;
             Assert(!emptyExpr, "Expected expression to be invalid");
@@ -296,12 +296,12 @@ namespace SignalBindingTests {
             Timer t("Add the missing unknown entity");
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
+            double val = ecs::SignalRef(hand, TEST_SIGNAL_ACTION3).GetSignal(lock);
+            AssertEqual(val, 0.0, "Expected binding to invalid entity to read as 0");
+
             unknown = lock.NewEntity();
             ecs::EntityRef unknownRef(ecs::Name("foo", "unknown"), unknown);
             unknown.Set<ecs::Name>(lock, "foo", "unknown");
-
-            double val = ecs::SignalRef(hand, TEST_SIGNAL_ACTION3).GetSignal(lock);
-            AssertEqual(val, 0.0, "Expected binding to invalid entity to read as 0");
 
             val = ecs::SignalRef(hand, TEST_SIGNAL_ACTION3).GetSignal(lock);
             AssertEqual(val, 0.0, "Expected binding to missing signal to read as 0");
