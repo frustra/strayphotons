@@ -11,7 +11,6 @@
 #include "game/Scene.hh"
 
 #include <algorithm>
-#include <picojson/picojson.h>
 
 namespace ecs {
     template<>

@@ -53,7 +53,7 @@ namespace ecs {
             SignalRef signal;
 
             CompiledFunc Compile() const;
-            bool operator==(const SignalNode &other) const = default;
+            bool operator==(const SignalNode &) const = default;
             size_t hash() const {
                 return robin_hood::hash<std::string>()(signal.String());
             }
@@ -117,12 +117,7 @@ namespace ecs {
             std::string text;
             CompiledFunc evaluate = nullptr;
             sp::InlineVector<SignalNodePtr, 3> childNodes;
-            std::vector<std::weak_ptr<Node>> subscribers;
-            bool uncachable = false;
-
-            mutable double lastValue = 0.0;
-            mutable bool lastValueDirty = true;
-            mutable uint32_t version = 0;
+            bool uncacheable = false;
 
             template<typename T>
             Node(T &&arg, std::string text, std::initializer_list<SignalNodePtr> childNodes = {})
@@ -130,14 +125,14 @@ namespace ecs {
                 this->childNodes.insert(this->childNodes.end(), childNodes.begin(), childNodes.end());
                 if constexpr (std::is_same<T, IdentifierNode>() || std::is_same<T, ComponentNode>() ||
                               std::is_same<T, FocusCondition>()) {
-                    uncachable = true;
+                    uncacheable = true;
                 }
             }
 
-            static const SignalNodePtr &subscribeToChildren(const SignalNodePtr &node);
-            static void markDirty(const SignalNodePtr &node);
+            static const SignalNodePtr &propagateUncacheable(const SignalNodePtr &node);
 
-            CompiledFunc compile();
+            CompiledFunc Compile();
+            void SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const;
             double Evaluate(const Context &ctx, size_t depth) const;
             bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
             SignalNodePtr setScope(const EntityScope &scope) const;
@@ -153,7 +148,7 @@ namespace ecs {
 namespace std {
     // Thread-safe equality check without weak_ptr::lock()
     inline bool operator==(const ecs::SignalNodePtr &a, const std::weak_ptr<ecs::expression::Node> &b) {
-        return !a.owner_before(b) && !b.owner_before(b);
+        return !a.owner_before(b) && !b.owner_before(a);
     }
 } // namespace std
 

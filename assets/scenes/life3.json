@@ -109,6 +109,46 @@
 			}
 		},
 		{
+			"name": "spawn_button",
+			"transform": {
+				"parent": "table.surface",
+				"rotate": [90, 0, 0, -1],
+				"translate": [0.06, -0.11, -0.06]
+			},
+			"signal_output": {
+				"toggle_alive": 0
+			},
+			"event_bindings": {
+				"/button/press": {
+					"outputs": [
+						"spawn_button/signal/set/toggle_alive"
+					],
+					"set_value": true
+				}
+			},
+			"event_input": {},
+			"script": [
+				{
+					"parameters": {
+						"source": "button"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "signal_from_signal",
+					"parameters": {
+						"toggle_alive": "0"
+					}
+				},
+				{
+					"onTick": "signal_from_event",
+					"parameters": {
+						"outputs": "toggle_alive"
+					}
+				}
+			]
+		},
+		{
 			"name": "mirrorcube1",
 			"transform": {
 				"scale": 0.1,
@@ -142,31 +182,46 @@
 		{
 			"name": "life.3_3",
 			"signal_output": {
-				"alive": 1
+				"alive": 0
+			},
+			"signal_bindings": {
+				"toggle_alive": "spawn_button/toggle_alive"
 			}
 		},
 		{
 			"name": "life.4_4",
 			"signal_output": {
-				"alive": 1
+				"alive": 0
+			},
+			"signal_bindings": {
+				"toggle_alive": "spawn_button/toggle_alive"
 			}
 		},
 		{
 			"name": "life.4_5",
 			"signal_output": {
-				"alive": 1
+				"alive": 0
+			},
+			"signal_bindings": {
+				"toggle_alive": "spawn_button/toggle_alive"
 			}
 		},
 		{
 			"name": "life.3_5",
 			"signal_output": {
-				"alive": 1
+				"alive": 0
+			},
+			"signal_bindings": {
+				"toggle_alive": "spawn_button/toggle_alive"
 			}
 		},
 		{
 			"name": "life.2_5",
 			"signal_output": {
-				"alive": 1
+				"alive": 0
+			},
+			"signal_bindings": {
+				"toggle_alive": "spawn_button/toggle_alive"
 			}
 		},
 		{

@@ -6,9 +6,19 @@
 		},
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
-			"next_alive": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)"
+			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))"
 		},
-		"event_bindings": {},
+		"event_input": {},
+		"event_bindings": {
+			"/physics/collision/force_found": {
+				"outputs": ["scoperoot/signal/set/force_alive"],
+				"set_value": 1
+			},
+			"/physics/collision/force_lost": {
+				"outputs": ["scoperoot/signal/set/force_alive"],
+				"set_value": 0
+			}
+		},
 		"physics": {
 			"shapes": {
 				"box": [0.03, 0.03, 0.03],
@@ -16,7 +26,8 @@
 					"translate": [0, 0.015, 0]
 				}
 			},
-			"type": "Static"
+			"type": "Static",
+			"contact_report_force": 0.1
 		},
 		"script": [
 			{
@@ -29,6 +40,12 @@
 				"onTick": "signal_from_signal",
 				"parameters": {
 					"alive": "scoperoot/next_alive"
+				}
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": "force_alive"
 				}
 			}
 		]

@@ -107,6 +107,7 @@ Signal expressions support the following operations and functions:
             }
         }
 
+        bool IsCacheable() const;
         bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
         double Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth = 0) const;
         double EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const;

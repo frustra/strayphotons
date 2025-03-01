@@ -67,6 +67,7 @@ namespace ecs {
         SignalManager &manager;
         SignalExpression &expr;
         std::vector<std::string_view> tokens; // string_views into expr
+        SignalRef outputRef;
         size_t nodeCount = 0;
 
         static constexpr PrecedenceTable precedenceLookup = PrecedenceTable();
@@ -97,7 +98,7 @@ namespace ecs {
         if (tokens.empty() && tokenIndex == 0) {
             // Treat an empty string as a constant 0.0
             nodeCount++;
-            return manager.GetNode(Node(ConstantNode(0.0), picojson::value(0.0).serialize()));
+            return manager.GetConstantNode(0.0);
         } else if (tokenIndex >= tokens.size()) {
             Errorf("Failed to parse signal expression, unexpected end of expression: %s", expr.expr);
             return nullptr;
@@ -177,14 +178,14 @@ namespace ecs {
                 if (token == "-") {
                     if (constantNode) {
                         double newVal = constantNode->value * -1;
-                        node = manager.GetNode(Node(ConstantNode{newVal}, picojson::value(newVal).serialize()));
+                        node = manager.GetConstantNode(newVal);
                     } else {
                         node = manager.GetNode(Node(OneInputOperation{"-", ""}, "-" + inputNode->text, {inputNode}));
                     }
                 } else if (token == "!") {
                     if (constantNode) {
                         double newVal = constantNode->value >= 0.5 ? 0.0 : 1.0;
-                        node = manager.GetNode(Node(ConstantNode{newVal}, picojson::value(newVal).serialize()));
+                        node = manager.GetConstantNode(newVal);
                     } else {
                         node = manager.GetNode(Node(OneInputOperation{"!", ""}, "!" + inputNode->text, {inputNode}));
                     }
@@ -341,7 +342,7 @@ namespace ecs {
                 }
 
                 double newVal = std::stod(std::string(token));
-                node = manager.GetNode(Node(ConstantNode{newVal}, picojson::value(newVal).serialize()));
+                node = manager.GetConstantNode(newVal);
                 tokenIndex++;
             } else if (token == ")" || token == "," || token == ":") {
                 Errorf("Failed to parse signal expression, unexpected token '%s': %s",
@@ -381,7 +382,7 @@ namespace ecs {
                         return nullptr;
                     }
 
-                    node = manager.GetNode(Node(SignalNode{signalRef}, signalRef.String()));
+                    node = manager.GetSignalNode(signalRef);
                 } else if (token[delimiter] == '#') {
                     ecs::Name entityName(token.substr(0, delimiter), expr.scope);
                     std::string componentPath(token.substr(delimiter + 1));
@@ -425,9 +426,8 @@ namespace ecs {
     SignalExpression::SignalExpression(const SignalRef &signal) {
         this->scope = EntityScope(signal.GetEntity().Name().scene, "");
         this->expr = signal.String();
-        SignalManager &manager = GetSignalManager();
-        this->rootNode = manager.GetNode(Node(SignalNode{signal}, expr));
-        rootNode->compile();
+        this->rootNode = GetSignalManager().GetSignalNode(signal);
+        rootNode->Compile();
         Assertf(rootNode->evaluate, "Failed to compile expression: %s", expr);
     }
 
@@ -478,63 +478,51 @@ namespace ecs {
         Assertf(tokenIndex == ctx.tokens.size(), "Failed to parse signal expression, incomplete parse: %s", exprView);
 
         // Compile the parsed expression tree into a lambda function
-        rootNode->compile();
+        rootNode->Compile();
         Assertf(rootNode->evaluate, "Failed to compile expression: %s", expr);
         return true;
-    } // namespace ecs
+    }
 
     Context::Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input)
         : lock(lock), expr(expr), input(input) {}
 
-    const SignalNodePtr &Node::subscribeToChildren(const SignalNodePtr &node) {
+    const SignalNodePtr &Node::propagateUncacheable(const SignalNodePtr &node) {
         if (!node) return node;
-        sp::erase_if(node->subscribers, [](auto &weakPtr) {
-            return weakPtr.expired();
-        });
         for (const auto &child : node->childNodes) {
-            if (child->uncachable) node->uncachable = true;
-            if (!sp::contains(child->subscribers, node)) {
-                child->subscribers.emplace_back(node);
+            if (child->uncacheable) {
+                node->uncacheable = true;
+                break;
             }
         }
         return node;
     }
 
-    void Node::markDirty(const SignalNodePtr &node) {
-        if (!node) return;
-        node->lastValueDirty = true;
-        for (const auto &subscriber : node->subscribers) {
-            markDirty(subscriber.lock());
-        }
-    }
-
-    CompiledFunc Node::compile() {
+    CompiledFunc Node::Compile() {
         for (const auto &child : childNodes) {
-            if (child) child->compile();
+            if (child) child->Compile();
         }
-        if (evaluate) return evaluate;
         return std::visit(
             [&](auto &node) {
+                if (evaluate) return evaluate;
                 return evaluate = node.Compile();
             },
             (NodeVariant &)*this);
     }
 
+    void Node::SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const {
+        if (auto *signalNode = std::get_if<SignalNode>((NodeVariant *)this)) {
+            signalNode->signal.AddSubscriber(lock, subscriber);
+        }
+        for (const auto &child : childNodes) {
+            if (child) child->SubscribeToChildren(lock, subscriber);
+        }
+    }
+
     double Node::Evaluate(const Context &ctx, size_t depth) const {
         DebugAssertf(evaluate, "Node::Evaluate null compiled function: %s", text);
-        if (uncachable) return this->evaluate(ctx, *this, depth);
-        if (lastValueDirty) {
-            double newValue = this->evaluate(ctx, *this, depth);
-            if (newValue != lastValue) {
-                lastValue = newValue;
-                version++;
-                for (const auto &subscriber : subscribers) {
-                    markDirty(subscriber.lock());
-                }
-            }
-            lastValueDirty = false;
-        }
-        return lastValue;
+        double result = this->evaluate(ctx, *this, depth);
+        DebugAssertf(std::isfinite(result), "expression::Node::Evaluate() returned non-finite value: %f", result);
+        return result;
     }
 
     CompiledFunc ConstantNode::Compile() const {
@@ -853,6 +841,11 @@ namespace ecs {
         };
     }
 
+    bool SignalExpression::IsCacheable() const {
+        if (!rootNode) return true;
+        return !rootNode->uncacheable;
+    }
+
     bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         if (!rootNode) return false;
         return rootNode->canEvaluate(lock, depth);
@@ -898,7 +891,7 @@ namespace ecs {
             signalCopy.SetScope(scope);
             if (signalCopy != signalNode.signal) {
                 SignalManager &manager = GetSignalManager();
-                return manager.GetNode(Node(SignalNode(signalCopy), signalCopy.String()));
+                return manager.GetSignalNode(signalCopy);
             }
         } else if (std::holds_alternative<ComponentNode>(*this)) {
             auto &componentNode = std::get<ComponentNode>(*this);
@@ -995,7 +988,7 @@ namespace ecs {
         this->scope = scope;
         SignalNodePtr newRoot = rootNode->setScope(scope);
         if (newRoot) {
-            newRoot->compile();
+            newRoot->Compile();
             // Logf("Setting scope of expression (%s): %s -> %s", scope.String(), rootNode->text, newRoot->text);
             Assertf(newRoot->evaluate, "Failed to compile expression: %s", expr);
             this->rootNode = newRoot;

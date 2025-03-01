@@ -17,6 +17,10 @@ namespace ecs {
     class SignalExpression;
     struct SignalKey;
 
+    namespace expression {
+        struct Node;
+    }
+
     using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, FocusLock>>;
 
     class SignalRef {
@@ -39,12 +43,17 @@ namespace ecs {
 
         void SetScope(const EntityScope &scope);
 
+        void AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &ref) const;
+        void MarkDirty(const Lock<Write<Signals>> &lock, size_t depth = 0) const;
+        void UpdateDirtySubscribers(const Lock<Write<Signals>, ReadSignalsLock> &lock, size_t depth = 0) const;
+
         double &SetValue(const Lock<Write<Signals>> &lock, double value) const;
         void ClearValue(const Lock<Write<Signals>> &lock) const;
         bool HasValue(const Lock<Read<Signals>> &lock) const;
         const double &GetValue(const Lock<Read<Signals>> &lock) const;
-        SignalExpression &SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &signal) const;
-        SignalExpression &SetBinding(const Lock<Write<Signals>> &lock,
+        SignalExpression &SetBinding(const Lock<Write<Signals>, ReadSignalsLock> &lock,
+            const SignalExpression &signal) const;
+        SignalExpression &SetBinding(const Lock<Write<Signals>, ReadSignalsLock> &lock,
             const std::string_view &expr,
             const EntityScope &scope = Name()) const;
         void ClearBinding(const Lock<Write<Signals>> &lock) const;
@@ -66,17 +75,34 @@ namespace ecs {
         bool operator==(const std::string &signalName) const;
         bool operator<(const SignalRef &other) const;
 
+        using WeakRef = std::weak_ptr<Ref>;
+        WeakRef GetWeakRef() const {
+            return ptr;
+        }
+
     private:
         std::shared_ptr<Ref> ptr;
 
         friend class SignalManager;
+        friend struct expression::Node;
         friend struct std::hash<SignalRef>;
+        friend bool operator==(const std::shared_ptr<Ref> &, const WeakRef &);
+#ifdef TEST_FRIENDS_signal_caching
+        TEST_FRIENDS_signal_caching
+#endif
     };
+
+    using WeakSignalRef = SignalRef::WeakRef;
+
+    // Thread-safe equality check without weak_ptr::lock()
+    inline bool operator==(const std::shared_ptr<SignalRef::Ref> &a, const WeakSignalRef &b) {
+        return !a.owner_before(b) && !b.owner_before(a);
+    }
 } // namespace ecs
 
 namespace std {
     template<>
     struct hash<ecs::SignalRef> {
-        std::size_t operator()(const ecs::SignalRef &ref) const;
+        size_t operator()(const ecs::SignalRef &ref) const;
     };
 } // namespace std

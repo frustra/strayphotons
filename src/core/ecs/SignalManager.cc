@@ -11,6 +11,7 @@
 #include "ecs/SignalRef.hh"
 
 #include <mutex>
+#include <picojson/picojson.h>
 #include <shared_mutex>
 
 namespace ecs {
@@ -65,7 +66,15 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::GetNode(const Node &node) {
-        return expression::Node::subscribeToChildren(signalNodes.LoadOrInsert(node));
+        return Node::propagateUncacheable(signalNodes.LoadOrInsert(node));
+    }
+
+    SignalNodePtr SignalManager::GetConstantNode(double value) {
+        return GetNode(Node{ConstantNode{value}, picojson::value(value).serialize()});
+    }
+
+    SignalNodePtr SignalManager::GetSignalNode(SignalRef ref) {
+        return GetNode(Node{SignalNode{ref}, ref.String()});
     }
 
     std::vector<SignalNodePtr> SignalManager::GetNodes(const std::string &search) {

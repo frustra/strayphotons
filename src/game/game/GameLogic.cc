@@ -108,5 +108,13 @@ namespace sp {
             UpdateInputEvents(lock, windowInputQueue);
             ecs::GetScriptManager().RunOnTick(lock, interval);
         }
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>();
+            auto &signals = lock.Get<const ecs::Signals>().signals;
+            for (size_t index = 0; index < signals.size(); index++) {
+                auto &signal = signals[index];
+                if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
+            }
+        }
     }
 } // namespace sp

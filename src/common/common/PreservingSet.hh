@@ -85,7 +85,7 @@ namespace sp {
         std::unordered_set<std::shared_ptr<T>, PtrHash, PtrEqual> handles;
 
         robin_hood::unordered_flat_map<T *, size_t> indexLookup;
-        std::set<size_t> freeList;
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeList;
 
     public:
         PreservingSet() {}
@@ -124,7 +124,7 @@ namespace sp {
                             handle.reset();
                             timed.value.reset();
                             Assertf(timed.ptr.use_count() == 0, "PreservingSet handle delete failed");
-                            freeList.emplace(i);
+                            freeList.push(i);
                         }
                     }
                 }
@@ -144,7 +144,8 @@ namespace sp {
             } else {
                 size_t i = ~0u;
                 if (!freeList.empty()) {
-                    i = freeList.extract(--freeList.end()).value();
+                    i = freeList.top();
+                    freeList.pop();
                     storage[i] = TimedValue(value);
                 } else {
                     i = storage.size();

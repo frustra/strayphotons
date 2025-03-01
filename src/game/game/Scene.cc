@@ -352,7 +352,7 @@ namespace sp {
         if (liveSceneId.Exists(live)) liveSceneId.Destroy(live);
         if (stagingSceneId.Exists(staging)) stagingSceneId.Destroy(staging);
 
-        live.Get<ecs::Signals>().FreeMissingEntitySignals(live);
+        live.Get<ecs::Signals>().UpdateMissingEntitySignals(live);
 
         active = false;
     }

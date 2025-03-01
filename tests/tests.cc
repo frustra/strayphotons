@@ -16,6 +16,7 @@
 #ifndef TEST_TYPE
     #define TEST_TYPE "Unknown"
 #endif
+#include <ecs/SignalManager.hh>
 
 namespace testing {
     std::vector<std::function<void()>> registeredTests;
@@ -47,9 +48,12 @@ int main(int argc, char **argv) {
                 for (auto &ent : liveLock.Entities()) {
                     ent.Destroy(liveLock);
                 }
-                stagingLock.Set<ecs::Signals>();
+                stagingLock.Unset<ecs::Signals>();
                 liveLock.Set<ecs::Signals>();
             }
+            auto &manager = ecs::GetSignalManager();
+            while (manager.DropAllUnusedNodes() > 0) {}
+            AssertEqual(manager.GetNodeCount(), 0u, "Expected no signal nodes after test");
         }
     }
 
