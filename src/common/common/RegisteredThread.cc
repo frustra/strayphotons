@@ -61,21 +61,22 @@ namespace sp {
             try {
 #endif
                 while (state == ThreadState::Started) {
-                    this->PreFrame();
-                    if (this->stepMode) {
-                        while (stepCount < maxStepCount) {
+                    if (this->PreFrame()) {
+                        if (this->stepMode) {
+                            while (stepCount < maxStepCount) {
+                                if (traceFrames) FrameMarkStart(threadName.c_str());
+                                this->Frame();
+                                if (traceFrames) FrameMarkEnd(threadName.c_str());
+                                stepCount++;
+                            }
+                            stepCount.notify_all();
+                            this->PostFrame(true);
+                        } else {
                             if (traceFrames) FrameMarkStart(threadName.c_str());
                             this->Frame();
                             if (traceFrames) FrameMarkEnd(threadName.c_str());
-                            stepCount++;
+                            this->PostFrame(false);
                         }
-                        stepCount.notify_all();
-                        this->PostFrame(true);
-                    } else {
-                        if (traceFrames) FrameMarkStart(threadName.c_str());
-                        this->Frame();
-                        if (traceFrames) FrameMarkEnd(threadName.c_str());
-                        this->PostFrame(false);
                     }
 
                     auto realFrameEnd = chrono_clock::now();

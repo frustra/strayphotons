@@ -36,8 +36,10 @@ namespace sp {
 
         // Will be called once per interval except for in step mode
         virtual void Frame() = 0;
-        // Will always be called once per interval
-        virtual void PreFrame() {}
+        // Will always be called once per interval, frame is skipped if false is returned
+        virtual bool PreFrame() {
+            return true;
+        }
         // Will always be called once per interval
         virtual void PostFrame(bool stepMode) {}
 

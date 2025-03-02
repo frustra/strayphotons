@@ -154,7 +154,7 @@ namespace sp {
         RegisteredThread::StartThread(startPaused);
     }
 
-    void PhysxManager::PreFrame() {
+    bool PhysxManager::PreFrame() {
         ZoneScoped;
         GetSceneManager().PreloadScenePhysics([this](auto lock, auto scene) {
             ZoneScopedN("PreloadScenePhysics");
@@ -177,6 +177,7 @@ namespace sp {
             }
             return complete;
         });
+        return true;
     }
 
     void PhysxManager::Frame() {
