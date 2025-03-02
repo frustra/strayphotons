@@ -655,35 +655,35 @@ namespace sp::vulkan {
             AssertVKSuccess(result, "timed out waiting for fence");
         }
 
-        if (!swapchain) return false;
-        try {
-            ZoneScopedN("AcquireNextImage");
-            auto acquireResult = device->acquireNextImageKHR(*swapchain,
-                FENCE_WAIT_TIME,
-                *Frame().imageAvailableSemaphore,
-                nullptr);
-            if (acquireResult.result == vk::Result::eTimeout) {
-                Warnf("vkAcquireNextImageKHR timeout");
+        if (swapchain) {
+            try {
+                ZoneScopedN("AcquireNextImage");
+                auto acquireResult = device->acquireNextImageKHR(*swapchain,
+                    FENCE_WAIT_TIME,
+                    *Frame().imageAvailableSemaphore,
+                    nullptr);
+                if (acquireResult.result == vk::Result::eTimeout) {
+                    Warnf("vkAcquireNextImageKHR timeout");
+                    return false;
+                } else {
+                    AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
+                }
+                swapchainImageIndex = acquireResult.value;
+                ZoneValue(swapchainImageIndex);
+            } catch (const vk::OutOfDateKHRError &) {
+                RecreateSwapchain();
                 return false;
-            } else {
-                AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
+            } catch (const std::system_error &err) {
+                Abortf("Exception: %s", err.what());
             }
-            swapchainImageIndex = acquireResult.value;
-            ZoneValue(swapchainImageIndex);
-        } catch (const vk::OutOfDateKHRError &) {
-            RecreateSwapchain();
-            return false;
-        } catch (const std::system_error &err) {
-            Abortf("Exception: %s", err.what());
-        }
 
-        if (SwapchainImage().inFlightFence) {
-            ZoneScopedN("WaitForImageFence");
-            auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
-            AssertVKSuccess(result, "timed out waiting for fence");
+            if (SwapchainImage().inFlightFence) {
+                ZoneScopedN("WaitForImageFence");
+                auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
+                AssertVKSuccess(result, "timed out waiting for fence");
+            }
+            SwapchainImage().inFlightFence = *Frame().inFlightFence;
         }
-        SwapchainImage().inFlightFence = *Frame().inFlightFence;
-
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
         PrepareResourcesForFrame();
 
