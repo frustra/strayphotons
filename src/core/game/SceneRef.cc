@@ -20,11 +20,11 @@ namespace sp {
     }
 
     bool SceneRef::operator==(const Scene &scene) const {
-        return data && data->name == scene.data->name;
+        return data && data->path == scene.data->path;
     }
 
     bool SceneRef::operator==(const std::shared_ptr<Scene> &scene) const {
-        return data && scene && data->name == scene->data->name;
+        return data && scene && data->path == scene->data->path;
     }
 
     // Thread-safe equality check without weak_ptr::lock()
@@ -48,6 +48,6 @@ namespace sp {
     }
 
     bool SceneMetadata::operator<(const SceneMetadata &other) const {
-        return type == other.type ? name < other.name : type < other.type;
+        return type == other.type ? path < other.path : type < other.type;
     }
 } // namespace sp

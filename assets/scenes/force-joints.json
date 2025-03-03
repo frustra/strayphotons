@@ -5,7 +5,7 @@
 	"entities": [
 		{
 			"name": "global:player_gravity_none",
-			"scene_connection": { "player_gravity_none": "1" },
+			"scene_connection": { "overrides/player_gravity_none": "1" },
 			"transform": {}
 		},
 		{

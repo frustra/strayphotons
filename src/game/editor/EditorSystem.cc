@@ -141,9 +141,9 @@ namespace sp {
         }
 
         if (trayOpen) {
-            GetSceneManager().QueueAction(SceneAction::RemoveScene, "tray");
+            GetSceneManager().QueueAction(SceneAction::RemoveScene, "editor/tray");
         } else {
-            GetSceneManager().QueueAction(SceneAction::AddScene, "tray");
+            GetSceneManager().QueueAction(SceneAction::AddScene, "editor/tray");
         }
     }
 } // namespace sp

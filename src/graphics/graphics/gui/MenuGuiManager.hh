@@ -25,6 +25,7 @@ namespace sp {
         void DefineWindows() override;
 
         bool MenuOpen() const;
+        void RefreshSceneList();
 
     private:
         GraphicsManager &graphics;
@@ -32,6 +33,7 @@ namespace sp {
         ecs::EventQueueRef events = ecs::EventQueue::New();
 
         MenuScreen selectedScreen = MenuScreen::Main;
+        std::vector<std::pair<std::string, std::string>> sceneList;
 
         shared_ptr<GpuTexture> logoTex;
     };

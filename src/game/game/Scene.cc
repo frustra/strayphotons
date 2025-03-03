@@ -17,6 +17,7 @@
 namespace sp {
     std::shared_ptr<Scene> Scene::New(ecs::Lock<ecs::AddRemove> stagingLock,
         const std::string &name,
+        const std::string &path,
         SceneType type,
         ScenePriority priority,
         const ecs::SceneProperties &properties,
@@ -27,7 +28,7 @@ namespace sp {
         ecs::Name sceneName("scene", name);
         sceneId.Set<ecs::Name>(stagingLock, sceneName);
         sceneId.Set<ecs::SceneProperties>(stagingLock, properties);
-        return std::make_shared<Scene>(Scene{SceneMetadata{name, type, priority, sceneId}, asset});
+        return std::make_shared<Scene>(Scene{SceneMetadata{name, path, type, priority, sceneId}, asset});
     }
 
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
