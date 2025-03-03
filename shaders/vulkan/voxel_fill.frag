@@ -10,6 +10,8 @@
 
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 layout(constant_id = 1) const float LIGHT_ATTENUATION = 0.5;
+layout(constant_id = 2) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
+layout(constant_id = 3) const int SHADOW_MAP_SAMPLE_COUNT = 3;
 
 #define DIFFUSE_ONLY_SHADING
 #define SHADOWS_ENABLED

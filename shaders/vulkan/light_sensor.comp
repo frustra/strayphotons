@@ -40,6 +40,9 @@ layout(set = 1, binding = 0) uniform sampler2D textures[];
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
 
+const float SHADOW_MAP_SAMPLE_WIDTH = 0;
+const int SHADOW_MAP_SAMPLE_COUNT = 1;
+
 #include "../lib/shading.glsl"
 
 void main() {

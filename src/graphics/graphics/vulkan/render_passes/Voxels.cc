@@ -380,6 +380,8 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, fragmentListCount);
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarLightAttenuation.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 2, CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 3, CVarShadowMapSampleCount.Get());
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),

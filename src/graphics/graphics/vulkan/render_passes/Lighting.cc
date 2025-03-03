@@ -20,9 +20,14 @@
 #include <glm/gtx/vector_angle.hpp>
 
 namespace sp::vulkan::renderer {
+    CVar<int> CVarShadowMapSampleCount("r.ShadowMapSampleCount", 9, "Number of samples to use in shadow filtering");
+    CVar<float> CVarShadowMapSampleWidth("r.ShadowMapSampleWidth",
+        2.25,
+        "The size of filter used for filtering shadows");
+
     static CVar<bool> CVarBlurShadowMap("r.BlurShadowMap", false, "Blur the shadow map before sampling");
     static CVar<int> CVarShadowMapSizeOffset("r.ShadowMapSizeOffset", -1, "Adjust shadow map sizes by 2^N");
-    static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering (0: off, 1: on, 2: shadow map blur");
+    static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering (0: off, 1: on)");
     static CVar<int> CVarLightingMode("r.LightingMode",
         1,
         "Toggle between different lighting shader modes "
@@ -369,6 +374,9 @@ namespace sp::vulkan::renderer {
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "shadow_map_mask.frag");
 
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarShadowMapSampleCount.Get());
+
                 auto lastFrameID = resources.GetID("ShadowMap.Linear", false, 1);
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView(0, 0, resources.GetImageView(lastFrameID));
@@ -581,6 +589,8 @@ namespace sp::vulkan::renderer {
                 }
                 cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, 1, voxelLayerCount);
+                cmd.SetShaderConstant(ShaderStage::Fragment, 2, CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 3, CVarShadowMapSampleCount.Get());
 
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);

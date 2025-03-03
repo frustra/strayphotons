@@ -19,6 +19,9 @@ layout(early_fragment_tests) in;
 
 const float scatterTermMultiplier = 0.2;
 
+layout(constant_id = 0) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
+layout(constant_id = 1) const int SHADOW_MAP_SAMPLE_COUNT = 3;
+
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
 

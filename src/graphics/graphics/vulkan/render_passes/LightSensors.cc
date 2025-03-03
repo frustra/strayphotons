@@ -70,6 +70,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([data, textureSet = &scene.textures](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("light_sensor.comp");
+
                 cmd.SetImageView(0, 0, resources.GetImageView("ShadowMap.Linear"));
                 cmd.SetStorageBuffer(0, 1, resources.GetBuffer("LightSensorValues"));
                 cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));

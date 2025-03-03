@@ -11,6 +11,7 @@
 #define INCLUDE_LAYOUT layout
 
 #define M_PI 3.1415926535897932384626433832795
+#define M_GOLDEN_RATIO 1.618033988749
 
 #define saturate(x) clamp(x, 0.0, 1.0)
 #define hash(x) fract(sin(x) * 43758.543123)

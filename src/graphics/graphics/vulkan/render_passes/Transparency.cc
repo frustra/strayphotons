@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "graphics/vulkan/render_passes/Lighting.hh"
 
 namespace sp::vulkan::renderer {
     void Transparency::AddPass(RenderGraph &graph, const ecs::View &view) {
@@ -37,6 +38,9 @@ namespace sp::vulkan::renderer {
             })
             .Execute([this, drawIDs](Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "lighting_transparent.frag");
+
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarShadowMapSampleCount.Get());
 
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
