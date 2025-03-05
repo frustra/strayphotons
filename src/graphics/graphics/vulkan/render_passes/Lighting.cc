@@ -22,7 +22,7 @@
 namespace sp::vulkan::renderer {
     CVar<int> CVarShadowMapSampleCount("r.ShadowMapSampleCount", 9, "Number of samples to use in shadow filtering");
     CVar<float> CVarShadowMapSampleWidth("r.ShadowMapSampleWidth",
-        2.25,
+        4.0,
         "The size of filter used for filtering shadows");
 
     static CVar<bool> CVarBlurShadowMap("r.BlurShadowMap", false, "Blur the shadow map before sampling");

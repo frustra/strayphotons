@@ -63,6 +63,7 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     float t = dot(surfaceNormal, info.shadowMapPos) / dot(surfaceNormal, rayDir);
     float fragmentDepth = LinearDepth(rayDir * t, info.clip);
     vec2 sampleScale = vec2(1.0); // - cross(surfaceNormal, rayDir).yx * 0.75;
+    sampleScale *= fragmentDepth * 0.75 + 0.25;
 
     float values[SHADOW_MAP_SAMPLE_COUNT];
     float theta = M_PI / 2.0; // 45 degree start
@@ -87,9 +88,9 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
         float upperBlend = fragmentDepth - max(0, avgDepth - values[i]) - shadowBiasMin;
         totalSample += smoothstep(lowerBlend, upperBlend, values[i]);
     }
-    float bias = length(cross(surfaceNormal, rayDir)) * 0.5; // = sin(angle of incidence) / 2
+    float bias = length(cross(surfaceNormal, rayDir)); // = sin(angle of incidence)
     return edgeTerm.x * edgeTerm.y *
-           smoothstep(0.125 * (1 - bias), 0.875 - bias, totalSample / SHADOW_MAP_SAMPLE_COUNT);
+           smoothstep(0.125 - bias * 0.125, 0.875 - bias * 0.6, totalSample / SHADOW_MAP_SAMPLE_COUNT);
 }
 
 float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
