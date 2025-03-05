@@ -32,12 +32,13 @@ float SimpleOcclusion(ShadowInfo info) {
     if (texCoord.xy != clamp(texCoord.xy, 0.0, 1.0)) return 0.0;
     texCoord.xy = clamp(texCoord.xy, shadowSampleWidth, 1.0 - shadowSampleWidth);
 
-    float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
+    float shadowBiasMin = shadowBiasDistanceMin / (info.clip.y - info.clip.x);
+    float shadowBiasMax = shadowBiasDistanceMax / (info.clip.y - info.clip.x);
 
     float testDepth = LinearDepth(info.shadowMapPos, info.clip);
     float sampledDepth = texture(TEXTURE_SAMPLER(texCoord.xy * info.mapOffset.zw + info.mapOffset.xy)).r;
 
-    return smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
+    return smoothstep(testDepth - shadowBiasMax, testDepth - shadowBiasMin, sampledDepth);
 }
 
 #ifdef MIRROR_SAMPLE
@@ -70,20 +71,23 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
     for (int i = 0; i < SHADOW_MAP_SAMPLE_COUNT; i++) {
         vec2 spiralXY = vec2(sin(theta), cos(theta)) * sqrt(r);
         values[i] = texture(TEXTURE_SAMPLER((shadowMapCoord + rotation0 * spiralXY * shadowSampleOffset * sampleScale) * info.mapOffset.zw + info.mapOffset.xy)).r;
-        avgDepth += values[i];
+        avgDepth += values[i] * (1.0 - r);
         theta += 2.0 * M_PI / M_GOLDEN_RATIO;
         r -= 1.0 / SHADOW_MAP_SAMPLE_COUNT;
     }
-    avgDepth /= SHADOW_MAP_SAMPLE_COUNT;
+    avgDepth /= (SHADOW_MAP_SAMPLE_COUNT+1) * 0.5;
 
-    float shadowBias = shadowBiasDistance / (info.clip.y - info.clip.x);
-    float testDepth = fragmentDepth - shadowBias;
+    float shadowBiasMin = shadowBiasDistanceMin / (info.clip.y - info.clip.x);
+    float shadowBiasMax = shadowBiasDistanceMax / (info.clip.y - info.clip.x);
 
     float totalSample = 0.0;
     for (int i = 0; i < SHADOW_MAP_SAMPLE_COUNT; i++) {
-        totalSample += step(testDepth - max(0, avgDepth - values[i]), values[i]);
+        float lowerBlend = fragmentDepth - max(0, avgDepth - values[i]) - shadowBiasMax;
+        float upperBlend = fragmentDepth - max(0, avgDepth - values[i]) - shadowBiasMin;
+        totalSample += smoothstep(lowerBlend, upperBlend, values[i]);
     }
-    return edgeTerm.x * edgeTerm.y * smoothstep(0.125, 0.875, totalSample / SHADOW_MAP_SAMPLE_COUNT);
+    float weight = length(cross(surfaceNormal, rayDir)) * 0.5; // = sin(angle of incidence) / 2
+    return edgeTerm.x * edgeTerm.y * smoothstep(0.125 * (1 - weight), 0.875 - weight, totalSample / SHADOW_MAP_SAMPLE_COUNT);
 }
 
 float SampleVarianceShadowMap(ShadowInfo info, float varianceMin, float lightBleedReduction) {
