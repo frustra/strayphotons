@@ -79,9 +79,10 @@ namespace sp::vulkan {
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
             gpuRenderable.emissiveScale = renderable.emissiveScale;
-            if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
-                gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(renderable.colorOverride);
-            }
+            gpuRenderable.baseColorTint = (uint32_t)(glm::clamp(renderable.baseColorTint[0], 0.0f, 1.0f) * 255) << 24 |
+                                          (uint32_t)(glm::clamp(renderable.baseColorTint[1], 0.0f, 1.0f) * 255) << 16 |
+                                          (uint32_t)(glm::clamp(renderable.baseColorTint[2], 0.0f, 1.0f) * 255) << 8 |
+                                          (uint32_t)(glm::clamp(renderable.baseColorTint[3], 0.0f, 1.0f) * 255);
             if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
                 gpuRenderable.metallicRoughnessOverrideID = textures.GetSinglePixelIndex(
                     glm::vec4(renderable.metallicRoughnessOverride, 0, 1));
@@ -266,13 +267,13 @@ namespace sp::vulkan {
                         drawCmd.firstInstance = drawParams.size();
                         auto &drawParam = drawParams.emplace_back();
 
-                        drawParam.baseColorTexID = renderable.baseColorOverrideID >= 0 ? renderable.baseColorOverrideID
-                                                                                       : primitive.baseColor.index;
+                        drawParam.baseColorTexID = primitive.baseColor.index;
                         drawParam.metallicRoughnessTexID = renderable.metallicRoughnessOverrideID >= 0
                                                                ? renderable.metallicRoughnessOverrideID
                                                                : primitive.metallicRoughness.index;
                         drawParam.opticID = renderable.opticID;
                         drawParam.emissiveScale = renderable.emissiveScale;
+                        drawParam.baseColorTint = renderable.baseColorTint;
 
                         auto worldPos = renderable.modelToWorld * glm::vec4(primitive.center, 1);
                         auto relPos = (glm::vec3(worldPos) / worldPos.w) - viewPosition;

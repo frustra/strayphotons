@@ -3,7 +3,7 @@
 		"renderable": {
 			"model": "sphere",
 			"emissive": 0.5,
-			"color_override": [0.1, 1.0, 0.2, 1]
+			"tint": [0.1, 1.0, 0.2, 1]
 		},
 		"physics": {
 			"shapes": {

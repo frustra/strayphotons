@@ -157,7 +157,7 @@
 			"renderable": {
 				"model": "colorfilter",
 				"visibility": "Transparent|LightingShadow",
-				"color_override": [1, 0, 0, 0.5]
+				"tint": [1, 0, 0, 0.5]
 			},
 			"name": "redfilter",
 			"transform": {
@@ -182,7 +182,7 @@
 			"renderable": {
 				"model": "colorfilter",
 				"visibility": "Transparent|LightingShadow",
-				"color_override": [0, 1, 0, 0.5]
+				"tint": [0, 1, 0, 0.5]
 			},
 			"name": "greenfilter",
 			"transform": {
@@ -207,7 +207,7 @@
 			"renderable": {
 				"model": "colorfilter",
 				"visibility": "Transparent|LightingShadow",
-				"color_override": [0, 0, 1, 0.5]
+				"tint": [0, 0, 1, 0.5]
 			},
 			"name": "bluefilter",
 			"transform": {
@@ -232,7 +232,7 @@
 			"renderable": {
 				"model": "colorfilter",
 				"visibility": "Transparent|LightingShadow",
-				"color_override": [0, 1, 1, 0.5]
+				"tint": [0, 1, 1, 0.5]
 			},
 			"name": "cyanfilter",
 			"transform": {
@@ -257,7 +257,7 @@
 			"renderable": {
 				"model": "colorfilter",
 				"visibility": "Transparent|LightingShadow",
-				"color_override": [1, 0, 1, 0.5]
+				"tint": [1, 0, 1, 0.5]
 			},
 			"name": "magentafilter",
 			"transform": {
@@ -282,7 +282,7 @@
 			"renderable": {
 				"model": "colorfilter",
 				"visibility": "Transparent|LightingShadow",
-				"color_override": [1, 1, 0, 0.5]
+				"tint": [1, 1, 0, 0.5]
 			},
 			"name": "yellowfilter",
 			"transform": {

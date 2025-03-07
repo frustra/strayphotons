@@ -59,7 +59,7 @@ namespace ecs {
         VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye |
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
-        sp::color_alpha_t colorOverride = glm::vec4(-1);
+        sp::color_alpha_t baseColorTint = glm::vec4(-1);
         glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
 
         bool IsVisible(VisibilityMask viewMask) const {
@@ -87,10 +87,9 @@ It is usually preferred to load the model using the [gltf Prefab Script](Prefab_
         StructField::New("emissive",
             "Emissive multiplier to turn this model into a light source",
             &Renderable::emissiveScale),
-        StructField::New("color_override",
-            "Override the mesh's texture to a flat RGBA color. "
-            "Values are in the range 0.0 to 1.0. -1 means the original color is used.",
-            &Renderable::colorOverride),
+        StructField::New("tint",
+            "Tint the mesh's texture with an RGBA color. Values are in the range 0.0 to 1.0.",
+            &Renderable::baseColorTint),
         StructField::New("metallic_roughness_override",
             "Override the mesh's metallic and roughness material properties. "
             "Values are in the range 0.0 to 1.0. -1 means the original material is used.",

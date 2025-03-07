@@ -29,6 +29,7 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 layout(location = 6) flat in float emissiveScale;
+layout(location = 7) flat in vec4 baseColorTint;
 
 layout(binding = 1) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -68,15 +69,16 @@ layout(binding = 9) uniform PreviousVoxelStateUniform {
 layout(binding = 10) uniform sampler3D voxelLayersIn[6];
 
 void main() {
-    vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
-    if (baseColor.a < 0.5) discard;
+    vec4 baseColorAlpha = texture(textures[baseColorTexID], inTexCoord);
+    if (baseColorAlpha.a < 0.5) discard;
+    vec3 baseColor = mix(baseColorAlpha.rgb, baseColorTint.rgb, baseColorTint.a);
 
     vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
     float roughness = metallicRoughnessSample.g;
     float metalness = metallicRoughnessSample.b;
 
-    vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
-    pixelRadiance += emissiveScale * baseColor.rgb;
+    vec3 pixelRadiance = DirectShading(inWorldPos, baseColor, inNormal, inNormal, roughness, metalness);
+    pixelRadiance += emissiveScale * baseColor;
 
     if (LIGHT_ATTENUATION > 0) {
         vec3 voxelPos = (previousVoxelInfo.worldToVoxel * vec4(inWorldPos, 1.0)).xyz;
@@ -87,7 +89,7 @@ void main() {
             vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos + voxelNormal), 0);
             indirectDiffuse += sampleValue.rgb * step(0, dot(AxisDirections[i], voxelNormal));
         }
-        vec3 directDiffuseColor = baseColor.rgb * (1 - metalness);
+        vec3 directDiffuseColor = baseColor * (1 - metalness);
         pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
                          smoothstep(0.0, 0.1, length(indirectDiffuse));
     }

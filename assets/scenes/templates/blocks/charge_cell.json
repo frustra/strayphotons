@@ -72,7 +72,7 @@
 				"scale": 0.049
 			},
 			"renderable": {
-				"color_override": [0.03, 0.03, 0.04, 1],
+				"tint": [0.03, 0.03, 0.04, 1],
 				"metallic_roughness_override": [1, 0.6],
 				"model": "box"
 			}
