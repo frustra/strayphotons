@@ -47,7 +47,8 @@ namespace sp {
         GraphicsContext() {}
         virtual ~GraphicsContext() {}
 
-        virtual void BeginFrame() = 0;
+        // Skips frame if false is returned
+        virtual bool BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
         virtual void EndFrame() = 0;
         virtual void WaitIdle() {}

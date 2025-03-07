@@ -65,7 +65,7 @@ namespace sp {
 
     private:
         bool ThreadInit() override;
-        void PreFrame() override;
+        bool PreFrame() override;
         void PostFrame(bool stepMode) override;
         void Frame() override;
 

@@ -635,7 +635,7 @@ namespace sp::vulkan {
         if (vkRenderer) vkRenderer->SetMenuGui(menuGui);
     }
 
-    void DeviceContext::BeginFrame() {
+    bool DeviceContext::BeginFrame() {
         ZoneScoped;
         if (perfTimer) perfTimer->StartFrame();
 
@@ -659,15 +659,22 @@ namespace sp::vulkan {
             try {
                 ZoneScopedN("AcquireNextImage");
                 auto acquireResult = device->acquireNextImageKHR(*swapchain,
-                    UINT64_MAX,
+                    FENCE_WAIT_TIME,
                     *Frame().imageAvailableSemaphore,
                     nullptr);
-                AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
+                if (acquireResult.result == vk::Result::eTimeout) {
+                    Warnf("vkAcquireNextImageKHR timeout");
+                    return false;
+                } else {
+                    AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
+                }
                 swapchainImageIndex = acquireResult.value;
                 ZoneValue(swapchainImageIndex);
             } catch (const vk::OutOfDateKHRError &) {
                 RecreateSwapchain();
-                return BeginFrame();
+                return false;
+            } catch (const std::system_error &err) {
+                Abortf("Exception: %s", err.what());
             }
 
             if (SwapchainImage().inFlightFence) {
@@ -697,6 +704,7 @@ namespace sp::vulkan {
 #endif
 
         frameBeginQueue.Flush();
+        return true;
     }
 
     void DeviceContext::PrepareResourcesForFrame() {

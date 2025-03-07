@@ -46,6 +46,7 @@ namespace sp {
 
         static std::shared_ptr<Scene> New(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::string &name,
+            const std::string &path,
             SceneType type,
             ScenePriority priority,
             const ecs::SceneProperties &properties,

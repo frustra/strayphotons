@@ -105,6 +105,41 @@ namespace sp {
         }
     }
 
+    std::vector<std::string> AssetManager::ListBundledAssets(const std::string &prefix,
+        const std::string &extension) const {
+        std::vector<std::string> results;
+        if (std::filesystem::is_directory(OVERRIDE_ASSETS_DIR / prefix)) {
+            for (auto &entry : std::filesystem::directory_iterator(OVERRIDE_ASSETS_DIR / prefix)) {
+                if (entry.is_regular_file() && (extension.empty() || entry.path().extension() == extension)) {
+                    auto path = entry.path().lexically_relative(OVERRIDE_ASSETS_DIR).string();
+                    std::replace(path.begin(), path.end(), (char)std::filesystem::path::preferred_separator, '/');
+                    results.emplace_back(path);
+                }
+            }
+        }
+        if (std::filesystem::is_directory(assetsPath / prefix)) {
+            for (auto &entry : std::filesystem::directory_iterator(assetsPath / prefix)) {
+                auto path = entry.path().lexically_relative(assetsPath);
+                if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) continue;
+                if (entry.is_regular_file() && (extension.empty() || entry.path().extension() == extension)) {
+                    std::string pathStr = path.string();
+                    std::replace(pathStr.begin(), pathStr.end(), (char)std::filesystem::path::preferred_separator, '/');
+                    results.emplace_back(pathStr);
+                }
+            }
+        }
+        if (!bundleIndex.empty()) {
+            for (auto &[path, range] : bundleIndex) {
+                if (starts_with(path, prefix)) {
+                    if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) continue;
+                    if (std::filesystem::is_regular_file(assetsPath / path)) continue;
+                    results.emplace_back(path);
+                }
+            }
+        }
+        return results;
+    }
+
     void AssetManager::Frame() {
         loadedGltfs.Tick(this->interval);
         for (auto &assets : loadedAssets) {

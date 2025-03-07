@@ -75,7 +75,7 @@ namespace sp::vulkan {
         }
 
         // Potential GraphicsContext function implementations
-        void BeginFrame() override;
+        bool BeginFrame() override;
         void SwapBuffers() override;
         void EndFrame() override;
         void WaitIdle() override {

@@ -13,7 +13,7 @@
 				"translate": [0, 153, 0]
 			},
 			"scene_connection": {
-				"player_gravity_spin": "1"
+				"overrides/player_gravity_spin": "1"
 			}
 		},
 		{

@@ -34,14 +34,19 @@ namespace sp {
 
     struct SceneMetadata {
         std::string name;
+        std::string path;
         SceneType type;
         ScenePriority priority;
         ecs::EntityRef sceneEntity;
 
         const ecs::SceneProperties &GetProperties(ecs::Lock<ecs::Read<ecs::SceneProperties>> lock) const;
 
-        SceneMetadata(const string &name, SceneType type, ScenePriority priority, ecs::Entity sceneId)
-            : name(name), type(type), priority(priority), sceneEntity(ecs::Name("scene", name), sceneId) {}
+        SceneMetadata(const string &name,
+            const string &path,
+            SceneType type,
+            ScenePriority priority,
+            ecs::Entity sceneId)
+            : name(name), path(path), type(type), priority(priority), sceneEntity(ecs::Name("scene", name), sceneId) {}
 
         bool operator<(const SceneMetadata &other) const;
     };

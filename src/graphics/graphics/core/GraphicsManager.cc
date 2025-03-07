@@ -140,13 +140,13 @@ namespace sp {
         return true;
     }
 
-    void GraphicsManager::PreFrame() {
+    bool GraphicsManager::PreFrame() {
         ZoneScoped;
-        if (!HasActiveContext()) return;
+        if (!HasActiveContext()) return false;
         if (debugGui) debugGui->BeforeFrame();
         if (menuGui) menuGui->BeforeFrame();
 
-        context->BeginFrame();
+        return context->BeginFrame();
     }
 
     void GraphicsManager::Frame() {

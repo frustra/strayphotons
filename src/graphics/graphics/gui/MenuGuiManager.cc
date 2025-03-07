@@ -151,6 +151,8 @@ namespace sp {
 
             if (ImGui::Button("Scene Select")) {
                 selectedScreen = MenuScreen::SceneSelect;
+
+                RefreshSceneList();
             }
 
             if (ImGui::Button("Options")) {
@@ -175,22 +177,13 @@ namespace sp {
 
             PushFont(Font::Monospace, 32);
 
-#define LEVEL_BUTTON(name, file)                                     \
-    if (ImGui::Button(name)) {                                       \
-        CVarMenuOpen.Set(false);                                     \
-        selectedScreen = MenuScreen::Main;                           \
-        GetConsoleManager().QueueParseAndExecute("loadscene " file); \
-    }
-
-            LEVEL_BUTTON("01 - Outside", "01-outside")
-            LEVEL_BUTTON("02 - Mirrors", "02-mirrors")
-            LEVEL_BUTTON("03 - Dark", "03-dark")
-            LEVEL_BUTTON("04 - Symmetry", "04-symmetry")
-            LEVEL_BUTTON("Sponza", "sponza")
-            LEVEL_BUTTON("Station Center", "station-center")
-            LEVEL_BUTTON("Cornell Box", "cornell-box-1")
-            LEVEL_BUTTON("Cornell Box Mirror", "cornell-box-3")
-            LEVEL_BUTTON("Test 1", "test1")
+            for (auto &[name, file] : sceneList) {
+                if (ImGui::Button(name.c_str())) {
+                    CVarMenuOpen.Set(false);
+                    selectedScreen = MenuScreen::Main;
+                    GetConsoleManager().QueueParseAndExecute("loadscene " + file);
+                }
+            }
 
 #undef LEVEL_BUTTON
 
@@ -275,5 +268,49 @@ namespace sp {
 
     bool MenuGuiManager::MenuOpen() const {
         return CVarMenuOpen.Get();
+    }
+
+    void MenuGuiManager::RefreshSceneList() {
+        static const std::vector<std::string> builtIn = {
+            "01-outside",
+            "02-mirrors",
+            "03-dark",
+            "04-symmetry",
+            "sponza",
+            "station-center",
+            "cornell-box-1",
+            "cornell-box-3",
+            "test1",
+        };
+        sceneList = {
+            {"01 - Outside", "01-outside"},
+            {"02 - Mirrors", "02-mirrors"},
+            {"03 - Dark", "03-dark"},
+            {"04 - Symmetry", "04-symmetry"},
+            {"Sponza", "sponza"},
+            {"Station Center", "station-center"},
+            {"Cornell Box", "cornell-box-1"},
+            {"Cornell Box Mirror", "cornell-box-3"},
+            {"Test 1", "test1"},
+        };
+        auto sceneAssets = Assets().ListBundledAssets("scenes/", ".json");
+        for (auto &path : sceneAssets) {
+            if (starts_with(path, "scenes/") && ends_with(path, ".json")) {
+                std::string scene = path.substr(7, path.length() - 5 - 7);
+                if (contains(builtIn, scene)) continue;
+                std::string name = scene;
+                bool firstChar = true;
+                for (size_t i = 0; i < scene.length(); i++) {
+                    if (scene[i] == '_' || scene[i] == '-' || scene[i] == ' ') {
+                        name[i] = ' ';
+                        firstChar = true;
+                    } else if (firstChar) {
+                        name[i] = std::toupper(scene[i]);
+                        firstChar = false;
+                    }
+                }
+                sceneList.emplace_back(name, scene);
+            }
+        }
     }
 } // namespace sp

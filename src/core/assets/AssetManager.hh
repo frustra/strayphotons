@@ -44,6 +44,7 @@ namespace sp {
         void Shutdown();
 
         std::filesystem::path GetExternalPath(const std::string &path) const;
+        std::vector<std::string> ListBundledAssets(const std::string &prefix, const std::string &extension = "") const;
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(const std::string &name);

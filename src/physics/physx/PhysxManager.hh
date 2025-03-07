@@ -113,7 +113,7 @@ namespace sp {
         void StartThread(bool startPaused = false);
 
     private:
-        void PreFrame() override;
+        bool PreFrame() override;
         void Frame() override;
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,

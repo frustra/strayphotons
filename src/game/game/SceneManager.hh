@@ -79,6 +79,8 @@ namespace sp {
             enablePhysicsPreload = false;
         }
 
+        static std::string_view GetSceneName(std::string_view scenePath);
+
     private:
         void RunSceneActions();
         void UpdateSceneConnections();
@@ -99,7 +101,7 @@ namespace sp {
         void RespawnPlayer(
             ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock);
 
-        std::shared_ptr<Scene> LoadSceneJson(const std::string &name, SceneType sceneType);
+        std::shared_ptr<Scene> LoadSceneJson(const std::string &name, const std::string &path, SceneType sceneType);
         void SaveSceneJson(const std::string &name);
 
         std::shared_ptr<Scene> LoadBindingsJson();
@@ -110,16 +112,16 @@ namespace sp {
         struct QueuedAction {
             SceneAction action;
 
-            std::string sceneName;
+            std::string scenePath;
             EditSceneCallback editSceneCallback;
             EditCallback editCallback;
             VoidCallback voidCallback;
             std::promise<void> promise;
 
-            QueuedAction(SceneAction action, std::string sceneName, EditSceneCallback editSceneCallback = nullptr)
-                : action(action), sceneName(sceneName), editSceneCallback(editSceneCallback) {}
-            QueuedAction(SceneAction action, std::string sceneName, EditCallback editCallback)
-                : action(action), sceneName(sceneName), editCallback(editCallback) {}
+            QueuedAction(SceneAction action, std::string scenePath, EditSceneCallback editSceneCallback = nullptr)
+                : action(action), scenePath(scenePath), editSceneCallback(editSceneCallback) {}
+            QueuedAction(SceneAction action, std::string scenePath, EditCallback editCallback)
+                : action(action), scenePath(scenePath), editCallback(editCallback) {}
             QueuedAction(SceneAction action, EditCallback editCallback) : action(action), editCallback(editCallback) {}
             QueuedAction(SceneAction action, VoidCallback voidCallback) : action(action), voidCallback(voidCallback) {}
         };

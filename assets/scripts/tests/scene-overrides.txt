@@ -1,4 +1,4 @@
-loadscene test1-override
+loadscene overrides/test1-override
 addscene test1
 respawn
 steplogic
@@ -23,7 +23,7 @@ screenshot load-override-first3.png
 stepgraphics
 
 loadscene test1
-addscene test1-override
+addscene overrides/test1-override
 # BUG: The voxel lighting is not cleared when the entity changes
 respawn
 steplogic
