@@ -3,7 +3,7 @@
 		{
 			"name": "floor",
 			"transform": {
-				"scale": [10, 0.5, 8],
+				"scale": [10, 0.5, 10],
 				"translate": [0, -0.25, 0]
 			},
 			"renderable": {
@@ -17,9 +17,18 @@
 			}
 		},
 		{
+			"transform": {
+				"translate": [-5, 0, -5],
+				"scale": 0.1
+			},
+			"voxel_area": {
+				"extents": [100, 50, 100]
+			}
+		},
+		{
 			"name": "ceiling",
 			"transform": {
-				"scale": [10, 0.1, 8],
+				"scale": [10, 0.1, 10],
 				"translate": [0, 5, 0]
 			},
 			"renderable": {
@@ -36,7 +45,7 @@
 			"name": "front_wall",
 			"transform": {
 				"scale": [10, 5, 0.1],
-				"translate": [0, 2.5, -4]
+				"translate": [0, 2.5, -5]
 			},
 			"renderable": {
 				"model": "box"
@@ -51,7 +60,7 @@
 		{
 			"name": "left_wall",
 			"transform": {
-				"scale": [0.1, 5, 8],
+				"scale": [0.1, 5, 10],
 				"translate": [-5, 2.5, 0]
 			},
 			"renderable": {
@@ -67,7 +76,7 @@
 		{
 			"name": "right_wall",
 			"transform": {
-				"scale": [0.1, 5, 8],
+				"scale": [0.1, 5, 10],
 				"translate": [5, 2.5, 0]
 			},
 			"renderable": {
@@ -84,7 +93,7 @@
 			"name": "back_wall",
 			"transform": {
 				"scale": [10, 5, 0.1],
-				"translate": [0, 2.5, 4]
+				"translate": [0, 2.5, 5]
 			},
 			"renderable": {
 				"model": "box"
@@ -97,23 +106,10 @@
 			}
 		},
 		{
-			"name": "table",
-			"transform": {
-				"translate": [-0.5, 0, -2]
-			},
-			"script": {
-				"parameters": {
-					"source": "table/1x1"
-				},
-				"prefab": "template"
-			}
-		},
-		{
 			"name": "spawn_button",
 			"transform": {
-				"parent": "table.surface",
 				"rotate": [90, 0, 0, -1],
-				"translate": [0.06, -0.11, -0.06]
+				"translate": [-4.5, 1.2, -4.5]
 			},
 			"signal_output": {
 				"toggle_alive": 0
@@ -151,11 +147,11 @@
 		{
 			"name": "mirrorcube1",
 			"transform": {
-				"scale": 0.1,
+				"scale": 0.5,
 				"translate": [0.65, 0, 0.35]
 			},
 			"physics": {
-				"contact_report_force": 1
+				"contact_report_force": 0.1
 			},
 			"script": {
 				"parameters": {
@@ -167,8 +163,8 @@
 		{
 			"name": "life",
 			"transform": {
-				"parent": "table.surface",
-				"translate": [0, 0, 0]
+				"translate": [-5, -0.29, -5],
+				"scale": 10.4166667
 			},
 			"script": [
 				{
@@ -266,15 +262,15 @@
 		},
 		{
 			"transform": {
-				"rotate": [90, -1, 0, 0],
-				"translate": [0, 5, 0]
+				"rotate": [[45, 0, 1, 0], [70, -1, 0, 0]],
+				"translate": [-4, 3, -4]
 			},
 			"light": {
-				"intensity": 15,
+				"intensity": 1,
 				"shadow_map_clip": [0.1, 10],
-				"shadow_map_size": 10,
-				"spot_angle": 60,
-				"tint": [1, 1, 1]
+				"shadow_map_size": 8,
+				"spot_angle": 10,
+				"tint": [1, 1, 0.9]
 			}
 		}
 	]

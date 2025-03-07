@@ -446,6 +446,7 @@ namespace sp {
             if (loadedScene) {
                 if (loadedScene->data->type == SceneType::Async) scenes[SceneType::Async].push_back(loadedScene);
             } else {
+                Debugf("Loading scene connection: %s", scenePath);
                 AddScene(scenePath, SceneType::Async);
             }
         }

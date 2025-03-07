@@ -847,7 +847,7 @@ namespace ecs {
     }
 
     bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        if (!rootNode) return false;
+        if (!rootNode) return true;
         return rootNode->canEvaluate(lock, depth);
     }
 
@@ -860,7 +860,7 @@ namespace ecs {
                 Errorf("Max signal binding depth exceeded: %s -> %s", text, binding.expr);
                 return false;
             }
-            return signalNode.signal.GetBinding(lock).CanEvaluate(lock, depth + 1);
+            return binding.CanEvaluate(lock, depth + 1);
         } else if (std::holds_alternative<ComponentNode>(*this)) {
             const ComponentNode &componentNode = std::get<ComponentNode>(*this);
             const ComponentBase *base = componentNode.component;

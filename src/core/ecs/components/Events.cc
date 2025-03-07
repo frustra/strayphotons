@@ -291,6 +291,7 @@ namespace ecs {
                 if (!input) return false; // Event filtered asynchronously
                 if (binding.actions.filterExpr->EvaluateEvent(lock, *input) < 0.5) return false;
             } else {
+                Logf("Async input ready: %s", asyncInput->Ready() ? "true" : "false");
                 asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
                     [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
                         if (!input) {
@@ -321,6 +322,11 @@ namespace ecs {
                 modifyEvent(lock, output, *input, binding);
                 asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
             } else {
+                Logf("Async input ready: %s", asyncInput->Ready() ? "true" : "false");
+                Logf("Async output ready: %s", asyncOutput->Ready() ? "true" : "false");
+                for (auto &expr : binding.actions.modifyExprs) {
+                    Logf("Can Eval \"%s\" = %s", expr.expr, expr.CanEvaluate(lock));
+                }
                 asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
                     asyncOutput,
                     [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {

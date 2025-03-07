@@ -2,11 +2,13 @@
 	"components": {
 		"transform": {},
 		"signal_output": {
-			"alive": 0
+			"alive": 0,
+			"age": 100000
 		},
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
-			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))"
+			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))",
+			"decay": "min(1, 1 / (scoperoot/age + 1))"
 		},
 		"event_input": {},
 		"event_bindings": {
@@ -26,8 +28,7 @@
 					"translate": [0, 0.015, 0]
 				}
 			},
-			"type": "Static",
-			"contact_report_force": 0.1
+			"type": "Static"
 		},
 		"script": [
 			{
@@ -39,7 +40,8 @@
 			{
 				"onTick": "signal_from_signal",
 				"parameters": {
-					"alive": "scoperoot/next_alive"
+					"alive": "scoperoot/next_alive",
+					"age": "scoperoot/alive == scoperoot/next_alive ? scoperoot/age + 1 : 0"
 				}
 			},
 			{
@@ -59,14 +61,17 @@
 				"scale": 0.03
 			},
 			"renderable": {
-				"model": "box"
+				"model": "box",
+				"color_override": [1, 1, 1, 1]
 			},
 			"event_input": {},
 			"script": [
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"renderable.emissive": "scoperoot/alive"
+						"renderable.emissive": "max(0.0001, scoperoot/decay) + scoperoot/alive",
+						"renderable.color_override.rg": "min(1, max(0.0001, scoperoot/decay))",
+						"renderable.color_override.b": "1 - max(0.0001, scoperoot/decay)"
 					}
 				}
 			]

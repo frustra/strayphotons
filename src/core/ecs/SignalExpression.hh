@@ -116,8 +116,7 @@ Signal expressions support the following operations and functions:
             return expr == other.expr && scope == other.scope;
         }
 
-        // True if the expression is valid and can be evaluated.
-        // An empty expression is valid and evaluates to 0.
+        // True if the expression can be evaluated and is non-empty.
         explicit operator bool() const {
             return rootNode != nullptr;
         }
