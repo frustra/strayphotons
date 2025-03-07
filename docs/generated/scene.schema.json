@@ -735,19 +735,7 @@
 					"physics_query": {},
 					"renderable": {
 						"properties": {
-							"color_override": {
-								"default": [-1, -1, -1, -1],
-								"description": "Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used.",
-								"items": {
-									"maximum": 1,
-									"minimum": 0,
-									"type": "number"
-								},
-								"maxItems": 4,
-								"minItems": 4,
-								"type": "array"
-							},
-							"emissive": {
+							"tint"
 								"default": 0,
 								"description": "Emissive multiplier to turn this model into a light source",
 								"type": "number"
@@ -772,6 +760,18 @@
 								"default": "",
 								"description": "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
 								"type": "string"
+							},
+							"tint": {
+								"default": [-1, -1, -1, -1],
+								"description": "Tint the mesh's texture with an RGBA color. Values are in the range 0.0 to 1.0.",
+								"items": {
+									"maximum": 1,
+									"minimum": 0,
+									"type": "number"
+								},
+								"maxItems": 4,
+								"minItems": 4,
+								"type": "array"
 							},
 							"visibility": {
 								"default": "DirectCamera|DirectEye|LightingShadow|LightingVoxel",

@@ -90,14 +90,14 @@
 			},
 			"_renderable": {
 				"model": "box",
-				"color_override": [0, 0, 0, 1]
+				"tint": [0, 0, 0, 1]
 			},
 			"_script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"renderable.color_override.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
-					"renderable.color_override.g": "scoperoot/alive",
-					"renderable.color_override.b": "scoperoot/next_alive"
+					"renderable.tint.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
+					"renderable.tint.g": "scoperoot/alive",
+					"renderable.tint.b": "scoperoot/next_alive"
 				}
 			}
 		}

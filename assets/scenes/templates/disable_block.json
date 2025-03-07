@@ -19,7 +19,7 @@
 		{
 			"name": "mount.Cylinder",
 			"renderable": {
-				"color_override": [0, 0, 0, 1]
+				"tint": [0, 0, 0, 1]
 			}
 		}
 	]

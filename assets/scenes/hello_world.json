@@ -61,7 +61,7 @@
             },
             "renderable": {
                 "model": "box",
-                "color_override": [1, 0, 0, 1]
+                "tint": [1, 0, 0, 1]
             },
             "physics": {
                 "shapes": {
@@ -78,7 +78,7 @@
             },
             "renderable": {
                 "model": "box",
-                "color_override": [0, 0, 1, 1]
+                "tint": [0, 0, 1, 1]
             },
             "physics": {
                 "shapes": {

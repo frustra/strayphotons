@@ -148,7 +148,7 @@ Entities can be attached in a couple ways:
        },
        "renderable": {
            "model": "box",
-           "color_override": [1, 0, 0, 1]
+           "tint": [1, 0, 0, 1]
        },
        "physics": {
            "type": "SubActor",
@@ -160,7 +160,7 @@ Entities can be attached in a couple ways:
    ```
 
    This scales down the earlier `box` model, and places it on top of the cardboard box using relative positioning.
-   The new box is colored red using the `color_override` property of `renderable` so we can tell it apart.
+   The new box is colored red using the `tint` property of `renderable` so we can tell it apart.
 
    The `SubActor` physics type adds any physics shapes defined on this entity to the parent physics actor based on the `transform` parent.
    In this case the parent physics actor is the `hello_world:interactive-box` entity.
@@ -183,7 +183,7 @@ Entities can be attached in a couple ways:
        },
        "renderable": {
            "model": "box",
-           "color_override": [0, 0, 1, 1]
+           "tint": [0, 0, 1, 1]
        },
        "physics": {,
            "type": "Dynamic",

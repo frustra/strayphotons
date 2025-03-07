@@ -207,7 +207,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test.exe",
-            "args": ["--with-validation-layers", "-v", "--assets", "../assets/", "--run", "tests/scene-overrides.txt"],
+            "args": ["--with-validation-layers", "-v", "--assets", "../assets/", "--run", "tests/life3.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

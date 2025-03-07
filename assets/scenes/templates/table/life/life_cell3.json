@@ -3,12 +3,14 @@
 		"transform": {},
 		"signal_output": {
 			"alive": 0,
-			"age": 100000
+			"age_alive": 0,
+			"age_dead": 100000
 		},
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
 			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))",
-			"decay": "min(1, 1 / (scoperoot/age * scoperoot/age + 1))"
+			"decay_alive": "1 / (scoperoot/age_alive + 1)",
+			"decay_dead": "1 / (scoperoot/age_dead * scoperoot/age_dead + 1)"
 		},
 		"event_input": {},
 		"event_bindings": {
@@ -41,7 +43,8 @@
 				"onTick": "signal_from_signal",
 				"parameters": {
 					"alive": "scoperoot/next_alive",
-					"age": "scoperoot/alive >= scoperoot/next_alive ? scoperoot/age + 1 : 0"
+					"age_alive": "scoperoot/alive ? scoperoot/age_alive + 1 : 0",
+					"age_dead": "!scoperoot/alive ? scoperoot/age_dead + 1 : 0"
 				}
 			},
 			{
@@ -62,16 +65,16 @@
 			},
 			"renderable": {
 				"model": "box",
-				"color_override": [1, 1, 1, 1]
+				"tint": [1, 1, 1, 1]
 			},
 			"event_input": {},
 			"script": [
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"renderable.emissive": "max(0.001, scoperoot/decay) + scoperoot/alive",
-						"renderable.color_override.rg": "max(0.0001, scoperoot/decay) * scoperoot/alive + scoperoot/alive",
-						"renderable.color_override.b": "1 - max(0.0001, scoperoot/decay)"
+						"renderable.emissive": "max(0.0001, max(scoperoot/decay_alive, scoperoot/decay_dead))",
+						"renderable.tint.rg": "min(scoperoot/alive, max(0.0001, scoperoot/decay_alive))",
+						"renderable.tint.b": "max(0.0001, scoperoot/decay_dead)"
 					}
 				}
 			]
@@ -85,14 +88,15 @@
 			},
 			"_renderable": {
 				"model": "box",
-				"color_override": [0, 0, 0, 1]
+				"tint": [0, 0, 0, 1],
+				"emissive": 0.1
 			},
 			"_script": {
 				"onTick": "component_from_signal",
 				"parameters": {
-					"renderable.color_override.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
-					"renderable.color_override.g": "scoperoot/alive",
-					"renderable.color_override.b": "scoperoot/next_alive"
+					"renderable.tint.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
+					"renderable.tint.g": "scoperoot/alive",
+					"renderable.tint.b": "scoperoot/next_alive"
 				}
 			}
 		}

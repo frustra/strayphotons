@@ -66,7 +66,7 @@ namespace sp::vulkan {
         uint32_t jointPosesOffset = 0xffffffff;
         uint32_t opticID = 0;
         float emissiveScale = 0;
-        int32_t baseColorOverrideID = -1;
+        uint32_t baseColorTint = 0; // RGBA packed u8
         int32_t metallicRoughnessOverrideID = -1;
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
@@ -76,6 +76,7 @@ namespace sp::vulkan {
         uint16_t metallicRoughnessTexID;
         uint16_t opticID = 0;
         float16_t emissiveScale = 0.0f;
+        uint32_t baseColorTint = 0; // RGBA packed u8
     };
     static_assert(sizeof(GPUDrawParams) % sizeof(uint16_t) == 0, "std430 alignment");
 

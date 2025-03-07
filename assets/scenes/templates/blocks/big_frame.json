@@ -117,7 +117,7 @@
 			},
 			"renderable": {
 				"model": "colorfilter",
-				"color_override": [0, 0, 0, 1],
+				"tint": [0, 0, 0, 1],
 				"metallic_roughness_override": [0.0, 1.0]
 			},
 			"physics": {

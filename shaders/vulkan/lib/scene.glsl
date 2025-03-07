@@ -27,7 +27,7 @@ struct RenderableEntity {
     uint jointPosesOffset;
     uint opticID;
     float emissiveScale;
-    int baseColorOverrideID;
+    uint baseColorTint; // RGBA packed u8
     int metallicRoughnessOverrideID;
 };
 

@@ -50,6 +50,7 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
 layout(location = 5) flat in float emissiveScale;
+layout(location = 6) flat in vec4 baseColorTint;
 layout(location = 0, index = 0) out vec4 outFragColor;
 layout(location = 0, index = 1) out vec4 outTransparencyMask;
 
@@ -60,7 +61,7 @@ void main() {
     ViewState view = views[gl_ViewID_OVR];
 
     vec4 baseColorAlpha = texture(textures[baseColorTexID], inTexCoord);
-    vec3 baseColor = baseColorAlpha.rgb * baseColorAlpha.a;
+    vec3 baseColor = mix(baseColorAlpha.rgb * baseColorAlpha.a, baseColorTint.rgb, baseColorTint.a);
     float scatterTerm = baseColorAlpha.a * scatterTermMultiplier;
 
     vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);

@@ -244,7 +244,7 @@
 				"translate": [0, 14.9, 0]
 			},
 			"renderable": {
-				"color_override": [0.529, 0.808, 0.922, 1],
+				"tint": [0.529, 0.808, 0.922, 1],
 				"emissive": 1,
 				"visibility": "DirectCamera|DirectEye|LightingVoxel"
 			},
