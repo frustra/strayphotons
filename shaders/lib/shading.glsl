@@ -64,7 +64,7 @@ vec3 DirectShading(vec3 worldPosition,
 #endif
     vec3 pixelLuminance = vec3(0);
 
-#ifdef USE_PCF
+#if defined(USE_PCF) && !defined(USE_SPHERE_SAMPLING)
     // Rotate PCF kernel by a random angle.
     float angle = InterleavedGradientNoise(gl_FragCoord.xy) * M_PI * 2.0;
     float s = sin(angle), c = cos(angle);
@@ -83,8 +83,8 @@ vec3 DirectShading(vec3 worldPosition,
         float hasIllum = 1.0 - notHasIllum;
 
         {
-            float lightDistance = length(abs(lights[i].position - worldPosition));
-            float lightDistanceSq = lightDistance * lightDistance;
+            vec3 lightVector = lights[i].position - worldPosition;
+            float lightDistanceSq = dot(lightVector, lightVector);
             float falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
             illuminance = notHasIllum * lights[i].intensity * falloff + hasIllum * illuminance;
@@ -131,6 +131,15 @@ vec3 DirectShading(vec3 worldPosition,
         occlusion *= SampleVarianceShadowMap(info, 0.00002, 0.5);
     #else
         #ifdef USE_PCF
+            #ifdef USE_SPHERE_SAMPLING
+        // Rotate PCF kernel by an angle determined by position in the light view space
+        vec2 scale = 0.1 * textureSize(shadowMap, 0).xy * info.mapOffset.zw;
+        float angle = sin(shadowMapPos.x * scale.x) * cos(shadowMapPos.y * scale.y);
+        angle += mix(cos(shadowMapPos.z * max(scale.x, scale.y)), 0, abs(surfaceNormal.z));
+        angle *= M_PI * 2.0;
+        float s = sin(angle), c = cos(angle);
+        mat2 rotation = mat2(c, s, -s, c);
+            #endif
         occlusion *= DirectOcclusion(info, surfaceNormal, rotation);
         #else
         occlusion *= SimpleOcclusion(info);

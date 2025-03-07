@@ -14,6 +14,9 @@ layout(location = 0) out vec4 outLinearDepth;
 
 layout(binding = 0) uniform sampler2D shadowMap;
 
+layout(constant_id = 0) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
+layout(constant_id = 1) const int SHADOW_MAP_SAMPLE_COUNT = 3;
+
 #include "../lib/shadow_sample.glsl"
 #include "../lib/types_common.glsl"
 

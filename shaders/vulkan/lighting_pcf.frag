@@ -7,4 +7,5 @@
 
 #version 450
 #define USE_PCF
+// #define USE_SPHERE_SAMPLING
 #include "lighting.frag.glsl"

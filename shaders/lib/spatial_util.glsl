@@ -10,7 +10,8 @@
 
 #include "normal_encode.glsl"
 
-const float shadowBiasDistance = 0.01;
+const float shadowBiasDistanceMin = 0.005;
+const float shadowBiasDistanceMax = 0.01;
 
 // Projects v onto a normalized vector u.
 vec3 ProjectVec3(vec3 v, vec3 u) {

@@ -14,6 +14,8 @@ layout(num_views = 2) in;
 
 layout(constant_id = 0) const uint MODE = 1;
 layout(constant_id = 1) const uint VOXEL_LAYERS = 1;
+layout(constant_id = 2) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
+layout(constant_id = 3) const int SHADOW_MAP_SAMPLE_COUNT = 3;
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"

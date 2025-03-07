@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "console/CVar.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <optional>
@@ -15,6 +16,9 @@
 namespace sp::vulkan::renderer {
     static const int MAX_LIGHTS = 64;
     static const int MAX_OPTICS = 16;
+
+    extern CVar<int> CVarShadowMapSampleCount;
+    extern CVar<float> CVarShadowMapSampleWidth;
 
     class Voxels;
 
