@@ -128,11 +128,9 @@
 			"light": {
 				"tint": [1, 0.7, 0.235],
 				"intensity": 100,
-				"spot_angle": 85
-			},
-			"view": {
-				"extents": [2048, 2048],
-				"clip": [0.1, 256]
+				"spot_angle": 85,
+				"shadow_map_size": 11,
+				"shadow_map_clip": [0.1, 5]
 			},
 			"transform": {
 				"translate": [0, 4.2, 0],
@@ -143,11 +141,9 @@
 			"light": {
 				"tint": [1, 0.7, 0.235],
 				"intensity": 100,
-				"spot_angle": 30
-			},
-			"view": {
-				"extents": [1024, 1024],
-				"clip": [0.1, 256]
+				"spot_angle": 30,
+				"shadow_map_size": 10,
+				"shadow_map_clip": [0.1, 5]
 			},
 			"transform": {
 				"translate": [0, 3.0, 0],
