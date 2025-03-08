@@ -85,8 +85,7 @@ namespace ecs {
         size_t &index = GetIndex();
         if (index >= signals.signals.size()) return;
         auto &signal = signals.signals[index];
-        //! signal.lastValueDirty &&
-        if (depth <= MAX_SIGNAL_BINDING_DEPTH) {
+        if (!signal.lastValueDirty && depth <= MAX_SIGNAL_BINDING_DEPTH) {
             signal.lastValueDirty = true;
             signals.MarkStorageDirty(lock, index);
             if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
@@ -102,7 +101,8 @@ namespace ecs {
         }
     }
 
-    void SignalRef::UpdateDirtySubscribers(const Lock<Write<Signals>, ReadSignalsLock> &lock, size_t depth) const {
+    void SignalRef::UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock,
+        size_t depth) const {
         ZoneScoped;
         // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
@@ -111,12 +111,14 @@ namespace ecs {
         size_t &index = GetIndex();
         if (index >= signals.signals.size()) return;
         auto &signal = signals.signals[index];
-        if (signal.lastValueDirty) {
-            // double oldValue = signal.lastValue;
+        bool isCacheable = !std::isinf(signal.value) || signal.expr.IsCacheable();
+        if (signal.lastValueDirty || !isCacheable) {
+            double oldValue = signal.lastValue;
             signal.lastValue = signal.Value(lock);
-            // if (signal.lastValue != oldValue) {
-            //     Logf("Signal changed: %s = %f -> %f", signal.ref.String(), oldValue, signal.lastValue);
-            // }
+            if (signal.lastValue != oldValue) {
+                if (!isCacheable) MarkDirty(lock, depth);
+                //     Logf("Signal changed: %s = %f -> %f", signal.ref.String(), oldValue, signal.lastValue);
+            }
             signal.lastValueDirty = false;
             signals.MarkStorageDirty(lock, index);
             if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
@@ -305,9 +307,8 @@ namespace ecs {
         if (index >= readSignals.size()) return 0.0;
 
         auto &readSignal = readSignals[index];
-        bool hasValue = !std::isinf(readSignal.value);
-        bool isUncacheableExpr = !hasValue && !readSignal.expr.IsCacheable();
-        if (!isUncacheableExpr && !readSignal.lastValueDirty) {
+        bool isCacheable = !std::isinf(readSignal.value) || readSignal.expr.IsCacheable();
+        if (isCacheable && !readSignal.lastValueDirty) {
             DebugAssertf(std::isfinite(readSignal.lastValue),
                 "SignalRef::GetSignal() returned non-finite value: %f",
                 readSignal.lastValue);
@@ -318,7 +319,7 @@ namespace ecs {
             auto &signals = writeLock->Get<Signals>();
             auto &signal = signals.signals[index];
             double newValue = signal.Value(lock, depth);
-            if (isUncacheableExpr) return newValue;
+            if (!isCacheable) return newValue;
             // if (newValue != signal.lastValue) {
             //     Logf("Signal changed (write eval): %s = %f -> %f", signal.ref.String(), signal.lastValue, newValue);
             // }

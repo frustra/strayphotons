@@ -45,7 +45,7 @@ namespace ecs {
 
         void AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &ref) const;
         void MarkDirty(const Lock<Write<Signals>> &lock, size_t depth = 0) const;
-        void UpdateDirtySubscribers(const Lock<Write<Signals>, ReadSignalsLock> &lock, size_t depth = 0) const;
+        void UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock, size_t depth = 0) const;
 
         double &SetValue(const Lock<Write<Signals>> &lock, double value) const;
         void ClearValue(const Lock<Write<Signals>> &lock) const;

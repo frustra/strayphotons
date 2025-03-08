@@ -109,11 +109,14 @@ namespace sp {
             ecs::GetScriptManager().RunOnTick(lock, interval);
         }
         {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>();
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadAll>();
             auto &signals = lock.Get<const ecs::Signals>().signals;
             for (size_t index = 0; index < signals.size(); index++) {
                 auto &signal = signals[index];
-                if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
+                if (signal.ref) {
+                    bool isCacheable = !std::isinf(signal.value) || signal.expr.IsCacheable();
+                    if (signal.lastValueDirty || !isCacheable) signal.ref.UpdateDirtySubscribers(lock);
+                }
             }
         }
     }

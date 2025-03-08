@@ -578,7 +578,7 @@ namespace ecs {
                         return ecs::ReadStructField(&component, componentNode.field);
                     } else {
                         Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
-                            componentNode.field.name,
+                            componentNode.path,
                             typeid(T).name());
                         return 0.0;
                     }
