@@ -486,15 +486,33 @@ namespace ecs {
     Context::Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input)
         : lock(lock), expr(expr), input(input) {}
 
-    const SignalNodePtr &Node::propagateUncacheable(const SignalNodePtr &node) {
+    const SignalNodePtr &Node::updateDependencies(const SignalNodePtr &node) {
         if (!node) return node;
         for (const auto &child : node->childNodes) {
+            if (child->uncacheable) node->uncacheable = true;
+            sp::erase_if(child->dependencies, [](auto &weakPtr) {
+                return weakPtr.expired();
+            });
+            if (!sp::contains(child->dependencies, node)) child->dependencies.emplace_back(node);
+        }
+        return node;
+    }
+
+    void Node::propagateUncacheable(bool newUncacheable) {
+        bool oldUncacheable = uncacheable;
+        uncacheable = newUncacheable;
+        for (const auto &child : childNodes) {
             if (child->uncacheable) {
-                node->uncacheable = true;
+                uncacheable = true;
                 break;
             }
         }
-        return node;
+        if (uncacheable != oldUncacheable) {
+            for (const auto &dep : dependencies) {
+                auto dependency = dep.lock();
+                if (dependency) dependency->propagateUncacheable(uncacheable);
+            }
+        }
     }
 
     CompiledFunc Node::Compile() {

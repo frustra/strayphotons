@@ -374,7 +374,7 @@ namespace sp {
             liveConnection = ecs::EntityRef(name).Get(liveLock);
             if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
                 auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
-                if (connection.scenes.count(data->name)) {
+                if (connection.scenes.count(data->path)) {
                     stagingConnection = e;
                     break;
                 }

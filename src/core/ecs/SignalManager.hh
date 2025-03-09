@@ -11,6 +11,7 @@
 #include "common/LockFreeMutex.hh"
 #include "common/PreservingMap.hh"
 #include "common/PreservingSet.hh"
+#include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalExpressionNode.hh"
@@ -25,7 +26,7 @@
 namespace ecs {
     class SignalManager {
     public:
-        SignalManager() {}
+        SignalManager();
 
         SignalRef GetRef(const SignalKey &signal);
         SignalRef GetRef(const EntityRef &entity, const std::string_view &signalName);
@@ -46,6 +47,8 @@ namespace ecs {
         sp::LockFreeMutex mutex;
         sp::PreservingSet<expression::Node, 1000> signalNodes;
         sp::PreservingMap<SignalKey, SignalRef::Ref, 1000> signalRefs;
+
+        sp::CFuncCollection funcs;
 
         friend class SignalExpression;
     };

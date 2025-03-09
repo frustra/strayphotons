@@ -26,6 +26,7 @@ namespace ecs {
     }
 
     using SignalNodePtr = std::shared_ptr<expression::Node>;
+    using WeakNodePtr = std::weak_ptr<expression::Node>;
 
     namespace expression {
         struct Context;
@@ -117,6 +118,7 @@ namespace ecs {
             std::string text;
             CompiledFunc evaluate = nullptr;
             sp::InlineVector<SignalNodePtr, 3> childNodes;
+            std::vector<WeakNodePtr> dependencies;
             bool uncacheable = false;
 
             template<typename T>
@@ -129,7 +131,8 @@ namespace ecs {
                 }
             }
 
-            static const SignalNodePtr &propagateUncacheable(const SignalNodePtr &node);
+            static const SignalNodePtr &updateDependencies(const SignalNodePtr &node);
+            void propagateUncacheable(bool newUncacheable);
 
             CompiledFunc Compile();
             void SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const;

@@ -8,7 +8,7 @@
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
 			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))",
-			"decay": "min(1, 1 / (scoperoot/age + 1))"
+			"decay": "min(1, 1 / (scoperoot/age * scoperoot/age + 1))"
 		},
 		"event_input": {},
 		"event_bindings": {

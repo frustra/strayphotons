@@ -35,6 +35,7 @@ namespace ecs {
             double lastValue = 0.0;
             bool lastValueDirty = true;
             std::vector<WeakSignalRef> subscribers;
+            std::vector<WeakSignalRef> dependencies;
 
             Signal();
             Signal(const SignalRef &ref, double value);

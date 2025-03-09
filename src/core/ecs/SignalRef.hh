@@ -45,6 +45,7 @@ namespace ecs {
 
         void AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &ref) const;
         void MarkDirty(const Lock<Write<Signals>> &lock, size_t depth = 0) const;
+        bool IsCacheable(const Lock<Read<Signals>> &lock) const;
         void UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock, size_t depth = 0) const;
 
         double &SetValue(const Lock<Write<Signals>> &lock, double value) const;
@@ -81,6 +82,8 @@ namespace ecs {
         }
 
     private:
+        void UnsubscribeDependencies(const Lock<Write<Signals>> &lock) const;
+
         std::shared_ptr<Ref> ptr;
 
         friend class SignalManager;

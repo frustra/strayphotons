@@ -22,6 +22,19 @@ namespace ecs {
         return signalManager;
     }
 
+    SignalManager::SignalManager() {
+        funcs.Register<std::string>("assert_signal",
+            "Asserts a signal expression evaluates to true (i.e. >= 0.5) (assert_signal <expr>)",
+            [](std::string input) {
+                auto lock = StartTransaction<ReadAll>();
+                SignalExpression expr(input);
+                double result = expr.Evaluate(lock);
+                if (result < 0.5) {
+                    Abortf("Assertion failed (%s): %f != true", expr.expr, result);
+                }
+            });
+    }
+
     SignalRef SignalManager::GetRef(const SignalKey &signal) {
         if (!signal) return SignalRef();
 
@@ -66,7 +79,7 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::GetNode(const Node &node) {
-        return Node::propagateUncacheable(signalNodes.LoadOrInsert(node));
+        return Node::updateDependencies(signalNodes.LoadOrInsert(node));
     }
 
     SignalNodePtr SignalManager::GetConstantNode(double value) {
