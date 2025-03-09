@@ -57,24 +57,41 @@ namespace SignalBindingTests {
             ecs::EntityRef handRef(ecs::Name("player", "hand"), hand);
             hand.Set<ecs::Name>(lock, "player", "hand");
 
+            AssertEqual(manager.GetNodeCount(), 0u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION1).SetBinding(lock, "player/device2_key", ecs::Name("player", ""));
+            AssertEqual(manager.GetNodeCount(), 1u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION2)
                 .SetBinding(lock, "player/device2_key + player/device1_button", ecs::Name("player", ""));
+            AssertEqual(manager.GetNodeCount(), 3u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION3)
                 .SetBinding(lock,
-                    "-1.0 ? 0.1 : -(-1.0 + -player/device2_key) + -max(player/device1_button ? 1.2 : 0, "
-                    "player:hand/test-action1)",
+                    "-1.0 ? 0.1 : -(-1.0 + -player/device2_key) + "
+                    "-max(player/device1_button ? 1.2 : 0, player:hand/test-action1)",
                     ecs::Name("player", ""));
+            AssertEqual(manager.GetNodeCount(), 18u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION4).SetBinding(lock, "3 +4 *2 /(1 - -5)+1 /0");
+            AssertEqual(manager.GetNodeCount(), 30u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION5)
                 .SetBinding(lock, "cos(max(2,3)/3 *3.14159265359) * -1 ? 42 : 0.1");
+            AssertEqual(manager.GetNodeCount(), 38u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION6).SetBinding(lock, "(0.2 + 0.3 && 2 == 1 * 2) + 0.6 == 2 - 0.4");
+            AssertEqual(manager.GetNodeCount(), 50u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION7)
                 .SetBinding(lock, "! 10 + 1 || !player/device2_key != !0", ecs::Name("player", ""));
+            AssertEqual(manager.GetNodeCount(), 55u, "Wrong number of expression nodes");
+
             ecs::SignalRef(player, TEST_SIGNAL_ACTION8)
                 .SetBinding(lock, "0 != 0.0 ? (1 ? 1 : (3 + 0.14)) : (3 + 0.14)");
-            ecs::SignalRef(player, TEST_SIGNAL_ACTION9).SetBinding(lock, "");
+            AssertEqual(manager.GetNodeCount(), 62u, "Wrong number of expression nodes");
 
+            ecs::SignalRef(player, TEST_SIGNAL_ACTION9).SetBinding(lock, "");
             AssertEqual(manager.GetNodeCount(), 62u, "Wrong number of expression nodes");
 
             // Test a bunch of invalid expressions to make sure they don't crash the parser

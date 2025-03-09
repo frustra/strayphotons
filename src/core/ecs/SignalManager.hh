@@ -37,6 +37,7 @@ namespace ecs {
         SignalNodePtr GetNode(const expression::Node &node);
         SignalNodePtr GetConstantNode(double value);
         SignalNodePtr GetSignalNode(SignalRef ref);
+        SignalNodePtr FindSignalNode(SignalRef ref);
         std::vector<SignalNodePtr> GetNodes(const std::string &search = "");
 
         void Tick(chrono_clock::duration maxTickInterval);
