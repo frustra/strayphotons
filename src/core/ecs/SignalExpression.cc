@@ -124,8 +124,9 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr trueNode = parseNode(tokenIndex, ':');
                 if (!trueNode) {
-                    Errorf("Failed to parse signal expression, invalid true expression for conditional: %s",
-                        joinTokens(nodeStart, tokenIndex));
+                    // parseNode will already have logged the problem in this path.
+                    // Errorf("Failed to parse signal expression, invalid true expression for conditional: %s",
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ":") {
                     Errorf("Failed to parse signal expression, conditional missing ':': %s",
@@ -136,8 +137,9 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr falseNode = parseNode(tokenIndex, precedence);
                 if (!falseNode) {
-                    Errorf("Failed to parse signal expression, invalid false expression for conditional: %s",
-                        joinTokens(nodeStart, tokenIndex));
+                    // parseNode will already have logged the problem in this path.
+                    // Errorf("Failed to parse signal expression, invalid false expression for conditional: %s",
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 }
 
@@ -154,6 +156,7 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr inputNode = parseNode(tokenIndex, ')');
                 if (!inputNode) {
+                    // parseNode will already have logged the problem in this path.
                     // Errorf("Failed to parse signal expression, invalid expression: %s",
                     //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
@@ -169,8 +172,9 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr inputNode = parseNode(tokenIndex, '_');
                 if (!inputNode) {
+                    // parseNode will already have logged the problem in this path.
                     // Errorf("Failed to parse signal expression, invalid expression: %s",
-                    //     joinTokens(startToken, tokenIndex));
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 }
 
@@ -211,9 +215,10 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr inputNode = parseNode(tokenIndex, ')');
                 if (!inputNode) {
-                    Errorf("Failed to parse signal expression, invalid argument to function '%s': %s",
-                        std::string(token),
-                        joinTokens(nodeStart, tokenIndex));
+                    // parseNode will already have logged the problem in this path.
+                    // Errorf("Failed to parse signal expression, invalid argument to function '%s': %s",
+                    //     std::string(token),
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ")") {
                     Errorf("Failed to parse signal expression, '%s' function missing close brace: %s",
@@ -262,9 +267,10 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr aNode = parseNode(tokenIndex, ',');
                 if (!aNode) {
-                    Errorf("Failed to parse signal expression, invalid 1st argument to function: '%s': %s",
-                        std::string(token),
-                        joinTokens(nodeStart, tokenIndex));
+                    // parseNode will already have logged the problem in this path.
+                    // Errorf("Failed to parse signal expression, invalid 1st argument to function: '%s': %s",
+                    //     std::string(token),
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ",") {
                     Errorf("Failed to parse signal expression, '%s' function expects 2 arguments: %s",
@@ -276,9 +282,10 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr bNode = parseNode(tokenIndex, ')');
                 if (!bNode) {
-                    Errorf("Failed to parse signal expression, invalid 2nd argument to function '%s': %s",
-                        std::string(token),
-                        joinTokens(nodeStart, tokenIndex));
+                    // parseNode will already have logged the problem in this path.
+                    // Errorf("Failed to parse signal expression, invalid 2nd argument to function '%s': %s",
+                    //     std::string(token),
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 } else if (tokenIndex >= tokens.size() || tokens[tokenIndex] != ")") {
                     Errorf("Failed to parse signal expression, '%s' function missing close brace: %s",
@@ -324,9 +331,10 @@ namespace ecs {
                 tokenIndex++;
                 SignalNodePtr bNode = parseNode(tokenIndex, token[0]);
                 if (!bNode) {
-                    Errorf("Failed to parse signal expression, invalid 2nd argument to operator '%s': %s",
-                        std::string(token),
-                        joinTokens(nodeStart, tokenIndex));
+                    // parseNode will already have logged the problem in this path.
+                    // Errorf("Failed to parse signal expression, invalid 2nd argument to operator '%s': %s",
+                    //     std::string(token),
+                    //     joinTokens(nodeStart, tokenIndex));
                     return nullptr;
                 }
 
