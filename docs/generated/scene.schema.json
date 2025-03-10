@@ -735,7 +735,7 @@
 					"physics_query": {},
 					"renderable": {
 						"properties": {
-							"tint"
+							"emissive": {
 								"default": 0,
 								"description": "Emissive multiplier to turn this model into a light source",
 								"type": "number"

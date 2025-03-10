@@ -91,15 +91,7 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::FindSignalNode(SignalRef ref) {
-        SignalNodePtr result;
-        signalNodes.ForEach([&](const Node &node, SignalNodePtr ptr) {
-            if (auto *signalNode = std::get_if<SignalNode>(&node)) {
-                if (signalNode->signal == ref) {
-                    result = ptr;
-                }
-            }
-        });
-        return result;
+        return signalNodes.Find(Node{SignalNode{ref}, ""});
     }
 
     std::vector<SignalNodePtr> SignalManager::GetNodes(const std::string &search) {
