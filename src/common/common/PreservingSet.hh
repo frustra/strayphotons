@@ -160,6 +160,21 @@ namespace sp {
             }
         }
 
+        std::shared_ptr<T> Find(const T &value) {
+            std::shared_lock lock(mutex);
+
+            auto it = handles.find(value);
+            if (it != handles.end()) {
+                std::shared_ptr<T> ptr = *it;
+                size_t i = indexLookup.at(ptr.get());
+                Assertf(i < storage.size(), "PreservingSet index out of bounds");
+                storage[i].last_use = 0;
+                return ptr;
+            } else {
+                return nullptr;
+            }
+        }
+
         // Removes all values that have no references.
         // Values will have their destructors called inline by the current thread.
         // Returns the number of values that were removed.
