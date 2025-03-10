@@ -85,7 +85,7 @@ namespace ecs {
             subscriber.MarkDirty(lock);
         }
         SignalNodePtr subscriberNode = GetSignalManager().FindSignalNode(subscriber);
-        if (subscriberNode) subscriberNode->propagateUncacheable(!IsCacheable(lock));
+        if (subscriberNode) subscriberNode->PropagateUncacheable(!IsCacheable(lock));
     }
 
     void SignalRef::UnsubscribeDependencies(const Lock<Write<Signals>> &lock) const {
@@ -110,7 +110,7 @@ namespace ecs {
         if (!signal.dependencies.empty()) signals.MarkStorageDirty(lock, index);
         signal.dependencies.clear();
         SignalNodePtr signalNode = GetSignalManager().FindSignalNode(*this);
-        if (signalNode) signalNode->propagateUncacheable(!IsCacheable(lock));
+        if (signalNode) signalNode->PropagateUncacheable(!IsCacheable(lock));
     }
 
     void SignalRef::MarkDirty(const Lock<Write<Signals>> &lock, size_t depth) const {

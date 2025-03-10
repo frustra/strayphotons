@@ -486,7 +486,7 @@ namespace ecs {
     Context::Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input)
         : lock(lock), expr(expr), input(input) {}
 
-    const SignalNodePtr &Node::updateDependencies(const SignalNodePtr &node) {
+    const SignalNodePtr &Node::UpdateDependencies(const SignalNodePtr &node) {
         if (!node) return node;
         for (const auto &child : node->childNodes) {
             if (child->uncacheable) node->uncacheable = true;
@@ -498,7 +498,7 @@ namespace ecs {
         return node;
     }
 
-    void Node::propagateUncacheable(bool newUncacheable) {
+    void Node::PropagateUncacheable(bool newUncacheable) {
         bool oldUncacheable = uncacheable;
         uncacheable = newUncacheable;
         for (const auto &child : childNodes) {
@@ -510,7 +510,7 @@ namespace ecs {
         if (uncacheable != oldUncacheable) {
             for (const auto &dep : dependencies) {
                 auto dependency = dep.lock();
-                if (dependency) dependency->propagateUncacheable(uncacheable);
+                if (dependency) dependency->PropagateUncacheable(uncacheable);
             }
         }
     }
@@ -866,10 +866,10 @@ namespace ecs {
 
     bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         if (!rootNode) return true;
-        return rootNode->canEvaluate(lock, depth);
+        return rootNode->CanEvaluate(lock, depth);
     }
 
-    bool Node::canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+    bool Node::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         if (std::holds_alternative<SignalNode>(*this)) {
             const SignalNode &signalNode = std::get<SignalNode>(*this);
             if (signalNode.signal.HasValue(lock)) return true;
@@ -897,12 +897,12 @@ namespace ecs {
             if (!lock.template Has<FocusLock>()) return false;
         }
         for (auto &node : childNodes) {
-            if (!node->canEvaluate(lock, depth)) return false;
+            if (!node->CanEvaluate(lock, depth)) return false;
         }
         return true;
     }
 
-    SignalNodePtr Node::setScope(const EntityScope &scope) const {
+    SignalNodePtr Node::SetScope(const EntityScope &scope) const {
         if (std::holds_alternative<SignalNode>(*this)) {
             auto &signalNode = std::get<SignalNode>(*this);
             SignalRef signalCopy = signalNode.signal;
@@ -924,7 +924,7 @@ namespace ecs {
         } else if (std::holds_alternative<FocusCondition>(*this)) {
             auto &focusNode = std::get<FocusCondition>(*this);
             if (childNodes.empty()) return nullptr;
-            SignalNodePtr setNode = childNodes[0]->setScope(scope);
+            SignalNodePtr setNode = childNodes[0]->SetScope(scope);
             if (setNode) {
                 SignalManager &manager = GetSignalManager();
                 return manager.GetNode(Node(FocusCondition(focusNode.ifFocused),
@@ -935,7 +935,7 @@ namespace ecs {
         } else if (std::holds_alternative<OneInputOperation>(*this)) {
             auto &oneNode = std::get<OneInputOperation>(*this);
             if (childNodes.empty()) return nullptr;
-            SignalNodePtr setNode = childNodes[0]->setScope(scope);
+            SignalNodePtr setNode = childNodes[0]->SetScope(scope);
             if (setNode) {
                 SignalManager &manager = GetSignalManager();
                 return manager.GetNode(Node(OneInputOperation(oneNode.prefixStr, oneNode.suffixStr),
@@ -945,8 +945,8 @@ namespace ecs {
         } else if (std::holds_alternative<TwoInputOperation>(*this)) {
             auto &twoNode = std::get<TwoInputOperation>(*this);
             if (childNodes.size() < 2) return nullptr;
-            SignalNodePtr setNodeA = childNodes[0]->setScope(scope);
-            SignalNodePtr setNodeB = childNodes[1]->setScope(scope);
+            SignalNodePtr setNodeA = childNodes[0]->SetScope(scope);
+            SignalNodePtr setNodeB = childNodes[1]->SetScope(scope);
             if (setNodeA || setNodeB) {
                 if (!setNodeA) setNodeA = childNodes[0];
                 if (!setNodeB) setNodeB = childNodes[1];
@@ -957,9 +957,9 @@ namespace ecs {
             }
         } else if (std::holds_alternative<DeciderOperation>(*this)) {
             if (childNodes.size() < 3) return nullptr;
-            SignalNodePtr setNodeIf = childNodes[0]->setScope(scope);
-            SignalNodePtr setNodeTrue = childNodes[1]->setScope(scope);
-            SignalNodePtr setNodeFalse = childNodes[2]->setScope(scope);
+            SignalNodePtr setNodeIf = childNodes[0]->SetScope(scope);
+            SignalNodePtr setNodeTrue = childNodes[1]->SetScope(scope);
+            SignalNodePtr setNodeFalse = childNodes[2]->SetScope(scope);
             if (setNodeIf || setNodeTrue || setNodeFalse) {
                 if (!setNodeIf) setNodeIf = childNodes[0];
                 if (!setNodeTrue) setNodeTrue = childNodes[1];
@@ -973,14 +973,14 @@ namespace ecs {
         return nullptr;
     }
 
-    size_t Node::hash() const {
+    size_t Node::Hash() const {
         size_t hash = std::visit(
             [&](auto &node) {
-                return node.hash();
+                return node.Hash();
             },
             (NodeVariant &)*this);
         for (const auto &child : childNodes) {
-            sp::hash_combine(hash, child->hash());
+            sp::hash_combine(hash, child->Hash());
         }
         return hash;
     }
@@ -1004,7 +1004,7 @@ namespace ecs {
 
     void SignalExpression::SetScope(const EntityScope &scope) {
         this->scope = scope;
-        SignalNodePtr newRoot = rootNode->setScope(scope);
+        SignalNodePtr newRoot = rootNode->SetScope(scope);
         if (newRoot) {
             newRoot->Compile();
             // Logf("Setting scope of expression (%s): %s -> %s", scope.String(), rootNode->text, newRoot->text);

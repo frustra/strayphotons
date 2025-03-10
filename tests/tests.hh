@@ -54,11 +54,37 @@ namespace testing {
         }
     }
 
+    template<typename>
+    struct is_optional : std::false_type {};
+
+    template<typename T>
+    struct is_optional<std::optional<T>> : std::true_type {};
+
     template<typename Ta, typename Tb>
     inline void AssertEqual(Ta a, Tb b, const std::string &message = "not equal") {
         if (!(a == b)) {
             std::stringstream ss;
-            ss << "Assertion failed: " << message << " \"" << a << "\" != \"" << b << "\"" << std::endl;
+            ss << "Assertion failed: " << message << " \"";
+            if constexpr (is_optional<Ta>()) {
+                if (a.has_value()) {
+                    ss << *a;
+                } else {
+                    ss << "none";
+                }
+            } else {
+                ss << a;
+            }
+            ss << "\" != \"";
+            if constexpr (is_optional<Tb>()) {
+                if (b.has_value()) {
+                    ss << *b;
+                } else {
+                    ss << "none";
+                }
+            } else {
+                ss << b;
+            }
+            ss << "\"" << std::endl;
             std::cerr << ss.str() << std::flush;
             throw std::runtime_error(message);
         }

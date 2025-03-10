@@ -140,50 +140,105 @@ namespace SignalCachingTests {
                 }
             }
             auto &signals = lock.Get<ecs::Signals>();
-            auto checkAndPrintSignals = [&] {
-                std::cout << "Signal nodes:" << std::endl;
+            auto checkSignals = [&](const std::map<size_t, std::optional<double>> &lastValues) {
                 for (size_t index = 0; index < signals.signals.size(); index++) {
+                    auto it = lastValues.find(index);
+                    AssertTrue(it != lastValues.end(), "Signal index not in expected list: " + std::to_string(index));
                     auto &signal = signals.signals[index];
                     AssertTrue((bool)signal.ref, "Expected all signals to have refs");
                     if (!std::isinf(signal.value)) {
                         AssertTrue(!signal.lastValueDirty, "Expected value signal not to be dirty");
                         AssertEqual(signal.value, signal.lastValue, "Expected value signal to have correct lastValue");
-                        // std::cout << "index " << index << " value = " << signal.value << std::endl;
+                        AssertEqual(signal.value,
+                            it->second,
+                            "Unexpected signal value for signal index: " + std::to_string(index));
                     } else {
-                        std::string info;
                         if (signal.lastValueDirty) {
-                            info += " dirty";
+                            AssertEqual(it->second,
+                                std::optional<size_t>(),
+                                "Unexpected signal value for signal index: " + std::to_string(index));
                         } else {
-                            info += " lastValue = " + std::to_string(signal.lastValue);
+                            AssertEqual(it->second,
+                                signal.lastValue,
+                                "Unexpected signal value for signal index: " + std::to_string(index));
                         }
-                        std::cout << "index " << index << info << " expr = " << signal.expr.expr << std::endl;
                     }
                 }
             };
-            auto printSubscribers = [&](size_t index) {
-                for (auto &sub : signals.signals[index].subscribers) {
+            auto assertSubscribers = [&](size_t index, std::initializer_list<size_t> subscriberIndexes) {
+                auto &signal = signals.signals[index];
+                AssertEqual(signal.subscribers.size(), subscriberIndexes.size(), "Wrong number of subscribers");
+                size_t i = 0;
+                for (auto &sub : signal.subscribers) {
                     auto subscriber = sub.lock();
-                    if (subscriber) {
-                        std::cout << "Subscriber: " << subscriber->index << std::endl;
-                    } else {
-                        std::cout << "Null subscriber" << std::endl;
+                    if (!subscriber) continue;
+                    AssertEqual(subscriber->index, *(subscriberIndexes.begin() + i), "Wrong subscriber index");
+                    AssertTrue(subscriber->index < signals.signals.size(), "Wrong subscriber index");
+                    bool found = false;
+                    for (auto &dep : signals.signals[subscriber->index].dependencies) {
+                        auto dependency = dep.lock();
+                        if (!dependency) continue;
+                        if (dependency->index == index) {
+                            found = true;
+                            break;
+                        }
                     }
+                    AssertTrue(found, "Subscriber does not have dependency set");
+                    i++;
                 }
             };
-            printSubscribers(4);
-            checkAndPrintSignals();
+            assertSubscribers(0, {5, 6});
+            assertSubscribers(1, {4, 6});
+            assertSubscribers(2, {});
+            assertSubscribers(3, {});
+            assertSubscribers(4, {5, 6});
+            assertSubscribers(5, {});
+            assertSubscribers(6, {});
+            checkSignals({
+                {0, 1},
+                {1, 2},
+                {2, 0},
+                {3, 1},
+                {4, {}},
+                {5, {}},
+                {6, {}},
+            });
             AssertEqual(ecs::SignalRef(hand, TEST_SIGNAL_ACTION1).GetSignal(lock),
                 0.0,
                 "Expected correct expression evaluation");
-            checkAndPrintSignals();
+            checkSignals({
+                {0, 1},
+                {1, 2},
+                {2, 0},
+                {3, 1},
+                {4, 0},
+                {5, {}},
+                {6, {}},
+            });
             AssertEqual(ecs::SignalRef(hand, TEST_SIGNAL_ACTION2).GetSignal(lock),
                 1.0,
                 "Expected correct expression evaluation");
-            checkAndPrintSignals();
+            checkSignals({
+                {0, 1},
+                {1, 2},
+                {2, 0},
+                {3, 1},
+                {4, 0},
+                {5, 1},
+                {6, {}},
+            });
             AssertEqual(ecs::SignalRef(player, TEST_SIGNAL_ACTION3).GetSignal(lock),
                 1.0,
                 "Expected correct expression evaluation");
-            checkAndPrintSignals();
+            checkSignals({
+                {0, 1},
+                {1, 2},
+                {2, 0},
+                {3, 1},
+                {4, 0},
+                {5, 1},
+                {6, 1},
+            });
         }
     }
 

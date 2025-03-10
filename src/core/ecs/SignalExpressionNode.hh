@@ -37,7 +37,7 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const ConstantNode &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<double>()(value);
             }
         };
@@ -46,7 +46,7 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const IdentifierNode &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<std::string>()(field.name);
             }
         };
@@ -55,7 +55,7 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const SignalNode &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<std::string>()(signal.String());
             }
         };
@@ -67,7 +67,7 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const ComponentNode &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<std::string>()(entity.Name().String() + field.name + path);
             }
         };
@@ -76,7 +76,7 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const FocusCondition &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<std::string>()(std::string(magic_enum::enum_name(ifFocused)));
             }
         };
@@ -85,7 +85,7 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const OneInputOperation &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<std::string>()(prefixStr + suffixStr);
             }
         };
@@ -94,14 +94,14 @@ namespace ecs {
 
             CompiledFunc Compile() const;
             bool operator==(const TwoInputOperation &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return robin_hood::hash<std::string>()(prefixStr + middleStr + suffixStr);
             }
         };
         struct DeciderOperation {
             CompiledFunc Compile() const;
             bool operator==(const DeciderOperation &) const = default;
-            size_t hash() const {
+            size_t Hash() const {
                 return 0;
             }
         };
@@ -131,15 +131,15 @@ namespace ecs {
                 }
             }
 
-            static const SignalNodePtr &updateDependencies(const SignalNodePtr &node);
-            void propagateUncacheable(bool newUncacheable);
+            static const SignalNodePtr &UpdateDependencies(const SignalNodePtr &node);
+            void PropagateUncacheable(bool newUncacheable);
 
             CompiledFunc Compile();
             void SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const;
             double Evaluate(const Context &ctx, size_t depth) const;
-            bool canEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
-            SignalNodePtr setScope(const EntityScope &scope) const;
-            size_t hash() const;
+            bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
+            SignalNodePtr SetScope(const EntityScope &scope) const;
+            size_t Hash() const;
 
             bool operator==(const Node &other) const {
                 return (const NodeVariant &)*this == (const NodeVariant &)other && childNodes == other.childNodes;
@@ -158,11 +158,11 @@ namespace std {
 template<>
 struct robin_hood::hash<ecs::expression::Node> {
     std::size_t operator()(const ecs::expression::Node &node) const {
-        return node.hash();
+        return node.Hash();
     }
 
     std::size_t operator()(const std::shared_ptr<ecs::expression::Node> &node) const {
         if (!node) return robin_hood::hash<size_t>()(0);
-        return node->hash();
+        return node->Hash();
     }
 };

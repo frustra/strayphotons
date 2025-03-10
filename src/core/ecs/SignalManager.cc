@@ -79,7 +79,7 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::GetNode(const Node &node) {
-        return Node::updateDependencies(signalNodes.LoadOrInsert(node));
+        return Node::UpdateDependencies(signalNodes.LoadOrInsert(node));
     }
 
     SignalNodePtr SignalManager::GetConstantNode(double value) {
