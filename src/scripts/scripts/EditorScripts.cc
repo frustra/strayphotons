@@ -10,6 +10,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalManager.hh"
+#include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
@@ -26,6 +27,7 @@ namespace sp::scripts {
 
     struct TraySpawner {
         std::string templateSource;
+        bool resetScale = false;
 
         void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
             Event event;
@@ -41,8 +43,14 @@ namespace sp::scripts {
                 }
 
                 if (!ent.Has<Name, TransformTree>(lock)) continue;
-                auto &sourceName = ent.Get<Name>(lock);
-                auto transform = ent.Get<TransformTree>(lock).GetGlobalTransform(lock);
+                auto &sourceName = ent.Get<const Name>(lock);
+                auto transform = ent.Get<const TransformTree>(lock).GetGlobalTransform(lock);
+                if (resetScale) {
+                    const Transform &sourceTransform = event.source.Get<const TransformSnapshot>(lock).globalPose;
+                    glm::vec3 grabDir = glm::normalize(transform.GetPosition() - sourceTransform.GetPosition());
+                    transform.Translate(grabDir * (1.0f - transform.GetScale()));
+                    transform.SetScale(glm::vec3(1));
+                }
 
                 std::optional<SignalOutput> signalOutputs;
                 std::optional<SignalBindings> signalBindings;
@@ -63,6 +71,12 @@ namespace sp::scripts {
                 if (lock.Has<ActiveScene>()) {
                     auto &active = lock.Get<ActiveScene>();
                     scene = active.scene;
+                    if (scene) Logf("TraySpawner using editor scene: %s", scene.data->path);
+                }
+                if (!scene) {
+                    auto &spawnInfo = entities::Spawn.Get(lock).Get<ecs::SceneInfo>(lock);
+                    scene = spawnInfo.scene;
+                    if (scene) Logf("TraySpawner using spawn scene: %s", scene.data->path);
                 }
                 if (!scene) {
                     Errorf("TraySpawner has no active scene");
@@ -114,7 +128,8 @@ namespace sp::scripts {
     StructMetadata MetadataTraySpawner(typeid(TraySpawner),
         "TraySpawner",
         "",
-        StructField::New("source", &TraySpawner::templateSource));
+        StructField::New("source", &TraySpawner::templateSource),
+        StructField::New("reset_scale", &TraySpawner::resetScale));
     InternalScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
 
     struct EditTool {

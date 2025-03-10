@@ -73,7 +73,7 @@ namespace ecs {
             src);
     }
 
-    std::string Event::toString() const {
+    std::string Event::ToString() const {
         std::stringstream ss;
         ss << this->name << ":" << this->data;
         return ss.str();

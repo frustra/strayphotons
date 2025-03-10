@@ -55,7 +55,7 @@ namespace ecs {
         template<typename T>
         Event(const std::string &name, const Entity &source, const T &data) : name(name), source(source), data(data) {}
 
-        std::string toString() const;
+        std::string ToString() const;
     };
 
     struct AsyncEvent {

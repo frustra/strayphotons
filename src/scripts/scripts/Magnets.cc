@@ -106,7 +106,7 @@ namespace sp::scripts {
 
                         grabEntities.emplace(event.source);
                     } else {
-                        Errorf("Unsupported grab event type: %s", event.toString());
+                        Errorf("Unsupported grab event type: %s", event.ToString());
                     }
                 }
             }

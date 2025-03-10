@@ -1,7 +1,6 @@
 {
 	"components": {
-		"transform": {
-		},
+		"transform": {},
 		"physics": {
 			"shapes": {
 				"model": "box",
@@ -11,6 +10,8 @@
 			},
 			"mass": 2
 		},
+		"physics_joints": [],
+		"event_input": {},
 		"script": [
 			{
 				"prefab": "gltf",
@@ -22,14 +23,8 @@
 			{
 				"prefab": "template",
 				"parameters": { "source": "interactive" }
-			},
-			{
-				"onTick": "magnetic_plug"
 			}
-		],
-		"physics_joints": [],
-		"trigger_group": "Magnetic",
-		"event_input": {}
+		]
 	},
 	"entities": [
 		{

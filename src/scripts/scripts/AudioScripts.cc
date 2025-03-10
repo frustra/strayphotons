@@ -8,6 +8,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalStructAccess_common.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 
@@ -54,6 +55,44 @@ namespace sp::scripts {
     StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), "SoundOcclusion", "");
     InternalScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
 
+    struct VolumeControl {
+        SignalExpression volumeInput;
+
+        void Init(ScriptState &state) {
+            state.definition.events.clear();
+            if (volumeInput.expr.empty()) {
+                state.definition.events.emplace_back("/volume/set");
+                state.definition.filterOnEvent = true;
+            }
+        }
+
+        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+            if (!ent.Has<Audio>(lock)) return;
+            auto &sounds = ent.Get<Audio>(lock).sounds;
+            if (sounds.empty()) return;
+
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                if (event.name == "/volume/set") {
+                    bool success = ecs::detail::ConvertAccessor<const float>(event.data, [&](const float &value) {
+                        sounds[0].volume = glm::clamp(value, 0.0f, 1.0f);
+                    });
+                    if (!success) {
+                        Logf("Couldn't convert from %s to float", event.ToString());
+                    }
+                }
+            }
+            if (!volumeInput.expr.empty()) {
+                sounds[0].volume = glm::clamp(volumeInput.Evaluate(lock), 0.0, 1.0);
+            }
+        }
+    };
+    StructMetadata MetadataVolumeControl(typeid(VolumeControl),
+        "VolumeControl",
+        "",
+        StructField::New("volume", &VolumeControl::volumeInput));
+    InternalScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl);
+
     struct SpeedControlledSound {
         bool init = false;
         Transform lastTransform;
@@ -90,5 +129,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSpeedControlledSound(typeid(SpeedControlledSound), "SpeedControlledSound", "");
-    InternalScript<SpeedControlledSound> elevator("speed_controlled_sound", MetadataSpeedControlledSound);
+    InternalScript<SpeedControlledSound> speedControlledSound("speed_controlled_sound", MetadataSpeedControlledSound);
 } // namespace sp::scripts

@@ -33,7 +33,7 @@ namespace sp {
                             if (command && !command->empty()) {
                                 GetConsoleManager().QueueParseAndExecute(*command);
                             } else {
-                                Errorf("Console binding received invalid event: %s", event.toString());
+                                Errorf("Console binding received invalid event: %s", event.ToString());
                             }
                         }
                     });

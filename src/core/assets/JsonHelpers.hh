@@ -54,11 +54,6 @@ namespace sp::json {
         }
 
         template<typename T>
-        struct is_optional : std::false_type {};
-        template<typename T>
-        struct is_optional<std::optional<T>> : std::true_type {};
-
-        template<typename T>
         struct is_unordered_map : std::false_type {};
         template<typename K, typename V>
         struct is_unordered_map<robin_hood::unordered_flat_map<K, V>> : std::true_type {};
@@ -511,7 +506,7 @@ namespace sp::json {
             typeSchema["minItems"] = picojson::value((double)T::length());
             typeSchema["maxItems"] = picojson::value((double)T::length());
             SaveSchema<typename T::value_type>(typeSchema["items"], references, false);
-        } else if constexpr (detail::is_optional<T>()) {
+        } else if constexpr (is_optional<T>()) {
             typeSchema["default"] = picojson::value();
             SaveSchema<typename T::value_type>(dst, references, false);
         } else if constexpr (sp::is_vector<T>()) {

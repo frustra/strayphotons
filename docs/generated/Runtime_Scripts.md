@@ -539,6 +539,21 @@ The `sun` script has no configurable parameters
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **source** | string | "" | No description |
+| **reset_scale** | bool | false | No description |
+
+</div>
+
+
+<div class="component_definition">
+
+## `volume_control` Script
+
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **volume** | [SignalExpression](#SignalExpression-type) | "" | No description |
+
+**See Also:**
+[SignalExpression](#SignalExpression-type)
 
 </div>
 

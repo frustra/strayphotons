@@ -59,7 +59,7 @@ namespace sp::scripts {
                     } else if (std::holds_alternative<bool>(event.data)) {
                         sp::erase(pointEntities, event.source);
                     } else {
-                        Errorf("Unsupported point event type: %s", event.toString());
+                        Errorf("Unsupported point event type: %s", event.ToString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
                     if (std::holds_alternative<bool>(event.data)) {
@@ -130,7 +130,7 @@ namespace sp::scripts {
 
                         grabEntities.emplace_back(event.source, secondary);
                     } else {
-                        Errorf("Unsupported grab event type: %s", event.toString());
+                        Errorf("Unsupported grab event type: %s", event.ToString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
                     if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) continue;
@@ -257,12 +257,17 @@ namespace sp::scripts {
                         auto justDropped = grabEntity;
                         if (grabEntity) {
                             // Drop the currently held entity
-                            EventBindings::SendEvent(lock, grabEntity, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                            size_t count = EventBindings::SendEvent(lock,
+                                grabEntity,
+                                Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                             UpdateGrabTarget(lock, {});
+                            if (count == 0) {
+                                justDropped = Entity(); // Held entity no longer exists
+                            }
                         }
                         if (std::holds_alternative<bool>(event.data)) {
                             auto &grabEvent = std::get<bool>(event.data);
-                            if (grabEvent && raycastResult.target && raycastResult.target != justDropped) {
+                            if (grabEvent && raycastResult.target && !justDropped) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
                                         raycastResult.target,
@@ -281,7 +286,7 @@ namespace sp::scripts {
                                 }
                             }
                         } else {
-                            Errorf("Unsupported grab event type: %s", event.toString());
+                            Errorf("Unsupported grab event type: %s", event.ToString());
                         }
                     } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
                         if (std::holds_alternative<bool>(event.data)) {

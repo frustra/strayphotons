@@ -1,0 +1,20 @@
+{
+	"components": {
+		"transform": {},
+		"physics": {
+			"shapes": {
+				"model": "cardboard-box"
+			},
+			"mass": 1
+		},
+		"renderable": {
+			"model": "cardboard-box"
+		},
+		"physics_joints": [],
+		"event_input": {},
+		"script": {
+			"prefab": "template",
+			"parameters": { "source": "interactive" }
+		}
+	}
+}

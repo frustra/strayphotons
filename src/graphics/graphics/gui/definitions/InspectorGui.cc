@@ -61,7 +61,7 @@ namespace sp {
                 if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
 
                 if (!std::holds_alternative<ecs::Entity>(event.data)) {
-                    Errorf("Invalid editor event: %s", event.toString());
+                    Errorf("Invalid editor event: %s", event.ToString());
                 } else {
                     auto newTarget = std::get<ecs::Entity>(event.data);
                     targetEntity = newTarget;
