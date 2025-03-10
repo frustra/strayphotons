@@ -352,7 +352,7 @@ namespace sp {
         if (liveSceneId.Exists(live)) liveSceneId.Destroy(live);
         if (stagingSceneId.Exists(staging)) stagingSceneId.Destroy(staging);
 
-        live.Get<ecs::Signals>().FreeMissingEntitySignals(live);
+        live.Get<ecs::Signals>().UpdateMissingEntitySignals(live);
 
         active = false;
     }
@@ -374,7 +374,7 @@ namespace sp {
             liveConnection = ecs::EntityRef(name).Get(liveLock);
             if (liveConnection.Has<ecs::SceneConnection, ecs::TransformSnapshot>(liveLock)) {
                 auto &connection = liveConnection.Get<ecs::SceneConnection>(liveLock);
-                if (connection.scenes.count(data->name)) {
+                if (connection.scenes.count(data->path)) {
                     stagingConnection = e;
                     break;
                 }

@@ -11,9 +11,9 @@
 #include "common/Hashing.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalManager.hh"
 
 #include <optional>
-#include <picojson/picojson.h>
 
 namespace ecs {
     SignalKey::SignalKey(const EntityRef &entity, const std::string_view &signalName)
@@ -61,43 +61,88 @@ namespace std {
 } // namespace std
 
 namespace ecs {
+    Signals::Signal::Signal() : value(-std::numeric_limits<double>::infinity()), expr(), lastValueDirty(true) {}
+    Signals::Signal::Signal(const SignalRef &ref, double value) : value(value), expr(), ref(ref) {
+        if (!std::isinf(value)) {
+            this->lastValue = value;
+            this->lastValueDirty = false;
+        } else {
+            this->lastValue = 0.0;
+            this->lastValueDirty = true;
+        }
+    }
+    Signals::Signal::Signal(const SignalRef &ref, const SignalExpression &expr)
+        : value(-std::numeric_limits<double>::infinity()), expr(expr), ref(ref), lastValueDirty(true) {}
+    Signals::Signal::Signal(const SignalRef &ref, const SignalRef &subscriber)
+        : value(-std::numeric_limits<double>::infinity()), expr(), ref(ref), lastValueDirty(true) {
+        subscribers.emplace_back(subscriber.GetWeakRef());
+    }
+
+    double Signals::Signal::Value(const ecs::DynamicLock<ecs::ReadSignalsLock> &lock, size_t depth) const {
+        if (!std::isinf(value)) {
+            return value;
+        } else {
+            return expr.Evaluate(lock, depth);
+        }
+    }
+
     size_t Signals::NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
-            signals.emplace_back(value, ref);
+            signals.emplace_back(ref, value);
         } else {
             index = freeIndexes.top();
             freeIndexes.pop();
-            signals[index] = Signal(value, ref);
+            signals[index] = Signal(ref, value);
         }
-        MarkDirty(lock, index);
+        MarkStorageDirty(lock, index);
         Entity ent = ref.GetEntity().Get(lock);
         Assertf(ent.Exists(lock), "Setting signal value on missing entity: %s", ref.GetEntity().Name().String());
         return index;
     }
 
-    size_t Signals::NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, const SignalExpression &expr) {
+    size_t Signals::NewSignal(const Lock<Write<Signals>, ReadSignalsLock> &lock,
+        const SignalRef &ref,
+        const SignalExpression &expr) {
         size_t index;
         if (freeIndexes.empty()) {
             index = signals.size();
-            signals.emplace_back(expr, ref);
+            signals.emplace_back(ref, expr);
         } else {
             index = freeIndexes.top();
             freeIndexes.pop();
-            signals[index] = Signal(expr, ref);
+            signals[index] = Signal(ref, expr);
         }
-        MarkDirty(lock, index);
+        MarkStorageDirty(lock, index);
         Entity ent = ref.GetEntity().Get(lock);
         Assertf(ent.Exists(lock), "Setting signal expression on missing entity: %s", ref.GetEntity().Name().String());
+        return index;
+    }
+
+    size_t Signals::NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, const SignalRef &subscriber) {
+        size_t index;
+        if (freeIndexes.empty()) {
+            index = signals.size();
+            signals.emplace_back(ref, subscriber);
+        } else {
+            index = freeIndexes.top();
+            freeIndexes.pop();
+            signals[index] = Signal(ref, subscriber);
+        }
+        MarkStorageDirty(lock, index);
         return index;
     }
 
     void Signals::FreeSignal(const Lock<Write<Signals>> &lock, size_t index) {
         if (index >= signals.size()) return;
         Signal &signal = signals[index];
-        MarkDirty(lock, index);
-        if (signal.ref) signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
+        DebugAssertf(signal.subscribers.empty(), "Signals::FreeSignal index has subscribers");
+        MarkStorageDirty(lock, index);
+        if (signal.ref) {
+            if (!std::isinf(signal.lastValue)) signal.ref.MarkDirty(lock);
+            signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
+        }
         signal = Signal();
         freeIndexes.push(index);
     }
@@ -106,29 +151,52 @@ namespace ecs {
         ZoneScoped;
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
+            DebugAssertf(signal.subscribers.empty(), "Signals::FreeSignal index has subscribers");
             if (signal.ref && signal.ref.GetEntity() == entity) {
-                MarkDirty(lock, i);
-                signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
-                signal = Signal();
-                freeIndexes.push(i);
+                MarkStorageDirty(lock, i);
+                signal.value = -std::numeric_limits<double>::infinity();
+                signal.expr = {};
+                if (signal.subscribers.empty()) {
+                    DebugAssertf(i == signal.ref.GetIndex(), "FreeEntitySignals index missmatch");
+                    signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
+                    signal = Signal();
+                    freeIndexes.push(i);
+                } else {
+                    if (signal.lastValue != 0.0 || signal.lastValueDirty) {
+                        signal.lastValue = 0.0;
+                        signal.ref.MarkDirty(lock);
+                        signal.lastValueDirty = false;
+                    }
+                }
             }
         }
     }
 
-    void Signals::FreeMissingEntitySignals(const Lock<Write<Signals>> &lock) {
+    void Signals::UpdateMissingEntitySignals(const Lock<Write<Signals>> &lock) {
         ZoneScoped;
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
             if (signal.ref && !signal.ref.GetEntity().Get(lock).Exists(lock)) {
-                MarkDirty(lock, i);
-                signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
-                signal = Signal();
-                freeIndexes.push(i);
+                MarkStorageDirty(lock, i);
+                signal.value = -std::numeric_limits<double>::infinity();
+                signal.expr = {};
+                if (signal.subscribers.empty()) {
+                    DebugAssertf(i == signal.ref.GetIndex(), "UpdateMissingEntitySignals index missmatch");
+                    signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
+                    signal = Signal();
+                    freeIndexes.push(i);
+                } else {
+                    if (signal.lastValue != 0.0 || signal.lastValueDirty) {
+                        signal.lastValue = 0.0;
+                        signal.ref.MarkDirty(lock);
+                        signal.lastValueDirty = false;
+                    }
+                }
             }
         }
     }
 
-    void Signals::MarkDirty(const Lock<Write<Signals>> lock, size_t index) {
+    void Signals::MarkStorageDirty(const Lock<Write<Signals>> &lock, size_t index) {
         ZoneScoped;
         auto &signals = lock.Get<Signals>();
         auto &prevSignals = lock.GetPrevious<Signals>();
@@ -136,7 +204,7 @@ namespace ecs {
             signals.dirtyIndices.clear();
             signals.changeCount++;
         }
-        Assertf(index < signals.signals.size(), "Signals::MarkDirty index out of range");
+        Assertf(index < signals.signals.size(), "Signals::MarkStorageDirty index out of range");
         signals.dirtyIndices.emplace(index);
     }
 

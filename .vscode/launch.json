@@ -242,6 +242,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis"
         },
         {
             "name": "Unit Tests (gdb)",

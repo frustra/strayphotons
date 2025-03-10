@@ -54,7 +54,136 @@ namespace ecs {
         }
     }
 
+    void SignalRef::AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const {
+        ZoneScoped;
+        // ZoneStr(String());
+        Assertf(IsLive(lock), "SiganlRef::AddSubscriber() called with staging lock");
+        Assertf(ptr, "SignalRef::AddSubscriber() called on null SignalRef");
+        Assertf(subscriber, "SignalRef::AddSubscriber() called with null subscriber");
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex();
+        const size_t &subIndex = subscriber.GetIndex();
+        Assertf(subIndex < signals.signals.size(),
+            "SignalRef::AddSubscriber() called with invalid subscriber index: %u",
+            subIndex);
+        if (index < signals.signals.size()) {
+            auto &signal = signals.signals[index];
+            sp::erase_if(signal.subscribers, [](auto &weakPtr) {
+                return weakPtr.expired();
+            });
+            if (!sp::contains(signal.subscribers, subscriber.ptr)) {
+                signal.subscribers.emplace_back(subscriber.ptr);
+                signals.MarkStorageDirty(lock, index);
+                signals.signals[subIndex].dependencies.emplace_back(ptr);
+                signals.MarkStorageDirty(lock, subIndex);
+                subscriber.MarkDirty(lock);
+            }
+        } else {
+            index = signals.NewSignal(lock, *this, subscriber);
+            signals.signals[subIndex].dependencies.emplace_back(ptr);
+            signals.MarkStorageDirty(lock, subIndex);
+            subscriber.MarkDirty(lock);
+        }
+        SignalNodePtr subscriberNode = GetSignalManager().FindSignalNode(subscriber);
+        if (subscriberNode) subscriberNode->PropagateUncacheable(!IsCacheable(lock));
+    }
+
+    void SignalRef::UnsubscribeDependencies(const Lock<Write<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
+        Assertf(IsLive(lock), "SiganlRef::UnsubscribeDependencies() called with staging lock");
+        Assertf(ptr, "SignalRef::UnsubscribeDependencies() called on null SignalRef");
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex();
+        if (index >= signals.signals.size()) return;
+
+        auto &signal = signals.signals[index];
+        for (const auto &dep : signal.dependencies) {
+            auto dependency = dep.lock();
+            if (!dependency) continue;
+            const size_t &depIndex = dependency->index;
+            if (depIndex >= signals.signals.size()) continue;
+            auto &depSignal = signals.signals[depIndex];
+            sp::erase(depSignal.subscribers, ptr);
+            signals.MarkStorageDirty(lock, depIndex);
+        }
+        if (!signal.dependencies.empty()) signals.MarkStorageDirty(lock, index);
+        signal.dependencies.clear();
+        SignalNodePtr signalNode = GetSignalManager().FindSignalNode(*this);
+        if (signalNode) signalNode->PropagateUncacheable(!IsCacheable(lock));
+    }
+
+    void SignalRef::MarkDirty(const Lock<Write<Signals>> &lock, size_t depth) const {
+        ZoneScoped;
+        // ZoneStr(String());
+        Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
+        Assertf(ptr, "SignalRef::MarkDirty() called on null SignalRef");
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex();
+        if (index >= signals.signals.size()) return;
+        auto &signal = signals.signals[index];
+        if (!signal.lastValueDirty && depth <= MAX_SIGNAL_BINDING_DEPTH) {
+            signal.lastValueDirty = true;
+            signals.MarkStorageDirty(lock, index);
+            if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                // Subscribers past this depth won't be able to evaluate this reference
+                return;
+            }
+            for (const auto &sub : signal.subscribers) {
+                auto subscriber = sub.lock();
+                if (subscriber) {
+                    SignalRef(subscriber).MarkDirty(lock, depth + 1);
+                }
+            }
+        }
+    }
+
+    bool SignalRef::IsCacheable(const Lock<Read<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::IsCacheable() called with staging lock");
+        Assertf(ptr, "SignalRef::IsCacheable() called on null SignalRef");
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex();
+        if (index >= signals.signals.size()) return true;
+        auto &signal = signals.signals[index];
+        return !std::isinf(signal.value) || signal.expr.IsCacheable();
+    }
+
+    void SignalRef::UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock,
+        size_t depth) const {
+        ZoneScoped;
+        // ZoneStr(String());
+        Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
+        Assertf(ptr, "SignalRef::MarkDirty() called on null SignalRef");
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex();
+        if (index >= signals.signals.size()) return;
+        auto &signal = signals.signals[index];
+        bool isCacheable = !std::isinf(signal.value) || signal.expr.IsCacheable();
+        if (signal.lastValueDirty || !isCacheable) {
+            double oldValue = signal.lastValue;
+            signal.lastValue = signal.Value(lock);
+            if (isCacheable) {
+                signal.lastValueDirty = false;
+            } else if (signal.lastValue != oldValue) {
+                MarkDirty(lock, depth);
+            }
+            signals.MarkStorageDirty(lock, index);
+            if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
+                // Subscribers past this depth won't be able to evaluate this reference
+                return;
+            }
+            for (const auto &sub : signal.subscribers) {
+                auto subscriber = sub.lock();
+                if (subscriber) {
+                    SignalRef(subscriber).UpdateDirtySubscribers(lock, depth + 1);
+                }
+            }
+        }
+    }
+
     double &SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::SetValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
@@ -62,17 +191,29 @@ namespace ecs {
         size_t &index = GetIndex();
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
-            signal.value = value;
-            signals.MarkDirty(lock, index);
+            if (std::isinf(signal.value)) UnsubscribeDependencies(lock);
+            if (signal.value != value) {
+                signal.value = value;
+                signals.MarkStorageDirty(lock, index);
+            }
+            if (signal.lastValue != value) {
+                signal.lastValue = value;
+                MarkDirty(lock);
+            }
+            signal.lastValueDirty = false;
             return signal.value;
         } else {
             index = signals.NewSignal(lock, *this, value);
-            signals.MarkDirty(lock, index);
-            return signals.signals[index].value;
+            if (value != 0.0) MarkDirty(lock);
+            auto &signal = signals.signals[index];
+            signal.lastValueDirty = false;
+            return signal.value;
         }
     }
 
     void SignalRef::ClearValue(const Lock<Write<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::ClearValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::ClearValue() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -80,12 +221,24 @@ namespace ecs {
         if (index >= signals.signals.size()) return; // Noop
 
         auto &signal = signals.signals[index];
-        signal.value = -std::numeric_limits<double>::infinity();
-        signals.MarkDirty(lock, index);
-        if (signal.expr.IsNull()) signals.FreeSignal(lock, index);
+        if (!std::isinf(signal.value)) {
+            signal.value = -std::numeric_limits<double>::infinity();
+            signals.MarkStorageDirty(lock, index);
+        }
+        if (signal.expr) {
+            signal.expr.rootNode->SubscribeToChildren(lock, *this);
+            MarkDirty(lock);
+        } else if (signal.lastValue != 0.0 || signal.lastValueDirty) {
+            signal.lastValue = 0.0;
+            MarkDirty(lock);
+            signal.lastValueDirty = false;
+        }
+        if (!signal.expr && signal.subscribers.empty()) signals.FreeSignal(lock, index);
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::HasValue() called with staging lock. Use SignalOutput instead");
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
@@ -96,6 +249,8 @@ namespace ecs {
     }
 
     const double &SignalRef::GetValue(const Lock<Read<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetValue() called with staging lock. Use SignalOutput instead");
         static const double empty = 0.0;
         if (!ptr) return empty;
@@ -106,32 +261,45 @@ namespace ecs {
         return signals[index].value;
     }
 
-    SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>> &lock, const SignalExpression &expr) const {
+    SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>, ReadSignalsLock> &lock,
+        const SignalExpression &expr) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::SetBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
-        Assertf(!expr.IsNull(), "SignalRef::SetBinding() called with null SignalExpression");
+        Assertf(expr, "SignalRef::SetBinding() called with null SignalExpression");
         auto &signals = lock.Get<Signals>();
         size_t &index = GetIndex();
 
         if (index < signals.signals.size()) {
             auto &signal = signals.signals[index];
-            signal.expr = expr;
-            signals.MarkDirty(lock, index);
-            return signal.expr;
+            if (signal.expr != expr) {
+                signal.expr = expr;
+                UnsubscribeDependencies(lock);
+                signal.expr.rootNode->SubscribeToChildren(lock, *this);
+                signals.MarkStorageDirty(lock, index);
+                MarkDirty(lock);
+            }
+            // SubscribeToChildren may create new signal indexes, so we can't hold this reference earlier
+            return signals.signals[index].expr;
         } else {
             index = signals.NewSignal(lock, *this, expr);
-            signals.MarkDirty(lock, index);
+            signals.signals[index].expr.rootNode->SubscribeToChildren(lock, *this);
+            MarkDirty(lock);
+            // SubscribeToChildren may create new signal indexes, so we can't hold this reference earlier
             return signals.signals[index].expr;
         }
     }
 
-    SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>> &lock,
+    SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>, ReadSignalsLock> &lock,
         const std::string_view &expr,
         const EntityScope &scope) const {
         return SetBinding(lock, SignalExpression{expr, scope});
     }
 
     void SignalRef::ClearBinding(const Lock<Write<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::ClearBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::ClearBinding() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -139,12 +307,18 @@ namespace ecs {
         if (index >= signals.signals.size()) return; // Noop
 
         auto &signal = signals.signals[index];
-        signal.expr = SignalExpression();
-        signals.MarkDirty(lock, index);
-        if (std::isinf(signal.value)) signals.FreeSignal(lock, index);
+        if (signal.expr) {
+            signal.expr = SignalExpression();
+            UnsubscribeDependencies(lock);
+            signals.MarkStorageDirty(lock, index);
+            MarkDirty(lock);
+        }
+        if (std::isinf(signal.value) && signal.subscribers.empty()) signals.FreeSignal(lock, index);
     }
 
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::HasBinding() called with staging lock. Use SignalBindings instead");
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
@@ -155,6 +329,8 @@ namespace ecs {
     }
 
     const SignalExpression &SignalRef::GetBinding(const Lock<Read<Signals>> &lock) const {
+        ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetBinding() called with staging lock. Use SignalBindings instead");
         static const SignalExpression empty = {};
         if (!ptr) return empty;
@@ -167,15 +343,34 @@ namespace ecs {
 
     double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         ZoneScoped;
+        // ZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetSignal() called with staging lock. Use SignalBindings instead");
         if (!ptr) return 0.0;
-        auto &signals = lock.Get<Signals>().signals;
+        auto &readSignals = lock.Get<Signals>().signals;
         const size_t &index = GetIndex();
-        if (index >= signals.size()) return 0.0;
+        if (index >= readSignals.size()) return 0.0;
 
-        auto &signal = signals[index];
-        if (!std::isinf(signal.value)) return signal.value;
-        return signal.expr.Evaluate(lock, depth);
+        auto &readSignal = readSignals[index];
+        bool isCacheable = !std::isinf(readSignal.value) || readSignal.expr.IsCacheable();
+        if (isCacheable && !readSignal.lastValueDirty) {
+            DebugAssertf(std::isfinite(readSignal.lastValue),
+                "SignalRef::GetSignal() returned non-finite value: %f",
+                readSignal.lastValue);
+            return readSignal.lastValue;
+        }
+        auto writeLock = lock.TryLock<Write<Signals>>();
+        if (writeLock) {
+            auto &signals = writeLock->Get<Signals>();
+            auto &signal = signals.signals[index];
+            double newValue = signal.Value(lock, depth);
+            if (!isCacheable) return newValue;
+            signal.lastValue = newValue;
+            signals.MarkStorageDirty(*writeLock, index);
+            signal.lastValueDirty = false;
+            return newValue;
+        } else {
+            return readSignal.Value(lock, depth);
+        }
     }
 
     bool SignalRef::operator==(const Entity &other) const {

@@ -11,8 +11,6 @@
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
-#include <picojson/picojson.h>
-
 namespace ecs {
     FocusLock::FocusLock(FocusLayer layer) {
         if (layer != FocusLayer::Never && layer != FocusLayer::Always) {

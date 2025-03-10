@@ -171,5 +171,10 @@ namespace sp {
             std::shared_lock lock(mutex);
             return storage.contains(key);
         }
+
+        size_t Size() {
+            std::shared_lock lock(mutex);
+            return storage.size();
+        }
     };
 } // namespace sp

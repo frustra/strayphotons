@@ -20,6 +20,10 @@
 #include <string>
 
 namespace ecs {
+    namespace expression {
+        struct Node;
+    }
+
     static const size_t MAX_SIGNAL_BINDING_DEPTH = 10;
 
     struct Signals {
@@ -28,14 +32,17 @@ namespace ecs {
             SignalExpression expr;
             SignalRef ref;
 
-            Signal() : value(-std::numeric_limits<double>::infinity()), expr() {}
-            Signal(double value, const SignalRef &ref) : value(value), expr() {
-                if (!std::isinf(value)) this->ref = ref;
-            }
-            Signal(const SignalExpression &expr, const SignalRef &ref)
-                : value(-std::numeric_limits<double>::infinity()), expr(expr) {
-                if (expr) this->ref = ref;
-            }
+            double lastValue = 0.0;
+            bool lastValueDirty = true;
+            std::vector<WeakSignalRef> subscribers;
+            std::vector<WeakSignalRef> dependencies;
+
+            Signal();
+            Signal(const SignalRef &ref, double value);
+            Signal(const SignalRef &ref, const SignalExpression &expr);
+            Signal(const SignalRef &ref, const SignalRef &subscriber);
+
+            double Value(const ecs::DynamicLock<ecs::ReadSignalsLock> &lock, size_t depth = 0) const;
         };
 
         uint32_t changeCount = 0;
@@ -44,12 +51,15 @@ namespace ecs {
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
 
         size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value);
-        size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, const SignalExpression &expr);
+        size_t NewSignal(const Lock<Write<Signals>, ReadSignalsLock> &lock,
+            const SignalRef &ref,
+            const SignalExpression &expr);
+        size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, const SignalRef &subscriber);
         void FreeSignal(const Lock<Write<Signals>> &lock, size_t index);
         void FreeEntitySignals(const Lock<Write<Signals>> &lock, Entity entity);
-        void FreeMissingEntitySignals(const Lock<Write<Signals>> &lock);
+        void UpdateMissingEntitySignals(const Lock<Write<Signals>> &lock);
 
-        void MarkDirty(const Lock<Write<Signals>> lock, size_t index);
+        void MarkStorageDirty(const Lock<Write<Signals>> &lock, size_t index);
 
         Signals &operator=(const Signals &other);
     };

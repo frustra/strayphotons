@@ -684,6 +684,7 @@ namespace sp::vulkan {
             }
             SwapchainImage().inFlightFence = *Frame().inFlightFence;
         }
+
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
         PrepareResourcesForFrame();
 

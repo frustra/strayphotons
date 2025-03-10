@@ -1,8 +1,9 @@
 loadscene life3
 setsignal player:player/move_noclip 1
 steplogic
-set_position player:player 0 0.25 -1.5
+set_position player:player -1 3 -3
 rotate player:flathead -90 1 0 0
+sendevent life3:spawn_button/button/press
 stepphysics
 steplogic
 screenshot life0.png
@@ -16,4 +17,13 @@ screenshot life1.png
 stepgraphics
 steplogic
 screenshot life2.png
+stepgraphics
+steplogic
+screenshot life3.png
+stepgraphics
+steplogic
+screenshot life4.png
+stepgraphics
+steplogic
+screenshot life5.png
 stepgraphics

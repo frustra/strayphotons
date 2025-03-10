@@ -291,19 +291,22 @@ namespace ecs {
                 if (!input) return false; // Event filtered asynchronously
                 if (binding.actions.filterExpr->EvaluateEvent(lock, *input) < 0.5) return false;
             } else {
-                asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
-                    [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
-                        if (!input) {
-                            return std::make_shared<EventData>(); // Event filtered asynchronously
-                        }
+                Abortf("Event filter expression \"%s\" references unacquired lock");
+                // Events can be filtered asyncronously, but this introduces a race condition where filtering can
+                // execute before the emitting transaction commits.
+                //     asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
+                //         [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
+                //             if (!input) {
+                //                 return std::shared_ptr<EventData>(); // Event filtered asynchronously
+                //             }
 
-                        auto lock = ecs::StartTransaction<ReadAll>();
-                        if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
-                            return input;
-                        } else {
-                            return std::shared_ptr<EventData>();
-                        }
-                    });
+                //             auto lock = ecs::StartTransaction<ReadAll>();
+                //             if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
+                //                 return input;
+                //             } else {
+                //                 return std::shared_ptr<EventData>();
+                //             }
+                //         });
             }
         }
 
@@ -321,18 +324,21 @@ namespace ecs {
                 modifyEvent(lock, output, *input, binding);
                 asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
             } else {
-                asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
-                    asyncOutput,
-                    [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
-                        if (!input || !output) {
-                            return std::make_shared<EventData>(); // Event filtered asynchronously
-                        }
+                Abortf("Event modify expression \"%s\" references unacquired lock");
+                // Event data can be modified asyncronously, but this introduces a race condition where modifications
+                // can execute before the emitting transaction commits.
+                // asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
+                //     asyncOutput,
+                //     [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
+                //         if (!input || !output) {
+                //             return std::make_shared<EventData>(); // Event filtered asynchronously
+                //         }
 
-                        auto lock = ecs::StartTransaction<ReadAll>();
-                        EventData modified = *output;
-                        modifyEvent(lock, modified, *input, binding);
-                        return std::make_shared<EventData>(modified);
-                    });
+                //         auto lock = ecs::StartTransaction<ReadAll>();
+                //         EventData modified = *output;
+                //         modifyEvent(lock, modified, *input, binding);
+                //         return std::make_shared<EventData>(modified);
+                //     });
             }
         }
         return true;

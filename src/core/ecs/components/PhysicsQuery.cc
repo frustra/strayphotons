@@ -11,8 +11,6 @@
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
-#include <picojson/picojson.h>
-
 namespace ecs {
     template<>
     void Component<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget) {

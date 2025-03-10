@@ -11,12 +11,28 @@
 #include "ecs/SignalRef.hh"
 
 #include <mutex>
+#include <picojson/picojson.h>
 #include <shared_mutex>
 
 namespace ecs {
+    using namespace expression;
+
     SignalManager &GetSignalManager() {
         static SignalManager signalManager;
         return signalManager;
+    }
+
+    SignalManager::SignalManager() {
+        funcs.Register<std::string>("assert_signal",
+            "Asserts a signal expression evaluates to true (i.e. >= 0.5) (assert_signal <expr>)",
+            [](std::string input) {
+                auto lock = StartTransaction<ReadAll>();
+                SignalExpression expr(input);
+                double result = expr.Evaluate(lock);
+                if (result < 0.5) {
+                    Abortf("Assertion failed (%s): %f != true", expr.expr, result);
+                }
+            });
     }
 
     SignalRef SignalManager::GetRef(const SignalKey &signal) {
@@ -62,7 +78,43 @@ namespace ecs {
         return results;
     }
 
+    SignalNodePtr SignalManager::GetNode(const Node &node) {
+        return Node::UpdateDependencies(signalNodes.LoadOrInsert(node));
+    }
+
+    SignalNodePtr SignalManager::GetConstantNode(double value) {
+        return GetNode(Node{ConstantNode{value}, picojson::value(value).serialize()});
+    }
+
+    SignalNodePtr SignalManager::GetSignalNode(SignalRef ref) {
+        return GetNode(Node{SignalNode{ref}, ref.String()});
+    }
+
+    SignalNodePtr SignalManager::FindSignalNode(SignalRef ref) {
+        SignalNodePtr result;
+        signalNodes.ForEach([&](const Node &node, SignalNodePtr ptr) {
+            if (auto *signalNode = std::get_if<SignalNode>(&node)) {
+                if (signalNode->signal == ref) {
+                    result = ptr;
+                }
+            }
+        });
+        return result;
+    }
+
+    std::vector<SignalNodePtr> SignalManager::GetNodes(const std::string &search) {
+        std::vector<SignalNodePtr> results;
+        signalNodes.ForEach([&](const Node &node, SignalNodePtr ptr) {
+            if (search.empty() || node.text.find(search) != std::string::npos) {
+                results.emplace_back(ptr);
+            }
+        });
+        return results;
+    }
+
     void SignalManager::Tick(chrono_clock::duration maxTickInterval) {
+        signalNodes.Tick(maxTickInterval);
+
         std::vector<std::shared_ptr<SignalRef::Ref>> refsToFree;
         signalRefs.Tick(maxTickInterval, [&](std::shared_ptr<SignalRef::Ref> &refPtr) {
             if (!refPtr) return;
@@ -77,5 +129,13 @@ namespace ecs {
                 refPtr->index = std::numeric_limits<size_t>::max();
             }
         }
+    }
+
+    size_t SignalManager::DropAllUnusedNodes() {
+        return signalNodes.DropAll();
+    }
+
+    size_t SignalManager::GetNodeCount() {
+        return signalNodes.Size();
     }
 } // namespace ecs

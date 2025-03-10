@@ -342,13 +342,15 @@ namespace sp::scripts {
 
         void Init(ScriptState &state) {
             refs.reserve(mapping.size());
-            for (auto &[outputSignal, signalExpr] : mapping) {
-                refs.emplace_back(SignalRef(EntityRef(state.scope), outputSignal), &signalExpr);
-            }
         }
 
         template<typename LockType>
         void updateSignalFromSignal(const LockType &lock, Entity ent) {
+            if (refs.size() < mapping.size()) {
+                for (auto &[outputSignal, signalExpr] : mapping) {
+                    refs.emplace_back(SignalRef(ent, outputSignal), &signalExpr);
+                }
+            }
             DynamicLock<ReadSignalsLock> readLock = lock.ReadOnlySubset();
             for (auto &[outputSignal, signalExpr] : refs) {
                 outputSignal.SetValue(lock, signalExpr->Evaluate(readLock));

@@ -2,13 +2,25 @@
 	"components": {
 		"transform": {},
 		"signal_output": {
-			"alive": 0
+			"alive": 0,
+			"age": 100000
 		},
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
-			"next_alive": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)"
+			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))",
+			"decay": "min(1, 1 / (scoperoot/age * scoperoot/age + 1))"
 		},
-		"event_bindings": {},
+		"event_input": {},
+		"event_bindings": {
+			"/physics/collision/force_found": {
+				"outputs": ["scoperoot/signal/set/force_alive"],
+				"set_value": 1
+			},
+			"/physics/collision/force_lost": {
+				"outputs": ["scoperoot/signal/set/force_alive"],
+				"set_value": 0
+			}
+		},
 		"physics": {
 			"shapes": {
 				"box": [0.03, 0.03, 0.03],
@@ -28,7 +40,14 @@
 			{
 				"onTick": "signal_from_signal",
 				"parameters": {
-					"alive": "scoperoot/next_alive"
+					"alive": "scoperoot/next_alive",
+					"age": "scoperoot/alive >= scoperoot/next_alive ? scoperoot/age + 1 : 0"
+				}
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": "force_alive"
 				}
 			}
 		]
@@ -42,14 +61,17 @@
 				"scale": 0.03
 			},
 			"renderable": {
-				"model": "box"
+				"model": "box",
+				"color_override": [1, 1, 1, 1]
 			},
 			"event_input": {},
 			"script": [
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"renderable.emissive": "scoperoot/alive"
+						"renderable.emissive": "max(0.001, scoperoot/decay) + scoperoot/alive",
+						"renderable.color_override.rg": "max(0.0001, scoperoot/decay) * scoperoot/alive + scoperoot/alive",
+						"renderable.color_override.b": "1 - max(0.0001, scoperoot/decay)"
 					}
 				}
 			]

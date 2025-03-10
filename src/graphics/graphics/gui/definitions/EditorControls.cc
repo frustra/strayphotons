@@ -153,28 +153,30 @@ namespace sp {
                                 followFocusPos = signalNameCursorPos;
                             }
 
-                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, newRef](auto &lock) {
-                                if (ref.HasValue(lock)) {
-                                    newRef.SetValue(lock, ref.GetValue(lock));
-                                    ref.ClearValue(lock);
-                                }
-                                if (ref.HasBinding(lock)) {
-                                    newRef.SetBinding(lock, ref.GetBinding(lock));
-                                    ref.ClearBinding(lock);
-                                }
-                            });
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                                [ref = ref, newRef](auto &lock) {
+                                    if (ref.HasValue(lock)) {
+                                        newRef.SetValue(lock, ref.GetValue(lock));
+                                        ref.ClearValue(lock);
+                                    }
+                                    if (ref.HasBinding(lock)) {
+                                        newRef.SetBinding(lock, ref.GetBinding(lock));
+                                        ref.ClearBinding(lock);
+                                    }
+                                });
                         }
                     }
                     ImGui::TableSetColumnIndex(2);
                     if (ImGui::Checkbox("", &hasValue)) {
-                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([hasValue, ref = ref, scope](auto &lock) {
-                            if (hasValue) {
-                                ref.SetValue(lock, 0.0);
-                            } else {
-                                ref.ClearValue(lock);
-                                if (!ref.HasBinding(lock)) ref.SetBinding(lock, "0.0", scope);
-                            };
-                        });
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                            [hasValue, ref = ref, scope](auto &lock) {
+                                if (hasValue) {
+                                    ref.SetValue(lock, 0.0);
+                                } else {
+                                    ref.ClearValue(lock);
+                                    if (!ref.HasBinding(lock)) ref.SetBinding(lock, "0.0", scope);
+                                };
+                            });
                     }
                     ImGui::TableSetColumnIndex(3);
                     if (hasValue) {
@@ -190,9 +192,10 @@ namespace sp {
                         ecs::SignalExpression expression = ref.GetBinding(lock);
                         if (AddImGuiElement("##SignalBinding." + ref.GetSignalName(), expression)) {
                             if (expression) {
-                                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, expression](auto &lock) {
-                                    ref.SetBinding(lock, expression);
-                                });
+                                ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                                    [ref = ref, expression](auto &lock) {
+                                        ref.SetBinding(lock, expression);
+                                    });
                             }
                         }
                         ImGui::SameLine();
@@ -221,16 +224,17 @@ namespace sp {
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Binding")) {
-                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([targetEntity, scope](auto &lock) {
-                    for (size_t i = 0;; i++) {
-                        std::string signalName = i > 0 ? ("binding" + std::to_string(i)) : "binding";
-                        ecs::SignalRef newRef(targetEntity, signalName);
-                        if (!newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
-                            newRef.SetBinding(lock, "0 + 0", scope);
-                            break;
+                ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                    [targetEntity, scope](auto &lock) {
+                        for (size_t i = 0;; i++) {
+                            std::string signalName = i > 0 ? ("binding" + std::to_string(i)) : "binding";
+                            ecs::SignalRef newRef(targetEntity, signalName);
+                            if (!newRef.HasValue(lock) && !newRef.HasBinding(lock)) {
+                                newRef.SetBinding(lock, "0 + 0", scope);
+                                break;
+                            }
                         }
-                    }
-                });
+                    });
             }
         }
     }
