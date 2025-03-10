@@ -444,6 +444,8 @@ namespace ecs {
     }
 
     bool SignalExpression::Compile() {
+        ZoneScoped;
+        ZoneStr(expr);
         CompileContext ctx = {GetSignalManager(), *this, {}};
         // Tokenize the expression
         std::string_view exprView = this->expr;
@@ -998,7 +1000,6 @@ namespace ecs {
         // ZoneStr(expr);
         if (!rootNode) return 0.0;
         Context ctx(lock, *this, 0.0);
-        // TODO: Update input sources
         return rootNode->Evaluate(ctx, depth);
     }
 

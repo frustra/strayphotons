@@ -162,11 +162,11 @@ namespace ecs {
         if (signal.lastValueDirty || !isCacheable) {
             double oldValue = signal.lastValue;
             signal.lastValue = signal.Value(lock);
-            if (signal.lastValue != oldValue) {
-                if (!isCacheable) MarkDirty(lock, depth);
-                //     Logf("Signal changed: %s = %f -> %f", signal.ref.String(), oldValue, signal.lastValue);
+            if (isCacheable) {
+                signal.lastValueDirty = false;
+            } else if (signal.lastValue != oldValue) {
+                MarkDirty(lock, depth);
             }
-            if (isCacheable) signal.lastValueDirty = false;
             signals.MarkStorageDirty(lock, index);
             if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
                 // Subscribers past this depth won't be able to evaluate this reference
@@ -197,9 +197,6 @@ namespace ecs {
                 signals.MarkStorageDirty(lock, index);
             }
             if (signal.lastValue != value) {
-                // if (signal.ref.GetEntity().Name().scene != "input") {
-                //     Logf("Changing signal: %s = %f -> %f", signal.ref.String(), signal.lastValue, value);
-                // }
                 signal.lastValue = value;
                 MarkDirty(lock);
             }
@@ -207,14 +204,7 @@ namespace ecs {
             return signal.value;
         } else {
             index = signals.NewSignal(lock, *this, value);
-            if (value != 0.0) {
-                // auto &signal = signals.signals[index];
-                // if (signal.ref.GetEntity().Name().scene != "input" &&
-                //     !sp::starts_with(signal.ref.GetSignalName(), "tile.")) {
-                //     Logf("New signal: %s = %f", signal.ref.String(), value);
-                // }
-                MarkDirty(lock);
-            }
+            if (value != 0.0) MarkDirty(lock);
             auto &signal = signals.signals[index];
             signal.lastValueDirty = false;
             return signal.value;
@@ -374,9 +364,6 @@ namespace ecs {
             auto &signal = signals.signals[index];
             double newValue = signal.Value(lock, depth);
             if (!isCacheable) return newValue;
-            // if (newValue != signal.lastValue) {
-            //     Logf("Signal changed (write eval): %s = %f -> %f", signal.ref.String(), signal.lastValue, newValue);
-            // }
             signal.lastValue = newValue;
             signals.MarkStorageDirty(*writeLock, index);
             signal.lastValueDirty = false;
