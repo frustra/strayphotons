@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "console/CFunc.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {
@@ -23,7 +24,7 @@ namespace sp::vulkan::renderer {
 
     class Voxels {
     public:
-        Voxels(GPUScene &scene) : scene(scene) {}
+        Voxels(GPUScene &scene);
         void LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock);
 
         void AddVoxelization(RenderGraph &graph, const Lighting &lighting);
@@ -52,6 +53,9 @@ namespace sp::vulkan::renderer {
 
         std::array<vk::DescriptorSet, 2> layerDescriptorSets;
         uint32_t currentSetFrame = 0;
+
+        std::atomic_flag debugThisFrame;
+        CFuncCollection funcs;
 
         void updateDescriptorSet(rg::Resources &resources, DeviceContext &device);
 

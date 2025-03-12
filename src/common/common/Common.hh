@@ -30,6 +30,7 @@ typedef std::chrono::steady_clock chrono_clock;
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <optional>
 #include <variant>
 
 typedef unsigned char uint8;
