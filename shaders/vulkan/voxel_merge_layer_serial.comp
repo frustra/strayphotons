@@ -7,7 +7,7 @@
 
 #version 460
 
-layout(local_size_x = 1, local_size_y = 1) in;
+layout(local_size_x = 6, local_size_y = 1) in;
 
 #include "../lib/types_common.glsl"
 #include "../lib/voxel_shared.glsl"
@@ -16,23 +16,18 @@ layout(binding = 0) uniform VoxelStateUniform {
     VoxelState voxelInfo;
 };
 
-layout(binding = 1) uniform LayerDataUniform {
-    vec3 layerDirection;
-    uint layerIndex;
-};
-
-layout(binding = 2, rgba16f) uniform image3D voxelLayer;
-
-layout(std430, binding = 3) buffer VoxelFragmentListMetadata {
+layout(std430, binding = 1) buffer VoxelFragmentListMetadata {
     uint count;
     uint capacity;
     uint offset;
     VkDispatchIndirectCommand cmd;
 };
 
-layout(std430, binding = 4) buffer VoxelFragmentList {
+layout(std430, binding = 2) buffer VoxelFragmentList {
     VoxelFragment fragmentLists[]; // Already bound at +offset
 };
+
+layout(binding = 3, rgba16f) uniform image3D[6] voxelLayer;
 
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 
@@ -41,14 +36,13 @@ void main() {
         ivec3 position = ivec3(fragmentLists[index].position);
         vec3 overflowRadiance = vec3(fragmentLists[index].radiance);
         vec3 overflowNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
-        float alpha = max(0, dot(overflowNormal, -layerDirection));
-        overflowRadiance *= alpha;
 
-        vec4 radiance = imageLoad(voxelLayer, position);
+        float alpha = max(0, dot(overflowNormal, -AxisDirections[gl_LocalInvocationIndex]));
+        vec4 radiance = imageLoad(voxelLayer[gl_LocalInvocationIndex], position);
         radiance.a += alpha;
         if (radiance.a > 0) {
-            radiance.rgb = mix(radiance.rgb, overflowRadiance, alpha / radiance.a);
-            imageStore(voxelLayer, position, radiance);
+            radiance.rgb = mix(radiance.rgb, overflowRadiance * alpha, alpha / radiance.a);
+            imageStore(voxelLayer[gl_LocalInvocationIndex], position, radiance);
         }
     }
 }
