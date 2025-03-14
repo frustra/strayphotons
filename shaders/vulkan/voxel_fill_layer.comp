@@ -27,13 +27,7 @@ layout(std430, binding = 2) buffer VoxelFragmentList {
     VoxelFragment fragmentLists[];
 };
 
-layout(binding = 3, rgba16f) writeonly uniform image3D[6] radianceOut;
-// radianceOutPosX
-// radianceOutPosY
-// radianceOutPosZ
-// radianceOutNegX
-// radianceOutNegY
-// radianceOutNegZ
+layout(binding = 3, rgba16f) writeonly uniform image3D radianceOut[6];
 
 void main() {
     uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;

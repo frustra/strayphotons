@@ -708,85 +708,88 @@ namespace sp::vulkan::renderer {
             });
 
         for (size_t layer = 1; layer < voxelLayerCount; layer++) {
-            for (auto &voxelLayer : VoxelLayers[layer]) {
-                graph.AddPass(voxelLayer.preBlurName)
-                    .Build([&](rg::PassBuilder &builder) {
+            graph.AddPass("PreBlur")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.ReadUniform("VoxelState");
+                    builder.ReadPreviousFrame("VoxelState", Access::AnyShaderReadUniform);
+
+                    for (auto &voxelLayer : VoxelLayers[layer]) {
                         builder.Write(voxelLayer.preBlurName, Access::ComputeShaderWrite);
 
                         auto &prevLayer = VoxelLayers[layer - 1][voxelLayer.dirIndex].name;
                         builder.Read(prevLayer, Access::ComputeShaderSampleImage);
 
-                        builder.ReadUniform("VoxelState");
-                        builder.ReadPreviousFrame("VoxelState", Access::AnyShaderReadUniform);
                         auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][voxelLayer.dirIndex].preBlurName;
                         builder.ReadPreviousFrame(lastFrameOutput, Access::FragmentShaderSampleImage);
-                    })
-                    .Execute([this, layer, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
-                        cmd.SetComputeShader("voxel_mipmap_layer.comp");
-                        cmd.SetShaderConstant(ShaderStage::Compute, 0, layer == 1 ? CVarLightLowPass.Get() : 0.0f);
+                    }
+                })
+                .Execute([this, layer](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetComputeShader("voxel_mipmap_layer.comp");
+                    cmd.SetShaderConstant(ShaderStage::Compute, 0, layer == 1 ? CVarLightLowPass.Get() : 0.0f);
+                    cmd.SetShaderConstant(ShaderStage::Compute, 1, (uint32_t)layer);
 
-                        cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                    cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
 
-                        GPULayerData layerData = {
-                            directions[voxelLayer.dirIndex],
-                            voxelLayer.layerIndex,
-                        };
-                        cmd.UploadUniformData(0, 1, &layerData);
+                    auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
+                    if (lastVoxelStateID != InvalidResource && CVarReprojectVoxelGrid.Get()) {
+                        cmd.SetUniformBuffer(0, 1, resources.GetBuffer(lastVoxelStateID));
+                    } else {
+                        cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
+                    }
 
-                        auto &prevLayer = VoxelLayers[layer - 1][voxelLayer.dirIndex].name;
-                        cmd.SetImageView(0, 2, resources.GetImageView(prevLayer));
+                    for (size_t i = 0; i < directions.size(); i++) {
+                        auto &prevLayer = VoxelLayers[layer - 1][i].name;
+                        cmd.SetImageView(0, 2 + i, resources.GetImageView(prevLayer));
 
-                        cmd.SetImageView(0, 3, resources.GetImageView(voxelLayer.preBlurName));
+                        cmd.SetImageView(0,
+                            2 + directions.size() + i,
+                            resources.GetImageView(VoxelLayers[layer][i].preBlurName));
 
-                        auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
-                        if (lastVoxelStateID != InvalidResource && CVarReprojectVoxelGrid.Get()) {
-                            cmd.SetUniformBuffer(0, 4, resources.GetBuffer(lastVoxelStateID));
-                        } else {
-                            cmd.SetUniformBuffer(0, 4, resources.GetBuffer("VoxelState"));
-                        }
-                        auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][voxelLayer.dirIndex].preBlurName;
+                        auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][i].preBlurName;
                         auto lastVoxelLayerID = resources.GetID(lastFrameOutput, false, 1);
                         if (lastVoxelLayerID != InvalidResource) {
-                            cmd.SetImageView(0, 5, resources.GetImageView(lastVoxelLayerID));
+                            cmd.SetImageView(0,
+                                2 + directions.size() * 2 + i,
+                                resources.GetImageView(lastVoxelLayerID));
                         } else {
-                            cmd.SetImageView(0, 5, resources.GetImageView(prevLayer));
+                            cmd.SetImageView(0, 2 + directions.size() * 2 + i, resources.GetImageView(prevLayer));
                         }
+                    }
 
-                        auto dispatchCount = (voxelGridSize + 7) / 8;
-                        cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
-                    });
+                    auto dispatchCount = (voxelGridSize + 7) / 8;
+                    cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
+                });
 
-                graph.AddPass("BlurLayer")
-                    .Build([&](rg::PassBuilder &builder) {
+            graph.AddPass("BlurLayer")
+                .Build([&](rg::PassBuilder &builder) {
+                    for (auto &voxelLayer : VoxelLayers[layer]) {
                         builder.Read(voxelLayer.preBlurName, Access::ComputeShaderSampleImage);
                         builder.Write(voxelLayer.name, Access::ComputeShaderWrite);
+                    }
 
-                        for (auto &voxelLayer2 : VoxelLayers[layer - 1]) {
-                            builder.Read(voxelLayer2.preBlurName, Access::ComputeShaderSampleImage);
-                        }
-                    })
-                    .Execute([this, layer, voxelLayer](rg::Resources &resources, CommandContext &cmd) {
-                        cmd.SetComputeShader("voxel_mipmap_layer_blur.comp");
+                    for (auto &voxelLayer : VoxelLayers[layer - 1]) {
+                        builder.Read(voxelLayer.preBlurName, Access::ComputeShaderSampleImage);
+                    }
+                })
+                .Execute([this, layer](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetComputeShader("voxel_mipmap_layer_blur.comp");
 
-                        GPULayerData layerData = {
-                            directions[voxelLayer.dirIndex],
-                            voxelLayer.layerIndex,
-                        };
-                        cmd.UploadUniformData(0, 0, &layerData);
+                    cmd.SetShaderConstant(ShaderStage::Compute, 0, (uint32_t)layer);
 
-                        cmd.SetImageView(0, 1, resources.GetImageView(voxelLayer.name));
-                        cmd.SetImageView(0, 2, resources.GetImageView(voxelLayer.preBlurName));
+                    for (size_t i = 0; i < directions.size(); i++) {
+                        cmd.SetImageView(0, i, resources.GetImageView(VoxelLayers[layer][i].name));
+                        cmd.SetImageView(0,
+                            directions.size() + i,
+                            resources.GetImageView(VoxelLayers[layer][i].preBlurName));
 
-                        for (auto &voxelLayer2 : VoxelLayers[layer - 1]) {
-                            cmd.SetImageView(0,
-                                3 + voxelLayer2.dirIndex,
-                                resources.GetImageView(voxelLayer2.preBlurName));
-                        }
+                        cmd.SetImageView(0,
+                            directions.size() * 2 + i,
+                            resources.GetImageView(VoxelLayers[layer - 1][i].preBlurName));
+                    }
 
-                        auto dispatchCount = (voxelGridSize + 7) / 8;
-                        cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
-                    });
-            }
+                    auto dispatchCount = (voxelGridSize + 7) / 8;
+                    cmd.Dispatch(dispatchCount.x, dispatchCount.y, dispatchCount.z);
+                });
         }
     }
 
