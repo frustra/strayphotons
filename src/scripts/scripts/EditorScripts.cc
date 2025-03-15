@@ -70,7 +70,9 @@ namespace sp::scripts {
                 SceneRef scene;
                 if (lock.Has<ActiveScene>()) {
                     auto &active = lock.Get<ActiveScene>();
-                    scene = active.scene;
+                    if (active.scene && active.scene.data->sceneEntity.Get(lock).Exists(lock)) {
+                        scene = active.scene;
+                    }
                     if (scene) Logf("TraySpawner using editor scene: %s", scene.data->path);
                 }
                 if (!scene) {

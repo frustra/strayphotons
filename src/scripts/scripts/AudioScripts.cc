@@ -57,12 +57,13 @@ namespace sp::scripts {
 
     struct VolumeControl {
         SignalExpression volumeInput;
+        SignalRef output;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
             if (volumeInput.expr.empty()) {
                 state.definition.events.emplace_back("/volume/set");
-                state.definition.filterOnEvent = true;
+                // state.definition.filterOnEvent = true;
             }
         }
 
@@ -71,20 +72,24 @@ namespace sp::scripts {
             auto &sounds = ent.Get<Audio>(lock).sounds;
             if (sounds.empty()) return;
 
+            if (!output) output = SignalRef(ent, "volume");
+
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == "/volume/set") {
                     bool success = ecs::detail::ConvertAccessor<const float>(event.data, [&](const float &value) {
-                        sounds[0].volume = glm::clamp(value, 0.0f, 1.0f);
+                        sounds[0].volume = std::max(sounds[0].volume, glm::clamp(value, 0.0f, 1.0f));
                     });
                     if (!success) {
                         Logf("Couldn't convert from %s to float", event.ToString());
                     }
                 }
             }
-            if (!volumeInput.expr.empty()) {
-                sounds[0].volume = glm::clamp(volumeInput.Evaluate(lock), 0.0, 1.0);
-            }
+            // if (!volumeInput.expr.empty()) {
+            sounds[0].volume = std::max(sounds[0].volume * 0.99f,
+                glm::clamp<float>(volumeInput.Evaluate(lock), 0.0f, 1.0f));
+            // }
+            output.SetValue(lock, sounds[0].volume);
         }
     };
     StructMetadata MetadataVolumeControl(typeid(VolumeControl),

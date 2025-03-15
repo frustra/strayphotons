@@ -17,8 +17,9 @@
 					"modify": "event * 0.0015"
 				},
 				{
-					"outputs": "scoperoot/sound/play",
-					"set_value": 0
+					"outputs": ["scoperoot/sound/play", "scoperoot/signal/set/last_play"],
+					"set_value": 0,
+					"filter": "scoperoot/last_play > 40"
 				}
 			]
 		},
@@ -30,6 +31,18 @@
 			},
 			{
 				"onTick": "volume_control"
+			},
+			{
+				"onTick": "signal_from_signal",
+				"parameters": {
+					"last_play": "scoperoot/last_play + 1"
+				}
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": "last_play"
+				}
 			}
 		]
 	},
