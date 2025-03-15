@@ -91,7 +91,7 @@
 		},
 		{
 			"name": "tray_attachment",
-			"scene_connection": { "tray": "0" },
+			"scene_connection": { "editor/tray": "0" },
 			"transform": {
 				"parent": "direction",
 				"translate": [0, 1, -1]
