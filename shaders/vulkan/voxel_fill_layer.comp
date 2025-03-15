@@ -37,8 +37,8 @@ void main() {
     vec3 radiance = vec3(fragmentLists[index].radiance);
     vec3 voxelNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
 
-	for (int i = 0; i < 6; i++) {
-		float alpha = max(0, dot(voxelNormal, -AxisDirections[i]));
-		imageStore(radianceOut[i], position, vec4(radiance, 1) * alpha);
-	}
+    for (int i = 0; i < 6; i++) {
+        float alpha = max(0, dot(voxelNormal, -AxisDirections[i]));
+        imageStore(radianceOut[i], position, vec4(radiance, 1) * alpha);
+    }
 }

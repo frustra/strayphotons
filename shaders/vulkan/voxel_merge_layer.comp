@@ -39,14 +39,14 @@ void main() {
     vec3 overflowRadiance = vec3(fragmentLists[index].radiance);
     vec3 overflowNormal = mat3(voxelInfo.worldToVoxel) * vec3(fragmentLists[index].normal);
 
-	for (int i = 0; i < 6; i++) {
-		float alpha = max(0, dot(overflowNormal, -AxisDirections[i]));
+    for (int i = 0; i < 6; i++) {
+        float alpha = max(0, dot(overflowNormal, -AxisDirections[i]));
 
-		vec4 radiance = imageLoad(voxelLayer[i], position);
-		radiance.a += alpha;
-		if (radiance.a > 0) {
-			radiance.rgb = mix(radiance.rgb, overflowRadiance * alpha, alpha / radiance.a);
-			imageStore(voxelLayer[i], position, radiance);
-		}
-	}
+        vec4 radiance = imageLoad(voxelLayer[i], position);
+        radiance.a += alpha;
+        if (radiance.a > 0) {
+            radiance.rgb = mix(radiance.rgb, overflowRadiance * alpha, alpha / radiance.a);
+            imageStore(voxelLayer[i], position, radiance);
+        }
+    }
 }

@@ -26,54 +26,54 @@ void main() {
 
     int stride = 1; // << max(0, int(layerIndex) - 2); // max(1, int(layerIndex) - 1);
 
-	for (int axis = 0; axis < 6; axis++) {
-		ivec3 tangentAxisA = ivec3(AxisDirections[TangentAxisA[axis]]) * stride;
-		ivec3 tangentAxisB = ivec3(AxisDirections[TangentAxisB[axis]]) * stride;
+    for (int axis = 0; axis < 6; axis++) {
+        ivec3 tangentAxisA = ivec3(AxisDirections[TangentAxisA[axis]]) * stride;
+        ivec3 tangentAxisB = ivec3(AxisDirections[TangentAxisB[axis]]) * stride;
 
-		vec3 forwardOffset = vec3(0.5 + AxisDirections[axis] * 0.5);
-		vec3 gridSize = imageSize(voxelLayerOut[axis]);
-		vec4[4] tangentSamples = vec4[](
-			texture(prevFrameVoxelLayer[OppositeAxis[TangentAxisA[axis]]], (voxelPos + forwardOffset) / gridSize),
-			texture(prevFrameVoxelLayer[OppositeAxis[TangentAxisB[axis]]], (voxelPos + forwardOffset) / gridSize),
-			texture(prevFrameVoxelLayer[TangentAxisA[axis]], (voxelPos + forwardOffset) / gridSize),
-			texture(prevFrameVoxelLayer[TangentAxisB[axis]], (voxelPos + forwardOffset) / gridSize));
+        vec3 forwardOffset = vec3(0.5 + AxisDirections[axis] * 0.5);
+        vec3 gridSize = imageSize(voxelLayerOut[axis]);
+        vec4[4] tangentSamples = vec4[](
+            texture(prevFrameVoxelLayer[OppositeAxis[TangentAxisA[axis]]], (voxelPos + forwardOffset) / gridSize),
+            texture(prevFrameVoxelLayer[OppositeAxis[TangentAxisB[axis]]], (voxelPos + forwardOffset) / gridSize),
+            texture(prevFrameVoxelLayer[TangentAxisA[axis]], (voxelPos + forwardOffset) / gridSize),
+            texture(prevFrameVoxelLayer[TangentAxisB[axis]], (voxelPos + forwardOffset) / gridSize));
 
-		// Alpha acts as voxel fill count on first layer
-		tangentSamples[0] /= max(1, tangentSamples[0].a);
-		tangentSamples[1] /= max(1, tangentSamples[1].a);
-		tangentSamples[2] /= max(1, tangentSamples[2].a);
-		tangentSamples[3] /= max(1, tangentSamples[3].a);
+        // Alpha acts as voxel fill count on first layer
+        tangentSamples[0] /= max(1, tangentSamples[0].a);
+        tangentSamples[1] /= max(1, tangentSamples[1].a);
+        tangentSamples[2] /= max(1, tangentSamples[2].a);
+        tangentSamples[3] /= max(1, tangentSamples[3].a);
 
-		vec4[4] cornerSamples = vec4[]((tangentSamples[0] + tangentSamples[1]) * 0.5,
-			(tangentSamples[0] + tangentSamples[3]) * 0.5,
-			(tangentSamples[2] + tangentSamples[1]) * 0.5,
-			(tangentSamples[2] + tangentSamples[3]) * 0.5);
+        vec4[4] cornerSamples = vec4[]((tangentSamples[0] + tangentSamples[1]) * 0.5,
+            (tangentSamples[0] + tangentSamples[3]) * 0.5,
+            (tangentSamples[2] + tangentSamples[1]) * 0.5,
+            (tangentSamples[2] + tangentSamples[3]) * 0.5);
 
-		vec4[3][3] alphaSamples = vec4[][](vec4[](cornerSamples[0], tangentSamples[0], cornerSamples[1]),
-			vec4[](tangentSamples[1], vec4(0), tangentSamples[3]),
-			vec4[](cornerSamples[2], tangentSamples[2], cornerSamples[3]));
+        vec4[3][3] alphaSamples = vec4[][](vec4[](cornerSamples[0], tangentSamples[0], cornerSamples[1]),
+            vec4[](tangentSamples[1], vec4(0), tangentSamples[3]),
+            vec4[](cornerSamples[2], tangentSamples[2], cornerSamples[3]));
 
-		vec4 sampleValue = vec4(0);
-		float count = 0;
-		for (int i = -1; i <= 1; i++) {
-			for (int j = -1; j <= 1; j++) {
-				ivec3 samplePos = voxelPos + tangentAxisA * i + tangentAxisB * j;
+        vec4 sampleValue = vec4(0);
+        float count = 0;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                ivec3 samplePos = voxelPos + tangentAxisA * i + tangentAxisB * j;
 
-				vec4 frontSample = alphaSamples[i + 1][j + 1] * vec4(vec3(0.707), 1);
-				vec4 backSample = texelFetch(voxelLayerIn[axis], samplePos, 0);
-				if (layerIndex == 1) {
-					backSample /= max(1, backSample.a);
-				}
+                vec4 frontSample = alphaSamples[i + 1][j + 1] * vec4(vec3(0.707), 1);
+                vec4 backSample = texelFetch(voxelLayerIn[axis], samplePos, 0);
+                if (layerIndex == 1) {
+                    backSample /= max(1, backSample.a);
+                }
 
-				vec4 combined = vec4(0);
-				combined.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
-				combined.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
+                vec4 combined = vec4(0);
+                combined.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
+                combined.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
 
-				float weight = pow(0.95, stride * length(vec2(i, j)));
-				count += weight;
-				sampleValue += combined * weight;
-			}
-		}
-		imageStore(voxelLayerOut[axis], ivec3(voxelPos), sampleValue / count);
-	}
+                float weight = pow(0.95, stride * length(vec2(i, j)));
+                count += weight;
+                sampleValue += combined * weight;
+            }
+        }
+        imageStore(voxelLayerOut[axis], ivec3(voxelPos), sampleValue / count);
+    }
 }
