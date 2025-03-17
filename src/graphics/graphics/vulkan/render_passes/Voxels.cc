@@ -67,6 +67,14 @@ namespace sp::vulkan::renderer {
         VkDispatchIndirectCommand cmd;
     };
 
+    Voxels::Voxels(GPUScene &scene) : scene(scene) {
+        funcs.Register("printgraphics", "Print graphics debug information", [this]() {
+            if (debugThisFrame.test_and_set()) {
+                Warnf("Graphics frame already flagged for debug printing");
+            }
+        });
+    }
+
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
         voxelGridSize = glm::ivec3(0);
         for (auto entity : lock.EntitiesWith<ecs::VoxelArea>()) {
@@ -483,14 +491,23 @@ namespace sp::vulkan::renderer {
                 });
         }
 
-        AddBufferReadback(graph, "FragmentListMetadata", 0, {}, [listCount = fragmentListCount](BufferPtr buffer) {
-            auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
-            for (uint32 i = 0; i < listCount; i++) {
-                if (map[i].count > map[i].capacity) {
-                    Warnf("fragment list %d overflow, count: %u, capacity: %u", i, map[i].count, map[i].capacity);
+        AddBufferReadback(graph,
+            "FragmentListMetadata",
+            0,
+            {},
+            [this, listCount = fragmentListCount](BufferPtr buffer) {
+                auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
+                bool printDebug = debugThisFrame.test();
+                debugThisFrame.clear();
+                for (uint32 i = 0; i < listCount; i++) {
+                    if (printDebug) {
+                        Logf("fragment list %d, count: %u, capacity %u", i, map[i].count, map[i].capacity);
+                    }
+                    if (map[i].count > map[i].capacity) {
+                        Warnf("fragment list %d overflow, count: %u, capacity: %u", i, map[i].count, map[i].capacity);
+                    }
                 }
-            }
-        });
+            });
     }
 
     void Voxels::AddVoxelizationInit(RenderGraph &graph, const Lighting &lighting) {

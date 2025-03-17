@@ -281,6 +281,74 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "cardboard_box",
+			"transform": {
+				"parent": "root",
+				"translate": [0.8, 0.05, 0.3],
+				"scale": 0.1
+			},
+			"physics": {
+				"type": "Static",
+				"group": "UserInterface"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
+					"parameters": {
+						"source": "blocks/cardboard_box"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/cardboard_box",
+						"reset_scale": true
+					}
+				}
+			]
+		},
+		{
+			"name": "1mirror_cube",
+			"transform": {
+				"parent": "root",
+				"translate": [0.8, 0.05, 0.2],
+				"scale": 0.1
+			},
+			"physics": {
+				"type": "Static",
+				"group": "UserInterface"
+			},
+			"event_input": {},
+			"script": [
+				{
+					"onTick": "interactive_object",
+					"parameters": {
+						"highlight_only": true
+					}
+				},
+				{
+					"parameters": {
+						"source": "blocks/1mirror_cube"
+					},
+					"prefab": "template"
+				},
+				{
+					"onTick": "tray_spawner",
+					"parameters": {
+						"source": "blocks/1mirror_cube",
+						"reset_scale": true
+					}
+				}
+			]
 		}
 	]
 }

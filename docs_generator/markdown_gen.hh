@@ -8,6 +8,7 @@
 #pragma once
 
 #include "assets/JsonHelpers.hh"
+#include "common/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructFieldTypes.hh"
 
@@ -72,7 +73,7 @@ private:
         } else if constexpr (sp::json::detail::is_unordered_map<T>()) {
             return "map&lt;" + fieldTypeName<typename T::key_type>() + ", " + fieldTypeName<typename T::mapped_type>() +
                    "&gt;";
-        } else if constexpr (sp::json::detail::is_optional<T>()) {
+        } else if constexpr (sp::is_optional<T>()) {
             return "optional&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
         } else if constexpr (std::is_enum<T>()) {
             static const auto enumName = magic_enum::enum_type_name<T>();
@@ -99,7 +100,7 @@ public:
             auto &defaultValue = defaultPtr ? *reinterpret_cast<const T *>(defaultPtr) : defaultStruct;
 
             picojson::value defaultJson;
-            if constexpr (!sp::json::detail::is_optional<T>()) {
+            if constexpr (!sp::is_optional<T>()) {
                 defaultJson = picojson::value(picojson::object());
                 sp::json::Save(ecs::EntityScope(), defaultJson, defaultValue);
             }

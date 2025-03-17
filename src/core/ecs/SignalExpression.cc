@@ -489,7 +489,11 @@ namespace ecs {
 
         // Compile the parsed expression tree into a lambda function
         rootNode->Compile();
-        Assertf(rootNode->evaluate, "Failed to compile expression: %s", expr);
+        if (!rootNode->evaluate) {
+            Errorf("Failed to compile expression: %s", expr);
+            rootNode.reset();
+            return false;
+        }
         return true;
     }
 
@@ -527,7 +531,9 @@ namespace ecs {
 
     CompiledFunc Node::Compile() {
         for (const auto &child : childNodes) {
-            if (child) child->Compile();
+            if (child) {
+                if (!child->Compile()) return nullptr;
+            }
         }
         return std::visit(
             [&](auto &node) {
@@ -561,6 +567,10 @@ namespace ecs {
     }
 
     CompiledFunc IdentifierNode::Compile() const {
+        if (field.name != "event" && !field.name.starts_with("event.")) {
+            Errorf("SignalExpression has undefined identifier: %s", field.name);
+            return nullptr;
+        }
         return [](const Context &ctx, const Node &node, size_t depth) {
             // ZoneScoped;
             auto &identNode = std::get<IdentifierNode>(node);

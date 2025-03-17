@@ -30,6 +30,8 @@ typedef std::chrono::steady_clock chrono_clock;
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <optional>
+#include <variant>
 
 typedef unsigned char uint8;
 typedef signed char int8;
@@ -199,6 +201,16 @@ namespace sp {
 
     template<typename T>
     struct is_vector<std::vector<T>> : std::true_type {};
+
+    template<typename T>
+    struct is_optional : std::false_type {};
+    template<typename T>
+    struct is_optional<std::optional<T>> : std::true_type {};
+
+    template<typename T>
+    struct is_variant : std::false_type {};
+    template<typename... Tn>
+    struct is_variant<std::variant<Tn...>> : std::true_type {};
 
     template<typename T>
     struct is_glm_vec : std::false_type {};

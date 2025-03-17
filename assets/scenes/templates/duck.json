@@ -4,22 +4,47 @@
 		"physics": {
 			"type": "Dynamic",
 			"mass": 1,
-			"contact_report_force": 100
+			"contact_report_force": 1
 		},
 		"audio": [{
 			"file": "quack.ogg",
 			"volume": 0.3
 		}],
 		"event_bindings": {
-			"/physics/collision/force_found": {
-				"outputs": "scoperoot/sound/play",
-				"set_value": 0
-			}
+			"/physics/collision/force_found": [
+				{
+					"outputs": "scoperoot/volume/set",
+					"modify": "event * 0.0015"
+				},
+				{
+					"outputs": ["scoperoot/sound/play", "scoperoot/signal/set/last_play"],
+					"set_value": 0,
+					"filter": "scoperoot/last_play > 40"
+				}
+			]
 		},
-		"script": {
-			"prefab": "template",
-			"parameters": { "source": "interactive" }
-		}
+		"event_input": {},
+		"script": [
+			{
+				"prefab": "template",
+				"parameters": { "source": "interactive" }
+			},
+			{
+				"onTick": "volume_control"
+			},
+			{
+				"onTick": "signal_from_signal",
+				"parameters": {
+					"last_play": "scoperoot/last_play + 1"
+				}
+			},
+			{
+				"onTick": "signal_from_event",
+				"parameters": {
+					"outputs": "last_play"
+				}
+			}
+		]
 	},
 	"entities": [
 		{

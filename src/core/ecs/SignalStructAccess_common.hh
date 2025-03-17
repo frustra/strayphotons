@@ -83,6 +83,12 @@ namespace ecs::detail {
                 }
             }
             return true;
+        } else if constexpr (sp::is_variant<T>::value) {
+            return std::visit(
+                [&](auto &&innerValue) {
+                    return ConvertAccessor<ArgT>(innerValue, accessor);
+                },
+                value);
         } else {
             return false;
         }

@@ -11,6 +11,9 @@
 #include "ecs/EcsImpl.hh"
 #include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
+#include "physx/PhysxUtils.hh"
+
+#include <glm/gtx/norm.hpp>
 
 namespace sp {
     using namespace physx;
@@ -47,8 +50,12 @@ namespace sp {
         float thresholdForce = std::min(thresholdForce0, thresholdForce1);
 
         auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-        for (size_t i = 0; i < nbPairs; i++) {
-            auto &pair = pairs[i];
+
+        PxContactPairExtraDataIterator iter(pairHeader.extraDataStream, pairHeader.extraDataStreamSize);
+        while (iter.nextItemSet()) {
+            if (!iter.preSolverVelocity || !iter.postSolverVelocity) continue;
+
+            auto &pair = pairs[iter.contactPairIndex];
             if (!pair.shapes[0] || !pair.shapes[1]) continue;
             auto *shapeUserData0 = (ShapeUserData *)pair.shapes[0]->userData;
             auto *shapeUserData1 = (ShapeUserData *)pair.shapes[1]->userData;
@@ -61,41 +68,93 @@ namespace sp {
             //     ecs::ToString(lock, shapeUserData0->parent),
             //     ecs::ToString(lock, shapeUserData1->parent));
 
-            if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND)) {
+            const float frameRate = 120.0f;
+            float maxForce = 0.0f;
+
+            const auto *dynamicActor0 = pairHeader.actors[0]->is<PxRigidDynamic>();
+            if (dynamicActor0) {
+                glm::vec3 preSolveLinear0 = PxVec3ToGlmVec3(iter.preSolverVelocity->linearVelocity[0]);
+                glm::vec3 postSolveLinear0 = PxVec3ToGlmVec3(iter.postSolverVelocity->linearVelocity[0]);
+                glm::vec3 deltaLinear0 = postSolveLinear0 - preSolveLinear0;
+
+                glm::vec3 preSolveAngular0 = PxVec3ToGlmVec3(iter.preSolverVelocity->angularVelocity[0]);
+                glm::vec3 postSolveAngular0 = PxVec3ToGlmVec3(iter.postSolverVelocity->angularVelocity[0]);
+                glm::vec3 deltaAngular0 = postSolveAngular0 - preSolveAngular0;
+
+                float linearForce = glm::length(deltaLinear0) * dynamicActor0->getMass();
+                float angularTorque = glm::length(
+                    deltaAngular0 * PxVec3ToGlmVec3(dynamicActor0->getMassSpaceInertiaTensor()));
+                if (linearForce > 0 || angularTorque > 0) {
+                    // Logf("Actor0 %s shape %u mass %f Linear %f Angular %f",
+                    //     ecs::EntityRef(userData0->entity).Name().String(),
+                    //     iter.contactPairIndex,
+                    //     dynamicActor0->getMass(),
+                    //     linearForce * frameRate,
+                    //     angularTorque * frameRate);
+                    maxForce = std::max({maxForce, linearForce * frameRate, angularTorque * frameRate});
+                }
+            }
+            const auto *dynamicActor1 = pairHeader.actors[1]->is<PxRigidDynamic>();
+            if (dynamicActor1) {
+                glm::vec3 preSolveLinear = PxVec3ToGlmVec3(iter.preSolverVelocity->linearVelocity[1]);
+                glm::vec3 postSolveLinear = PxVec3ToGlmVec3(iter.postSolverVelocity->linearVelocity[1]);
+                glm::vec3 deltaLinear = postSolveLinear - preSolveLinear;
+
+                glm::vec3 preSolveAngular = PxVec3ToGlmVec3(iter.preSolverVelocity->angularVelocity[1]);
+                glm::vec3 postSolveAngular = PxVec3ToGlmVec3(iter.postSolverVelocity->angularVelocity[1]);
+                glm::vec3 deltaAngular = postSolveAngular - preSolveAngular;
+
+                float linearForce = glm::length(deltaLinear) * dynamicActor1->getMass();
+                float angularTorque = glm::length(
+                    deltaAngular * PxVec3ToGlmVec3(dynamicActor1->getMassSpaceInertiaTensor()));
+                if (linearForce > 0 || angularTorque > 0) {
+                    // Logf("Actor1 %s shape %u mass %f Linear %f Angular %f",
+                    //     ecs::EntityRef(userData1->entity).Name().String(),
+                    //     iter.contactPairIndex,
+                    //     dynamicActor1->getMass(),
+                    //     linearForce * frameRate,
+                    //     angularTorque * frameRate);
+                    maxForce = std::max({maxForce, linearForce * frameRate, angularTorque * frameRate});
+                }
+            }
+
+            if ((pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_FOUND) ||
+                    pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_PERSISTS)) &&
+                maxForce >= thresholdForce) {
                 if (shapeUserData0->owner != shapeUserData0->parent) {
                     ecs::EventBindings::SendEvent(lock,
                         shapeUserData0->owner,
-                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, thresholdForce});
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, maxForce});
                 }
                 if (shapeUserData1->owner != shapeUserData1->parent) {
                     ecs::EventBindings::SendEvent(lock,
                         shapeUserData1->owner,
-                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, thresholdForce});
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, maxForce});
                 }
 
                 ecs::EventBindings::SendEvent(lock,
                     shapeUserData0->parent,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, thresholdForce});
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, maxForce});
                 ecs::EventBindings::SendEvent(lock,
                     shapeUserData1->parent,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, thresholdForce});
-            } else if (pair.events.isSet(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST)) {
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, maxForce});
+            } else if (pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_LOST)) {
                 ecs::EventBindings::SendEvent(lock,
                     shapeUserData0->parent,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, thresholdForce});
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, maxForce});
                 ecs::EventBindings::SendEvent(lock,
                     shapeUserData1->parent,
-                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, thresholdForce});
+                    ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, maxForce});
 
                 if (shapeUserData0->owner != shapeUserData0->parent) {
                     ecs::EventBindings::SendEvent(lock,
                         shapeUserData0->owner,
-                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, thresholdForce});
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, maxForce});
                 }
                 if (shapeUserData1->owner != shapeUserData1->parent) {
                     ecs::EventBindings::SendEvent(lock,
                         shapeUserData1->owner,
-                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, thresholdForce});
+                        ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, maxForce});
                 }
             }
         }
@@ -106,8 +165,8 @@ namespace sp {
         Logf("SimulationCallbackHandler::onTrigger: %u", count);
     }
 
-    // Called for rigid bodies that have moved and have the PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW flag set.
-    // This callback is invoked inline with the simulation and will block execution.
+    // Called for rigid bodies that have moved and have the PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW flag
+    // set. This callback is invoked inline with the simulation and will block execution.
     void SimulationCallbackHandler::onAdvance(const PxRigidBody *const *bodyBuffer,
         const PxTransform *poseBuffer,
         const PxU32 count) {
@@ -117,8 +176,11 @@ namespace sp {
     static const auto collisionTable = [] {
         constexpr auto count = magic_enum::enum_count<ecs::PhysicsGroup>();
         std::array<std::array<PxPairFlags, count>, count> table;
-        auto defaultFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND |
-                            PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST;
+        auto defaultFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::ePRE_SOLVER_VELOCITY |
+                            PxPairFlag::ePOST_SOLVER_VELOCITY | PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND |
+                            PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST | PxPairFlag::eNOTIFY_CONTACT_POINTS |
+                            PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_TOUCH_LOST |
+                            PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
         std::fill(&table[0][0], &table[count - 1][count - 1] + 1, defaultFlags);
 
         auto removeCollision = [&](auto group0, auto group1) {

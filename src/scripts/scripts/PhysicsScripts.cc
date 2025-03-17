@@ -150,7 +150,7 @@ namespace sp::scripts {
                     } else if (std::holds_alternative<EntityRef>(event.data)) {
                         joint.target = std::get<EntityRef>(event.data);
                     } else {
-                        Errorf("Invalid set_target event type: %s", event.toString());
+                        Errorf("Invalid set_target event type: %s", event.ToString());
                         continue;
                     }
                 } else if (action == "set_current_offset") {
@@ -162,7 +162,7 @@ namespace sp::scripts {
                     } else if (std::holds_alternative<EntityRef>(event.data)) {
                         target = std::get<EntityRef>(event.data).Get(lock);
                     } else {
-                        Errorf("Invalid set_current_offset event type: %s", event.toString());
+                        Errorf("Invalid set_current_offset event type: %s", event.ToString());
                         continue;
                     }
                     if (ent.Has<TransformSnapshot>(lock) && target.Has<TransformSnapshot>(lock)) {
@@ -173,14 +173,14 @@ namespace sp::scripts {
                     if (std::holds_alternative<Transform>(event.data)) {
                         joint.localOffset = std::get<Transform>(event.data);
                     } else {
-                        Errorf("Invalid set_local_offset event type: %s", event.toString());
+                        Errorf("Invalid set_local_offset event type: %s", event.ToString());
                         continue;
                     }
                 } else if (action == "set_remote_offset") {
                     if (std::holds_alternative<Transform>(event.data)) {
                         joint.remoteOffset = std::get<Transform>(event.data);
                     } else {
-                        Errorf("Invalid set_remote_offset event type: %s", event.toString());
+                        Errorf("Invalid set_remote_offset event type: %s", event.ToString());
                         continue;
                     }
                 } else {
