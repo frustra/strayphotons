@@ -30,13 +30,42 @@ namespace ecs {
     class ScriptState;
     class ScriptInstance;
 
+    using ScriptUpdateLock = Lock<ReadAll,
+        Write<SceneProperties,
+            TransformTree,
+            TransformSnapshot,
+            Renderable,
+
+            ActiveScene,
+            Animation,
+            Audio,
+            CharacterController,
+            FocusLock,
+            Gui,
+            LaserEmitter,
+            LaserSensor,
+            Light,
+            LightSensor,
+            SceneConnection,
+            Screen,
+            TriggerArea,
+            TriggerGroup,
+            View,
+            XRView,
+
+            EventInput,
+            EventBindings,
+            Signals,
+            SignalOutput,
+            SignalBindings,
+            Scripts>>;
     using PhysicsUpdateLock = Lock<SendEventsLock,
         ReadSignalsLock,
         Read<TransformSnapshot>,
-        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
+        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, LaserLine, VoxelArea>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
-    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
+    using OnTickFunc = std::function<void(ScriptState &, ScriptUpdateLock, Entity, chrono_clock::duration)>;
     using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
     using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc>;
@@ -163,7 +192,7 @@ namespace ecs {
 
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
-        void RunOnTick(const Lock<WriteAll> &Lock, const chrono_clock::duration &interval);
+        void RunOnTick(const ScriptUpdateLock &Lock, const chrono_clock::duration &interval);
         void RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
 
         // RunPrefabs should only be run from the SceneManager thread

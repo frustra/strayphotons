@@ -29,7 +29,7 @@ namespace sp::scripts {
         std::string templateSource;
         bool resetScale = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name != INTERACT_EVENT_INTERACT_GRAB) continue;
@@ -141,7 +141,7 @@ namespace sp::scripts {
         glm::vec3 faceNormal = glm::vec3(0);
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode, bool snapToFace) {
+        bool performUpdate(PhysicsUpdateLock lock, float toolDepth, int editMode, bool snapToFace) {
             auto deltaDepth = toolDepth;
             if (!snapToFace) {
                 deltaDepth = std::round(toolDepth / CVarEditTranslateSnap.Get()) * CVarEditTranslateSnap.Get();
@@ -186,7 +186,7 @@ namespace sp::scripts {
             return true;
         }
 
-        void performRotateToFace(Lock<WriteAll> lock, glm::vec3 targetNormal) {
+        void performRotateToFace(PhysicsUpdateLock lock, glm::vec3 targetNormal) {
             auto &targetTree = selectedEntity.Get<TransformTree>(lock);
             auto worldToLocalRotation = glm::inverse(targetTree.GetGlobalRotation(lock));
             auto deltaRotation = glm::rotation(worldToLocalRotation * faceNormal, worldToLocalRotation * -targetNormal);
@@ -194,7 +194,7 @@ namespace sp::scripts {
             selectedEntity.Set<TransformSnapshot>(lock, targetTree.GetGlobalTransform(lock));
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree, PhysicsQuery>(lock)) return;
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);
@@ -295,5 +295,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEditTool(typeid(EditTool), "EditTool", "");
-    InternalScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
+    InternalPhysicsScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

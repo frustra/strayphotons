@@ -16,8 +16,8 @@ namespace ecs {
     struct LaserSensor {
         glm::vec3 threshold = glm::vec3(0.5f, 0.5f, 0.5f);
 
-        // updated automatically
-        glm::vec3 illuminance = glm::vec3(0);
+        // Updated based on light path by the Physics thread
+        std::array<SignalExpression, 3> illuminance = {};
     };
 
     static Component<LaserSensor> ComponentLaserSensor(

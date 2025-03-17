@@ -32,8 +32,42 @@ namespace ecs {
     template<typename>
     class Component;
 
+    using ScriptWriteLock = Lock<Write<SceneProperties,
+        TransformTree,
+        TransformSnapshot,
+        Renderable,
+
+        ActiveScene,
+        Animation,
+        Audio,
+        CharacterController,
+        FocusLock,
+        Gui,
+        LaserEmitter,
+        // LaserLine,
+        LaserSensor,
+        Light,
+        LightSensor,
+        // OpticalElement,
+        // Physics,
+        // PhysicsJoints,
+        // PhysicsQuery,
+        SceneConnection,
+        Screen,
+        TriggerArea,
+        TriggerGroup,
+        View,
+        // VoxelArea,
+        XRView,
+
+        EventInput,
+        EventBindings,
+        Signals,
+        SignalOutput,
+        SignalBindings,
+        Scripts>>;
     using PhysicsWriteLock = Lock<
-        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
+        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, LaserLine, VoxelArea>>;
 
     class ComponentBase : public sp::NonMoveable {
     public:
@@ -51,7 +85,7 @@ namespace ecs {
         virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
         virtual bool HasComponent(const FlatEntity &ent) const = 0;
         virtual const void *Access(const Lock<ReadAll> &lock, Entity ent) const = 0;
-        virtual void *Access(const Lock<WriteAll> &lock, Entity ent) const = 0;
+        virtual void *Access(const ScriptWriteLock &lock, Entity ent) const = 0;
         virtual void *Access(const PhysicsWriteLock &lock, Entity ent) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
@@ -184,8 +218,12 @@ namespace ecs {
             return &ent.Get<CompType>(lock);
         }
 
-        void *Access(const Lock<WriteAll> &lock, Entity ent) const override {
-            return &ent.Get<CompType>(lock);
+        void *Access(const ScriptWriteLock &lock, Entity ent) const override {
+            if constexpr (Tecs::is_write_allowed<CompType, ScriptWriteLock>()) {
+                return &ent.Get<CompType>(lock);
+            } else {
+                return nullptr;
+            }
         }
 
         void *Access(const PhysicsWriteLock &lock, Entity ent) const override {

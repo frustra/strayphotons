@@ -16,7 +16,7 @@ namespace sp::scripts {
     struct Flashlight {
         EntityRef parentEntity;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<Light, TransformTree>(lock)) return;
 
             auto &light = ent.Get<Light>(lock);
@@ -60,7 +60,7 @@ namespace sp::scripts {
         "/action/flashlight/grab");
 
     struct SunScript {
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -81,5 +81,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSunScript(typeid(SunScript), "SunScript", "");
-    InternalScript<SunScript> sun("sun", MetadataSunScript);
+    InternalPhysicsScript<SunScript> sun("sun", MetadataSunScript);
 } // namespace sp::scripts

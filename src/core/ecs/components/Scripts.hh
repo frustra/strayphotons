@@ -155,7 +155,7 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
-        static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        static void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.userData);
             if (!ptr) ptr = &state.userData.emplace<T>();
             ptr->OnTick(state, lock, ent, interval);

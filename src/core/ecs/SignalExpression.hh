@@ -84,6 +84,8 @@ Signal expressions support the following operations and functions:
         struct Node;
     } // namespace expression
 
+    using SignalNodePtr = std::shared_ptr<expression::Node>;
+
     class SignalExpression {
     public:
         SignalExpression() {}
@@ -111,6 +113,22 @@ Signal expressions support the following operations and functions:
         bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
         double Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth = 0) const;
         double EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const;
+
+        // Output a new expression that is the sum of these two
+        SignalExpression operator+(const SignalExpression &rhs) const;
+        SignalExpression operator+(const SignalNodePtr &rhs) const;
+        // Compile the right hand side into an expression and sum the value with this expression
+        SignalExpression operator+(const std::string &expr) const;
+        // Compile the right hand side into a constant node and sum the value with this expression
+        SignalExpression operator+(double value) const;
+
+        // Output a new expression that is the product of these two
+        SignalExpression operator*(const SignalExpression &rhs) const;
+        SignalExpression operator*(const SignalNodePtr &rhs) const;
+        // Compile the right hand side into an expression and multiply the value with this expression
+        SignalExpression operator*(const std::string &expr) const;
+        // Compile the right hand side into a constant node and multiply the value with this expression
+        SignalExpression operator*(double value) const;
 
         bool operator==(const SignalExpression &other) const {
             return expr == other.expr && scope == other.scope;

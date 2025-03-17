@@ -14,7 +14,7 @@ Script Example Definition
         // Internal script state
         bool init = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!init) {
                 // First run only
                 Logf("Example script added to %s", ToString(lock, ent));

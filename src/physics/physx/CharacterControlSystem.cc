@@ -61,9 +61,9 @@ namespace sp {
                 auto &pointerTree = pointerEnt.Set<ecs::TransformTree>(lock);
                 pointerTree.parent = entities::FlatHead;
                 auto &pointerScripts = pointerEnt.Set<ecs::Scripts>(lock);
-                pointerScripts.AddOnTick(ecs::Name(scene->data->name, ""),
+                pointerScripts.AddOnPhysicsUpdate(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
+                        ecs::PhysicsUpdateLock lock,
                         ecs::Entity ent,
                         chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
@@ -83,9 +83,9 @@ namespace sp {
                 auto &headTree = headEnt.Set<ecs::TransformTree>(lock);
                 headTree.parent = entities::FlatHead;
                 auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
-                headScripts.AddOnTick(ecs::Name(scene->data->name, ""),
+                headScripts.AddOnPhysicsUpdate(ecs::Name(scene->data->name, ""),
                     [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
+                        ecs::PhysicsUpdateLock lock,
                         ecs::Entity ent,
                         chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;

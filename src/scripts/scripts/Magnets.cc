@@ -38,7 +38,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<PhysicsJoints, TransformSnapshot>(lock)) return;
             auto &joints = ent.Get<PhysicsJoints>(lock);
             auto &plugTransform = ent.Get<const TransformSnapshot>(lock).globalPose;
@@ -117,7 +117,7 @@ namespace sp::scripts {
         "",
         StructField::New("attach", &MagneticPlug::attachedSocketEntity),
         StructField::New("disabled", &MagneticPlug::disabled));
-    InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
+    InternalPhysicsScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,
         "/magnet/nearby",
@@ -126,7 +126,7 @@ namespace sp::scripts {
     struct MagneticSocket {
         robin_hood::unordered_flat_set<Entity> disabledEntities;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TriggerArea>(lock)) return;
 
             EntityRef enableTriggerEntity = ecs::Name("enable_trigger", state.scope);

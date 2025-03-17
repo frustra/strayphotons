@@ -23,7 +23,7 @@ namespace ecs {
         struct Segment {
             glm::vec3 start = glm::vec3(0);
             glm::vec3 end = glm::vec3(0);
-            sp::color_t color = glm::vec3(1); // HDR value
+            std::array<SignalExpression, 3> color = {SignalExpression{"1"}, {"1"}, {"1"}}; // HDR value
         };
         using Segments = std::vector<Segment>;
         std::variant<Line, Segments> line = Line();

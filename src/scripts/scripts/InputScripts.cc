@@ -21,7 +21,7 @@ namespace sp::scripts {
     struct RelativeMovement {
         EntityRef targetEntity, referenceEntity;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             glm::vec3 movementInput = glm::vec3(0);
             movementInput.x -= SignalRef(ent, "move_left").GetSignal(lock);
             movementInput.x += SignalRef(ent, "move_right").GetSignal(lock);
@@ -76,7 +76,7 @@ namespace sp::scripts {
         EntityRef targetEntity;
         bool enableSmoothRotation = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             auto target = targetEntity.Get(lock);
@@ -159,7 +159,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateCamera(state, lock, ent);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateCamera(state, lock, ent);
         }
     };

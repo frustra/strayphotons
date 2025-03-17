@@ -447,7 +447,7 @@ namespace sp {
                     scene.data->name,
                     [target = this->target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock,
                         std::shared_ptr<Scene> scene) {
-                        void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
+                        void *component = comp.Access((ecs::ScriptUpdateLock)lock, target);
                         field.Access<T>(component) = value;
                     });
             } else {

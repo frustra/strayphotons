@@ -30,7 +30,7 @@ namespace sp::scripts {
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformSnapshot>(lock)) return;
 
             bool enableInteraction = !highlightOnly && !disabled;
@@ -234,7 +234,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (ent.Has<TransformSnapshot, PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
                 auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;

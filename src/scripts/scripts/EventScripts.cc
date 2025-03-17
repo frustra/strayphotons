@@ -16,7 +16,7 @@ namespace sp::scripts {
     struct InitEvent {
         std::vector<std::string> outputs;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             state.definition.events.clear();
             state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
 
@@ -41,7 +41,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (outputEvent.empty()) continue;
@@ -91,7 +91,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateEvents(state, lock, ent, interval);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateEvents(state, lock, ent, interval);
         }
     };
@@ -117,7 +117,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
@@ -186,7 +186,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             sendOutputEvents(state, lock, ent, interval);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             sendOutputEvents(state, lock, ent, interval);
         }
     };
@@ -305,7 +305,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateComponentFromEvent(state, lock, ent);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateComponentFromEvent(state, lock, ent);
         }
     };

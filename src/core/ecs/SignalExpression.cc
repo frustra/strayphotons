@@ -1021,6 +1021,66 @@ namespace ecs {
         return rootNode->Evaluate(ctx, 0);
     }
 
+    SignalExpression SignalExpression::operator+(const SignalNodePtr &rhs) const {
+        SignalNodePtr rhsNode = rhs;
+        if (rhsNode) rhsNode = rhsNode->SetScope(this->scope);
+        if (!rhsNode) return *this;
+        SignalExpression result;
+        result.scope = scope;
+        result.expr = this->expr + " + " + rhsNode->text;
+        result.rootNode = GetSignalManager().GetNode(
+            expression::Node{expression::TwoInputOperation{"", " + ", ""}, result.expr, {this->rootNode, rhsNode}});
+        result.rootNode->Compile();
+        if (!result.rootNode->evaluate) {
+            Errorf("Failed to compile expression: %s", expr);
+            result.rootNode.reset();
+            return {};
+        }
+        return result;
+    }
+
+    SignalExpression SignalExpression::operator+(const SignalExpression &rhs) const {
+        return *this + rhs.rootNode;
+    }
+
+    SignalExpression SignalExpression::operator+(const std::string &rhs) const {
+        return *this + SignalExpression(rhs, scope).rootNode;
+    }
+
+    SignalExpression SignalExpression::operator+(double rhs) const {
+        return *this + GetSignalManager().GetConstantNode(rhs);
+    }
+
+    SignalExpression SignalExpression::operator*(const SignalNodePtr &rhs) const {
+        SignalNodePtr rhsNode = rhs;
+        if (rhsNode) rhsNode = rhsNode->SetScope(this->scope);
+        if (!rhsNode) return {};
+        SignalExpression result;
+        result.scope = scope;
+        result.expr = this->expr + " * " + rhsNode->text;
+        result.rootNode = GetSignalManager().GetNode(
+            expression::Node{expression::TwoInputOperation{"", " * ", ""}, result.expr, {this->rootNode, rhsNode}});
+        result.rootNode->Compile();
+        if (!result.rootNode->evaluate) {
+            Errorf("Failed to compile expression: %s", expr);
+            result.rootNode.reset();
+            return {};
+        }
+        return result;
+    }
+
+    SignalExpression SignalExpression::operator*(const SignalExpression &rhs) const {
+        return *this * rhs.rootNode;
+    }
+
+    SignalExpression SignalExpression::operator*(const std::string &rhs) const {
+        return *this * SignalExpression(rhs, scope).rootNode;
+    }
+
+    SignalExpression SignalExpression::operator*(double rhs) const {
+        return *this * GetSignalManager().GetConstantNode(rhs);
+    }
+
     void SignalExpression::SetScope(const EntityScope &scope) {
         this->scope = scope;
         if (!rootNode) return;

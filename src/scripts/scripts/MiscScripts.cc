@@ -63,7 +63,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateEdgeTrigger(state, lock, ent);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateEdgeTrigger(state, lock, ent);
         }
     };
@@ -85,7 +85,7 @@ namespace sp::scripts {
         std::string modelName;
         std::vector<std::string> templates = {"interactive"};
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<Name, SceneInfo>(lock)) return;
             Transform relativeTransform;
             auto target = targetEntity.Get(lock);
@@ -150,7 +150,7 @@ namespace sp::scripts {
         glm::vec3 rotationAxis = glm::vec3(0);
         float rotationSpeedRpm;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -170,7 +170,7 @@ namespace sp::scripts {
     struct RotateToEntity {
         EntityRef targetEntityRef, upEntityRef;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             auto targetEnt = targetEntityRef.Get(lock);
@@ -324,7 +324,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateComponentFromSignal(lock, ent);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateComponentFromSignal(lock, ent);
         }
     };
@@ -360,7 +360,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateSignalFromSignal(lock, ent);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateSignalFromSignal(lock, ent);
         }
     };
@@ -405,7 +405,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateSignal(lock, ent, interval);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateSignal(lock, ent, interval);
         }
     };
@@ -475,7 +475,7 @@ namespace sp::scripts {
         void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateTimer(state, lock, ent, interval);
         }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, ScriptUpdateLock lock, Entity ent, chrono_clock::duration interval) {
             updateTimer(state, lock, ent, interval);
         }
     };

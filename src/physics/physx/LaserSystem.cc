@@ -78,11 +78,12 @@ namespace sp {
 
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
-            sensor.illuminance = glm::vec3(0);
+            sensor.illuminance = {};
         }
         for (auto &entity : lock.EntitiesWith<ecs::LaserEmitter>()) {
-            if (!entity.Has<ecs::TransformSnapshot, ecs::LaserLine>(lock)) continue;
+            if (!entity.Has<ecs::Name, ecs::TransformSnapshot, ecs::LaserLine>(lock)) continue;
 
+            auto &name = entity.Get<ecs::Name>(lock);
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
             auto &lines = entity.Get<ecs::LaserLine>(lock);
             lines.on = emitter.on;
@@ -97,11 +98,17 @@ namespace sp {
             auto &segments = std::get<ecs::LaserLine::Segments>(lines.line);
             segments.clear();
 
-            color_t signalColor = glm::vec3{
-                ecs::SignalRef(entity, "laser_color_r").GetSignal(lock),
-                ecs::SignalRef(entity, "laser_color_g").GetSignal(lock),
-                ecs::SignalRef(entity, "laser_color_b").GetSignal(lock),
+            std::array<ecs::SignalExpression, 3> signalColor = {
+                ecs::SignalExpression{ecs::SignalRef(entity, "laser_color_r")},
+                {ecs::SignalRef(entity, "laser_color_g")},
+                {ecs::SignalRef(entity, "laser_color_b")},
             };
+            signalColor[0] = signalColor[0] + (name.String() + "#laser_emitter.color.r");
+            signalColor[1] = signalColor[1] + (name.String() + "#laser_emitter.color.g");
+            signalColor[2] = signalColor[2] + (name.String() + "#laser_emitter.color.b");
+            signalColor[0] = signalColor[0] * (name.String() + "#laser_emitter.intensity");
+            signalColor[1] = signalColor[1] * (name.String() + "#laser_emitter.intensity");
+            signalColor[2] = signalColor[2] * (name.String() + "#laser_emitter.intensity");
 
             std::array<physx::PxRaycastHit, 128> hitBuffer;
 
@@ -124,7 +131,7 @@ namespace sp {
             emitterQueue.emplace_back(LaserStart{
                 transform.GetPosition() + transform.GetForward() * emitter.startDistance * transform.GetScale(),
                 transform.GetForward(),
-                emitter.color + signalColor,
+                glm::vec3(1),
             });
 
             while (!emitterQueue.empty()) {
@@ -147,7 +154,9 @@ namespace sp {
                     auto &segment = segments.emplace_back();
                     segment.start = laserStart.rayStart;
                     segment.end = laserStart.rayStart + laserStart.rayDir * maxDistance;
-                    segment.color = laserStart.color;
+                    segment.color[0] = signalColor[0] * laserStart.color[0];
+                    segment.color[1] = signalColor[1] * laserStart.color[1];
+                    segment.color[2] = signalColor[2] * laserStart.color[2];
                 } else {
                     std::sort(hit.touches, hit.touches + hit.nbTouches, [](auto a, auto b) {
                         return a.distance < b.distance;
@@ -181,7 +190,9 @@ namespace sp {
                             auto &segment = segments.emplace_back();
                             segment.start = laserStart.rayStart;
                             segment.end = segmentEnd;
-                            segment.color = laserStart.color;
+                            segment.color[0] = signalColor[0] * laserStart.color[0];
+                            segment.color[1] = signalColor[1] * laserStart.color[1];
+                            segment.color[2] = signalColor[2] * laserStart.color[2];
 
                             laserStart.color *= optic.passTint;
                             laserStart.rayStart = segmentEnd;
@@ -198,7 +209,9 @@ namespace sp {
                     segment.end = laserStart.rayStart +
                                   laserStart.rayDir *
                                       ((hit.hasBlock ? hit.block.distance : maxDistance) - startDistance);
-                    segment.color = laserStart.color;
+                    segment.color[0] = signalColor[0] * laserStart.color[0];
+                    segment.color[1] = signalColor[1] * laserStart.color[1];
+                    segment.color[2] = signalColor[2] * laserStart.color[2];
 
                     physx::PxShape *hitShape = hit.block.shape;
                     if (hitShape) {
@@ -207,7 +220,9 @@ namespace sp {
                             auto hitEntity = userData->owner;
                             if (hitEntity.Has<ecs::LaserSensor>(lock)) {
                                 auto &sensor = hitEntity.Get<ecs::LaserSensor>(lock);
-                                sensor.illuminance += glm::vec3(laserStart.color * emitter.intensity);
+                                sensor.illuminance[0] = signalColor[0] * laserStart.color[0] + sensor.illuminance[0];
+                                sensor.illuminance[1] = signalColor[1] * laserStart.color[1] + sensor.illuminance[1];
+                                sensor.illuminance[2] = signalColor[2] * laserStart.color[2] + sensor.illuminance[2];
                             }
                             if (hitEntity.Has<ecs::OpticalElement>(lock)) {
                                 auto &optic = hitEntity.Get<ecs::OpticalElement>(lock);
@@ -227,11 +242,14 @@ namespace sp {
         }
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
-            ecs::SignalRef(entity, "light_value_r").SetValue(lock, sensor.illuminance.r);
-            ecs::SignalRef(entity, "light_value_g").SetValue(lock, sensor.illuminance.g);
-            ecs::SignalRef(entity, "light_value_b").SetValue(lock, sensor.illuminance.b);
+            ecs::SignalRef(entity, "light_value_r").SetBinding(lock, sensor.illuminance[0]);
+            ecs::SignalRef(entity, "light_value_g").SetBinding(lock, sensor.illuminance[1]);
+            ecs::SignalRef(entity, "light_value_b").SetBinding(lock, sensor.illuminance[2]);
             ecs::SignalRef(entity, "value")
-                .SetValue(lock, glm::all(glm::greaterThanEqual(sensor.illuminance, sensor.threshold)));
+                .SetBinding(lock,
+                    "( " + sensor.illuminance[0].expr + " >= " + std::to_string(sensor.threshold.r) + ") && ( " +
+                        sensor.illuminance[1].expr + " >= " + std::to_string(sensor.threshold.g) + ") && ( " +
+                        sensor.illuminance[2].expr + " >= " + std::to_string(sensor.threshold.b) + ")");
         }
     }
 } // namespace sp

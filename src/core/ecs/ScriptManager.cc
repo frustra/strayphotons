@@ -168,7 +168,7 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RunOnTick(const Lock<WriteAll> &lock, const chrono_clock::duration &interval) {
+    void ScriptManager::RunOnTick(const ScriptUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
         std::shared_lock l(mutexes[ScriptCallbackIndex<OnTickFunc>()]);
         for (auto &[ent, state] : onTickScripts) {
