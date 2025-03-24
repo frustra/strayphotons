@@ -152,6 +152,12 @@ namespace sp {
                 GetSceneManager().QueueActionAndBlock(SceneAction::SaveStagingScene, sceneName);
             });
 
+        funcs.Register<std::string>("savegame",
+            "Print out a json serialization of the live scene state",
+            [](std::string outputPath) {
+                GetSceneManager().QueueActionAndBlock(SceneAction::SaveLiveScene, outputPath);
+            });
+
         funcs.Register("printevents", "Print out the current state of event queues", []() {
             auto lock = ecs::StartTransaction<
                 ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventInput, ecs::EventBindings>>();

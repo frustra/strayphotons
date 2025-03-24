@@ -23,7 +23,7 @@ namespace sp::scripts {
 
     struct EdgeTrigger {
         // Input parameters
-        std::string inputExpr;
+        SignalExpression inputExpr;
         std::string outputName = "/script/edge_trigger";
 
         bool enableFalling = true;
@@ -31,17 +31,13 @@ namespace sp::scripts {
         std::optional<SignalExpression> eventValue;
 
         // Internal script state
-        SignalExpression expr;
+        std::string lastExpr;
         std::optional<double> previousValue;
 
         template<typename LockType>
         void updateEdgeTrigger(ScriptState &state, const LockType &lock, const Entity &ent) {
-            if (expr.expr != inputExpr || state.scope != expr.scope) {
-                expr = SignalExpression(inputExpr, state.scope);
-                if (!previousValue) previousValue = expr.Evaluate(lock);
-            }
-
-            auto value = expr.Evaluate(lock);
+            auto value = inputExpr.Evaluate(lock);
+            if (!previousValue) previousValue = value;
 
             Event outputEvent;
             outputEvent.name = outputName;

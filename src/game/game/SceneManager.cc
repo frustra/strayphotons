@@ -246,6 +246,11 @@ namespace sp {
                 std::string sceneName(GetSceneName(item.scenePath));
                 SaveSceneJson(sceneName);
                 item.promise.set_value();
+            } else if (item.action == SceneAction::SaveLiveScene) {
+                ZoneScopedN("SaveLiveScene");
+                ZoneStr(item.scenePath);
+                SaveLiveSceneJson(item.scenePath);
+                item.promise.set_value();
             } else if (item.action == SceneAction::LoadScene) {
                 ZoneScopedN("LoadScene");
                 ZoneStr(item.scenePath);
@@ -716,76 +721,6 @@ namespace sp {
             scriptManager.RunPrefabs(lock, e);
         }
         return scene;
-    }
-
-    void SceneManager::SaveSceneJson(const std::string &sceneName) {
-        auto scene = stagedScenes.Load(sceneName);
-        if (scene) {
-            Tracef("Saving staging scene: %s", scene->data->path);
-            auto staging = ecs::StartStagingTransaction<ecs::ReadAll>();
-
-            ecs::EntityScope scope(scene->data->name, "");
-
-            picojson::array entities;
-            for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
-                if (!e.Has<ecs::SceneInfo>(staging)) continue;
-                auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-                // Skip entities that aren't part of this scene, or were created by a prefab script
-                if (sceneInfo.scene != scene || sceneInfo.prefabStagingId) continue;
-
-                static auto componentOrderFunc = [](const std::string &a, const std::string &b) {
-                    // Sort component keys in the order they are defined in the ECS
-                    return ecs::GetComponentIndex(a) < ecs::GetComponentIndex(b);
-                };
-                picojson::object components(componentOrderFunc);
-                if (e.Has<ecs::Name>(staging)) {
-                    auto &name = e.Get<ecs::Name>(staging);
-                    if (scene->ValidateEntityName(name)) {
-                        json::Save(scope, components["name"], name);
-                    }
-                }
-                ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                    if (name == "scene_properties") return;
-                    if (comp.HasComponent(staging, e)) {
-                        auto &value = components[comp.name];
-                        if (comp.metadata.fields.empty() || value.is<picojson::null>()) {
-                            value.set<picojson::object>({});
-                        }
-                        comp.SaveEntity(staging, scope, value, e);
-                    }
-                });
-                entities.emplace_back(components);
-            }
-
-            static auto sceneOrderFunc = [](const std::string &a, const std::string &b) {
-                // Force "entities" to be sorted last
-                if (b == "entities") {
-                    return a < "zentities";
-                } else if (a == "entities") {
-                    return "zentities" < b;
-                } else {
-                    return a < b;
-                }
-            };
-            picojson::object sceneObj(sceneOrderFunc);
-            static const ecs::SceneProperties defaultProperties = {};
-            static const ScenePriority defaultPriority = ScenePriority::Scene;
-            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
-            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, &defaultPriority);
-            sceneObj["entities"] = picojson::value(entities);
-            auto val = picojson::value(sceneObj);
-            auto scenePath = scene->asset->path;
-            Logf("Saving scene %s to '%s'", scene->data->name, scenePath.string());
-
-            std::ofstream out;
-            if (Assets().OutputStream(scenePath.string(), out)) {
-                auto outputJson = val.serialize(true);
-                out.write(outputJson.c_str(), outputJson.size());
-                out.close();
-            }
-        } else {
-            Errorf("SceneManager::SaveSceneJson: scene %s not found", sceneName);
-        }
     }
 
     std::shared_ptr<Scene> SceneManager::LoadBindingsJson() {

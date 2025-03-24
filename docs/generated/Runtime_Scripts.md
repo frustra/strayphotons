@@ -85,7 +85,7 @@ The `component_from_signal` script has parameter type: map&lt;string, [SignalExp
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **input_expr** | string | "" | No description |
+| **input_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
 | **output_event** | string | "/script/edge_trigger" | No description |
 | **falling_edge** | bool | true | No description |
 | **rising_edge** | bool | true | No description |
@@ -303,7 +303,7 @@ The `physics_component_from_signal` script has parameter type: map&lt;string, [S
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **input_expr** | string | "" | No description |
+| **input_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
 | **output_event** | string | "/script/edge_trigger" | No description |
 | **falling_edge** | bool | true | No description |
 | **rising_edge** | bool | true | No description |

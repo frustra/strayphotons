@@ -38,6 +38,7 @@ namespace sp {
         ApplyResetStagingScene, // Arguments: (sceneName, [EditCallback])
         ApplyStagingScene, // Arguments: (sceneName, [EditCallback])
         SaveStagingScene, // Arguments: (sceneName)
+        SaveLiveScene, // Arguments: (outputPath)
         LoadScene, // Arguments: (sceneName)
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
@@ -103,6 +104,7 @@ namespace sp {
 
         std::shared_ptr<Scene> LoadSceneJson(const std::string &name, const std::string &path, SceneType sceneType);
         void SaveSceneJson(const std::string &name);
+        void SaveLiveSceneJson(const std::string &path);
 
         std::shared_ptr<Scene> LoadBindingsJson();
 

@@ -78,7 +78,7 @@ namespace sp {
         Assertf(scene->data, "Scene::NewRootEntity called with null scene data: %s", entityName.String());
 
         if (entityName) {
-            if (!ValidateEntityName(entityName)) {
+            if (scene->data->priority != ScenePriority::SaveGame && !ValidateEntityName(entityName)) {
                 Errorf("Invalid root entity name: %s", entityName.String());
                 return ecs::Entity();
             }
@@ -219,7 +219,7 @@ namespace sp {
                 continue;
             }
 
-            entities.emplace_back(e, scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), e));
+            entities.emplace_back(e, scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), e));
         }
 
         auto live = ecs::StartTransaction<ecs::AddRemove>();
@@ -253,7 +253,7 @@ namespace sp {
                 sceneInfo.SetLiveId(staging, sceneInfo.liveId);
                 liveSceneInfo = sceneInfo.rootStagingId.Get<ecs::SceneInfo>(staging);
 
-                scene::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
+                scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
                 continue;
             }
 
@@ -269,8 +269,8 @@ namespace sp {
                 liveSceneInfo = sceneInfo.rootStagingId.Get<ecs::SceneInfo>(staging);
 
                 // Rebuild the flat entity since the scene hierarchy has changed
-                flatEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId);
-                scene::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
+                flatEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId);
+                scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
             } else {
                 // No entity exists in the live scene
                 sceneInfo.liveId = live.NewEntity();
@@ -280,7 +280,7 @@ namespace sp {
                 ecs::GetEntityRefs().Set(entityName, e);
                 ecs::GetEntityRefs().Set(entityName, sceneInfo.liveId);
 
-                scene::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
+                scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
             }
         }
         {
@@ -327,8 +327,9 @@ namespace sp {
                     remainingInfo.liveId.Set<ecs::SceneInfo>(live,
                         remainingInfo.rootStagingId.Get<ecs::SceneInfo>(staging));
 
-                    auto flatEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), remainingInfo.rootStagingId);
-                    scene::ApplyFlatEntity(live, remainingInfo.liveId, flatEntity, false);
+                    auto flatEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging),
+                        remainingInfo.rootStagingId);
+                    scene_util::ApplyFlatEntity(live, remainingInfo.liveId, flatEntity, false);
                 }
             }
             ecs::EntityRef ref = e;
