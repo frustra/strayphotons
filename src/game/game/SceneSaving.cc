@@ -177,7 +177,7 @@ namespace sp {
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     const Component<T> &base = LookupComponent<T>();
                     if (src.Has<T>(live)) {
-                        auto &value = components[base.name];
+                        picojson::value &value = components[base.name];
                         auto liveComp = src.Get<T>(live);
                         auto &sceneInfo = src.Get<SceneInfo>(live);
                         std::optional<T> stagingComp = BuildFlatComponent<T>(staging, sceneInfo.rootStagingId);
@@ -332,11 +332,15 @@ namespace sp {
         }
         // Generate scene_connection entity
         picojson::object connections;
-        for (auto &scene : scenes[SceneType::World]) {
-            if (!scene || !scene->data) continue;
+        for (auto &scene : scenes[SceneType::Async]) {
+            if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
+            // TODO: Add Async scenes with an on-init condition (timer? load-once flag?)
             connections[scene->data->name] = picojson::value("1");
         }
-        // TODO: Add Async scenes with an on-init condition (timer? load-once flag?)
+        for (auto &scene : scenes[SceneType::World]) {
+            if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
+            connections[scene->data->name] = picojson::value("1");
+        }
         if (!connections.empty()) {
             picojson::object ent;
             ent["scene_connection"] = picojson::value(connections);

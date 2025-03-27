@@ -45,6 +45,8 @@ namespace ecs {
         picojson::value &dst,
         const EventData &src,
         const EventData *def);
+    template<>
+    void StructMetadata::SetScope<EventData>(EventData &dst, const EntityScope &scope);
 
     struct Event {
         std::string name;

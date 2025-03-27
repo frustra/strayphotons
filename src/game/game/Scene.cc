@@ -64,7 +64,7 @@ namespace sp {
         }
 
         auto entity = stagingLock.NewEntity();
-        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene);
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene, ecs::EntityScope(scene->data->name, ""));
         entity.Set<ecs::Name>(stagingLock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
@@ -73,7 +73,8 @@ namespace sp {
 
     ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
-        ecs::Name entityName) {
+        ecs::Name entityName,
+        const ecs::EntityScope &scope) {
         Assertf(scene, "Scene::NewRootEntity called with null scene: %s", entityName.String());
         Assertf(scene->data, "Scene::NewRootEntity called with null scene data: %s", entityName.String());
 
@@ -100,7 +101,7 @@ namespace sp {
         }
 
         auto entity = lock.NewEntity();
-        entity.Set<ecs::SceneInfo>(lock, entity, scene);
+        entity.Set<ecs::SceneInfo>(lock, entity, scene, scope);
         entity.Set<ecs::Name>(lock, entityName);
         if (ecs::IsLive(lock)) entity.Set<ecs::SceneProperties>(lock, scene->data->GetProperties(lock));
         namedEntities.emplace(entityName, entity);
@@ -112,7 +113,7 @@ namespace sp {
         ecs::Entity prefabRoot,
         size_t prefabScriptId,
         std::string relativeName,
-        ecs::EntityScope scope) {
+        const ecs::EntityScope &scope) {
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
         Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
             "Prefab root %s does not have SceneInfo",
@@ -148,7 +149,12 @@ namespace sp {
         auto entity = stagingLock.NewEntity();
         auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
         entity.Set<ecs::Name>(stagingLock, entityName);
-        auto &newSceneInfo = entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, prefabScriptId, rootSceneInfo);
+        auto &newSceneInfo = entity.Set<ecs::SceneInfo>(stagingLock,
+            entity,
+            prefabRoot,
+            prefabScriptId,
+            rootSceneInfo,
+            scope);
         if (existing) {
             Assertf(existing.Has<ecs::SceneInfo>(stagingLock),
                 "Expected existing staging entity to have SceneInfo: %s",

@@ -60,14 +60,15 @@ namespace sp {
         // Should only be called from SceneManager thread
         ecs::Entity NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
-            ecs::Name name = ecs::Name());
+            ecs::Name name,
+            const ecs::EntityScope &scope);
 
         // Should only be called from SceneManager thread
         ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             ecs::Entity prefabRoot,
             size_t prefabScriptId,
-            std::string relativeName = "",
-            ecs::EntityScope scope = ecs::Name());
+            std::string relativeName,
+            const ecs::EntityScope &scope);
 
         // Should only be called from SceneManager thread
         void RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);

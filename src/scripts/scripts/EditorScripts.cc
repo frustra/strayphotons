@@ -102,7 +102,7 @@ namespace sp::scripts {
                         }
                         Logf("TraySpawner new entity: %s", name.String());
 
-                        auto newEntity = scene->NewRootEntity(lock, scene, name);
+                        auto newEntity = scene->NewRootEntity(lock, scene, name, scope);
                         newEntity.Set<TransformTree>(lock, transform);
                         if (signalOutputs) {
                             newEntity.Set<SignalOutput>(lock, *signalOutputs);
