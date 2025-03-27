@@ -159,16 +159,19 @@ namespace sp {
             });
 
         funcs.Register("printevents", "Print out the current state of event queues", []() {
-            auto lock = ecs::StartTransaction<
-                ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventInput, ecs::EventBindings>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::EventInput>>();
 
-            for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
+            for (auto &ent : lock.EntitiesWith<ecs::EventInput>()) {
+                auto &input = ent.Get<ecs::EventInput>(lock);
+                if (input.events.empty()) continue;
                 Logf("Event input %s:", ecs::ToString(lock, ent));
 
-                auto &input = ent.Get<ecs::EventInput>(lock);
                 for (auto &[eventName, queues] : input.events) {
-                    for (auto &queue : queues) {
-                        if (queue->Empty()) {
+                    for (auto &queuePtr : queues) {
+                        auto queue = queuePtr.lock();
+                        if (!queue) {
+                            Logf("  %s: null weak_ptr", eventName);
+                        } else if (queue->Empty()) {
                             Logf("  %s: empty", eventName);
                         } else {
                             Logf("  %s: %u/%u events", eventName, queue->Size(), queue->Capacity());
@@ -176,8 +179,14 @@ namespace sp {
                     }
                 }
             }
+        });
 
-            for (auto ent : lock.EntitiesWith<ecs::EventBindings>()) {
+        funcs.Register("printbindings", "Print out the event binding state", []() {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventBindings>>();
+
+            for (auto &ent : lock.EntitiesWith<ecs::EventBindings>()) {
+                auto &bindings = ent.Get<ecs::EventBindings>(lock);
+                if (bindings.sourceToDest.empty()) continue;
                 Logf("Event binding %s:", ecs::ToString(lock, ent));
 
                 ecs::EntityScope scope;
@@ -186,7 +195,6 @@ namespace sp {
                     if (sceneInfo.scene) scope.scene = sceneInfo.scene.data->name;
                 }
 
-                auto &bindings = ent.Get<ecs::EventBindings>(lock);
                 for (auto &[bindingName, list] : bindings.sourceToDest) {
                     Logf("    %s:%s", bindingName, list.empty() ? " none" : "");
                     for (auto &binding : list) {

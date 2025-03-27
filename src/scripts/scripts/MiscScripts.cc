@@ -31,7 +31,6 @@ namespace sp::scripts {
         std::optional<SignalExpression> eventValue;
 
         // Internal script state
-        std::string lastExpr;
         std::optional<double> previousValue;
 
         template<typename LockType>
@@ -71,7 +70,8 @@ namespace sp::scripts {
         StructField::New("falling_edge", &EdgeTrigger::enableFalling),
         StructField::New("rising_edge", &EdgeTrigger::enableRising),
         StructField::New("init_value", &EdgeTrigger::previousValue),
-        StructField::New("set_event_value", &EdgeTrigger::eventValue));
+        StructField::New("set_event_value", &EdgeTrigger::eventValue),
+        StructField::New("_previous_value", &EdgeTrigger::previousValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
     InternalPhysicsScript<EdgeTrigger> physicsEdgeTrigger("physics_edge_trigger", MetadataEdgeTrigger);
 

@@ -87,6 +87,7 @@ namespace ecs {
         static const size_t QUEUE_POOL_BLOCK_SIZE = 1024;
 
         using Ref = std::shared_ptr<EventQueue>;
+        using WeakRef = std::weak_ptr<EventQueue>;
 
         // Returns false if the queue is full
         bool Add(const AsyncEvent &event);
@@ -122,4 +123,12 @@ namespace ecs {
     };
 
     using EventQueueRef = EventQueue::Ref;
+    using EventQueueWeakRef = EventQueue::WeakRef;
 } // namespace ecs
+
+namespace std {
+    // Thread-safe equality check without weak_ptr::lock()
+    inline bool operator==(const ecs::EventQueueRef &a, const ecs::EventQueueWeakRef &b) {
+        return !a.owner_before(b) && !b.owner_before(a);
+    }
+} // namespace std

@@ -179,8 +179,9 @@ namespace ecs {
         size_t eventsSent = 0;
         auto it = events.find(event.name);
         if (it != events.end()) {
-            for (auto &queue : it->second) {
-                if (queue->Add(event)) eventsSent++;
+            for (auto &queuePtr : it->second) {
+                auto queue = queuePtr.lock();
+                if (queue && queue->Add(event)) eventsSent++;
             }
         }
         return eventsSent;

@@ -11,6 +11,7 @@
 #include "common/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
@@ -127,7 +128,52 @@ namespace sp {
                 } else if constexpr (std::is_same_v<T, SceneProperties> || std::is_same_v<T, TransformSnapshot>) {
                     // Skip
                 } else if constexpr (std::is_same_v<T, Signals>) {
-                    // TODO: Convert signals to SignalOutput / SignalBindings
+                    // Convert live signals to SignalOutput / SignalBindings for saving
+                    auto signals = GetSignalManager().GetSignals(src);
+                    if (!signals.empty()) {
+                        auto &sceneInfo = src.Get<SceneInfo>(live);
+                        std::optional<SignalOutput> liveOutputs;
+                        std::optional<SignalBindings> liveBindings;
+                        for (auto &signalRef : signals) {
+                            if (signalRef.HasValue(live)) {
+                                if (!liveOutputs) liveOutputs = SignalOutput();
+                                liveOutputs->signals[signalRef.GetSignalName()] = signalRef.GetValue(live);
+                            }
+                            if (signalRef.HasBinding(live)) {
+                                if (!liveBindings) liveBindings = SignalBindings();
+                                liveBindings->bindings[signalRef.GetSignalName()] = signalRef.GetBinding(live);
+                            }
+                        }
+                        auto stagingOutputs = BuildFlatComponent<SignalOutput>(staging, sceneInfo.rootStagingId);
+                        auto stagingBindings = BuildFlatComponent<SignalBindings>(staging, sceneInfo.rootStagingId);
+
+                        if (liveOutputs) {
+                            const Component<SignalOutput> &base = LookupComponent<SignalOutput>();
+                            auto &value = components[base.name];
+                            SignalOutput *outputsPtr = nullptr;
+                            if (stagingOutputs) outputsPtr = &stagingOutputs.value();
+                            for (const StructField &field : base.metadata.fields) {
+                                field.Save(scope, value, &liveOutputs.value(), outputsPtr);
+                            }
+                            StructMetadata::Save<SignalOutput>(scope, value, liveOutputs.value(), outputsPtr);
+                            if (value.is<picojson::null>()) {
+                                components.erase(base.name);
+                            }
+                        }
+                        if (liveBindings) {
+                            const Component<SignalBindings> &base = LookupComponent<SignalBindings>();
+                            auto &value = components[base.name];
+                            SignalBindings *bindingsPtr = nullptr;
+                            if (stagingBindings) bindingsPtr = &stagingBindings.value();
+                            for (const StructField &field : base.metadata.fields) {
+                                field.Save(scope, value, &liveBindings.value(), bindingsPtr);
+                            }
+                            StructMetadata::Save<SignalBindings>(scope, value, liveBindings.value(), bindingsPtr);
+                            if (value.is<picojson::null>()) {
+                                components.erase(base.name);
+                            }
+                        }
+                    }
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     const Component<T> &base = LookupComponent<T>();
                     if (src.Has<T>(live)) {
@@ -262,13 +308,40 @@ namespace sp {
         for (auto &e : live.EntitiesWith<SceneInfo>()) {
             if (!e.Has<SceneInfo>(live)) continue;
 
-            picojson::value ent;
-            if (SaveEntityIfChanged(live, staging, scope, ent, e)) {
+            if (e == sp::entities::Spawn) {
+                // Replace spawn point with player position
+                picojson::value ent;
+                SaveEntityIfChanged(live, staging, scope, ent, e);
+                if (!ent.is<picojson::object>()) {
+                    picojson::object spawnObj;
+                    spawnObj["name"] = picojson::value(sp::entities::Spawn.Name().String());
+                    ent = picojson::value(spawnObj);
+                }
+                auto &spawnObj = ent.get<picojson::object>();
+
+                auto &transform = sp::entities::Direction.GetLive().Get<TransformSnapshot>(live).globalPose;
+                // TODO: Save entities::Head rotation to a new SpawnLook entity
+                json::Save(scope, spawnObj["transform"], transform);
                 entities.emplace_back(ent);
+            } else {
+                picojson::value ent;
+                if (SaveEntityIfChanged(live, staging, scope, ent, e)) {
+                    entities.emplace_back(ent);
+                }
             }
         }
-        // TODO: Generate scene_connection entity
-        // TODO: Replace player with spawn point entity
+        // Generate scene_connection entity
+        picojson::object connections;
+        for (auto &scene : scenes[SceneType::World]) {
+            if (!scene || !scene->data) continue;
+            connections[scene->data->name] = picojson::value("1");
+        }
+        // TODO: Add Async scenes with an on-init condition (timer? load-once flag?)
+        if (!connections.empty()) {
+            picojson::object ent;
+            ent["scene_connection"] = picojson::value(connections);
+            entities.emplace_back(ent);
+        }
 
         static auto sceneOrderFunc = [](const std::string &a, const std::string &b) {
             // Force "entities" to be sorted last

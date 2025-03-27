@@ -26,9 +26,9 @@ namespace sp {
     // Lower priority scenes will have their components overwritten with higher priority components.
     enum class ScenePriority {
         System, // Lowest priority
-        SaveGame,
         Scene,
         Player,
+        SaveGame,
         Bindings,
         Override, // Highest priority
     };
