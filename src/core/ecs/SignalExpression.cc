@@ -1049,7 +1049,7 @@ namespace ecs {
         picojson::value &dst,
         const SignalExpression &src,
         const SignalExpression *def) {
-        if (src.scope != scope) {
+        if (src.scope != scope && !src.expr.empty()) {
             // TODO: Remap signal names to new scope instead of converting to fully qualified names
             // Warnf("Saving signal expression with missmatched scope: `%s`, scope '%s' != '%s'",
             //     src.expr,
