@@ -335,11 +335,11 @@ namespace sp {
         for (auto &scene : scenes[SceneType::Async]) {
             if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
             // TODO: Add Async scenes with an on-init condition (timer? load-once flag?)
-            connections[scene->data->name] = picojson::value("1");
+            connections[scene->data->path] = picojson::value("1");
         }
         for (auto &scene : scenes[SceneType::World]) {
             if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
-            connections[scene->data->name] = picojson::value("1");
+            connections[scene->data->path] = picojson::value("1");
         }
         if (!connections.empty()) {
             picojson::object ent;
