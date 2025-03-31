@@ -24,7 +24,12 @@ namespace ecs {
         } else if (src.is<double>()) {
             data = src.get<double>();
         } else if (src.is<std::string>()) {
-            data = src.get<std::string>();
+            auto &str = src.get<std::string>();
+            if (str.starts_with("entity:")) {
+                data = EntityRef(Name(str.substr(7), ecs::EntityScope()));
+            } else {
+                data = str;
+            }
         } else if (src.is<picojson::array>()) {
             auto &arr = src.get<picojson::array>();
             if (arr.size() == 2) {
@@ -71,6 +76,13 @@ namespace ecs {
                 sp::json::Save(scope, dst, value);
             },
             src);
+    }
+
+    template<>
+    void StructMetadata::SetScope<EventData>(EventData &dst, const EntityScope &scope) {
+        if (auto *ref = std::get_if<EntityRef>(&dst)) {
+            ref->SetScope(scope);
+        }
     }
 
     std::string Event::ToString() const {

@@ -152,17 +152,49 @@ namespace sp {
                 GetSceneManager().QueueActionAndBlock(SceneAction::SaveStagingScene, sceneName);
             });
 
-        funcs.Register("printevents", "Print out the current state of event queues", []() {
-            auto lock = ecs::StartTransaction<
-                ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventInput, ecs::EventBindings>>();
+        funcs.Register<std::string>("savegame",
+            "Save a copy of the live scene state to a file",
+            [](std::string saveName) {
+                if (saveName.empty()) {
+                    int i = 0;
+                    while (std::filesystem::exists("./saves/save" + std::to_string(i) + ".json")) {
+                        i++;
+                    }
+                    saveName = "save" + std::to_string(i);
+                }
+                GetSceneManager().QueueActionAndBlock(SceneAction::SaveLiveScene, "saves/" + saveName);
+            });
 
-            for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
+        funcs.Register<std::string>("loadgame",
+            "Load a previously saved scene state from a file",
+            [](std::string saveName) {
+                if (saveName.empty()) {
+                    int i = 0;
+                    while (std::filesystem::exists("./saves/save" + std::to_string(i + 1) + ".json")) {
+                        i++;
+                    }
+                    saveName = "save" + std::to_string(i);
+                }
+                auto &manager = GetSceneManager();
+                manager.QueueAction(SceneAction::LoadScene, "saves/" + saveName);
+                manager.QueueAction(SceneAction::SyncScene);
+                manager.QueueActionAndBlock(SceneAction::RespawnPlayer);
+            });
+
+        funcs.Register("printevents", "Print out the current state of event queues", []() {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::EventInput>>();
+
+            for (auto &ent : lock.EntitiesWith<ecs::EventInput>()) {
+                auto &input = ent.Get<ecs::EventInput>(lock);
+                if (input.events.empty()) continue;
                 Logf("Event input %s:", ecs::ToString(lock, ent));
 
-                auto &input = ent.Get<ecs::EventInput>(lock);
                 for (auto &[eventName, queues] : input.events) {
-                    for (auto &queue : queues) {
-                        if (queue->Empty()) {
+                    for (auto &queuePtr : queues) {
+                        auto queue = queuePtr.lock();
+                        if (!queue) {
+                            Logf("  %s: null weak_ptr", eventName);
+                        } else if (queue->Empty()) {
                             Logf("  %s: empty", eventName);
                         } else {
                             Logf("  %s: %u/%u events", eventName, queue->Size(), queue->Capacity());
@@ -170,8 +202,14 @@ namespace sp {
                     }
                 }
             }
+        });
 
-            for (auto ent : lock.EntitiesWith<ecs::EventBindings>()) {
+        funcs.Register("printbindings", "Print out the event binding state", []() {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventBindings>>();
+
+            for (auto &ent : lock.EntitiesWith<ecs::EventBindings>()) {
+                auto &bindings = ent.Get<ecs::EventBindings>(lock);
+                if (bindings.sourceToDest.empty()) continue;
                 Logf("Event binding %s:", ecs::ToString(lock, ent));
 
                 ecs::EntityScope scope;
@@ -180,7 +218,6 @@ namespace sp {
                     if (sceneInfo.scene) scope.scene = sceneInfo.scene.data->name;
                 }
 
-                auto &bindings = ent.Get<ecs::EventBindings>(lock);
                 for (auto &[bindingName, list] : bindings.sourceToDest) {
                     Logf("    %s:%s", bindingName, list.empty() ? " none" : "");
                     for (auto &binding : list) {

@@ -98,7 +98,7 @@ namespace ecs {
                     for (auto &comp : entSrc) {
                         if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
-                        auto componentType = ecs::LookupComponent(comp.first);
+                        auto componentType = LookupComponent(comp.first);
                         if (componentType != nullptr) {
                             if (!componentType->LoadEntity(entDst.second, comp.second)) {
                                 Errorf("Failed to load component in template (%s), ignoring: %s",
@@ -132,7 +132,7 @@ namespace ecs {
                 for (auto &comp : entSrc) {
                     if (comp.first.empty() || comp.first[0] == '_' || comp.first == "name") continue;
 
-                    auto componentType = ecs::LookupComponent(comp.first);
+                    auto componentType = LookupComponent(comp.first);
                     if (componentType != nullptr) {
                         if (!componentType->LoadEntity(rootComponents, comp.second)) {
                             Errorf("Failed to load component in template (%s), ignoring: %s", sourceName, comp.first);
@@ -150,14 +150,17 @@ namespace ecs {
             ZoneScoped;
 
             Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", scope);
-            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+            ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
                 comp.SetComponent(lock, scope, newEntity, rootComponents);
             });
+            EntityRef newRef(newEntity);
 
-            if (newEntity.Has<ecs::TransformTree>(lock)) {
-                auto &transform = newEntity.Get<ecs::TransformTree>(lock);
+            if (newEntity.Has<TransformTree>(lock)) {
+                auto &transform = newEntity.Get<TransformTree>(lock);
                 if (!transform.parent) {
-                    if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
+                    if (rootEnt.Has<TransformTree>(lock) && rootEnt != newRef) {
+                        transform.parent = rootEnt;
+                    }
                     transform.pose = offset * transform.pose.Get();
                 }
             }
@@ -168,32 +171,35 @@ namespace ecs {
         void AddEntities(const Lock<AddRemove> &lock, EntityScope scope, Transform offset = {}) {
             ZoneScoped;
 
-            std::vector<ecs::Entity> scriptEntities;
+            std::vector<Entity> scriptEntities;
             for (auto &[relativeName, flatEnt] : entityList) {
-                ecs::Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope);
+                Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope);
                 if (!newEntity) {
                     // Most llkely a duplicate entity or invalid name
                     Errorf("Failed to create template entity (%s), ignoring: '%s'", sourceName, relativeName);
                     continue;
                 }
+                EntityRef newRef(newEntity);
 
-                ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+                ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
                     comp.SetComponent(lock, scope, newEntity, flatEnt);
                 });
 
-                if (newEntity.Has<ecs::TransformTree>(lock)) {
-                    auto &transform = newEntity.Get<ecs::TransformTree>(lock);
+                if (newEntity.Has<TransformTree>(lock)) {
+                    auto &transform = newEntity.Get<TransformTree>(lock);
                     if (!transform.parent) {
-                        if (rootEnt.Has<TransformTree>(lock)) transform.parent = rootEnt;
+                        if (rootEnt.Has<TransformTree>(lock) && rootEnt != newRef) {
+                            transform.parent = rootEnt;
+                        }
                         transform.pose = offset * transform.pose.Get();
                     }
                 }
-                if (newEntity.Has<ecs::Scripts>(lock)) {
+                if (newEntity.Has<Scripts>(lock)) {
                     scriptEntities.push_back(newEntity);
                 }
             }
 
-            auto &scriptManager = ecs::GetScriptManager();
+            auto &scriptManager = GetScriptManager();
             for (auto &e : scriptEntities) {
                 scriptManager.RunPrefabs(lock, e);
             }
@@ -210,7 +216,7 @@ namespace ecs {
             ZoneScoped;
             ZoneStr(source);
 
-            EntityScope scope = ecs::Name(scene->data->name, "");
+            EntityScope scope = Name(scene->data->name, "");
             if (ent.Has<Name>(lock)) scope = ent.Get<Name>(lock);
 
             TemplateParser parser(scene, ent, state.GetInstanceId(), source);
@@ -218,8 +224,8 @@ namespace ecs {
 
             Entity rootOverride = parser.ApplyComponents(lock, scope);
             parser.AddEntities(lock, scope);
-            if (rootOverride.Has<ecs::Scripts>(lock)) {
-                ecs::GetScriptManager().RunPrefabs(lock, rootOverride);
+            if (rootOverride.Has<Scripts>(lock)) {
+                GetScriptManager().RunPrefabs(lock, rootOverride);
             }
         }
     };
@@ -254,7 +260,7 @@ namespace ecs {
                 return;
             }
 
-            EntityScope rootScope = ecs::Name(scene->data->name, "");
+            EntityScope rootScope = Name(scene->data->name, "");
             if (ent.Has<Name>(lock)) rootScope = ent.Get<Name>(lock);
 
             TemplateParser surface(scene, ent, state.GetInstanceId(), surfaceTemplate);
@@ -278,9 +284,9 @@ namespace ecs {
                     offset3D[axesIndex.first] = offset2D.x;
                     offset3D[axesIndex.second] = offset2D.y;
 
-                    ecs::EntityScope tileScope = ecs::Name(std::to_string(x) + "_" + std::to_string(y), rootScope);
+                    EntityScope tileScope = Name(std::to_string(x) + "_" + std::to_string(y), rootScope);
 
-                    ecs::Entity tileEnt = surface.ApplyComponents(lock, tileScope, offset3D);
+                    Entity tileEnt = surface.ApplyComponents(lock, tileScope, offset3D);
                     if (!tileEnt) {
                         // Most llkely a duplicate entity or invalid name
                         Errorf("Failed to create tiled template entity (%s), ignoring: '%s'",
@@ -326,8 +332,8 @@ namespace ecs {
                             edge.AddEntities(lock, tileScope, transform);
                         }
                     }
-                    if (tileEnt.Has<ecs::Scripts>(lock)) {
-                        ecs::GetScriptManager().RunPrefabs(lock, tileEnt);
+                    if (tileEnt.Has<Scripts>(lock)) {
+                        GetScriptManager().RunPrefabs(lock, tileEnt);
                     }
                 }
             }

@@ -15,11 +15,15 @@
 namespace ecs {
     struct SceneInfo {
         SceneInfo() {}
-        SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene);
+        SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene, const EntityScope &scope);
 
-        SceneInfo(Entity rootStagingId, Entity prefabStagingId, size_t prefabScriptId, const SceneInfo &rootSceneInfo)
+        SceneInfo(Entity rootStagingId,
+            Entity prefabStagingId,
+            size_t prefabScriptId,
+            const SceneInfo &rootSceneInfo,
+            const ecs::EntityScope &scope)
             : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), prefabScriptId(prefabScriptId),
-              priority(rootSceneInfo.priority), scene(rootSceneInfo.scene) {
+              priority(rootSceneInfo.priority), scene(rootSceneInfo.scene), scope(scope) {
             Assertf(IsStaging(rootStagingId), "Invalid rootStagingId in SceneInfo: %s", std::to_string(rootStagingId));
             Assertf(IsStaging(prefabStagingId),
                 "Invalid prefabStagingId in SceneInfo: %s",
@@ -44,5 +48,6 @@ namespace ecs {
 
         sp::ScenePriority priority = sp::ScenePriority::Scene;
         sp::SceneRef scene;
+        EntityScope scope;
     };
 } // namespace ecs

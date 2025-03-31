@@ -46,7 +46,7 @@
 		{
 			"name": "global:spawn",
 			"transform": {
-				"translate": [0, 160.05, -3.8],
+				"translate": [0, 145.05, -3.8],
 				"rotate": [180, 0, 1, 0]
 			}
 		},
@@ -56,8 +56,8 @@
 				"model": "box"
 			},
 			"transform": {
-				"scale": [320, 1, 1],
-				"translate": [0, 160, 3.2]
+				"scale": [290, 1, 1],
+				"translate": [0, 145, 3.2]
 			},
 			"physics": {
 				"shapes": {
@@ -72,8 +72,8 @@
 				"model": "box"
 			},
 			"transform": {
-				"scale": [320, 1, 1],
-				"translate": [0, 160, 3.2],
+				"scale": [290, 1, 1],
+				"translate": [0, 145, 3.2],
 				"rotate": [45, 0, 0, 1]
 			},
 			"physics": {
@@ -90,8 +90,8 @@
 				"visibility": ""
 			},
 			"transform": {
-				"scale": [320, 5.2, 0.1],
-				"translate": [0, 160, 2.75],
+				"scale": [290, 5.2, 0.1],
+				"translate": [0, 145, 2.75],
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
@@ -107,8 +107,8 @@
 				"model": "box"
 			},
 			"transform": {
-				"scale": [5.2, 153.9, 0.1],
-				"translate": [0, 82.95, -2.35]
+				"scale": [5.2, 138.5, 0.1],
+				"translate": [0, 75.25, -2.35]
 			},
 			"physics": {
 				"shapes": {
@@ -123,8 +123,8 @@
 				"model": "box"
 			},
 			"transform": {
-				"scale": [0.1, 160, 5],
-				"translate": [3.05, 86, 0.2]
+				"scale": [0.1, 145, 5],
+				"translate": [3.05, 78.496, 0.2]
 			},
 			"physics": {
 				"shapes": {
@@ -139,8 +139,8 @@
 				"model": "box"
 			},
 			"transform": {
-				"scale": [0.1, 160, 5],
-				"translate": [-3.05, 86, 0.2]
+				"scale": [0.1, 145, 5],
+				"translate": [-3.05, 78.496, 0.2]
 			},
 			"physics": {
 				"shapes": {
@@ -155,8 +155,8 @@
 				"model": "box"
 			},
 			"transform": {
-				"scale": [320, 1, 1],
-				"translate": [0, 160, 3.2],
+				"scale": [290, 1, 1],
+				"translate": [0, 145, 3.2],
 				"rotate": [-45, 0, 0, 1]
 			},
 			"physics": {
@@ -169,7 +169,7 @@
 		{
 			"name": "global:ship_airlock",
 			"transform": {
-				"translate": [0, 160, -3.9]
+				"translate": [0, 145, -3.9]
 			},
 			"scene_connection": {
 				"station-center": "elevator_zone/trigger_player_count"

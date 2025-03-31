@@ -484,7 +484,7 @@ namespace sp {
             liveSceneInfo.scene.data->name);
         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
 
-        auto flatParentEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
+        auto flatParentEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
         ecs::FlatEntity flatStagingEntity;
 
         ( // For each component:

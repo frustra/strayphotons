@@ -41,7 +41,7 @@ namespace ecs {
         size_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::unordered_map<std::string, std::vector<EventQueueRef>> events;
+        robin_hood::unordered_map<std::string, std::vector<EventQueueWeakRef>> events;
     };
 
     static Component<EventInput> ComponentEventInput({typeid(EventInput), "event_input", R"(

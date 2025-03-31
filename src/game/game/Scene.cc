@@ -64,7 +64,7 @@ namespace sp {
         }
 
         auto entity = stagingLock.NewEntity();
-        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene);
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, scene, ecs::EntityScope(scene->data->name, ""));
         entity.Set<ecs::Name>(stagingLock, entityName);
         namedEntities.emplace(entityName, entity);
         references.emplace_back(entityName, entity);
@@ -73,12 +73,13 @@ namespace sp {
 
     ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
-        ecs::Name entityName) {
+        ecs::Name entityName,
+        const ecs::EntityScope &scope) {
         Assertf(scene, "Scene::NewRootEntity called with null scene: %s", entityName.String());
         Assertf(scene->data, "Scene::NewRootEntity called with null scene data: %s", entityName.String());
 
         if (entityName) {
-            if (!ValidateEntityName(entityName)) {
+            if (scene->data->priority != ScenePriority::SaveGame && !ValidateEntityName(entityName)) {
                 Errorf("Invalid root entity name: %s", entityName.String());
                 return ecs::Entity();
             }
@@ -100,7 +101,7 @@ namespace sp {
         }
 
         auto entity = lock.NewEntity();
-        entity.Set<ecs::SceneInfo>(lock, entity, scene);
+        entity.Set<ecs::SceneInfo>(lock, entity, scene, scope);
         entity.Set<ecs::Name>(lock, entityName);
         if (ecs::IsLive(lock)) entity.Set<ecs::SceneProperties>(lock, scene->data->GetProperties(lock));
         namedEntities.emplace(entityName, entity);
@@ -112,7 +113,7 @@ namespace sp {
         ecs::Entity prefabRoot,
         size_t prefabScriptId,
         std::string relativeName,
-        ecs::EntityScope scope) {
+        const ecs::EntityScope &scope) {
         Assertf(ecs::IsStaging(stagingLock), "Scene::NewPrefabEntity must be called with a staging lock");
         Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
             "Prefab root %s does not have SceneInfo",
@@ -148,7 +149,12 @@ namespace sp {
         auto entity = stagingLock.NewEntity();
         auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
         entity.Set<ecs::Name>(stagingLock, entityName);
-        auto &newSceneInfo = entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, prefabScriptId, rootSceneInfo);
+        auto &newSceneInfo = entity.Set<ecs::SceneInfo>(stagingLock,
+            entity,
+            prefabRoot,
+            prefabScriptId,
+            rootSceneInfo,
+            scope);
         if (existing) {
             Assertf(existing.Has<ecs::SceneInfo>(stagingLock),
                 "Expected existing staging entity to have SceneInfo: %s",
@@ -219,7 +225,7 @@ namespace sp {
                 continue;
             }
 
-            entities.emplace_back(e, scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), e));
+            entities.emplace_back(e, scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), e));
         }
 
         auto live = ecs::StartTransaction<ecs::AddRemove>();
@@ -253,7 +259,7 @@ namespace sp {
                 sceneInfo.SetLiveId(staging, sceneInfo.liveId);
                 liveSceneInfo = sceneInfo.rootStagingId.Get<ecs::SceneInfo>(staging);
 
-                scene::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
+                scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
                 continue;
             }
 
@@ -269,8 +275,8 @@ namespace sp {
                 liveSceneInfo = sceneInfo.rootStagingId.Get<ecs::SceneInfo>(staging);
 
                 // Rebuild the flat entity since the scene hierarchy has changed
-                flatEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId);
-                scene::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
+                flatEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId);
+                scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
             } else {
                 // No entity exists in the live scene
                 sceneInfo.liveId = live.NewEntity();
@@ -280,7 +286,7 @@ namespace sp {
                 ecs::GetEntityRefs().Set(entityName, e);
                 ecs::GetEntityRefs().Set(entityName, sceneInfo.liveId);
 
-                scene::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
+                scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
             }
         }
         {
@@ -327,8 +333,9 @@ namespace sp {
                     remainingInfo.liveId.Set<ecs::SceneInfo>(live,
                         remainingInfo.rootStagingId.Get<ecs::SceneInfo>(staging));
 
-                    auto flatEntity = scene::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), remainingInfo.rootStagingId);
-                    scene::ApplyFlatEntity(live, remainingInfo.liveId, flatEntity, false);
+                    auto flatEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging),
+                        remainingInfo.rootStagingId);
+                    scene_util::ApplyFlatEntity(live, remainingInfo.liveId, flatEntity, false);
                 }
             }
             ecs::EntityRef ref = e;

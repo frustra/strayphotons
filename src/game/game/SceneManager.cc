@@ -246,6 +246,11 @@ namespace sp {
                 std::string sceneName(GetSceneName(item.scenePath));
                 SaveSceneJson(sceneName);
                 item.promise.set_value();
+            } else if (item.action == SceneAction::SaveLiveScene) {
+                ZoneScopedN("SaveLiveScene");
+                ZoneStr(item.scenePath);
+                SaveLiveSceneJson(item.scenePath);
+                item.promise.set_value();
             } else if (item.action == SceneAction::LoadScene) {
                 ZoneScopedN("LoadScene");
                 ZoneStr(item.scenePath);
@@ -268,9 +273,35 @@ namespace sp {
                         removedCount);
                 }
 
-                AddScene(item.scenePath, SceneType::World, [this](auto stagingLock, auto liveLock, auto scene) {
-                    RespawnPlayer(liveLock);
-                });
+                if (starts_with(item.scenePath, "saves/")) {
+                    ZoneScopedN("ReloadPlayer");
+                    if (playerScene) {
+                        auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                        auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
+
+                        playerScene->RemoveScene(stagingLock, liveLock);
+                        playerScene.reset();
+                    }
+                    AddScene(item.scenePath, SceneType::Async);
+
+                    playerScene = LoadSceneJson("player", "system/player", SceneType::World);
+                    if (playerScene) {
+                        PreloadAndApplyScene(playerScene, false, [this](auto stagingLock, auto liveLock, auto scene) {
+                            ecs::Entity stagingPlayer = scene->GetStagingEntity(entities::Player.Name());
+                            Assert(stagingPlayer.Has<ecs::SceneInfo>(stagingLock),
+                                "Player scene doesn't contain an entity named player");
+
+                            RespawnPlayer(liveLock);
+                        });
+                    } else {
+                        Errorf("Failed to load player scene!");
+                    }
+                } else {
+                    AddScene(item.scenePath, SceneType::World, [this](auto stagingLock, auto liveLock, auto scene) {
+                        // Maybne pause physics here?
+                        RespawnPlayer(liveLock);
+                    });
+                }
                 item.promise.set_value();
             } else if (item.action == SceneAction::ReloadScene) {
                 ZoneScopedN("ReloadScene");
@@ -629,7 +660,17 @@ namespace sp {
         SceneType sceneType) {
         Logf("Loading scene: %s", scenePath);
 
-        auto asset = Assets().Load("scenes/" + scenePath + ".json", AssetType::Bundled, true)->Get();
+        std::string adjustedPath;
+        AssetType adjustedType;
+        if (starts_with(scenePath, "saves/")) {
+            adjustedPath = scenePath;
+            adjustedType = AssetType::External;
+        } else {
+            adjustedPath = "scenes/" + scenePath;
+            adjustedType = AssetType::Bundled;
+        }
+
+        auto asset = Assets().Load(adjustedPath + ".json", adjustedType, true)->Get();
         if (!asset) {
             Errorf("Scene not found: %s", scenePath);
             return nullptr;
@@ -695,7 +736,7 @@ namespace sp {
             auto &name_ptr = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
             auto name = name_ptr ? *name_ptr : ecs::Name();
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, name, scope);
             if (!entity) {
                 // Most llkely a duplicate entity definition
                 Errorf("LoadScene(%s): Failed to create entity, ignoring: '%s'", scenePath, name.String());
@@ -716,76 +757,6 @@ namespace sp {
             scriptManager.RunPrefabs(lock, e);
         }
         return scene;
-    }
-
-    void SceneManager::SaveSceneJson(const std::string &sceneName) {
-        auto scene = stagedScenes.Load(sceneName);
-        if (scene) {
-            Tracef("Saving staging scene: %s", scene->data->path);
-            auto staging = ecs::StartStagingTransaction<ecs::ReadAll>();
-
-            ecs::EntityScope scope(scene->data->name, "");
-
-            picojson::array entities;
-            for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
-                if (!e.Has<ecs::SceneInfo>(staging)) continue;
-                auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-                // Skip entities that aren't part of this scene, or were created by a prefab script
-                if (sceneInfo.scene != scene || sceneInfo.prefabStagingId) continue;
-
-                static auto componentOrderFunc = [](const std::string &a, const std::string &b) {
-                    // Sort component keys in the order they are defined in the ECS
-                    return ecs::GetComponentIndex(a) < ecs::GetComponentIndex(b);
-                };
-                picojson::object components(componentOrderFunc);
-                if (e.Has<ecs::Name>(staging)) {
-                    auto &name = e.Get<ecs::Name>(staging);
-                    if (scene->ValidateEntityName(name)) {
-                        json::Save(scope, components["name"], name);
-                    }
-                }
-                ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                    if (name == "scene_properties") return;
-                    if (comp.HasComponent(staging, e)) {
-                        auto &value = components[comp.name];
-                        if (comp.metadata.fields.empty() || value.is<picojson::null>()) {
-                            value.set<picojson::object>({});
-                        }
-                        comp.SaveEntity(staging, scope, value, e);
-                    }
-                });
-                entities.emplace_back(components);
-            }
-
-            static auto sceneOrderFunc = [](const std::string &a, const std::string &b) {
-                // Force "entities" to be sorted last
-                if (b == "entities") {
-                    return a < "zentities";
-                } else if (a == "entities") {
-                    return "zentities" < b;
-                } else {
-                    return a < b;
-                }
-            };
-            picojson::object sceneObj(sceneOrderFunc);
-            static const ecs::SceneProperties defaultProperties = {};
-            static const ScenePriority defaultPriority = ScenePriority::Scene;
-            json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
-            json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, &defaultPriority);
-            sceneObj["entities"] = picojson::value(entities);
-            auto val = picojson::value(sceneObj);
-            auto scenePath = scene->asset->path;
-            Logf("Saving scene %s to '%s'", scene->data->name, scenePath.string());
-
-            std::ofstream out;
-            if (Assets().OutputStream(scenePath.string(), out)) {
-                auto outputJson = val.serialize(true);
-                out.write(outputJson.c_str(), outputJson.size());
-                out.close();
-            }
-        } else {
-            Errorf("SceneManager::SaveSceneJson: scene %s not found", sceneName);
-        }
     }
 
     std::shared_ptr<Scene> SceneManager::LoadBindingsJson() {
@@ -862,7 +833,7 @@ namespace sp {
             auto &name = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
             if (!name || !*name) continue;
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name);
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name, ecs::EntityScope("bindings", ""));
             if (!entity) {
                 // Most llkely a duplicate entity definition
                 Errorf("Failed to create binding entity, ignoring: '%s'", name->String());

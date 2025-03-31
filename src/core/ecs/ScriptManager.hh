@@ -32,7 +32,7 @@ namespace ecs {
 
     using PhysicsUpdateLock = Lock<SendEventsLock,
         ReadSignalsLock,
-        Read<TransformSnapshot>,
+        Read<TransformSnapshot, SceneInfo>,
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;

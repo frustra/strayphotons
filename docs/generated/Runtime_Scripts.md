@@ -85,12 +85,13 @@ The `component_from_signal` script has parameter type: map&lt;string, [SignalExp
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **input_expr** | string | "" | No description |
+| **input_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
 | **output_event** | string | "/script/edge_trigger" | No description |
 | **falling_edge** | bool | true | No description |
 | **rising_edge** | bool | true | No description |
 | **init_value** | optional&lt;double&gt; | null | No description |
 | **set_event_value** | optional&lt;[SignalExpression](#SignalExpression-type)&gt; | null | No description |
+| **_previous_value** | optional&lt;double&gt; | null | No description |
 
 **See Also:**
 [SignalExpression](#SignalExpression-type)
@@ -166,6 +167,9 @@ The `init_event` script has parameter type: vector&lt;string&gt;
 |------------|------|---------------|-------------|
 | **grab_distance** | float | 2 | No description |
 | **noclip_entity** | [EntityRef](#EntityRef-type) | "" | No description |
+| **_grab_entity** | [EntityRef](#EntityRef-type) | "" | No description |
+| **_point_entity** | [EntityRef](#EntityRef-type) | "" | No description |
+| **_press_entity** | [EntityRef](#EntityRef-type) | "" | No description |
 
 **See Also:**
 [EntityRef](#EntityRef-type)
@@ -181,6 +185,12 @@ The `init_event` script has parameter type: vector&lt;string&gt;
 |------------|------|---------------|-------------|
 | **disabled** | bool | false | No description |
 | **highlight_only** | bool | false | No description |
+| **_grab_entities** | vector&lt;pair&lt;[EntityRef](#EntityRef-type), [EntityRef](#EntityRef-type)&gt;&gt; | [] | No description |
+| **_point_entities** | vector&lt;[EntityRef](#EntityRef-type)&gt; | [] | No description |
+| **_render_outline** | bool | false | No description |
+
+**See Also:**
+[EntityRef](#EntityRef-type)
 
 </div>
 
@@ -303,12 +313,13 @@ The `physics_component_from_signal` script has parameter type: map&lt;string, [S
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **input_expr** | string | "" | No description |
+| **input_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
 | **output_event** | string | "/script/edge_trigger" | No description |
 | **falling_edge** | bool | true | No description |
 | **rising_edge** | bool | true | No description |
 | **init_value** | optional&lt;double&gt; | null | No description |
 | **set_event_value** | optional&lt;[SignalExpression](#SignalExpression-type)&gt; | null | No description |
+| **_previous_value** | optional&lt;double&gt; | null | No description |
 
 **See Also:**
 [SignalExpression](#SignalExpression-type)

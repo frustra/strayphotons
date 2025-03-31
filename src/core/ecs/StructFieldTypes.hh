@@ -82,6 +82,8 @@ namespace ecs {
         std::vector<PhysicsShape>,
         std::vector<ScriptInstance>,
         std::vector<Sound>,
+        std::vector<EntityRef>,
+        std::vector<std::pair<EntityRef, EntityRef>>,
         std::optional<double>,
         std::optional<EventData>,
         std::optional<SignalExpression>,

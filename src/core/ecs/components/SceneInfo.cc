@@ -12,8 +12,8 @@
 #include "game/Scene.hh"
 
 namespace ecs {
-    SceneInfo::SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene)
-        : priority(scene->data->priority), scene(scene) {
+    SceneInfo::SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene, const EntityScope &scope)
+        : priority(scene->data->priority), scene(scene), scope(scope) {
         if (IsLive(ent)) {
             liveId = ent;
         } else if (IsStaging(ent)) {

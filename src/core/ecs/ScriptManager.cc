@@ -132,12 +132,14 @@ namespace ecs {
                     if (!state.eventQueue) state.eventQueue = ecs::EventQueue::New();
                     eventInput.Register(lock, state.eventQueue, event);
                 }
+                entry.first = ent;
             } else if (!state.definition.events.empty()) {
                 Warnf("Script %s has events but %s has no EventInput component",
                     state.definition.name,
                     ecs::ToString(lock, ent));
+            } else {
+                entry.first = ent;
             }
-            entry.first = ent;
         }
     }
 

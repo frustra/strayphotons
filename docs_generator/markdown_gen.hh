@@ -70,6 +70,9 @@ private:
             }
         } else if constexpr (sp::is_vector<T>()) {
             return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
+        } else if constexpr (sp::is_pair<T>()) {
+            return "pair&lt;" + fieldTypeName<typename T::first_type>() + ", " +
+                   fieldTypeName<typename T::first_type>() + "&gt;";
         } else if constexpr (sp::json::detail::is_unordered_map<T>()) {
             return "map&lt;" + fieldTypeName<typename T::key_type>() + ", " + fieldTypeName<typename T::mapped_type>() +
                    "&gt;";

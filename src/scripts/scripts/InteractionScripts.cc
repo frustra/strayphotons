@@ -25,8 +25,8 @@ namespace sp::scripts {
     struct InteractiveObject {
         bool disabled = false;
         bool highlightOnly = false;
-        std::vector<std::pair<Entity, Entity>> grabEntities;
-        std::vector<Entity> pointEntities;
+        std::vector<std::pair<EntityRef, EntityRef>> grabEntities;
+        std::vector<EntityRef> pointEntities;
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
 
@@ -55,7 +55,9 @@ namespace sp::scripts {
                 if (event.name == INTERACT_EVENT_INTERACT_POINT) {
                     auto pointTransform = std::get_if<Transform>(&event.data);
                     if (pointTransform) {
-                        pointEntities.emplace_back(event.source);
+                        if (!sp::contains(pointEntities, event.source)) {
+                            pointEntities.emplace_back(event.source);
+                        }
                     } else if (std::holds_alternative<bool>(event.data)) {
                         sp::erase(pointEntities, event.source);
                     } else {
@@ -64,7 +66,7 @@ namespace sp::scripts {
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
                     if (std::holds_alternative<bool>(event.data)) {
                         // Grab(false) = Drop
-                        Entity secondary;
+                        EntityRef secondary;
                         for (auto &[a, b] : grabEntities) {
                             if (a == event.source) {
                                 secondary = b;
@@ -87,7 +89,7 @@ namespace sp::scripts {
                         auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
                         auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
-                        Entity secondary;
+                        EntityRef secondary;
                         if (ent.Has<PhysicsJoints>(lock)) {
                             auto &joints = ent.Get<PhysicsJoints>(lock);
                             if (event.source.Has<PhysicsJoints>(lock)) {
@@ -198,7 +200,10 @@ namespace sp::scripts {
         "InteractiveObject",
         "",
         StructField::New("disabled", &InteractiveObject::disabled),
-        StructField::New("highlight_only", &InteractiveObject::highlightOnly));
+        StructField::New("highlight_only", &InteractiveObject::highlightOnly),
+        StructField::New("_grab_entities", &InteractiveObject::grabEntities),
+        StructField::New("_point_entities", &InteractiveObject::pointEntities),
+        StructField::New("_render_outline", &InteractiveObject::renderOutline));
     InternalScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
         true,
@@ -209,7 +214,7 @@ namespace sp::scripts {
     struct InteractHandler {
         float grabDistance = 2.0f;
         EntityRef noclipEntity;
-        Entity grabEntity, pointEntity, pressEntity;
+        EntityRef grabEntity, pointEntity, pressEntity;
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
         void UpdateGrabTarget(Lock<Write<PhysicsJoints>> lock, Entity newGrabEntity) {
@@ -332,7 +337,10 @@ namespace sp::scripts {
         "InteractHandler",
         "",
         StructField::New("grab_distance", &InteractHandler::grabDistance),
-        StructField::New("noclip_entity", &InteractHandler::noclipEntity));
+        StructField::New("noclip_entity", &InteractHandler::noclipEntity),
+        StructField::New("_grab_entity", &InteractHandler::grabEntity),
+        StructField::New("_point_entity", &InteractHandler::pointEntity),
+        StructField::New("_press_entity", &InteractHandler::pressEntity));
     InternalScript<InteractHandler> interactHandler("interact_handler",
         MetadataInteractHandler,
         false,

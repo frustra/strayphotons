@@ -14,7 +14,7 @@ namespace sp {
     class GraphicsManager;
     class GpuTexture;
 
-    enum class MenuScreen { Main, Options, SceneSelect };
+    enum class MenuScreen { Main, Options, SceneSelect, SaveSelect };
 
     class MenuGuiManager : public SystemGuiManager {
     public:
@@ -26,6 +26,7 @@ namespace sp {
 
         bool MenuOpen() const;
         void RefreshSceneList();
+        void RefreshSaveList();
 
     private:
         GraphicsManager &graphics;
@@ -34,6 +35,7 @@ namespace sp {
 
         MenuScreen selectedScreen = MenuScreen::Main;
         std::vector<std::pair<std::string, std::string>> sceneList;
+        std::vector<std::pair<std::string, std::string>> saveList;
 
         shared_ptr<GpuTexture> logoTex;
     };

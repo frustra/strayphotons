@@ -19,6 +19,7 @@
 #include <picojson/picojson.h>
 #include <robin_hood.h>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -179,6 +180,31 @@ namespace sp::json {
         dst = entry;
         return true;
     }
+    template<typename A, typename B>
+    inline bool Load(std::pair<A, B> &dst, const picojson::value &src) {
+        if (!src.is<picojson::array>()) {
+            Errorf("Unexpected type for pair<%s, %s>: %s", typeid(A).name(), typeid(B).name(), src.to_str());
+            return false;
+        }
+        auto &arr = src.get<picojson::array>();
+        if (arr.empty()) return true;
+        if (arr.size() > 2) {
+            Errorf("Too many values specified for pair<%s, %s>: %d", typeid(A).name(), typeid(B).name(), arr.size());
+            return false;
+        }
+        if (!sp::json::Load<A>(dst.first, arr[0])) {
+            return false;
+        }
+        if (arr.size() > 1) {
+            if (!sp::json::Load<B>(dst.second, arr[1])) {
+                return false;
+            }
+        } else {
+            Errorf("Not enough values specified for pair<%s, %s>: %d", typeid(A).name(), typeid(B).name(), arr.size());
+            return false;
+        }
+        return true;
+    }
     template<typename T>
     inline bool Load(std::vector<T> &dst, const picojson::value &src) {
         dst.clear();
@@ -327,9 +353,16 @@ namespace sp::json {
             },
             src);
     }
+    template<typename A, typename B>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::pair<A, B> &src) {
+        picojson::array pair(2);
+        Save(s, pair[0], src.first);
+        Save(s, pair[1], src.second);
+        dst = picojson::value(pair);
+    }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {
-        if (src.size() == 1) {
+        if (src.size() == 1 && !sp::is_pair<T>()) {
             Save(s, dst, src[0]);
         } else {
             picojson::array vec(src.size());
@@ -441,7 +474,7 @@ namespace sp::json {
         if (def && arrayOut.empty()) return false;
 
         picojson::value valueOut;
-        if (arrayOut.size() == 1) {
+        if (arrayOut.size() == 1 && !sp::is_pair<T>()) {
             valueOut = arrayOut.front();
         } else {
             valueOut = picojson::value(arrayOut);
@@ -511,7 +544,25 @@ namespace sp::json {
             SaveSchema<typename T::value_type>(dst, references, false);
         } else if constexpr (sp::is_vector<T>()) {
             picojson::value subSchema;
-            SaveSchema<typename T::value_type>(subSchema, references, false);
+            if constexpr (sp::is_pair<typename T::value_type>()) {
+                picojson::value subSchemaA;
+                SaveSchema<typename T::value_type::first_type>(subSchemaA, references, false);
+                picojson::value subSchemaB;
+                SaveSchema<typename T::value_type::second_type>(subSchemaB, references, false);
+
+                picojson::object pairSchema;
+                pairSchema["type"] = picojson::value("array");
+                pairSchema["minItems"] = picojson::value(2.0);
+                pairSchema["maxItems"] = picojson::value(2.0);
+                pairSchema["items"] = picojson::value(false);
+                picojson::array pairItems(2);
+                pairItems[0] = subSchemaA;
+                pairItems[1] = subSchemaB;
+                pairSchema["prefixItems"] = picojson::value(pairItems);
+                subSchema = picojson::value(pairSchema);
+            } else {
+                SaveSchema<typename T::value_type>(subSchema, references, false);
+            }
 
             picojson::object arraySchema;
             arraySchema["type"] = picojson::value("array");

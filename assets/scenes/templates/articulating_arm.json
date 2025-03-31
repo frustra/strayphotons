@@ -55,7 +55,7 @@
 					{
 						"outputs": "arm.Arm_0/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Arm_0/physics_joint/lock/enable"
 				]
@@ -111,7 +111,7 @@
 					{
 						"outputs": "arm.Socket_0/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Socket_0/physics_joint/lock/enable"
 				]
@@ -168,7 +168,7 @@
 					{
 						"outputs": "arm.Knob/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Knob/physics_joint/lock/enable"
 				]
@@ -235,7 +235,7 @@
 					{
 						"outputs": "arm.Shaft/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Shaft/physics_joint/lock/enable"
 				]
@@ -289,7 +289,7 @@
 					{
 						"outputs": "arm.Arm_1/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Arm_1/physics_joint/lock/enable"
 				]
@@ -345,7 +345,7 @@
 					{
 						"outputs": "arm.Socket_1/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Socket_1/physics_joint/lock/enable"
 				]
@@ -404,7 +404,7 @@
 					{
 						"outputs": "arm.Ball_1/physics_joint/lock/set_current_offset",
 						"filter": "event",
-						"set_value": "arm.Ball_0"
+						"set_value": "entity:arm.Ball_0"
 					},
 					"arm.Ball_1/physics_joint/lock/enable"
 				]

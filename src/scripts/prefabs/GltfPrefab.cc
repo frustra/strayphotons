@@ -71,9 +71,12 @@ namespace ecs {
                     state.GetInstanceId(),
                     getNodeName(nodeId),
                     prefixName);
+                EntityRef newRef(newEntity);
 
                 auto &transform = newEntity.Set<TransformTree>(lock, node.transform);
-                if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
+                if (parentEnt.Has<TransformTree>(lock) && parentEnt != newRef) {
+                    transform.parent = parentEnt;
+                }
 
                 if (node.meshIndex) {
                     if (render) {

@@ -10,12 +10,12 @@
 			"states": [
 				{
 					"delay": 10,
-					"translate": [0, 160, 0],
+					"translate": [0, 145, 0],
 					"translate_tangent": [0, 0, 0]
 				},
 				{
 					"delay": 10,
-					"translate": [0, 120, 0],
+					"translate": [0, 105, 0],
 					"translate_tangent": [0, -7, 0]
 				},
 				{

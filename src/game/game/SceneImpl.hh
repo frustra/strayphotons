@@ -14,7 +14,7 @@
 
 #include <bitset>
 
-namespace sp::scene {
+namespace sp::scene_util {
     using namespace ecs;
 
     // Build a flattened set of components from the staging ECS.
@@ -47,7 +47,7 @@ namespace sp::scene {
                     } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
                         // Ignore, this is handled by TransformTree
                     } else if constexpr (std::is_same_v<T, Animation>) {
-                        // Ignore, this is handled bellow and depends on the final TransformTree
+                        // Ignore, this is handled below and depends on the final TransformTree
                     } else if constexpr (std::is_same_v<T, SceneProperties>) {
                         auto &component = std::get<std::shared_ptr<SceneProperties>>(flatEntity);
                         if (!component) {
@@ -156,9 +156,9 @@ namespace sp::scene {
                 } else if constexpr (std::is_same_v<T, SceneInfo>) {
                     // Ignore, this should always be set
                 } else if constexpr (std::is_same_v<T, SignalOutput>) {
-                    // Skip, this is handled bellow
+                    // Skip, this is handled below
                 } else if constexpr (std::is_same_v<T, SignalBindings>) {
-                    // Skip, this is handled bellow
+                    // Skip, this is handled below
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     auto &component = std::get<std::shared_ptr<T>>(flatEntity);
                     if (component) {
@@ -201,5 +201,10 @@ namespace sp::scene {
                 if (!ref.HasBinding(live)) ref.SetBinding(live, binding);
             }
         }
+
+        if (liveId.Has<Scripts>(live) && !liveId.Has<EventInput>(live)) {
+            auto &scripts = liveId.Get<const Scripts>(live);
+            if (!scripts.scripts.empty()) liveId.Set<EventInput>(live);
+        }
     }
-} // namespace sp::scene
+} // namespace sp::scene_util

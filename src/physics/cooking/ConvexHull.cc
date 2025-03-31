@@ -331,7 +331,7 @@ namespace sp {
         }
 
         std::ofstream out;
-        if (Assets().OutputStream("cache/collision/" + settings->name, out)) {
+        if (Assets().OutputStream(OVERRIDE_ASSETS_DIR / ("cache/collision/" + settings->name), out)) {
             hullCacheHeader header = {};
             header.modelHash = model->asset->Hash();
             HashKey<HullSettings::Fields> settingsHash = {};

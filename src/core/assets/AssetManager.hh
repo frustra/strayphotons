@@ -30,6 +30,8 @@ namespace sp {
     class PhysicsInfo;
     struct HullSettings;
 
+    extern const std::filesystem::path OVERRIDE_ASSETS_DIR;
+
     enum class AssetType {
         Bundled = 0,
         External,
@@ -56,7 +58,7 @@ namespace sp {
         bool IsGltfRegistered(const std::string &name);
 
         bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
-        bool OutputStream(const std::string &path, std::ofstream &stream);
+        bool OutputStream(const std::filesystem::path &path, std::ofstream &stream);
 
     private:
         void Frame() override;

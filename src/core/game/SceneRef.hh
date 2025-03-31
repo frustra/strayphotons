@@ -28,6 +28,7 @@ namespace sp {
         System, // Lowest priority
         Scene,
         Player,
+        SaveGame,
         Bindings,
         Override, // Highest priority
     };

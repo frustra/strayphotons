@@ -202,11 +202,15 @@ namespace sp {
         }
     }
 
-    bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream) {
-        auto p = OVERRIDE_ASSETS_DIR / path;
-        std::filesystem::create_directories(p.parent_path());
+    bool AssetManager::OutputStream(const std::filesystem::path &path, std::ofstream &stream) {
+        try {
+            std::filesystem::create_directories(path.parent_path());
+        } catch (std::filesystem::filesystem_error &err) {
+            Errorf("Failed to create parent directory: %s", err.what());
+            return false;
+        }
 
-        stream.open(p, std::ios::out | std::ios::binary);
+        stream.open(path, std::ios::out | std::ios::binary);
         return !!stream;
     }
 

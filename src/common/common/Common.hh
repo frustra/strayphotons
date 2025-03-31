@@ -198,9 +198,13 @@ namespace sp {
 
     template<typename T>
     struct is_vector : std::false_type {};
-
     template<typename T>
     struct is_vector<std::vector<T>> : std::true_type {};
+
+    template<typename T>
+    struct is_pair : std::false_type {};
+    template<typename A, typename B>
+    struct is_pair<std::pair<A, B>> : std::true_type {};
 
     template<typename T>
     struct is_optional : std::false_type {};
@@ -214,7 +218,6 @@ namespace sp {
 
     template<typename T>
     struct is_glm_vec : std::false_type {};
-
     template<glm::length_t L, typename T, glm::qualifier Q>
     struct is_glm_vec<glm::vec<L, T, Q>> : std::true_type {};
 

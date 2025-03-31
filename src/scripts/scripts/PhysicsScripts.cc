@@ -159,8 +159,15 @@ namespace sp::scripts {
                     if (std::holds_alternative<std::string>(event.data)) {
                         auto targetName = std::get<std::string>(event.data);
                         target = ecs::EntityRef(ecs::Name(targetName, state.scope)).Get(lock);
+                        if (!target) {
+                            Errorf("Invalid set_current_offset event target: %s", targetName);
+                        }
                     } else if (std::holds_alternative<EntityRef>(event.data)) {
-                        target = std::get<EntityRef>(event.data).Get(lock);
+                        auto targetRef = std::get<EntityRef>(event.data);
+                        target = targetRef.Get(lock);
+                        if (!target) {
+                            Errorf("Invalid set_current_offset event target: %s", targetRef.Name().String());
+                        }
                     } else {
                         Errorf("Invalid set_current_offset event type: %s", event.ToString());
                         continue;

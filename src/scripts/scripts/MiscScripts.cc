@@ -23,7 +23,7 @@ namespace sp::scripts {
 
     struct EdgeTrigger {
         // Input parameters
-        std::string inputExpr;
+        SignalExpression inputExpr;
         std::string outputName = "/script/edge_trigger";
 
         bool enableFalling = true;
@@ -31,17 +31,12 @@ namespace sp::scripts {
         std::optional<SignalExpression> eventValue;
 
         // Internal script state
-        SignalExpression expr;
         std::optional<double> previousValue;
 
         template<typename LockType>
         void updateEdgeTrigger(ScriptState &state, const LockType &lock, const Entity &ent) {
-            if (expr.expr != inputExpr || state.scope != expr.scope) {
-                expr = SignalExpression(inputExpr, state.scope);
-                if (!previousValue) previousValue = expr.Evaluate(lock);
-            }
-
-            auto value = expr.Evaluate(lock);
+            auto value = inputExpr.Evaluate(lock);
+            if (!previousValue) previousValue = value;
 
             Event outputEvent;
             outputEvent.name = outputName;
@@ -75,7 +70,8 @@ namespace sp::scripts {
         StructField::New("falling_edge", &EdgeTrigger::enableFalling),
         StructField::New("rising_edge", &EdgeTrigger::enableRising),
         StructField::New("init_value", &EdgeTrigger::previousValue),
-        StructField::New("set_event_value", &EdgeTrigger::eventValue));
+        StructField::New("set_event_value", &EdgeTrigger::eventValue),
+        StructField::New("_previous_value", &EdgeTrigger::previousValue));
     InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
     InternalPhysicsScript<EdgeTrigger> physicsEdgeTrigger("physics_edge_trigger", MetadataEdgeTrigger);
 
