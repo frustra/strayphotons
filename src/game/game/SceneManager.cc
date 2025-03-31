@@ -282,9 +282,7 @@ namespace sp {
                         playerScene->RemoveScene(stagingLock, liveLock);
                         playerScene.reset();
                     }
-                    AddScene(item.scenePath, SceneType::Async, [this](auto stagingLock, auto liveLock, auto scene) {
-                        // Maybne pause physics here?
-                    });
+                    AddScene(item.scenePath, SceneType::Async);
 
                     playerScene = LoadSceneJson("player", "system/player", SceneType::World);
                     if (playerScene) {
