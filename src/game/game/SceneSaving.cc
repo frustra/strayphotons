@@ -279,7 +279,7 @@ namespace sp {
             Logf("Saving scene %s to '%s'", scene->data->name, scenePath.string());
 
             std::ofstream out;
-            if (Assets().OutputStream(scenePath.string(), out)) {
+            if (Assets().OutputStream(OVERRIDE_ASSETS_DIR / scenePath, out)) {
                 auto outputJson = val.serialize(true);
                 out.write(outputJson.c_str(), outputJson.size());
                 out.close();
@@ -289,20 +289,23 @@ namespace sp {
         }
     }
 
-    void SceneManager::SaveLiveSceneJson(const std::string &outputPath) {
+    void SceneManager::SaveLiveSceneJson(std::string outputPath) {
         Tracef("Saving live scene to: %s", outputPath);
         auto staging = StartStagingTransaction<ReadAll>();
         auto live = StartTransaction<ReadAll>();
+
+        if (ends_with(outputPath, ".json")) {
+            outputPath = outputPath.substr(0, outputPath.size() - 6);
+        }
 
         EntityScope scope;
         auto delim = outputPath.rfind('/');
         if (delim != std::string::npos) {
             scope.scene = outputPath.substr(delim + 1);
-        } else if (outputPath.empty()) {
-            scope.scene = "save0";
         } else {
             scope.scene = outputPath;
         }
+        Assertf(!scope.scene.empty(), "Saving live scene to empty name: %s", outputPath);
 
         picojson::array entities;
         for (auto &e : live.EntitiesWith<SceneInfo>()) {
@@ -332,15 +335,16 @@ namespace sp {
         }
         // Generate scene_connection entity
         picojson::object connections;
+        // TODO: Set up some mechanism to recreate original async dependencies
         for (auto &scene : scenes[SceneType::Async]) {
             if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
-            // TODO: Add Async scenes with an on-init condition (timer? load-once flag?)
             connections[scene->data->path] = picojson::value("1");
         }
         for (auto &scene : scenes[SceneType::World]) {
             if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
             connections[scene->data->path] = picojson::value("1");
         }
+        connections[scope.scene] = picojson::value("1");
         if (!connections.empty()) {
             picojson::object ent;
             ent["scene_connection"] = picojson::value(connections);
@@ -358,20 +362,27 @@ namespace sp {
             }
         };
         picojson::object sceneObj(sceneOrderFunc);
-        // TODO: Set up scene connections
-        // static const SceneProperties defaultProperties = {};
-        // json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
         json::Save(scope, sceneObj["priority"], ScenePriority::SaveGame);
         sceneObj["entities"] = picojson::value(entities);
         auto val = picojson::value(sceneObj);
-        auto scenePath = std::string(outputPath.empty() ? "save0" : outputPath) + ".json";
-        Logf("Saving live scene to '%s'", scenePath);
+        std::filesystem::path scenePath;
+        if (starts_with(outputPath, "saves/")) {
+            auto base = std::filesystem::absolute("./saves");
+            auto fullPath = std::filesystem::weakly_canonical(base / (outputPath.substr(6) + ".json"));
+            Logf("Saving game to: %s", fullPath.string());
+            scenePath = std::filesystem::relative(fullPath);
+        } else {
+            scenePath = OVERRIDE_ASSETS_DIR / (outputPath + ".json");
+            Logf("Saving live scene to '%s'", scenePath.string());
+        }
 
         std::ofstream out;
         if (Assets().OutputStream(scenePath, out)) {
             auto outputJson = val.serialize(true);
             out.write(outputJson.c_str(), outputJson.size());
             out.close();
+        } else {
+            Errorf("Failed to write scene file: %s", scenePath.string());
         }
     }
 } // namespace sp

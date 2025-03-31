@@ -153,9 +153,32 @@ namespace sp {
             });
 
         funcs.Register<std::string>("savegame",
-            "Print out a json serialization of the live scene state",
-            [](std::string outputPath) {
-                GetSceneManager().QueueActionAndBlock(SceneAction::SaveLiveScene, outputPath);
+            "Save a copy of the live scene state to a file",
+            [](std::string saveName) {
+                if (saveName.empty()) {
+                    int i = 0;
+                    while (std::filesystem::exists("./saves/save" + std::to_string(i) + ".json")) {
+                        i++;
+                    }
+                    saveName = "save" + std::to_string(i);
+                }
+                GetSceneManager().QueueActionAndBlock(SceneAction::SaveLiveScene, "saves/" + saveName);
+            });
+
+        funcs.Register<std::string>("loadgame",
+            "Load a previously saved scene state from a file",
+            [](std::string saveName) {
+                if (saveName.empty()) {
+                    int i = 0;
+                    while (std::filesystem::exists("./saves/save" + std::to_string(i + 1) + ".json")) {
+                        i++;
+                    }
+                    saveName = "save" + std::to_string(i);
+                }
+                auto &manager = GetSceneManager();
+                manager.QueueAction(SceneAction::LoadScene, "saves/" + saveName);
+                manager.QueueAction(SceneAction::SyncScene);
+                manager.QueueActionAndBlock(SceneAction::RespawnPlayer);
             });
 
         funcs.Register("printevents", "Print out the current state of event queues", []() {

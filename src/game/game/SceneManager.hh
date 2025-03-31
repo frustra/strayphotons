@@ -104,7 +104,7 @@ namespace sp {
 
         std::shared_ptr<Scene> LoadSceneJson(const std::string &name, const std::string &path, SceneType sceneType);
         void SaveSceneJson(const std::string &name);
-        void SaveLiveSceneJson(const std::string &path);
+        void SaveLiveSceneJson(std::string path);
 
         std::shared_ptr<Scene> LoadBindingsJson();
 

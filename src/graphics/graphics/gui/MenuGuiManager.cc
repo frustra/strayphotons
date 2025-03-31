@@ -149,6 +149,17 @@ namespace sp {
                 CVarMenuOpen.Set(false);
             }
 
+            if (ImGui::Button("Save Game")) {
+                GetConsoleManager().QueueParseAndExecute("savegame");
+                // TODO: Add some sort of notifier that the game has been saved successfully
+            }
+
+            if (ImGui::Button("Load Game")) {
+                selectedScreen = MenuScreen::SaveSelect;
+
+                RefreshSaveList();
+            }
+
             if (ImGui::Button("Scene Select")) {
                 selectedScreen = MenuScreen::SceneSelect;
 
@@ -172,10 +183,13 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
+            PushFont(Font::Monospace, 32);
+
             ImGui::Text("Scene Select");
             ImGui::Text(" ");
 
-            PushFont(Font::Monospace, 32);
+            ImGui::PopFont();
+            PushFont(Font::Monospace, 25);
 
             for (auto &[name, file] : sceneList) {
                 if (ImGui::Button(name.c_str())) {
@@ -185,7 +199,37 @@ namespace sp {
                 }
             }
 
-#undef LEVEL_BUTTON
+            ImGui::PopFont();
+            ImGui::Text(" ");
+
+            if (ImGui::Button("Back")) {
+                selectedScreen = MenuScreen::Main;
+            }
+
+            ImGui::End();
+        } else if (selectedScreen == MenuScreen::SaveSelect) {
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f));
+            ImGui::Begin("MenuSaveSelect", nullptr, flags);
+
+            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+
+            PushFont(Font::Monospace, 32);
+
+            ImGui::Text("Load Game");
+            ImGui::Text(" ");
+
+            ImGui::PopFont();
+            PushFont(Font::Monospace, 25);
+
+            for (auto &[name, file] : saveList) {
+                if (ImGui::Button(name.c_str())) {
+                    CVarMenuOpen.Set(false);
+                    selectedScreen = MenuScreen::Main;
+                    GetConsoleManager().QueueParseAndExecute("loadgame " + file);
+                }
+            }
 
             ImGui::PopFont();
             ImGui::Text(" ");
@@ -203,11 +247,14 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
+            PushFont(Font::Monospace, 32);
+
             ImGui::Text("Options");
             ImGui::Text(" ");
             ImGui::Columns(2, "optcols", false);
 
-            PushFont(Font::Monospace, 32);
+            ImGui::PopFont();
+            PushFont(Font::Monospace, 25);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 15));
 
             ImGui::Text("Resolution");
@@ -311,6 +358,23 @@ namespace sp {
                 }
                 sceneList.emplace_back(name, scene);
             }
+        }
+    }
+
+    void MenuGuiManager::RefreshSaveList() {
+        saveList.clear();
+        int i = 0;
+        while (std::filesystem::exists("./saves/save" + std::to_string(i) + ".json")) {
+            auto last_write_time = std::filesystem::last_write_time("./saves/save" + std::to_string(i) + ".json");
+            std::time_t time = std::chrono::system_clock::to_time_t(
+                std::chrono::clock_cast<std::chrono::system_clock>(last_write_time));
+            std::tm *tm = std::localtime(&time);
+
+            std::string timeStr(100, '\0');
+            size_t n = std::strftime(timeStr.data(), timeStr.size(), "%x %X", tm);
+            timeStr.resize(n);
+            saveList.emplace_back("Save " + std::to_string(i) + ": " + timeStr, "save" + std::to_string(i));
+            i++;
         }
     }
 } // namespace sp

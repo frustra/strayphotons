@@ -319,7 +319,7 @@ namespace sp {
                 ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
 
                 ImGui::AlignTextToFramePadding();
-                ImGui::Text("Entity Definitions:");
+                ImGui::Text("Entity Definitions (Overrides First):");
                 if (targetSceneInfo.prefabStagingId) {
                     ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().FramePadding.x - 200.0f);
                     if (ImGui::Button("Goto Prefab Source", ImVec2(200, 0))) {

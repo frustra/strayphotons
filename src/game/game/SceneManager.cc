@@ -273,9 +273,37 @@ namespace sp {
                         removedCount);
                 }
 
-                AddScene(item.scenePath, SceneType::World, [this](auto stagingLock, auto liveLock, auto scene) {
-                    RespawnPlayer(liveLock);
-                });
+                if (starts_with(item.scenePath, "saves/")) {
+                    ZoneScopedN("ReloadPlayer");
+                    if (playerScene) {
+                        auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
+                        auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
+
+                        playerScene->RemoveScene(stagingLock, liveLock);
+                        playerScene.reset();
+                    }
+                    AddScene(item.scenePath, SceneType::Async, [this](auto stagingLock, auto liveLock, auto scene) {
+                        // Maybne pause physics here?
+                    });
+
+                    playerScene = LoadSceneJson("player", "system/player", SceneType::World);
+                    if (playerScene) {
+                        PreloadAndApplyScene(playerScene, false, [this](auto stagingLock, auto liveLock, auto scene) {
+                            ecs::Entity stagingPlayer = scene->GetStagingEntity(entities::Player.Name());
+                            Assert(stagingPlayer.Has<ecs::SceneInfo>(stagingLock),
+                                "Player scene doesn't contain an entity named player");
+
+                            RespawnPlayer(liveLock);
+                        });
+                    } else {
+                        Errorf("Failed to load player scene!");
+                    }
+                } else {
+                    AddScene(item.scenePath, SceneType::World, [this](auto stagingLock, auto liveLock, auto scene) {
+                        // Maybne pause physics here?
+                        RespawnPlayer(liveLock);
+                    });
+                }
                 item.promise.set_value();
             } else if (item.action == SceneAction::ReloadScene) {
                 ZoneScopedN("ReloadScene");
@@ -634,7 +662,17 @@ namespace sp {
         SceneType sceneType) {
         Logf("Loading scene: %s", scenePath);
 
-        auto asset = Assets().Load("scenes/" + scenePath + ".json", AssetType::Bundled, true)->Get();
+        std::string adjustedPath;
+        AssetType adjustedType;
+        if (starts_with(scenePath, "saves/")) {
+            adjustedPath = scenePath;
+            adjustedType = AssetType::External;
+        } else {
+            adjustedPath = "scenes/" + scenePath;
+            adjustedType = AssetType::Bundled;
+        }
+
+        auto asset = Assets().Load(adjustedPath + ".json", adjustedType, true)->Get();
         if (!asset) {
             Errorf("Scene not found: %s", scenePath);
             return nullptr;

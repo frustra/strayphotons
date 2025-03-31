@@ -79,7 +79,7 @@
             "/keyboard/key/f6": {
                 "outputs": "console:input/action/run_command",
                 "filter": "event",
-                "set_value": "reloadscene; reloadplayer"
+                "set_value": "reloadplayer; reloadscene; respawn"
             },
             "/keyboard/key/f7": {
                 "outputs": "console:input/action/run_command",
