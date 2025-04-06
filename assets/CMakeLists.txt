@@ -90,6 +90,7 @@ if(SP_PACKAGE_RELEASE)
             ${_texture_assets_full}
             ${_shaders_assets_full}
             ${_physics_json_assets_full}
+            models
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
     )
