@@ -459,6 +459,7 @@ namespace sp {
                     auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
                     if (set) return set;
 
+                    Logf("Updating physics collision cache: %s", name);
                     set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
                     hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
 

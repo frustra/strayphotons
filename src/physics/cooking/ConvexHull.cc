@@ -226,10 +226,7 @@ namespace sp {
         Assertf(mesh, "Physics mesh is undefined: %s index %u", settings->name, settings->hull.meshIndex);
 
         auto asset = Assets().Load("cache/collision/" + settings->name)->Get();
-        if (!asset) {
-            Errorf("Physics collision cache missing for hull: %s", settings->name);
-            return nullptr;
-        }
+        if (!asset) return nullptr;
 
         auto buf = asset->Buffer();
         if (buf.size() < sizeof(hullCacheHeader)) {
@@ -301,7 +298,8 @@ namespace sp {
     void hullgen::SaveCollisionCache(physx::PxSerializationRegistry &registry,
         const AsyncPtr<Gltf> &modelPtr,
         const AsyncPtr<HullSettings> &settingsPtr,
-        const ConvexHullSet &set) {
+        const ConvexHullSet &set,
+        const std::filesystem::path &assetsPath) {
         ZoneScoped;
         Assertf(modelPtr, "SaveCollisionCache called with null model ptr");
         Assertf(settingsPtr, "SaveCollisionCache called with null hull settings ptr");
@@ -331,7 +329,7 @@ namespace sp {
         }
 
         std::ofstream out;
-        if (Assets().OutputStream(OVERRIDE_ASSETS_DIR / ("cache/collision/" + settings->name), out)) {
+        if (Assets().OutputStream(assetsPath / "cache/collision" / settings->name, out)) {
             hullCacheHeader header = {};
             header.modelHash = model->asset->Hash();
             HashKey<HullSettings::Fields> settingsHash = {};

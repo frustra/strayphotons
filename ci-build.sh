@@ -57,6 +57,11 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     exit 1
 fi
 
+if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
+    echo -e "~~~ Updating assets.spdata"
+    cmake --build ./build --config RelWithDebInfo --target assets_tar 2>&1 | tee >(grep -E "error( \w+)?:" >> ./build/build_errors.log)
+fi
+
 cd bin
 
 success=0
@@ -146,13 +151,23 @@ fi
 
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Uploading package release :arrow_up:"
-    mkdir -p StrayPhotons
-    mv sp.dll sp.pdb sp-vk.exe StrayPhotons/
-    mv sp-vk.pdb sp-winit.exe sp-winit.pdb scripts StrayPhotons/
-    mv openvr_api.dll actions.json sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json StrayPhotons/
-    zip -r StrayPhotons.zip StrayPhotons
-    buildkite-agent artifact upload "assets.spdata"
-    buildkite-agent artifact upload "StrayPhotons.zip"
+
+    mkdir -p sp_bins
+    mv sp.dll sp-vk.exe sp-winit.exe openvr_api.dll sp_bins/
+    zip -r sp_bins.zip sp_bins
+    buildkite-agent artifact upload "sp_bins.zip"
+
+    mkdir -p sp_debug_symbols
+    mv sp.pdb sp-vk.pdb sp-winit.pdb sp_debug_symbols/
+    zip -r sp_debug_symbols.zip sp_debug_symbols
+    buildkite-agent artifact upload "sp_debug_symbols.zip"
+
+    mkdir -p sp_assets
+    mv assets.spdata scripts actions.json sp_assets/
+    mv sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json sp_assets/
+    zip -r sp_assets.zip sp_assets
+    buildkite-agent artifact upload "sp_assets.zip"
+
 elif [ -n "$BUILDKITE_API_TOKEN" ]; then
     echo -e "--- Comparing screenshots :camera_with_flash:"
     ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
