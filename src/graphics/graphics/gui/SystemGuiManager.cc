@@ -56,20 +56,44 @@ namespace sp {
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name == INPUT_EVENT_MENU_SCROLL) {
+                    if (!std::holds_alternative<glm::vec2>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected vec2", event.ToString());
+                        continue;
+                    }
                     auto &scroll = std::get<glm::vec2>(event.data);
                     io.AddMouseWheelEvent(scroll.x, scroll.y);
                 } else if (event.name == INPUT_EVENT_MENU_CURSOR) {
+                    if (!std::holds_alternative<glm::vec2>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected vec2", event.ToString());
+                        continue;
+                    }
                     auto &pos = std::get<glm::vec2>(event.data);
                     io.AddMousePosEvent(pos.x / io.DisplayFramebufferScale.x, pos.y / io.DisplayFramebufferScale.y);
                 } else if (event.name == INPUT_EVENT_MENU_PRIMARY_TRIGGER) {
+                    if (!std::holds_alternative<bool>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected bool", event.ToString());
+                        continue;
+                    }
                     auto &down = std::get<bool>(event.data);
                     io.AddMouseButtonEvent(ImGuiMouseButton_Left, down);
                 } else if (event.name == INPUT_EVENT_MENU_SECONDARY_TRIGGER) {
+                    if (!std::holds_alternative<bool>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected bool", event.ToString());
+                        continue;
+                    }
                     auto &down = std::get<bool>(event.data);
                     io.AddMouseButtonEvent(ImGuiMouseButton_Right, down);
                 } else if (event.name == INPUT_EVENT_MENU_TEXT_INPUT) {
+                    if (!std::holds_alternative<unsigned int>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected uint", event.ToString());
+                        continue;
+                    }
                     io.AddInputCharacter(std::get<unsigned int>(event.data));
                 } else if (event.name == INPUT_EVENT_MENU_KEY_DOWN) {
+                    if (!std::holds_alternative<int>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected int", event.ToString());
+                        continue;
+                    }
                     auto &keyCode = (KeyCode &)std::get<int>(event.data);
                     if (keyCode == KEY_LEFT_CONTROL || keyCode == KEY_RIGHT_CONTROL) {
                         io.AddKeyEvent(ImGuiMod_Ctrl, true);
@@ -85,6 +109,10 @@ namespace sp {
                         io.AddKeyEvent(imguiKey->second, true);
                     }
                 } else if (event.name == INPUT_EVENT_MENU_KEY_UP) {
+                    if (!std::holds_alternative<int>(event.data)) {
+                        Warnf("System GUI received unexpected event data: %s, expected int", event.ToString());
+                        continue;
+                    }
                     auto &keyCode = (KeyCode &)std::get<int>(event.data);
                     if (keyCode == KEY_LEFT_CONTROL || keyCode == KEY_RIGHT_CONTROL) {
                         io.AddKeyEvent(ImGuiMod_Ctrl, false);

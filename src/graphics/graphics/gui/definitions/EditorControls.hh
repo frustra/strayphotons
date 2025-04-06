@@ -17,10 +17,11 @@ namespace sp {
         };
 
         // Persistent context
-        std::string entitySearch, sceneEntry;
+        std::string entitySearch, sceneEntry, signalSearch;
         std::map<ecs::Name, TreeNode> entityTree;
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         SceneRef scene;
+        ecs::SignalRef selectedSignal;
         ecs::Entity target;
         std::string followFocus;
         int followFocusPos;
@@ -36,6 +37,7 @@ namespace sp {
         void AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
         void ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
         void ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock);
+        void ShowSignalControls(const ecs::Lock<ecs::ReadAll> &lock);
 
         template<typename T>
         bool AddImGuiElement(const std::string &name, T &value);

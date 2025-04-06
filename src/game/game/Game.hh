@@ -61,11 +61,12 @@ namespace sp {
     public:
         LockFreeEventQueue<ecs::Event> inputEventQueue;
 
+        std::shared_ptr<xr::XrSystem> xr;
+        bool enableXrSystem = false;
+
         std::shared_ptr<GraphicsManager> graphics;
         std::shared_ptr<PhysxManager> physics;
         std::shared_ptr<AudioManager> audio;
-        std::shared_ptr<xr::XrSystem> xr;
-        bool enableXrSystem = false;
 
         ConsoleBindingManager consoleBinding;
         EditorSystem editor;
