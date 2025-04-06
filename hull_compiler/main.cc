@@ -40,11 +40,11 @@ int main(int argc, char **argv) {
 
     std::string modelName = optionsResult["model-name"].as<std::string>();
 
-    sp::logging::SetLogLevel(sp::logging::Level::Warn);
+    sp::logging::SetLogLevel(sp::logging::Level::Log);
 
-    std::string assetsPath = "";
+    std::filesystem::path assetsPath = sp::OVERRIDE_ASSETS_DIR;
     if (optionsResult.count("assets")) assetsPath = optionsResult["assets"].as<std::string>();
-    sp::Assets().StartThread(assetsPath);
+    sp::Assets().StartThread(assetsPath.string());
 
     auto modelPtr = sp::Assets().LoadGltf(modelName);
     auto model = modelPtr->Get();
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
             Logf("Updating physics collision cache: %s.%s", modelName, meshName);
 
             set = sp::hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
-            sp::hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
+            sp::hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set, assetsPath);
 
             updated = true;
         }
@@ -96,12 +96,12 @@ int main(int argc, char **argv) {
         Logf("Updating physics collision cache: %s.%s", modelName, meshName);
 
         set = sp::hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
-        sp::hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
+        sp::hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set, assetsPath);
 
         updated = true;
     }
 
-    std::filesystem::path markerPath("../assets/cache/collision/" + modelName);
+    std::filesystem::path markerPath(assetsPath / "cache/collision" / modelName);
     if (updated || !std::filesystem::exists(markerPath)) {
         std::filesystem::create_directories(markerPath.parent_path());
         std::ofstream(markerPath).close(); // Create or touch the marker file

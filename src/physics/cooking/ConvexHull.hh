@@ -7,10 +7,12 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "common/Async.hh"
 #include "common/Common.hh"
 
 #include <atomic>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <memory>
 #include <robin_hood.h>
@@ -59,6 +61,7 @@ namespace sp {
         void SaveCollisionCache(physx::PxSerializationRegistry &registry,
             const AsyncPtr<Gltf> &model,
             const AsyncPtr<HullSettings> &settings,
-            const ConvexHullSet &set);
+            const ConvexHullSet &set,
+            const std::filesystem::path &assetsPath = OVERRIDE_ASSETS_DIR);
     } // namespace hullgen
 } // namespace sp
