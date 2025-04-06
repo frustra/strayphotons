@@ -134,13 +134,14 @@ namespace ecs {
         });
         if (!refsToFree.empty()) {
             ZoneScopedN("FreeSignals");
-            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([refsToFree](auto &lock) {
-                auto &signals = lock.Get<Signals>();
-                for (auto &refPtr : refsToFree) {
-                    signals.FreeSignal(lock, refPtr->index);
-                    refPtr->index = std::numeric_limits<size_t>::max();
-                }
-            });
+            ecs::QueueTransaction<ecs::Write<ecs::Signals>>(
+                [refsToFree](const ecs::Lock<ecs::Write<ecs::Signals>> &lock) {
+                    auto &signals = lock.Get<Signals>();
+                    for (auto &refPtr : refsToFree) {
+                        signals.FreeSignal(lock, refPtr->index);
+                        refPtr->index = std::numeric_limits<size_t>::max();
+                    }
+                });
         }
         return refsToFree.size();
     }
