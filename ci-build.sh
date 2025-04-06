@@ -57,6 +57,11 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     exit 1
 fi
 
+if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
+    echo -e "~~~ Updating assets.spdata"
+    cmake --build ./build --config RelWithDebInfo --target assets_tar 2>&1 | tee >(grep -E "error( \w+)?:" >> ./build/build_errors.log)
+fi
+
 cd bin
 
 success=0

@@ -90,16 +90,12 @@ if(SP_PACKAGE_RELEASE)
             ${_texture_assets_full}
             ${_shaders_assets_full}
             ${_physics_json_assets_full}
-            models
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_LIST_DIR}
     )
 
-    add_custom_target(assets_tar DEPENDS ${PROJECT_OUTPUT_DIR}/${_asset_filename})
+    add_custom_target(assets_tar ALL DEPENDS ${PROJECT_OUTPUT_DIR}/${_asset_filename})
 
     # Make the TAR generation depend on having up-to-date models
     add_dependencies(assets_tar models)
-
-    # Make the exe depend on having the asset tar bundle
-    add_dependencies(${PROJECT_COMMON_EXE} assets_tar)
 endif()
