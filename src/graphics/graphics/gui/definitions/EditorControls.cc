@@ -557,9 +557,9 @@ namespace sp {
                 auto node = ecs::GetSignalManager().FindSignalNode(ref);
                 if (node) {
                     ImGui::Text("Node cacheable: %s", node->uncacheable ? "false" : "true");
-                    ImGui::Text("Node references: %u", node->references.size());
+                    ImGui::Text("Node references: %llu", node->references.size());
                 }
-                ImGui::Text("Subscribers: %u", signal.subscribers.size());
+                ImGui::Text("Subscribers: %llu", signal.subscribers.size());
                 for (auto &sub : signal.subscribers) {
                     auto subscriber = ecs::SignalRef(sub.lock());
                     if (subscriber) {
@@ -569,7 +569,7 @@ namespace sp {
                         }
                     }
                 }
-                ImGui::Text("Dependencies: %u", signal.dependencies.size());
+                ImGui::Text("Dependencies: %llu", signal.dependencies.size());
                 for (auto &dep : signal.dependencies) {
                     auto dependency = ecs::SignalRef(dep.lock());
                     if (dependency) {
